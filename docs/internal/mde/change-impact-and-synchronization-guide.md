@@ -31,7 +31,7 @@ to determine what is required.
 | JSON/XMI semantic bridge           | `packages/java/platform-modeling/.../XmiModelImportService.java`                                     | Model create/update/import/export, transformation handoff, graph reconstruction                                        |
 | Frontend modeling behavior         | `apps/frontend/js/` and `apps/frontend/css/`                                                         | Canvas, graph editor, workbenches, attribute editor, views, layout, methodology checks                                 |
 | Persistence                        | PostgreSQL migrations and platform storage/application records                                       | Stored JSON/XMI, metamodel hash/version, jobs, assistant retrieval/model context                                       |
-| AI modeling behavior               | `apps/backend/.../assistant/`                                                                        | Catalog indexing, starter models, deterministic patches, semantic patch compilation, model context                     |
+| AI modeling behavior               | `apps/backend/.../assistant/`                                                                        | Catalog indexing, starter models, deterministic patches, ModelDelta compilation, model context                         |
 | Public API contract                | controllers plus `docs/api/openapi/openapi.yaml`                                                     | Frontend, external clients, API docs                                                                                   |
 | Regression fixtures                | `mde/samples/*.xmi`, Java tests, case-study samples                                                  | All MDE pipeline regression tests                                                                                      |
 | Architecture documentation         | `README.md`, `docs/internal/project-description.md`, `docs/`, especially `docs/diagrams/`            | Developers, thesis material, operations                                                                                |
@@ -747,7 +747,7 @@ change.
 1. First change the formal source: metamodel and/or EVL.
 2. Regenerate Ecore and restart the backend when metamodel or methodology sources changed.
 3. Update starter models and deterministic patches when they encode affected fields/types.
-4. Update patch compilation/context indexing only if the semantic patch or model JSON protocol
+4. Update patch compilation/context indexing only if the ModelDelta or model JSON protocol
    changed.
 5. Validate assistant starters for CIM, PIM, and PSM.
 6. Test representative add, update, relationship, delete, auto-apply, and undo flows.

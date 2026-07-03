@@ -2,18 +2,22 @@ package io.mehdieidi.modless.platform.assistant.application;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
+import io.mehdieidi.modless.platform.assistant.delta.DeltaNormalizer;
+import io.mehdieidi.modless.platform.assistant.delta.ModelDelta;
+import io.mehdieidi.modless.platform.assistant.delta.ModelDeltaParser;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
-import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
 import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompleter;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.source.SourceChunker;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /** Curated prompt benchmark runner for assistant reliability work. */
 public final class AssistantEvalRunner {
@@ -22,6 +26,9 @@ public final class AssistantEvalRunner {
   private final AssistantMetamodelSchemaService schemas;
   private final AssistantPatchCompleter patchCompleter;
   private final ObjectMapper mapper;
+  private final ModelDeltaParser deltaParser;
+  private final DeltaNormalizer deltaNormalizer;
+  private final DeltaCompiler deltaCompiler;
 
   public AssistantEvalRunner(
       AssistantModelProvider provider,
@@ -32,6 +39,9 @@ public final class AssistantEvalRunner {
     this.schemas = schemas;
     this.patchCompleter = patchCompleter;
     this.mapper = mapper;
+    this.deltaParser = new ModelDeltaParser(mapper);
+    this.deltaNormalizer = new DeltaNormalizer(schemas);
+    this.deltaCompiler = new DeltaCompiler(schemas);
   }
 
   /** Loads curated prompts from the bundled fixture file. */
@@ -81,27 +91,41 @@ public final class AssistantEvalRunner {
     List<EvalResult> results = new ArrayList<>();
     for (EvalPrompt prompt : prompts == null ? List.<EvalPrompt>of() : prompts) {
       long startedAt = System.currentTimeMillis();
+      int providerCalls = 0;
+      long providerWaitMs = 0L;
       EvalResult.Builder builder =
           new EvalResult.Builder(prompt.id(), prompt.category(), prompt.level());
+      List<AssistantModelProvider.ContextSnippet> snippets = List.of();
       try {
+        ModelLevel level = ModelLevel.fromApiName(prompt.level());
+        snippets = new ArrayList<>(schemas.planningContracts(level, prompt.prompt(), 8));
+        int requiredContracts = prompt.requiredContracts().size();
+        int retrievedRequiredContracts =
+            countRequiredContracts(prompt.requiredContracts(), snippets);
+        int sourceChunkCount = sourceChunkCount(prompt);
         if (!live) {
           builder
-              .turnKind(AssistantTurnPlan.Kind.PATCH.name())
+              .turnKind(ModelDelta.Kind.MODEL_DELTA.name())
               .operationCount(8)
+              .addElementCount(Math.max(prompt.minElementAdds(), 1))
+              .connectionCount(Math.max(prompt.minConnections(), 0))
+              .sourceAnalysisUsed(!prompt.requiresSourceAnalysis())
+              .sourceChunkCount(sourceChunkCount)
+              .coveredSourceChunkCount(sourceChunkCount)
+              .requiredContractCount(requiredContracts)
+              .retrievedRequiredContractCount(retrievedRequiredContracts)
               .validationPassed(true)
               .repairAttempts(0)
-              .toolCalls(3)
+              .toolCalls(0)
+              .providerWaitMs(0)
               .failureStage("")
               .latencyMs(System.currentTimeMillis() - startedAt);
           results.add(builder.build());
           continue;
         }
-        ModelLevel level = ModelLevel.fromApiName(prompt.level());
-        List<AssistantModelProvider.ContextSnippet> snippets =
-            new ArrayList<>(schemas.planningContracts(level, prompt.prompt(), 8));
         boolean sourceAnalysisUsed = false;
-        SemanticModelPatch sourcePatch = null;
         if (!prompt.sourceDocument().isBlank() && level == ModelLevel.CIM) {
+          long providerStarted = System.currentTimeMillis();
           AssistantModelProvider.AssistantReply analysis =
               provider.analyzeSource(
                   new AssistantModelProvider.AssistantPrompt(
@@ -110,73 +134,60 @@ public final class AssistantEvalRunner {
                       sourceAnalysisUserMessage(prompt),
                       sourceAnalysisSnippets(prompt)),
                   (stage, message) -> {});
+          providerWaitMs += System.currentTimeMillis() - providerStarted;
+          providerCalls++;
           if (analysis != null && !analysis.content().isBlank()) {
             sourceAnalysisUsed = true;
             snippets.add(
                 new AssistantModelProvider.ContextSnippet(
                     "source-analysis", prompt.id() + " evidence map", analysis.content()));
-            sourcePatch =
-                new CimSourceModelMaterializer(schemas, mapper)
-                    .materialize(analysis.content())
-                    .map(CimSourceModelMaterializer.Result::patch)
-                    .orElse(null);
           }
-        }
-        if (sourcePatch != null) {
-          SemanticModelPatch completed = patchCompleter.complete(level, sourcePatch, Map.of());
-          int addCount = count(completed, SemanticModelPatch.OperationType.ADD_ELEMENT);
-          int connectionCount = count(completed, SemanticModelPatch.OperationType.CONNECT_ELEMENTS);
-          boolean passed =
-              completed.operations().size() >= prompt.minOperations()
-                  && addCount >= prompt.minElementAdds()
-                  && connectionCount >= prompt.minConnections()
-                  && (!prompt.requiresSourceAnalysis() || sourceAnalysisUsed);
-          builder
-              .turnKind(AssistantTurnPlan.Kind.PATCH.name())
-              .operationCount(completed.operations().size())
-              .addElementCount(addCount)
-              .connectionCount(connectionCount)
-              .sourceAnalysisUsed(sourceAnalysisUsed)
-              .validationPassed(passed)
-              .repairAttempts(0)
-              .toolCalls(0)
-              .failureStage(passed ? "" : "EVAL_EXPECTATIONS")
-              .latencyMs(System.currentTimeMillis() - startedAt);
-          results.add(builder.build());
-          continue;
         }
         if (toolBinder != null) {
           toolBinder.bind(level, prompt);
         }
         try {
-          AssistantModelProvider.AgentLoopResult loopResult =
-              provider.planMutationTurn(
+          long providerStarted = System.currentTimeMillis();
+          AssistantModelProvider.AssistantReply reply =
+              provider.completeStructured(
                   new AssistantModelProvider.AssistantPrompt(
                       AssistantModelRole.PLANNER,
-                      "Eval run for category " + prompt.category(),
+                      "Eval run for category "
+                          + prompt.category()
+                          + ". Return only ModelDelta JSON.",
                       prompt.prompt(),
-                      snippets),
-                  (stage, message) -> {});
-          AssistantTurnPlan plan = loopResult.plan();
+                      snippets));
+          providerWaitMs += System.currentTimeMillis() - providerStarted;
+          providerCalls++;
+          ModelDelta delta = deltaNormalizer.normalize(level, deltaParser.parse(reply.content()));
           SemanticModelPatch completed =
-              patchCompleter.complete(level, plan.patch(), java.util.Map.of());
+              patchCompleter.complete(
+                  level,
+                  deltaCompiler.compile(
+                      level, mapper.createObjectNode(), java.util.Map.of(), delta),
+                  java.util.Map.of());
           int addCount = count(completed, SemanticModelPatch.OperationType.ADD_ELEMENT);
           int connectionCount = count(completed, SemanticModelPatch.OperationType.CONNECT_ELEMENTS);
           boolean passed =
-              plan.kind() == AssistantTurnPlan.Kind.PATCH
+              delta.kind() == ModelDelta.Kind.MODEL_DELTA
                   && completed.operations().size() >= prompt.minOperations()
                   && addCount >= prompt.minElementAdds()
                   && connectionCount >= prompt.minConnections()
                   && (!prompt.requiresSourceAnalysis() || sourceAnalysisUsed);
           builder
-              .turnKind(plan.kind().name())
+              .turnKind(delta.kind().name())
               .operationCount(completed.operations().size())
               .addElementCount(addCount)
               .connectionCount(connectionCount)
               .sourceAnalysisUsed(sourceAnalysisUsed)
               .validationPassed(passed)
               .repairAttempts(0)
-              .toolCalls(loopResult.toolCalls())
+              .toolCalls(providerCalls)
+              .sourceChunkCount(sourceChunkCount)
+              .coveredSourceChunkCount(sourceAnalysisUsed ? sourceChunkCount : 0)
+              .requiredContractCount(requiredContracts)
+              .retrievedRequiredContractCount(retrievedRequiredContracts)
+              .providerWaitMs(providerWaitMs)
               .failureStage(passed ? "" : "EVAL_EXPECTATIONS")
               .latencyMs(System.currentTimeMillis() - startedAt);
         } finally {
@@ -190,7 +201,12 @@ public final class AssistantEvalRunner {
             .operationCount(0)
             .validationPassed(false)
             .repairAttempts(0)
-            .toolCalls(0)
+            .toolCalls(providerCalls)
+            .sourceChunkCount(0)
+            .coveredSourceChunkCount(0)
+            .requiredContractCount(0)
+            .retrievedRequiredContractCount(0)
+            .providerWaitMs(providerWaitMs)
             .failureStage("PLANNING")
             .failureMessage(ex.getMessage())
             .latencyMs(System.currentTimeMillis() - startedAt);
@@ -198,6 +214,13 @@ public final class AssistantEvalRunner {
       results.add(builder.build());
     }
     return results;
+  }
+
+  private int sourceChunkCount(EvalPrompt prompt) {
+    if (prompt == null || prompt.sourceDocument().isBlank()) {
+      return 0;
+    }
+    return new SourceChunker().chunk(prompt.id(), prompt.sourceDocument(), 4000, 24).size();
   }
 
   private String sourceAnalysisPrompt(EvalPrompt prompt) {
@@ -246,6 +269,26 @@ public final class AssistantEvalRunner {
             .count();
   }
 
+  private int countRequiredContracts(
+      List<String> requiredContracts, List<AssistantModelProvider.ContextSnippet> snippets) {
+    if (requiredContracts == null || requiredContracts.isEmpty()) {
+      return 0;
+    }
+    String haystack =
+        (snippets == null ? List.<AssistantModelProvider.ContextSnippet>of() : snippets)
+            .stream()
+                .map(snippet -> snippet.title() + "\n" + snippet.content())
+                .reduce("", (left, right) -> left + "\n" + right)
+                .toLowerCase(Locale.ROOT);
+    int count = 0;
+    for (String required : requiredContracts) {
+      if (required != null && haystack.contains(required.toLowerCase(Locale.ROOT))) {
+        count++;
+      }
+    }
+    return count;
+  }
+
   /** Prints a baseline report grouped by category. */
   public String baselineReport(List<EvalResult> results) {
     StringBuilder report = new StringBuilder("Assistant eval baseline\n");
@@ -271,6 +314,151 @@ public final class AssistantEvalRunner {
                   .append('\n');
             });
     return report.toString().trim();
+  }
+
+  /** Summarizes curated evals against the redesign quality gates. */
+  public QualityGateReport qualityGateReport(List<EvalResult> results) {
+    return qualityGateReport(results, QualityGateConfig.defaults());
+  }
+
+  /** Summarizes curated evals against explicit quality gates. */
+  public QualityGateReport qualityGateReport(List<EvalResult> results, QualityGateConfig config) {
+    List<EvalResult> rows = results == null ? List.of() : List.copyOf(results);
+    QualityGateConfig gates = config == null ? QualityGateConfig.defaults() : config;
+    int total = rows.size();
+    long passed = rows.stream().filter(EvalResult::validationPassed).count();
+    long modelDeltaSuccesses =
+        rows.stream()
+            .filter(EvalResult::validationPassed)
+            .filter(result -> ModelDelta.Kind.MODEL_DELTA.name().equals(result.turnKind()))
+            .count();
+    long sourceChunks = rows.stream().mapToLong(EvalResult::sourceChunkCount).sum();
+    long coveredSourceChunks = rows.stream().mapToLong(EvalResult::coveredSourceChunkCount).sum();
+    long requiredContracts = rows.stream().mapToLong(EvalResult::requiredContractCount).sum();
+    long retrievedContracts =
+        rows.stream().mapToLong(EvalResult::retrievedRequiredContractCount).sum();
+    double passRate = total == 0 ? 1.0 : (double) passed / total;
+    double modelDeltaRate = passed == 0 ? 1.0 : (double) modelDeltaSuccesses / passed;
+    double sourceCoverageRate =
+        sourceChunks == 0 ? 1.0 : (double) coveredSourceChunks / sourceChunks;
+    double retrievalRecallRate =
+        requiredContracts == 0 ? 1.0 : (double) retrievedContracts / requiredContracts;
+    double averageRepairAttempts =
+        rows.stream().mapToInt(EvalResult::repairAttempts).average().orElse(0.0);
+    double averageProviderCalls =
+        rows.stream().mapToInt(EvalResult::toolCalls).average().orElse(0.0);
+    long p95LatencyMs = percentileLatency(rows, 0.95);
+
+    List<String> violations = new ArrayList<>();
+    if (passRate < gates.minStructuralPassRate()) {
+      violations.add(
+          "structural pass rate "
+              + percent(passRate)
+              + " below "
+              + percent(gates.minStructuralPassRate()));
+    }
+    if (modelDeltaRate < gates.minModelDeltaSuccessRate()) {
+      violations.add(
+          "ModelDelta success rate "
+              + percent(modelDeltaRate)
+              + " below "
+              + percent(gates.minModelDeltaSuccessRate()));
+    }
+    if (sourceCoverageRate < gates.minSourceCoverageRate()) {
+      violations.add(
+          "source coverage "
+              + percent(sourceCoverageRate)
+              + " below "
+              + percent(gates.minSourceCoverageRate()));
+    }
+    if (retrievalRecallRate < gates.minRetrievalRecallRate()) {
+      violations.add(
+          "retrieval contract recall "
+              + percent(retrievalRecallRate)
+              + " below "
+              + percent(gates.minRetrievalRecallRate()));
+    }
+    if (averageRepairAttempts > gates.maxAverageRepairAttempts()) {
+      violations.add(
+          "average repair attempts "
+              + String.format(Locale.ROOT, "%.2f", averageRepairAttempts)
+              + " above "
+              + String.format(Locale.ROOT, "%.2f", gates.maxAverageRepairAttempts()));
+    }
+    if (averageProviderCalls > gates.maxAverageProviderCalls()) {
+      violations.add(
+          "average provider calls "
+              + String.format(Locale.ROOT, "%.2f", averageProviderCalls)
+              + " above "
+              + String.format(Locale.ROOT, "%.2f", gates.maxAverageProviderCalls()));
+    }
+    if (p95LatencyMs > gates.maxP95LatencyMs()) {
+      violations.add("p95 latency " + p95LatencyMs + "ms above " + gates.maxP95LatencyMs() + "ms");
+    }
+
+    return new QualityGateReport(
+        total,
+        (int) passed,
+        passRate,
+        modelDeltaRate,
+        sourceCoverageRate,
+        retrievalRecallRate,
+        averageRepairAttempts,
+        averageProviderCalls,
+        p95LatencyMs,
+        violations);
+  }
+
+  /** Reports live-style latency and provider-call statistics for eval output. */
+  public LatencyReport latencyReport(List<EvalResult> results) {
+    List<EvalResult> rows = results == null ? List.of() : List.copyOf(results);
+    double averageProviderCalls =
+        rows.stream().mapToInt(EvalResult::toolCalls).average().orElse(0.0);
+    long p50Total = percentileLatency(rows, 0.50);
+    long p95Total = percentileLatency(rows, 0.95);
+    long p50Provider = percentileProviderWait(rows, 0.50);
+    long p95Provider = percentileProviderWait(rows, 0.95);
+    long p50Backend = percentileBackendLatency(rows, 0.50);
+    long p95Backend = percentileBackendLatency(rows, 0.95);
+    return new LatencyReport(
+        rows.size(),
+        p50Total,
+        p95Total,
+        p50Provider,
+        p95Provider,
+        p50Backend,
+        p95Backend,
+        averageProviderCalls);
+  }
+
+  private long percentileLatency(List<EvalResult> results, double percentile) {
+    return percentile(results, percentile, EvalResult::latencyMs);
+  }
+
+  private long percentileProviderWait(List<EvalResult> results, double percentile) {
+    return percentile(results, percentile, EvalResult::providerWaitMs);
+  }
+
+  private long percentileBackendLatency(List<EvalResult> results, double percentile) {
+    return percentile(
+        results, percentile, result -> Math.max(0L, result.latencyMs() - result.providerWaitMs()));
+  }
+
+  private long percentile(
+      List<EvalResult> results,
+      double percentile,
+      java.util.function.ToLongFunction<EvalResult> value) {
+    if (results == null || results.isEmpty()) {
+      return 0L;
+    }
+    List<Long> sorted =
+        results.stream().map(value::applyAsLong).sorted(Comparator.naturalOrder()).toList();
+    int index = (int) Math.ceil(percentile * sorted.size()) - 1;
+    return sorted.get(Math.max(0, Math.min(sorted.size() - 1, index)));
+  }
+
+  private String percent(double value) {
+    return String.format(Locale.ROOT, "%.1f%%", value * 100.0);
   }
 
   /** Binds tool context for live agent-loop eval runs. */
@@ -304,6 +492,7 @@ public final class AssistantEvalRunner {
       boolean emptyCanvas,
       List<String> selectedElementIds,
       String sourceDocument,
+      List<String> requiredContracts,
       int minOperations,
       int minElementAdds,
       int minConnections,
@@ -312,9 +501,97 @@ public final class AssistantEvalRunner {
     public EvalPrompt {
       selectedElementIds = selectedElementIds == null ? List.of() : List.copyOf(selectedElementIds);
       sourceDocument = sourceDocument == null ? "" : sourceDocument;
+      requiredContracts = requiredContracts == null ? List.of() : List.copyOf(requiredContracts);
       minOperations = Math.max(minOperations, 1);
       minElementAdds = Math.max(minElementAdds, 0);
       minConnections = Math.max(minConnections, 0);
+    }
+  }
+
+  /** Quality gate thresholds for assistant eval reports. */
+  public record QualityGateConfig(
+      double minStructuralPassRate,
+      double minModelDeltaSuccessRate,
+      double minSourceCoverageRate,
+      double minRetrievalRecallRate,
+      double maxAverageRepairAttempts,
+      double maxAverageProviderCalls,
+      long maxP95LatencyMs) {
+
+    public static QualityGateConfig defaults() {
+      return new QualityGateConfig(0.95, 1.0, 1.0, 0.90, 0.5, 3.0, 300_000L);
+    }
+  }
+
+  /** Aggregate eval quality report. */
+  public record QualityGateReport(
+      int total,
+      int passed,
+      double structuralPassRate,
+      double modelDeltaSuccessRate,
+      double sourceCoverageRate,
+      double retrievalRecallRate,
+      double averageRepairAttempts,
+      double averageProviderCalls,
+      long p95LatencyMs,
+      List<String> violations) {
+
+    public QualityGateReport {
+      violations = violations == null ? List.of() : List.copyOf(violations);
+    }
+
+    public boolean passedGates() {
+      return violations.isEmpty();
+    }
+
+    public String summary() {
+      return "quality="
+          + (passedGates() ? "PASS" : "FAIL")
+          + ", structural="
+          + String.format(Locale.ROOT, "%.1f%%", structuralPassRate * 100.0)
+          + ", modelDelta="
+          + String.format(Locale.ROOT, "%.1f%%", modelDeltaSuccessRate * 100.0)
+          + ", sourceCoverage="
+          + String.format(Locale.ROOT, "%.1f%%", sourceCoverageRate * 100.0)
+          + ", retrievalRecall="
+          + String.format(Locale.ROOT, "%.1f%%", retrievalRecallRate * 100.0)
+          + ", avgRepair="
+          + String.format(Locale.ROOT, "%.2f", averageRepairAttempts)
+          + ", avgProviderCalls="
+          + String.format(Locale.ROOT, "%.2f", averageProviderCalls)
+          + ", p95LatencyMs="
+          + p95LatencyMs;
+    }
+  }
+
+  /** Live/non-live eval latency summary. */
+  public record LatencyReport(
+      int total,
+      long p50LatencyMs,
+      long p95LatencyMs,
+      long p50ProviderWaitMs,
+      long p95ProviderWaitMs,
+      long p50BackendLatencyMs,
+      long p95BackendLatencyMs,
+      double averageProviderCalls) {
+
+    public String summary() {
+      return "latency total="
+          + total
+          + ", p50="
+          + p50LatencyMs
+          + "ms, p95="
+          + p95LatencyMs
+          + "ms, providerP50="
+          + p50ProviderWaitMs
+          + "ms, providerP95="
+          + p95ProviderWaitMs
+          + "ms, backendP50="
+          + p50BackendLatencyMs
+          + "ms, backendP95="
+          + p95BackendLatencyMs
+          + "ms, avgProviderCalls="
+          + String.format(Locale.ROOT, "%.2f", averageProviderCalls);
     }
   }
 
@@ -332,8 +609,13 @@ public final class AssistantEvalRunner {
    * @param validationPassed whether validation passed
    * @param repairAttempts repair passes used
    * @param toolCalls tool invocations
+   * @param sourceChunkCount source chunks expected to be represented in the run
+   * @param coveredSourceChunkCount source chunks represented by source analysis/evidence
+   * @param requiredContractCount metamodel contracts expected by the fixture
+   * @param retrievedRequiredContractCount expected metamodel contracts present in snippets
    * @param failureStage failure stage when unsuccessful
    * @param failureMessage optional failure message
+   * @param providerWaitMs measured provider wait
    * @param latencyMs turn latency
    */
   public record EvalResult(
@@ -348,8 +630,13 @@ public final class AssistantEvalRunner {
       boolean validationPassed,
       int repairAttempts,
       int toolCalls,
+      int sourceChunkCount,
+      int coveredSourceChunkCount,
+      int requiredContractCount,
+      int retrievedRequiredContractCount,
       String failureStage,
       String failureMessage,
+      long providerWaitMs,
       long latencyMs) {
 
     static final class Builder {
@@ -364,8 +651,13 @@ public final class AssistantEvalRunner {
       private boolean validationPassed;
       private int repairAttempts;
       private int toolCalls;
+      private int sourceChunkCount;
+      private int coveredSourceChunkCount;
+      private int requiredContractCount;
+      private int retrievedRequiredContractCount;
       private String failureStage = "";
       private String failureMessage = "";
+      private long providerWaitMs;
       private long latencyMs;
 
       Builder(String id, String category, String level) {
@@ -414,6 +706,26 @@ public final class AssistantEvalRunner {
         return this;
       }
 
+      Builder sourceChunkCount(int sourceChunkCount) {
+        this.sourceChunkCount = sourceChunkCount;
+        return this;
+      }
+
+      Builder coveredSourceChunkCount(int coveredSourceChunkCount) {
+        this.coveredSourceChunkCount = coveredSourceChunkCount;
+        return this;
+      }
+
+      Builder requiredContractCount(int requiredContractCount) {
+        this.requiredContractCount = requiredContractCount;
+        return this;
+      }
+
+      Builder retrievedRequiredContractCount(int retrievedRequiredContractCount) {
+        this.retrievedRequiredContractCount = retrievedRequiredContractCount;
+        return this;
+      }
+
       Builder failureStage(String failureStage) {
         this.failureStage = failureStage;
         return this;
@@ -421,6 +733,11 @@ public final class AssistantEvalRunner {
 
       Builder failureMessage(String failureMessage) {
         this.failureMessage = failureMessage;
+        return this;
+      }
+
+      Builder providerWaitMs(long providerWaitMs) {
+        this.providerWaitMs = providerWaitMs;
         return this;
       }
 
@@ -442,8 +759,13 @@ public final class AssistantEvalRunner {
             validationPassed,
             repairAttempts,
             toolCalls,
+            sourceChunkCount,
+            coveredSourceChunkCount,
+            requiredContractCount,
+            retrievedRequiredContractCount,
             failureStage,
             failureMessage,
+            providerWaitMs,
             latencyMs);
       }
     }

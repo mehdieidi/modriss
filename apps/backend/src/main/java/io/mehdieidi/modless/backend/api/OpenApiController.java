@@ -55,6 +55,7 @@ public class OpenApiController {
     add(paths, "/api/layout", "post", "Auto-layout diagram nodes");
     add(paths, "/api/chatbot/sessions", "post", "Create assistant session");
     add(paths, "/api/chatbot/sessions/{sessionId}", "delete", "Clear assistant session memory");
+    add(paths, "/api/chatbot/sessions/{sessionId}/cancel", "post", "Cancel active assistant turn");
     add(paths, "/api/chatbot/sessions/{sessionId}/messages", "post", "Send assistant message");
     add(
         paths,

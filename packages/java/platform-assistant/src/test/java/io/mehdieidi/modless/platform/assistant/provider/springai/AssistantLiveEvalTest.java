@@ -12,10 +12,10 @@ import io.mehdieidi.modless.platform.assistant.application.AssistantEvalRunner;
 import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
+import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompleter;
-import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
 import io.mehdieidi.modless.platform.assistant.persistence.jdbc.JdbcAssistantModelContextIndex;
 import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
@@ -68,6 +68,7 @@ class AssistantLiveEvalTest {
             true,
             List.of(),
             source,
+            List.of("Actor", "Command", "Event", "BusinessPolicy"),
             38,
             24,
             8,
@@ -132,6 +133,7 @@ class AssistantLiveEvalTest {
         new AssistantToolService(
             emptyCatalog(),
             new AssistantPatchCompiler(),
+            new DeltaCompiler(new AssistantMetamodelSchemaService()),
             new AssistantMetamodelSchemaService(),
             models,
             mapper);
@@ -142,7 +144,6 @@ class AssistantLiveEvalTest {
             new AssistantPromptGuard(properties),
             tools,
             new AssistantHardeningService(properties, null),
-            new SemanticModelPatchParser(mapper),
             RestClient.builder());
     AssistantMetamodelSchemaService schemas = new AssistantMetamodelSchemaService();
     AssistantEvalRunner runner =

@@ -17,7 +17,7 @@ flowchart LR
     developer -->|"Uses browser modeler, assistant, artifact explorer"| system
     owner -->|"Owns projects and manages membership"| system
     operator -->|"Configures, observes, and operates"| system
-    system -->|"Chat completion and structured semantic patch requests"| proxy
+    system -->|"Chat completion and structured ModelDelta requests"| proxy
     proxy -->|"Proxied provider calls"| llm
     system -.->|"Generates deployable project artifacts for"| aws
 ```

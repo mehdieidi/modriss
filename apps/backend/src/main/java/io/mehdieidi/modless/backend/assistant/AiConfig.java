@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
+import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
-import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.assistant.provider.ConfiguredAssistantModelProvider;
 import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
@@ -45,10 +45,12 @@ public class AiConfig {
   AssistantToolService assistantToolService(
       io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog catalogs,
       AssistantPatchCompiler patchCompiler,
+      DeltaCompiler deltaCompiler,
       AssistantMetamodelSchemaService schemas,
       ModelService models,
       ObjectMapper mapper) {
-    return new AssistantToolService(catalogs, patchCompiler, schemas, models, mapper);
+    return new AssistantToolService(
+        catalogs, patchCompiler, deltaCompiler, schemas, models, mapper);
   }
 
   @Bean
@@ -58,16 +60,9 @@ public class AiConfig {
       AssistantPromptGuard promptGuard,
       AssistantToolService tools,
       AssistantHardeningService hardening,
-      SemanticModelPatchParser patchParser,
       @Qualifier("aiRestClientBuilder") RestClient.Builder restClientBuilder) {
     return new OpenAiCompatibleAssistantModelProvider(
-        properties,
-        proxyAvailability,
-        promptGuard,
-        tools,
-        hardening,
-        patchParser,
-        restClientBuilder);
+        properties, proxyAvailability, promptGuard, tools, hardening, restClientBuilder);
   }
 
   @Bean
@@ -76,10 +71,9 @@ public class AiConfig {
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
       AssistantToolService tools,
-      AssistantHardeningService hardening,
-      SemanticModelPatchParser patchParser) {
+      AssistantHardeningService hardening) {
     return new GeminiAssistantModelProvider(
-        properties, proxyAvailability, promptGuard, tools, hardening, patchParser);
+        properties, proxyAvailability, promptGuard, tools, hardening);
   }
 
   @Bean

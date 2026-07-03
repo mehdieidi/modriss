@@ -4,7 +4,6 @@ import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningSer
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
-import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
 import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import org.springframework.ai.chat.client.ChatClient;
@@ -25,7 +24,6 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       AssistantPromptGuard promptGuard,
       AssistantToolService tools,
       AssistantHardeningService hardening,
-      SemanticModelPatchParser patchParser,
       RestClient.Builder restClientBuilder) {
     super(
         AiProperties.Provider.OPENAI.key(),
@@ -34,7 +32,6 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
         promptGuard,
         tools,
         hardening,
-        patchParser,
         ChatClient.create(chatModel(properties, restClientBuilder)));
   }
 
@@ -82,15 +79,6 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   }
 
   @Override
-  protected OpenAiChatOptions toolLoopOptions(String model, AssistantModelRole role) {
-    return OpenAiChatOptions.builder()
-        .model(model)
-        .temperature(0.2)
-        .maxCompletionTokens(Math.min(properties.tokenBudget(), completionLimit(role)))
-        .build();
-  }
-
-  @Override
   protected OpenAiChatOptions options(String model, AssistantModelRole role) {
     OpenAiChatOptions.Builder builder =
         OpenAiChatOptions.builder()
@@ -115,10 +103,5 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   @Override
   protected boolean registerTools(AssistantModelRole role) {
     return role != AssistantModelRole.PLANNER;
-  }
-
-  @Override
-  protected boolean registerPlannerExplorationTools() {
-    return true;
   }
 }

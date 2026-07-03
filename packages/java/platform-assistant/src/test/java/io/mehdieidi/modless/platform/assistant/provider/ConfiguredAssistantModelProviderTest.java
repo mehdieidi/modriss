@@ -26,7 +26,7 @@ class ConfiguredAssistantModelProviderTest {
         mock(OpenAiCompatibleAssistantModelProvider.class);
     GeminiAssistantModelProvider gemini = mock(GeminiAssistantModelProvider.class);
     when(openai.available()).thenReturn(true);
-    when(openai.planTurn(any())).thenThrow(new PlatformException(503, "OpenAI unavailable"));
+    when(openai.complete(any())).thenThrow(new PlatformException(503, "OpenAI unavailable"));
     ConfiguredAssistantModelProvider provider =
         new ConfiguredAssistantModelProvider(properties, openai, gemini);
 
@@ -34,9 +34,9 @@ class ConfiguredAssistantModelProviderTest {
         assertThrows(
             PlatformException.class,
             () ->
-                provider.planTurn(new AssistantModelProvider.AssistantPrompt(null, "", "", null)));
+                provider.complete(new AssistantModelProvider.AssistantPrompt(null, "", "", null)));
 
     assertEquals("OpenAI unavailable", failure.getMessage());
-    verify(gemini, never()).planTurn(any());
+    verify(gemini, never()).complete(any());
   }
 }

@@ -55,13 +55,18 @@ modless:
   ai:
     enabled: ${MODLESS_AI_ENABLED:false}
     provider: ${MODLESS_AI_PROVIDER:openai}
-    modeling-strategy: ${MODLESS_AI_MODELING_STRATEGY:model-subset}
-    request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:10m}
-    max-tool-calls: ${MODLESS_AI_MAX_TOOL_CALLS:0}
-    validation-repair-attempts: ${MODLESS_AI_VALIDATION_REPAIR_ATTEMPTS:6}
-    max-agent-steps: ${MODLESS_AI_MAX_AGENT_STEPS:16}
-    max-tool-calls-per-step: ${MODLESS_AI_MAX_TOOL_CALLS_PER_STEP:8}
+    request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:5m}
+    turn-timeout: ${MODLESS_AI_TURN_TIMEOUT:5m}
+    max-repair-attempts: ${MODLESS_AI_MAX_REPAIR_ATTEMPTS:1}
+    max-tool-calls: ${MODLESS_AI_MAX_TOOL_CALLS:24}
+    max-agent-steps: ${MODLESS_AI_MAX_AGENT_STEPS:8}
+    max-tool-calls-per-step: ${MODLESS_AI_MAX_TOOL_CALLS_PER_STEP:4}
     token-budget: ${MODLESS_AI_TOKEN_BUDGET:16000}
+    max-prompt-tokens: ${MODLESS_AI_MAX_PROMPT_TOKENS:24000}
+    max-source-chunk-tokens: ${MODLESS_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
+    max-source-chunks-per-turn: ${MODLESS_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
+    require-idempotency-key: ${MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY:true}
+    new-agent-enabled: ${MODLESS_AI_NEW_AGENT_ENABLED:true}
     max-context-snippets: ${MODLESS_AI_MAX_CONTEXT_SNIPPETS:24}
     reserved-schema-snippets: ${MODLESS_AI_RESERVED_SCHEMA_SNIPPETS:10}
     max-snippet-chars: ${MODLESS_AI_MAX_SNIPPET_CHARS:2400}
@@ -76,7 +81,7 @@ modless:
       retry-backoff: ${MODLESS_AI_RETRY_BACKOFF:250ms}
       recent-message-window: ${MODLESS_AI_RECENT_MESSAGE_WINDOW:24}
     embeddings:
-      provider: ${MODLESS_AI_EMBEDDINGS_PROVIDER:HASH}
+      provider: ${MODLESS_AI_EMBEDDINGS_PROVIDER:ONNX}
       model-resource: ${MODLESS_AI_EMBEDDINGS_MODEL_RESOURCE:}
       tokenizer-resource: ${MODLESS_AI_EMBEDDINGS_TOKENIZER_RESOURCE:}
       model-output-name: ${MODLESS_AI_EMBEDDINGS_MODEL_OUTPUT_NAME:}

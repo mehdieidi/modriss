@@ -20,8 +20,8 @@ Modless combines two kinds of intelligence:
 
 1. **Probabilistic AI** — an LLM explains, clarifies, or drafts structured model changes; RAG
    supplies metamodel and methodology snippets; providers are OpenAI-compatible or Gemini.
-2. **Deterministic MDE** — Ecore defines legal structure; Java compiles semantic operations into
-   JSON Pointer patches; structural validation gates apply; PostgreSQL stores models, memory,
+2. **Deterministic MDE** — Ecore defines legal structure; Java compiles `ModelDelta` into
+   executable patch operations; structural validation gates apply; PostgreSQL stores models, memory,
    proposals, and audits.
 
 ```mermaid
@@ -30,8 +30,8 @@ flowchart LR
     backend["AssistantOrchestrator"]
     context["Compact model context"]
     rag["Retrieved metamodel and methodology snippets"]
-    llm["LLM planner or responder"]
-    semantic["SemanticModelPatch or model subset"]
+    llm["ModelingAgent or responder"]
+    delta["ModelDelta"]
     compiler["AssistantPatchCompiler"]
     validate["Ecore structural validation"]
     apply["Auto-apply via ModelService.patch"]
@@ -42,8 +42,8 @@ flowchart LR
     backend --> rag
     context --> llm
     rag --> llm
-    llm --> semantic
-    semantic --> compiler
+    llm --> delta
+    delta --> compiler
     compiler --> validate
     validate --> apply
     apply --> db
@@ -65,23 +65,24 @@ mutation may be applied.
 Key configuration:
 
 - `apps/backend/src/main/resources/application.yml` — `modless.ai.*` bindings
-- `MODLESS_AI_MODELING_STRATEGY` — wired in `AssistantServicesConfig` (not on `AiProperties`)
 - `deploy/compose.yaml` — local stack including pgvector Postgres
 
-## 3. Modeling Strategies
+## 3. Modeling Protocol
 
-`MODLESS_AI_MODELING_STRATEGY` defaults to `model-subset`.
+There is one assistant modeling mode. Model-changing turns use `ModelingAgent`, and the
+provider-facing mutation protocol is `ModelDelta`.
 
-| Strategy         | Planner                                           | Tools                                   | Output                                                          |
-| ---------------- | ------------------------------------------------- | --------------------------------------- | --------------------------------------------------------------- |
-| `model-subset`   | `AssistantModelSubsetPlanner`                     | None (single structured LLM call)       | JSON subset → `ModelSubsetPatchCompiler` → `SemanticModelPatch` |
-| `semantic-patch` | `AbstractAssistantModelProvider.planMutationTurn` | Optional exploration phase, then commit | Direct `SemanticModelPatch` operations                          |
+| Concern        | Implementation                                                        |
+| -------------- | --------------------------------------------------------------------- |
+| Agent          | `ModelingAgent`                                                       |
+| Output         | `ModelDelta` JSON                                                     |
+| Schema/context | `ModelDeltaSchemaFactory`, metamodel contract snippets, model context |
+| Compiler       | `DeltaCompiler`                                                       |
+| Apply gate     | `ModelService.validateStructural()` and revision-guarded apply        |
 
-Aliases are accepted (`subset`, `json-subset`, `patch`, `operations`, etc.) via
-`AssistantModelingStrategy.from()`.
-
-Both strategies share `AssistantPatchCompleter`, the validation repair loop
-(`MODLESS_AI_VALIDATION_REPAIR_ATTEMPTS`, default 6), and `autoApplyValidatedProposal()`.
+The old selectable modeling-mode switch, subset planner, and direct provider patch planning have
+been removed from production wiring. Internal semantic patch classes remain as a backend-owned
+compiler IR and proposal/audit shape.
 
 ## 4. Concepts
 
@@ -115,29 +116,28 @@ rebuilt when the revision changes.
 
 ### Structured mutations
 
-The LLM must express changes as `SemanticModelPatch` operations:
+The LLM must express changes as `ModelDelta`:
 
-- `ADD_ELEMENT`
-- `CONNECT_ELEMENTS`
-- `SET_ATTRIBUTE`
-- `DELETE_ELEMENT`
+- `elements` with `localId`, `eClass`, attributes, and explicit containment placement
+- `references` for writable non-containment links
+- `attributeUpdates` for saved/local element attribute edits
+- `deletions` only when deletion intent is explicit
 
-`AssistantPatchCompiler` compiles these into JSON Pointer patch operations plus an inverse patch
+`DeltaCompiler` lowers `ModelDelta` into backend-owned patch operations, and
+`AssistantPatchCompiler` compiles those into JSON Pointer patch operations plus an inverse patch
 for undo.
 
-### Tools (semantic-patch exploration only)
+### Tools
 
-`AssistantToolService` exposes 14 whitelisted Spring AI tools, including:
+`AssistantToolService` exposes whitelisted inspection/preview tools, including:
 
-- `searchCatalogs`, `previewSemanticPatch`, `summarizeValidation`, `requestUserChoice`
-- `getElementContext`, `getTypeContract`, `validateSnapshot`, `inspectCurrentSemanticPatch`
+- `searchCatalogs`, `previewModelDelta`, `summarizeValidation`, `requestUserChoice`
+- `getElementContext`, `getTypeContract`, `validateSnapshot`, `inspectCurrentModelDelta`
 - `getLanguageIndex`, `getMetamodelCoverage`, `findCreatableTypes`, `findContainmentOptions`
 - `summarizeCurrentModel`, `listModelElements`
 
-Tools are bound per turn via `AssistantToolBridge.bindSession()`. Counts are tracked for metrics.
-`MODLESS_AI_MAX_TOOL_CALLS`, `MODLESS_AI_MAX_TOOL_CALLS_PER_STEP`, and
-`MODLESS_AI_MAX_AGENT_STEPS` are bound in configuration but **not enforced** by the orchestrator
-today.
+Tools are bound per turn via `AssistantToolBridge.bindSession()`. Counts are tracked for metrics,
+and the public configuration exposes bounded step/tool limits for the unified agent path.
 
 ## 5. One Complete Turn
 
@@ -152,10 +152,11 @@ Example: user asks to add a PIM function connected to the selected API.
 6. Build or load compact model context.
 7. Retrieve catalog snippets (up to `MODLESS_AI_MAX_CONTEXT_SNIPPETS`, default 24, with schema
    reservation via `AssistantSnippetBudget`).
-8. Plan: answer, structured clarification (`WAITING_FOR_CHOICE`), or mutation.
-9. For CIM with attachments, optional `SOURCE_ANALYST` pass and deterministic
-   `CimSourceModelMaterializer` may bypass the LLM planner.
-10. Compile semantic patch; run repair loop on structural validation failures.
+8. Plan: answer, structured clarification (`WAITING_FOR_CHOICE`), or `ModelDelta` mutation.
+9. For CIM with attachments, source text is treated as untrusted evidence and passed through
+   source analysis/fallback chunking; it no longer bypasses the modeling agent.
+10. Compile the delta through backend-owned patch IR; run the bounded repair loop on structural
+    validation failures.
 11. Publish realtime `assistant.progress` and optional `assistant.model.preview` events.
 12. **Auto-apply** valid patch through `ModelService.patch()`; persist proposal as `APPLIED`.
 13. Return `MessageResponse` with `workflowState: APPLIED` and proposal card data; publish
@@ -223,22 +224,22 @@ Flyway assistant migrations live under `classpath:db/assistant-migration` in `pl
 
 ## 10. Code Map
 
-| Concern        | Primary classes                                                                        |
-| -------------- | -------------------------------------------------------------------------------------- |
-| Orchestration  | `packages/java/platform-assistant/.../AssistantOrchestrator.java`                      |
-| HTTP API       | `apps/backend/.../ChatbotController.java`                                              |
-| Realtime       | `apps/backend/.../AssistantRealtimeHub.java`, `ChatbotWebSocketHandler.java`           |
-| Model-subset   | `.../subset/AssistantModelSubsetPlanner.java`, `ModelSubsetPatchCompiler.java`         |
-| Semantic patch | `.../planning/AssistantTurnPlanParser.java`, `.../patch/SemanticModelPatchParser.java` |
-| Compile / undo | `.../patch/AssistantPatchCompiler.java`                                                |
-| RAG            | `.../persistence/jdbc/JdbcAssistantCatalog.java`                                       |
-| Embeddings     | `.../persistence/embedding/LocalEmbeddingService.java`                                 |
-| Model context  | `.../persistence/jdbc/JdbcAssistantModelContextIndex.java`                             |
-| Tools          | `.../tools/AssistantToolService.java`                                                  |
-| Hardening      | `.../application/AssistantHardeningService.java`                                       |
-| Providers      | `.../provider/ConfiguredAssistantModelProvider.java`, OpenAI/Gemini adapters           |
-| Config         | `.../config/AiProperties.java`, `apps/backend/.../AssistantServicesConfig.java`        |
-| Frontend       | `apps/frontend/js/chat.js`                                                             |
+| Concern         | Primary classes                                                                 |
+| --------------- | ------------------------------------------------------------------------------- |
+| Orchestration   | `packages/java/platform-assistant/.../AssistantOrchestrator.java`               |
+| HTTP API        | `apps/backend/.../ChatbotController.java`                                       |
+| Realtime        | `apps/backend/.../AssistantRealtimeHub.java`, `ChatbotWebSocketHandler.java`    |
+| ModelDelta      | `.../agent/ModelingAgent.java`, `.../delta/*`                                   |
+| Source evidence | `.../source/SourceUnderstandingService.java`, `.../source/SourceChunker.java`   |
+| Compile / undo  | `.../delta/DeltaCompiler.java`, `.../patch/AssistantPatchCompiler.java`         |
+| RAG             | `.../persistence/jdbc/JdbcAssistantCatalog.java`                                |
+| Embeddings      | `.../persistence/embedding/LocalEmbeddingService.java`                          |
+| Model context   | `.../persistence/jdbc/JdbcAssistantModelContextIndex.java`                      |
+| Tools           | `.../tools/AssistantToolService.java`                                           |
+| Hardening       | `.../application/AssistantHardeningService.java`                                |
+| Providers       | `.../provider/ConfiguredAssistantModelProvider.java`, OpenAI/Gemini adapters    |
+| Config          | `.../config/AiProperties.java`, `apps/backend/.../AssistantServicesConfig.java` |
+| Frontend        | `apps/frontend/js/chat.js`                                                      |
 
 ## 11. EVL vs Assistant Validation
 
@@ -264,20 +265,22 @@ code today.
 
 - No LLM fine-tuning on repository assets.
 - No wholesale model/metamodel/EVL export to providers.
-- Catalog indexing is compact extraction, not a full formal parser for every source dialect.
+- Catalog indexing is compact extraction, with metamodel/retrieval services layered above it for
+  assistant context.
 - Hash embeddings are weaker than ONNX sentence transformers.
 - Summarizer model role is configured but not invoked for thread summaries today.
-- Semantic patch compiler covers supported element patterns, not every theoretical metamodel edit.
-- CIM source materialization and coverage heuristics are specialized fast paths.
+- ModelDelta compilation covers supported element patterns, not every theoretical metamodel edit.
+- Source understanding has a conservative chunk/fallback path; richer provider-native extraction
+  can continue behind the same boundary.
 
 ## 14. Suggested Learning Path
 
-1. `SemanticModelPatch.java` — allowed mutation protocol.
+1. `ModelDelta.java` and `ModelingAgent.java` — provider-facing mutation protocol.
 2. `AssistantOrchestrator.handleMessage()` — full turn pipeline.
-3. `AssistantModelSubsetPlanner` or `AbstractAssistantModelProvider` — strategy-specific planning.
+3. `DeltaCompiler` and `AssistantPatchCompiler` — delta lowering, compile, and inverse patches.
 4. `JdbcAssistantCatalog.refresh()` — what enters RAG (and what does not).
 5. `JdbcAssistantModelContextIndex` — compact model snapshots.
-6. `AssistantPatchCompiler` — compile and inverse patches.
+6. `SourceUnderstandingService` — source evidence fallback/chunking boundary.
 7. `ModelService.validateStructural()` — apply gate.
 8. `apps/frontend/js/chat.js` — UI: choices, applied proposal cards, undo.
 9. Diagrams: `docs/diagrams/14-ai-assistant-architecture.md`,

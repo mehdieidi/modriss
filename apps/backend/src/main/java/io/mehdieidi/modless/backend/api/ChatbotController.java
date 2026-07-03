@@ -201,7 +201,8 @@ public class ChatbotController {
                 request.selectedElementIds(),
                 request.unsavedDraftPatch(),
                 attachment.name(),
-                attachment.content()));
+                attachment.content(),
+                request.idempotencyKey()));
     log.info(
         "assistant HTTP message completed requestId={} sessionId={} workflowState={} modelId={} "
             + "revision={} orchestratorElapsedMs={} totalElapsedMs={}",
@@ -378,6 +379,12 @@ public class ChatbotController {
     assistant.clear(auth.user(token), sessionId);
   }
 
+  /** Requests cancellation of the currently active assistant turn for a session. */
+  @PostMapping("/api/chatbot/sessions/{sessionId}/cancel")
+  void cancel(@RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
+    assistant.cancelActiveTurn(auth.user(token), sessionId);
+  }
+
   /**
    * Reindexes assistant metamodel and methodology catalogs when {@code mde/} files change.
    *
@@ -552,7 +559,8 @@ public class ChatbotController {
       String unsavedDraftPatch,
       String attachmentName,
       String attachmentContent,
-      List<String> attachmentIds) {}
+      List<String> attachmentIds,
+      String idempotencyKey) {}
 
   /**
    * Upload response.

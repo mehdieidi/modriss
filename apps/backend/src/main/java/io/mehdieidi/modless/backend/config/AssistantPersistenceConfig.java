@@ -2,16 +2,23 @@ package io.mehdieidi.modless.backend.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
+import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelContractIndexService;
 import io.mehdieidi.modless.platform.assistant.persistence.embedding.EmbeddingSettings;
 import io.mehdieidi.modless.platform.assistant.persistence.embedding.LocalEmbeddingService;
 import io.mehdieidi.modless.platform.assistant.persistence.jdbc.JdbcAssistantCatalog;
 import io.mehdieidi.modless.platform.assistant.persistence.jdbc.JdbcAssistantMemoryStore;
+import io.mehdieidi.modless.platform.assistant.persistence.jdbc.JdbcAssistantMetamodelContractStore;
 import io.mehdieidi.modless.platform.assistant.persistence.jdbc.JdbcAssistantModelContextIndex;
+import io.mehdieidi.modless.platform.assistant.persistence.jdbc.JdbcAssistantSourceEvidenceStore;
+import io.mehdieidi.modless.platform.assistant.persistence.jdbc.JdbcAssistantTurnExecutionStore;
 import io.mehdieidi.modless.platform.assistant.persistence.memory.SpringAiJdbcChatMemory;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantChatMemory;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantMemoryStore;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantMetamodelContractStore;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantModelContextIndex;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantSourceEvidenceStore;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantTurnExecutionStore;
 import io.mehdieidi.modless.platform.modeling.runtime.MdeRuntimePaths;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
@@ -30,6 +37,23 @@ public class AssistantPersistenceConfig {
   @Bean
   AssistantMemoryStore assistantMemoryStore(JdbcTemplate jdbc, ObjectMapper mapper) {
     return new JdbcAssistantMemoryStore(jdbc, mapper);
+  }
+
+  @Bean
+  AssistantTurnExecutionStore assistantTurnExecutionStore(JdbcTemplate jdbc, ObjectMapper mapper) {
+    return new JdbcAssistantTurnExecutionStore(jdbc, mapper);
+  }
+
+  @Bean
+  AssistantSourceEvidenceStore assistantSourceEvidenceStore(
+      JdbcTemplate jdbc, ObjectMapper mapper) {
+    return new JdbcAssistantSourceEvidenceStore(jdbc, mapper);
+  }
+
+  @Bean
+  AssistantMetamodelContractStore assistantMetamodelContractStore(
+      JdbcTemplate jdbc, ObjectMapper mapper, LocalEmbeddingService embeddings) {
+    return new JdbcAssistantMetamodelContractStore(jdbc, mapper, embeddings);
   }
 
   @Bean
@@ -65,6 +89,22 @@ public class AssistantPersistenceConfig {
                     log.info("Assistant startup catalog refresh completed.");
                   } else {
                     log.warn("Assistant startup catalog refresh failed.", error);
+                  }
+                });
+  }
+
+  @Bean
+  ApplicationRunner assistantMetamodelContractRefreshRunner(
+      MetamodelContractIndexService contractIndex) {
+    return args ->
+        CompletableFuture.supplyAsync(contractIndex::refreshAll)
+            .whenComplete(
+                (count, error) -> {
+                  if (error == null) {
+                    log.info(
+                        "Assistant metamodel contract index refreshed with {} records.", count);
+                  } else {
+                    log.warn("Assistant metamodel contract index refresh failed.", error);
                   }
                 });
   }

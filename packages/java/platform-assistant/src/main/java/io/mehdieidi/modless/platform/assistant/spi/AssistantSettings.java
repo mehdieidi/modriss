@@ -29,6 +29,46 @@ public interface AssistantSettings {
   /** Outbound AI request timeout. */
   Duration requestTimeout();
 
+  /** Overall assistant turn timeout. */
+  default Duration turnTimeout() {
+    return requestTimeout();
+  }
+
+  /** Maximum agentic planner loop iterations per mutation turn. */
+  default int maxAgentSteps() {
+    return 8;
+  }
+
+  /** Maximum tool calls allowed in one agent loop step. */
+  default int maxToolCallsPerStep() {
+    return 4;
+  }
+
+  /** Approximate maximum prompt tokens per provider call. */
+  default int maxPromptTokens() {
+    return 24000;
+  }
+
+  /** Maximum approximate source tokens in one source chunk. */
+  default int maxSourceChunkTokens() {
+    return 4000;
+  }
+
+  /** Maximum source chunks processed in one turn. */
+  default int maxSourceChunksPerTurn() {
+    return 24;
+  }
+
+  /** Whether client turn idempotency keys are required. */
+  default boolean requireIdempotencyKey() {
+    return true;
+  }
+
+  /** Whether the unified ModelDelta agent path is enabled. */
+  default boolean newAgentEnabled() {
+    return true;
+  }
+
   /** Rate-limit and circuit-breaker settings. */
   Hardening hardening();
 

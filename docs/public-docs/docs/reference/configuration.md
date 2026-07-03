@@ -58,43 +58,43 @@ The packaged modeling config defaults to `antv-g6`. The Docker Compose stack ove
 
 ## AI
 
-| Variable                                 | Default                          |
-| ---------------------------------------- | -------------------------------- |
-| `MODLESS_AI_ENABLED`                     | `false` in backend configuration |
-| `MODLESS_AI_PROVIDER`                    | `openai`                         |
-| `MODLESS_AI_MODELING_STRATEGY`           | `model-subset`                   |
-| `MODLESS_AI_REQUEST_TIMEOUT`             | `10m`                            |
-| `MODLESS_AI_MAX_TOOL_CALLS`              | `0` (not enforced)               |
-| `MODLESS_AI_VALIDATION_REPAIR_ATTEMPTS`  | `6`                              |
-| `MODLESS_AI_MAX_AGENT_STEPS`             | `16` (not enforced)              |
-| `MODLESS_AI_MAX_TOOL_CALLS_PER_STEP`     | `8` (not enforced)               |
-| `MODLESS_AI_SEMANTIC_VALIDATION_ENABLED` | `false` (documented only)        |
-| `MODLESS_AI_TOKEN_BUDGET`                | `16000`                          |
-| `MODLESS_AI_MAX_CONTEXT_SNIPPETS`        | `24`                             |
-| `MODLESS_AI_RESERVED_SCHEMA_SNIPPETS`    | `10`                             |
-| `MODLESS_AI_MAX_SNIPPET_CHARS`           | `2400`                           |
-| `MODLESS_AI_MAX_SYSTEM_CHARS`            | `14000`                          |
-| `MODLESS_AI_RATE_LIMIT_REQUESTS`         | `30`                             |
-| `MODLESS_AI_RATE_LIMIT_WINDOW`           | `1m`                             |
-| `MODLESS_AI_CIRCUIT_FAILURE_THRESHOLD`   | `3`                              |
-| `MODLESS_AI_CIRCUIT_OPEN_DURATION`       | `1m`                             |
-| `MODLESS_AI_PROVIDER_RETRY_ATTEMPTS`     | `2`                              |
-| `MODLESS_AI_RETRY_BACKOFF`               | `250ms`                          |
-| `MODLESS_AI_RECENT_MESSAGE_WINDOW`       | `24`                             |
-| `MODLESS_AI_FALLBACK_PROVIDER`           | empty (used on HTTP 429 only)    |
+| Variable                                | Default                          |
+| --------------------------------------- | -------------------------------- |
+| `MODLESS_AI_ENABLED`                    | `false` in backend configuration |
+| `MODLESS_AI_PROVIDER`                   | `openai`                         |
+| `MODLESS_AI_REQUEST_TIMEOUT`            | `5m`                             |
+| `MODLESS_AI_TURN_TIMEOUT`               | `5m`                             |
+| `MODLESS_AI_MAX_REPAIR_ATTEMPTS`        | `1`                              |
+| `MODLESS_AI_MAX_TOOL_CALLS`             | `24`                             |
+| `MODLESS_AI_MAX_AGENT_STEPS`            | `8`                              |
+| `MODLESS_AI_MAX_TOOL_CALLS_PER_STEP`    | `4`                              |
+| `MODLESS_AI_TOKEN_BUDGET`               | `16000`                          |
+| `MODLESS_AI_MAX_PROMPT_TOKENS`          | `24000`                          |
+| `MODLESS_AI_MAX_SOURCE_CHUNK_TOKENS`    | `4000`                           |
+| `MODLESS_AI_MAX_SOURCE_CHUNKS_PER_TURN` | `24`                             |
+| `MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY`    | `true`                           |
+| `MODLESS_AI_NEW_AGENT_ENABLED`          | `true`                           |
+| `MODLESS_AI_MAX_CONTEXT_SNIPPETS`       | `24`                             |
+| `MODLESS_AI_RESERVED_SCHEMA_SNIPPETS`   | `10`                             |
+| `MODLESS_AI_MAX_SNIPPET_CHARS`          | `2400`                           |
+| `MODLESS_AI_MAX_SYSTEM_CHARS`           | `14000`                          |
+| `MODLESS_AI_RATE_LIMIT_REQUESTS`        | `30`                             |
+| `MODLESS_AI_RATE_LIMIT_WINDOW`          | `1m`                             |
+| `MODLESS_AI_CIRCUIT_FAILURE_THRESHOLD`  | `3`                              |
+| `MODLESS_AI_CIRCUIT_OPEN_DURATION`      | `1m`                             |
+| `MODLESS_AI_PROVIDER_RETRY_ATTEMPTS`    | `2`                              |
+| `MODLESS_AI_RETRY_BACKOFF`              | `250ms`                          |
+| `MODLESS_AI_RECENT_MESSAGE_WINDOW`      | `24`                             |
+| `MODLESS_AI_FALLBACK_PROVIDER`          | empty (used on HTTP 429 only)    |
 
-`MODLESS_AI_MODELING_STRATEGY` selects how the assistant drafts model changes:
-
-- `model-subset` — JSON Schema guided partial model subsets compiled into validated semantic patches
-  (default)
-- `semantic-patch` — older direct semantic-operation planner
+The assistant exposes one modeling mutation protocol, `ModelDelta`. The backend compiles the delta
+into internal patch operations, structurally validates it, and applies valid turns atomically.
 
 Provider variables include `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`,
 `GEMINI_API_KEY`, and role-specific planner, responder, and summarizer model names.
 
-Embedding variables default to `HASH` in `.env.example`. Set `MODLESS_AI_EMBEDDINGS_PROVIDER=ONNX`
-with the `onnx-embeddings` Maven profile when testing local ONNX embeddings. Related variables cover
-resources, cache behavior, GPU device, and hash fallback.
+Embedding variables default to `ONNX` with hash fallback for constrained local environments. Related
+variables cover resources, cache behavior, GPU device, and hash fallback.
 
 Dedicated AI proxy variables configure HTTP or SOCKS proxy behavior for provider calls only.
 

@@ -2,33 +2,55 @@ package io.mehdieidi.modless.backend.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.backend.observability.ModlessMetrics;
+import io.mehdieidi.modless.platform.assistant.agent.ContextBudget;
+import io.mehdieidi.modless.platform.assistant.agent.IntentPlanner;
+import io.mehdieidi.modless.platform.assistant.agent.ModelDeltaProviderClient;
+import io.mehdieidi.modless.platform.assistant.agent.ModelingAgent;
+import io.mehdieidi.modless.platform.assistant.agent.PromptContextBuilder;
+import io.mehdieidi.modless.platform.assistant.agent.ReadOnlyAnswerAgent;
 import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator;
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.modless.platform.assistant.application.AssistantValidationFeedbackResolver;
+import io.mehdieidi.modless.platform.assistant.application.CancellationRegistry;
 import io.mehdieidi.modless.platform.assistant.application.MetamodelCatalogService;
 import io.mehdieidi.modless.platform.assistant.application.ModelContextIndexService;
+import io.mehdieidi.modless.platform.assistant.application.TurnTransactionService;
+import io.mehdieidi.modless.platform.assistant.config.AiProperties;
+import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
+import io.mehdieidi.modless.platform.assistant.delta.DeltaNormalizer;
+import io.mehdieidi.modless.platform.assistant.delta.DeltaRepairService;
+import io.mehdieidi.modless.platform.assistant.delta.ModelDeltaParser;
+import io.mehdieidi.modless.platform.assistant.delta.ModelDeltaSchemaFactory;
+import io.mehdieidi.modless.platform.assistant.delta.StructuralValidationGate;
+import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelContractIndexService;
+import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelKnowledgeService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompleter;
-import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
 import io.mehdieidi.modless.platform.assistant.planning.AssistantClarificationGate;
-import io.mehdieidi.modless.platform.assistant.planning.AssistantTurnPlanParser;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.retrieval.RetrievalCoordinator;
 import io.mehdieidi.modless.platform.assistant.session.AssistantSessionStore;
+import io.mehdieidi.modless.platform.assistant.source.SourceChunker;
+import io.mehdieidi.modless.platform.assistant.source.SourceCoverageMatrix;
+import io.mehdieidi.modless.platform.assistant.source.SourceEvidenceExtractor;
+import io.mehdieidi.modless.platform.assistant.source.SourceEvidenceMerger;
+import io.mehdieidi.modless.platform.assistant.source.SourceToModelDeltaPlanner;
+import io.mehdieidi.modless.platform.assistant.source.SourceUnderstandingService;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantChatMemory;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantMemoryStore;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantMetamodelContractStore;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantMetrics;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantModelContextIndex;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantRealtimePublisher;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantSettings;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantSourceEvidenceStore;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantToolBridge;
-import io.mehdieidi.modless.platform.assistant.subset.AssistantModelSubsetPlanner;
-import io.mehdieidi.modless.platform.assistant.subset.AssistantModelingStrategy;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantTurnExecutionStore;
 import io.mehdieidi.modless.platform.model.application.ModelService;
 import io.mehdieidi.modless.platform.project.application.ProjectService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -42,18 +64,34 @@ public class AssistantServicesConfig {
   }
 
   @Bean
-  SemanticModelPatchParser semanticModelPatchParser(ObjectMapper mapper) {
-    return new SemanticModelPatchParser(mapper);
-  }
-
-  @Bean
-  AssistantTurnPlanParser assistantTurnPlanParser(ObjectMapper mapper) {
-    return new AssistantTurnPlanParser(mapper);
+  CancellationRegistry cancellationRegistry() {
+    return new CancellationRegistry();
   }
 
   @Bean
   AssistantMetamodelSchemaService assistantMetamodelSchemaService() {
     return new AssistantMetamodelSchemaService();
+  }
+
+  @Bean
+  MetamodelKnowledgeService metamodelKnowledgeService(AssistantMetamodelSchemaService schemas) {
+    return new MetamodelKnowledgeService(schemas);
+  }
+
+  @Bean
+  MetamodelContractIndexService metamodelContractIndexService(
+      MetamodelKnowledgeService metamodels,
+      AssistantMetamodelContractStore contractStore,
+      ObjectMapper mapper) {
+    return new MetamodelContractIndexService(metamodels, contractStore, mapper);
+  }
+
+  @Bean
+  RetrievalCoordinator retrievalCoordinator(
+      MetamodelKnowledgeService metamodels, AssistantCatalog catalogs, AssistantSettings settings) {
+    String embeddingProvider =
+        settings instanceof AiProperties ai ? ai.embeddings().provider().name() : "";
+    return new RetrievalCoordinator(metamodels, catalogs, embeddingProvider);
   }
 
   @Bean
@@ -64,20 +102,6 @@ public class AssistantServicesConfig {
   @Bean
   AssistantPatchCompleter assistantPatchCompleter(AssistantMetamodelSchemaService schemas) {
     return new AssistantPatchCompleter(schemas);
-  }
-
-  @Bean
-  AssistantModelingStrategy assistantModelingStrategy(
-      @Value("${modless.ai.modeling-strategy:model-subset}") String value) {
-    return AssistantModelingStrategy.from(value);
-  }
-
-  @Bean
-  AssistantModelSubsetPlanner assistantModelSubsetPlanner(
-      AssistantModelProvider provider,
-      AssistantMetamodelSchemaService schemas,
-      ObjectMapper mapper) {
-    return new AssistantModelSubsetPlanner(provider, schemas, mapper);
   }
 
   @Bean
@@ -108,6 +132,125 @@ public class AssistantServicesConfig {
   }
 
   @Bean
+  ModelDeltaSchemaFactory modelDeltaSchemaFactory(
+      AssistantMetamodelSchemaService schemas, ObjectMapper mapper) {
+    return new ModelDeltaSchemaFactory(schemas, mapper);
+  }
+
+  @Bean
+  ModelDeltaParser modelDeltaParser(ObjectMapper mapper) {
+    return new ModelDeltaParser(mapper);
+  }
+
+  @Bean
+  DeltaCompiler deltaCompiler(AssistantMetamodelSchemaService schemas) {
+    return new DeltaCompiler(schemas);
+  }
+
+  @Bean
+  DeltaNormalizer deltaNormalizer(AssistantMetamodelSchemaService schemas) {
+    return new DeltaNormalizer(schemas);
+  }
+
+  @Bean
+  StructuralValidationGate structuralValidationGate(ModelService models) {
+    return new StructuralValidationGate(models);
+  }
+
+  @Bean
+  ContextBudget contextBudget(AssistantSettings settings) {
+    return new ContextBudget(
+        settings.maxPromptTokens(), settings.maxSnippetChars(), settings.maxContextSnippets());
+  }
+
+  @Bean
+  PromptContextBuilder promptContextBuilder(ContextBudget budget) {
+    return new PromptContextBuilder(budget);
+  }
+
+  @Bean
+  ModelDeltaProviderClient modelDeltaProviderClient(
+      AssistantModelProvider provider, ModelDeltaParser parser, DeltaNormalizer normalizer) {
+    return new ModelDeltaProviderClient(provider, parser, normalizer);
+  }
+
+  @Bean
+  ReadOnlyAnswerAgent readOnlyAnswerAgent(
+      AssistantModelProvider provider, PromptContextBuilder prompts) {
+    return new ReadOnlyAnswerAgent(provider, prompts);
+  }
+
+  @Bean
+  IntentPlanner intentPlanner(
+      AssistantModelProvider provider, ObjectMapper mapper, PromptContextBuilder prompts) {
+    return new IntentPlanner(provider, mapper, prompts);
+  }
+
+  @Bean
+  ModelingAgent modelingAgent(
+      ModelDeltaSchemaFactory schemaFactory,
+      ModelDeltaProviderClient providerClient,
+      PromptContextBuilder prompts,
+      DeltaCompiler compiler) {
+    return new ModelingAgent(schemaFactory, providerClient, prompts, compiler);
+  }
+
+  @Bean
+  DeltaRepairService deltaRepairService(
+      ModelingAgent modelingAgent,
+      AssistantValidationFeedbackResolver feedbackResolver,
+      AssistantMetamodelSchemaService schemas,
+      AssistantCatalog catalogs,
+      AssistantPatchCompleter patchCompleter,
+      AssistantSettings settings) {
+    return new DeltaRepairService(
+        modelingAgent, feedbackResolver, schemas, catalogs, patchCompleter, settings);
+  }
+
+  @Bean
+  TurnTransactionService turnTransactionService(
+      AssistantPatchCompiler patchCompiler,
+      StructuralValidationGate structuralValidation,
+      ModelService models,
+      AssistantMemoryStore memory,
+      AssistantRealtimePublisher realtime) {
+    return new TurnTransactionService(
+        patchCompiler, structuralValidation, models, memory, realtime);
+  }
+
+  @Bean
+  SourceChunker sourceChunker() {
+    return new SourceChunker();
+  }
+
+  @Bean
+  SourceEvidenceExtractor sourceEvidenceExtractor() {
+    return new SourceEvidenceExtractor();
+  }
+
+  @Bean
+  SourceEvidenceMerger sourceEvidenceMerger() {
+    return new SourceEvidenceMerger();
+  }
+
+  @Bean
+  SourceCoverageMatrix sourceCoverageMatrix() {
+    return new SourceCoverageMatrix();
+  }
+
+  @Bean
+  SourceToModelDeltaPlanner sourceToModelDeltaPlanner(
+      ObjectMapper mapper, SourceCoverageMatrix coverageMatrix) {
+    return new SourceToModelDeltaPlanner(mapper, coverageMatrix);
+  }
+
+  @Bean
+  SourceUnderstandingService sourceUnderstandingService(
+      SourceChunker chunker, SourceEvidenceExtractor extractor, SourceEvidenceMerger merger) {
+    return new SourceUnderstandingService(chunker, extractor, merger);
+  }
+
+  @Bean
   MetamodelCatalogService metamodelCatalogService(AssistantCatalog catalogs) {
     return new MetamodelCatalogService(catalogs);
   }
@@ -126,6 +269,7 @@ public class AssistantServicesConfig {
       AssistantChatMemory chatMemory,
       AssistantCatalog catalogs,
       AssistantModelContextIndex modelContexts,
+      AssistantSourceEvidenceStore sourceEvidenceStore,
       AssistantPatchCompiler patchCompiler,
       AssistantPatchCompleter patchCompleter,
       AssistantValidationFeedbackResolver feedbackResolver,
@@ -138,8 +282,17 @@ public class AssistantServicesConfig {
       AssistantHardeningService hardening,
       ModelService models,
       ProjectService projects,
-      AssistantModelingStrategy modelingStrategy,
-      AssistantModelSubsetPlanner subsetPlanner) {
+      CancellationRegistry cancellations,
+      AssistantTurnExecutionStore turnExecutions,
+      StructuralValidationGate structuralValidation,
+      IntentPlanner intentPlanner,
+      ReadOnlyAnswerAgent readOnlyAnswerAgent,
+      SourceUnderstandingService sourceUnderstanding,
+      SourceToModelDeltaPlanner sourceToModelDeltaPlanner,
+      RetrievalCoordinator retrievalCoordinator,
+      DeltaRepairService repairService,
+      TurnTransactionService turnTransactionService,
+      ModelingAgent modelingAgent) {
     return new AssistantOrchestrator(
         settings,
         provider,
@@ -148,6 +301,7 @@ public class AssistantServicesConfig {
         chatMemory,
         catalogs,
         modelContexts,
+        sourceEvidenceStore,
         patchCompiler,
         patchCompleter,
         feedbackResolver,
@@ -160,8 +314,17 @@ public class AssistantServicesConfig {
         hardening,
         models,
         projects,
-        modelingStrategy,
-        subsetPlanner);
+        cancellations,
+        turnExecutions,
+        structuralValidation,
+        intentPlanner,
+        readOnlyAnswerAgent,
+        sourceUnderstanding,
+        sourceToModelDeltaPlanner,
+        retrievalCoordinator,
+        repairService,
+        turnTransactionService,
+        modelingAgent);
   }
 
   /** Bridges Micrometer metrics to the platform assistant metrics port. */

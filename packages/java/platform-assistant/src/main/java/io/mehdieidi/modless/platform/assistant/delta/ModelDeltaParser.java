@@ -1,0 +1,310 @@
+package io.mehdieidi.modless.platform.assistant.delta;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
+import io.mehdieidi.modless.platform.kernel.PlatformException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+/** Strict parser for provider-returned ModelDelta JSON. */
+public class ModelDeltaParser {
+
+  private final ObjectMapper mapper;
+
+  public ModelDeltaParser(ObjectMapper mapper) {
+    this.mapper = mapper;
+  }
+
+  /** Parses exactly one JSON object, with only an optional JSON Markdown fence stripped. */
+  public ModelDelta parse(String content) {
+    String value = stripFence(content);
+    if (value.isBlank()) {
+      throw new PlatformException(502, "AI assistant returned an empty ModelDelta.");
+    }
+    try {
+      JsonNode parsed = mapper.readTree(value);
+      if (!(parsed instanceof ObjectNode object)) {
+        throw new PlatformException(502, "AI assistant ModelDelta must be a JSON object.");
+      }
+      return parseObject(object);
+    } catch (PlatformException ex) {
+      throw ex;
+    } catch (Exception ex) {
+      throw new PlatformException(502, "AI assistant returned invalid ModelDelta JSON.");
+    }
+  }
+
+  private ModelDelta parseObject(ObjectNode object) {
+    requireOnlyProperties(
+        object,
+        "ModelDelta",
+        Set.of(
+            "intent",
+            "kind",
+            "message",
+            "questions",
+            "elements",
+            "references",
+            "attributeUpdates",
+            "deletions",
+            "assumptions"));
+    AssistantTurnPlan.Intent intent = parseIntent(requireText(object, "intent", "ModelDelta"));
+    ModelDelta.Kind kind = parseKind(requireText(object, "kind", "ModelDelta"));
+    String message = requireText(object, "message", "ModelDelta");
+    List<ModelDelta.Element> elements = parseElements(object.path("elements"));
+    List<ModelDelta.Reference> references = parseReferences(object.path("references"));
+    List<ModelDelta.AttributeUpdate> updates =
+        parseAttributeUpdates(object.path("attributeUpdates"));
+    List<ModelDelta.Deletion> deletions = parseDeletions(object.path("deletions"));
+    if (!elements.isEmpty()
+        || !references.isEmpty()
+        || !updates.isEmpty()
+        || !deletions.isEmpty()) {
+      intent = AssistantTurnPlan.Intent.MUTATION;
+      kind = ModelDelta.Kind.MODEL_DELTA;
+    }
+    return new ModelDelta(
+        intent,
+        kind,
+        message,
+        parseQuestions(object.path("questions")),
+        elements,
+        references,
+        updates,
+        deletions,
+        strings(object.path("assumptions")));
+  }
+
+  private List<ModelDelta.Element> parseElements(JsonNode node) {
+    if (node.isMissingNode()) {
+      return List.of();
+    }
+    ArrayNode array = requireArray(node, "ModelDelta elements");
+    List<ModelDelta.Element> result = new ArrayList<>();
+    for (JsonNode item : array) {
+      if (!(item instanceof ObjectNode object)) {
+        throw new PlatformException(502, "ModelDelta elements must be JSON objects.");
+      }
+      requireOnlyProperties(
+          object,
+          "ModelDelta element",
+          Set.of("localId", "eClass", "attributes", "placement", "references", "evidenceIds"));
+      ObjectNode attributes =
+          requireObject(object.path("attributes"), "ModelDelta element attributes");
+      result.add(
+          new ModelDelta.Element(
+              requireText(object, "localId", "ModelDelta element"),
+              requireText(object, "eClass", "ModelDelta element"),
+              attributes.deepCopy(),
+              parsePlacement(object.path("placement")),
+              parseReferences(object.path("references")),
+              strings(object.path("evidenceIds"))));
+    }
+    return List.copyOf(result);
+  }
+
+  private ModelDelta.Placement parsePlacement(JsonNode node) {
+    ObjectNode object = requireObject(node, "ModelDelta placement");
+    requireOnlyProperties(object, "ModelDelta placement", Set.of("ownerId", "referenceName"));
+    return new ModelDelta.Placement(
+        requireText(object, "ownerId", "ModelDelta placement"),
+        requireText(object, "referenceName", "ModelDelta placement"));
+  }
+
+  private List<ModelDelta.Reference> parseReferences(JsonNode node) {
+    if (node.isMissingNode()) {
+      return List.of();
+    }
+    ArrayNode array = requireArray(node, "ModelDelta references");
+    List<ModelDelta.Reference> result = new ArrayList<>();
+    for (JsonNode item : array) {
+      if (!(item instanceof ObjectNode object)) {
+        throw new PlatformException(502, "ModelDelta references must be JSON objects.");
+      }
+      requireOnlyProperties(
+          object, "ModelDelta reference", Set.of("sourceId", "referenceName", "targetId"));
+      result.add(
+          new ModelDelta.Reference(
+              requireText(object, "sourceId", "ModelDelta reference"),
+              requireText(object, "referenceName", "ModelDelta reference"),
+              requireText(object, "targetId", "ModelDelta reference")));
+    }
+    return List.copyOf(result);
+  }
+
+  private List<ModelDelta.AttributeUpdate> parseAttributeUpdates(JsonNode node) {
+    if (node.isMissingNode()) {
+      return List.of();
+    }
+    ArrayNode array = requireArray(node, "ModelDelta attributeUpdates");
+    List<ModelDelta.AttributeUpdate> result = new ArrayList<>();
+    for (JsonNode item : array) {
+      if (!(item instanceof ObjectNode object)) {
+        throw new PlatformException(502, "ModelDelta attributeUpdates must be JSON objects.");
+      }
+      requireOnlyProperties(
+          object, "ModelDelta attributeUpdate", Set.of("elementId", "attributeName", "value"));
+      if (!object.has("value")) {
+        throw new PlatformException(502, "ModelDelta attributeUpdate requires value.");
+      }
+      result.add(
+          new ModelDelta.AttributeUpdate(
+              requireText(object, "elementId", "ModelDelta attributeUpdate"),
+              requireText(object, "attributeName", "ModelDelta attributeUpdate"),
+              object.get("value")));
+    }
+    return List.copyOf(result);
+  }
+
+  private List<ModelDelta.Deletion> parseDeletions(JsonNode node) {
+    if (node.isMissingNode()) {
+      return List.of();
+    }
+    ArrayNode array = requireArray(node, "ModelDelta deletions");
+    List<ModelDelta.Deletion> result = new ArrayList<>();
+    for (JsonNode item : array) {
+      if (!(item instanceof ObjectNode object)) {
+        throw new PlatformException(502, "ModelDelta deletions must be JSON objects.");
+      }
+      requireOnlyProperties(object, "ModelDelta deletion", Set.of("elementId", "reason"));
+      result.add(
+          new ModelDelta.Deletion(
+              requireText(object, "elementId", "ModelDelta deletion"),
+              requireText(object, "reason", "ModelDelta deletion")));
+    }
+    return List.copyOf(result);
+  }
+
+  private List<AssistantChoice> parseQuestions(JsonNode node) {
+    if (node.isMissingNode()) {
+      return List.of();
+    }
+    ArrayNode array = requireArray(node, "ModelDelta questions");
+    List<AssistantChoice> result = new ArrayList<>();
+    for (JsonNode question : array) {
+      if (!(question instanceof ObjectNode object)) {
+        throw new PlatformException(502, "ModelDelta questions must be JSON objects.");
+      }
+      requireOnlyProperties(
+          object,
+          "ModelDelta question",
+          Set.of("id", "prompt", "selectionMode", "options", "allowFreeText"));
+      List<AssistantChoice.Option> options = new ArrayList<>();
+      for (JsonNode option : requireArray(object.path("options"), "ModelDelta question options")) {
+        if (!(option instanceof ObjectNode optionObject)) {
+          throw new PlatformException(502, "ModelDelta question options must be JSON objects.");
+        }
+        requireOnlyProperties(
+            optionObject, "ModelDelta question option", Set.of("id", "label", "description"));
+        options.add(
+            new AssistantChoice.Option(
+                requireText(optionObject, "id", "ModelDelta question option"),
+                requireText(optionObject, "label", "ModelDelta question option"),
+                requireText(optionObject, "description", "ModelDelta question option")));
+      }
+      result.add(
+          new AssistantChoice(
+              requireText(object, "id", "ModelDelta question"),
+              requireText(object, "prompt", "ModelDelta question"),
+              parseSelectionMode(requireText(object, "selectionMode", "ModelDelta question")),
+              options,
+              object.path("allowFreeText").asBoolean(false)));
+    }
+    return List.copyOf(result);
+  }
+
+  private AssistantTurnPlan.Intent parseIntent(String value) {
+    return switch (value.trim().toUpperCase(Locale.ROOT)) {
+      case "INFORMATION" -> AssistantTurnPlan.Intent.INFORMATION;
+      case "MUTATION" -> AssistantTurnPlan.Intent.MUTATION;
+      default -> throw new PlatformException(502, "ModelDelta intent is not allowed.");
+    };
+  }
+
+  private ModelDelta.Kind parseKind(String value) {
+    return switch (value.trim().toUpperCase(Locale.ROOT)) {
+      case "MODEL_DELTA" -> ModelDelta.Kind.MODEL_DELTA;
+      case "CLARIFICATION" -> ModelDelta.Kind.CLARIFICATION;
+      case "ANSWER" -> ModelDelta.Kind.ANSWER;
+      default -> throw new PlatformException(502, "ModelDelta kind is not allowed.");
+    };
+  }
+
+  private AssistantChoice.SelectionMode parseSelectionMode(String value) {
+    try {
+      return AssistantChoice.SelectionMode.valueOf(value.toUpperCase(Locale.ROOT));
+    } catch (RuntimeException ignored) {
+      throw new PlatformException(502, "ModelDelta question selectionMode is not allowed.");
+    }
+  }
+
+  private List<String> strings(JsonNode node) {
+    if (node.isMissingNode()) {
+      return List.of();
+    }
+    ArrayNode array = requireArray(node, "ModelDelta string list");
+    List<String> result = new ArrayList<>();
+    for (JsonNode value : array) {
+      if (value == null || !value.isTextual()) {
+        throw new PlatformException(502, "ModelDelta string lists may contain only strings.");
+      }
+      if (!value.asText().isBlank()) {
+        result.add(value.asText());
+      }
+    }
+    return List.copyOf(result);
+  }
+
+  private String requireText(ObjectNode object, String name, String scope) {
+    JsonNode value = object.get(name);
+    if (value == null || !value.isTextual() || value.asText().isBlank()) {
+      throw new PlatformException(502, scope + " requires string field " + name + ".");
+    }
+    return value.asText("");
+  }
+
+  private ObjectNode requireObject(JsonNode node, String scope) {
+    if (node instanceof ObjectNode object) {
+      return object;
+    }
+    throw new PlatformException(502, scope + " must be a JSON object.");
+  }
+
+  private ArrayNode requireArray(JsonNode node, String scope) {
+    if (node instanceof ArrayNode array) {
+      return array;
+    }
+    throw new PlatformException(502, scope + " must be a JSON array.");
+  }
+
+  private void requireOnlyProperties(ObjectNode object, String scope, Set<String> allowed) {
+    object
+        .fieldNames()
+        .forEachRemaining(
+            name -> {
+              if (!allowed.contains(name)) {
+                throw new PlatformException(
+                    502, scope + " contains unsupported field " + name + ".");
+              }
+            });
+  }
+
+  private String stripFence(String content) {
+    String value = content == null ? "" : content.trim();
+    if (!value.startsWith("```")) {
+      return value;
+    }
+    int firstLineEnd = value.indexOf('\n');
+    int closingFence = value.lastIndexOf("```");
+    if (firstLineEnd < 0 || closingFence <= firstLineEnd) {
+      return value;
+    }
+    return value.substring(firstLineEnd + 1, closingFence).trim();
+  }
+}

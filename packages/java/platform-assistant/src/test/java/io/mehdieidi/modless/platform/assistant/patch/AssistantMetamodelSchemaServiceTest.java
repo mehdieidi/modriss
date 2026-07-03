@@ -32,34 +32,21 @@ class AssistantMetamodelSchemaServiceTest {
 
   @Test
   void exposesRequiredFeaturesForTypesNamedInTheRequest() {
-    var snippets = schemas.planningContracts(ModelLevel.PIM, "Add a Function handler", 4);
-
-    assertTrue(snippets.stream().anyMatch(snippet -> "Function".equals(snippet.title())));
     AssistantModelProvider.ContextSnippet function =
-        snippets.stream()
-            .filter(snippet -> "Function".equals(snippet.title()))
-            .findFirst()
-            .orElseThrow();
+        schemas.typeContract(ModelLevel.PIM, "Function");
     assertTrue(function.content().contains("functionKind"));
     assertTrue(function.content().contains("contract -> FunctionContract required single"));
   }
 
   @Test
-  void ranksRelevantTypesForServerlessCreationPrompts() {
+  void exposesCreatableTypesWithoutPromptKeywordRanking() {
     List<String> types =
         schemas.relevantTypes(
             ModelLevel.PIM, "Create a serverless model for vending machine backend", true, 8);
 
-    assertTrue(types.contains("ServerlessService"));
+    assertEquals(types, schemas.relevantTypes(ModelLevel.PIM, "unrelated wording", true, 8));
     assertTrue(types.contains("Function"));
     assertTrue(types.contains("Api"));
-    var snippets =
-        schemas.planningContracts(
-            ModelLevel.PIM, "Create a serverless model for vending machine backend", 6, true);
-    assertTrue(snippets.size() >= 4);
-    assertTrue(
-        snippets.stream()
-            .map(AssistantModelProvider.ContextSnippet::title)
-            .anyMatch("Function"::equals));
+    assertEquals(6, schemas.planningContracts(ModelLevel.PIM, "anything", 6, true).size());
   }
 }

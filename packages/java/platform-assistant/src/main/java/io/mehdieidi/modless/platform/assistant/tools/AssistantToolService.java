@@ -2,6 +2,8 @@ package io.mehdieidi.modless.platform.assistant.tools;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
+import io.mehdieidi.modless.platform.assistant.delta.ModelDelta;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantValidationSummary;
 import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
@@ -28,6 +30,7 @@ public class AssistantToolService implements AssistantToolBridge {
 
   private final AssistantCatalog catalogs;
   private final AssistantPatchCompiler patchCompiler;
+  private final DeltaCompiler deltaCompiler;
   private final AssistantMetamodelSchemaService schemas;
   private final ModelService models;
   private final ObjectMapper mapper;
@@ -37,11 +40,13 @@ public class AssistantToolService implements AssistantToolBridge {
   public AssistantToolService(
       AssistantCatalog catalogs,
       AssistantPatchCompiler patchCompiler,
+      DeltaCompiler deltaCompiler,
       AssistantMetamodelSchemaService schemas,
       ModelService models,
       ObjectMapper mapper) {
     this.catalogs = catalogs;
     this.patchCompiler = patchCompiler;
+    this.deltaCompiler = deltaCompiler;
     this.schemas = schemas;
     this.models = models;
     this.mapper = mapper;
@@ -78,20 +83,21 @@ public class AssistantToolService implements AssistantToolBridge {
     return catalogs.search(query, level, Math.min(Math.max(limit, 1), 8));
   }
 
-  /** Previews a semantic patch against a compact model snapshot. */
+  /** Previews a ModelDelta against a compact model snapshot. */
   @Tool(
-      name = "previewSemanticPatch",
-      description = "Compile and preview a typed semantic patch. Does not commit changes.")
-  public PreviewResult previewSemanticPatch(
+      name = "previewModelDelta",
+      description = "Compile and preview a typed ModelDelta. Does not commit changes.")
+  public PreviewResult previewModelDelta(
       @ToolParam(description = "Current model JSON snapshot") String modelJson,
-      @ToolParam(description = "SemanticModelPatch JSON") String semanticPatchJson) {
+      @ToolParam(description = "ModelDelta JSON") String modelDeltaJson) {
     trackToolCall();
     try {
       JsonNode model = mapper.readTree(modelJson == null ? "{}" : modelJson);
-      SemanticModelPatch semantic =
+      ModelLevel level = schemas.resolveLevel(model, "");
+      ModelDelta delta =
           mapper.readValue(
-              semanticPatchJson == null ? "{\"operations\":[]}" : semanticPatchJson,
-              SemanticModelPatch.class);
+              modelDeltaJson == null ? "{\"elements\":[]}" : modelDeltaJson, ModelDelta.class);
+      SemanticModelPatch semantic = deltaCompiler.compile(level, model, elementTypes(model), delta);
       AssistantPatchCompiler.CompiledPatch compiled = patchCompiler.compile(model, semantic);
       JsonNode preview = patchCompiler.apply(model, compiled);
       return new PreviewResult(
@@ -99,7 +105,7 @@ public class AssistantToolService implements AssistantToolBridge {
     } catch (PlatformException ex) {
       throw ex;
     } catch (Exception ex) {
-      throw new PlatformException(400, "Invalid semantic patch preview input.");
+      throw new PlatformException(400, "Invalid ModelDelta preview input.");
     }
   }
 
@@ -233,22 +239,24 @@ public class AssistantToolService implements AssistantToolBridge {
     }
   }
 
-  /** Inspects a semantic patch against the bound model snapshot without committing it. */
+  /** Inspects a ModelDelta against the bound model snapshot without committing it. */
   @Tool(
-      name = "inspectCurrentSemanticPatch",
+      name = "inspectCurrentModelDelta",
       description =
-          "Compile, preview, and structurally validate a SemanticModelPatch against the active"
+          "Compile, preview, and structurally validate a ModelDelta against the active"
               + " bound model snapshot. Does not commit changes and does not require the model"
               + " JSON.")
-  public PatchInspectionResult inspectCurrentSemanticPatch(
-      @ToolParam(description = "SemanticModelPatch JSON") String semanticPatchJson) {
+  public PatchInspectionResult inspectCurrentModelDelta(
+      @ToolParam(description = "ModelDelta JSON") String modelDeltaJson) {
     trackToolCall();
     AssistantToolBridge.ToolSession active = requireSession();
     try {
-      SemanticModelPatch semantic =
+      ModelDelta delta =
           mapper.readValue(
-              semanticPatchJson == null ? "{\"operations\":[]}" : semanticPatchJson,
-              SemanticModelPatch.class);
+              modelDeltaJson == null ? "{\"elements\":[]}" : modelDeltaJson, ModelDelta.class);
+      SemanticModelPatch semantic =
+          deltaCompiler.compile(
+              active.level(), active.modelJson(), elementTypes(active.modelJson()), delta);
       AssistantPatchCompiler.CompiledPatch compiled =
           patchCompiler.compile(active.modelJson(), semantic);
       JsonNode preview = patchCompiler.apply(active.modelJson(), compiled);
@@ -263,7 +271,7 @@ public class AssistantToolService implements AssistantToolBridge {
     } catch (PlatformException ex) {
       throw ex;
     } catch (Exception ex) {
-      throw new PlatformException(400, "Invalid semantic patch inspection input.");
+      throw new PlatformException(400, "Invalid ModelDelta inspection input.");
     }
   }
 
@@ -289,13 +297,14 @@ public class AssistantToolService implements AssistantToolBridge {
     return schemas.coverage(ModelLevel.fromApiName(level));
   }
 
-  /** Returns creatable metamodel types ranked for the supplied modeling intent. */
+  /** Returns creatable metamodel types from the formal Ecore-derived schema. */
   @Tool(
       name = "findCreatableTypes",
-      description = "Find Ecore-defined creatable element types relevant to the modeling request.")
+      description = "List Ecore-defined creatable element types for a modeling level.")
   public List<String> findCreatableTypes(
       @ToolParam(description = "Configured modeling level key or display name") String level,
-      @ToolParam(description = "Natural language modeling request") String query,
+      @ToolParam(description = "Optional caller note; semantic selection comes from RetrievalPlan")
+          String query,
       @ToolParam(description = "Maximum type names to return") int limit) {
     trackToolCall();
     return schemas.relevantTypes(ModelLevel.fromApiName(level), query, false, Math.min(limit, 32));
@@ -367,6 +376,67 @@ public class AssistantToolService implements AssistantToolBridge {
       }
     }
     return new ContainmentOptions(canonicalChild, options.size(), options);
+  }
+
+  /** Finds valid non-containment references between elements in the bound model. */
+  @Tool(
+      name = "findReferenceOptions",
+      description =
+          "Find Ecore-valid writable non-containment references between active model elements.")
+  public ReferenceOptions findReferenceOptions(
+      @ToolParam(description = "Optional source metamodel type filter") String sourceType,
+      @ToolParam(description = "Optional target metamodel type filter") String targetType,
+      @ToolParam(description = "Optional reference name or purpose filter") String purpose,
+      @ToolParam(description = "Maximum options to return") int limit) {
+    trackToolCall();
+    AssistantToolBridge.ToolSession active = requireSession();
+    String sourceFilter = canonicalFilter(active.level(), sourceType);
+    String targetFilter = canonicalFilter(active.level(), targetType);
+    String purposeFilter = purpose == null ? "" : purpose.trim().toLowerCase(Locale.ROOT);
+    int bounded = Math.min(Math.max(limit <= 0 ? 24 : limit, 1), 80);
+    List<ReferenceOption> options = new ArrayList<>();
+    for (var source : active.context().elements()) {
+      if (options.size() >= bounded || !typeMatches(source.type(), sourceFilter)) {
+        continue;
+      }
+      for (var target : active.context().elements()) {
+        if (options.size() >= bounded || source.id().equals(target.id())) {
+          continue;
+        }
+        if (!typeMatches(target.type(), targetFilter)) {
+          continue;
+        }
+        schemas.typeSchema(active.level(), source.type()).stream()
+            .flatMap(type -> type.references().stream())
+            .filter(reference -> !reference.containment())
+            .filter(reference -> !reference.readonly())
+            .filter(
+                reference ->
+                    purposeFilter.isBlank()
+                        || reference.name().toLowerCase(Locale.ROOT).contains(purposeFilter))
+            .filter(
+                reference ->
+                    schemas.acceptsReferenceTarget(
+                        active.level(), source.type(), reference.name(), target.type()))
+            .forEach(
+                reference -> {
+                  if (options.size() < bounded) {
+                    options.add(
+                        new ReferenceOption(
+                            source.id(),
+                            source.type(),
+                            source.name(),
+                            reference.name(),
+                            target.id(),
+                            target.type(),
+                            target.name(),
+                            reference.many(),
+                            reference.required()));
+                  }
+                });
+      }
+    }
+    return new ReferenceOptions(sourceFilter, targetFilter, options.size(), options);
   }
 
   /** Summarizes the bound model snapshot for agent exploration. */
@@ -475,6 +545,30 @@ public class AssistantToolService implements AssistantToolBridge {
     }
   }
 
+  private Map<String, String> elementTypes(JsonNode model) {
+    Map<String, String> types = new LinkedHashMap<>();
+    collectElementTypes(model, types);
+    return types;
+  }
+
+  private void collectElementTypes(JsonNode node, Map<String, String> types) {
+    if (node == null || node.isNull()) {
+      return;
+    }
+    if (node.isObject()) {
+      String id = node.path("id").asText("");
+      String type = node.path("eClass").asText("");
+      if (!id.isBlank() && !type.isBlank()) {
+        types.putIfAbsent(id, type);
+      }
+      node.fields().forEachRemaining(entry -> collectElementTypes(entry.getValue(), types));
+      return;
+    }
+    if (node.isArray()) {
+      node.forEach(child -> collectElementTypes(child, types));
+    }
+  }
+
   private AssistantValidationSummary validationSummary(ModelService.ValidationResult validation) {
     List<AssistantValidationSummary.Issue> issues =
         validation == null
@@ -534,6 +628,17 @@ public class AssistantToolService implements AssistantToolBridge {
     return "";
   }
 
+  private String canonicalFilter(ModelLevel level, String type) {
+    if (type == null || type.isBlank()) {
+      return "";
+    }
+    return schemas.canonicalType(level, type);
+  }
+
+  private boolean typeMatches(String type, String filter) {
+    return filter == null || filter.isBlank() || filter.equals(type);
+  }
+
   /**
    * Patch preview result.
    *
@@ -589,7 +694,7 @@ public class AssistantToolService implements AssistantToolBridge {
   /**
    * Non-committing patch inspection result.
    *
-   * @param semanticOperationCount semantic operation count
+   * @param semanticOperationCount internal operation count
    * @param executablePatchOperationCount compiled executable operation count
    * @param affectedElements stable affected IDs
    * @param validation structural validation summary
@@ -618,7 +723,7 @@ public class AssistantToolService implements AssistantToolBridge {
    * @param ownerElementId stable owner ID; root model ID for root containment
    * @param ownerType owner EClass
    * @param ownerName owner display name
-   * @param referenceName containment feature to use in the semantic patch
+   * @param referenceName containment feature to use in ModelDelta placement
    * @param root whether the owner is the model root
    * @param many whether the containment accepts multiple children
    * @param required whether the containment feature is required
@@ -629,6 +734,44 @@ public class AssistantToolService implements AssistantToolBridge {
       String ownerName,
       String referenceName,
       boolean root,
+      boolean many,
+      boolean required) {}
+
+  /**
+   * Valid non-containment reference options between active model elements.
+   *
+   * @param sourceTypeFilter canonical source type filter, when supplied
+   * @param targetTypeFilter canonical target type filter, when supplied
+   * @param totalOptions number of returned options
+   * @param options source/reference/target options
+   */
+  public record ReferenceOptions(
+      String sourceTypeFilter,
+      String targetTypeFilter,
+      int totalOptions,
+      List<ReferenceOption> options) {}
+
+  /**
+   * One legal non-containment reference choice.
+   *
+   * @param sourceElementId stable source element ID
+   * @param sourceType source EClass
+   * @param sourceName source display name
+   * @param referenceName writable EReference name
+   * @param targetElementId stable target element ID
+   * @param targetType target EClass
+   * @param targetName target display name
+   * @param many whether the reference accepts multiple targets
+   * @param required whether the reference is required
+   */
+  public record ReferenceOption(
+      String sourceElementId,
+      String sourceType,
+      String sourceName,
+      String referenceName,
+      String targetElementId,
+      String targetType,
+      String targetName,
       boolean many,
       boolean required) {}
 

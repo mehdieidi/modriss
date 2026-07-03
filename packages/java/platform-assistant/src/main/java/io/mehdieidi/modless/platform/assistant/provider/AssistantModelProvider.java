@@ -1,8 +1,6 @@
 package io.mehdieidi.modless.platform.assistant.provider;
 
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
-import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
-import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
 import java.util.List;
 
 /** Provider-neutral boundary for assistant model calls. */
@@ -41,38 +39,6 @@ public interface AssistantModelProvider {
     return complete(prompt);
   }
 
-  /** Produces one structured answer, clarification, or semantic patch decision. */
-  default AssistantTurnPlan planTurn(AssistantPrompt prompt) {
-    AssistantReply reply = complete(prompt);
-    return new AssistantTurnPlan(
-        AssistantTurnPlan.Kind.ANSWER,
-        reply.content(),
-        List.of(),
-        new SemanticModelPatch(List.of()));
-  }
-
-  /**
-   * Produces a schema-converted semantic patch. Providers that do not support structured output
-   * return an empty patch.
-   *
-   * @param prompt compact planner prompt
-   * @return semantic patch
-   */
-  default SemanticModelPatch proposePatch(AssistantPrompt prompt) {
-    return new SemanticModelPatch(List.of());
-  }
-
-  /**
-   * Runs the bounded agentic planner loop for mutation turns.
-   *
-   * @param prompt planner prompt
-   * @param progress progress callback
-   * @return structured turn plan and loop metrics
-   */
-  default AgentLoopResult planMutationTurn(AssistantPrompt prompt, AgentProgress progress) {
-    return new AgentLoopResult(planTurn(prompt), 0, 1);
-  }
-
   /**
    * Produces a compact source-material analysis for requirements or event-storming documents.
    *
@@ -92,15 +58,6 @@ public interface AssistantModelProvider {
   interface AgentProgress {
     void onProgress(String stage, String message);
   }
-
-  /**
-   * Agent loop result with planner output and loop metrics.
-   *
-   * @param plan structured turn plan
-   * @param toolCalls number of tool invocations
-   * @param steps number of agent loop steps
-   */
-  record AgentLoopResult(AssistantTurnPlan plan, int toolCalls, int steps) {}
 
   /**
    * Structured assistant prompt.

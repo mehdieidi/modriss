@@ -60,6 +60,7 @@ let activeThinkingEl = null;
 let thinkingSteps = [];
 let thinkingStartTime = 0;
 let thinkingProgress = null;
+let activeTurnCanceling = false;
 
 const CHAT_HISTORY_DAYS = 3;
 
@@ -214,6 +215,16 @@ function ensureThinkingStream(initialMessage = null, stage = "PLANNING") {
     header.className = "chat-thinking-header";
     header.innerHTML =
       '<span class="chat-thinking-spinner" aria-hidden="true"></span><span class="chat-thinking-title">Working on your request</span>';
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "chat-thinking-cancel";
+    cancel.textContent = "Cancel";
+    cancel.addEventListener("click", () => {
+      cancelActiveChatTurn().catch((error) => {
+        setError(error, { prefix: "Could not cancel assistant turn." });
+      });
+    });
+    header.appendChild(cancel);
     bubble.appendChild(header);
 
     const status = document.createElement("div");
@@ -327,6 +338,7 @@ function finalizeThinkingStream() {
   thinkingSteps = [];
   chatActivityHistory = [];
   thinkingProgress = null;
+  activeTurnCanceling = false;
   scrollChatToBottom();
 }
 
@@ -336,6 +348,21 @@ function clearThinkingStream() {
   thinkingSteps = [];
   chatActivityHistory = [];
   thinkingProgress = null;
+  activeTurnCanceling = false;
+}
+
+async function cancelActiveChatTurn() {
+  if (activeTurnCanceling) {
+    return;
+  }
+  const sessionId = state.chat.sessions.get(chatScopeKey())?.sessionId;
+  if (!sessionId) {
+    return;
+  }
+  activeTurnCanceling = true;
+  updateThinkingStatus("Cancel requested. Waiting for the backend to stop safely.", "CANCELING");
+  clearAssistantModelPreview({ restore: true });
+  await api(`/chatbot/sessions/${sessionId}/cancel`, { method: "POST" });
 }
 
 function cloneValue(value) {
@@ -803,6 +830,21 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
     const payload = JSON.parse(event.data)?.payload;
     handleChatRealtimeEvent(typeKey, "assistant.progress", payload);
   });
+  for (const eventName of [
+    "assistant.trace.started",
+    "assistant.trace.step",
+    "assistant.tool.started",
+    "assistant.tool.completed",
+    "assistant.delta.drafted",
+    "assistant.delta.validated",
+    "assistant.turn.completed",
+    "assistant.turn.failed",
+  ]) {
+    stream.addEventListener(eventName, (event) => {
+      const payload = JSON.parse(event.data)?.payload;
+      handleChatRealtimeEvent(typeKey, eventName, payload);
+    });
+  }
   stream.addEventListener("assistant.model.preview", (event) => {
     const payload = JSON.parse(event.data)?.payload;
     handleChatRealtimeEvent(typeKey, "assistant.model.preview", payload);
@@ -814,8 +856,43 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
 }
 
 function handleChatRealtimeEvent(typeKey, eventType, payload) {
-  if (eventType === "assistant.progress") {
+  if (eventType === "assistant.trace.started") {
+    updateThinkingStatus("Started the modeling turn.", "PLANNING");
+    return;
+  }
+  if (eventType === "assistant.trace.step" || eventType === "assistant.progress") {
     updateThinkingStatus(payload?.message || "Working with the model", payload?.stage);
+    return;
+  }
+  if (eventType === "assistant.tool.started") {
+    updateThinkingStatus(
+      payload?.message || "Inspecting model context.",
+      payload?.stage || "PLANNING",
+    );
+    return;
+  }
+  if (eventType === "assistant.tool.completed") {
+    updateThinkingStatus(
+      payload?.message || "Context inspection finished.",
+      payload?.stage || "PLANNING",
+    );
+    return;
+  }
+  if (eventType === "assistant.delta.drafted") {
+    updateThinkingStatus(payload?.message || "Drafted model operations.", "PREVIEWING_PATCH");
+    return;
+  }
+  if (eventType === "assistant.delta.validated") {
+    updateThinkingStatus(payload?.message || "Validated model operations.", "VALIDATING");
+    return;
+  }
+  if (eventType === "assistant.turn.completed" || eventType === "assistant.turn.failed") {
+    if (chatBusyDepth === 0) {
+      applyWorkflowSnapshot(
+        payload?.workflowState || (eventType.endsWith("failed") ? "FAILED" : "APPLIED"),
+        payload?.message || "Assistant turn finished",
+      );
+    }
     return;
   }
   if (eventType === "assistant.model.preview") {
@@ -1420,6 +1497,8 @@ export async function sendChatMessage() {
     response = await api(`/chatbot/sessions/${session.sessionId}/messages`, {
       method: "POST",
       body: JSON.stringify({
+        idempotencyKey:
+          crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         message: text,
         modelId: state.modelId,
         revision: state.modelRevision || null,

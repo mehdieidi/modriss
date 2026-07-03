@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 
 /**
- * Backend-owned semantic patch protocol used for assistant proposals.
+ * Backend-owned operation IR used after ModelDelta compilation.
  *
  * @param operations typed semantic operations against stable model element IDs
  */

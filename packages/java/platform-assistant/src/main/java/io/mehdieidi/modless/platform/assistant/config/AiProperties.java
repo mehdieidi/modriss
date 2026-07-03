@@ -13,6 +13,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param enabled whether outbound AI calls are allowed
  * @param provider configured provider key, currently {@code openai} or {@code gemini}
  * @param requestTimeout outbound AI request timeout
+ * @param turnTimeout overall assistant turn timeout
  * @param maxToolCalls legacy operation/tool limit; zero or negative means unbounded
  * @param validationRepairAttempts maximum validator-guided replanning passes per mutation
  * @param tokenBudget approximate prompt budget per turn
@@ -29,6 +30,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param openaiCompatible OpenAI-compatible endpoint settings
  * @param gemini Google Gemini Developer API settings
  * @param models role-specific model names
+ * @param maxRepairAttempts preferred maximum repair attempts; overrides validationRepairAttempts
+ * @param maxPromptTokens maximum prompt budget per provider call
+ * @param maxSourceChunkTokens maximum source chunk token budget
+ * @param maxSourceChunksPerTurn maximum source chunks processed in one turn
+ * @param requireIdempotencyKey whether client turn idempotency keys are required
+ * @param newAgentEnabled whether the unified ModelDelta agent path is enabled
  */
 @ConfigurationProperties(prefix = "modless.ai")
 public record AiProperties(
@@ -50,21 +57,85 @@ public record AiProperties(
     Proxy proxy,
     OpenAiCompatible openaiCompatible,
     Gemini gemini,
-    Models models)
+    Models models,
+    Duration turnTimeout,
+    int maxRepairAttempts,
+    int maxPromptTokens,
+    int maxSourceChunkTokens,
+    int maxSourceChunksPerTurn,
+    boolean requireIdempotencyKey,
+    boolean newAgentEnabled)
     implements AssistantSettings {
+
+  public AiProperties(
+      boolean enabled,
+      String provider,
+      Duration requestTimeout,
+      int maxToolCalls,
+      int validationRepairAttempts,
+      int tokenBudget,
+      int maxContextSnippets,
+      int maxSnippetChars,
+      int maxSystemChars,
+      int maxAgentSteps,
+      int maxToolCallsPerStep,
+      int reservedSchemaSnippets,
+      String fallbackProvider,
+      Hardening hardening,
+      Embeddings embeddings,
+      Proxy proxy,
+      OpenAiCompatible openaiCompatible,
+      Gemini gemini,
+      Models models) {
+    this(
+        enabled,
+        provider,
+        requestTimeout,
+        maxToolCalls,
+        validationRepairAttempts,
+        tokenBudget,
+        maxContextSnippets,
+        maxSnippetChars,
+        maxSystemChars,
+        maxAgentSteps,
+        maxToolCallsPerStep,
+        reservedSchemaSnippets,
+        fallbackProvider,
+        hardening,
+        embeddings,
+        proxy,
+        openaiCompatible,
+        gemini,
+        models,
+        null,
+        0,
+        0,
+        0,
+        0,
+        true,
+        true);
+  }
 
   /** Applies conservative defaults for local development. */
   public AiProperties {
     provider = Provider.from(provider).key();
-    requestTimeout = requestTimeout == null ? Duration.ofMinutes(10) : requestTimeout;
-    maxToolCalls = maxToolCalls <= 0 ? Integer.MAX_VALUE : maxToolCalls;
-    validationRepairAttempts = validationRepairAttempts <= 0 ? 6 : validationRepairAttempts;
+    requestTimeout = requestTimeout == null ? Duration.ofMinutes(5) : requestTimeout;
+    turnTimeout = turnTimeout == null ? Duration.ofMinutes(5) : turnTimeout;
+    maxToolCalls = maxToolCalls <= 0 ? 24 : maxToolCalls;
+    validationRepairAttempts =
+        maxRepairAttempts > 0
+            ? maxRepairAttempts
+            : validationRepairAttempts <= 0 ? 1 : validationRepairAttempts;
+    maxRepairAttempts = validationRepairAttempts;
     tokenBudget = tokenBudget <= 0 ? 16000 : tokenBudget;
+    maxPromptTokens = maxPromptTokens <= 0 ? 24000 : maxPromptTokens;
+    maxSourceChunkTokens = maxSourceChunkTokens <= 0 ? 4000 : maxSourceChunkTokens;
+    maxSourceChunksPerTurn = maxSourceChunksPerTurn <= 0 ? 24 : maxSourceChunksPerTurn;
     maxContextSnippets = maxContextSnippets <= 0 ? 24 : maxContextSnippets;
     maxSnippetChars = maxSnippetChars <= 0 ? 2400 : maxSnippetChars;
     maxSystemChars = maxSystemChars <= 0 ? 14000 : maxSystemChars;
-    maxAgentSteps = maxAgentSteps <= 0 ? 16 : maxAgentSteps;
-    maxToolCallsPerStep = maxToolCallsPerStep <= 0 ? 8 : maxToolCallsPerStep;
+    maxAgentSteps = maxAgentSteps <= 0 ? 8 : maxAgentSteps;
+    maxToolCallsPerStep = maxToolCallsPerStep <= 0 ? 4 : maxToolCallsPerStep;
     reservedSchemaSnippets = reservedSchemaSnippets <= 0 ? 10 : reservedSchemaSnippets;
     fallbackProvider = fallbackProvider == null ? "" : fallbackProvider.trim();
     hardening =

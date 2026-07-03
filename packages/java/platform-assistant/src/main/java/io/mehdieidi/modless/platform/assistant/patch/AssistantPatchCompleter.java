@@ -28,7 +28,7 @@ public class AssistantPatchCompleter {
   }
 
   /**
-   * Expands a semantic patch until required single-valued containments and attributes are present.
+   * Expands backend operation IR until required single-valued containments and attributes exist.
    *
    * @param level model level
    * @param patch planner patch

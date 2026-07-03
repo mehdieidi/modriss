@@ -37,7 +37,7 @@ class AssistantClarificationGateTest {
   }
 
   @Test
-  void defersArchitectureAndRuntimeQuestionsForCreationRequests() {
+  void keepsDomainArchitectureAndRuntimeQuestionsForLlmOrUserResolution() {
     AssistantTurnPlan plan =
         new AssistantTurnPlan(
             AssistantTurnPlan.Intent.MUTATION,
@@ -71,8 +71,8 @@ class AssistantClarificationGateTest {
     String request = "Create a serverless model for vending machine backend";
     AssistantTurnPlan gated = gate.apply(plan, request);
 
-    assertEquals(AssistantTurnPlan.Kind.PATCH, gated.kind());
-    assertTrue(gate.shouldDeferToProposal(plan, request));
+    assertEquals(AssistantTurnPlan.Kind.CLARIFICATION, gated.kind());
+    assertTrue(!gate.shouldDeferToProposal(plan, request));
   }
 
   @Test
@@ -127,10 +127,10 @@ class AssistantClarificationGateTest {
             new SemanticModelPatch(List.of()));
 
     String request = "Create a complete CIM model from the attached user story document.";
-    AssistantTurnPlan gated = gate.apply(plan, request);
+    AssistantTurnPlan gated = gate.apply(plan, request, true);
 
     assertEquals(AssistantTurnPlan.Kind.PATCH, gated.kind());
-    assertTrue(gate.shouldDeferToProposal(plan, request));
+    assertTrue(gate.shouldDeferToProposal(plan, request, true));
   }
 
   @Test

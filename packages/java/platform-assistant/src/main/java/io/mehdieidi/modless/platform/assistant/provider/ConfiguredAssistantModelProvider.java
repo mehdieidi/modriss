@@ -1,8 +1,6 @@
 package io.mehdieidi.modless.platform.assistant.provider;
 
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
-import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
-import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.modless.platform.assistant.provider.springai.GeminiAssistantModelProvider;
 import io.mehdieidi.modless.platform.assistant.provider.springai.OpenAiCompatibleAssistantModelProvider;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
@@ -38,21 +36,6 @@ public final class ConfiguredAssistantModelProvider implements AssistantModelPro
   @Override
   public AssistantReply complete(AssistantPrompt prompt) {
     return withFallback(provider -> provider.complete(prompt));
-  }
-
-  @Override
-  public AssistantTurnPlan planTurn(AssistantPrompt prompt) {
-    return withFallback(provider -> provider.planTurn(prompt));
-  }
-
-  @Override
-  public SemanticModelPatch proposePatch(AssistantPrompt prompt) {
-    return withFallback(provider -> provider.proposePatch(prompt));
-  }
-
-  @Override
-  public AgentLoopResult planMutationTurn(AssistantPrompt prompt, AgentProgress progress) {
-    return withFallback(provider -> provider.planMutationTurn(prompt, progress));
   }
 
   @Override

@@ -21,16 +21,23 @@ class AiPropertiesTest {
     assertEquals("127.0.0.1", properties.proxy().host());
     assertEquals(2081, properties.proxy().port());
     assertEquals("https://api.openai.com", properties.openaiCompatible().baseUrl());
-    assertEquals(Duration.ofMinutes(10), properties.requestTimeout());
+    assertEquals(Duration.ofMinutes(5), properties.requestTimeout());
+    assertEquals(Duration.ofMinutes(5), properties.turnTimeout());
     assertEquals("", properties.gemini().apiKey());
     assertEquals(30, properties.hardening().perUserRequestsPerWindow());
     assertEquals(AiProperties.EmbeddingProvider.ONNX, properties.embeddings().provider());
     assertTrue(properties.embeddings().fallbackToHash());
-    assertEquals(6, properties.validationRepairAttempts());
+    assertEquals(1, properties.validationRepairAttempts());
+    assertEquals(1, properties.maxRepairAttempts());
     assertEquals(16000, properties.tokenBudget());
-    assertEquals(16, properties.maxAgentSteps());
-    assertEquals(8, properties.maxToolCallsPerStep());
-    assertEquals(Integer.MAX_VALUE, properties.maxToolCalls());
+    assertEquals(24000, properties.maxPromptTokens());
+    assertEquals(8, properties.maxAgentSteps());
+    assertEquals(4, properties.maxToolCallsPerStep());
+    assertEquals(24, properties.maxToolCalls());
+    assertEquals(4000, properties.maxSourceChunkTokens());
+    assertEquals(24, properties.maxSourceChunksPerTurn());
+    assertTrue(properties.requireIdempotencyKey());
+    assertTrue(properties.newAgentEnabled());
     assertEquals(10, properties.reservedSchemaSnippets());
     assertEquals("gpt-4o-mini", properties.modelFor(AssistantModelRole.RESPONDER));
   }

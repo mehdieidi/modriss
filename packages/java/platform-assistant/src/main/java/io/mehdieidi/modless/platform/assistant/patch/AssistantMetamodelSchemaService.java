@@ -7,12 +7,10 @@ import io.mehdieidi.modless.platform.kernel.PlatformException;
 import io.mehdieidi.modless.platform.modeling.config.ModelingConfigService;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Runtime metamodel view derived from the same Ecore-backed configuration used by the editor. */
@@ -245,14 +243,16 @@ public class AssistantMetamodelSchemaService {
         creatable.stream().map(TypeSchema::name).toList());
   }
 
-  /** Returns Ecore-derived feature contracts for creatable types named in a user request. */
+  /** Returns deterministic Ecore-derived feature contracts for creatable types. */
   public List<AssistantModelProvider.ContextSnippet> planningContracts(
       ModelLevel level, String request, int limit) {
     return planningContracts(level, request, limit, false);
   }
 
   /**
-   * Returns type contracts ranked by intent relevance to the user request.
+   * Returns type contracts from the Ecore-derived metamodel. Relevance is decided by the LLM
+   * retrieval plan before this method is used; this fallback deliberately does not inspect prompt
+   * words.
    *
    * @param level model level
    * @param request user message
@@ -266,9 +266,7 @@ public class AssistantMetamodelSchemaService {
     if (bounded == 0) {
       return List.of();
     }
-    return relevantTypes(level, request, emptyModel, bounded).stream()
-        .map(type -> typeContract(level, type))
-        .toList();
+    return allPlanningContracts(level).stream().limit(bounded).toList();
   }
 
   /** Returns writable contracts for every creatable type in the level metamodel. */
@@ -279,38 +277,17 @@ public class AssistantMetamodelSchemaService {
         .toList();
   }
 
-  /**
-   * Ranks creatable metamodel types by relevance to a natural-language modeling request.
-   *
-   * @param level model level
-   * @param request user message
-   * @param emptyModel whether the active model has no saved elements yet
-   * @param limit maximum type names
-   * @return ranked canonical type names
-   */
+  /** Returns creatable metamodel types in canonical Ecore configuration order. */
   public List<String> relevantTypes(
       ModelLevel level, String request, boolean emptyModel, int limit) {
     int bounded = Math.max(0, limit);
     if (bounded == 0) {
       return List.of();
     }
-    String normalized = request == null ? "" : request.toLowerCase(Locale.ROOT);
-    Set<String> tokens = tokenize(normalized);
-    Map<String, Integer> scores = new LinkedHashMap<>();
-    for (TypeSchema type : schema(level).types().values()) {
-      if (!type.creatable()) {
-        continue;
-      }
-      int score = scoreType(type, normalized, tokens);
-      if (score > 0) {
-        scores.put(type.name(), score);
-      }
-    }
-    applyIntentBoosts(level, tokens, scores);
-    return scores.entrySet().stream()
-        .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+    return schema(level).types().values().stream()
+        .filter(TypeSchema::creatable)
+        .map(TypeSchema::name)
         .limit(bounded)
-        .map(Map.Entry::getKey)
         .toList();
   }
 
@@ -340,7 +317,7 @@ public class AssistantMetamodelSchemaService {
     The canvas is empty. Model only what the user asked for, using types and relationships allowed
     by the formal metamodel. Include required nested contracts and attributes for every element
     you add.
-    Types most relevant to this request:
+    Representative creatable types from the formal metamodel:
     """
         + contracts;
   }
@@ -497,100 +474,6 @@ public class AssistantMetamodelSchemaService {
       return List.of();
     }
     return list.stream().map(String::valueOf).toList();
-  }
-
-  private int scoreType(TypeSchema type, String normalized, Set<String> tokens) {
-    int score = 0;
-    String typeLower = type.name().toLowerCase(Locale.ROOT);
-    if (normalized.contains(typeLower)) {
-      score += 120;
-    }
-    for (String token : tokenize(type.label())) {
-      if (tokens.contains(token)) {
-        score += 10;
-      }
-    }
-    for (String token : tokenize(type.category())) {
-      if (tokens.contains(token)) {
-        score += 6;
-      }
-    }
-    for (String part : splitCamelCase(type.name())) {
-      if (tokens.contains(part)) {
-        score += 8;
-      }
-    }
-    return score;
-  }
-
-  private void applyIntentBoosts(
-      ModelLevel level, Set<String> tokens, Map<String, Integer> scores) {
-    for (Map.Entry<String, List<String>> entry : intentBoosts(level).entrySet()) {
-      if (!tokens.contains(entry.getKey())) {
-        continue;
-      }
-      for (String type : entry.getValue()) {
-        if (schema(level).type(type).filter(TypeSchema::creatable).isPresent()) {
-          scores.merge(type, 24, Math::max);
-        }
-      }
-    }
-  }
-
-  private Map<String, List<String>> intentBoosts(ModelLevel level) {
-    return switch (level) {
-      case CIM ->
-          Map.ofEntries(
-              Map.entry("process", List.of("Process", "ProcessStep", "BusinessCapability")),
-              Map.entry("actor", List.of("Actor", "Role")),
-              Map.entry("goal", List.of("BusinessGoal", "BusinessCapability")),
-              Map.entry("capability", List.of("BusinessCapability", "BusinessService")),
-              Map.entry("domain", List.of("BusinessCapability", "DomainEntity")));
-      case PIM ->
-          Map.ofEntries(
-              Map.entry("serverless", List.of("ServerlessService", "Function", "DeploymentUnit")),
-              Map.entry("backend", List.of("ServerlessService", "Function", "Api")),
-              Map.entry("service", List.of("ServerlessService", "DeploymentUnit")),
-              Map.entry("api", List.of("Api", "ApiRoute")),
-              Map.entry("rest", List.of("Api", "ApiRoute")),
-              Map.entry("http", List.of("Api", "ApiRoute")),
-              Map.entry("function", List.of("Function", "Trigger")),
-              Map.entry("handler", List.of("Function", "Trigger")),
-              Map.entry("event", List.of("EventChannel", "EventType", "Flow")),
-              Map.entry("message", List.of("EventChannel", "EventType")),
-              Map.entry("queue", List.of("EventChannel")),
-              Map.entry("data", List.of("DataStore", "ObjectStore", "DataAccess")),
-              Map.entry("storage", List.of("DataStore", "ObjectStore")),
-              Map.entry("database", List.of("DataStore")),
-              Map.entry("workflow", List.of("Workflow", "HumanTask")));
-      case PSM ->
-          Map.ofEntries(
-              Map.entry("lambda", List.of("AwsLambdaFunction", "AwsLambdaAlias")),
-              Map.entry("api", List.of("AwsHttpApi", "AwsRestApi")),
-              Map.entry("queue", List.of("AwsSqsQueue")),
-              Map.entry("topic", List.of("AwsSnsTopic")),
-              Map.entry("storage", List.of("AwsS3Bucket", "AwsDynamoDbTable")),
-              Map.entry("serverless", List.of("AwsLambdaFunction", "AwsHttpApi", "AwsStack")));
-    };
-  }
-
-  private Set<String> tokenize(String value) {
-    if (value == null || value.isBlank()) {
-      return Set.of();
-    }
-    return java.util.Arrays.stream(value.toLowerCase(Locale.ROOT).split("[^a-z0-9]+"))
-        .filter(token -> token.length() > 2)
-        .collect(Collectors.toCollection(LinkedHashSet::new));
-  }
-
-  private List<String> splitCamelCase(String value) {
-    if (value == null || value.isBlank()) {
-      return List.of();
-    }
-    return java.util.Arrays.stream(value.split("(?=[A-Z])|_"))
-        .map(part -> part.toLowerCase(Locale.ROOT))
-        .filter(part -> part.length() > 2)
-        .toList();
   }
 
   /** Runtime level schema. */

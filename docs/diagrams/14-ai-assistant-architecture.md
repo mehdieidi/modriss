@@ -17,7 +17,7 @@ flowchart TB
         guard["AssistantPromptGuard<br/>redaction and injection markers"]
         context["AssistantModelContextIndexService<br/>compact model context"]
         catalog["JdbcAssistantCatalog<br/>metamodel and methodology RAG index"]
-        compiler["AssistantPatchCompiler<br/>semantic patch to JSON patch"]
+        compiler["AssistantPatchCompiler<br/>ModelDelta IR to JSON patch"]
         memory["AssistantMemoryRepository<br/>durable history, proposal, audit"]
         chatMemory["SpringAiChatMemoryService<br/>recent chat window"]
     end
@@ -59,7 +59,7 @@ stateDiagram-v2
     PLAN --> ANSWER: explanation or analysis
     PLAN --> CLARIFY: consequential ambiguity
     CLARIFY --> PLAN: durable user answers
-    PLAN --> VALIDATE: semantic patch
+    PLAN --> VALIDATE: compiled ModelDelta operations
     VALIDATE --> REPAIR: invalid
     REPAIR --> VALIDATE: repair attempts
     VALIDATE --> APPLIED: structurally valid

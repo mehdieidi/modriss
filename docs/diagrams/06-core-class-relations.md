@@ -117,8 +117,11 @@ classDiagram
     class AssistantModelProvider {
         <<interface>>
         +complete(prompt)
-        +proposePatch(prompt)
+        +completeStructured(prompt)
     }
+    class ModelingAgent
+    class ModelDeltaProviderClient
+    class ModelDelta
     class ConfiguredAssistantModelProvider
     class OpenAiCompatibleAssistantModelProvider
     class GeminiAssistantModelProvider
@@ -138,7 +141,10 @@ classDiagram
     AssistantModelProvider <|.. GeminiAssistantModelProvider
     ConfiguredAssistantModelProvider --> OpenAiCompatibleAssistantModelProvider
     ConfiguredAssistantModelProvider --> GeminiAssistantModelProvider
-    AssistantOrchestrator --> AssistantModelProvider
+    AssistantOrchestrator --> ModelingAgent
+    ModelingAgent --> ModelDeltaProviderClient
+    ModelDeltaProviderClient --> AssistantModelProvider
+    ModelDeltaProviderClient --> ModelDelta
     AssistantOrchestrator --> JdbcAssistantCatalog
     AssistantOrchestrator --> AssistantModelContextIndexService
     AssistantOrchestrator --> AssistantPatchCompiler

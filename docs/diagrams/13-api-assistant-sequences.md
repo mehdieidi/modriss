@@ -53,16 +53,19 @@ sequenceDiagram
         O->>Models: Resolve and load active model
         O->>Models: Validate stored model
         O->>Ctx: Snapshot compact context and cache by revision
-        O->>Cat: Retrieve metamodel/EVL snippets
-        O->>Provider: complete(RESPONDER prompt)
-        Provider-->>O: Assistant explanation
-        opt mode allows proposals
-            O->>Provider: proposePatch(PLANNER prompt)
-            Provider-->>O: SemanticModelPatch
-            O->>O: Validate semantic grounding and operation limit
-            O->>Patch: compile semantic patch to JSON patch + inverse
+        O->>Cat: Retrieve metamodel and methodology snippets
+        O->>Provider: completeStructured(intent prompt)
+        Provider-->>O: Intent decision
+        alt information turn
+            O->>Provider: completeStructured(read-only prompt)
+            Provider-->>O: Assistant explanation
+        else mutation turn
+            O->>Provider: completeStructured(ModelDelta prompt)
+            Provider-->>O: ModelDelta
+            O->>O: Parse, normalize, and compile ModelDelta
+            O->>Patch: compile patch to JSON patch + inverse
             O->>Patch: apply patch to preview model
-            O->>Models: Validate preview
+            O->>Models: Validate preview structurally
             O->>Models: patch stored model with expected revision
             O->>Mem: save applied proposal audit record
             O->>RT: publish model.updated

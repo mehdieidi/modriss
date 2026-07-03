@@ -9,7 +9,7 @@ import java.util.List;
  *
  * @param id proposal ID
  * @param affectedElements stable affected element IDs
- * @param patch semantic patch
+ * @param patch backend operation IR compiled from ModelDelta
  * @param inversePatch inverse executable patch
  * @param validation validation preview
  * @param riskLevel risk level

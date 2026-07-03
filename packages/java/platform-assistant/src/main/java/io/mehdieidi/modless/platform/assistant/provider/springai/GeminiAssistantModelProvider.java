@@ -8,7 +8,6 @@ import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningSer
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
-import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
 import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import org.springframework.ai.chat.client.ChatClient;
@@ -26,8 +25,7 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
       AssistantToolService tools,
-      AssistantHardeningService hardening,
-      SemanticModelPatchParser patchParser) {
+      AssistantHardeningService hardening) {
     super(
         AiProperties.Provider.GEMINI.key(),
         properties,
@@ -35,7 +33,6 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
         promptGuard,
         tools,
         hardening,
-        patchParser,
         ChatClient.create(chatModel(properties)));
   }
 

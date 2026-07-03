@@ -28,7 +28,7 @@ public class AssistantPatchCompiler {
    * Compiles semantic operations against a model snapshot.
    *
    * @param modelJson model JSON
-   * @param semantic semantic patch
+   * @param semantic backend operation IR compiled from ModelDelta
    * @return compiled patch
    */
   public CompiledPatch compile(JsonNode modelJson, SemanticModelPatch semantic) {

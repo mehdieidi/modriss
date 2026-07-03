@@ -30,16 +30,15 @@ OPENAI_COMPATIBLE_BASE_URL=https://api.openai.com
 MODLESS_AI_PLANNER_MODEL=gpt-4o-mini
 MODLESS_AI_RESPONDER_MODEL=gpt-4o-mini
 MODLESS_AI_SUMMARIZER_MODEL=gpt-4o-mini
-MODLESS_AI_MAX_TOOL_CALLS=0
+MODLESS_AI_MAX_TOOL_CALLS=24
 MODLESS_AI_TOKEN_BUDGET=16000
-MODLESS_AI_REQUEST_TIMEOUT=10m
+MODLESS_AI_REQUEST_TIMEOUT=5m
+MODLESS_AI_TURN_TIMEOUT=5m
 ```
 
-`MODLESS_AI_REQUEST_TIMEOUT` defaults to 10 minutes. Complete architecture proposals can require
-large structured responses, and OpenAI-compatible gateways or reasoning models can have highly
-variable latency. Lower values may reject otherwise successful requests. Connection establishment
-still fails after at most 10 seconds. A response timeout is not retried because the provider may
-still be processing the original request.
+`MODLESS_AI_REQUEST_TIMEOUT` and `MODLESS_AI_TURN_TIMEOUT` default to 5 minutes. Connection
+establishment still fails after at most 10 seconds. A response timeout is not retried because the
+provider may still be processing the original request.
 
 For another OpenAI-compatible provider, keep `MODLESS_AI_PROVIDER=openai` and set
 `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`, and the role-specific model names to the
@@ -60,22 +59,19 @@ MODLESS_AI_ENABLED=false
 ```
 
 The assistant runs as one autonomous modeling agent. The LLM answers, asks structured
-clarification questions when needed, or drafts semantic operations from retrieved context. The
-backend compiles and validates model-changing work before applying it, then exposes undo through
-the API and UI.
+clarification questions when needed, or drafts `ModelDelta` from retrieved context. The backend
+compiles and validates model-changing work before applying it, then exposes undo through the API
+and UI.
 
 Do not put API keys directly in `application.yml`. Use environment variables or a local `.env` file
 that is not committed.
 
-## Modeling strategy
+## Modeling protocol
 
-`MODLESS_AI_MODELING_STRATEGY` selects how the agent drafts mutations (default `model-subset`):
-
-- `model-subset` — LLM returns a JSON subset that the backend compiles into semantic operations.
-- `semantic-patch` — LLM returns semantic operations directly; the planner may run a tool exploration
-  phase before commit.
-
-Both paths share the same compiler, structural validation repair loop, and auto-apply behavior.
+There is one assistant modeling mode. Model-changing turns go through `ModelingAgent`, whose
+provider-facing output contract is `ModelDelta`. The backend lowers that delta into internal patch
+operations, structurally validates the preview, and applies atomically against the expected model
+revision. The old selectable modeling-mode switch is removed.
 
 ## Docker Compose
 
@@ -318,7 +314,7 @@ The AI feature adds these tables:
 - `assistant_threads`: one assistant thread per user/project/modeling level.
 - `assistant_messages`: durable user/assistant/system/tool message audit history.
 - `assistant_thread_summaries`: rolling summaries of long conversations.
-- `assistant_proposals`: applied semantic patches, risk level, validation preview, citations, and
+- `assistant_proposals`: applied ModelDelta operation previews, risk level, validation preview, citations, and
   inverse patch for undo.
 - `assistant_action_audits`: apply, undo, and choice audit records.
 - `assistant_retrieval_documents`: indexed metamodel and methodology snippets with embeddings for

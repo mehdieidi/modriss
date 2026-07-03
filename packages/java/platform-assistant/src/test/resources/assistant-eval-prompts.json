@@ -277,6 +277,18 @@
     "requiresSourceAnalysis": true
   },
   {
+    "id": "cim-mixed-workshop-01",
+    "category": "cim-source-document",
+    "level": "CIM",
+    "prompt": "Create a complete CIM model from these mixed-language workshop notes. Preserve actors, goals, commands, events, rules, risks, assumptions, and relationships.",
+    "emptyCanvas": true,
+    "sourceDocument": "یادداشت کارگاه پذیرش درمانگاه:\n- بیمار درخواست نوبت را ثبت می کند و ترجیح زمانی خود را می گوید.\n- تیم پذیرش زمان های آزاد پزشک را بررسی می کند و نوبت پیشنهادی می سازد.\n- Payment desk confirms copay before final booking.\n- After confirmation, notification service sends a reminder message.\n- اگر بیمار مدارک ناقص داشته باشد، پذیرش باید درخواست تکمیل اطلاعات بدهد.\n- Risk: duplicate bookings when two clerks reserve the same slot.\n- Assumption: reminders can be retried safely.",
+    "minOperations": 18,
+    "minElementAdds": 12,
+    "minConnections": 4,
+    "requiresSourceAnalysis": true
+  },
+  {
     "id": "psm-create-04",
     "category": "psm",
     "level": "PSM",

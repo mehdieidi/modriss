@@ -15,14 +15,6 @@ public class AssistantClarificationGate {
           "(?i)\\b(id|uuid|ulid|identifier|stable[ -]?id|element[ -]?id|name|naming|"
               + "layout|ordering|order|sequence|position|format)\\b");
 
-  private static final Pattern DEFERRABLE_PROMPT =
-      Pattern.compile(
-          "(?i)\\b(architecture|interaction[ -]?style|serverless|api[ -]?first|event[ -]?driven|"
-              + "runtime|language|package[ -]?manager|pip|poetry|npm|maven|go[ -]?mod|gradle|"
-              + "implementation[ -]?profile|persistence|data[ -]?store|object[ -]?store|"
-              + "relational|correlation|framework|handler|deployment|environment|schema|"
-              + "primary[ -]?language|domain[ -]?name)\\b");
-
   private static final Pattern EXPLICIT_USER_FORK =
       Pattern.compile(
           "(?i)\\b(which|should i|do you prefer|choose between|either .+ or .+)\\b.*\\?",
@@ -33,12 +25,6 @@ public class AssistantClarificationGate {
           "(?i)\\b(file|attachment|document|\\.md|\\.txt|\\.json)\\b.*\\b(content|contents|"
               + "upload|reattach|attach|paste|provide|read)\\b|\\b(reattach|upload|attach|"
               + "paste|provide)\\b.*\\b(file|attachment|document|contents?)\\b",
-          Pattern.DOTALL);
-
-  private static final Pattern DOCUMENT_BACKED_REQUEST =
-      Pattern.compile(
-          "(?i)\\b(attached|attachment|file|document|source|requirements?|user stor|event"
-              + " storm|\\.md|\\.txt|\\.json)\\b",
           Pattern.DOTALL);
 
   /**
@@ -60,12 +46,25 @@ public class AssistantClarificationGate {
    * @return gated plan
    */
   public AssistantTurnPlan apply(AssistantTurnPlan plan, String userMessage) {
+    return apply(plan, userMessage, false);
+  }
+
+  /**
+   * Filters clarification questions using explicit backend context signals.
+   *
+   * @param plan planner output
+   * @param userMessage original user request
+   * @param sourceContextAvailable whether the backend already has source text for this turn
+   * @return gated plan
+   */
+  public AssistantTurnPlan apply(
+      AssistantTurnPlan plan, String userMessage, boolean sourceContextAvailable) {
     if (plan.kind() != AssistantTurnPlan.Kind.CLARIFICATION) {
       return plan;
     }
     List<AssistantChoice> meaningful = new ArrayList<>();
     for (AssistantChoice question : plan.questions()) {
-      if (question == null || isDeferrable(question, userMessage)) {
+      if (question == null || isDeferrable(question, sourceContextAvailable)) {
         continue;
       }
       meaningful.add(question);
@@ -97,6 +96,15 @@ public class AssistantClarificationGate {
    * of interrupting the user.
    */
   public boolean shouldDeferToProposal(AssistantTurnPlan plan, String userMessage) {
+    return shouldDeferToProposal(plan, userMessage, false);
+  }
+
+  /**
+   * Returns whether a mutation clarification should be resolved by replanning with defaults instead
+   * of interrupting the user.
+   */
+  public boolean shouldDeferToProposal(
+      AssistantTurnPlan plan, String userMessage, boolean sourceContextAvailable) {
     if (plan.intent() != AssistantTurnPlan.Intent.MUTATION
         || plan.kind() != AssistantTurnPlan.Kind.CLARIFICATION) {
       return false;
@@ -107,27 +115,34 @@ public class AssistantClarificationGate {
     if (plan.questions().isEmpty()) {
       return false;
     }
-    return plan.questions().stream().allMatch(question -> isDeferrable(question, userMessage));
+    return plan.questions().stream()
+        .allMatch(question -> isDeferrable(question, sourceContextAvailable));
   }
 
   /** Returns whether every question in the plan is deferrable. */
   public boolean isDeferrableClarification(AssistantTurnPlan plan, String userMessage) {
+    return isDeferrableClarification(plan, userMessage, false);
+  }
+
+  /** Returns whether every question in the plan is deferrable. */
+  public boolean isDeferrableClarification(
+      AssistantTurnPlan plan, String userMessage, boolean sourceContextAvailable) {
     if (plan.kind() != AssistantTurnPlan.Kind.CLARIFICATION || plan.questions().isEmpty()) {
       return false;
     }
-    return plan.questions().stream().allMatch(question -> isDeferrable(question, userMessage));
+    return plan.questions().stream()
+        .allMatch(question -> isDeferrable(question, sourceContextAvailable));
   }
 
-  private boolean isDeferrable(AssistantChoice question, String userMessage) {
+  private boolean isDeferrable(AssistantChoice question, boolean sourceContextAvailable) {
     if (question == null) {
       return true;
     }
     String prompt = question.prompt() == null ? "" : question.prompt().toLowerCase(Locale.ROOT);
-    if (TRIVIAL_PROMPT.matcher(prompt).find() || DEFERRABLE_PROMPT.matcher(prompt).find()) {
+    if (TRIVIAL_PROMPT.matcher(prompt).find()) {
       return true;
     }
-    if (DOCUMENT_BACKED_REQUEST.matcher(userMessage == null ? "" : userMessage).find()
-        && FILE_CONTENT_PROMPT.matcher(prompt).find()) {
+    if (sourceContextAvailable && FILE_CONTENT_PROMPT.matcher(prompt).find()) {
       return true;
     }
     for (AssistantChoice.Option option : question.options()) {
@@ -135,9 +150,7 @@ public class AssistantClarificationGate {
         continue;
       }
       String optionText = (option.label() + " " + option.description()).toLowerCase(Locale.ROOT);
-      if (DEFERRABLE_PROMPT.matcher(optionText).find()
-          || (DOCUMENT_BACKED_REQUEST.matcher(userMessage == null ? "" : userMessage).find()
-              && FILE_CONTENT_PROMPT.matcher(optionText).find())) {
+      if (sourceContextAvailable && FILE_CONTENT_PROMPT.matcher(optionText).find()) {
         return true;
       }
     }

@@ -23,17 +23,10 @@ feedback and no persisted proposal.
 There is **no REST approve or reject step**. The UI shows applied changes and offers **Undo** when
 an inverse patch is available.
 
-## Modeling Strategies
+## Modeling Contract
 
-Configure with `MODLESS_AI_MODELING_STRATEGY` (default `model-subset`).
-
-| Strategy         | How the LLM drafts changes                                                                                                                                         |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `model-subset`   | JSON Schema guided partial model subsets compiled deterministically into semantic operations                                                                       |
-| `semantic-patch` | Direct semantic operations (`ADD_ELEMENT`, `CONNECT_ELEMENTS`, `SET_ATTRIBUTE`, `DELETE_ELEMENT`) via a two-phase planner (optional tool exploration, then commit) |
-
-Both strategies share the same backend compiler, structural validation, repair loop, and auto-apply
-path.
+The assistant has one provider-facing mutation contract: `ModelDelta`. The backend owns IDs,
+containment checks, patch compilation, structural validation, persistence, audit records, and undo.
 
 ## Context Boundary
 
@@ -93,8 +86,8 @@ Resilience controls:
 - Provider retries with configurable backoff
 - Optional **fallback provider on HTTP 429 only** (`MODLESS_AI_FALLBACK_PROVIDER`)
 
-Retrieval embeddings default to local hash vectors (`MODLESS_AI_EMBEDDINGS_PROVIDER=HASH`). Enable
-ONNX with the `onnx-embeddings` Maven profile when higher-quality semantic retrieval is required.
+Retrieval embeddings default to ONNX (`MODLESS_AI_EMBEDDINGS_PROVIDER=ONNX`) with hash fallback for
+constrained local environments.
 
 ## Enable Safely
 

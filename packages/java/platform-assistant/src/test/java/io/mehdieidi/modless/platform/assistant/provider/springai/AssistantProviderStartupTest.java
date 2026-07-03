@@ -9,10 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
+import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
-import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
 import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
 import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
@@ -52,11 +52,11 @@ class AssistantProviderStartupTest {
         new AssistantToolService(
             mock(AssistantCatalog.class),
             new AssistantPatchCompiler(),
+            new DeltaCompiler(new AssistantMetamodelSchemaService()),
             new AssistantMetamodelSchemaService(),
             mock(ModelService.class),
             new ObjectMapper());
     AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
-    SemanticModelPatchParser patchParser = new SemanticModelPatchParser(new ObjectMapper());
 
     assertDoesNotThrow(
         () ->
@@ -66,12 +66,11 @@ class AssistantProviderStartupTest {
                 promptGuard,
                 tools,
                 hardening,
-                patchParser,
                 RestClient.builder()));
     assertDoesNotThrow(
         () ->
             new GeminiAssistantModelProvider(
-                properties, proxyAvailability, promptGuard, tools, hardening, patchParser));
+                properties, proxyAvailability, promptGuard, tools, hardening));
   }
 
   @Test
@@ -102,6 +101,7 @@ class AssistantProviderStartupTest {
         new AssistantToolService(
             mock(AssistantCatalog.class),
             new AssistantPatchCompiler(),
+            new DeltaCompiler(new AssistantMetamodelSchemaService()),
             new AssistantMetamodelSchemaService(),
             mock(ModelService.class),
             new ObjectMapper());
@@ -113,8 +113,7 @@ class AssistantProviderStartupTest {
                 proxyAvailability,
                 new AssistantPromptGuard(properties),
                 tools,
-                new AssistantHardeningService(properties, null),
-                new SemanticModelPatchParser(new ObjectMapper())));
+                new AssistantHardeningService(properties, null)));
   }
 
   @Test
@@ -144,6 +143,7 @@ class AssistantProviderStartupTest {
         new AssistantToolService(
             mock(AssistantCatalog.class),
             new AssistantPatchCompiler(),
+            new DeltaCompiler(new AssistantMetamodelSchemaService()),
             new AssistantMetamodelSchemaService(),
             mock(ModelService.class),
             new ObjectMapper());
@@ -153,8 +153,7 @@ class AssistantProviderStartupTest {
             new ProxyAvailability(properties),
             new AssistantPromptGuard(properties),
             tools,
-            new AssistantHardeningService(properties, null),
-            new SemanticModelPatchParser(new ObjectMapper()));
+            new AssistantHardeningService(properties, null));
 
     assertFalse(gemini.registerTools(AssistantModelRole.RESPONDER));
     assertFalse(gemini.registerTools(AssistantModelRole.PLANNER));
@@ -187,6 +186,7 @@ class AssistantProviderStartupTest {
         new AssistantToolService(
             mock(AssistantCatalog.class),
             new AssistantPatchCompiler(),
+            new DeltaCompiler(new AssistantMetamodelSchemaService()),
             new AssistantMetamodelSchemaService(),
             mock(ModelService.class),
             new ObjectMapper());
@@ -197,11 +197,9 @@ class AssistantProviderStartupTest {
             new AssistantPromptGuard(properties),
             tools,
             new AssistantHardeningService(properties, null),
-            new SemanticModelPatchParser(new ObjectMapper()),
             RestClient.builder());
 
     assertTrue(openai.registerTools(AssistantModelRole.RESPONDER));
     assertFalse(openai.registerTools(AssistantModelRole.PLANNER));
-    assertTrue(openai.registerPlannerExplorationTools());
   }
 }
