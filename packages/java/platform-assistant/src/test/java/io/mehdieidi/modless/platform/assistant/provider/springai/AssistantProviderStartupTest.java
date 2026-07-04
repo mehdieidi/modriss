@@ -51,7 +51,10 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
-            true);
+            true,
+            0,
+            0,
+            false);
     ProxyAvailability proxyAvailability = new ProxyAvailability(properties);
     AssistantPromptGuard promptGuard = new AssistantPromptGuard(properties);
     AssistantToolService tools =
@@ -107,7 +110,10 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
-            true);
+            true,
+            0,
+            0,
+            false);
     ProxyAvailability proxyAvailability = new ProxyAvailability(properties);
     AssistantToolService tools =
         new AssistantToolService(
@@ -156,7 +162,10 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
-            true);
+            true,
+            0,
+            0,
+            false);
     AssistantToolService tools =
         new AssistantToolService(
             mock(AssistantCatalog.class),
@@ -205,7 +214,10 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
-            true);
+            true,
+            0,
+            0,
+            false);
     AssistantToolService tools =
         new AssistantToolService(
             mock(AssistantCatalog.class),

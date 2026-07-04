@@ -86,6 +86,50 @@ class AssistantLiveEvalTest {
         gates.passedGates(), () -> gates.summary() + "\n" + gates.violations() + "\n" + baseline);
   }
 
+  @org.junit.jupiter.api.Timeout(900)
+  @Test
+  void liveRealScenarioPromptsPassQualityGates() throws Exception {
+    LiveEvalHarness harness = liveEvalHarness();
+    AssistantEvalRunner.LiveEvalBudget budget =
+        new AssistantEvalRunner.LiveEvalBudget(300_000L, 900_000L);
+    long suiteStarted = System.currentTimeMillis();
+    List<AssistantEvalRunner.EvalResult> results =
+        harness
+            .runner()
+            .run(
+                true,
+                toolBinder(harness.tools(), harness.mapper()),
+                harness.runner().loadRealScenarioPrompts(),
+                budget);
+    AssistantEvalRunner.QualityGateReport gates = harness.runner().qualityGateReport(results);
+    AssistantEvalRunner.LatencyReport latency = harness.runner().latencyReport(results);
+    String baseline = harness.runner().baselineReport(results);
+
+    System.out.println(
+        "Live real-scenario suite wall-clock: "
+            + (System.currentTimeMillis() - suiteStarted)
+            + "ms");
+    System.out.println(gates.summary());
+    System.out.println(latency.summary());
+    System.out.println(baseline);
+
+    writeGateReportIfRequested(true, results, gates, latency, baseline);
+
+    for (AssistantEvalRunner.EvalResult result : results) {
+      org.junit.jupiter.api.Assertions.assertTrue(
+          result.latencyMs() <= budget.maxTurnLatencyMs(),
+          () ->
+              result.id()
+                  + " exceeded turn budget at "
+                  + result.latencyMs()
+                  + "ms: "
+                  + result.failureMessage());
+    }
+
+    assertTrue(
+        gates.passedGates(), () -> gates.summary() + "\n" + gates.violations() + "\n" + baseline);
+  }
+
   @org.junit.jupiter.api.Timeout(300)
   @Test
   void liveStressEventStormingDocumentWithinTurnBudget() throws Exception {
@@ -296,7 +340,10 @@ class AssistantLiveEvalTest {
         integer(env, "MODLESS_AI_MAX_PROMPT_TOKENS", 24000),
         integer(env, "MODLESS_AI_MAX_SOURCE_CHUNK_TOKENS", 4000),
         integer(env, "MODLESS_AI_MAX_SOURCE_CHUNKS_PER_TURN", 24),
-        bool(env, "MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY", true));
+        bool(env, "MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY", true),
+        integer(env, "MODLESS_AI_MAX_PROVIDER_CALLS_PER_TURN", 4),
+        integer(env, "MODLESS_AI_MAX_PROVIDER_CALLS_SOURCE_TURN", 6),
+        bool(env, "MODLESS_AI_LLM_CONTRACT_RERANK_ENABLED", false));
   }
 
   private RestClient.Builder restClientBuilder(AiProperties properties) {

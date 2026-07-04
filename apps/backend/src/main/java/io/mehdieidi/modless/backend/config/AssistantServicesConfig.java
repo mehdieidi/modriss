@@ -32,6 +32,7 @@ import io.mehdieidi.modless.platform.assistant.planning.AssistantClarificationGa
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.assistant.retrieval.RetrievalCoordinator;
 import io.mehdieidi.modless.platform.assistant.session.AssistantSessionStore;
+import io.mehdieidi.modless.platform.assistant.source.LlmSourceEvidenceExtractor;
 import io.mehdieidi.modless.platform.assistant.source.SourceChunker;
 import io.mehdieidi.modless.platform.assistant.source.SourceCoverageMatrix;
 import io.mehdieidi.modless.platform.assistant.source.SourceEvidenceExtractor;
@@ -96,7 +97,12 @@ public class AssistantServicesConfig {
     String embeddingProvider =
         settings instanceof AiProperties ai ? ai.embeddings().provider().name() : "";
     return new RetrievalCoordinator(
-        metamodels, catalogs, contractStore, embeddingProvider, provider);
+        metamodels,
+        catalogs,
+        contractStore,
+        embeddingProvider,
+        provider,
+        settings.llmContractRerankEnabled());
   }
 
   @Bean

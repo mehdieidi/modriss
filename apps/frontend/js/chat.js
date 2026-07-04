@@ -171,6 +171,7 @@ export function resetChatActivityUi() {
   chatActivityHistory = [];
   clearThinkingStream();
   clearAssistantModelPreview({ restore: false });
+  updateChatComposerActionButton();
 }
 
 function applyWorkflowSnapshot(_workflowState, _message = null) {}
@@ -202,7 +203,12 @@ function scrollChatToBottom() {
   el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
 }
 
+function stripLegacyThinkingCancelButtons() {
+  el.chatMessages?.querySelectorAll(".chat-thinking-cancel").forEach((node) => node.remove());
+}
+
 function ensureThinkingStream(initialMessage = null, stage = "PLANNING") {
+  stripLegacyThinkingCancelButtons();
   if (!activeThinkingEl) {
     removeChatWelcome();
     const msg = document.createElement("div");
@@ -216,16 +222,6 @@ function ensureThinkingStream(initialMessage = null, stage = "PLANNING") {
     header.className = "chat-thinking-header";
     header.innerHTML =
       '<span class="chat-thinking-spinner" aria-hidden="true"></span><span class="chat-thinking-title">Working on your request</span>';
-    const cancel = document.createElement("button");
-    cancel.type = "button";
-    cancel.className = "chat-thinking-cancel";
-    cancel.textContent = "Cancel";
-    cancel.addEventListener("click", () => {
-      cancelActiveChatTurn().catch((error) => {
-        setError(error, { prefix: "Could not cancel assistant turn." });
-      });
-    });
-    header.appendChild(cancel);
     bubble.appendChild(header);
 
     const status = document.createElement("div");
@@ -476,9 +472,48 @@ async function cancelActiveChatTurn() {
     return;
   }
   activeTurnCanceling = true;
+  updateChatComposerActionButton();
   updateThinkingStatus("Cancel requested. Waiting for the backend to stop safely.", "CANCELING");
   clearAssistantModelPreview({ restore: true });
-  await api(`/chatbot/sessions/${sessionId}/cancel`, { method: "POST" });
+  try {
+    await api(`/chatbot/sessions/${sessionId}/cancel`, { method: "POST" });
+  } catch (error) {
+    activeTurnCanceling = false;
+    updateChatComposerActionButton();
+    throw error;
+  }
+}
+
+function updateChatComposerActionButton() {
+  if (!el.chatSendBtn) {
+    return;
+  }
+  const busy = chatBusyDepth > 0;
+  el.chatSendBtn.classList.toggle("is-stopping", busy);
+  el.chatSendBtn.disabled = busy && activeTurnCanceling;
+  if (busy) {
+    const label = activeTurnCanceling ? "Stopping..." : "Stop";
+    el.chatSendBtn.title = label;
+    el.chatSendBtn.setAttribute("aria-label", label);
+  } else {
+    el.chatSendBtn.title = "Send message";
+    el.chatSendBtn.setAttribute("aria-label", "Send message");
+  }
+}
+
+export function handleChatSendButtonClick() {
+  if (chatBusyDepth > 0) {
+    cancelActiveChatTurn().catch((error) => {
+      setError(error, { prefix: "Could not cancel assistant turn." });
+    });
+    return;
+  }
+  sendChatMessage();
+}
+
+export function initChatComposer() {
+  stripLegacyThinkingCancelButtons();
+  updateChatComposerActionButton();
 }
 
 function cloneValue(value) {
@@ -600,6 +635,7 @@ function applyHttpActivity(response) {
 function beginChatActivity(message, workflowState = null) {
   chatBusyDepth += 1;
   ensureThinkingStream(message, workflowState ? idleStageForWorkflow(workflowState) : "PLANNING");
+  updateChatComposerActionButton();
 }
 
 function endChatActivity(message = null, workflowState = null) {
@@ -610,6 +646,7 @@ function endChatActivity(message = null, workflowState = null) {
       applyWorkflowSnapshot(workflowState, message);
     }
   }
+  updateChatComposerActionButton();
 }
 
 function updateChatProviderLabel(provider) {
@@ -699,6 +736,8 @@ export async function prepareChatWindow() {
   if (chatBusyDepth === 0) {
     resetChatActivityUi();
   }
+  stripLegacyThinkingCancelButtons();
+  updateChatComposerActionButton();
   closeChatHistoryPanel();
   updateChatHeaderSubtitle();
   return ensureChatSession();
@@ -1607,6 +1646,9 @@ function defaultAttachmentMessage() {
 // ── Send message ──────────────────────────────────────────────────────────────
 
 export async function sendChatMessage() {
+  if (chatBusyDepth > 0) {
+    return;
+  }
   const typedText = el.chatInput.value.trim();
   const attachment = state.chat.attachment;
   if (!typedText && !attachment) {
@@ -1614,20 +1656,20 @@ export async function sendChatMessage() {
   }
   const text = typedText || defaultAttachmentMessage();
 
+  beginChatActivity("Understanding your request");
+  el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
+
   let response = null;
   try {
     const session = await ensureChatSession();
     if (!session) {
+      endChatActivity("Could not start chat session.", "FAILED");
       return;
     }
     const requestedModelId = state.modelId;
     const requestDiagramFingerprint = JSON.stringify(state.diagram || {});
     appendChat("user", text);
     el.chatInput.value = "";
-    el.chatSendBtn.disabled = true;
-
-    beginChatActivity("Understanding your request");
-    el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
 
     await ensureChatRealtime(chatScopeKey(state.activeType), state.activeType, session.sessionId);
 
@@ -1682,7 +1724,5 @@ export async function sendChatMessage() {
     }
     appendChat("assistant", formatUserError(error));
     setError(error, { prefix: "Chat failed." });
-  } finally {
-    el.chatSendBtn.disabled = false;
   }
 }

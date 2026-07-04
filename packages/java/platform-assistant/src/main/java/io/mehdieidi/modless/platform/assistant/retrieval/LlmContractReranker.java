@@ -13,14 +13,21 @@ import java.util.Map;
 public class LlmContractReranker {
 
   private final AssistantModelProvider provider;
+  private final boolean enabled;
 
   public LlmContractReranker(AssistantModelProvider provider) {
+    this(provider, false);
+  }
+
+  public LlmContractReranker(AssistantModelProvider provider, boolean enabled) {
     this.provider = provider;
+    this.enabled = enabled;
   }
 
   public List<ContractSearchHit> rerank(
       RetrievalPlan plan, List<ContractSearchHit> candidates, int limit) {
-    if (provider == null
+    if (!enabled
+        || provider == null
         || !provider.available()
         || candidates == null
         || candidates.size() <= limit

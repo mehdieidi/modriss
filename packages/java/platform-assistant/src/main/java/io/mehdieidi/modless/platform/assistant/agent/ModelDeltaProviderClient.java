@@ -30,7 +30,7 @@ public class ModelDeltaProviderClient {
       if (failure instanceof PlatformException platform) {
         throw platform;
       }
-      throw new PlatformException(502, "AI assistant ModelDelta was rejected by schema parsing.");
+      throw new PlatformException(422, "AI assistant ModelDelta was rejected by schema parsing.");
     }
   }
 }

@@ -28,7 +28,7 @@
     <link href="/css/glsp-canvas.css" rel="stylesheet" />
     <link href="/vendor/glsp/glsp-client.css" rel="stylesheet" />
     <link href="/css/modless-sprotty.css" rel="stylesheet" />
-    <link href="/css/chat.css" rel="stylesheet" />
+    <link href="/css/chat.css?v=chat-stop-20260704a" rel="stylesheet" />
     <link href="/css/artifact.css" rel="stylesheet" />
     <link href="/css/panels.css" rel="stylesheet" />
     <link href="/css/methodology.css" rel="stylesheet" />
@@ -1196,11 +1196,22 @@
               ></span>
               <input accept=".txt,.md,.json" id="chatFileInput" type="file" />
             </label>
-            <button class="chat-send-btn" id="chatSendBtn" title="Send message" type="button">
+            <button
+              class="chat-send-btn"
+              id="chatSendBtn"
+              title="Send message"
+              type="button"
+              aria-label="Send message"
+            >
               <span
                 aria-hidden="true"
-                class="chat-send-icon icon-svg icon-mask"
+                class="chat-send-icon chat-send-icon--send icon-svg icon-mask"
                 style="--icon-src: url(&quot;/assets/icons/send.svg&quot;)"
+              ></span>
+              <span
+                aria-hidden="true"
+                class="chat-send-icon chat-send-icon--stop icon-svg icon-mask"
+                style="--icon-src: url(&quot;/assets/icons/stop.svg&quot;)"
               ></span>
             </button>
           </div>
@@ -1540,7 +1551,7 @@
       </div>
     </div>
 
-    <script src="/backend-config.js?v=g6wired-20260624a"></script>
-    <script src="/js/main.js?v=g6wired-20260624a" type="module"></script>
+    <script src="/backend-config.js?v=chat-stop-20260704a"></script>
+    <script src="/js/main.js?v=chat-stop-20260704a" type="module"></script>
   </body>
 </html>

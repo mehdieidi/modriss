@@ -1,0 +1,96 @@
+[
+  {
+    "id": "real-cim-user-stories-clinic",
+    "category": "cim-source-document",
+    "level": "CIM",
+    "prompt": "Transform the attached user story requirements into a complete draft CIM model. Include actors, goals, user stories, business rules, domain terms, risks, assumptions, commands, events, and relationships grounded in the source.",
+    "emptyCanvas": true,
+    "sourceDocumentPath": "mde/samples/document-to-cim/community-clinic-user-stories.md",
+    "requiredContracts": ["Actor", "Command", "BusinessEvent", "Policy"],
+    "minOperations": 20,
+    "minElementAdds": 12,
+    "minConnections": 4,
+    "requiresSourceAnalysis": true,
+    "structuralExpectations": {
+      "requiredTypeFamilies": ["Actor"],
+      "minRelationships": 2,
+      "requireEvidenceIds": false,
+      "rejectPlaceholderOnlyNames": true
+    }
+  },
+  {
+    "id": "real-cim-eventstorming-marketplace",
+    "category": "cim-source-document",
+    "level": "CIM",
+    "prompt": "From the event storming workshop notes, create a complete draft CIM model covering actors, commands, events, policies, entities, goals, risks, and relationships.",
+    "emptyCanvas": true,
+    "sourceDocumentPath": "mde/samples/document-to-cim/marketplace-returns-event-storming.md",
+    "requiredContracts": ["Actor", "Command", "BusinessEvent", "Policy"],
+    "minOperations": 24,
+    "minElementAdds": 16,
+    "minConnections": 6,
+    "requiresSourceAnalysis": true,
+    "structuralExpectations": {
+      "requiredTypeFamilies": ["Actor", "Command"],
+      "minRelationships": 3,
+      "requireEvidenceIds": false,
+      "rejectPlaceholderOnlyNames": true
+    }
+  },
+  {
+    "id": "real-pim-create-library",
+    "category": "create-empty",
+    "level": "PIM",
+    "prompt": "Create a serverless library management backend with at least one API, two functions, one data store, and one event channel.",
+    "emptyCanvas": true,
+    "minOperations": 4,
+    "minElementAdds": 4,
+    "minConnections": 1,
+    "requiresSourceAnalysis": false
+  },
+  {
+    "id": "real-pim-extend-refund",
+    "category": "refine",
+    "level": "PIM",
+    "prompt": "Add refund processing to the payment workflow: create a Refund Payment function, a Payment Refunded event channel, and connect them through a workflow state that invokes the refund function.",
+    "emptyCanvas": false,
+    "requiredContracts": ["Workflow", "Function", "EventChannel"],
+    "minOperations": 2,
+    "minElementAdds": 1,
+    "minConnections": 0,
+    "requiresSourceAnalysis": false
+  },
+  {
+    "id": "real-pim-explain",
+    "category": "analysis",
+    "level": "PIM",
+    "prompt": "Explain how the payment workflow, functions, and events interact in this model.",
+    "emptyCanvas": false,
+    "minOperations": 0,
+    "minElementAdds": 0,
+    "minConnections": 0,
+    "requiresSourceAnalysis": false
+  },
+  {
+    "id": "real-psm-create-ticketing",
+    "category": "psm",
+    "level": "PSM",
+    "prompt": "Create an AWS serverless PSM skeleton for a ticketing platform with API Gateway, Lambda, DynamoDB, and EventBridge resources.",
+    "emptyCanvas": true,
+    "minOperations": 4,
+    "minElementAdds": 4,
+    "minConnections": 0,
+    "requiresSourceAnalysis": false
+  },
+  {
+    "id": "real-psm-explain-deployment",
+    "category": "psm",
+    "level": "PSM",
+    "prompt": "Explain deployment and operational risks for this AWS serverless PSM as if I am reviewing production readiness.",
+    "emptyCanvas": true,
+    "minOperations": 0,
+    "minElementAdds": 0,
+    "minConnections": 0,
+    "requiresSourceAnalysis": false
+  }
+]

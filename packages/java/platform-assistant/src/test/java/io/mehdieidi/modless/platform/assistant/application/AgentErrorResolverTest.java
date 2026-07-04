@@ -33,4 +33,16 @@ class AgentErrorResolverTest {
     assertEquals("SCHEMA_REJECTED", error.code());
     assertEquals(false, error.retryable());
   }
+
+  @Test
+  void mapsTurnBudgetExceededFailures() {
+    AgentError error =
+        AgentErrorResolver.resolve(
+            new PlatformException(429, "Assistant provider call budget exceeded for this turn."),
+            "PLANNING",
+            "turn-3");
+
+    assertEquals("TURN_BUDGET_EXCEEDED", error.code());
+    assertTrue(error.retryable());
+  }
 }

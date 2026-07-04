@@ -32,6 +32,8 @@ import {
 import { closeImpactPanel, toggleImpactMode } from "./impact.js";
 import {
   closeChatHistoryPanel,
+  handleChatSendButtonClick,
+  initChatComposer,
   prepareChatWindow,
   sendChatMessage,
   startNewChatConversation,
@@ -39,7 +41,7 @@ import {
   toggleChatHistoryPanel,
   uploadChatAttachment,
   updateChatAttachmentLabel,
-} from "./chat.js";
+} from "./chat.js?v=chat-stop-20260704a";
 import {
   bindProjectDialogActions,
   deleteCurrentProject,
@@ -1032,7 +1034,7 @@ function bindEvents() {
   });
   el.chatSendBtn?.addEventListener("click", () => {
     collapseChatInput();
-    sendChatMessage();
+    handleChatSendButtonClick();
   });
 
   el.chatFileInput?.addEventListener("change", async (event) => {
@@ -1141,6 +1143,7 @@ async function init() {
   bindProjectDialogActions();
   setupIdeMenus();
   bindEvents();
+  initChatComposer();
   installG6LargeGraphDevHelper({ renderDiagram, renderWorkbench: renderViewWorkbench });
   bindUnsavedModelGuard();
   initViewWorkbench({ renderDiagram, renderPalette });

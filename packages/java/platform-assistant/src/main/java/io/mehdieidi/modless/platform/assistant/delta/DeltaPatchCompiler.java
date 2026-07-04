@@ -116,6 +116,7 @@ class DeltaPatchCompiler {
     if (sourceElementId != null && !sourceElementId.isBlank()) {
       String ownerType = types.get(sourceElementId);
       if (ownerType != null && !referenceName.isBlank()) {
+        referenceName = canonicalContainmentName(level, ownerType, referenceName, type);
         schemas.requireContainment(level, ownerType, referenceName, type);
       }
     } else if (schemas.rootContainment(level, type).isEmpty()) {
@@ -222,7 +223,61 @@ class DeltaPatchCompiler {
         return "consumedByPolicies";
       }
     }
+    if ("ApiGatewayIntegration".equals(sourceType) && "AwsLambdaFunction".equals(targetType)) {
+      if ((normalized.contains("lambda") || normalized.contains("function"))
+          && candidates.contains("lambdaTarget")) {
+        return "lambdaTarget";
+      }
+    }
+    if ("EventBridgeRule".equals(sourceType) && "EventBridgeBus".equals(targetType)) {
+      if ((normalized.contains("bus") || normalized.equals("eventbus"))
+          && candidates.contains("bus")) {
+        return "bus";
+      }
+    }
+    if ("WorkflowState".equals(sourceType) && "Function".equals(targetType)) {
+      if ((normalized.contains("invoke") || normalized.contains("function"))
+          && candidates.contains("invokesFunction")) {
+        return "invokesFunction";
+      }
+    }
     return candidates.size() == 1 ? candidates.get(0) : requestedName;
+  }
+
+  private String canonicalContainmentName(
+      ModelLevel level, String ownerType, String requestedName, String childType) {
+    if (ownerType == null
+        || ownerType.isBlank()
+        || requestedName == null
+        || requestedName.isBlank()) {
+      return requestedName == null ? "" : requestedName;
+    }
+    try {
+      schemas.requireContainment(level, ownerType, requestedName, childType);
+      return requestedName;
+    } catch (PlatformException ignored) {
+      // Resolve common LLM containment aliases below.
+    }
+    List<AssistantMetamodelSchemaService.ReferenceSchema> candidates =
+        schemas.containments(level, ownerType, childType);
+    if (candidates.isEmpty()) {
+      return requestedName;
+    }
+    String normalized = requestedName.trim().toLowerCase(java.util.Locale.ROOT);
+    for (AssistantMetamodelSchemaService.ReferenceSchema candidate : candidates) {
+      String name = candidate.name();
+      if (name.equalsIgnoreCase(requestedName)) {
+        return name;
+      }
+      String lower = name.toLowerCase(java.util.Locale.ROOT);
+      if (normalized.equals(lower)
+          || normalized.equals(lower + "s")
+          || (normalized.endsWith("s")
+              && normalized.substring(0, normalized.length() - 1).equals(lower))) {
+        return name;
+      }
+    }
+    return candidates.size() == 1 ? candidates.get(0).name() : requestedName;
   }
 
   private SemanticModelPatch.Operation attributeOperation(

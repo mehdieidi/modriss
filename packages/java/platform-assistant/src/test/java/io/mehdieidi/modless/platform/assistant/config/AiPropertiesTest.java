@@ -15,7 +15,7 @@ class AiPropertiesTest {
     AiProperties properties =
         new AiProperties(
             false, null, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, null, null, null, null, null, null,
-            null, 0, 0, 0, 0, true);
+            null, 0, 0, 0, 0, true, 0, 0, false);
 
     assertFalse(properties.enabled());
     assertEquals("openai", properties.provider());
@@ -39,6 +39,9 @@ class AiPropertiesTest {
     assertEquals(24, properties.maxSourceChunksPerTurn());
     assertTrue(properties.requireIdempotencyKey());
     assertEquals(10, properties.reservedSchemaSnippets());
+    assertEquals(4, properties.maxProviderCallsPerTurn());
+    assertEquals(6, properties.maxProviderCallsSourceTurn());
+    assertFalse(properties.llmContractRerankEnabled());
     assertEquals("gpt-4o-mini", properties.modelFor(AssistantModelRole.RESPONDER));
   }
 
@@ -86,7 +89,10 @@ class AiPropertiesTest {
             0,
             0,
             0,
-            true);
+            true,
+            0,
+            0,
+            false);
 
     assertEquals(AiProperties.Provider.GEMINI, properties.providerKind());
     assertEquals("gemini-2.0-flash", properties.modelFor(AssistantModelRole.RESPONDER));

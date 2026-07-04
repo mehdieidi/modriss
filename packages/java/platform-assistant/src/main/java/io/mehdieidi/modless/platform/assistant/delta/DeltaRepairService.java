@@ -81,26 +81,29 @@ public class DeltaRepairService {
     String feedbackSummary =
         feedback == null || feedback.isEmpty()
             ? ""
-            : "\nValidator feedback to correct:\n"
-                + feedback.stream().limit(12).collect(Collectors.joining("\n"));
+            : "\nValidator feedback to correct (fix only these issues):\n"
+                + feedback.stream().limit(8).collect(Collectors.joining("\n"));
     AssistantModelProvider.AssistantPrompt prompt =
         new AssistantModelProvider.AssistantPrompt(
             AssistantModelRole.PLANNER,
             systemPrompt
-                + "\n\nThis is a mandatory replanning pass. Return kind=PATCH only."
+                + "\n\nThis is a mandatory replanning pass. Return kind=MODEL_DELTA only."
                 + "\nNever return CLARIFICATION or ANSWER for this mutation."
                 + "\nDo not ask the user about IDs, UUIDs, architecture style, runtime language,"
                 + " package manager, persistence technology, API style, or layout."
                 + "\nInfer safe enum defaults from the retrieved metamodel contracts and starter"
                 + " model. The backend will apply the validated change to the canvas."
-                + "\nModel only what the user asked for. Use as many operations as the request"
-                + " genuinely requires, including required nested contracts and attributes."
+                + "\nModel only what the user asked for. Use as many elements and references as the"
+                + " request genuinely requires, including required nested contracts and attributes."
+                + "\nReturn a focused ModelDelta that fixes the listed issues only."
+                + " Prefer attributeUpdates and small element additions over full regeneration."
                 + "\nRejected prior plan summary: "
                 + rejectedSummary
                 + feedbackSummary,
             "Original request:\n"
                 + (rootMessage == null ? "" : rootMessage)
-                + "\n\nReturn one complete PATCH that satisfies the request using safe defaults.",
+                + "\n\nReturn one ModelDelta JSON object that satisfies the request using safe"
+                + " defaults. Omit unchanged elements.",
             snippets);
     return modelingAgent.repair(level, null, context, prompt);
   }
@@ -117,7 +120,7 @@ public class DeltaRepairService {
       List<String> feedback,
       int repairNumber) {
     List<String> safeFeedback = feedback == null ? List.of() : feedback;
-    String feedbackText = safeFeedback.stream().limit(20).collect(Collectors.joining("\n"));
+    String feedbackText = safeFeedback.stream().limit(8).collect(Collectors.joining("\n"));
     List<AssistantModelProvider.ContextSnippet> repairContext = new ArrayList<>();
     repairContext.addAll(
         feedbackResolver.contractsForFeedback(level, safeFeedback, failed.patch(), 12));
@@ -142,16 +145,16 @@ public class DeltaRepairService {
     String requestWithFeedback =
         "Original user request:\n"
             + (requestMessage == null ? "" : requestMessage)
-            + "\n\nRejected turn plan:\n"
-            + failed
+            + "\n\nRejected semantic operations summary:\n"
+            + operationSummary(failed.patch())
             + "\n\nBackend structural validation feedback:\n"
             + feedbackText
             + "\n\n"
-            + "Return one complete replacement turn plan. Use PATCH only if you can correct every"
-            + " structural failure. Add the support elements and references explicitly reported in"
-            + " structural feedback, choosing safe reversible defaults. Do not repeat the rejected"
-            + " plan or ask the user to decide how to satisfy a structural requirement; use"
-            + " CLARIFICATION only when the missing decision is genuinely a domain choice.";
+            + "Return a focused ModelDelta patch that fixes ONLY the listed validation errors."
+            + " Prefer attributeUpdates, reference fixes, and small element additions."
+            + " Do NOT regenerate the entire model; omit unchanged elements."
+            + " Limit output to fixes for at most 8 issues. Use kind=MODEL_DELTA unless a genuine"
+            + " domain choice is missing.";
     AssistantModelProvider.AssistantPrompt prompt =
         new AssistantModelProvider.AssistantPrompt(
             AssistantModelRole.PLANNER,
@@ -184,7 +187,7 @@ public class DeltaRepairService {
       return "none";
     }
     return patch.operations().stream()
-        .limit(40)
+        .limit(15)
         .map(
             operation ->
                 operation.type()

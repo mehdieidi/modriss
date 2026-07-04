@@ -8,8 +8,10 @@ import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaSer
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Metamodel-driven normalization for provider-returned ModelDelta. */
 public class DeltaNormalizer {
@@ -57,10 +59,8 @@ public class DeltaNormalizer {
     String type = canonical(level, element.eClass());
     String originalId = element.localId();
     String localId =
-        originalId.isBlank()
-            ? "new_" + (localIds.size() + 1)
-            : originalId.replaceAll("[^A-Za-z0-9_-]", "_");
-    localIds.putIfAbsent(originalId, localId);
+        sanitizeLocalId(originalId.isBlank() ? "new_" + (localIds.size() + 1) : originalId);
+    registerLocalIdAliases(localIds, originalId, localId);
     ModelDelta.Placement placement = normalizePlacement(level, type, element.placement(), localIds);
     JsonNode attributes = canonicalizeAttributes(level, type, element.attributes());
     return new ModelDelta.Element(
@@ -149,6 +149,37 @@ public class DeltaNormalizer {
     } catch (PlatformException failure) {
       throw failure;
     }
+  }
+
+  private String sanitizeLocalId(String id) {
+    if (id == null || id.isBlank()) {
+      return id == null ? "" : id;
+    }
+    return id.replaceAll("[^A-Za-z0-9_-]", "_");
+  }
+
+  private void registerLocalIdAliases(
+      Map<String, String> localIds, String originalId, String canonicalId) {
+    for (String alias : idAliases(originalId)) {
+      localIds.putIfAbsent(alias, canonicalId);
+    }
+    for (String alias : idAliases(canonicalId)) {
+      localIds.putIfAbsent(alias, canonicalId);
+    }
+  }
+
+  private Set<String> idAliases(String id) {
+    Set<String> aliases = new LinkedHashSet<>();
+    if (id == null || id.isBlank()) {
+      return aliases;
+    }
+    aliases.add(id);
+    aliases.add(sanitizeLocalId(id));
+    aliases.add(id.replace('.', '-'));
+    aliases.add(id.replace('.', '_'));
+    aliases.add(id.replace('-', '_'));
+    aliases.add(id.replace('_', '-'));
+    return aliases;
   }
 
   private boolean isRootModelType(ModelLevel level, String type) {

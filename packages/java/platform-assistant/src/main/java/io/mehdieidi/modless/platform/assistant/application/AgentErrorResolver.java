@@ -34,9 +34,11 @@ public final class AgentErrorResolver {
               ? "STALE_REVISION"
               : "INTERNAL_ERROR";
       case 429 ->
-          message.contains("tool budget") || message.contains("agent step")
-              ? "TURN_DEADLINE_EXCEEDED"
-              : "PROVIDER_UNAVAILABLE";
+          message.contains("provider call budget")
+              ? "TURN_BUDGET_EXCEEDED"
+              : message.contains("tool budget") || message.contains("agent step")
+                  ? "TURN_DEADLINE_EXCEEDED"
+                  : "PROVIDER_UNAVAILABLE";
       case 499 -> "CANCELED";
       case 502 ->
           message.contains("schema") || message.contains("modeldelta")
@@ -57,7 +59,8 @@ public final class AgentErrorResolver {
           "PROVIDER_TIMEOUT",
           "PROVIDER_UNAVAILABLE",
           "CANCELED",
-          "TURN_DEADLINE_EXCEEDED" ->
+          "TURN_DEADLINE_EXCEEDED",
+          "TURN_BUDGET_EXCEEDED" ->
           true;
       default -> false;
     };

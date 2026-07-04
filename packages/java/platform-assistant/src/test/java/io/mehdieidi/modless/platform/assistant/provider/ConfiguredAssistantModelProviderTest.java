@@ -21,7 +21,7 @@ class ConfiguredAssistantModelProviderTest {
     AiProperties properties =
         new AiProperties(
             true, "openai", null, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, null, null, null, null, null,
-            null, null, 0, 0, 0, 0, true);
+            null, null, 0, 0, 0, 0, true, 0, 0, false);
     OpenAiCompatibleAssistantModelProvider openai =
         mock(OpenAiCompatibleAssistantModelProvider.class);
     GeminiAssistantModelProvider gemini = mock(GeminiAssistantModelProvider.class);

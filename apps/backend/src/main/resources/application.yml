@@ -58,6 +58,9 @@ modless:
     request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:5m}
     turn-timeout: ${MODLESS_AI_TURN_TIMEOUT:5m}
     max-repair-attempts: ${MODLESS_AI_MAX_REPAIR_ATTEMPTS:1}
+    max-provider-calls-per-turn: ${MODLESS_AI_MAX_PROVIDER_CALLS_PER_TURN:4}
+    max-provider-calls-source-turn: ${MODLESS_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:6}
+    llm-contract-rerank-enabled: ${MODLESS_AI_LLM_CONTRACT_RERANK_ENABLED:false}
     max-tool-calls: ${MODLESS_AI_MAX_TOOL_CALLS:24}
     max-agent-steps: ${MODLESS_AI_MAX_AGENT_STEPS:8}
     max-tool-calls-per-step: ${MODLESS_AI_MAX_TOOL_CALLS_PER_STEP:4}

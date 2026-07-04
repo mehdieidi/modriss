@@ -109,7 +109,8 @@ class DeltaRepairServiceTest {
         ArgumentCaptor.forClass(AssistantModelProvider.AssistantPrompt.class);
     verify(modelingAgent).repair(eq(ModelLevel.PIM), eq(null), eq(null), prompt.capture());
     assertTrue(prompt.getValue().system().contains("validator-guided repair pass 1"));
-    assertTrue(prompt.getValue().user().contains("Rejected turn plan"));
+    assertTrue(prompt.getValue().user().contains("Rejected semantic operations summary"));
+    assertTrue(prompt.getValue().user().contains("focused ModelDelta patch"));
     assertTrue(prompt.getValue().user().contains("Function must be contained"));
   }
 

@@ -482,6 +482,7 @@ public class AssistantOrchestrator {
           "requestedRevision",
           request.revision());
       AssistantTurnRequest enrichedRequest = enrichWithSourceAnalysis(session, request);
+      ProviderCallBudget.bind(providerCallBudgetFor(enrichedRequest));
 
       long contextStarted = System.nanoTime();
       checkTurnActive(session);
@@ -560,6 +561,9 @@ public class AssistantOrchestrator {
             "toolCalls",
             toolCalls);
       } catch (PlatformException failure) {
+        if (isDeltaCompileFailure(failure)) {
+          throw failure;
+        }
         if (failure.status() < 500 && failure.status() != 429) {
           throw failure;
         }
@@ -586,7 +590,8 @@ public class AssistantOrchestrator {
       AssistantTurnResponse response =
           switch (plan.kind()) {
             case ANSWER -> {
-              if (plan.intent() == AssistantTurnPlan.Intent.MUTATION) {
+              if (plan.intent() == AssistantTurnPlan.Intent.MUTATION
+                  || shouldForceMutationProposal(enrichedRequest)) {
                 if (plan.patch().operations().isEmpty()) {
                   plan = replanWithSafeDefaults(session, enrichedRequest, context, snippets, plan);
                 }
@@ -705,7 +710,10 @@ public class AssistantOrchestrator {
     } catch (PlatformException failure) {
       AgentError error = AgentErrorResolver.resolve(failure, "TURN_EXECUTION", trace.turnId());
       turnExecutions.fail(trace.turnId(), failure.status(), failure.getMessage());
-      if (failure.status() == 499 || failure.status() == 504 || error.retryable()) {
+      if (failure.status() == 499
+          || failure.status() == 504
+          || failure.status() == 502
+          || error.retryable()) {
         AssistantTurnResponse response =
             finishTurn(
                 session,
@@ -723,6 +731,7 @@ public class AssistantOrchestrator {
       throw failure;
     } finally {
       cancellations.failOpen(session.id(), trace.turnId());
+      ProviderCallBudget.clear();
       currentTrace.remove();
       currentPhaseTimings.remove();
       currentRetrievalDiagnostics.remove();
@@ -890,21 +899,88 @@ public class AssistantOrchestrator {
     }
     List<String> candidateTypes =
         intent == null || intent.candidateTypes() == null ? List.of() : intent.candidateTypes();
-    ModelingAgent.AgentLoopResult loopResult =
-        modelingAgent.plan(
-            session.level(),
-            baseModel,
-            context,
-            prompt,
-            (stage, message) -> publishProgress(session.id(), stage, message),
-            candidateTypes);
-    AssistantTurnPlan plan = loopResult.plan();
-    int toolCalls = loopResult.toolCalls();
+    int maxCompileRepairs = Math.max(0, properties.validationRepairAttempts());
+    String compileFailure = null;
+    AssistantTurnPlan plan = null;
+    int toolCalls = 0;
+    int agentSteps = 0;
+    for (int compileAttempt = 0; compileAttempt <= maxCompileRepairs; compileAttempt++) {
+      try {
+        if (compileAttempt == 0) {
+          ModelingAgent.AgentLoopResult loopResult =
+              modelingAgent.plan(
+                  session.level(),
+                  baseModel,
+                  context,
+                  prompt,
+                  (stage, message) -> publishProgress(session.id(), stage, message),
+                  candidateTypes);
+          plan = loopResult.plan();
+          toolCalls = Math.max(toolCalls, loopResult.toolCalls());
+          agentSteps = loopResult.steps();
+        } else {
+          publishProgress(
+              session.id(),
+              "COMPLETING",
+              "Fixing ModelDelta structural compile errors before validation");
+          checkTurnActive(session);
+          AssistantTurnPlan failedPlan =
+              plan == null
+                  ? new AssistantTurnPlan(
+                      AssistantTurnPlan.Intent.MUTATION,
+                      AssistantTurnPlan.Kind.PATCH,
+                      "",
+                      List.of(),
+                      new SemanticModelPatch(List.of()))
+                  : plan;
+          plan =
+              repairService.repair(
+                  session.level(),
+                  turnPrompt(session, request, context),
+                  request.message(),
+                  baseModel,
+                  context,
+                  snippets,
+                  failedPlan,
+                  List.of(compileFailure),
+                  compileAttempt);
+          toolCalls = Math.max(toolCalls, tools.consumeToolCallCount());
+        }
+        if (plan != null && plan.kind() != AssistantTurnPlan.Kind.PATCH) {
+          break;
+        }
+        if (plan != null && !plan.patch().operations().isEmpty()) {
+          break;
+        }
+        compileFailure = "The ModelDelta compiled to no semantic operations.";
+      } catch (PlatformException failure) {
+        if (!isDeltaCompileFailure(failure)) {
+          throw failure;
+        }
+        if (isModelDeltaProviderFailure(failure)) {
+          throw failure;
+        }
+        compileFailure = failure.getMessage();
+        logTurnInfo(
+            "model_delta_compile_failed",
+            "compileAttempt",
+            compileAttempt,
+            "message",
+            compileFailure);
+        if (compileAttempt >= maxCompileRepairs) {
+          throw failure;
+        }
+      }
+    }
+    if (plan == null) {
+      throw new PlatformException(
+          422, compileFailure == null ? "ModelDelta compile failed." : compileFailure);
+    }
     metrics.recordAssistantToolCalls(toolCalls);
     log.info(
         "Assistant agent loop completed sessionId={} steps={} toolCalls={} snippets={}",
         session.id(),
-        loopResult.steps(),
+        agentSteps,
         toolCalls,
         snippets.size());
     logTurnPhase(
@@ -913,7 +989,7 @@ public class AssistantOrchestrator {
         "protocol",
         "MODEL_DELTA",
         "steps",
-        loopResult.steps(),
+        agentSteps,
         "toolCalls",
         toolCalls,
         "planKind",
@@ -923,6 +999,40 @@ public class AssistantOrchestrator {
         "operations",
         plan.patch().operations().size());
     return new InitialPlanResult(plan, toolCalls);
+  }
+
+  private boolean isModelDeltaProviderFailure(PlatformException failure) {
+    if (failure == null) {
+      return false;
+    }
+    String message = failure.getMessage();
+    if (message == null) {
+      return false;
+    }
+    String normalized = message.toLowerCase(java.util.Locale.ROOT);
+    return normalized.contains("modeldelta") || normalized.contains("schema parsing");
+  }
+
+  private boolean isDeltaCompileFailure(PlatformException failure) {
+    if (failure == null) {
+      return false;
+    }
+    if (isModelDeltaProviderFailure(failure)) {
+      return true;
+    }
+    if (failure.status() != 422) {
+      return false;
+    }
+    String message = failure.getMessage();
+    if (message == null || message.isBlank()) {
+      return false;
+    }
+    String normalized = message.toLowerCase(java.util.Locale.ROOT);
+    return normalized.contains("modeldelta")
+        || normalized.contains("not grounded in the metamodel")
+        || normalized.contains("requires localid")
+        || normalized.contains("containment")
+        || normalized.contains("unknown or cyclic owner");
   }
 
   private AssistantTurnRequest enrichWithSourceAnalysis(
@@ -1173,6 +1283,20 @@ public class AssistantOrchestrator {
                 attempt.feedback(),
                 repairNumber);
       } catch (PlatformException failure) {
+        if (isDeltaCompileFailure(failure) || isModelDeltaProviderFailure(failure)) {
+          logTurnInfo(
+              "repair_pass_failed",
+              "repairNumber",
+              repairNumber,
+              "status",
+              failure.status(),
+              "message",
+              failure.getMessage());
+          if (repairNumber >= maxRepairAttempts) {
+            break;
+          }
+          continue;
+        }
         if (failure.status() < 500 && failure.status() != 429) {
           throw failure;
         }
@@ -1389,7 +1513,8 @@ public class AssistantOrchestrator {
         replanWithSafeDefaults(session, request, context, snippets, original);
     if (replanned.kind() == AssistantTurnPlan.Kind.CLARIFICATION
         && clarificationGate.shouldDeferToProposal(
-            replanned, request.rootMessage(), sourceContextAvailable(request))) {
+            replanned, request.rootMessage(), sourceContextAvailable(request))
+        && ProviderCallBudget.hasRemaining()) {
       replanned = replanWithSafeDefaults(session, request, context, snippets, replanned);
     }
     if (replanned.kind() == AssistantTurnPlan.Kind.CLARIFICATION) {
@@ -1402,6 +1527,14 @@ public class AssistantOrchestrator {
   private boolean sourceContextAvailable(AssistantTurnRequest request) {
     return request != null
         && (!blank(request.attachmentContent()) || !blank(request.sourceAnalysis()));
+  }
+
+  private boolean shouldForceMutationProposal(AssistantTurnRequest request) {
+    IntentPlanner.IntentDecision decision = currentIntentDecision.get();
+    if (decision != null) {
+      return decision.intent() == IntentPlanner.Intent.MUTATION;
+    }
+    return false;
   }
 
   private boolean samePatch(AssistantTurnPlan left, AssistantTurnPlan right) {
@@ -1427,6 +1560,10 @@ public class AssistantOrchestrator {
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantTurnPlan rejected,
       List<String> feedback) {
+    if (!ProviderCallBudget.hasRemaining()) {
+      logTurnInfo("replan_skipped", "reason", "provider_call_budget_exceeded");
+      return rejected;
+    }
     publishProgress(
         session.id(),
         "PLANNING",
@@ -3071,6 +3208,13 @@ public class AssistantOrchestrator {
         + "\n";
   }
 
+  private int providerCallBudgetFor(AssistantTurnRequest request) {
+    if (request != null && !blank(request.attachmentContent())) {
+      return properties.maxProviderCallsSourceTurn();
+    }
+    return properties.maxProviderCallsPerTurn();
+  }
+
   private String evalCategory(AssistantTurnRequest request, AssistantModelContext context) {
     if (request.selectedElementIds() != null && !request.selectedElementIds().isEmpty()) {
       return "selected-element";
@@ -3103,7 +3247,7 @@ public class AssistantOrchestrator {
         turnDiagnostics.create(
             stage,
             snippetCount,
-            stage == null || stage.isBlank() ? 0 : 1,
+            ProviderCallBudget.count(),
             toolCalls,
             repairAttempts,
             outcome,

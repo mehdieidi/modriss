@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class ModelDeltaParserTest {
@@ -202,6 +203,126 @@ class ModelDeltaParserTest {
                   "message": "Missing intent"
                 }
                 """));
+  }
+
+  @Test
+  void coercesMissingAttributesToEmptyObject() {
+    ModelDelta delta =
+        parser.parse(
+            """
+            {
+              "intent": "MUTATION",
+              "kind": "MODEL_DELTA",
+              "message": "Created API without explicit attributes object.",
+              "elements": [
+                {
+                  "localId": "api-1",
+                  "eClass": "API",
+                  "placement": {"ownerId": "root", "referenceName": "apis"}
+                }
+              ]
+            }
+            """);
+
+    assertEquals(1, delta.elements().size());
+    assertEquals("{}", delta.elements().get(0).attributes().toString());
+  }
+
+  @Test
+  void coercesNullAttributesToEmptyObject() {
+    ModelDelta delta =
+        parser.parse(
+            """
+            {
+              "intent": "MUTATION",
+              "kind": "MODEL_DELTA",
+              "message": "Created function.",
+              "elements": [
+                {
+                  "localId": "fn-1",
+                  "eClass": "Function",
+                  "attributes": null,
+                  "placement": {"ownerId": "root", "referenceName": "functions"}
+                }
+              ]
+            }
+            """);
+
+    assertEquals("{}", delta.elements().get(0).attributes().toString());
+  }
+
+  @Test
+  void convertsAttributeArrayEntriesToObject() {
+    ModelDelta delta =
+        parser.parse(
+            """
+            {
+              "intent": "MUTATION",
+              "kind": "MODEL_DELTA",
+              "message": "Created function.",
+              "elements": [
+                {
+                  "localId": "fn-1",
+                  "eClass": "Function",
+                  "attributes": [
+                    {"name": "name", "value": "Health Check"},
+                    {"attributeName": "summary", "value": "Returns service health."}
+                  ],
+                  "placement": {"ownerId": "root", "referenceName": "functions"}
+                }
+              ]
+            }
+            """);
+
+    assertEquals("Health Check", delta.elements().get(0).attributes().get("name").asText());
+    assertEquals(
+        "Returns service health.", delta.elements().get(0).attributes().get("summary").asText());
+  }
+
+  @Test
+  void expandsSourceFactIdsAliasToEvidenceIds() {
+    ModelDelta delta =
+        parser.parse(
+            """
+            {
+              "intent": "MUTATION",
+              "kind": "MODEL_DELTA",
+              "message": "Created actor from source.",
+              "elements": [
+                {
+                  "localId": "actor-1",
+                  "eClass": "Actor",
+                  "attributes": {"name": "Patient"},
+                  "placement": {"ownerId": "root", "referenceName": "actors"},
+                  "sourceFactIds": ["fact-1", "fact-2"]
+                }
+              ]
+            }
+            """);
+
+    assertEquals(List.of("fact-1", "fact-2"), delta.elements().get(0).evidenceIds());
+  }
+
+  @Test
+  void allowsMissingPlacementForNormalizerBackfill() {
+    ModelDelta delta =
+        parser.parse(
+            """
+            {
+              "intent": "MUTATION",
+              "kind": "MODEL_DELTA",
+              "message": "Created actor.",
+              "elements": [
+                {
+                  "localId": "actor-1",
+                  "eClass": "Actor",
+                  "attributes": {"name": "Patient"}
+                }
+              ]
+            }
+            """);
+
+    assertEquals(null, delta.elements().get(0).placement());
   }
 
   @Test

@@ -64,6 +64,21 @@ public interface AssistantSettings {
     return true;
   }
 
+  /** Maximum provider calls allowed for a standard assistant turn. */
+  default int maxProviderCallsPerTurn() {
+    return 4;
+  }
+
+  /** Maximum provider calls allowed when a source attachment is processed. */
+  default int maxProviderCallsSourceTurn() {
+    return 6;
+  }
+
+  /** Whether hybrid contract retrieval may invoke an LLM rerank pass. */
+  default boolean llmContractRerankEnabled() {
+    return false;
+  }
+
   /** Rate-limit and circuit-breaker settings. */
   Hardening hardening();
 

@@ -3,6 +3,7 @@ package io.mehdieidi.modless.platform.assistant.delta;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
@@ -91,22 +92,29 @@ public class ModelDeltaParser {
       if (!(item instanceof ObjectNode object)) {
         throw new PlatformException(502, "ModelDelta elements must be JSON objects.");
       }
+      coerceEvidenceIdsAlias(object);
       requireOnlyProperties(
           object,
           "ModelDelta element",
           Set.of("localId", "eClass", "attributes", "placement", "references", "evidenceIds"));
-      ObjectNode attributes =
-          requireObject(object.path("attributes"), "ModelDelta element attributes");
+      ObjectNode attributes = coerceAttributes(object.path("attributes"));
       result.add(
           new ModelDelta.Element(
               requireText(object, "localId", "ModelDelta element"),
               requireText(object, "eClass", "ModelDelta element"),
               attributes.deepCopy(),
-              parsePlacement(object.path("placement")),
+              parseOptionalPlacement(object.path("placement")),
               parseReferences(object.path("references")),
               strings(object.path("evidenceIds"))));
     }
     return List.copyOf(result);
+  }
+
+  private ModelDelta.Placement parseOptionalPlacement(JsonNode node) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return null;
+    }
+    return parsePlacement(node);
   }
 
   private ModelDelta.Placement parsePlacement(JsonNode node) {
@@ -116,6 +124,40 @@ public class ModelDeltaParser {
     return new ModelDelta.Placement(
         requireText(object, "ownerId", "ModelDelta placement"),
         requireText(object, "referenceName", "ModelDelta placement"));
+  }
+
+  private ObjectNode coerceAttributes(JsonNode node) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return JsonNodeFactory.instance.objectNode();
+    }
+    if (node instanceof ObjectNode object) {
+      return object;
+    }
+    if (node instanceof ArrayNode array) {
+      ObjectNode converted = JsonNodeFactory.instance.objectNode();
+      for (JsonNode item : array) {
+        if (!(item instanceof ObjectNode entry)) {
+          continue;
+        }
+        if (entry.has("name") && entry.has("value")) {
+          converted.set(entry.get("name").asText(""), entry.get("value"));
+        } else if (entry.has("attributeName") && entry.has("value")) {
+          converted.set(entry.get("attributeName").asText(""), entry.get("value"));
+        }
+      }
+      return converted;
+    }
+    throw new PlatformException(502, "ModelDelta element attributes must be a JSON object.");
+  }
+
+  private void coerceEvidenceIdsAlias(ObjectNode object) {
+    if (object == null) {
+      return;
+    }
+    if (object.has("sourceFactIds") && !object.has("evidenceIds")) {
+      object.set("evidenceIds", object.get("sourceFactIds"));
+    }
+    object.remove("sourceFactIds");
   }
 
   private List<ModelDelta.Reference> parseReferences(JsonNode node) {
@@ -129,6 +171,7 @@ public class ModelDeltaParser {
         throw new PlatformException(502, "ModelDelta references must be JSON objects.");
       }
       coerceReferenceNameAlias(object);
+      coerceEvidenceIdsAlias(object);
       requireOnlyProperties(
           object,
           "ModelDelta reference",
@@ -169,6 +212,22 @@ public class ModelDeltaParser {
         throw new PlatformException(502, "ModelDelta attributeUpdates must be JSON objects.");
       }
       coerceAttributeNameAlias(object);
+      JsonNode nestedAttributes = object.get("attributes");
+      if (nestedAttributes != null && nestedAttributes.isObject()) {
+        String elementId = object.path("elementId").asText("");
+        if (elementId.isBlank()) {
+          throw new PlatformException(
+              502, "ModelDelta attributeUpdate with attributes requires elementId.");
+        }
+        nestedAttributes
+            .fields()
+            .forEachRemaining(
+                entry ->
+                    result.add(
+                        new ModelDelta.AttributeUpdate(
+                            elementId, entry.getKey(), entry.getValue())));
+        continue;
+      }
       requireOnlyProperties(
           object, "ModelDelta attributeUpdate", Set.of("elementId", "attributeName", "value"));
       if (!object.has("value")) {
@@ -241,9 +300,27 @@ public class ModelDeltaParser {
   }
 
   private AssistantTurnPlan.Intent parseIntent(String value) {
-    return switch (value.trim().toUpperCase(Locale.ROOT)) {
-      case "INFORMATION" -> AssistantTurnPlan.Intent.INFORMATION;
+    String normalized = value.trim().toUpperCase(Locale.ROOT);
+    return switch (normalized) {
+      case "INFORMATION",
+          "EXPLAIN",
+          "EXPLAIN_MODEL",
+          "ANSWER",
+          "READ",
+          "QUERY",
+          "QUESTION",
+          "CLARIFICATION" ->
+          AssistantTurnPlan.Intent.INFORMATION;
       case "MUTATION",
+          "CREATE",
+          "UPDATE",
+          "EDIT",
+          "DELETE",
+          "MODIFY",
+          "EXTEND",
+          "BUILD",
+          "MODEL",
+          "MODELING",
           "CREATE_MODEL",
           "EXTEND_MODEL",
           "EDIT_MODEL",

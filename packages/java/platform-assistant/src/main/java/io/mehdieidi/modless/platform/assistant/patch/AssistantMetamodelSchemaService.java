@@ -60,13 +60,36 @@ public class AssistantMetamodelSchemaService {
     if (exact.isPresent()) {
       return exact.get().name();
     }
-    String candidate = type == null ? "" : type.trim().toLowerCase(Locale.ROOT);
+    String candidate = type == null ? "" : type.trim();
+    if (candidate.isBlank()) {
+      throw new PlatformException(422, "Unknown metamodel element type: " + type);
+    }
+    List<String> caseInsensitiveMatches =
+        schema.types().values().stream()
+            .map(TypeSchema::name)
+            .filter(name -> name.equalsIgnoreCase(candidate))
+            .toList();
+    if (caseInsensitiveMatches.size() == 1) {
+      return caseInsensitiveMatches.get(0);
+    }
+    String normalized = candidate.toLowerCase(Locale.ROOT);
+    List<String> suffixMatches =
+        schema.types().values().stream()
+            .map(TypeSchema::name)
+            .filter(
+                name ->
+                    normalized.length() > name.length()
+                        && normalized.endsWith(name.toLowerCase(Locale.ROOT)))
+            .toList();
+    if (suffixMatches.size() == 1) {
+      return suffixMatches.get(0);
+    }
     List<String> prefixMatches =
-        candidate.length() < 5
+        normalized.length() < 5
             ? List.of()
             : schema.types().values().stream()
                 .map(TypeSchema::name)
-                .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(candidate))
+                .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(normalized))
                 .toList();
     if (prefixMatches.size() == 1) {
       return prefixMatches.get(0);

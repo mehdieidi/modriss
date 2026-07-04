@@ -39,6 +39,16 @@ public class RetrievalCoordinator {
       AssistantMetamodelContractStore contractStore,
       String embeddingProvider,
       AssistantModelProvider provider) {
+    this(metamodels, catalogs, contractStore, embeddingProvider, provider, false);
+  }
+
+  public RetrievalCoordinator(
+      MetamodelKnowledgeService metamodels,
+      AssistantCatalog catalogs,
+      AssistantMetamodelContractStore contractStore,
+      String embeddingProvider,
+      AssistantModelProvider provider,
+      boolean llmContractRerankEnabled) {
     this.metamodels = metamodels;
     this.catalogs = catalogs;
     this.contractStore =
@@ -46,7 +56,7 @@ public class RetrievalCoordinator {
     this.embeddingProvider = embeddingProvider == null ? "" : embeddingProvider;
     this.documentBuilder = new MetamodelRetrievalDocumentBuilder(metamodels);
     this.reranker = new RetrievalReranker();
-    this.llmReranker = new LlmContractReranker(provider);
+    this.llmReranker = new LlmContractReranker(provider, llmContractRerankEnabled);
   }
 
   /** Retrieves context for a structured plan and always includes required contract closure. */

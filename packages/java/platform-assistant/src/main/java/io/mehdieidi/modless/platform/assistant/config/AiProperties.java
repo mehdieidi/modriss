@@ -35,6 +35,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxSourceChunkTokens maximum source chunk token budget
  * @param maxSourceChunksPerTurn maximum source chunks processed in one turn
  * @param requireIdempotencyKey whether client turn idempotency keys are required
+ * @param maxProviderCallsPerTurn maximum provider calls for a standard turn
+ * @param maxProviderCallsSourceTurn maximum provider calls when source analysis runs
+ * @param llmContractRerankEnabled whether hybrid retrieval may invoke LLM reranking
  */
 @ConfigurationProperties(prefix = "modless.ai")
 public record AiProperties(
@@ -62,7 +65,10 @@ public record AiProperties(
     int maxPromptTokens,
     int maxSourceChunkTokens,
     int maxSourceChunksPerTurn,
-    boolean requireIdempotencyKey)
+    boolean requireIdempotencyKey,
+    int maxProviderCallsPerTurn,
+    int maxProviderCallsSourceTurn,
+    boolean llmContractRerankEnabled)
     implements AssistantSettings {
 
   /** Applies conservative defaults for local development. */
@@ -101,6 +107,13 @@ public record AiProperties(
         openaiCompatible == null ? new OpenAiCompatible(null, null) : openaiCompatible;
     gemini = gemini == null ? new Gemini(null) : gemini;
     models = models == null ? new Models(null, null, null) : models;
+    maxProviderCallsPerTurn = maxProviderCallsPerTurn <= 0 ? 4 : maxProviderCallsPerTurn;
+    maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 6 : maxProviderCallsSourceTurn;
+  }
+
+  @Override
+  public boolean llmContractRerankEnabled() {
+    return llmContractRerankEnabled;
   }
 
   /**

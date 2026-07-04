@@ -596,6 +596,10 @@
   font: 600 12px/1.3 var(--font-ui);
 }
 
+.chat-thinking-cancel {
+  display: none !important;
+}
+
 .chat-thinking-spinner {
   width: 12px;
   height: 12px;
@@ -1261,6 +1265,20 @@
   height: 15px;
 }
 
+.chat-send-btn .chat-send-icon--stop {
+  display: none;
+  width: 11px;
+  height: 11px;
+}
+
+.chat-send-btn.is-stopping .chat-send-icon--send {
+  display: none;
+}
+
+.chat-send-btn.is-stopping .chat-send-icon--stop {
+  display: inline-flex;
+}
+
 .chat-send-btn:hover:not(:disabled) {
   box-shadow: 0 8px 18px color-mix(in srgb, var(--accent-glow) 72%, transparent);
   transform: translateY(-1px);
@@ -1271,6 +1289,27 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.chat-send-btn.is-stopping {
+  border-color: color-mix(in srgb, var(--text-strong) 28%, transparent);
+  background: color-mix(in srgb, var(--text-strong) 90%, #000 10%);
+  color: color-mix(in srgb, var(--surface-1) 96%, #fff 4%);
+}
+
+.chat-send-btn.is-stopping .chat-send-icon.icon-svg.icon-mask {
+  width: 11px;
+  height: 11px;
+}
+
+.chat-send-btn.is-stopping:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--text-strong) 24%, transparent);
+}
+
+.chat-send-btn.is-stopping:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 @media (max-width: 920px) {

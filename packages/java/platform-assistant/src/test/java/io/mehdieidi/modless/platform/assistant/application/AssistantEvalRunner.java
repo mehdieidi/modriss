@@ -1,5 +1,6 @@
 package io.mehdieidi.modless.platform.assistant.application;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +21,8 @@ import io.mehdieidi.modless.platform.assistant.source.SourceUnderstandingService
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -83,17 +86,86 @@ public final class AssistantEvalRunner {
     return loadPromptsFromResource("/assistant-eval-live-gate-prompts.json");
   }
 
+  /** Loads real-world scenario prompts backed by repository sample documents. */
+  public List<EvalPrompt> loadRealScenarioPrompts() {
+    return loadPromptsFromResource("/assistant-eval-real-scenarios-prompts.json", true);
+  }
+
   private List<EvalPrompt> loadPromptsFromResource(String resourcePath) {
+    return loadPromptsFromResource(resourcePath, false);
+  }
+
+  private List<EvalPrompt> loadPromptsFromResource(
+      String resourcePath, boolean resolveDocumentPaths) {
     try (InputStream input = AssistantEvalRunner.class.getResourceAsStream(resourcePath)) {
       if (input == null) {
         throw new IllegalStateException(resourcePath + " is missing from test resources.");
       }
-      return mapper.readValue(input, new TypeReference<>() {});
+      if (!resolveDocumentPaths) {
+        return mapper.readValue(input, new TypeReference<>() {});
+      }
+      List<EvalPromptFixture> fixtures = mapper.readValue(input, new TypeReference<>() {});
+      return fixtures.stream().map(this::toEvalPrompt).toList();
     } catch (Exception ex) {
       throw new IllegalStateException(
           "Could not load assistant eval prompts from " + resourcePath, ex);
     }
   }
+
+  private EvalPrompt toEvalPrompt(EvalPromptFixture fixture) {
+    String sourceDocument = fixture.sourceDocument();
+    if ((sourceDocument == null || sourceDocument.isBlank())
+        && fixture.sourceDocumentPath() != null
+        && !fixture.sourceDocumentPath().isBlank()) {
+      sourceDocument = readRepositoryFile(fixture.sourceDocumentPath());
+    }
+    return new EvalPrompt(
+        fixture.id(),
+        fixture.category(),
+        fixture.level(),
+        fixture.prompt(),
+        fixture.emptyCanvas(),
+        fixture.selectedElementIds(),
+        sourceDocument,
+        fixture.requiredContracts(),
+        fixture.minOperations(),
+        fixture.minElementAdds(),
+        fixture.minConnections(),
+        fixture.requiresSourceAnalysis(),
+        fixture.expectedOutcome(),
+        fixture.structuralExpectations());
+  }
+
+  private String readRepositoryFile(String relativePath) {
+    Path repoRoot = Path.of("../../../").normalize().toAbsolutePath();
+    Path file = repoRoot.resolve(relativePath.replace('/', java.io.File.separatorChar)).normalize();
+    if (!Files.exists(file)) {
+      throw new IllegalStateException("Repository fixture is missing: " + file);
+    }
+    try {
+      return Files.readString(file);
+    } catch (Exception ex) {
+      throw new IllegalStateException("Could not read repository fixture: " + file, ex);
+    }
+  }
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  private record EvalPromptFixture(
+      String id,
+      String category,
+      String level,
+      String prompt,
+      boolean emptyCanvas,
+      List<String> selectedElementIds,
+      String sourceDocument,
+      String sourceDocumentPath,
+      List<String> requiredContracts,
+      int minOperations,
+      int minElementAdds,
+      int minConnections,
+      boolean requiresSourceAnalysis,
+      String expectedOutcome,
+      StructuralExpectations structuralExpectations) {}
 
   /**
    * Runs the benchmark and returns per-prompt results.

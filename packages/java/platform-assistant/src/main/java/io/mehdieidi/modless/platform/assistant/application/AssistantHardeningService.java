@@ -72,6 +72,7 @@ public class AssistantHardeningService {
    */
   public <T> T providerCall(
       AssistantModelRole role, String provider, String model, Supplier<T> call) {
+    ProviderCallBudget.consume(role);
     Instant now = clock.instant();
     Circuit snapshot = circuits.getOrDefault(provider, new Circuit(0, Instant.EPOCH));
     if (now.isBefore(snapshot.openUntil())) {

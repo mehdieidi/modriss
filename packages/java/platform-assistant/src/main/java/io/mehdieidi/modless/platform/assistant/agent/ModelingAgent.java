@@ -144,11 +144,15 @@ public class ModelingAgent {
 
   private boolean shouldExplore(
       AssistantModelContext context, AssistantModelProvider.AssistantPrompt prompt) {
-    if (context != null && !context.elements().isEmpty()) {
-      return true;
-    }
     int snippets = prompt == null || prompt.snippets() == null ? 0 : prompt.snippets().size();
-    return snippets < Math.max(4, settings == null ? 10 : settings.reservedSchemaSnippets());
+    int reserved = settings == null ? 10 : settings.reservedSchemaSnippets();
+    if (context != null && !context.elements().isEmpty()) {
+      return snippets < Math.max(4, reserved / 2);
+    }
+    if (snippets >= reserved) {
+      return false;
+    }
+    return snippets < Math.max(4, reserved);
   }
 
   private AssistantModelProvider.AssistantPrompt explorationPrompt(
@@ -248,8 +252,17 @@ public class ModelingAgent {
      Command, Policy.emitsEvents -> BusinessEvent, BusinessCapability.containsCommands -> Command,
      BusinessCapability.containsEvents -> BusinessEvent, AggregateCandidate.handledCommands ->
      Command, AggregateCandidate.emittedEvents -> BusinessEvent, ExternalSystem.producedEvents ->
-     BusinessEvent,
-     and ExternalSystem.consumedEvents -> BusinessEvent. Use these exact Ecore feature names.
+     BusinessEvent, ExternalSystem.consumedEvents -> BusinessEvent, BusinessGoal.owners ->
+     Stakeholder (never Actor), and Stakeholder.ownsGoals -> BusinessGoal. Model actors and
+     stakeholders separately; link actors to commands/events, stakeholders to goals/requirements.
+     Use these exact Ecore feature names.
+
+     Do not ask the user to confirm backend retrieval, metamodel contracts, or tool usage. The
+     backend already assembled exact Ecore contracts, source evidence, and model context for this
+     turn. When attachment content or source evidence snippets are present, treat them as the
+     authoritative source text; never return kind=ANSWER claiming the source document is missing.
+     Unless a domain fact is genuinely missing from all supplied context, proceed with
+     kind=MODEL_DELTA and list any assumptions instead of returning CLARIFICATION.
     """
         + (repair
             ? "\nThis is a structural repair pass. Return a complete replacement ModelDelta that"
