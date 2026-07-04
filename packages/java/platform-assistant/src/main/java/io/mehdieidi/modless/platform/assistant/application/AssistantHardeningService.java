@@ -150,10 +150,12 @@ public class AssistantHardeningService {
           mdc("assistantSessionId"),
           mdc("requestId"),
           last == null ? "unknown" : last.toString());
+      String diagnostic = providerFailureDiagnostic(last);
       throw new PlatformException(
           502,
           "AI provider request failed. Check provider base URL, model, API key, and proxy"
-              + " settings.");
+              + " settings."
+              + (diagnostic.isBlank() ? "" : " Provider error: " + diagnostic));
     } finally {
       // Provider duration metrics are recorded by the backend metrics adapter.
     }
@@ -221,6 +223,22 @@ public class AssistantHardeningService {
       current = current.getCause();
     }
     return current;
+  }
+
+  private String providerFailureDiagnostic(Throwable failure) {
+    if (failure == null) {
+      return "";
+    }
+    Throwable root = rootCause(failure);
+    String message = root.getMessage();
+    if (message == null || message.isBlank()) {
+      message = failure.getMessage();
+    }
+    if (message == null || message.isBlank()) {
+      return root.getClass().getSimpleName();
+    }
+    String compact = message.replaceAll("\\s+", " ").trim();
+    return compact.length() <= 240 ? compact : compact.substring(0, 237) + "...";
   }
 
   private String mdc(String key) {

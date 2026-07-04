@@ -6,6 +6,7 @@ import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
 import io.mehdieidi.modless.platform.assistant.delta.DeltaNormalizer;
 import io.mehdieidi.modless.platform.assistant.delta.ModelDelta;
 import io.mehdieidi.modless.platform.assistant.delta.ModelDeltaParser;
+import io.mehdieidi.modless.platform.assistant.delta.ModelDeltaSchemaFactory;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
@@ -29,6 +30,7 @@ public final class AssistantEvalRunner {
   private final ModelDeltaParser deltaParser;
   private final DeltaNormalizer deltaNormalizer;
   private final DeltaCompiler deltaCompiler;
+  private final ModelDeltaSchemaFactory deltaSchemaFactory;
 
   public AssistantEvalRunner(
       AssistantModelProvider provider,
@@ -42,6 +44,7 @@ public final class AssistantEvalRunner {
     this.deltaParser = new ModelDeltaParser(mapper);
     this.deltaNormalizer = new DeltaNormalizer(schemas);
     this.deltaCompiler = new DeltaCompiler(schemas);
+    this.deltaSchemaFactory = new ModelDeltaSchemaFactory(schemas, mapper);
   }
 
   /** Loads curated prompts from the bundled fixture file. */
@@ -98,7 +101,8 @@ public final class AssistantEvalRunner {
       List<AssistantModelProvider.ContextSnippet> snippets = List.of();
       try {
         ModelLevel level = ModelLevel.fromApiName(prompt.level());
-        snippets = new ArrayList<>(schemas.planningContracts(level, prompt.prompt(), 8));
+        snippets = new ArrayList<>(deltaSchemaFactory.snippets(level));
+        snippets.addAll(schemas.planningContracts(level, prompt.prompt(), 8));
         int requiredContracts = prompt.requiredContracts().size();
         int retrievedRequiredContracts =
             countRequiredContracts(prompt.requiredContracts(), snippets);
@@ -140,7 +144,9 @@ public final class AssistantEvalRunner {
             sourceAnalysisUsed = true;
             snippets.add(
                 new AssistantModelProvider.ContextSnippet(
-                    "source-analysis", prompt.id() + " evidence map", analysis.content()));
+                    "source-analysis",
+                    prompt.id() + " evidence map",
+                    compact(analysis.content(), 10000)));
           }
         }
         if (toolBinder != null) {
@@ -154,9 +160,10 @@ public final class AssistantEvalRunner {
                       AssistantModelRole.PLANNER,
                       "Eval run for category "
                           + prompt.category()
-                          + ". Return only ModelDelta JSON.",
+                          + ". Return only ModelDelta JSON.\n\n"
+                          + modelDeltaProtocol(level),
                       prompt.prompt(),
-                      snippets));
+                      budgetSnippets(snippets)));
           providerWaitMs += System.currentTimeMillis() - providerStarted;
           providerCalls++;
           ModelDelta delta = deltaNormalizer.normalize(level, deltaParser.parse(reply.content()));
@@ -189,6 +196,23 @@ public final class AssistantEvalRunner {
               .retrievedRequiredContractCount(retrievedRequiredContracts)
               .providerWaitMs(providerWaitMs)
               .failureStage(passed ? "" : "EVAL_EXPECTATIONS")
+              .failureMessage(
+                  passed
+                      ? ""
+                      : "operations="
+                          + completed.operations().size()
+                          + "/"
+                          + prompt.minOperations()
+                          + ", additions="
+                          + addCount
+                          + "/"
+                          + prompt.minElementAdds()
+                          + ", connections="
+                          + connectionCount
+                          + "/"
+                          + prompt.minConnections()
+                          + ", sourceAnalysis="
+                          + sourceAnalysisUsed)
               .latencyMs(System.currentTimeMillis() - startedAt);
         } finally {
           if (toolBinder != null) {
@@ -236,6 +260,39 @@ public final class AssistantEvalRunner {
         """;
   }
 
+  private String modelDeltaProtocol(ModelLevel level) {
+    return """
+    Use the single provider-facing ModelDelta protocol. Return exactly one JSON object with these
+    top-level fields only: intent, kind, message, questions, elements, references,
+    attributeUpdates, deletions, assumptions. Do not use retired fields such as operations, op,
+    patch, semanticPatch, modelSubset, jsonPatch, or xmi.
+
+    For model changes, set intent=MUTATION and kind=MODEL_DELTA. Put each new model element in
+    elements with localId, eClass, attributes, placement, and optional evidenceIds. placement is
+    containment only and must use ownerId plus the exact containment referenceName from the Ecore
+    contracts; use ownerId="root" for root-owned elements. Put writable non-containment
+    EReferences in references. Put scalar EAttributes in attributes or attributeUpdates.
+
+    Use only EClasses and features from the supplied Ecore-derived contracts for level \
+    """
+        + level.apiName()
+        + """
+. Model source-backed facts with evidenceIds when source evidence is supplied. Do not
+synthesize deletion unless the user explicitly asked for deletion.
+
+For CIM/event-storming turns, add explicit relationship references instead of isolated
+elements. Common valid CIM links include Actor.issuesCommands -> Command,
+Command.expectedEvents -> BusinessEvent, Command.rejectionEvents -> BusinessEvent,
+Policy.triggeredBy -> BusinessEvent, Policy.guards -> Command, Policy.emitsCommands ->
+Command, Policy.emitsEvents -> BusinessEvent, BusinessCapability.containsCommands ->
+Command, BusinessCapability.containsEvents -> BusinessEvent, AggregateCandidate.handledCommands
+-> Command, AggregateCandidate.emittedEvents -> BusinessEvent,
+ExternalSystem.producedEvents -> BusinessEvent, and ExternalSystem.consumedEvents ->
+BusinessEvent. Use these exact Ecore feature names and include at least several
+source-backed references for source documents.
+""";
+  }
+
   private String sourceAnalysisUserMessage(EvalPrompt prompt) {
     if (prompt.sourceDocument().isBlank()) {
       return prompt.prompt();
@@ -257,6 +314,33 @@ public final class AssistantEvalRunner {
             "runtime-metamodel", "CIM language index", schemas.languageIndex(ModelLevel.CIM)));
     snippets.addAll(schemas.allPlanningContracts(ModelLevel.CIM).stream().limit(20).toList());
     return snippets;
+  }
+
+  private List<AssistantModelProvider.ContextSnippet> budgetSnippets(
+      List<AssistantModelProvider.ContextSnippet> snippets) {
+    List<AssistantModelProvider.ContextSnippet> result = new ArrayList<>();
+    for (AssistantModelProvider.ContextSnippet snippet :
+        snippets == null ? List.<AssistantModelProvider.ContextSnippet>of() : snippets) {
+      int max =
+          snippet.source().contains("json-schema")
+              ? 7000
+              : snippet.source().contains("source-analysis") ? 10000 : 2200;
+      result.add(
+          new AssistantModelProvider.ContextSnippet(
+              snippet.source(), snippet.title(), compact(snippet.content(), max)));
+      if (result.size() >= 18) {
+        break;
+      }
+    }
+    return result;
+  }
+
+  private String compact(String value, int maxChars) {
+    if (value == null || value.length() <= maxChars) {
+      return value == null ? "" : value;
+    }
+    return value.substring(0, Math.max(0, maxChars - 80))
+        + "\n...[truncated for eval prompt budget; preserve most specific earlier facts]...";
   }
 
   private int count(SemanticModelPatch patch, SemanticModelPatch.OperationType type) {
@@ -312,6 +396,24 @@ public final class AssistantEvalRunner {
                   .append(" passed, avgToolCalls=")
                   .append(String.format(Locale.ROOT, "%.1f", avgTools))
                   .append('\n');
+              categoryResults.stream()
+                  .filter(result -> !result.validationPassed())
+                  .forEach(
+                      result ->
+                          report
+                              .append("  ")
+                              .append(result.id())
+                              .append(" failed at ")
+                              .append(
+                                  result.failureStage().isBlank()
+                                      ? "UNKNOWN"
+                                      : result.failureStage())
+                              .append(": ")
+                              .append(
+                                  result.failureMessage().isBlank()
+                                      ? "No failure message captured."
+                                      : result.failureMessage())
+                              .append('\n'));
             });
     return report.toString().trim();
   }

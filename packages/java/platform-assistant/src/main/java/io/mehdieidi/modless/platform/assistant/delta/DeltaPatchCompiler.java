@@ -134,12 +134,25 @@ class DeltaPatchCompiler {
       ModelLevel level, Map<String, String> types, Reference reference) {
     String sourceType = types.get(reference.sourceId());
     String targetType = types.get(reference.targetId());
+    String referenceName =
+        canonicalReferenceName(level, sourceType, reference.referenceName(), targetType);
     if (sourceType == null
         || targetType == null
-        || reference.referenceName().isBlank()
-        || !schemas.acceptsReferenceTarget(
-            level, sourceType, reference.referenceName(), targetType)) {
-      throw new PlatformException(422, "ModelDelta reference is not grounded in the metamodel.");
+        || referenceName.isBlank()
+        || !schemas.acceptsReferenceTarget(level, sourceType, referenceName, targetType)) {
+      throw new PlatformException(
+          422,
+          "ModelDelta reference is not grounded in the metamodel: sourceId="
+              + reference.sourceId()
+              + ", sourceType="
+              + (sourceType == null ? "unknown" : sourceType)
+              + ", referenceName="
+              + reference.referenceName()
+              + ", targetId="
+              + reference.targetId()
+              + ", targetType="
+              + (targetType == null ? "unknown" : targetType)
+              + ".");
     }
     return new SemanticModelPatch.Operation(
         SemanticModelPatch.OperationType.CONNECT_ELEMENTS,
@@ -147,7 +160,69 @@ class DeltaPatchCompiler {
         null,
         null,
         reference.sourceId(),
-        reference.referenceName());
+        referenceName);
+  }
+
+  private String canonicalReferenceName(
+      ModelLevel level, String sourceType, String requestedName, String targetType) {
+    if (sourceType == null
+        || targetType == null
+        || requestedName == null
+        || requestedName.isBlank()) {
+      return requestedName == null ? "" : requestedName;
+    }
+    if (schemas.acceptsReferenceTarget(level, sourceType, requestedName, targetType)) {
+      return requestedName;
+    }
+    List<String> candidates =
+        schemas.typeSchema(level, sourceType).stream()
+            .flatMap(type -> type.references().stream())
+            .filter(reference -> !reference.containment() && !reference.readonly())
+            .filter(
+                reference ->
+                    schemas.acceptsReferenceTarget(level, sourceType, reference.name(), targetType))
+            .map(AssistantMetamodelSchemaService.ReferenceSchema::name)
+            .toList();
+    if (candidates.isEmpty()) {
+      return requestedName;
+    }
+    String normalized = requestedName.trim().toLowerCase(java.util.Locale.ROOT);
+    if (List.of(
+            "emit",
+            "emits",
+            "emitted",
+            "publish",
+            "publishes",
+            "produce",
+            "produces",
+            "raise",
+            "raises")
+        .contains(normalized)) {
+      if ("Command".equals(sourceType) && candidates.contains("expectedEvents")) {
+        return "expectedEvents";
+      }
+      if ("Policy".equals(sourceType)
+          && "BusinessEvent".equals(targetType)
+          && candidates.contains("emitsEvents")) {
+        return "emitsEvents";
+      }
+      if ("Policy".equals(sourceType)
+          && "Command".equals(targetType)
+          && candidates.contains("emitsCommands")) {
+        return "emitsCommands";
+      }
+    }
+    if (List.of("trigger", "triggers", "causes", "causedBy", "caused_by").contains(normalized)) {
+      if ("Policy".equals(sourceType)
+          && "BusinessEvent".equals(targetType)
+          && candidates.contains("triggeredBy")) {
+        return "triggeredBy";
+      }
+      if ("BusinessEvent".equals(sourceType) && candidates.contains("consumedByPolicies")) {
+        return "consumedByPolicies";
+      }
+    }
+    return candidates.size() == 1 ? candidates.get(0) : requestedName;
   }
 
   private SemanticModelPatch.Operation attributeOperation(

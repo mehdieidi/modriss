@@ -155,6 +155,16 @@ public class ModelingAgent {
 
      Deletion is allowed only when the user explicitly requested deletion. Model only facts grounded
      in the user request, selected model context, source evidence, or explicit assumptions.
+
+     For CIM/event-storming turns, add explicit relationship references instead of isolated
+     elements. Common valid CIM links include Actor.issuesCommands -> Command,
+     Command.expectedEvents -> BusinessEvent, Command.rejectionEvents -> BusinessEvent,
+     Policy.triggeredBy -> BusinessEvent, Policy.guards -> Command, Policy.emitsCommands ->
+     Command, Policy.emitsEvents -> BusinessEvent, BusinessCapability.containsCommands -> Command,
+     BusinessCapability.containsEvents -> BusinessEvent, AggregateCandidate.handledCommands ->
+     Command, AggregateCandidate.emittedEvents -> BusinessEvent, ExternalSystem.producedEvents ->
+     BusinessEvent,
+     and ExternalSystem.consumedEvents -> BusinessEvent. Use these exact Ecore feature names.
     """
         + (repair
             ? "\nThis is a structural repair pass. Return a complete replacement ModelDelta that"

@@ -14,7 +14,8 @@ class AiPropertiesTest {
   void appliesConservativeDefaults() {
     AiProperties properties =
         new AiProperties(
-            false, null, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, null, null, null, null, null, null);
+            false, null, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, null, null, null, null, null, null,
+            null, 0, 0, 0, 0, true, true);
 
     assertFalse(properties.enabled());
     assertEquals("openai", properties.provider());
@@ -80,7 +81,14 @@ class AiPropertiesTest {
             null,
             null,
             new AiProperties.Gemini("key"),
-            null);
+            null,
+            null,
+            0,
+            0,
+            0,
+            0,
+            true,
+            true);
 
     assertEquals(AiProperties.Provider.GEMINI, properties.providerKind());
     assertEquals("gemini-2.0-flash", properties.modelFor(AssistantModelRole.RESPONDER));

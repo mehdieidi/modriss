@@ -88,4 +88,52 @@ class DeltaCompilerTest {
                 Map.of(),
                 delta));
   }
+
+  @Test
+  void canonicalizesCommonEventStormingReferenceNames() throws Exception {
+    ModelDelta delta =
+        new ModelDelta(
+            AssistantTurnPlan.Intent.MUTATION,
+            ModelDelta.Kind.MODEL_DELTA,
+            "Connect command to event",
+            List.of(),
+            List.of(
+                new ModelDelta.Element(
+                    "cmd",
+                    "Command",
+                    JsonNodeFactory.instance.objectNode().put("name", "Register claim"),
+                    new ModelDelta.Placement("root", "commands"),
+                    List.of(),
+                    List.of()),
+                new ModelDelta.Element(
+                    "evt",
+                    "BusinessEvent",
+                    JsonNodeFactory.instance.objectNode().put("name", "Claim registered"),
+                    new ModelDelta.Placement("root", "events"),
+                    List.of(),
+                    List.of())),
+            List.of(new ModelDelta.Reference("cmd", "emits", "evt")),
+            List.of(),
+            List.of(),
+            List.of());
+
+    SemanticModelPatch patch =
+        compiler.compile(
+            ModelLevel.CIM,
+            mapper.readTree(
+                """
+                {"id":"root","eClass":"CIMModel","modelLevel":"CIM","commands":[],"events":[]}
+                """),
+            Map.of(),
+            delta);
+
+    SemanticModelPatch.Operation connection =
+        patch.operations().stream()
+            .filter(
+                operation -> operation.type() == SemanticModelPatch.OperationType.CONNECT_ELEMENTS)
+            .findFirst()
+            .orElseThrow();
+
+    assertEquals("expectedEvents", connection.referenceName());
+  }
 }

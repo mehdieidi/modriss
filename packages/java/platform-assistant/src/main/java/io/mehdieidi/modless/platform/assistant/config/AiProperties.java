@@ -67,55 +67,6 @@ public record AiProperties(
     boolean newAgentEnabled)
     implements AssistantSettings {
 
-  public AiProperties(
-      boolean enabled,
-      String provider,
-      Duration requestTimeout,
-      int maxToolCalls,
-      int validationRepairAttempts,
-      int tokenBudget,
-      int maxContextSnippets,
-      int maxSnippetChars,
-      int maxSystemChars,
-      int maxAgentSteps,
-      int maxToolCallsPerStep,
-      int reservedSchemaSnippets,
-      String fallbackProvider,
-      Hardening hardening,
-      Embeddings embeddings,
-      Proxy proxy,
-      OpenAiCompatible openaiCompatible,
-      Gemini gemini,
-      Models models) {
-    this(
-        enabled,
-        provider,
-        requestTimeout,
-        maxToolCalls,
-        validationRepairAttempts,
-        tokenBudget,
-        maxContextSnippets,
-        maxSnippetChars,
-        maxSystemChars,
-        maxAgentSteps,
-        maxToolCallsPerStep,
-        reservedSchemaSnippets,
-        fallbackProvider,
-        hardening,
-        embeddings,
-        proxy,
-        openaiCompatible,
-        gemini,
-        models,
-        null,
-        0,
-        0,
-        0,
-        0,
-        true,
-        true);
-  }
-
   /** Applies conservative defaults for local development. */
   public AiProperties {
     provider = Provider.from(provider).key();

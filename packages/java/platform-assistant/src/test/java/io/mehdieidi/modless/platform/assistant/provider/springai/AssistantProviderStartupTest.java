@@ -45,7 +45,14 @@ class AssistantProviderStartupTest {
             new AiProperties.Proxy(false, AiProperties.ProxyType.DIRECT, null, null, null),
             null,
             null,
-            null);
+            null,
+            null,
+            0,
+            0,
+            0,
+            0,
+            true,
+            true);
     ProxyAvailability proxyAvailability = new ProxyAvailability(properties);
     AssistantPromptGuard promptGuard = new AssistantPromptGuard(properties);
     AssistantToolService tools =
@@ -95,7 +102,14 @@ class AssistantProviderStartupTest {
             new AiProperties.Proxy(false, AiProperties.ProxyType.DIRECT, null, null, null),
             null,
             new AiProperties.Gemini(""),
-            new AiProperties.Models(null, "gemini-2.0-flash", null));
+            new AiProperties.Models(null, "gemini-2.0-flash", null),
+            null,
+            0,
+            0,
+            0,
+            0,
+            true,
+            true);
     ProxyAvailability proxyAvailability = new ProxyAvailability(properties);
     AssistantToolService tools =
         new AssistantToolService(
@@ -138,7 +152,14 @@ class AssistantProviderStartupTest {
             new AiProperties.Proxy(false, AiProperties.ProxyType.DIRECT, null, null, null),
             null,
             new AiProperties.Gemini(""),
-            null);
+            null,
+            null,
+            0,
+            0,
+            0,
+            0,
+            true,
+            true);
     AssistantToolService tools =
         new AssistantToolService(
             mock(AssistantCatalog.class),
@@ -181,7 +202,14 @@ class AssistantProviderStartupTest {
             new AiProperties.Proxy(false, AiProperties.ProxyType.DIRECT, null, null, null),
             null,
             null,
-            null);
+            null,
+            null,
+            0,
+            0,
+            0,
+            0,
+            true,
+            true);
     AssistantToolService tools =
         new AssistantToolService(
             mock(AssistantCatalog.class),

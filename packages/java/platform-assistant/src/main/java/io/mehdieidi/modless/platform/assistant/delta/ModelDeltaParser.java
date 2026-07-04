@@ -128,14 +128,32 @@ public class ModelDeltaParser {
         throw new PlatformException(502, "ModelDelta references must be JSON objects.");
       }
       requireOnlyProperties(
-          object, "ModelDelta reference", Set.of("sourceId", "referenceName", "targetId"));
-      result.add(
-          new ModelDelta.Reference(
-              requireText(object, "sourceId", "ModelDelta reference"),
-              requireText(object, "referenceName", "ModelDelta reference"),
-              requireText(object, "targetId", "ModelDelta reference")));
+          object,
+          "ModelDelta reference",
+          Set.of("sourceId", "ownerId", "referenceName", "targetId", "targetIds", "evidenceIds"));
+      String sourceId = referenceSourceId(object);
+      String referenceName = requireText(object, "referenceName", "ModelDelta reference");
+      if (object.has("targetId")) {
+        result.add(
+            new ModelDelta.Reference(
+                sourceId, referenceName, requireText(object, "targetId", "ModelDelta reference")));
+        continue;
+      }
+      if (!object.has("targetIds")) {
+        throw new PlatformException(502, "ModelDelta reference requires targetId or targetIds.");
+      }
+      for (String targetId : strings(object.path("targetIds"))) {
+        result.add(new ModelDelta.Reference(sourceId, referenceName, targetId));
+      }
     }
     return List.copyOf(result);
+  }
+
+  private String referenceSourceId(ObjectNode object) {
+    if (object.has("sourceId")) {
+      return requireText(object, "sourceId", "ModelDelta reference");
+    }
+    return requireText(object, "ownerId", "ModelDelta reference");
   }
 
   private List<ModelDelta.AttributeUpdate> parseAttributeUpdates(JsonNode node) {
@@ -222,7 +240,14 @@ public class ModelDeltaParser {
   private AssistantTurnPlan.Intent parseIntent(String value) {
     return switch (value.trim().toUpperCase(Locale.ROOT)) {
       case "INFORMATION" -> AssistantTurnPlan.Intent.INFORMATION;
-      case "MUTATION" -> AssistantTurnPlan.Intent.MUTATION;
+      case "MUTATION",
+          "CREATE_MODEL",
+          "EXTEND_MODEL",
+          "EDIT_MODEL",
+          "DELETE_MODEL",
+          "TRANSFORM_SOURCE_TO_MODEL",
+          "REPAIR_STRUCTURE" ->
+          AssistantTurnPlan.Intent.MUTATION;
       default -> throw new PlatformException(502, "ModelDelta intent is not allowed.");
     };
   }

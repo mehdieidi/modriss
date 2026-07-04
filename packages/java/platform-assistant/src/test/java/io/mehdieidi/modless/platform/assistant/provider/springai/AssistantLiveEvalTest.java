@@ -23,6 +23,7 @@ import io.mehdieidi.modless.platform.assistant.spi.AssistantToolBridge;
 import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.model.application.ModelService;
+import java.net.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -31,6 +32,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 class AssistantLiveEvalTest {
@@ -101,31 +103,8 @@ class AssistantLiveEvalTest {
     assumeTrue(!env.getOrDefault("OPENAI_COMPATIBLE_BASE_URL", "").isBlank());
 
     ObjectMapper mapper = new ObjectMapper();
-    AiProperties properties =
-        new AiProperties(
-            true,
-            "openai",
-            Duration.ofMinutes(5),
-            Integer.MAX_VALUE,
-            6,
-            24000,
-            32,
-            4000,
-            18000,
-            20,
-            12,
-            14,
-            "",
-            null,
-            null,
-            new AiProperties.Proxy(false, AiProperties.ProxyType.DIRECT, null, null, null),
-            new AiProperties.OpenAiCompatible(
-                env.get("OPENAI_COMPATIBLE_BASE_URL"), env.get("OPENAI_COMPATIBLE_API_KEY")),
-            null,
-            new AiProperties.Models(
-                env.getOrDefault("MODLESS_AI_PLANNER_MODEL", "auto"),
-                env.getOrDefault("MODLESS_AI_RESPONDER_MODEL", "auto"),
-                env.getOrDefault("MODLESS_AI_SUMMARIZER_MODEL", "auto")));
+    AiProperties properties = liveProperties(env);
+    RestClient.Builder restClientBuilder = restClientBuilder(properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(any(), any()))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
@@ -144,11 +123,134 @@ class AssistantLiveEvalTest {
             new AssistantPromptGuard(properties),
             tools,
             new AssistantHardeningService(properties, null),
-            RestClient.builder());
+            restClientBuilder);
     AssistantMetamodelSchemaService schemas = new AssistantMetamodelSchemaService();
     AssistantEvalRunner runner =
         new AssistantEvalRunner(provider, schemas, new AssistantPatchCompleter(schemas), mapper);
     return new LiveEvalHarness(mapper, tools, runner);
+  }
+
+  private AiProperties liveProperties(Map<String, String> env) {
+    return new AiProperties(
+        true,
+        env.getOrDefault("MODLESS_AI_PROVIDER", "openai"),
+        duration(env, "MODLESS_AI_REQUEST_TIMEOUT", Duration.ofMinutes(5)),
+        integer(env, "MODLESS_AI_MAX_TOOL_CALLS", 24),
+        integer(env, "MODLESS_AI_MAX_REPAIR_ATTEMPTS", 1),
+        integer(env, "MODLESS_AI_TOKEN_BUDGET", 16000),
+        integer(env, "MODLESS_AI_MAX_CONTEXT_SNIPPETS", 24),
+        integer(env, "MODLESS_AI_MAX_SNIPPET_CHARS", 2400),
+        integer(env, "MODLESS_AI_MAX_SYSTEM_CHARS", 14000),
+        integer(env, "MODLESS_AI_MAX_AGENT_STEPS", 8),
+        integer(env, "MODLESS_AI_MAX_TOOL_CALLS_PER_STEP", 4),
+        integer(env, "MODLESS_AI_RESERVED_SCHEMA_SNIPPETS", 10),
+        env.getOrDefault("MODLESS_AI_FALLBACK_PROVIDER", ""),
+        new AiProperties.Hardening(
+            integer(env, "MODLESS_AI_RATE_LIMIT_REQUESTS", 30),
+            duration(env, "MODLESS_AI_RATE_LIMIT_WINDOW", Duration.ofMinutes(1)),
+            integer(env, "MODLESS_AI_CIRCUIT_FAILURE_THRESHOLD", 3),
+            duration(env, "MODLESS_AI_CIRCUIT_OPEN_DURATION", Duration.ofMinutes(1)),
+            integer(env, "MODLESS_AI_PROVIDER_RETRY_ATTEMPTS", 2),
+            duration(env, "MODLESS_AI_RETRY_BACKOFF", Duration.ofMillis(250)),
+            integer(env, "MODLESS_AI_RECENT_MESSAGE_WINDOW", 24)),
+        null,
+        proxy(env),
+        new AiProperties.OpenAiCompatible(
+            env.get("OPENAI_COMPATIBLE_BASE_URL"), env.get("OPENAI_COMPATIBLE_API_KEY")),
+        null,
+        new AiProperties.Models(
+            env.getOrDefault("MODLESS_AI_PLANNER_MODEL", ""),
+            env.getOrDefault("MODLESS_AI_RESPONDER_MODEL", ""),
+            env.getOrDefault("MODLESS_AI_SUMMARIZER_MODEL", "")),
+        duration(env, "MODLESS_AI_TURN_TIMEOUT", Duration.ofMinutes(5)),
+        integer(env, "MODLESS_AI_MAX_REPAIR_ATTEMPTS", 1),
+        integer(env, "MODLESS_AI_MAX_PROMPT_TOKENS", 24000),
+        integer(env, "MODLESS_AI_MAX_SOURCE_CHUNK_TOKENS", 4000),
+        integer(env, "MODLESS_AI_MAX_SOURCE_CHUNKS_PER_TURN", 24),
+        bool(env, "MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY", true),
+        bool(env, "MODLESS_AI_NEW_AGENT_ENABLED", true));
+  }
+
+  private RestClient.Builder restClientBuilder(AiProperties properties) {
+    SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+    factory.setConnectTimeout(
+        properties.requestTimeout().compareTo(Duration.ofSeconds(10)) < 0
+            ? properties.requestTimeout()
+            : Duration.ofSeconds(10));
+    factory.setReadTimeout(properties.requestTimeout());
+    AiProperties.Proxy proxy = properties.proxy();
+    if (proxy.enabled() && proxy.type() != AiProperties.ProxyType.DIRECT) {
+      Proxy.Type type =
+          proxy.type() == AiProperties.ProxyType.SOCKS ? Proxy.Type.SOCKS : Proxy.Type.HTTP;
+      factory.setProxy(new Proxy(type, proxy.address()));
+    }
+    return RestClient.builder().requestFactory(factory);
+  }
+
+  private AiProperties.Proxy proxy(Map<String, String> env) {
+    return new AiProperties.Proxy(
+        bool(env, "MODLESS_AI_PROXY_ENABLED", false),
+        proxyType(env.get("MODLESS_AI_PROXY_TYPE")),
+        localProxyHost(env.get("MODLESS_AI_PROXY_HOST")),
+        integer(env, "MODLESS_AI_PROXY_PORT", 0),
+        duration(env, "MODLESS_AI_PROXY_CONNECT_TIMEOUT", Duration.ofSeconds(2)));
+  }
+
+  private String localProxyHost(String host) {
+    if (host != null && "host.docker.internal".equalsIgnoreCase(host.trim())) {
+      return "127.0.0.1";
+    }
+    return host;
+  }
+
+  private AiProperties.ProxyType proxyType(String value) {
+    if (value == null || value.isBlank()) {
+      return AiProperties.ProxyType.HTTP;
+    }
+    try {
+      return AiProperties.ProxyType.valueOf(value.trim().toUpperCase(Locale.ROOT));
+    } catch (IllegalArgumentException ignored) {
+      return AiProperties.ProxyType.HTTP;
+    }
+  }
+
+  private boolean bool(Map<String, String> env, String key, boolean fallback) {
+    String value = env.get(key);
+    return value == null || value.isBlank() ? fallback : Boolean.parseBoolean(value);
+  }
+
+  private int integer(Map<String, String> env, String key, int fallback) {
+    try {
+      String value = env.get(key);
+      return value == null || value.isBlank() ? fallback : Integer.parseInt(value.trim());
+    } catch (NumberFormatException ignored) {
+      return fallback;
+    }
+  }
+
+  private Duration duration(Map<String, String> env, String key, Duration fallback) {
+    String value = env.get(key);
+    if (value == null || value.isBlank()) {
+      return fallback;
+    }
+    String normalized = value.trim().toLowerCase(Locale.ROOT);
+    try {
+      if (normalized.endsWith("ms")) {
+        return Duration.ofMillis(Long.parseLong(normalized.substring(0, normalized.length() - 2)));
+      }
+      if (normalized.endsWith("s")) {
+        return Duration.ofSeconds(Long.parseLong(normalized.substring(0, normalized.length() - 1)));
+      }
+      if (normalized.endsWith("m")) {
+        return Duration.ofMinutes(Long.parseLong(normalized.substring(0, normalized.length() - 1)));
+      }
+      if (normalized.endsWith("h")) {
+        return Duration.ofHours(Long.parseLong(normalized.substring(0, normalized.length() - 1)));
+      }
+      return Duration.parse(value.trim());
+    } catch (RuntimeException ignored) {
+      return fallback;
+    }
   }
 
   private AssistantEvalRunner.ToolBinder toolBinder(AssistantToolService tools, ObjectMapper mapper)

@@ -1,7 +1,7 @@
 # platform-assistant
 
-Feature package for the AI modeling assistant: guarded-apply workflow, semantic patch
-pipeline, turn planning, session orchestration, and **its own persistence**.
+Feature package for the AI modeling assistant: guarded-apply workflow, ModelDelta
+planning, backend patch compilation, session orchestration, and **its own persistence**.
 
 ## Package layout
 
@@ -33,6 +33,7 @@ hub, and `AiProperties`.
 ## Public entry points
 
 - `platform.assistant.application.AssistantOrchestrator` — main assistant workflow
-- `platform.assistant.patch.AssistantPatchCompiler` — semantic patch compilation
+- `platform.assistant.delta.DeltaCompiler` — ModelDelta lowering to backend patch IR
+- `platform.assistant.patch.AssistantPatchCompiler` — backend patch compilation and inverse patches
 - `platform.assistant.provider.AssistantModelProvider` — provider-neutral LLM boundary
 - `platform.assistant.spi.*` — ports; JDBC implementations live in `persistence.jdbc`

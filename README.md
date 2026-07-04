@@ -5,8 +5,8 @@
 Modless is an AI-assisted, model-driven platform. You work in three formal modeling levels
 (CIM, PIM, AWS PSM) in the browser, validate with Eclipse Epsilon, transform between levels, and
 generate a reviewable project (infrastructure, Go handlers, contracts, tests, docs). An optional
-assistant can explain the metamodel, draft semantic patches, and apply changes only after validation
-and your approval.
+assistant can explain the metamodel, draft structured ModelDelta changes, and apply them only after
+validation.
 
 ```text
 CIM  ──validate/transform──▶  PIM  ──validate/transform──▶  AWS PSM  ──generate──▶  deployable project
