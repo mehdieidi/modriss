@@ -1267,8 +1267,8 @@
 
 .chat-send-btn .chat-send-icon--stop {
   display: none;
-  width: 11px;
-  height: 11px;
+  width: 15px;
+  height: 15px;
 }
 
 .chat-send-btn.is-stopping .chat-send-icon--send {
@@ -1291,24 +1291,7 @@
   box-shadow: none;
 }
 
-.chat-send-btn.is-stopping {
-  border-color: color-mix(in srgb, var(--text-strong) 28%, transparent);
-  background: color-mix(in srgb, var(--text-strong) 90%, #000 10%);
-  color: color-mix(in srgb, var(--surface-1) 96%, #fff 4%);
-}
-
-.chat-send-btn.is-stopping .chat-send-icon.icon-svg.icon-mask {
-  width: 11px;
-  height: 11px;
-}
-
-.chat-send-btn.is-stopping:hover:not(:disabled) {
-  filter: brightness(1.08);
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--text-strong) 24%, transparent);
-}
-
 .chat-send-btn.is-stopping:disabled {
-  opacity: 0.65;
   cursor: wait;
 }
 
