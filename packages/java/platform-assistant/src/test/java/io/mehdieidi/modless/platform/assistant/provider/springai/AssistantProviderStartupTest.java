@@ -51,7 +51,6 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
-            true,
             true);
     ProxyAvailability proxyAvailability = new ProxyAvailability(properties);
     AssistantPromptGuard promptGuard = new AssistantPromptGuard(properties);
@@ -108,7 +107,6 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
-            true,
             true);
     ProxyAvailability proxyAvailability = new ProxyAvailability(properties);
     AssistantToolService tools =
@@ -158,7 +156,6 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
-            true,
             true);
     AssistantToolService tools =
         new AssistantToolService(
@@ -208,7 +205,6 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
-            true,
             true);
     AssistantToolService tools =
         new AssistantToolService(

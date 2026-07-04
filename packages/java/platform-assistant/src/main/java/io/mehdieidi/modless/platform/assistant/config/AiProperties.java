@@ -35,7 +35,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxSourceChunkTokens maximum source chunk token budget
  * @param maxSourceChunksPerTurn maximum source chunks processed in one turn
  * @param requireIdempotencyKey whether client turn idempotency keys are required
- * @param newAgentEnabled whether the unified ModelDelta agent path is enabled
  */
 @ConfigurationProperties(prefix = "modless.ai")
 public record AiProperties(
@@ -63,8 +62,7 @@ public record AiProperties(
     int maxPromptTokens,
     int maxSourceChunkTokens,
     int maxSourceChunksPerTurn,
-    boolean requireIdempotencyKey,
-    boolean newAgentEnabled)
+    boolean requireIdempotencyKey)
     implements AssistantSettings {
 
   /** Applies conservative defaults for local development. */

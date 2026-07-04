@@ -20,7 +20,11 @@ class RealtimeTraceServiceTest {
   void publishesStartedProgressPreviewAssistantAndTerminalEvents() {
     service.started("session", "turn-1", "thread-1", "pim", "2026-07-03T12:00:00Z");
     service.progress("session", "turn-1", "PLANNING", "Drafting");
-    service.modelPreview("session", Map.of("operationCount", 2));
+    service.toolStarted("session", "turn-1", "searchCatalogs");
+    service.toolCompleted("session", "turn-1", "searchCatalogs");
+    service.deltaDrafted("session", "turn-1", 3, "draft");
+    service.deltaValidated("session", "turn-1", true, 0);
+    service.modelPreview("session", Map.of("operationCount", 2, "validated", true));
     service.assistantMessage("session", "done");
     service.terminal("session", AssistantWorkflowState.APPLIED, "model-1", 3L, null);
 
@@ -29,6 +33,10 @@ class RealtimeTraceServiceTest {
             "assistant.trace.started",
             "assistant.progress",
             "assistant.trace.step",
+            "assistant.tool.started",
+            "assistant.tool.completed",
+            "assistant.delta.drafted",
+            "assistant.delta.validated",
             "assistant.model.preview",
             "chat.assistant",
             "assistant.turn.completed"),
@@ -36,9 +44,12 @@ class RealtimeTraceServiceTest {
     assertTrue(payload(0).containsKey("deadlineAt"));
     assertEquals("PLANNING", payload(1).get("stage"));
     assertEquals("turn-1", payload(2).get("turnId"));
-    assertEquals(2, payload(3).get("operationCount"));
-    assertEquals("APPLIED", payload(5).get("workflowState"));
-    assertEquals(3L, payload(5).get("revision"));
+    assertEquals("searchCatalogs", payload(3).get("tool"));
+    assertEquals(3, payload(5).get("operationCount"));
+    assertEquals(true, payload(6).get("valid"));
+    assertEquals(2, payload(7).get("operationCount"));
+    assertEquals("APPLIED", payload(9).get("workflowState"));
+    assertEquals(3L, payload(9).get("revision"));
   }
 
   @Test

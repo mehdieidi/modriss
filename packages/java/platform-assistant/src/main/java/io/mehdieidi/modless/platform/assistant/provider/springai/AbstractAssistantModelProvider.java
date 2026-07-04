@@ -130,6 +130,31 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
   }
 
   @Override
+  public AssistantReply completeWithTools(AssistantPrompt rawPrompt) {
+    requireAvailable();
+    AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
+    String model = modelFor(prompt.role());
+    String providerCallId = providerCallId();
+    logRequest(prompt, model, providerCallId);
+    long providerStarted = System.nanoTime();
+    String content =
+        hardening.providerCall(
+            prompt.role(),
+            providerKey,
+            model,
+            () -> {
+              var request = chatClient.prompt().options(options(model, prompt.role())).tools(tools);
+              return request
+                  .system(SYSTEM_GUARDRAIL + "\n" + prompt.system())
+                  .user(userWithContext(prompt))
+                  .call()
+                  .content();
+            });
+    logResponse(prompt.role(), model, content, providerCallId, providerStarted);
+    return new AssistantReply(content == null ? "" : content, providerKey, model);
+  }
+
+  @Override
   public AssistantReply completeStructured(AssistantPrompt rawPrompt) {
     requireAvailable();
     AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);

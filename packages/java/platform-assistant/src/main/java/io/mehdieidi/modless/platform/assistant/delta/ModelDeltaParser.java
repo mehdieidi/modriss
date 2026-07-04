@@ -111,6 +111,7 @@ public class ModelDeltaParser {
 
   private ModelDelta.Placement parsePlacement(JsonNode node) {
     ObjectNode object = requireObject(node, "ModelDelta placement");
+    coerceReferenceNameAlias(object);
     requireOnlyProperties(object, "ModelDelta placement", Set.of("ownerId", "referenceName"));
     return new ModelDelta.Placement(
         requireText(object, "ownerId", "ModelDelta placement"),
@@ -127,6 +128,7 @@ public class ModelDeltaParser {
       if (!(item instanceof ObjectNode object)) {
         throw new PlatformException(502, "ModelDelta references must be JSON objects.");
       }
+      coerceReferenceNameAlias(object);
       requireOnlyProperties(
           object,
           "ModelDelta reference",
@@ -166,6 +168,7 @@ public class ModelDeltaParser {
       if (!(item instanceof ObjectNode object)) {
         throw new PlatformException(502, "ModelDelta attributeUpdates must be JSON objects.");
       }
+      coerceAttributeNameAlias(object);
       requireOnlyProperties(
           object, "ModelDelta attributeUpdate", Set.of("elementId", "attributeName", "value"));
       if (!object.has("value")) {
@@ -306,6 +309,27 @@ public class ModelDeltaParser {
       return array;
     }
     throw new PlatformException(502, scope + " must be a JSON array.");
+  }
+
+  private void coerceReferenceNameAlias(ObjectNode object) {
+    if (object != null && object.has("featureName") && !object.has("referenceName")) {
+      object.set("referenceName", object.get("featureName"));
+    }
+    object.remove("featureName");
+  }
+
+  private void coerceAttributeNameAlias(ObjectNode object) {
+    if (object == null) {
+      return;
+    }
+    if (object.has("name") && !object.has("attributeName")) {
+      object.set("attributeName", object.get("name"));
+    }
+    object.remove("name");
+    if (object.has("featureName") && !object.has("attributeName")) {
+      object.set("attributeName", object.get("featureName"));
+    }
+    object.remove("featureName");
   }
 
   private void requireOnlyProperties(ObjectNode object, String scope, Set<String> allowed) {

@@ -25,6 +25,23 @@ public interface AssistantToolBridge {
   int consumeToolCallCount();
 
   /**
+   * Binds a trace listener for user-visible tool events during the active session.
+   *
+   * @param trace trace listener, or {@code null} to clear
+   */
+  default void bindTrace(AssistantToolTrace trace) {}
+
+  /** User-visible tool trace callbacks for realtime assistant events. */
+  interface AssistantToolTrace {
+
+    /** Publishes a tool invocation start event. */
+    void started(String toolName);
+
+    /** Publishes a tool invocation completion event. */
+    void completed(String toolName);
+  }
+
+  /**
    * Active tool session context.
    *
    * @param level modeling level

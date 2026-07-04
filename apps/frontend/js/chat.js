@@ -60,6 +60,7 @@ let activeThinkingEl = null;
 let thinkingSteps = [];
 let thinkingStartTime = 0;
 let thinkingProgress = null;
+let sourceCoverageState = null;
 let activeTurnCanceling = false;
 
 const CHAT_HISTORY_DAYS = 3;
@@ -250,6 +251,7 @@ function ensureThinkingStream(initialMessage = null, stage = "PLANNING") {
     activeThinkingEl = msg;
     thinkingSteps = [];
     thinkingProgress = null;
+    sourceCoverageState = null;
     thinkingStartTime = Date.now();
   }
   if (initialMessage) {
@@ -280,9 +282,20 @@ function renderThinkingSteps() {
     if (index && count) {
       progress.textContent = `${Math.min(index, count)} / ${count}`;
       progress.classList.remove("hidden");
+      const bar = ensureSourceCoverageBar(status);
+      if (bar) {
+        const pct = Math.min(100, Math.round((Math.min(index, count) / count) * 100));
+        bar.style.width = `${pct}%`;
+        bar.parentElement?.classList.remove("hidden");
+      }
+    } else if (sourceCoverageState?.chunks?.length) {
+      progress.textContent = "";
+      progress.classList.add("hidden");
+      renderSourceCoverageMatrix(status, sourceCoverageState);
     } else {
       progress.textContent = "";
       progress.classList.add("hidden");
+      status.querySelector(".chat-source-coverage")?.remove();
     }
   }
   scrollChatToBottom();
@@ -301,6 +314,104 @@ function pushThinkingStep(message, stage = null) {
   thinkingSteps = chatActivityHistory.map((item) => ({ ...item }));
   renderThinkingSteps();
   el.chatTypingIndicator?.classList.add("hidden");
+}
+
+function ensureSourceCoverageBar(status) {
+  let track = status.querySelector(".chat-source-coverage-bar");
+  if (!track) {
+    track = document.createElement("div");
+    track.className = "chat-source-coverage-bar hidden";
+    const fill = document.createElement("div");
+    fill.className = "chat-source-coverage-bar-fill";
+    track.appendChild(fill);
+    status.appendChild(track);
+  }
+  return track.querySelector(".chat-source-coverage-bar-fill");
+}
+
+function coverageStatusClass(status) {
+  const normalized = String(status || "").toUpperCase();
+  if (normalized === "COVERED") {
+    return "is-covered";
+  }
+  if (normalized === "COMPRESSED") {
+    return "is-compressed";
+  }
+  if (normalized === "NEEDS_CLARIFICATION") {
+    return "is-gap";
+  }
+  return "is-pending";
+}
+
+function renderSourceCoverageMatrix(status, coverage) {
+  let matrix = status.querySelector(".chat-source-coverage");
+  if (!matrix) {
+    matrix = document.createElement("div");
+    matrix.className = "chat-source-coverage";
+    status.appendChild(matrix);
+  }
+  matrix.replaceChildren();
+  const heading = document.createElement("div");
+  heading.className = "chat-source-coverage-heading";
+  heading.textContent = `Source chunks ${coverage.covered}/${coverage.total}`;
+  matrix.appendChild(heading);
+  const list = document.createElement("div");
+  list.className = "chat-source-coverage-chunks";
+  for (const chunk of coverage.chunks) {
+    const item = document.createElement("span");
+    item.className = `chat-source-coverage-chunk ${coverageStatusClass(chunk.status)}`;
+    item.title = chunk.message || chunk.status || "";
+    item.textContent = chunk.chunkId || chunk.status || "?";
+    list.appendChild(item);
+  }
+  matrix.appendChild(list);
+}
+
+function trackSourceCoverageEvent(payload) {
+  const total = Number(payload?.totalChunks) || 0;
+  if (!total) {
+    return;
+  }
+  if (!sourceCoverageState) {
+    sourceCoverageState = { total, covered: 0, chunks: [] };
+  }
+  sourceCoverageState.total = total;
+  sourceCoverageState.covered = Number(payload?.coveredChunks) || sourceCoverageState.covered;
+  const chunkId = payload?.chunkId || `chunk-${sourceCoverageState.chunks.length + 1}`;
+  const status = payload?.status || "PENDING";
+  const existing = sourceCoverageState.chunks.find((entry) => entry.chunkId === chunkId);
+  const entry = {
+    chunkId,
+    status,
+    message: payload?.message || "",
+  };
+  if (existing) {
+    Object.assign(existing, entry);
+  } else {
+    sourceCoverageState.chunks.push(entry);
+  }
+}
+
+function appendSourceCoverageSummary(bubble, coverage) {
+  if (!coverage || !coverage.total) {
+    return;
+  }
+  const summary = document.createElement("div");
+  summary.className = "chat-source-coverage-summary";
+  summary.textContent = `Source coverage: ${coverage.covered}/${coverage.total} chunks`;
+  bubble.appendChild(summary);
+  if (coverage.chunks?.length) {
+    const list = document.createElement("div");
+    list.className = "chat-source-coverage-chunks";
+    for (const chunk of coverage.chunks) {
+      const item = document.createElement("span");
+      item.className = `chat-source-coverage-chunk ${coverageStatusClass(chunk.status)}`;
+      item.title = chunk.message || chunk.status || "";
+      item.textContent = chunk.chunkId || chunk.status || "?";
+      list.appendChild(item);
+    }
+    bubble.appendChild(list);
+  }
 }
 
 function updateThinkingStatus(message, stage = null, progress = null) {
@@ -333,11 +444,15 @@ function finalizeThinkingStream() {
   summaryEl.className = "chat-thinking-summary";
   summaryEl.textContent = `Worked for ${durationSec}s`;
   bubble.appendChild(summaryEl);
+  if (sourceCoverageState?.total) {
+    appendSourceCoverageSummary(bubble, sourceCoverageState);
+  }
 
   activeThinkingEl = null;
   thinkingSteps = [];
   chatActivityHistory = [];
   thinkingProgress = null;
+  sourceCoverageState = null;
   activeTurnCanceling = false;
   scrollChatToBottom();
 }
@@ -348,6 +463,7 @@ function clearThinkingStream() {
   thinkingSteps = [];
   chatActivityHistory = [];
   thinkingProgress = null;
+  sourceCoverageState = null;
   activeTurnCanceling = false;
 }
 
@@ -837,6 +953,7 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
     "assistant.tool.completed",
     "assistant.delta.drafted",
     "assistant.delta.validated",
+    "assistant.source.coverage",
     "assistant.turn.completed",
     "assistant.turn.failed",
   ]) {
@@ -886,7 +1003,27 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
     updateThinkingStatus(payload?.message || "Validated model operations.", "VALIDATING");
     return;
   }
+  if (eventType === "assistant.source.coverage") {
+    trackSourceCoverageEvent(payload);
+    const covered = Number(payload?.coveredChunks) || 0;
+    const total = Number(payload?.totalChunks) || 0;
+    const chunkLabel = payload?.chunkId ? ` (${payload.chunkId})` : "";
+    const statusLabel = payload?.status ? ` ${payload.status}` : "";
+    updateThinkingStatus(
+      payload?.message || `Source coverage${chunkLabel}:${statusLabel} ${covered}/${total || "?"}`,
+      "ANALYZING_SOURCE",
+      total > 0 ? { index: covered, count: total } : null,
+    );
+    return;
+  }
   if (eventType === "assistant.turn.completed" || eventType === "assistant.turn.failed") {
+    if (payload?.coverageSummary) {
+      sourceCoverageState = {
+        total: Number(payload.coverageSummary.totalChunks) || 0,
+        covered: Number(payload.coverageSummary.coveredChunks) || 0,
+        chunks: Array.isArray(payload.coverageSummary.chunks) ? payload.coverageSummary.chunks : [],
+      };
+    }
     if (chatBusyDepth === 0) {
       applyWorkflowSnapshot(
         payload?.workflowState || (eventType.endsWith("failed") ? "FAILED" : "APPLIED"),

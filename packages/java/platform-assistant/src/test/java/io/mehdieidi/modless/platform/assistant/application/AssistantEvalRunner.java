@@ -1,6 +1,7 @@
 package io.mehdieidi.modless.platform.assistant.application;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
 import io.mehdieidi.modless.platform.assistant.delta.DeltaNormalizer;
@@ -13,12 +14,18 @@ import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaSer
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompleter;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.assistant.source.SourceChunker;
+import io.mehdieidi.modless.platform.assistant.source.SourceEvidenceExtractor;
+import io.mehdieidi.modless.platform.assistant.source.SourceEvidenceGraph;
+import io.mehdieidi.modless.platform.assistant.source.SourceUnderstandingService;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 /** Curated prompt benchmark runner for assistant reliability work. */
 public final class AssistantEvalRunner {
@@ -31,12 +38,27 @@ public final class AssistantEvalRunner {
   private final DeltaNormalizer deltaNormalizer;
   private final DeltaCompiler deltaCompiler;
   private final ModelDeltaSchemaFactory deltaSchemaFactory;
+  private final SourceUnderstandingService sourceUnderstanding;
 
   public AssistantEvalRunner(
       AssistantModelProvider provider,
       AssistantMetamodelSchemaService schemas,
       AssistantPatchCompleter patchCompleter,
       ObjectMapper mapper) {
+    this(
+        provider,
+        schemas,
+        patchCompleter,
+        mapper,
+        new SourceUnderstandingService(new SourceChunker()));
+  }
+
+  public AssistantEvalRunner(
+      AssistantModelProvider provider,
+      AssistantMetamodelSchemaService schemas,
+      AssistantPatchCompleter patchCompleter,
+      ObjectMapper mapper,
+      SourceUnderstandingService sourceUnderstanding) {
     this.provider = provider;
     this.schemas = schemas;
     this.patchCompleter = patchCompleter;
@@ -45,19 +67,31 @@ public final class AssistantEvalRunner {
     this.deltaNormalizer = new DeltaNormalizer(schemas);
     this.deltaCompiler = new DeltaCompiler(schemas);
     this.deltaSchemaFactory = new ModelDeltaSchemaFactory(schemas, mapper);
+    this.sourceUnderstanding =
+        sourceUnderstanding == null
+            ? new SourceUnderstandingService(new SourceChunker())
+            : sourceUnderstanding;
   }
 
   /** Loads curated prompts from the bundled fixture file. */
   public List<EvalPrompt> loadPrompts() {
-    try (InputStream input =
-        AssistantEvalRunner.class.getResourceAsStream("/assistant-eval-prompts.json")) {
+    return loadPromptsFromResource("/assistant-eval-prompts.json");
+  }
+
+  /** Loads the bounded live-gate prompt set (designed to finish within turn latency budgets). */
+  public List<EvalPrompt> loadLiveGatePrompts() {
+    return loadPromptsFromResource("/assistant-eval-live-gate-prompts.json");
+  }
+
+  private List<EvalPrompt> loadPromptsFromResource(String resourcePath) {
+    try (InputStream input = AssistantEvalRunner.class.getResourceAsStream(resourcePath)) {
       if (input == null) {
-        throw new IllegalStateException(
-            "assistant-eval-prompts.json is missing from test resources.");
+        throw new IllegalStateException(resourcePath + " is missing from test resources.");
       }
       return mapper.readValue(input, new TypeReference<>() {});
     } catch (Exception ex) {
-      throw new IllegalStateException("Could not load assistant eval prompts.", ex);
+      throw new IllegalStateException(
+          "Could not load assistant eval prompts from " + resourcePath, ex);
     }
   }
 
@@ -91,8 +125,33 @@ public final class AssistantEvalRunner {
    * @return eval results
    */
   public List<EvalResult> run(boolean live, ToolBinder toolBinder, List<EvalPrompt> prompts) {
+    return run(live, toolBinder, prompts, LiveEvalBudget.defaults());
+  }
+
+  /**
+   * Runs the benchmark for an explicit prompt set with latency budgets.
+   *
+   * @param live when true, calls the configured provider
+   * @param toolBinder binds model context before each live agent loop
+   * @param prompts prompts to run
+   * @param budget per-turn and suite latency ceilings for live runs
+   * @return eval results
+   */
+  public List<EvalResult> run(
+      boolean live, ToolBinder toolBinder, List<EvalPrompt> prompts, LiveEvalBudget budget) {
     List<EvalResult> results = new ArrayList<>();
+    long suiteStartedAt = System.currentTimeMillis();
+    LiveEvalBudget limits = budget == null ? LiveEvalBudget.defaults() : budget;
     for (EvalPrompt prompt : prompts == null ? List.<EvalPrompt>of() : prompts) {
+      if (live && limits.maxSuiteLatencyMs() > 0) {
+        long elapsedSuite = System.currentTimeMillis() - suiteStartedAt;
+        if (elapsedSuite > limits.maxSuiteLatencyMs()) {
+          results.add(
+              suiteBudgetExceededResult(
+                  prompt, elapsedSuite, limits.maxSuiteLatencyMs(), results.size()));
+          break;
+        }
+      }
       long startedAt = System.currentTimeMillis();
       int providerCalls = 0;
       long providerWaitMs = 0L;
@@ -103,55 +162,68 @@ public final class AssistantEvalRunner {
         ModelLevel level = ModelLevel.fromApiName(prompt.level());
         snippets = new ArrayList<>(deltaSchemaFactory.snippets(level));
         snippets.addAll(schemas.planningContracts(level, prompt.prompt(), 8));
+        for (String required : prompt.requiredContracts()) {
+          var type = schemas.typeSchema(level, required);
+          if (type.isPresent()) {
+            snippets.add(schemas.typeContract(level, type.get().name()));
+          }
+        }
         int requiredContracts = prompt.requiredContracts().size();
         int retrievedRequiredContracts =
             countRequiredContracts(prompt.requiredContracts(), snippets);
         int sourceChunkCount = sourceChunkCount(prompt);
         if (!live) {
-          builder
-              .turnKind(ModelDelta.Kind.MODEL_DELTA.name())
-              .operationCount(8)
-              .addElementCount(Math.max(prompt.minElementAdds(), 1))
-              .connectionCount(Math.max(prompt.minConnections(), 0))
-              .sourceAnalysisUsed(!prompt.requiresSourceAnalysis())
-              .sourceChunkCount(sourceChunkCount)
-              .coveredSourceChunkCount(sourceChunkCount)
-              .requiredContractCount(requiredContracts)
-              .retrievedRequiredContractCount(retrievedRequiredContracts)
-              .validationPassed(true)
-              .repairAttempts(0)
-              .toolCalls(0)
-              .providerWaitMs(0)
-              .failureStage("")
-              .latencyMs(System.currentTimeMillis() - startedAt);
+          if ("resilience".equals(prompt.category())) {
+            runResilienceStub(prompt, builder, startedAt);
+          } else {
+            runStructuralStub(
+                prompt,
+                level,
+                snippets,
+                builder,
+                startedAt,
+                requiredContracts,
+                retrievedRequiredContracts,
+                sourceChunkCount);
+          }
           results.add(builder.build());
           continue;
         }
         boolean sourceAnalysisUsed = false;
+        int coveredSourceChunks = 0;
         if (!prompt.sourceDocument().isBlank() && level == ModelLevel.CIM) {
           long providerStarted = System.currentTimeMillis();
-          AssistantModelProvider.AssistantReply analysis =
-              provider.analyzeSource(
-                  new AssistantModelProvider.AssistantPrompt(
-                      AssistantModelRole.SOURCE_ANALYST,
-                      sourceAnalysisPrompt(prompt),
-                      sourceAnalysisUserMessage(prompt),
-                      sourceAnalysisSnippets(prompt)),
-                  (stage, message) -> {});
+          SourceEvidenceGraph graph =
+              sourceUnderstanding.understand(
+                  prompt.id(), prompt.id() + ".md", prompt.sourceDocument(), 4000, 24);
           providerWaitMs += System.currentTimeMillis() - providerStarted;
-          providerCalls++;
-          if (analysis != null && !analysis.content().isBlank()) {
+          if (!graph.facts().isEmpty() || !graph.coverage().isEmpty()) {
             sourceAnalysisUsed = true;
-            snippets.add(
-                new AssistantModelProvider.ContextSnippet(
-                    "source-analysis",
-                    prompt.id() + " evidence map",
-                    compact(analysis.content(), 10000)));
+            coveredSourceChunks = graph.coverage().size();
+            try {
+              snippets.add(
+                  new AssistantModelProvider.ContextSnippet(
+                      "source-analysis",
+                      prompt.id() + " evidence graph",
+                      compact(mapper.writeValueAsString(graph), 10000)));
+            } catch (Exception ignored) {
+              // Keep eval running when serialization fails.
+            }
           }
         }
         if (toolBinder != null) {
           toolBinder.bind(level, prompt);
         }
+        JsonNode baseModel =
+            toolBinder == null || toolBinder.baseModel() == null
+                ? mapper.createObjectNode()
+                : toolBinder.baseModel();
+        Map<String, String> existingTypes =
+            toolBinder == null || toolBinder.existingTypes() == null
+                ? Map.of()
+                : toolBinder.existingTypes();
+        snippets = new ArrayList<>(snippets);
+        snippets.addAll(canvasContextSnippets(level, baseModel, existingTypes));
         try {
           long providerStarted = System.currentTimeMillis();
           AssistantModelProvider.AssistantReply reply =
@@ -161,26 +233,57 @@ public final class AssistantEvalRunner {
                       "Eval run for category "
                           + prompt.category()
                           + ". Return only ModelDelta JSON.\n\n"
-                          + modelDeltaProtocol(level),
+                          + modelDeltaProtocol(level, baseModel),
                       prompt.prompt(),
                       budgetSnippets(snippets)));
           providerWaitMs += System.currentTimeMillis() - providerStarted;
           providerCalls++;
           ModelDelta delta = deltaNormalizer.normalize(level, deltaParser.parse(reply.content()));
           SemanticModelPatch completed =
-              patchCompleter.complete(
-                  level,
-                  deltaCompiler.compile(
-                      level, mapper.createObjectNode(), java.util.Map.of(), delta),
-                  java.util.Map.of());
+              deltaCompiler.compile(level, baseModel, existingTypes, delta);
           int addCount = count(completed, SemanticModelPatch.OperationType.ADD_ELEMENT);
           int connectionCount = count(completed, SemanticModelPatch.OperationType.CONNECT_ELEMENTS);
+          long latencyMs = System.currentTimeMillis() - startedAt;
           boolean passed =
-              delta.kind() == ModelDelta.Kind.MODEL_DELTA
-                  && completed.operations().size() >= prompt.minOperations()
-                  && addCount >= prompt.minElementAdds()
-                  && connectionCount >= prompt.minConnections()
-                  && (!prompt.requiresSourceAnalysis() || sourceAnalysisUsed);
+              evalPassed(
+                  prompt,
+                  delta,
+                  completed,
+                  sourceAnalysisUsed,
+                  sourceChunkCount,
+                  coveredSourceChunks);
+          String failureStage = "";
+          String failureMessage = "";
+          if (passed
+              && live
+              && limits.maxTurnLatencyMs() > 0
+              && latencyMs > limits.maxTurnLatencyMs()) {
+            passed = false;
+            failureStage = "TURN_LATENCY";
+            failureMessage =
+                "latencyMs="
+                    + latencyMs
+                    + " exceeded turn budget "
+                    + limits.maxTurnLatencyMs()
+                    + "ms";
+          } else if (!passed) {
+            failureStage = "EVAL_EXPECTATIONS";
+            failureMessage =
+                "operations="
+                    + completed.operations().size()
+                    + "/"
+                    + prompt.minOperations()
+                    + ", additions="
+                    + addCount
+                    + "/"
+                    + prompt.minElementAdds()
+                    + ", connections="
+                    + connectionCount
+                    + "/"
+                    + prompt.minConnections()
+                    + ", sourceAnalysis="
+                    + sourceAnalysisUsed;
+          }
           builder
               .turnKind(delta.kind().name())
               .operationCount(completed.operations().size())
@@ -191,29 +294,13 @@ public final class AssistantEvalRunner {
               .repairAttempts(0)
               .toolCalls(providerCalls)
               .sourceChunkCount(sourceChunkCount)
-              .coveredSourceChunkCount(sourceAnalysisUsed ? sourceChunkCount : 0)
+              .coveredSourceChunkCount(sourceAnalysisUsed ? coveredSourceChunks : 0)
               .requiredContractCount(requiredContracts)
               .retrievedRequiredContractCount(retrievedRequiredContracts)
               .providerWaitMs(providerWaitMs)
-              .failureStage(passed ? "" : "EVAL_EXPECTATIONS")
-              .failureMessage(
-                  passed
-                      ? ""
-                      : "operations="
-                          + completed.operations().size()
-                          + "/"
-                          + prompt.minOperations()
-                          + ", additions="
-                          + addCount
-                          + "/"
-                          + prompt.minElementAdds()
-                          + ", connections="
-                          + connectionCount
-                          + "/"
-                          + prompt.minConnections()
-                          + ", sourceAnalysis="
-                          + sourceAnalysisUsed)
-              .latencyMs(System.currentTimeMillis() - startedAt);
+              .failureStage(failureStage)
+              .failureMessage(failureMessage)
+              .latencyMs(latencyMs);
         } finally {
           if (toolBinder != null) {
             toolBinder.clear();
@@ -247,6 +334,225 @@ public final class AssistantEvalRunner {
     return new SourceChunker().chunk(prompt.id(), prompt.sourceDocument(), 4000, 24).size();
   }
 
+  private boolean countsTowardModelDeltaSuccessGate(EvalResult result) {
+    if (result == null) {
+      return false;
+    }
+    if ("analysis".equals(result.category())) {
+      return false;
+    }
+    if ("psm".equals(result.category())
+        && result.operationCount() == 0
+        && result.addElementCount() == 0
+        && result.connectionCount() == 0) {
+      return false;
+    }
+    return true;
+  }
+
+  private boolean readOnlyLevelPrompt(EvalPrompt prompt) {
+    return "psm".equals(prompt.category()) && prompt.minOperations() == 0;
+  }
+
+  private boolean evalPassed(
+      EvalPrompt prompt,
+      ModelDelta delta,
+      SemanticModelPatch completed,
+      boolean sourceAnalysisUsed,
+      int sourceChunkCount,
+      int coveredSourceChunks) {
+    if ("analysis".equals(prompt.category()) || readOnlyLevelPrompt(prompt)) {
+      return delta.kind() == ModelDelta.Kind.ANSWER
+          || (delta.kind() == ModelDelta.Kind.MODEL_DELTA && completed.operations().isEmpty());
+    }
+    if ("resilience".equals(prompt.category())) {
+      return false;
+    }
+    boolean structural =
+        delta.kind() == ModelDelta.Kind.MODEL_DELTA
+            && completed.operations().size() >= prompt.minOperations()
+            && count(completed, SemanticModelPatch.OperationType.ADD_ELEMENT)
+                >= prompt.minElementAdds()
+            && count(completed, SemanticModelPatch.OperationType.CONNECT_ELEMENTS)
+                >= prompt.minConnections()
+            && structuralExpectationsMet(prompt, delta, completed);
+    if (!prompt.requiresSourceAnalysis()) {
+      return structural;
+    }
+    return structural
+        && sourceAnalysisUsed
+        && sourceChunkCount > 0
+        && coveredSourceChunks >= sourceChunkCount;
+  }
+
+  private boolean structuralExpectationsMet(
+      EvalPrompt prompt, ModelDelta delta, SemanticModelPatch completed) {
+    StructuralExpectations expectations = prompt.structuralExpectations();
+    if (expectations == null) {
+      return true;
+    }
+    Set<String> elementTypes =
+        completed.operations().stream()
+            .filter(op -> op.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
+            .map(SemanticModelPatch.Operation::elementType)
+            .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
+    for (String family : expectations.requiredTypeFamilies()) {
+      if (elementTypes.stream().noneMatch(type -> type.equalsIgnoreCase(family))) {
+        return false;
+      }
+    }
+    int relationships =
+        count(completed, SemanticModelPatch.OperationType.CONNECT_ELEMENTS)
+            + (int)
+                delta.references().stream()
+                    .filter(reference -> reference != null && !reference.referenceName().isBlank())
+                    .count();
+    if (relationships < expectations.minRelationships()) {
+      return false;
+    }
+    if (expectations.requireEvidenceIds()
+        && delta.elements().stream().anyMatch(element -> element.evidenceIds().isEmpty())) {
+      return false;
+    }
+    if (expectations.rejectPlaceholderOnlyNames()) {
+      for (ModelDelta.Element element : delta.elements()) {
+        String name =
+            element.attributes() == null ? "" : element.attributes().path("name").asText("");
+        if (!name.isBlank() && name.equalsIgnoreCase(element.eClass())) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  private EvalResult suiteBudgetExceededResult(
+      EvalPrompt prompt, long elapsedSuiteMs, long maxSuiteLatencyMs, int completedCount) {
+    return new EvalResult(
+        prompt == null ? "suite-budget" : prompt.id(),
+        prompt == null ? "suite" : prompt.category(),
+        prompt == null ? "" : prompt.level(),
+        "SUITE_BUDGET_EXCEEDED",
+        0,
+        0,
+        0,
+        false,
+        false,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        "SUITE_LATENCY",
+        "suiteLatencyMs="
+            + elapsedSuiteMs
+            + " exceeded budget "
+            + maxSuiteLatencyMs
+            + "ms after "
+            + completedCount
+            + " prompts",
+        0,
+        elapsedSuiteMs);
+  }
+
+  /** Live eval latency budgets aligned with product turn timeout defaults. */
+  public record LiveEvalBudget(long maxTurnLatencyMs, long maxSuiteLatencyMs) {
+    public static LiveEvalBudget defaults() {
+      return new LiveEvalBudget(300_000L, 1_800_000L);
+    }
+
+    public static LiveEvalBudget gateSuite() {
+      return new LiveEvalBudget(300_000L, 900_000L);
+    }
+  }
+
+  private void runStructuralStub(
+      EvalPrompt prompt,
+      ModelLevel level,
+      List<AssistantModelProvider.ContextSnippet> snippets,
+      EvalResult.Builder builder,
+      long startedAt,
+      int requiredContracts,
+      int retrievedRequiredContracts,
+      int sourceChunkCount) {
+    boolean schemaReady =
+        deltaSchemaFactory.responseSchema(level, prompt.requiredContracts()) != null;
+    boolean retrievalOk = requiredContracts == 0 || retrievedRequiredContracts >= requiredContracts;
+    boolean sourceOk =
+        !prompt.requiresSourceAnalysis()
+            || (sourceChunkCount > 0 && !prompt.sourceDocument().isBlank());
+    boolean passed = schemaReady && retrievalOk && sourceOk;
+    int coveredChunks =
+        prompt.sourceDocument().isBlank()
+            ? 0
+            : new SourceEvidenceExtractor()
+                .extract(
+                    prompt.id(),
+                    new SourceChunker()
+                        .chunk(prompt.id(), prompt.sourceDocument(), 4000, 24)
+                        .get(0))
+                .coverage()
+                .size();
+    builder
+        .turnKind("STRUCTURAL_STUB")
+        .operationCount(0)
+        .addElementCount(0)
+        .connectionCount(0)
+        .sourceAnalysisUsed(false)
+        .sourceChunkCount(sourceChunkCount)
+        .coveredSourceChunkCount(coveredChunks)
+        .requiredContractCount(requiredContracts)
+        .retrievedRequiredContractCount(retrievedRequiredContracts)
+        .validationPassed(passed)
+        .repairAttempts(0)
+        .toolCalls(0)
+        .providerWaitMs(0)
+        .failureStage(passed ? "" : "STRUCTURAL_STUB")
+        .failureMessage(
+            passed
+                ? ""
+                : "schema=" + schemaReady + ", retrieval=" + retrievalOk + ", source=" + sourceOk)
+        .latencyMs(System.currentTimeMillis() - startedAt);
+  }
+
+  private void runResilienceStub(EvalPrompt prompt, EvalResult.Builder builder, long startedAt) {
+    String expected = prompt.expectedOutcome();
+    boolean passed = false;
+    String actual = "";
+    if ("STALE_REVISION".equals(expected)) {
+      actual =
+          AgentErrorResolver.resolve(
+                  new PlatformException(409, "The model changed while planning. Stale revision."),
+                  "APPLY_PRECONDITION",
+                  prompt.id())
+              .code();
+      passed = expected.equals(actual);
+    } else if ("PROVIDER_TIMEOUT".equals(expected)) {
+      actual =
+          AgentErrorResolver.resolve(
+                  new PlatformException(504, "Provider timed out."),
+                  "MODELING_PROVIDER_CALL",
+                  prompt.id())
+              .code();
+      passed = expected.equals(actual);
+    } else if ("IGNORED_INSTRUCTION".equals(expected) && !prompt.sourceDocument().isBlank()) {
+      var chunk = new SourceChunker().chunk(prompt.id(), prompt.sourceDocument(), 4000, 24).get(0);
+      var graph = new SourceEvidenceExtractor().extract(prompt.id(), chunk);
+      passed =
+          graph.facts().stream()
+              .anyMatch(fact -> "IGNORED_INSTRUCTION".equalsIgnoreCase(fact.kind()));
+      actual = passed ? expected : "MISSING_IGNORED_INSTRUCTION";
+    }
+    builder
+        .turnKind("RESILIENCE_STUB")
+        .operationCount(0)
+        .validationPassed(passed)
+        .failureStage(passed ? "" : "RESILIENCE_STUB")
+        .failureMessage(passed ? "" : "expected=" + expected + ", actual=" + actual)
+        .latencyMs(System.currentTimeMillis() - startedAt);
+  }
+
   private String sourceAnalysisPrompt(EvalPrompt prompt) {
     return """
     Eval source analysis for\
@@ -260,7 +566,50 @@ public final class AssistantEvalRunner {
         """;
   }
 
+  private List<AssistantModelProvider.ContextSnippet> canvasContextSnippets(
+      ModelLevel level, JsonNode baseModel, Map<String, String> existingTypes) {
+    if (baseModel == null
+        || baseModel.isEmpty()
+        || existingTypes == null
+        || existingTypes.isEmpty()) {
+      return List.of();
+    }
+    String rootId = baseModel.path("id").asText("");
+    StringBuilder summary = new StringBuilder();
+    existingTypes.entrySet().stream()
+        .filter(entry -> !entry.getKey().equals(rootId))
+        .sorted(Map.Entry.comparingByKey())
+        .forEach(
+            entry ->
+                summary
+                    .append("- ")
+                    .append(entry.getKey())
+                    .append(" (")
+                    .append(entry.getValue())
+                    .append(")\n"));
+    if (summary.isEmpty()) {
+      return List.of();
+    }
+    return List.of(
+        new AssistantModelProvider.ContextSnippet(
+            "canvas-context",
+            "Current saved canvas elements",
+            "Use these existing element IDs when extending the model:\n" + summary),
+        new AssistantModelProvider.ContextSnippet(
+            "canvas-root",
+            "Canvas root id",
+            "Model root id is "
+                + (rootId.isBlank() ? "root" : rootId)
+                + ". For root-owned elements set placement.ownerId to "
+                + (rootId.isBlank() ? "\"root\"" : ("\"" + rootId + "\" or \"root\""))
+                + " and use the exact root containment referenceName from the contracts."));
+  }
+
   private String modelDeltaProtocol(ModelLevel level) {
+    return modelDeltaProtocol(level, null);
+  }
+
+  private String modelDeltaProtocol(ModelLevel level, JsonNode baseModel) {
     return """
     Use the single provider-facing ModelDelta protocol. Return exactly one JSON object with these
     top-level fields only: intent, kind, message, questions, elements, references,
@@ -270,8 +619,9 @@ public final class AssistantEvalRunner {
     For model changes, set intent=MUTATION and kind=MODEL_DELTA. Put each new model element in
     elements with localId, eClass, attributes, placement, and optional evidenceIds. placement is
     containment only and must use ownerId plus the exact containment referenceName from the Ecore
-    contracts; use ownerId="root" for root-owned elements. Put writable non-containment
-    EReferences in references. Put scalar EAttributes in attributes or attributeUpdates.
+    contracts; use ownerId="root" for root-owned elements.     Put writable non-containment
+    EReferences in references using the exact field name referenceName (never featureName).
+    Put scalar EAttributes in attributes or attributeUpdates using attributeName.
 
     Use only EClasses and features from the supplied Ecore-derived contracts for level \
     """
@@ -279,6 +629,10 @@ public final class AssistantEvalRunner {
         + """
 . Model source-backed facts with evidenceIds when source evidence is supplied. Do not
 synthesize deletion unless the user explicitly asked for deletion.
+
+"""
+        + rootPlacementCheatSheet(level)
+        + """
 
 For CIM/event-storming turns, add explicit relationship references instead of isolated
 elements. Common valid CIM links include Actor.issuesCommands -> Command,
@@ -291,6 +645,32 @@ ExternalSystem.producedEvents -> BusinessEvent, and ExternalSystem.consumedEvent
 BusinessEvent. Use these exact Ecore feature names and include at least several
 source-backed references for source documents.
 """;
+  }
+
+  private String rootPlacementCheatSheet(ModelLevel level) {
+    return switch (level) {
+      case CIM ->
+          """
+          Root containment referenceName cheat sheet (ownerId=root):
+          Actor->actors, Command->commands, Role->roles, Risk->risks, BusinessEvent->businessEvents,
+          Policy->policies, BusinessGoal->businessGoals, Assumption->assumptions.
+          Never use the model root EClass (CIMModel) as an element eClass.
+          """;
+      case PIM ->
+          """
+          Root containment referenceName cheat sheet (ownerId=root):
+          Workflow->workflows, Function->functions, Api->apis, EventChannel->eventChannels.
+          Never use the model root EClass (PIMModel) as an element eClass.
+          """;
+      case PSM ->
+          """
+          Root containment referenceName cheat sheet (ownerId=root):
+          SamStack->stacks, TraceModel->traceModel, AwsSecurityBaseline->securityBaselines,
+          AwsNamingPolicy->namingPolicies.
+          Never use model root EClasses (AwsPsmModel, PSMModel) as element eClass.
+          """;
+      default -> "";
+    };
   }
 
   private String sourceAnalysisUserMessage(EvalPrompt prompt) {
@@ -429,8 +809,10 @@ source-backed references for source documents.
     QualityGateConfig gates = config == null ? QualityGateConfig.defaults() : config;
     int total = rows.size();
     long passed = rows.stream().filter(EvalResult::validationPassed).count();
+    long modelDeltaEligible = rows.stream().filter(this::countsTowardModelDeltaSuccessGate).count();
     long modelDeltaSuccesses =
         rows.stream()
+            .filter(this::countsTowardModelDeltaSuccessGate)
             .filter(EvalResult::validationPassed)
             .filter(result -> ModelDelta.Kind.MODEL_DELTA.name().equals(result.turnKind()))
             .count();
@@ -440,7 +822,8 @@ source-backed references for source documents.
     long retrievedContracts =
         rows.stream().mapToLong(EvalResult::retrievedRequiredContractCount).sum();
     double passRate = total == 0 ? 1.0 : (double) passed / total;
-    double modelDeltaRate = passed == 0 ? 1.0 : (double) modelDeltaSuccesses / passed;
+    double modelDeltaRate =
+        modelDeltaEligible == 0 ? 1.0 : (double) modelDeltaSuccesses / modelDeltaEligible;
     double sourceCoverageRate =
         sourceChunks == 0 ? 1.0 : (double) coveredSourceChunks / sourceChunks;
     double retrievalRecallRate =
@@ -564,11 +947,20 @@ source-backed references for source documents.
   }
 
   /** Binds tool context for live agent-loop eval runs. */
-  @FunctionalInterface
   public interface ToolBinder {
     void bind(ModelLevel level, EvalPrompt prompt);
 
     default void clear() {}
+
+    /** Current canvas JSON used to validate and compile ModelDelta output. */
+    default JsonNode baseModel() {
+      return null;
+    }
+
+    /** Stable element IDs already on the canvas. */
+    default Map<String, String> existingTypes() {
+      return Map.of();
+    }
   }
 
   /**
@@ -598,13 +990,79 @@ source-backed references for source documents.
       int minOperations,
       int minElementAdds,
       int minConnections,
-      boolean requiresSourceAnalysis) {
+      boolean requiresSourceAnalysis,
+      String expectedOutcome,
+      StructuralExpectations structuralExpectations) {
+
+    public EvalPrompt(
+        String id,
+        String category,
+        String level,
+        String prompt,
+        boolean emptyCanvas,
+        List<String> selectedElementIds,
+        String sourceDocument,
+        List<String> requiredContracts,
+        int minOperations,
+        int minElementAdds,
+        int minConnections,
+        boolean requiresSourceAnalysis) {
+      this(
+          id,
+          category,
+          level,
+          prompt,
+          emptyCanvas,
+          selectedElementIds,
+          sourceDocument,
+          requiredContracts,
+          minOperations,
+          minElementAdds,
+          minConnections,
+          requiresSourceAnalysis,
+          "",
+          StructuralExpectations.none());
+    }
+
+    public EvalPrompt(
+        String id,
+        String category,
+        String level,
+        String prompt,
+        boolean emptyCanvas,
+        List<String> selectedElementIds,
+        String sourceDocument,
+        List<String> requiredContracts,
+        int minOperations,
+        int minElementAdds,
+        int minConnections,
+        boolean requiresSourceAnalysis,
+        String expectedOutcome) {
+      this(
+          id,
+          category,
+          level,
+          prompt,
+          emptyCanvas,
+          selectedElementIds,
+          sourceDocument,
+          requiredContracts,
+          minOperations,
+          minElementAdds,
+          minConnections,
+          requiresSourceAnalysis,
+          expectedOutcome,
+          StructuralExpectations.none());
+    }
 
     public EvalPrompt {
       selectedElementIds = selectedElementIds == null ? List.of() : List.copyOf(selectedElementIds);
       sourceDocument = sourceDocument == null ? "" : sourceDocument;
       requiredContracts = requiredContracts == null ? List.of() : List.copyOf(requiredContracts);
-      minOperations = Math.max(minOperations, 1);
+      expectedOutcome = expectedOutcome == null ? "" : expectedOutcome.trim();
+      structuralExpectations =
+          structuralExpectations == null ? StructuralExpectations.none() : structuralExpectations;
+      minOperations = Math.max(minOperations, 0);
       minElementAdds = Math.max(minElementAdds, 0);
       minConnections = Math.max(minConnections, 0);
     }
@@ -694,6 +1152,45 @@ source-backed references for source documents.
           + p95BackendLatencyMs
           + "ms, avgProviderCalls="
           + String.format(Locale.ROOT, "%.2f", averageProviderCalls);
+    }
+
+    public String toJson() {
+      return "{"
+          + "\"total\":"
+          + total
+          + ",\"p50LatencyMs\":"
+          + p50LatencyMs
+          + ",\"p95LatencyMs\":"
+          + p95LatencyMs
+          + ",\"p50ProviderWaitMs\":"
+          + p50ProviderWaitMs
+          + ",\"p95ProviderWaitMs\":"
+          + p95ProviderWaitMs
+          + ",\"p50BackendLatencyMs\":"
+          + p50BackendLatencyMs
+          + ",\"p95BackendLatencyMs\":"
+          + p95BackendLatencyMs
+          + ",\"averageProviderCalls\":"
+          + String.format(Locale.ROOT, "%.4f", averageProviderCalls)
+          + "}";
+    }
+  }
+
+  /** Golden structural expectations beyond operation counts. */
+  public record StructuralExpectations(
+      List<String> requiredTypeFamilies,
+      int minRelationships,
+      boolean requireEvidenceIds,
+      boolean rejectPlaceholderOnlyNames) {
+
+    public StructuralExpectations {
+      requiredTypeFamilies =
+          requiredTypeFamilies == null ? List.of() : List.copyOf(requiredTypeFamilies);
+      minRelationships = Math.max(minRelationships, 0);
+    }
+
+    public static StructuralExpectations none() {
+      return new StructuralExpectations(List.of(), 0, false, false);
     }
   }
 

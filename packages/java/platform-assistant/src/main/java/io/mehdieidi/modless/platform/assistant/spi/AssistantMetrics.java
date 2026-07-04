@@ -52,6 +52,14 @@ public interface AssistantMetrics {
   default void recordAssistantProviderFailure(String provider) {}
 
   /**
+   * Records wall-clock duration for one assistant turn phase.
+   *
+   * @param phase canonical phase name
+   * @param millis elapsed milliseconds
+   */
+  default void recordAssistantPhaseDuration(String phase, long millis) {}
+
+  /**
    * Records a rate-limited assistant request.
    *
    * @param userId user ID

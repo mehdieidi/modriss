@@ -73,7 +73,6 @@ The packaged modeling config defaults to `antv-g6`. The Docker Compose stack ove
 | `MODLESS_AI_MAX_SOURCE_CHUNK_TOKENS`    | `4000`                           |
 | `MODLESS_AI_MAX_SOURCE_CHUNKS_PER_TURN` | `24`                             |
 | `MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY`    | `true`                           |
-| `MODLESS_AI_NEW_AGENT_ENABLED`          | `true`                           |
 | `MODLESS_AI_MAX_CONTEXT_SNIPPETS`       | `24`                             |
 | `MODLESS_AI_RESERVED_SCHEMA_SNIPPETS`   | `10`                             |
 | `MODLESS_AI_MAX_SNIPPET_CHARS`          | `2400`                           |

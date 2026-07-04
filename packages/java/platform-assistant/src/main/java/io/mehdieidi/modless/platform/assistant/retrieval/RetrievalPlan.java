@@ -9,10 +9,31 @@ public record RetrievalPlan(
     List<String> concepts,
     List<String> candidateTypes,
     boolean includeMethodology,
-    boolean includeSelectedNeighborhood) {
+    boolean includeSelectedNeighborhood,
+    String taskSummary,
+    List<String> mustIncludeContractsFor) {
+
+  public RetrievalPlan(
+      ModelLevel level,
+      List<String> concepts,
+      List<String> candidateTypes,
+      boolean includeMethodology,
+      boolean includeSelectedNeighborhood) {
+    this(
+        level,
+        concepts,
+        candidateTypes,
+        includeMethodology,
+        includeSelectedNeighborhood,
+        "",
+        List.of());
+  }
 
   public RetrievalPlan {
     concepts = concepts == null ? List.of() : List.copyOf(concepts);
     candidateTypes = candidateTypes == null ? List.of() : List.copyOf(candidateTypes);
+    taskSummary = taskSummary == null ? "" : taskSummary.trim();
+    mustIncludeContractsFor =
+        mustIncludeContractsFor == null ? List.of() : List.copyOf(mustIncludeContractsFor);
   }
 }

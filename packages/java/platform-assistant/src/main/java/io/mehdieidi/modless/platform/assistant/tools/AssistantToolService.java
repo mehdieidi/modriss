@@ -2,6 +2,7 @@ package io.mehdieidi.modless.platform.assistant.tools;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.platform.assistant.agent.ToolRegistry;
 import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
 import io.mehdieidi.modless.platform.assistant.delta.ModelDelta;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
@@ -35,6 +36,10 @@ public class AssistantToolService implements AssistantToolBridge {
   private final ModelService models;
   private final ObjectMapper mapper;
   private final ThreadLocal<AssistantToolBridge.ToolSession> session = new ThreadLocal<>();
+  private final ThreadLocal<AssistantToolBridge.AssistantToolTrace> trace = new ThreadLocal<>();
+  private final ThreadLocal<ToolRegistry> toolRegistry = new ThreadLocal<>();
+  private final ThreadLocal<Integer> toolStep = new ThreadLocal<>();
+  private final ThreadLocal<Integer> toolCallsThisStep = new ThreadLocal<>();
   private final AtomicInteger toolCallCount = new AtomicInteger();
 
   public AssistantToolService(
@@ -53,16 +58,41 @@ public class AssistantToolService implements AssistantToolBridge {
   }
 
   /** Binds model context used by element and validation tools for one agent loop turn. */
+  public void bindToolRegistry(ToolRegistry registry) {
+    if (registry == null) {
+      toolRegistry.remove();
+    } else {
+      toolRegistry.set(registry);
+    }
+    toolStep.set(1);
+    toolCallsThisStep.set(0);
+  }
+
   @Override
   public void bindSession(AssistantToolBridge.ToolSession toolSession) {
     session.set(toolSession);
     toolCallCount.set(0);
+    toolStep.set(1);
+    toolCallsThisStep.set(0);
+  }
+
+  @Override
+  public void bindTrace(AssistantToolBridge.AssistantToolTrace listener) {
+    if (listener == null) {
+      trace.remove();
+    } else {
+      trace.set(listener);
+    }
   }
 
   /** Clears the active tool session. */
   @Override
   public void clearSession() {
     session.remove();
+    trace.remove();
+    toolRegistry.remove();
+    toolStep.remove();
+    toolCallsThisStep.remove();
   }
 
   /** Returns and resets the number of tool invocations in the active session. */
@@ -509,7 +539,32 @@ public class AssistantToolService implements AssistantToolBridge {
   }
 
   private void trackToolCall() {
+    ToolRegistry registry = toolRegistry.get();
+    int step = toolStep.get() == null ? 1 : toolStep.get();
+    int callsThisStep = toolCallsThisStep.get() == null ? 0 : toolCallsThisStep.get();
+    int callsThisTurn = toolCallCount.get();
+    String toolName = resolveCallingToolName();
+    if (registry != null) {
+      registry.checkBudget(toolName, callsThisTurn, callsThisStep, step);
+    }
     toolCallCount.incrementAndGet();
+    toolCallsThisStep.set(callsThisStep + 1);
+    AssistantToolBridge.AssistantToolTrace listener = trace.get();
+    if (listener != null) {
+      listener.started(toolName);
+      listener.completed(toolName);
+    }
+  }
+
+  private String resolveCallingToolName() {
+    for (StackTraceElement frame : Thread.currentThread().getStackTrace()) {
+      if (AssistantToolService.class.getName().equals(frame.getClassName())
+          && !"trackToolCall".equals(frame.getMethodName())
+          && !"resolveCallingToolName".equals(frame.getMethodName())) {
+        return frame.getMethodName();
+      }
+    }
+    return "assistant-tool";
   }
 
   private List<String> splitIds(String raw) {

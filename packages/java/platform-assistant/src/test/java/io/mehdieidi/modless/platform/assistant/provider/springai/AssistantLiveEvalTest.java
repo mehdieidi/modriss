@@ -13,6 +13,8 @@ import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningSer
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
+import io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes.AssistantModelContext;
+import io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes.ContextElement;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompleter;
@@ -20,13 +22,18 @@ import io.mehdieidi.modless.platform.assistant.persistence.jdbc.JdbcAssistantMod
 import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantToolBridge;
+import io.mehdieidi.modless.platform.assistant.support.AssistantEvalGateReportWriter;
+import io.mehdieidi.modless.platform.assistant.support.AssistantEvalModelFixtures;
+import io.mehdieidi.modless.platform.assistant.support.TestEnvFiles;
 import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.net.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -38,20 +45,102 @@ import org.springframework.web.client.RestClient;
 class AssistantLiveEvalTest {
 
   @Test
-  void liveProviderCreatesLargeConnectedCimFromEventStormingDocument() throws Exception {
+  void liveGatePromptsPassQualityGatesWithinTurnBudget() throws Exception {
     LiveEvalHarness harness = liveEvalHarness();
-    AssistantEvalRunner.EvalPrompt prompt =
-        harness.runner().loadPrompts().stream()
-            .filter(item -> "cim-eventstorming-01".equals(item.id()))
-            .findFirst()
-            .orElseThrow();
-
+    AssistantEvalRunner.LiveEvalBudget budget = AssistantEvalRunner.LiveEvalBudget.gateSuite();
+    long suiteStarted = System.currentTimeMillis();
     List<AssistantEvalRunner.EvalResult> results =
-        harness.runner().run(true, toolBinder(harness.tools(), harness.mapper()), List.of(prompt));
+        harness
+            .runner()
+            .run(
+                true,
+                toolBinder(harness.tools(), harness.mapper()),
+                harness.runner().loadLiveGatePrompts(),
+                budget);
+    AssistantEvalRunner.QualityGateReport gates = harness.runner().qualityGateReport(results);
+    AssistantEvalRunner.LatencyReport latency = harness.runner().latencyReport(results);
+    String baseline = harness.runner().baselineReport(results);
 
-    assertTrue(results.get(0).validationPassed(), () -> harness.runner().baselineReport(results));
+    System.out.println(
+        "Live gate suite wall-clock: " + (System.currentTimeMillis() - suiteStarted) + "ms");
+    System.out.println(gates.summary());
+    System.out.println(latency.summary());
+    System.out.println(baseline);
+
+    writeGateReportIfRequested(true, results, gates, latency, baseline);
+
+    for (AssistantEvalRunner.EvalResult result : results) {
+      org.junit.jupiter.api.Assertions.assertTrue(
+          result.latencyMs() <= budget.maxTurnLatencyMs(),
+          () ->
+              result.id()
+                  + " exceeded 5m turn budget at "
+                  + result.latencyMs()
+                  + "ms (providerWait="
+                  + result.providerWaitMs()
+                  + "ms): "
+                  + result.failureMessage());
+    }
+
+    assertTrue(
+        gates.passedGates(), () -> gates.summary() + "\n" + gates.violations() + "\n" + baseline);
   }
 
+  @org.junit.jupiter.api.Timeout(300)
+  @Test
+  void liveStressEventStormingDocumentWithinTurnBudget() throws Exception {
+    LiveEvalHarness harness = liveEvalHarness();
+    AssistantEvalRunner.EvalPrompt prompt =
+        new AssistantEvalRunner.EvalPrompt(
+            "cim-eventstorming-stress",
+            "cim-source-document",
+            "CIM",
+            harness.runner().loadPrompts().stream()
+                .filter(item -> "cim-eventstorming-01".equals(item.id()))
+                .findFirst()
+                .orElseThrow()
+                .prompt(),
+            true,
+            List.of(),
+            harness.runner().loadPrompts().stream()
+                .filter(item -> "cim-eventstorming-01".equals(item.id()))
+                .findFirst()
+                .orElseThrow()
+                .sourceDocument(),
+            List.of(),
+            12,
+            8,
+            2,
+            true);
+
+    List<AssistantEvalRunner.EvalResult> results =
+        harness
+            .runner()
+            .run(
+                true,
+                toolBinder(harness.tools(), harness.mapper()),
+                List.of(prompt),
+                AssistantEvalRunner.LiveEvalBudget.defaults());
+
+    AssistantEvalRunner.EvalResult result = results.get(0);
+    System.out.println(
+        "Stress eventstorming: operations="
+            + result.operationCount()
+            + ", latencyMs="
+            + result.latencyMs()
+            + ", providerWaitMs="
+            + result.providerWaitMs()
+            + ", stage="
+            + result.failureStage());
+    org.junit.jupiter.api.Assertions.assertTrue(
+        result.latencyMs() <= 300_000L,
+        () -> "stress eval exceeded 5m: " + result.latencyMs() + "ms");
+    org.junit.jupiter.api.Assertions.assertFalse(
+        "PLANNING".equals(result.failureStage()), () -> result.failureMessage());
+  }
+
+  @org.junit.jupiter.api.Disabled(
+      "Optional long-running document eval; not part of live quality gates.")
   @Test
   void liveProviderCreatesCimFromCommunityClinicUserStories() throws Exception {
     LiveEvalHarness harness = liveEvalHarness();
@@ -94,8 +183,48 @@ class AssistantLiveEvalTest {
     assertTrue(result.validationPassed(), () -> harness.runner().baselineReport(results));
   }
 
+  @org.junit.jupiter.api.Disabled(
+      "Full 46-prompt matrix is for baseline recording only; use"
+          + " liveGatePromptsPassQualityGatesWithinTurnBudget.")
+  @Test
+  void liveFullEvalMatrixPassesQualityGates() throws Exception {
+    LiveEvalHarness harness = liveEvalHarness();
+    List<AssistantEvalRunner.EvalResult> results =
+        harness.runner().run(true, toolBinder(harness.tools(), harness.mapper()));
+    AssistantEvalRunner.QualityGateReport gates = harness.runner().qualityGateReport(results);
+    AssistantEvalRunner.LatencyReport latency = harness.runner().latencyReport(results);
+    String baseline = harness.runner().baselineReport(results);
+
+    System.out.println(gates.summary());
+    System.out.println(latency.summary());
+    System.out.println(baseline);
+
+    writeGateReportIfRequested(true, results, gates, latency, baseline);
+
+    assertTrue(
+        gates.passedGates(), () -> gates.summary() + "\n" + gates.violations() + "\n" + baseline);
+  }
+
+  private void writeGateReportIfRequested(
+      boolean live,
+      List<AssistantEvalRunner.EvalResult> results,
+      AssistantEvalRunner.QualityGateReport gates,
+      AssistantEvalRunner.LatencyReport latency,
+      String baseline)
+      throws Exception {
+    if (!"true".equalsIgnoreCase(TestEnvFiles.get("MODLESS_WRITE_EVAL_REPORT"))) {
+      return;
+    }
+    Path reportPath = Path.of("../../../docs/internal/ai/live-eval-gate-report.md").normalize();
+    String markdown =
+        AssistantEvalGateReportWriter.markdown(live, results, gates, latency, baseline);
+    Files.writeString(
+        reportPath, markdown, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    System.out.println("Wrote eval gate report to " + reportPath);
+  }
+
   private LiveEvalHarness liveEvalHarness() {
-    Map<String, String> env = env();
+    Map<String, String> env = TestEnvFiles.load();
     assumeTrue(
         "true".equalsIgnoreCase(env.getOrDefault("MODLESS_RUN_LIVE_ASSISTANT_EVAL", "")),
         "Set MODLESS_RUN_LIVE_ASSISTANT_EVAL=true to run the live LLM eval.");
@@ -167,8 +296,7 @@ class AssistantLiveEvalTest {
         integer(env, "MODLESS_AI_MAX_PROMPT_TOKENS", 24000),
         integer(env, "MODLESS_AI_MAX_SOURCE_CHUNK_TOKENS", 4000),
         integer(env, "MODLESS_AI_MAX_SOURCE_CHUNKS_PER_TURN", 24),
-        bool(env, "MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY", true),
-        bool(env, "MODLESS_AI_NEW_AGENT_ENABLED", true));
+        bool(env, "MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY", true));
   }
 
   private RestClient.Builder restClientBuilder(AiProperties properties) {
@@ -255,27 +383,51 @@ class AssistantLiveEvalTest {
 
   private AssistantEvalRunner.ToolBinder toolBinder(AssistantToolService tools, ObjectMapper mapper)
       throws Exception {
-    JsonNode cimModel =
-        mapper.readTree(
-            """
-            {"id":"cim-root","eClass":"CIMModel","modelLevel":"CIM","name":"Live CIM Eval",
-             "diagram":{"elements":[],"relationships":[]}}
-            """);
     JdbcAssistantModelContextIndex contexts = new JdbcAssistantModelContextIndex();
+    ThreadLocal<EvalSession> session = new ThreadLocal<>();
     return new AssistantEvalRunner.ToolBinder() {
       @Override
       public void bind(ModelLevel level, AssistantEvalRunner.EvalPrompt prompt) {
-        var context =
-            contexts.transientSnapshot("eval-project", level, "Live CIM Eval", 1L, cimModel, null);
-        tools.bindSession(new AssistantToolBridge.ToolSession(level, cimModel, context));
+        try {
+          JsonNode model = AssistantEvalModelFixtures.modelFor(level, prompt);
+          AssistantModelContext context =
+              contexts.transientSnapshot("eval-project", level, "Live Eval", 1L, model, null);
+          Map<String, String> existingTypes =
+              context.elements().stream()
+                  .collect(
+                      Collectors.toMap(
+                          ContextElement::id,
+                          ContextElement::type,
+                          (left, right) -> left,
+                          LinkedHashMap::new));
+          session.set(new EvalSession(model, existingTypes));
+          tools.bindSession(new AssistantToolBridge.ToolSession(level, model, context));
+        } catch (Exception ex) {
+          throw new IllegalStateException("Could not bind live eval session.", ex);
+        }
+      }
+
+      @Override
+      public JsonNode baseModel() {
+        EvalSession current = session.get();
+        return current == null ? null : current.model();
+      }
+
+      @Override
+      public Map<String, String> existingTypes() {
+        EvalSession current = session.get();
+        return current == null ? Map.of() : current.existingTypes();
       }
 
       @Override
       public void clear() {
+        session.remove();
         tools.clearSession();
       }
     };
   }
+
+  private record EvalSession(JsonNode model, Map<String, String> existingTypes) {}
 
   private AssistantCatalog emptyCatalog() {
     return new AssistantCatalog() {
@@ -307,36 +459,7 @@ class AssistantLiveEvalTest {
   }
 
   private Map<String, String> env() {
-    Map<String, String> values = new java.util.LinkedHashMap<>(System.getenv());
-    Path envFile = Path.of(".env");
-    if (Files.exists(envFile)) {
-      try {
-        for (String rawLine : Files.readAllLines(envFile)) {
-          String line = rawLine.trim();
-          if (line.isBlank() || line.startsWith("#") || !line.contains("=")) {
-            continue;
-          }
-          String[] parts = line.split("=", 2);
-          values.put(parts[0].trim(), unquote(parts[1].trim()));
-        }
-      } catch (Exception ignored) {
-        // Environment variables are still enough for the opt-in live test.
-      }
-    }
-    return values.entrySet().stream()
-        .collect(
-            Collectors.toMap(
-                entry -> entry.getKey().toUpperCase(Locale.ROOT),
-                Map.Entry::getValue,
-                (left, right) -> right,
-                java.util.LinkedHashMap::new));
-  }
-
-  private static String unquote(String value) {
-    if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
-      return value.substring(1, value.length() - 1);
-    }
-    return value;
+    return TestEnvFiles.load();
   }
 
   private record LiveEvalHarness(

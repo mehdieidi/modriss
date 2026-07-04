@@ -114,6 +114,23 @@ public final class ModelingConfigService {
   }
 
   /**
+   * Returns structural metamodel elements read directly from combined Ecore for a level.
+   *
+   * <p>Assistant contract indexing uses this as the canonical structural source so retrieval and
+   * ModelDelta schema generation do not depend on UI metadata drift.
+   *
+   * @param level modeling level
+   * @return Ecore-derived element metadata maps
+   */
+  public List<Map<String, Object>> ecoreDerivedElements(ModelLevel level) {
+    String key = level.apiName();
+    Map<String, Object> metadata = readMetadata(key);
+    String rootType =
+        String.valueOf(requireMap(metadata, "rootTemplate", key).getOrDefault("eClass", ""));
+    return readEcoreMetamodel(key, rootType).elements();
+  }
+
+  /**
    * Builds one level configuration from UI metadata and Ecore-derived structure.
    *
    * @param key lowercase level key

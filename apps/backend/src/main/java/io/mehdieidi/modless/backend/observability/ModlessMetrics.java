@@ -2,6 +2,8 @@ package io.mehdieidi.modless.backend.observability;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Component;
 
 /** Application-specific Prometheus metrics for MDE and assistant operations. */
@@ -106,6 +108,23 @@ public class ModlessMetrics {
     if (toolCalls > 0) {
       assistantToolCalls.increment(toolCalls);
     }
+  }
+
+  /**
+   * Records wall-clock duration for one assistant turn phase.
+   *
+   * @param phase canonical phase name
+   * @param millis elapsed milliseconds
+   */
+  public void recordAssistantPhaseDuration(String phase, long millis) {
+    if (millis <= 0L) {
+      return;
+    }
+    Timer.builder("modless.assistant.phase")
+        .description("Assistant turn phase latency")
+        .tag("phase", safeTag(phase))
+        .register(registry)
+        .record(millis, TimeUnit.MILLISECONDS);
   }
 
   private static String safeTag(String value) {

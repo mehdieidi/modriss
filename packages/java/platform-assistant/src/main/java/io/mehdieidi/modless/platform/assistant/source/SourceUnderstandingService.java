@@ -26,9 +26,28 @@ public class SourceUnderstandingService {
    */
   public SourceEvidenceGraph understand(
       String sourceId, String sourceName, String content, int maxTokens, int maxChunks) {
+    return understand(sourceId, sourceName, content, maxTokens, maxChunks, null);
+  }
+
+  /** Builds an evidence graph with optional per-chunk progress callbacks for realtime coverage. */
+  public SourceEvidenceGraph understand(
+      String sourceId,
+      String sourceName,
+      String content,
+      int maxTokens,
+      int maxChunks,
+      SourceChunkProgressListener listener) {
     List<SourceChunk> chunks = chunker.chunk(sourceName, content, maxTokens, maxChunks);
-    List<SourceEvidenceGraph> graphs =
-        chunks.stream().map(chunk -> extractor.extract(sourceId, chunk)).toList();
+    if (chunks.isEmpty()) {
+      return new SourceEvidenceGraph(sourceId, List.of(), List.of(), List.of());
+    }
+    List<SourceEvidenceGraph> graphs = new java.util.ArrayList<>();
+    for (int index = 0; index < chunks.size(); index++) {
+      graphs.add(extractor.extract(sourceId, chunks.get(index)));
+      if (listener != null) {
+        listener.onChunkProcessed(index + 1, chunks.size(), merger.merge(sourceId, graphs));
+      }
+    }
     return merger.merge(sourceId, graphs);
   }
 }

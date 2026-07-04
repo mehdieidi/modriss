@@ -15,7 +15,7 @@ class AiPropertiesTest {
     AiProperties properties =
         new AiProperties(
             false, null, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, null, null, null, null, null, null,
-            null, 0, 0, 0, 0, true, true);
+            null, 0, 0, 0, 0, true);
 
     assertFalse(properties.enabled());
     assertEquals("openai", properties.provider());
@@ -38,7 +38,6 @@ class AiPropertiesTest {
     assertEquals(4000, properties.maxSourceChunkTokens());
     assertEquals(24, properties.maxSourceChunksPerTurn());
     assertTrue(properties.requireIdempotencyKey());
-    assertTrue(properties.newAgentEnabled());
     assertEquals(10, properties.reservedSchemaSnippets());
     assertEquals("gpt-4o-mini", properties.modelFor(AssistantModelRole.RESPONDER));
   }
@@ -87,7 +86,6 @@ class AiPropertiesTest {
             0,
             0,
             0,
-            true,
             true);
 
     assertEquals(AiProperties.Provider.GEMINI, properties.providerKind());

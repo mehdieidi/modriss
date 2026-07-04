@@ -3,6 +3,7 @@ package io.mehdieidi.modless.platform.assistant.metamodel;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.modeling.config.ModelingConfigService;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,8 +14,13 @@ public class MetamodelKnowledgeService {
   private final MetamodelKnowledgeIndex index;
 
   public MetamodelKnowledgeService(AssistantMetamodelSchemaService schemas) {
+    this(schemas, new ModelingConfigService());
+  }
+
+  public MetamodelKnowledgeService(
+      AssistantMetamodelSchemaService schemas, ModelingConfigService modelingConfig) {
     this.schemas = schemas == null ? new AssistantMetamodelSchemaService() : schemas;
-    this.index = new EcoreContractExtractor(this.schemas).extract();
+    this.index = new EcoreContractExtractor(modelingConfig).extract();
   }
 
   /** Returns all creatable type contracts for a level. */
@@ -37,17 +43,71 @@ public class MetamodelKnowledgeService {
     return index;
   }
 
+  /** Returns the canonical root EClass for a modeling level. */
+  public String rootType(ModelLevel level) {
+    return schemas.rootType(level);
+  }
+
+  /** Returns the canonical case-sensitive EClass name from combined Ecore contracts. */
+  public String canonicalType(ModelLevel level, String type) {
+    return index
+        .typeContract(level, type)
+        .map(TypeContract::eClass)
+        .orElseGet(() -> schemas.canonicalType(level, type));
+  }
+
+  /** Finds the root containment reference for a top-level creatable element. */
+  public java.util.Optional<ReferenceContract> rootContainment(
+      ModelLevel level, String elementType) {
+    String canonical = canonicalType(level, elementType);
+    return index
+        .typeContract(level, rootType(level))
+        .flatMap(
+            root ->
+                root.references().stream()
+                    .filter(ReferenceContract::containment)
+                    .filter(reference -> assignable(level, canonical, reference.targetType()))
+                    .sorted(
+                        java.util.Comparator.comparing(ReferenceContract::many)
+                            .reversed()
+                            .thenComparing(
+                                reference ->
+                                    reference.targetType().equalsIgnoreCase(canonical) ? 0 : 1))
+                    .findFirst());
+  }
+
+  /** Stable hash for the combined Ecore contract set at a level. */
+  public String metamodelHash(ModelLevel level) {
+    return Integer.toHexString(
+        typeContracts(level).stream().map(TypeContract::eClass).sorted().toList().hashCode());
+  }
+
+  private boolean assignable(ModelLevel level, String childType, String targetType) {
+    if (childType == null || targetType == null) {
+      return false;
+    }
+    if (childType.equalsIgnoreCase(targetType)) {
+      return true;
+    }
+    return index
+        .typeContract(level, childType)
+        .map(
+            contract ->
+                contract.supertypes().stream()
+                    .anyMatch(supertype -> supertype.equalsIgnoreCase(targetType)))
+        .orElse(false);
+  }
+
   /** Returns exact type-contract snippets for a candidate set plus their required containments. */
   public List<AssistantModelProvider.ContextSnippet> contractClosure(
       ModelLevel level, List<String> candidateTypes) {
     List<AssistantModelProvider.ContextSnippet> result = new ArrayList<>();
     for (String type : candidateTypes == null ? List.<String>of() : candidateTypes) {
-      result.add(schemas.typeContract(level, type));
-      schemas.typeSchema(level, type).stream()
-          .flatMap(schema -> schema.references().stream())
-          .filter(AssistantMetamodelSchemaService.ReferenceSchema::required)
-          .filter(AssistantMetamodelSchemaService.ReferenceSchema::containment)
-          .forEach(reference -> result.add(schemas.typeContract(level, reference.targetType())));
+      result.add(typeContractSnippet(level, type));
+      typeContract(level, type).references().stream()
+          .filter(MetamodelKnowledgeService.ReferenceContract::required)
+          .filter(MetamodelKnowledgeService.ReferenceContract::containment)
+          .forEach(reference -> result.add(typeContractSnippet(level, reference.targetType())));
     }
     return result.stream()
         .collect(
@@ -59,6 +119,32 @@ public class MetamodelKnowledgeService {
         .values()
         .stream()
         .toList();
+  }
+
+  private AssistantModelProvider.ContextSnippet typeContractSnippet(
+      ModelLevel level, String typeName) {
+    TypeContract type = typeContract(level, typeName);
+    String attributes =
+        type.attributes().stream()
+            .map(attribute -> attribute.name() + ":" + attribute.type())
+            .collect(java.util.stream.Collectors.joining(", "));
+    String references =
+        type.references().stream()
+            .map(reference -> reference.name() + " -> " + reference.targetType())
+            .collect(java.util.stream.Collectors.joining(", "));
+    return new AssistantModelProvider.ContextSnippet(
+        "metamodel-contract",
+        type.eClass() + " EClass contract",
+        "EClass "
+            + type.eClass()
+            + " creatable="
+            + type.creatable()
+            + "; supertypes="
+            + type.supertypes()
+            + "; attributes="
+            + attributes
+            + "; references="
+            + references);
   }
 
   /** One EClass contract. */

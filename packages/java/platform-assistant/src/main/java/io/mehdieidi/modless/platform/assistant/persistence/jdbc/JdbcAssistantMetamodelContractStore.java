@@ -3,6 +3,7 @@ package io.mehdieidi.modless.platform.assistant.persistence.jdbc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.assistant.persistence.embedding.LocalEmbeddingService;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantMetamodelContractStore;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import java.sql.Timestamp;
 import java.util.List;
 import org.springframework.dao.DataAccessException;
@@ -30,6 +31,72 @@ public class JdbcAssistantMetamodelContractStore implements AssistantMetamodelCo
     for (MetamodelContractRecord record : records) {
       save(record);
     }
+  }
+
+  @Override
+  public List<ContractSearchHit> search(ModelLevel level, String query, int limit) {
+    String normalized = query == null ? "" : query.trim();
+    if (jdbc == null || level == null || normalized.isBlank() || limit <= 0) {
+      return List.of();
+    }
+    String tsQuery = toTsQuery(normalized);
+    if (tsQuery.isBlank()) {
+      return List.of();
+    }
+    String queryVector = embeddings.vectorLiteral(normalized);
+    return jdbc.query(
+        """
+        SELECT contract_kind, eclass, feature, content_json
+        FROM assistant_metamodel_contracts
+        WHERE level = ?
+        ORDER BY
+          CASE
+            WHEN to_tsvector('simple', eclass || ' ' || feature || ' ' || content_json::text)
+              @@ to_tsquery('simple', ?)
+            THEN ts_rank(
+              to_tsvector('simple', eclass || ' ' || feature || ' ' || content_json::text),
+              to_tsquery('simple', ?))
+            ELSE 0
+          END DESC,
+          embedding <=> ?::vector ASC,
+          updated_at DESC
+        LIMIT ?
+        """,
+        (rs, rowNum) ->
+            new ContractSearchHit(
+                rs.getString("contract_kind"),
+                rs.getString("eclass"),
+                rs.getString("feature"),
+                title(
+                    rs.getString("contract_kind"), rs.getString("eclass"), rs.getString("feature")),
+                rs.getString("content_json")),
+        level.name(),
+        tsQuery,
+        tsQuery,
+        queryVector,
+        limit);
+  }
+
+  private String title(String kind, String eClass, String feature) {
+    if (feature == null || feature.isBlank()) {
+      return eClass == null || eClass.isBlank() ? kind : eClass + " " + kind;
+    }
+    return eClass + "." + feature;
+  }
+
+  private String toTsQuery(String query) {
+    String[] terms = query.toLowerCase(java.util.Locale.ROOT).split("[^a-z0-9]+");
+    StringBuilder builder = new StringBuilder();
+    for (String term : terms) {
+      if (term.length() < 2) {
+        continue;
+      }
+      if (!builder.isEmpty()) {
+        builder.append(" | ");
+      }
+      builder.append(term).append(":*");
+    }
+    return builder.toString();
   }
 
   private void save(MetamodelContractRecord record) {

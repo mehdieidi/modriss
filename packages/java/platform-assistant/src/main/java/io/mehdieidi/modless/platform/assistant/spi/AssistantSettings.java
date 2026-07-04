@@ -64,11 +64,6 @@ public interface AssistantSettings {
     return true;
   }
 
-  /** Whether the unified ModelDelta agent path is enabled. */
-  default boolean newAgentEnabled() {
-    return true;
-  }
-
   /** Rate-limit and circuit-breaker settings. */
   Hardening hardening();
 

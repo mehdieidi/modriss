@@ -66,7 +66,6 @@ modless:
     max-source-chunk-tokens: ${MODLESS_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
     max-source-chunks-per-turn: ${MODLESS_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
     require-idempotency-key: ${MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY:true}
-    new-agent-enabled: ${MODLESS_AI_NEW_AGENT_ENABLED:true}
     max-context-snippets: ${MODLESS_AI_MAX_CONTEXT_SNIPPETS:24}
     reserved-schema-snippets: ${MODLESS_AI_RESERVED_SCHEMA_SNIPPETS:10}
     max-snippet-chars: ${MODLESS_AI_MAX_SNIPPET_CHARS:2400}

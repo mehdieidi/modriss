@@ -9,12 +9,14 @@ It does not receive whole models or raw constraint files.
 Each turn runs through one autonomous agent loop:
 
 1. Load the active project, model ID, revision, view, selection, and optional draft patch.
-2. Retrieve compact metamodel and methodology snippets plus a cached model-context snapshot.
-3. Plan an answer, clarification, or model mutation using the configured modeling strategy.
-4. Compile semantic operations into JSON Pointer patches against the current Ecore metamodel.
-5. Run structural validation (Ecore constraints). EVL semantic validation is **not** part of the
-   assistant apply gate today.
-6. **Auto-apply** valid mutations immediately, persist audits, and return an applied proposal with
+2. Classify intent with structured LLM output (`INFORMATION`, `MUTATION`, or `CLARIFICATION`).
+3. Retrieve compact Ecore contracts, methodology snippets, model-context snapshots, and optional
+   source evidence.
+4. Plan an answer, clarification, or `ModelDelta` mutation through the unified modeling agent.
+5. Compile `ModelDelta` into JSON Pointer patches against the current Ecore metamodel.
+6. Run structural validation (Ecore constraints). EVL semantic validation is **not** part of the
+   assistant apply gate.
+7. **Auto-apply** valid mutations immediately, persist audits, and return an applied proposal with
    undo support.
 
 Invalid mutations never reach the canvas. Failed turns return `workflowState: FAILED` with grounded
@@ -50,7 +52,7 @@ flowchart LR
     R --> I{"Answer, clarify, or patch?"}
     I -->|Clarify| Q["Structured questions"]
     Q --> R
-    I -->|Patch| D["Draft semantic change"]
+    I -->|Patch| D["Draft ModelDelta"]
     D --> V["Compile and structurally validate"]
     V -->|Invalid| X["Repair loop up to configured attempts"]
     X --> V
@@ -68,9 +70,9 @@ Upload text attachments with `POST /api/chatbot/sessions/{sessionId}/attachments
 `.json`). Reference them from messages with `attachmentIds`. When no attachments are supplied, the
 backend may reuse the three most recent session uploads.
 
-On CIM with attachments, the agent can run a dedicated source-analysis pass and, for create-style
-requests, a deterministic local materializer that bypasses the LLM planner when structured evidence
-is sufficient.
+On CIM with attachments, the agent runs an LLM-first source-evidence pipeline (chunking, structured
+extraction, coverage tracking) and then plans a `ModelDelta` from the evidence graph plus CIM
+contracts. There is no local heading parser or deterministic materializer bypass.
 
 ## Providers and Resilience
 

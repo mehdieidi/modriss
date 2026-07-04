@@ -40,6 +40,16 @@ public interface AssistantModelProvider {
   }
 
   /**
+   * Completes one prompt with whitelisted model-safe tools enabled.
+   *
+   * @param prompt prompt request
+   * @return provider response
+   */
+  default AssistantReply completeWithTools(AssistantPrompt prompt) {
+    return complete(prompt);
+  }
+
+  /**
    * Produces a compact source-material analysis for requirements or event-storming documents.
    *
    * @param prompt source-analysis prompt

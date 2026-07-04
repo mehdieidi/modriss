@@ -58,17 +58,24 @@ SSE sets `event: <type>` and sends the full envelope as data. WebSocket sends th
 
 ### Event Types
 
-| Type                      | When                    | Payload highlights                         |
-| ------------------------- | ----------------------- | ------------------------------------------ |
-| `assistant.ready`         | Connection established  | `{ "sessionId": "..." }`                   |
-| `assistant.progress`      | Turn stages             | `{ "stage", "message" }`                   |
-| `assistant.model.preview` | During compile/validate | Preview model fragment and operation index |
-| `chat.assistant`          | Turn complete           | Same shape as `MessageResponse`            |
-| `model.updated`           | After apply or undo     | `{ "modelId", "revision", "proposalId"? }` |
+| Event type                  | Purpose                                      |
+| --------------------------- | -------------------------------------------- |
+| `assistant.ready`           | Stream connected                             |
+| `assistant.trace.started`   | Turn accepted with deadline                  |
+| `assistant.trace.step`      | User-visible planning/validation stage       |
+| `assistant.progress`        | Turn stage updates (legacy alias)            |
+| `assistant.tool.started`    | Agent tool invocation began                  |
+| `assistant.tool.completed`  | Agent tool invocation finished               |
+| `assistant.delta.drafted`   | Draft `ModelDelta` compiled for preview      |
+| `assistant.delta.validated` | Structural validation summary                |
+| `assistant.model.preview`   | Incremental validated preview during compile |
+| `assistant.turn.completed`  | Successful terminal turn                     |
+| `assistant.turn.failed`     | Failed terminal turn                         |
+| `chat.assistant`            | Completed turn payload                       |
+| `model.updated`             | Model revision changed after apply or undo   |
 
-Common `assistant.progress` stages include `READING_MODEL`, `PLANNING`, `PLANNING_SUBSET`,
-`QUERYING_METAMODEL`, `PREVIEWING_PATCH`, `VALIDATING`, `COMPLETING`, `APPLYING`, and
-`ANALYZING_SOURCE`.
+Common `assistant.progress` stages include `READING_MODEL`, `PLANNING`, `QUERYING_METAMODEL`,
+`PREVIEWING_PATCH`, `VALIDATING`, `COMPLETING`, `APPLYING`, and `ANALYZING_SOURCE`.
 
 ## Proposal REST Routes
 

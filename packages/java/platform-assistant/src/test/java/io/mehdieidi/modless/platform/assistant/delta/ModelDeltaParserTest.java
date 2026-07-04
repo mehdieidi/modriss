@@ -57,6 +57,30 @@ class ModelDeltaParserTest {
   }
 
   @Test
+  void expandsFeatureNameAliasToReferenceName() {
+    ModelDelta delta =
+        parser.parse(
+            """
+            {
+              "intent": "MUTATION",
+              "kind": "MODEL_DELTA",
+              "message": "Connected actor to command.",
+              "elements": [],
+              "references": [
+                {
+                  "sourceId": "actor-1",
+                  "featureName": "issuesCommands",
+                  "targetId": "command-1"
+                }
+              ]
+            }
+            """);
+
+    assertEquals(1, delta.references().size());
+    assertEquals("issuesCommands", delta.references().get(0).referenceName());
+  }
+
+  @Test
   void expandsPluralReferenceTargets() {
     ModelDelta delta =
         parser.parse(

@@ -15,6 +15,18 @@ import org.junit.jupiter.api.Test;
 class AssistantEvalRunnerTest {
 
   @Test
+  void liveGatePromptFixtureLoadsRepresentativeCategories() {
+    AssistantEvalRunner runner = runner();
+    List<AssistantEvalRunner.EvalPrompt> prompts = runner.loadLiveGatePrompts();
+    assertFalse(prompts.isEmpty());
+    assertTrue(prompts.size() >= 5);
+    assertTrue(prompts.stream().anyMatch(prompt -> "analysis".equals(prompt.category())));
+    assertTrue(
+        prompts.stream().anyMatch(prompt -> "cim-source-document".equals(prompt.category())));
+    assertTrue(prompts.stream().anyMatch(prompt -> "retrieval".equals(prompt.category())));
+  }
+
+  @Test
   void stubBaselineCoversAllCategories() {
     AssistantModelProvider provider =
         new AssistantModelProvider() {
@@ -48,9 +60,35 @@ class AssistantEvalRunnerTest {
     assertTrue(report.contains("create-empty"));
     assertTrue(report.contains("selected-element"));
     assertTrue(report.contains("analysis"));
+    assertTrue(
+        results.stream()
+            .filter(r -> !"resilience".equals(r.category()))
+            .allMatch(AssistantEvalRunner.EvalResult::validationPassed));
+    assertTrue(
+        results.stream()
+            .filter(result -> "resilience".equals(result.category()))
+            .allMatch(AssistantEvalRunner.EvalResult::validationPassed));
+    assertFalse(runner.qualityGateReport(results).passedGates());
+  }
+
+  @Test
+  void stubModeDoesNotAutoPassQualityGates() {
+    AssistantEvalRunner runner = runner();
+    assertFalse(runner.qualityGateReport(runner.run(false)).passedGates());
+  }
+
+  @Test
+  void resilienceStubFixturesPass() {
+    AssistantEvalRunner runner = runner();
+    var results =
+        runner.run(
+            false,
+            null,
+            runner.loadPrompts().stream()
+                .filter(prompt -> "resilience".equals(prompt.category()))
+                .toList());
+    assertFalse(results.isEmpty());
     assertTrue(results.stream().allMatch(AssistantEvalRunner.EvalResult::validationPassed));
-    assertTrue(results.stream().allMatch(result -> "MODEL_DELTA".equals(result.turnKind())));
-    assertTrue(runner.qualityGateReport(results).passedGates());
   }
 
   @Test
@@ -143,7 +181,7 @@ class AssistantEvalRunnerTest {
     assertTrue(results.get(0).sourceAnalysisUsed());
     assertEquals(35, results.get(0).addElementCount());
     assertEquals(10, results.get(0).connectionCount());
-    assertEquals(2, results.get(0).toolCalls());
+    assertEquals(1, results.get(0).toolCalls());
   }
 
   @Test

@@ -2,15 +2,15 @@ package io.mehdieidi.modless.platform.assistant.agent;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
-import io.mehdieidi.modless.platform.assistant.delta.DeltaNormalizer;
 import io.mehdieidi.modless.platform.assistant.delta.ModelDelta;
-import io.mehdieidi.modless.platform.assistant.delta.ModelDeltaParser;
 import io.mehdieidi.modless.platform.assistant.delta.ModelDeltaSchemaFactory;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
 import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes.AssistantModelContext;
 import io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes.ContextElement;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantSettings;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantToolBridge;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.LinkedHashMap;
@@ -21,64 +21,101 @@ import java.util.stream.Collectors;
 /** Unified modeling agent that uses ModelDelta as the only provider-facing mutation protocol. */
 public class ModelingAgent {
 
+  private final AssistantModelProvider provider;
   private final ModelDeltaSchemaFactory schemaFactory;
   private final ModelDeltaProviderClient providerClient;
   private final PromptContextBuilder prompts;
   private final DeltaCompiler compiler;
   private final ToolRegistry toolRegistry;
+  private final AssistantToolBridge tools;
+  private final AssistantSettings settings;
 
   public ModelingAgent(
       AssistantModelProvider provider,
       ModelDeltaSchemaFactory schemaFactory,
-      ModelDeltaParser parser,
-      DeltaCompiler compiler) {
-    this(
-        schemaFactory,
-        new ModelDeltaProviderClient(
-            provider,
-            parser,
-            new DeltaNormalizer(
-                new io.mehdieidi.modless.platform.assistant.patch
-                    .AssistantMetamodelSchemaService())),
-        new PromptContextBuilder(new ContextBudget(24000, 8000, 32)),
-        compiler,
-        new ToolRegistry(24, 4, 8));
-  }
-
-  public ModelingAgent(
-      ModelDeltaSchemaFactory schemaFactory,
       ModelDeltaProviderClient providerClient,
       PromptContextBuilder prompts,
-      DeltaCompiler compiler) {
-    this(schemaFactory, providerClient, prompts, compiler, new ToolRegistry(24, 4, 8));
+      DeltaCompiler compiler,
+      AssistantSettings settings,
+      AssistantToolBridge tools) {
+    this(
+        provider,
+        schemaFactory,
+        providerClient,
+        prompts,
+        compiler,
+        tools,
+        settings,
+        new ToolRegistry(
+            settings == null ? 24 : settings.maxToolCalls(),
+            settings == null ? 4 : settings.maxToolCallsPerStep(),
+            settings == null ? 8 : settings.maxAgentSteps()));
   }
 
   public ModelingAgent(
+      AssistantModelProvider provider,
       ModelDeltaSchemaFactory schemaFactory,
       ModelDeltaProviderClient providerClient,
       PromptContextBuilder prompts,
       DeltaCompiler compiler,
+      AssistantToolBridge tools,
+      AssistantSettings settings,
       ToolRegistry toolRegistry) {
+    this.provider = provider;
     this.schemaFactory = schemaFactory;
     this.providerClient = providerClient;
     this.prompts = prompts;
     this.compiler = compiler;
+    this.tools = tools;
+    this.settings = settings;
     this.toolRegistry = toolRegistry == null ? new ToolRegistry(24, 4, 8) : toolRegistry;
+    if (tools
+        instanceof io.mehdieidi.modless.platform.assistant.tools.AssistantToolService service) {
+      service.bindToolRegistry(this.toolRegistry);
+    }
   }
 
-  /** Plans one mutation-capable turn through the ModelDelta contract. */
+  /** Plans one mutation-capable turn through a bounded tool loop and ModelDelta commit. */
+  public AgentLoopResult plan(
+      ModelLevel level,
+      JsonNode baseModel,
+      AssistantModelContext context,
+      AssistantModelProvider.AssistantPrompt prompt,
+      AssistantModelProvider.AgentProgress progress,
+      List<String> candidateTypes) {
+    int steps = 0;
+    int toolCalls = 0;
+    if (shouldExplore(context, prompt)) {
+      steps++;
+      if (progress != null) {
+        progress.onProgress(
+            "QUERYING_METAMODEL", "Inspecting contracts and model context before drafting");
+      }
+      provider.completeWithTools(explorationPrompt(level, prompt, candidateTypes));
+      toolCalls = Math.max(toolCalls, safeToolCount());
+    }
+    steps++;
+    if (progress != null) {
+      progress.onProgress("PLANNING_MODEL_DELTA", "Drafting a structurally grounded ModelDelta");
+    }
+    if (steps > (settings == null ? 8 : settings.maxAgentSteps())) {
+      throw new PlatformException(429, "Assistant agent step budget exceeded.");
+    }
+    ModelDelta delta =
+        providerClient.complete(
+            level, withModelDeltaProtocol(level, prompt, candidateTypes, false));
+    toolCalls = Math.max(toolCalls, safeToolCount());
+    AssistantTurnPlan plan = toTurnPlan(level, baseModel, context, delta);
+    return new AgentLoopResult(plan, toolCalls, steps);
+  }
+
   public AgentLoopResult plan(
       ModelLevel level,
       JsonNode baseModel,
       AssistantModelContext context,
       AssistantModelProvider.AssistantPrompt prompt,
       AssistantModelProvider.AgentProgress progress) {
-    if (progress != null) {
-      progress.onProgress("PLANNING_MODEL_DELTA", "Drafting a structurally grounded ModelDelta");
-    }
-    ModelDelta delta = providerClient.complete(level, withModelDeltaProtocol(level, prompt, false));
-    AssistantTurnPlan plan = toTurnPlan(level, baseModel, context, delta);
-    return new AgentLoopResult(plan, 0, 1);
+    return plan(level, baseModel, context, prompt, progress, List.of());
   }
 
   /** Plans one validation-guided repair pass through the same ModelDelta contract. */
@@ -86,9 +123,54 @@ public class ModelingAgent {
       ModelLevel level,
       JsonNode baseModel,
       AssistantModelContext context,
-      AssistantModelProvider.AssistantPrompt prompt) {
-    ModelDelta delta = providerClient.complete(level, withModelDeltaProtocol(level, prompt, true));
+      AssistantModelProvider.AssistantPrompt prompt,
+      List<String> candidateTypes) {
+    ModelDelta delta =
+        providerClient.complete(level, withModelDeltaProtocol(level, prompt, candidateTypes, true));
     return toTurnPlan(level, baseModel, context, delta);
+  }
+
+  public AssistantTurnPlan repair(
+      ModelLevel level,
+      JsonNode baseModel,
+      AssistantModelContext context,
+      AssistantModelProvider.AssistantPrompt prompt) {
+    return repair(level, baseModel, context, prompt, List.of());
+  }
+
+  private int safeToolCount() {
+    return tools == null ? 0 : tools.consumeToolCallCount();
+  }
+
+  private boolean shouldExplore(
+      AssistantModelContext context, AssistantModelProvider.AssistantPrompt prompt) {
+    if (context != null && !context.elements().isEmpty()) {
+      return true;
+    }
+    int snippets = prompt == null || prompt.snippets() == null ? 0 : prompt.snippets().size();
+    return snippets < Math.max(4, settings == null ? 10 : settings.reservedSchemaSnippets());
+  }
+
+  private AssistantModelProvider.AssistantPrompt explorationPrompt(
+      ModelLevel level,
+      AssistantModelProvider.AssistantPrompt prompt,
+      List<String> candidateTypes) {
+    return prompts.build(
+        new AssistantModelProvider.AssistantPrompt(
+            prompt.role(), prompt.system(), prompt.user(), List.of()),
+        List.of(
+            new PromptBlock(
+                PromptLabels.METHODOLOGY_NOTE,
+                """
+                Use read-only tools to inspect exact Ecore contracts, containment options, and the
+                active model neighborhood before the final ModelDelta is drafted. Do not emit
+                ModelDelta JSON in this exploration step.
+                """
+                    + "\n\n"
+                    + toolGuidance(),
+                true)),
+        schemaFactory.snippets(level, candidateTypes),
+        prompt.snippets());
   }
 
   private AssistantTurnPlan toTurnPlan(
@@ -118,13 +200,16 @@ public class ModelingAgent {
   }
 
   private AssistantModelProvider.AssistantPrompt withModelDeltaProtocol(
-      ModelLevel level, AssistantModelProvider.AssistantPrompt prompt, boolean repair) {
+      ModelLevel level,
+      AssistantModelProvider.AssistantPrompt prompt,
+      List<String> candidateTypes,
+      boolean repair) {
     return prompts.build(
         prompt,
         List.of(
-            new PromptBlock("model-delta-protocol", guidance(repair), true),
-            new PromptBlock("tool-registry", toolGuidance(), true)),
-        schemaFactory.snippets(level),
+            new PromptBlock(PromptLabels.METAMODEL_CONTRACT, guidance(repair), true),
+            new PromptBlock(PromptLabels.METHODOLOGY_NOTE, toolGuidance(), false)),
+        schemaFactory.snippets(level, candidateTypes),
         prompt.snippets());
   }
 
@@ -187,17 +272,9 @@ public class ModelingAgent {
         .collect(Collectors.joining("\n"));
   }
 
-  /** Fails fast for provider outputs that are not structured ModelDelta JSON. */
   public PlatformException schemaRejected(RuntimeException failure) {
     return new PlatformException(502, "AI assistant ModelDelta was rejected by schema parsing.");
   }
 
-  /**
-   * Agent loop result with planner output and loop metrics.
-   *
-   * @param plan structured turn plan
-   * @param toolCalls number of tool invocations
-   * @param steps number of agent loop steps
-   */
   public record AgentLoopResult(AssistantTurnPlan plan, int toolCalls, int steps) {}
 }

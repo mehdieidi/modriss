@@ -3,21 +3,21 @@ package io.mehdieidi.modless.platform.assistant.metamodel;
 import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelKnowledgeService.AttributeContract;
 import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelKnowledgeService.ReferenceContract;
 import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelKnowledgeService.TypeContract;
-import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.modeling.config.ModelingConfigService;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/** Extracts resolved, inherited, task-friendly contracts from the Ecore-backed schema service. */
+/** Extracts resolved, inherited, task-friendly contracts directly from combined Ecore resources. */
 public class EcoreContractExtractor {
 
-  private final AssistantMetamodelSchemaService schemas;
+  private final ModelingConfigService modelingConfig;
 
-  public EcoreContractExtractor(AssistantMetamodelSchemaService schemas) {
-    this.schemas = schemas == null ? new AssistantMetamodelSchemaService() : schemas;
+  public EcoreContractExtractor(ModelingConfigService modelingConfig) {
+    this.modelingConfig = modelingConfig == null ? new ModelingConfigService() : modelingConfig;
   }
 
   public MetamodelKnowledgeIndex extract() {
@@ -25,8 +25,8 @@ public class EcoreContractExtractor {
     List<MetamodelContractRecord> records = new ArrayList<>();
     for (ModelLevel level : ModelLevel.values()) {
       List<TypeContract> types =
-          schemas.coverage(level).typeNames().stream()
-              .map(type -> typeContract(level, type))
+          modelingConfig.ecoreDerivedElements(level).stream()
+              .map(raw -> typeContract(level, raw))
               .toList();
       byLevel.put(level, types);
       records.add(levelOverview(level, types));
@@ -39,38 +39,59 @@ public class EcoreContractExtractor {
     return new MetamodelKnowledgeIndex(byLevel, records);
   }
 
-  private TypeContract typeContract(ModelLevel level, String typeName) {
-    AssistantMetamodelSchemaService.TypeSchema type =
-        schemas
-            .typeSchema(level, typeName)
-            .orElseThrow(
-                () ->
-                    new io.mehdieidi.modless.platform.kernel.PlatformException(
-                        422, "Unknown metamodel type: " + typeName));
-    List<AttributeContract> attributes =
-        type.attributes().stream()
-            .map(
-                attribute ->
-                    new AttributeContract(
-                        attribute.name(),
-                        attribute.type(),
-                        attribute.required(),
-                        attribute.options()))
-            .toList();
-    List<ReferenceContract> references =
-        type.references().stream()
-            .map(
-                reference ->
-                    new ReferenceContract(
-                        reference.name(),
-                        reference.targetType(),
-                        reference.required(),
-                        reference.many(),
-                        reference.containment(),
-                        reference.readonly()))
-            .toList();
+  @SuppressWarnings("unchecked")
+  private TypeContract typeContract(ModelLevel level, Map<String, Object> raw) {
+    String typeName = text(raw, "type");
+    List<AttributeContract> attributes = new ArrayList<>();
+    for (Object value : (List<?>) raw.getOrDefault("attributes", List.of())) {
+      if (!(value instanceof Map<?, ?> attribute)) {
+        continue;
+      }
+      Map<String, Object> map = (Map<String, Object>) attribute;
+      attributes.add(
+          new AttributeContract(
+              text(map, "name"),
+              text(map, "type"),
+              Boolean.TRUE.equals(map.get("required")),
+              strings(map.get("options"))));
+    }
+    List<ReferenceContract> references = new ArrayList<>();
+    for (Object value : (List<?>) raw.getOrDefault("references", List.of())) {
+      if (!(value instanceof Map<?, ?> reference)) {
+        continue;
+      }
+      Map<String, Object> map = (Map<String, Object>) reference;
+      references.add(
+          new ReferenceContract(
+              text(map, "name"),
+              text(map, "targetType"),
+              Boolean.TRUE.equals(map.get("required")),
+              Boolean.TRUE.equals(map.get("many")),
+              Boolean.TRUE.equals(map.get("containment")),
+              Boolean.TRUE.equals(map.get("readonly"))));
+    }
     return new TypeContract(
-        level, type.name(), type.creatable(), type.supertypes(), attributes, references);
+        level,
+        typeName,
+        Boolean.TRUE.equals(raw.get("creatable")),
+        strings(raw.get("supertypes")),
+        attributes,
+        references);
+  }
+
+  private String text(Map<String, Object> map, String key) {
+    Object value = map.get(key);
+    return value == null ? "" : String.valueOf(value).trim();
+  }
+
+  private List<String> strings(Object value) {
+    if (!(value instanceof List<?> list)) {
+      return List.of();
+    }
+    return list.stream()
+        .map(item -> String.valueOf(item).trim())
+        .filter(item -> !item.isBlank())
+        .toList();
   }
 
   private MetamodelContractRecord levelOverview(ModelLevel level, List<TypeContract> types) {

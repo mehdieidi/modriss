@@ -88,10 +88,23 @@ public class AssistantServicesConfig {
 
   @Bean
   RetrievalCoordinator retrievalCoordinator(
-      MetamodelKnowledgeService metamodels, AssistantCatalog catalogs, AssistantSettings settings) {
+      MetamodelKnowledgeService metamodels,
+      AssistantCatalog catalogs,
+      AssistantMetamodelContractStore contractStore,
+      AssistantModelProvider provider,
+      AssistantSettings settings) {
     String embeddingProvider =
         settings instanceof AiProperties ai ? ai.embeddings().provider().name() : "";
-    return new RetrievalCoordinator(metamodels, catalogs, embeddingProvider);
+    return new RetrievalCoordinator(
+        metamodels, catalogs, contractStore, embeddingProvider, provider);
+  }
+
+  @Bean
+  ModelDeltaSchemaFactory modelDeltaSchemaFactory(
+      MetamodelKnowledgeService metamodels,
+      AssistantMetamodelSchemaService schemas,
+      ObjectMapper mapper) {
+    return new ModelDeltaSchemaFactory(metamodels, schemas, mapper);
   }
 
   @Bean
@@ -132,12 +145,6 @@ public class AssistantServicesConfig {
   }
 
   @Bean
-  ModelDeltaSchemaFactory modelDeltaSchemaFactory(
-      AssistantMetamodelSchemaService schemas, ObjectMapper mapper) {
-    return new ModelDeltaSchemaFactory(schemas, mapper);
-  }
-
-  @Bean
   ModelDeltaParser modelDeltaParser(ObjectMapper mapper) {
     return new ModelDeltaParser(mapper);
   }
@@ -148,8 +155,9 @@ public class AssistantServicesConfig {
   }
 
   @Bean
-  DeltaNormalizer deltaNormalizer(AssistantMetamodelSchemaService schemas) {
-    return new DeltaNormalizer(schemas);
+  DeltaNormalizer deltaNormalizer(
+      MetamodelKnowledgeService metamodels, AssistantMetamodelSchemaService schemas) {
+    return new DeltaNormalizer(metamodels, schemas);
   }
 
   @Bean
@@ -188,11 +196,15 @@ public class AssistantServicesConfig {
 
   @Bean
   ModelingAgent modelingAgent(
+      AssistantModelProvider provider,
       ModelDeltaSchemaFactory schemaFactory,
       ModelDeltaProviderClient providerClient,
       PromptContextBuilder prompts,
-      DeltaCompiler compiler) {
-    return new ModelingAgent(schemaFactory, providerClient, prompts, compiler);
+      DeltaCompiler compiler,
+      AssistantSettings settings,
+      AssistantToolBridge tools) {
+    return new ModelingAgent(
+        provider, schemaFactory, providerClient, prompts, compiler, settings, tools);
   }
 
   @Bean
@@ -224,8 +236,9 @@ public class AssistantServicesConfig {
   }
 
   @Bean
-  SourceEvidenceExtractor sourceEvidenceExtractor() {
-    return new SourceEvidenceExtractor();
+  SourceEvidenceExtractor sourceEvidenceExtractor(
+      AssistantModelProvider provider, ObjectMapper mapper) {
+    return new LlmSourceEvidenceExtractor(provider, mapper);
   }
 
   @Bean
@@ -354,6 +367,11 @@ public class AssistantServicesConfig {
     @Override
     public void recordAssistantToolCalls(int toolCalls) {
       metrics.recordAssistantToolCalls(toolCalls);
+    }
+
+    @Override
+    public void recordAssistantPhaseDuration(String phase, long millis) {
+      metrics.recordAssistantPhaseDuration(phase, millis);
     }
 
     @Override

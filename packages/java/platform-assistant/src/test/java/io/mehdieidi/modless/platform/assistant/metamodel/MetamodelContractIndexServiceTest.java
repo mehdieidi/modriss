@@ -8,6 +8,7 @@ import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaSer
 import io.mehdieidi.modless.platform.assistant.spi.AssistantMetamodelContractStore;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantMetamodelContractStore.MetamodelContractRecord;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.modeling.config.ModelingConfigService;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +47,7 @@ class MetamodelContractIndexServiceTest {
   @Test
   void extractorBuildsQueryableIndexWithContainmentAndEnumDocuments() {
     MetamodelKnowledgeIndex index =
-        new EcoreContractExtractor(new AssistantMetamodelSchemaService()).extract();
+        new EcoreContractExtractor(new ModelingConfigService()).extract();
 
     assertTrue(index.typeContract(ModelLevel.PIM, "Function").isPresent());
     assertTrue(index.typeContract(ModelLevel.CIM, "Actor").isPresent());

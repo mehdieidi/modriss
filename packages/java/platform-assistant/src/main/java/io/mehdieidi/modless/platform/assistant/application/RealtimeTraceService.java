@@ -8,7 +8,11 @@ import java.util.Map;
 /** Publishes user-visible assistant trace events without exposing private reasoning. */
 public class RealtimeTraceService {
 
+  private static final int PREVIEW_THROTTLE_EVERY = 5;
+
   private final AssistantRealtimePublisher realtime;
+  private final java.util.Map<String, Integer> previewCounters =
+      new java.util.concurrent.ConcurrentHashMap<>();
 
   public RealtimeTraceService(AssistantRealtimePublisher realtime) {
     this.realtime = realtime;
@@ -40,7 +44,82 @@ public class RealtimeTraceService {
   }
 
   public void modelPreview(String sessionId, Map<String, Object> payload) {
-    publish(sessionId, "assistant.model.preview", payload == null ? Map.of() : payload);
+    if (payload == null) {
+      publish(sessionId, "assistant.model.preview", Map.of());
+      return;
+    }
+    Object finalPreview = payload.get("final");
+    int operationCount =
+        payload.get("operationCount") instanceof Number number ? number.intValue() : 0;
+    boolean force =
+        Boolean.TRUE.equals(finalPreview) || Boolean.TRUE.equals(payload.get("validated"));
+    if (!force && operationCount > 0) {
+      int count = previewCounters.merge(sessionId, 1, Integer::sum);
+      if (count % PREVIEW_THROTTLE_EVERY != 0) {
+        return;
+      }
+    }
+    if (Boolean.TRUE.equals(finalPreview) || Boolean.TRUE.equals(payload.get("validated"))) {
+      previewCounters.remove(sessionId);
+    }
+    publish(sessionId, "assistant.model.preview", payload);
+  }
+
+  public void toolStarted(String sessionId, String turnId, String toolName) {
+    publish(
+        sessionId,
+        "assistant.tool.started",
+        Map.of("turnId", safe(turnId), "tool", safe(toolName)));
+  }
+
+  public void toolCompleted(String sessionId, String turnId, String toolName) {
+    publish(
+        sessionId,
+        "assistant.tool.completed",
+        Map.of("turnId", safe(turnId), "tool", safe(toolName)));
+  }
+
+  public void deltaDrafted(String sessionId, String turnId, int operationCount, String phase) {
+    publish(
+        sessionId,
+        "assistant.delta.drafted",
+        Map.of(
+            "turnId",
+            safe(turnId),
+            "operationCount",
+            Math.max(0, operationCount),
+            "phase",
+            safe(phase)));
+  }
+
+  public void deltaValidated(String sessionId, String turnId, boolean valid, int issueCount) {
+    publish(
+        sessionId,
+        "assistant.delta.validated",
+        Map.of("turnId", safe(turnId), "valid", valid, "issueCount", Math.max(0, issueCount)));
+  }
+
+  public void sourceCoverage(
+      String sessionId,
+      int coveredChunks,
+      int totalChunks,
+      String chunkId,
+      String status,
+      String message) {
+    publish(
+        sessionId,
+        "assistant.source.coverage",
+        Map.of(
+            "coveredChunks",
+            Math.max(0, coveredChunks),
+            "totalChunks",
+            Math.max(0, totalChunks),
+            "chunkId",
+            safe(chunkId),
+            "status",
+            safe(status),
+            "message",
+            safe(message)));
   }
 
   public void assistantMessage(String sessionId, Object response) {
