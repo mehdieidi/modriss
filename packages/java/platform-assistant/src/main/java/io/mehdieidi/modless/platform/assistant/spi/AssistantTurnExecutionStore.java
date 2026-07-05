@@ -30,6 +30,9 @@ public interface AssistantTurnExecutionStore {
   /** Marks the turn as cancel-requested. */
   default void requestCancel(String turnId) {}
 
+  /** Extends the deadline for a running turn. */
+  default void extendDeadline(String turnId, Instant newDeadlineAt) {}
+
   /** Stores a terminal response for replay and marks the turn complete. */
   default void complete(String turnId, AssistantTurnResponse response) {}
 

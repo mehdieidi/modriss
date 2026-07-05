@@ -38,7 +38,11 @@ class ProxyAvailabilityTest {
             false,
             0,
             0,
-            false);
+            false,
+            null,
+            0,
+            0,
+            true);
     ProxyAvailability availability = new ProxyAvailability(properties);
 
     ProxyAvailability.ProxyCheck first = availability.check();

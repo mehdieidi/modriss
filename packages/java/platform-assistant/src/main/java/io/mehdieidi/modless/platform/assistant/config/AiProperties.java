@@ -38,6 +38,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxProviderCallsPerTurn maximum provider calls for a standard turn
  * @param maxProviderCallsSourceTurn maximum provider calls when source analysis runs
  * @param llmContractRerankEnabled whether hybrid retrieval may invoke LLM reranking
+ * @param sourceTurnTimeout overall assistant turn timeout when a source attachment is present
+ * @param maxModelDeltaElementsPerPass maximum new elements accepted from one ModelDelta response
+ * @param maxCimModelingPasses maximum incremental CIM modeling passes per source-backed turn
+ * @param preferLlmSourceExtraction whether CIM attachments use LLM evidence extraction
  */
 @ConfigurationProperties(prefix = "modless.ai")
 public record AiProperties(
@@ -68,7 +72,11 @@ public record AiProperties(
     boolean requireIdempotencyKey,
     int maxProviderCallsPerTurn,
     int maxProviderCallsSourceTurn,
-    boolean llmContractRerankEnabled)
+    boolean llmContractRerankEnabled,
+    Duration sourceTurnTimeout,
+    int maxModelDeltaElementsPerPass,
+    int maxCimModelingPasses,
+    boolean preferLlmSourceExtraction)
     implements AssistantSettings {
 
   /** Applies conservative defaults for local development. */
@@ -107,8 +115,33 @@ public record AiProperties(
         openaiCompatible == null ? new OpenAiCompatible(null, null) : openaiCompatible;
     gemini = gemini == null ? new Gemini(null) : gemini;
     models = models == null ? new Models(null, null, null) : models;
-    maxProviderCallsPerTurn = maxProviderCallsPerTurn <= 0 ? 4 : maxProviderCallsPerTurn;
-    maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 6 : maxProviderCallsSourceTurn;
+    maxProviderCallsPerTurn = maxProviderCallsPerTurn <= 0 ? 8 : maxProviderCallsPerTurn;
+    maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 12 : maxProviderCallsSourceTurn;
+    sourceTurnTimeout =
+        sourceTurnTimeout == null ? Duration.ofMinutes(12) : sourceTurnTimeout;
+    maxModelDeltaElementsPerPass =
+        maxModelDeltaElementsPerPass <= 0 ? 40 : maxModelDeltaElementsPerPass;
+    maxCimModelingPasses = maxCimModelingPasses <= 0 ? 4 : maxCimModelingPasses;
+  }
+
+  @Override
+  public Duration sourceTurnTimeout() {
+    return sourceTurnTimeout;
+  }
+
+  @Override
+  public int maxModelDeltaElementsPerPass() {
+    return maxModelDeltaElementsPerPass;
+  }
+
+  @Override
+  public int maxCimModelingPasses() {
+    return maxCimModelingPasses;
+  }
+
+  @Override
+  public boolean preferLlmSourceExtraction() {
+    return preferLlmSourceExtraction;
   }
 
   @Override

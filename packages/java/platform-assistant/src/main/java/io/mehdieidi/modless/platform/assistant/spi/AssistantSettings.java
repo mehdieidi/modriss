@@ -79,6 +79,26 @@ public interface AssistantSettings {
     return false;
   }
 
+  /** Turn timeout when a source attachment is processed (often longer than {@link #turnTimeout()}). */
+  default Duration sourceTurnTimeout() {
+    return turnTimeout();
+  }
+
+  /** Maximum new elements accepted from one ModelDelta provider response. */
+  default int maxModelDeltaElementsPerPass() {
+    return 40;
+  }
+
+  /** Maximum incremental CIM modeling passes for one source-backed turn. */
+  default int maxCimModelingPasses() {
+    return 4;
+  }
+
+  /** Whether CIM source attachments should use LLM evidence extraction instead of a local fast path. */
+  default boolean preferLlmSourceExtraction() {
+    return true;
+  }
+
   /** Rate-limit and circuit-breaker settings. */
   Hardening hardening();
 

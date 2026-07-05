@@ -40,6 +40,7 @@ import io.mehdieidi.modless.platform.assistant.retrieval.RetrievalCoordinator;
 import io.mehdieidi.modless.platform.assistant.retrieval.RetrievalDiagnostics;
 import io.mehdieidi.modless.platform.assistant.retrieval.RetrievalPlan;
 import io.mehdieidi.modless.platform.assistant.session.AssistantSessionStore;
+import io.mehdieidi.modless.platform.assistant.source.SourceChunker;
 import io.mehdieidi.modless.platform.assistant.source.SourceCoverageMatrix;
 import io.mehdieidi.modless.platform.assistant.source.SourceEvidenceGraph;
 import io.mehdieidi.modless.platform.assistant.source.SourceToModelDeltaPlanner;
@@ -62,6 +63,7 @@ import io.mehdieidi.modless.platform.model.domain.ModelRecord;
 import io.mehdieidi.modless.platform.modeling.config.ModelingConfigService;
 import io.mehdieidi.modless.platform.project.application.ProjectService;
 import io.mehdieidi.modless.platform.project.domain.ProjectRecord;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -247,7 +249,14 @@ public class AssistantOrchestrator {
         sourceUnderstanding == null ? new SourceUnderstandingService(null) : sourceUnderstanding;
     this.sourceAnalysisFacade =
         new AssistantSourceAnalysisFacade(
-            this.sourceUnderstanding, this.sourceEvidenceStore, this.traceEvents, mapper);
+            this.sourceUnderstanding,
+            new SourceChunker(),
+            null,
+            null,
+            this.sourceEvidenceStore,
+            this.traceEvents,
+            mapper,
+            properties.preferLlmSourceExtraction());
     this.structuralValidation =
         structuralValidation == null ? new StructuralValidationGate(models) : structuralValidation;
     this.models = models;
@@ -424,7 +433,8 @@ public class AssistantOrchestrator {
             request.modelId(),
             request.revision(),
             idempotencyKey,
-            properties.turnTimeout());
+            turnTimeoutFor(request));
+    Instant turnStartedAt = Instant.now();
     Instant deadlineAt = startedTurn.deadlineAt();
     TurnTrace trace =
         new TurnTrace(
@@ -435,6 +445,7 @@ public class AssistantOrchestrator {
             session.level(),
             request.modelId(),
             turnStarted,
+            turnStartedAt,
             deadlineAt);
     currentTrace.set(trace);
     currentPhaseTimings.set(new LinkedHashMap<>());
@@ -464,7 +475,10 @@ public class AssistantOrchestrator {
       ensureDurableThread(user, session);
       logTurnPhase("durable_thread_ready", turnStarted, "threadId", threadId);
       ProviderCallBudget.bind(providerCallBudgetFor(request));
+      bindModelDeltaTurnContext(request, 1);
       AssistantTurnRequest enrichedRequest = enrichWithSourceAnalysis(session, request);
+      grantModelingDeadlineAfterSource(
+          session, startedTurn.turnId(), turnStartedAt, request, enrichedRequest);
       appendUserMessage(threadId, sessionId, enrichedRequest);
       logTurnPhase("user_message_appended", turnStarted);
 
@@ -735,6 +749,7 @@ public class AssistantOrchestrator {
     } finally {
       cancellations.failOpen(session.id(), trace.turnId());
       ProviderCallBudget.clear();
+      ModelDeltaTurnContext.clear();
       currentTrace.remove();
       currentPhaseTimings.remove();
       currentRetrievalDiagnostics.remove();
@@ -926,47 +941,120 @@ public class AssistantOrchestrator {
                 : intent.candidateTypes());
     int maxCompileRepairs = Math.max(0, properties.validationRepairAttempts());
     String compileFailure = null;
+    String schemaFailure = null;
     AssistantTurnPlan plan = null;
     ModelDelta lastDelta = null;
     int toolCalls = 0;
     int agentSteps = 0;
     for (int compileAttempt = 0; compileAttempt <= maxCompileRepairs; compileAttempt++) {
       if (compileAttempt == 0) {
-        ModelingAgent.AgentLoopResult loopResult =
-            modelingAgent.plan(
-                session.level(),
-                baseModel,
-                context,
-                prompt,
-                (stage, message) -> publishProgress(session.id(), stage, message),
-                candidateTypes);
-        plan = loopResult.plan();
-        lastDelta = loopResult.delta();
-        compileFailure = loopResult.compileError();
-        toolCalls = Math.max(toolCalls, loopResult.toolCalls());
-        agentSteps = loopResult.steps();
+        try {
+          ModelingAgent.AgentLoopResult loopResult =
+              modelingAgent.plan(
+                  session.level(),
+                  baseModel,
+                  context,
+                  prompt,
+                  (stage, message) -> publishProgress(session.id(), stage, message),
+                  candidateTypes);
+          plan = loopResult.plan();
+          lastDelta = loopResult.delta();
+          compileFailure = loopResult.compileError();
+          toolCalls = Math.max(toolCalls, loopResult.toolCalls());
+          agentSteps = loopResult.steps();
+        } catch (PlatformException failure) {
+          if (!ModelDeltaFailureClassifier.isProviderFailure(failure)) {
+            throw failure;
+          }
+          schemaFailure = failure.getMessage();
+          logTurnInfo(
+              "model_delta_schema_failed",
+              "compileAttempt",
+              compileAttempt,
+              "message",
+              schemaFailure);
+          if (compileAttempt >= maxCompileRepairs) {
+            throw failure;
+          }
+          continue;
+        }
+      } else if (schemaFailure != null && !schemaFailure.isBlank()) {
+        publishProgress(
+            session.id(),
+            "COMPLETING",
+            "Repairing invalid ModelDelta JSON before structural validation");
+        checkTurnActive(session);
+        try {
+          ModelingAgent.AgentLoopResult repairResult =
+              repairService.repairSchemaFailure(
+                  session.level(),
+                  turnPrompt(session, request, context),
+                  request.message(),
+                  baseModel,
+                  context,
+                  snippets,
+                  schemaFailure,
+                  candidateTypes,
+                  compileAttempt);
+          plan = repairResult.plan();
+          lastDelta = repairResult.delta();
+          compileFailure = repairResult.compileError();
+          schemaFailure = null;
+          toolCalls = Math.max(toolCalls, tools.consumeToolCallCount());
+        } catch (PlatformException failure) {
+          if (!ModelDeltaFailureClassifier.isProviderFailure(failure)) {
+            throw failure;
+          }
+          schemaFailure = failure.getMessage();
+          logTurnInfo(
+              "model_delta_schema_failed",
+              "compileAttempt",
+              compileAttempt,
+              "message",
+              schemaFailure);
+          if (compileAttempt >= maxCompileRepairs) {
+            throw failure;
+          }
+        }
       } else {
         publishProgress(
             session.id(),
             "COMPLETING",
             "Fixing ModelDelta structural compile errors before validation");
         checkTurnActive(session);
-        ModelingAgent.AgentLoopResult repairResult =
-            repairService.repairCompileFailure(
-                session.level(),
-                turnPrompt(session, request, context),
-                request.message(),
-                baseModel,
-                context,
-                snippets,
-                lastDelta,
-                List.of(compileFailure == null ? "ModelDelta compile failed." : compileFailure),
-                candidateTypes,
-                compileAttempt);
-        plan = repairResult.plan();
-        lastDelta = repairResult.delta();
-        compileFailure = repairResult.compileError();
-        toolCalls = Math.max(toolCalls, tools.consumeToolCallCount());
+        try {
+          ModelingAgent.AgentLoopResult repairResult =
+              repairService.repairCompileFailure(
+                  session.level(),
+                  turnPrompt(session, request, context),
+                  request.message(),
+                  baseModel,
+                  context,
+                  snippets,
+                  lastDelta,
+                  List.of(compileFailure == null ? "ModelDelta compile failed." : compileFailure),
+                  candidateTypes,
+                  compileAttempt);
+          plan = repairResult.plan();
+          lastDelta = repairResult.delta();
+          compileFailure = repairResult.compileError();
+          toolCalls = Math.max(toolCalls, tools.consumeToolCallCount());
+        } catch (PlatformException failure) {
+          if (!ModelDeltaFailureClassifier.isProviderFailure(failure)) {
+            throw failure;
+          }
+          schemaFailure = failure.getMessage();
+          compileFailure = null;
+          logTurnInfo(
+              "model_delta_schema_failed",
+              "compileAttempt",
+              compileAttempt,
+              "message",
+              schemaFailure);
+          if (compileAttempt >= maxCompileRepairs) {
+            throw failure;
+          }
+        }
       }
       if (compileFailure != null && !compileFailure.isBlank()) {
         logTurnInfo(
@@ -1159,6 +1247,33 @@ public class AssistantOrchestrator {
       AssistantModelContext context,
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantTurnPlan initialPlan) {
+    return proposalResponse(
+        user,
+        session,
+        threadId,
+        request,
+        model,
+        baseModel,
+        context,
+        snippets,
+        initialPlan,
+        1,
+        0);
+  }
+
+  private AssistantTurnResponse proposalResponse(
+      UserRecord user,
+      AssistantSessionStore.AssistantSession session,
+      String threadId,
+      AssistantTurnRequest request,
+      ModelRecord model,
+      JsonNode baseModel,
+      AssistantModelContext context,
+      List<AssistantModelProvider.ContextSnippet> snippets,
+      AssistantTurnPlan initialPlan,
+      int passNumber,
+      int cumulativeAdditions) {
+    bindModelDeltaTurnContext(request, passNumber);
     long proposalStarted = System.nanoTime();
     checkTurnActive(session);
     publishProgress(session.id(), "VALIDATING", "Compiling and validating the model change");
@@ -1176,11 +1291,19 @@ public class AssistantOrchestrator {
         "intent",
         acceptedPlan.intent());
     checkTurnActive(session);
-    SourceCoverageExpectation coverageExpectation = sourceCoverageExpectation(session, request);
+    SourceCoverageExpectation totalCoverageExpectation = sourceCoverageExpectation(session, request);
+    SourceCoverageExpectation coverageExpectation =
+        perPassCoverageExpectation(totalCoverageExpectation, cumulativeAdditions);
     logTurnInfo(
         "coverage_expectation_ready",
         "required",
         coverageExpectation.required(),
+        "passNumber",
+        passNumber,
+        "cumulativeAdditions",
+        cumulativeAdditions,
+        "totalMinAdditions",
+        totalCoverageExpectation.minAdditions(),
         "minAdditions",
         coverageExpectation.minAdditions(),
         "minOperations",
@@ -1281,6 +1404,15 @@ public class AssistantOrchestrator {
                     repairNumber)
                 .plan();
       } catch (PlatformException failure) {
+        if (isProviderCallBudgetExceeded(failure)) {
+          logTurnInfo(
+              "repair_pass_skipped",
+              "repairNumber",
+              repairNumber,
+              "reason",
+              "provider_call_budget_exceeded");
+          break;
+        }
         if (ModelDeltaFailureClassifier.isCompileFailure(failure)
             || ModelDeltaFailureClassifier.isProviderFailure(failure)) {
           logTurnInfo(
@@ -1409,8 +1541,224 @@ public class AssistantOrchestrator {
         "modelId",
         safeLogValue(response.modelId()),
         "revision",
-        response.revision());
-    return response;
+        response.revision(),
+        "passNumber",
+        passNumber);
+    if (response.workflowState() != AssistantWorkflowState.APPLIED
+        || passNumber >= properties.maxCimModelingPasses()) {
+      return response;
+    }
+    int passAdditions =
+        coverageStats(session.level(), acceptedPlan.patch(), baseModel).additions();
+    int updatedCumulative = cumulativeAdditions + passAdditions;
+    if (!needsMoreSourceCoverage(totalCoverageExpectation, updatedCumulative)) {
+      return response;
+    }
+    if (!hasTurnBudgetRemaining(java.time.Duration.ofSeconds(120))
+        || !ProviderCallBudget.hasRemaining()) {
+      logTurnInfo(
+          "cim_incremental_pass_skipped",
+          "reason",
+          "turn_budget_or_provider_budget_exhausted",
+          "passNumber",
+          passNumber,
+          "cumulativeAdditions",
+          updatedCumulative);
+      return response;
+    }
+    return continueCimIncrementalPass(
+        user,
+        session,
+        threadId,
+        request,
+        response,
+        snippets,
+        passNumber + 1,
+        updatedCumulative,
+        totalCoverageExpectation);
+  }
+
+  private AssistantTurnResponse continueCimIncrementalPass(
+      UserRecord user,
+      AssistantSessionStore.AssistantSession session,
+      String threadId,
+      AssistantTurnRequest request,
+      AssistantTurnResponse appliedResponse,
+      List<AssistantModelProvider.ContextSnippet> snippets,
+      int passNumber,
+      int cumulativeAdditions,
+      SourceCoverageExpectation totalCoverageExpectation) {
+    if (session.level() != ModelLevel.CIM || !sourceContextAvailable(request)) {
+      return appliedResponse;
+    }
+    checkTurnActive(session);
+    publishProgress(
+        session.id(),
+        "PLANNING",
+        "Continuing CIM modeling pass "
+            + passNumber
+            + " of "
+            + properties.maxCimModelingPasses()
+            + " from source evidence");
+    ModelRecord updatedModel =
+        models.get(user, session.level(), appliedResponse.modelId());
+    JsonNode baseModel = updatedModel.modelJson();
+    ModelService.ValidationResult currentValidation =
+        assistantValidation(session.level(), baseModel);
+    AssistantModelContext context =
+        modelContexts.snapshot(updatedModel, currentValidation);
+    AssistantTurnRequest passRequest =
+        request
+            .withMessage(incrementalCimPassMessage(request, passNumber, totalCoverageExpectation, cumulativeAdditions))
+            .withRevision(updatedModel.revision());
+    IntentPlanner.IntentDecision intentDecision =
+        classifyIntentForRetrieval(session, passRequest, context, baseModel);
+    currentIntentDecision.set(intentDecision);
+    List<AssistantModelProvider.ContextSnippet> passSnippets =
+        contextSnippets(
+            session,
+            passRequest,
+            context,
+            session.level(),
+            passRequest.selectedElementIds(),
+            intentDecision);
+    InitialPlanResult nextPlan =
+        planInitialTurn(
+            session, passRequest, context, passSnippets, baseModel, intentDecision);
+    if (nextPlan.plan().kind() != AssistantTurnPlan.Kind.PATCH
+        || nextPlan.plan().patch().operations().isEmpty()) {
+      logTurnInfo(
+          "cim_incremental_pass_skipped",
+          "reason",
+          "empty_incremental_plan",
+          "passNumber",
+          passNumber);
+      return appliedResponse;
+    }
+    return proposalResponse(
+        user,
+        session,
+        threadId,
+        passRequest,
+        updatedModel,
+        baseModel,
+        context,
+        passSnippets,
+        nextPlan.plan(),
+        passNumber,
+        cumulativeAdditions);
+  }
+
+  private String incrementalCimPassMessage(
+      AssistantTurnRequest request,
+      int passNumber,
+      SourceCoverageExpectation totalCoverage,
+      int cumulativeAdditions) {
+    return request.rootMessage()
+        + "\n\n[Incremental CIM modeling pass "
+        + passNumber
+        + ": continue building the draft CIM from the attached source. "
+        + cumulativeAdditions
+        + " semantic elements were added in earlier passes; the full source-backed model still "
+        + "needs roughly "
+        + Math.max(0, totalCoverage.minAdditions() - cumulativeAdditions)
+        + " more additions across uncovered user stories, domain concepts, commands, queries, "
+        + "events, policies, processes, and traceability. Add only new elements and links — do "
+        + "not duplicate what already exists on the canvas.]";
+  }
+
+  private void bindModelDeltaTurnContext(AssistantTurnRequest request, int passNumber) {
+    boolean sourceBacked = sourceContextAvailable(request);
+    ModelDeltaTurnContext.bind(
+        new ModelDeltaTurnContext.Context(
+            sourceBacked ? properties.maxModelDeltaElementsPerPass() : 0,
+            passNumber,
+            sourceBacked));
+  }
+
+  private Duration turnTimeoutFor(AssistantTurnRequest request) {
+    return properties.turnTimeout();
+  }
+
+  private void grantModelingDeadlineAfterSource(
+      AssistantSessionStore.AssistantSession session,
+      String turnId,
+      Instant turnStartedAt,
+      AssistantTurnRequest request,
+      AssistantTurnRequest enrichedRequest) {
+    if (!sourceContextAvailable(request) || blank(enrichedRequest.sourceAnalysis())) {
+      return;
+    }
+    if (!blank(request.sourceAnalysis())) {
+      return;
+    }
+    Duration modelingBudget = properties.turnTimeout();
+    Duration absoluteCap = properties.sourceTurnTimeout();
+    if (modelingBudget == null || modelingBudget.isZero() || modelingBudget.isNegative()) {
+      return;
+    }
+    Instant proposed = Instant.now().plus(modelingBudget);
+    Instant cap =
+        absoluteCap == null || absoluteCap.isZero() || absoluteCap.isNegative()
+            ? null
+            : turnStartedAt.plus(absoluteCap);
+    Instant newDeadline = cap == null || proposed.isBefore(cap) ? proposed : cap;
+    turnCoordinator.extendDeadline(session, turnId, newDeadline);
+    TurnTrace trace = currentTrace.get();
+    if (trace != null) {
+      currentTrace.set(
+          new TurnTrace(
+              trace.turnId(),
+              trace.sessionId(),
+              trace.threadId(),
+              trace.projectId(),
+              trace.level(),
+              trace.requestedModelId(),
+              trace.startedNanos(),
+              trace.startedAt(),
+              newDeadline));
+    }
+    logTurnInfo(
+        "modeling_deadline_granted",
+        "turnId",
+        turnId,
+        "modelingBudgetMinutes",
+        modelingBudget.toMinutes(),
+        "absoluteCapMinutes",
+        absoluteCap == null ? null : absoluteCap.toMinutes(),
+        "deadlineAt",
+        newDeadline);
+  }
+
+  private SourceCoverageExpectation perPassCoverageExpectation(
+      SourceCoverageExpectation total, int cumulativeAdditions) {
+    if (total == null || !total.required()) {
+      return SourceCoverageExpectation.none();
+    }
+    int remainingAdditions = Math.max(0, total.minAdditions() - cumulativeAdditions);
+    if (remainingAdditions == 0) {
+      return SourceCoverageExpectation.none();
+    }
+    int perPassCap = Math.max(1, properties.maxModelDeltaElementsPerPass());
+    int minAdditions = Math.min(perPassCap, remainingAdditions);
+    int remainingOperations = Math.max(0, total.minOperations() - cumulativeAdditions);
+    int minOperations =
+        remainingOperations == 0
+            ? minAdditions
+            : Math.min(minAdditions + 10, remainingOperations);
+    int minConnections =
+        cumulativeAdditions >= total.minConnections()
+            ? 0
+            : Math.min(total.minConnections(), Math.max(0, minAdditions / 4));
+    return new SourceCoverageExpectation(
+        true, minAdditions, minOperations, minConnections, total.requiredFamilies());
+  }
+
+  private boolean needsMoreSourceCoverage(
+      SourceCoverageExpectation total, int cumulativeAdditions) {
+    return total != null
+        && total.required()
+        && cumulativeAdditions < total.minAdditions();
   }
 
   private AssistantTurnPlan preparePlan(
@@ -3241,10 +3589,19 @@ public class AssistantOrchestrator {
   }
 
   private int providerCallBudgetFor(AssistantTurnRequest request) {
-    if (request != null && !blank(request.attachmentContent())) {
-      return properties.maxProviderCallsSourceTurn();
+    int repairs = Math.max(0, properties.validationRepairAttempts());
+    // Intent classification, initial planner, compile repairs, validation repairs, safe fallback.
+    int minimum = 2 + repairs + repairs + 1;
+    boolean hasSource =
+        request != null
+            && (!blank(request.attachmentContent()) || !blank(request.attachmentName()));
+    if (hasSource) {
+      minimum += 1;
+      int passes = Math.max(1, properties.maxCimModelingPasses());
+      minimum += (passes - 1) * 2;
+      return Math.max(properties.maxProviderCallsSourceTurn(), minimum);
     }
-    return properties.maxProviderCallsPerTurn();
+    return Math.max(properties.maxProviderCallsPerTurn(), minimum);
   }
 
   private String evalCategory(AssistantTurnRequest request, AssistantModelContext context) {
@@ -3586,6 +3943,15 @@ public class AssistantOrchestrator {
     return candidate;
   }
 
+  private boolean isProviderCallBudgetExceeded(PlatformException failure) {
+    if (failure == null || failure.status() != 429) {
+      return false;
+    }
+    String message = failure.getMessage();
+    return message != null
+        && message.toLowerCase(java.util.Locale.ROOT).contains("provider call budget");
+  }
+
   private boolean blank(String value) {
     return value == null || value.isBlank();
   }
@@ -3844,6 +4210,36 @@ public class AssistantOrchestrator {
           rootMessage,
           idempotencyKey);
     }
+
+    AssistantTurnRequest withMessage(String updatedMessage) {
+      return new AssistantTurnRequest(
+          updatedMessage,
+          modelId,
+          revision,
+          activeView,
+          selectedElementIds,
+          unsavedDraftPatch,
+          attachmentName,
+          attachmentContent,
+          sourceAnalysis,
+          rootMessage,
+          idempotencyKey);
+    }
+
+    AssistantTurnRequest withRevision(Long updatedRevision) {
+      return new AssistantTurnRequest(
+          message,
+          modelId,
+          updatedRevision,
+          activeView,
+          selectedElementIds,
+          unsavedDraftPatch,
+          attachmentName,
+          attachmentContent,
+          sourceAnalysis,
+          rootMessage,
+          idempotencyKey);
+    }
   }
 
   /** One assistant turn response. */
@@ -3909,6 +4305,7 @@ public class AssistantOrchestrator {
       ModelLevel level,
       String requestedModelId,
       long startedNanos,
+      java.time.Instant startedAt,
       java.time.Instant deadlineAt) {}
 
   private record PlanAttempt(

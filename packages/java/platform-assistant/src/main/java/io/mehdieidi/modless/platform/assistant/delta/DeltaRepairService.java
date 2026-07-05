@@ -122,6 +122,48 @@ public class DeltaRepairService {
         level, null, context, prompt, candidateTypes == null ? List.of() : candidateTypes);
   }
 
+  /** Performs one schema-parse repair pass when provider output is not valid ModelDelta JSON. */
+  public ModelingAgent.AgentLoopResult repairSchemaFailure(
+      ModelLevel level,
+      String systemPrompt,
+      String requestMessage,
+      JsonNode baseModel,
+      AssistantModelContext context,
+      List<AssistantModelProvider.ContextSnippet> snippets,
+      String parseFailure,
+      List<String> candidateTypes,
+      int repairNumber) {
+    String failureText =
+        parseFailure == null || parseFailure.isBlank()
+            ? "AI assistant returned invalid ModelDelta JSON."
+            : parseFailure;
+    List<AssistantModelProvider.ContextSnippet> repairContext = new ArrayList<>();
+    repairContext.addAll(snippets == null ? List.of() : snippets);
+    String requestWithFeedback =
+        "Original user request:\n"
+            + (requestMessage == null ? "" : requestMessage)
+            + "\n\nModelDelta schema parse failure:\n"
+            + failureText
+            + "\n\nReturn one valid ModelDelta JSON object only. Required root fields: intent,"
+            + " kind, message. Use exact Ecore eClass names, placement.referenceName for"
+            + " containment, and references for writable links. For large source-backed CIM"
+            + " models, include the most important actors, commands, events, policies, and"
+            + " entities first (up to about 40 elements) instead of an oversized payload.";
+    AssistantModelProvider.AssistantPrompt prompt =
+        new AssistantModelProvider.AssistantPrompt(
+            AssistantModelRole.PLANNER,
+            systemPrompt
+                + "\nThis is schema-parse repair pass "
+                + repairNumber
+                + " of "
+                + settings.validationRepairAttempts()
+                + ". Return strict ModelDelta JSON with no prose or Markdown.",
+            requestWithFeedback,
+            repairContext);
+    return modelingAgent.repair(
+        level, baseModel, context, prompt, candidateTypes == null ? List.of() : candidateTypes);
+  }
+
   /** Performs one compile-error repair pass with the rejected ModelDelta draft in context. */
   public ModelingAgent.AgentLoopResult repairCompileFailure(
       ModelLevel level,

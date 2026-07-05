@@ -38,6 +38,21 @@ final class DeltaReferenceNames {
       return requestedName;
     }
     String normalized = requestedName.trim().toLowerCase(Locale.ROOT);
+    if ("Function".equals(sourceType) && "EventType".equals(targetType)) {
+      if (List.of(
+                  "publishesevents",
+                  "publishevents",
+                  "publishes",
+                  "publish",
+                  "producesevents",
+                  "produceevents",
+                  "emits",
+                  "emitted")
+              .contains(normalized)
+          && candidates.contains("publishes")) {
+        return "publishes";
+      }
+    }
     if ("AggregateCandidate".equals(sourceType) && "DomainEntity".equals(targetType)) {
       if (List.of("entities", "entity", "domainentities", "domainentity").contains(normalized)) {
         if (candidates.contains("members")) {

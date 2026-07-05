@@ -52,6 +52,15 @@ public class AssistantTurnCoordinator {
     return new StartedTurn(turnId, deadlineAt);
   }
 
+  public void extendDeadline(
+      AssistantSessionStore.AssistantSession session, String turnId, Instant newDeadlineAt) {
+    if (session == null || turnId == null || turnId.isBlank() || newDeadlineAt == null) {
+      return;
+    }
+    cancellations.extendDeadline(session.id(), turnId, newDeadlineAt);
+    executions.extendDeadline(turnId, newDeadlineAt);
+  }
+
   public Optional<String> cancel(String sessionId) {
     Optional<String> turnId = cancellations.cancel(sessionId);
     turnId.ifPresent(executions::requestCancel);

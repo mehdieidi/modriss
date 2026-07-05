@@ -24,7 +24,7 @@ public class ModelDeltaParser {
 
   /** Parses exactly one JSON object, with only an optional JSON Markdown fence stripped. */
   public ModelDelta parse(String content) {
-    String value = stripFence(content);
+    String value = extractJsonObject(stripFence(content));
     if (value.isBlank()) {
       throw new PlatformException(502, "AI assistant returned an empty ModelDelta.");
     }
@@ -33,11 +33,32 @@ public class ModelDeltaParser {
       if (!(parsed instanceof ObjectNode object)) {
         throw new PlatformException(502, "AI assistant ModelDelta must be a JSON object.");
       }
+      coerceRootAliases(object);
       return parseObject(object);
     } catch (PlatformException ex) {
       throw ex;
     } catch (Exception ex) {
       throw new PlatformException(502, "AI assistant returned invalid ModelDelta JSON.");
+    }
+  }
+
+  private void coerceRootAliases(ObjectNode object) {
+    if (object == null) {
+      return;
+    }
+    boolean hasMutationPayload =
+        object.has("elements")
+            || object.has("references")
+            || object.has("attributeUpdates")
+            || object.has("deletions");
+    if (!object.has("intent") && hasMutationPayload) {
+      object.put("intent", "MUTATION");
+    }
+    if (!object.has("kind") && hasMutationPayload) {
+      object.put("kind", "MODEL_DELTA");
+    }
+    if (!object.has("message")) {
+      object.put("message", "Model update drafted by the assistant.");
     }
   }
 
@@ -92,6 +113,7 @@ public class ModelDeltaParser {
       if (!(item instanceof ObjectNode object)) {
         throw new PlatformException(502, "ModelDelta elements must be JSON objects.");
       }
+      coerceElementAliases(object);
       coerceEvidenceIdsAlias(object);
       requireOnlyProperties(
           object,
@@ -119,7 +141,11 @@ public class ModelDeltaParser {
 
   private ModelDelta.Placement parsePlacement(JsonNode node) {
     ObjectNode object = requireObject(node, "ModelDelta placement");
+    coercePlacementAliases(object);
     coerceReferenceNameAlias(object);
+    if (!object.has("ownerId") || object.get("ownerId").isNull()) {
+      object.put("ownerId", "root");
+    }
     requireOnlyProperties(object, "ModelDelta placement", Set.of("ownerId", "referenceName"));
     return new ModelDelta.Placement(
         requireText(object, "ownerId", "ModelDelta placement"),
@@ -148,6 +174,48 @@ public class ModelDeltaParser {
       return converted;
     }
     throw new PlatformException(502, "ModelDelta element attributes must be a JSON object.");
+  }
+
+  private void coerceElementAliases(ObjectNode object) {
+    if (object == null) {
+      return;
+    }
+    if (!object.has("localId") && object.has("id")) {
+      object.set("localId", object.get("id"));
+    }
+    object.remove("id");
+    if (!object.has("eClass") && object.has("type")) {
+      object.set("eClass", object.get("type"));
+    }
+    object.remove("type");
+    if (!object.has("placement")
+        && object.has("containment")
+        && object.get("containment").isObject()) {
+      object.set("placement", object.get("containment"));
+    }
+    object.remove("containment");
+  }
+
+  private void coercePlacementAliases(ObjectNode object) {
+    if (object == null) {
+      return;
+    }
+    if (!object.has("referenceName") && object.has("featureName")) {
+      object.set("referenceName", object.get("featureName"));
+    }
+    if (!object.has("referenceName") && object.has("container")) {
+      object.set("referenceName", object.get("container"));
+    }
+    if (!object.has("referenceName") && object.has("containment")) {
+      object.set("referenceName", object.get("containment"));
+    }
+    object.remove("featureName");
+    object.remove("container");
+    object.remove("containment");
+    if (!object.has("ownerId") && object.has("parentId")) {
+      object.set("ownerId", object.get("parentId"));
+    }
+    object.remove("parentId");
   }
 
   private void coerceEvidenceIdsAlias(ObjectNode object) {
@@ -212,6 +280,7 @@ public class ModelDeltaParser {
         throw new PlatformException(502, "ModelDelta attributeUpdates must be JSON objects.");
       }
       coerceAttributeNameAlias(object);
+      coerceAttributeUpdateAliases(object);
       JsonNode nestedAttributes = object.get("attributes");
       if (nestedAttributes != null && nestedAttributes.isObject()) {
         String elementId = object.path("elementId").asText("");
@@ -395,6 +464,20 @@ public class ModelDeltaParser {
     object.remove("featureName");
   }
 
+  private void coerceAttributeUpdateAliases(ObjectNode object) {
+    if (object == null) {
+      return;
+    }
+    if (!object.has("elementId") && object.has("localId")) {
+      object.set("elementId", object.get("localId"));
+    }
+    object.remove("localId");
+    if (!object.has("elementId") && object.has("id")) {
+      object.set("elementId", object.get("id"));
+    }
+    object.remove("id");
+  }
+
   private void coerceAttributeNameAlias(ObjectNode object) {
     if (object == null) {
       return;
@@ -432,5 +515,44 @@ public class ModelDeltaParser {
       return value;
     }
     return value.substring(firstLineEnd + 1, closingFence).trim();
+  }
+
+  private String extractJsonObject(String content) {
+    if (content == null || content.isBlank()) {
+      return "";
+    }
+    int start = content.indexOf('{');
+    if (start < 0) {
+      return content.trim();
+    }
+    int depth = 0;
+    boolean inString = false;
+    boolean escaped = false;
+    for (int index = start; index < content.length(); index++) {
+      char current = content.charAt(index);
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (current == '\\') {
+          escaped = true;
+        } else if (current == '"') {
+          inString = false;
+        }
+        continue;
+      }
+      if (current == '"') {
+        inString = true;
+        continue;
+      }
+      if (current == '{') {
+        depth++;
+      } else if (current == '}') {
+        depth--;
+        if (depth == 0) {
+          return content.substring(start, index + 1).trim();
+        }
+      }
+    }
+    return content.substring(start).trim();
   }
 }

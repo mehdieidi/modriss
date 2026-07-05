@@ -37,13 +37,31 @@ public class AssistantSourceAnalysisFacade {
   private final AssistantSourceEvidenceStore sourceEvidenceStore;
   private final RealtimeTraceService traceEvents;
   private final ObjectMapper mapper;
+  private final boolean preferLlmExtraction;
 
   public AssistantSourceAnalysisFacade(
       SourceUnderstandingService sourceUnderstanding,
       AssistantSourceEvidenceStore sourceEvidenceStore,
       RealtimeTraceService traceEvents,
       ObjectMapper mapper) {
-    this(sourceUnderstanding, null, null, null, sourceEvidenceStore, traceEvents, mapper);
+    this(sourceUnderstanding, null, null, null, sourceEvidenceStore, traceEvents, mapper, true);
+  }
+
+  public AssistantSourceAnalysisFacade(
+      SourceUnderstandingService sourceUnderstanding,
+      AssistantSourceEvidenceStore sourceEvidenceStore,
+      RealtimeTraceService traceEvents,
+      ObjectMapper mapper,
+      boolean preferLlmExtraction) {
+    this(
+        sourceUnderstanding,
+        null,
+        null,
+        null,
+        sourceEvidenceStore,
+        traceEvents,
+        mapper,
+        preferLlmExtraction);
   }
 
   public AssistantSourceAnalysisFacade(
@@ -54,6 +72,26 @@ public class AssistantSourceAnalysisFacade {
       AssistantSourceEvidenceStore sourceEvidenceStore,
       RealtimeTraceService traceEvents,
       ObjectMapper mapper) {
+    this(
+        sourceUnderstanding,
+        chunker,
+        localExtractor,
+        merger,
+        sourceEvidenceStore,
+        traceEvents,
+        mapper,
+        true);
+  }
+
+  public AssistantSourceAnalysisFacade(
+      SourceUnderstandingService sourceUnderstanding,
+      SourceChunker chunker,
+      SourceEvidenceExtractor localExtractor,
+      SourceEvidenceMerger merger,
+      AssistantSourceEvidenceStore sourceEvidenceStore,
+      RealtimeTraceService traceEvents,
+      ObjectMapper mapper,
+      boolean preferLlmExtraction) {
     this.sourceUnderstanding =
         sourceUnderstanding == null ? new SourceUnderstandingService(null) : sourceUnderstanding;
     this.chunker = chunker == null ? new SourceChunker() : chunker;
@@ -63,6 +101,7 @@ public class AssistantSourceAnalysisFacade {
         sourceEvidenceStore == null ? AssistantSourceEvidenceStore.noop() : sourceEvidenceStore;
     this.traceEvents = traceEvents;
     this.mapper = mapper;
+    this.preferLlmExtraction = preferLlmExtraction;
   }
 
   /** Whether a CIM attachment still needs source evidence extraction. */
@@ -211,6 +250,9 @@ public class AssistantSourceAnalysisFacade {
   }
 
   private boolean shouldUseFastLocalPath(List<SourceChunk> chunks, String content) {
+    if (preferLlmExtraction) {
+      return false;
+    }
     if (chunks == null || chunks.size() != 1) {
       return false;
     }

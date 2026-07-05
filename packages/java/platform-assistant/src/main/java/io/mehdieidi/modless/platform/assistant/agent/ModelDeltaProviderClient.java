@@ -1,8 +1,10 @@
 package io.mehdieidi.modless.platform.assistant.agent;
 
+import io.mehdieidi.modless.platform.assistant.application.ModelDeltaTurnContext;
 import io.mehdieidi.modless.platform.assistant.delta.DeltaNormalizer;
 import io.mehdieidi.modless.platform.assistant.delta.ModelDelta;
 import io.mehdieidi.modless.platform.assistant.delta.ModelDeltaParser;
+import io.mehdieidi.modless.platform.assistant.delta.ModelDeltaPayloadLimiter;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
@@ -25,7 +27,12 @@ public class ModelDeltaProviderClient {
   public ModelDelta complete(ModelLevel level, AssistantModelProvider.AssistantPrompt prompt) {
     AssistantModelProvider.AssistantReply reply = provider.completeStructured(prompt);
     try {
-      return normalizer.normalize(level, parser.parse(reply.content()));
+      ModelDelta normalized = normalizer.normalize(level, parser.parse(reply.content()));
+      ModelDeltaTurnContext.Context turnContext = ModelDeltaTurnContext.current();
+      if (turnContext != null && turnContext.maxElementsPerPass() > 0) {
+        normalized = ModelDeltaPayloadLimiter.limit(normalized, turnContext.maxElementsPerPass());
+      }
+      return normalized;
     } catch (RuntimeException failure) {
       if (failure instanceof PlatformException platform) {
         throw platform;

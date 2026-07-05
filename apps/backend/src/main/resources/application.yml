@@ -57,9 +57,13 @@ modless:
     provider: ${MODLESS_AI_PROVIDER:openai}
     request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:5m}
     turn-timeout: ${MODLESS_AI_TURN_TIMEOUT:5m}
+    source-turn-timeout: ${MODLESS_AI_SOURCE_TURN_TIMEOUT:12m}
     max-repair-attempts: ${MODLESS_AI_MAX_REPAIR_ATTEMPTS:1}
-    max-provider-calls-per-turn: ${MODLESS_AI_MAX_PROVIDER_CALLS_PER_TURN:4}
-    max-provider-calls-source-turn: ${MODLESS_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:6}
+    max-provider-calls-per-turn: ${MODLESS_AI_MAX_PROVIDER_CALLS_PER_TURN:8}
+    max-provider-calls-source-turn: ${MODLESS_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:12}
+    max-model-delta-elements-per-pass: ${MODLESS_AI_MAX_MODEL_DELTA_ELEMENTS_PER_PASS:40}
+    max-cim-modeling-passes: ${MODLESS_AI_MAX_CIM_MODELING_PASSES:4}
+    prefer-llm-source-extraction: ${MODLESS_AI_PREFER_LLM_SOURCE_EXTRACTION:true}
     llm-contract-rerank-enabled: ${MODLESS_AI_LLM_CONTRACT_RERANK_ENABLED:false}
     max-tool-calls: ${MODLESS_AI_MAX_TOOL_CALLS:24}
     max-agent-steps: ${MODLESS_AI_MAX_AGENT_STEPS:8}

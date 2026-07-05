@@ -59,6 +59,27 @@ public class CancellationRegistry {
     }
   }
 
+  /** Updates the active turn deadline when more modeling budget is granted. */
+  public void extendDeadline(String sessionId, String turnId, Instant newDeadlineAt) {
+    if (sessionId == null
+        || sessionId.isBlank()
+        || turnId == null
+        || turnId.isBlank()
+        || newDeadlineAt == null) {
+      return;
+    }
+    ActiveTurn current = activeBySession.get(sessionId);
+    if (current == null
+        || !current.turnId().equals(turnId)
+        || (current.deadlineAt() != null && !newDeadlineAt.isAfter(current.deadlineAt()))) {
+      return;
+    }
+    activeBySession.put(
+        sessionId,
+        new ActiveTurn(
+            current.turnId(), current.idempotencyKey(), newDeadlineAt, current.cancelRequested()));
+  }
+
   /** Stores the terminal response and clears the active turn. */
   public void complete(String sessionId, String turnId, AssistantTurnResponse response) {
     ActiveTurn current = activeBySession.get(sessionId);

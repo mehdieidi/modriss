@@ -343,7 +343,11 @@ class AssistantLiveEvalTest {
         bool(env, "MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY", true),
         integer(env, "MODLESS_AI_MAX_PROVIDER_CALLS_PER_TURN", 4),
         integer(env, "MODLESS_AI_MAX_PROVIDER_CALLS_SOURCE_TURN", 6),
-        bool(env, "MODLESS_AI_LLM_CONTRACT_RERANK_ENABLED", false));
+        bool(env, "MODLESS_AI_LLM_CONTRACT_RERANK_ENABLED", false),
+        duration(env, "MODLESS_AI_SOURCE_TURN_TIMEOUT", Duration.ofMinutes(8)),
+        integer(env, "MODLESS_AI_MAX_MODEL_DELTA_ELEMENTS_PER_PASS", 40),
+        integer(env, "MODLESS_AI_MAX_CIM_MODELING_PASSES", 4),
+        bool(env, "MODLESS_AI_PREFER_LLM_SOURCE_EXTRACTION", true));
   }
 
   private RestClient.Builder restClientBuilder(AiProperties properties) {

@@ -8,9 +8,11 @@ import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelKnowledgeServi
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,9 +45,38 @@ public class DeltaNormalizer {
             .toList();
     Map<String, String> elementTypes = new LinkedHashMap<>();
     elements.forEach(element -> elementTypes.put(element.localId(), element.eClass()));
+    String rootType = metamodels.rootType(level);
+    elements =
+        elements.stream()
+            .map(
+                element ->
+                    canonicalizeElementPlacement(level, element, localIds, elementTypes, rootType))
+            .toList();
+    List<ModelDelta.Reference> promotedReferences = new ArrayList<>();
+    elements =
+        elements.stream()
+            .map(
+                element ->
+                    promoteReferencePlacement(
+                        level, element, localIds, elementTypes, rootType, promotedReferences))
+            .map(
+                element -> resolveOrphanPlacement(level, element, localIds, elementTypes, rootType))
+            .toList();
     elements =
         elements.stream()
             .map(element -> canonicalizeElementReferences(level, element, localIds, elementTypes))
+            .map(element -> pruneElementReferences(level, element, elementTypes))
+            .toList();
+    List<ModelDelta.Reference> references = new ArrayList<>();
+    delta
+        .references()
+        .forEach(
+            reference ->
+                references.add(normalizeReference(level, reference, localIds, elementTypes)));
+    references.addAll(promotedReferences);
+    List<ModelDelta.Reference> groundedReferences =
+        references.stream()
+            .filter(reference -> isGroundedReference(level, reference, elementTypes))
             .toList();
     return new ModelDelta(
         delta.intent(),
@@ -53,9 +84,7 @@ public class DeltaNormalizer {
         delta.message(),
         delta.questions(),
         elements,
-        delta.references().stream()
-            .map(reference -> normalizeReference(level, reference, localIds, elementTypes))
-            .toList(),
+        List.copyOf(groundedReferences),
         delta.attributeUpdates().stream()
             .map(update -> normalizeUpdate(level, update, localIds, elementTypes))
             .toList(),
@@ -96,6 +125,147 @@ public class DeltaNormalizer {
         .orElse(placement);
   }
 
+  private ModelDelta.Element canonicalizeElementPlacement(
+      ModelLevel level,
+      ModelDelta.Element element,
+      Map<String, String> localIds,
+      Map<String, String> elementTypes,
+      String rootType) {
+    ModelDelta.Placement placement = element.placement();
+    if (placement == null || placement.referenceName().isBlank()) {
+      return element;
+    }
+    String ownerId = localIds.getOrDefault(placement.ownerId(), placement.ownerId());
+    String ownerType = ownerType(level, ownerId, elementTypes, rootType);
+    if (ownerType == null || ownerType.isBlank()) {
+      return element;
+    }
+    String referenceName =
+        DeltaPlacementNames.canonicalContainmentName(
+            schemas, level, ownerType, placement.referenceName(), element.eClass());
+    return new ModelDelta.Element(
+        element.localId(),
+        element.eClass(),
+        element.attributes(),
+        new ModelDelta.Placement(ownerId, referenceName),
+        element.references(),
+        element.evidenceIds());
+  }
+
+  private String ownerType(
+      ModelLevel level, String ownerId, Map<String, String> elementTypes, String rootType) {
+    if (ownerId == null || ownerId.isBlank() || "root".equalsIgnoreCase(ownerId)) {
+      return rootType;
+    }
+    return elementTypes.get(ownerId);
+  }
+
+  private ModelDelta.Element promoteReferencePlacement(
+      ModelLevel level,
+      ModelDelta.Element element,
+      Map<String, String> localIds,
+      Map<String, String> elementTypes,
+      String rootType,
+      List<ModelDelta.Reference> promotedReferences) {
+    ModelDelta.Placement placement = element.placement();
+    if (placement == null
+        || placement.referenceName().isBlank()
+        || "root".equalsIgnoreCase(placement.ownerId())) {
+      return element;
+    }
+    String ownerId = localIds.getOrDefault(placement.ownerId(), placement.ownerId());
+    String ownerType = ownerType(level, ownerId, elementTypes, rootType);
+    if (ownerType == null || ownerType.isBlank()) {
+      return element;
+    }
+    String childType = element.eClass();
+    String referenceName = placement.referenceName();
+    if (isContainment(level, ownerType, referenceName, childType)) {
+      return element;
+    }
+    referenceName =
+        resolveWritableReference(level, ownerType, referenceName, childType).orElse(null);
+    if (referenceName == null) {
+      return element;
+    }
+    java.util.Optional<AssistantMetamodelSchemaService.ReferenceSchema> rootContainment =
+        schemas.rootContainment(level, childType);
+    if (rootContainment.isEmpty()) {
+      return element;
+    }
+    promotedReferences.add(new ModelDelta.Reference(ownerId, referenceName, element.localId()));
+    return new ModelDelta.Element(
+        element.localId(),
+        element.eClass(),
+        element.attributes(),
+        new ModelDelta.Placement("root", rootContainment.get().name()),
+        element.references(),
+        element.evidenceIds());
+  }
+
+  private java.util.Optional<String> resolveWritableReference(
+      ModelLevel level, String ownerType, String requestedName, String childType) {
+    if (requestedName != null
+        && !requestedName.isBlank()
+        && schemas.acceptsReferenceTarget(level, ownerType, requestedName, childType)) {
+      return java.util.Optional.of(requestedName);
+    }
+    String canonical =
+        DeltaReferenceNames.canonicalReferenceName(
+            schemas, level, ownerType, requestedName, childType);
+    if (canonical != null
+        && !canonical.isBlank()
+        && schemas.acceptsReferenceTarget(level, ownerType, canonical, childType)) {
+      return java.util.Optional.of(canonical);
+    }
+    return schemas.typeSchema(level, ownerType).stream()
+        .flatMap(type -> type.references().stream())
+        .filter(reference -> !reference.containment() && !reference.readonly())
+        .filter(
+            reference ->
+                schemas.acceptsReferenceTarget(level, ownerType, reference.name(), childType))
+        .map(AssistantMetamodelSchemaService.ReferenceSchema::name)
+        .findFirst();
+  }
+
+  private ModelDelta.Element resolveOrphanPlacement(
+      ModelLevel level,
+      ModelDelta.Element element,
+      Map<String, String> localIds,
+      Map<String, String> elementTypes,
+      String rootType) {
+    ModelDelta.Placement placement = element.placement();
+    if (placement == null || placement.referenceName().isBlank()) {
+      return element;
+    }
+    String ownerId = localIds.getOrDefault(placement.ownerId(), placement.ownerId());
+    if ("root".equalsIgnoreCase(ownerId) || elementTypes.containsKey(ownerId)) {
+      return element;
+    }
+    java.util.Optional<AssistantMetamodelSchemaService.ReferenceSchema> rootContainment =
+        schemas.rootContainment(level, element.eClass());
+    if (rootContainment.isEmpty()) {
+      return element;
+    }
+    return new ModelDelta.Element(
+        element.localId(),
+        element.eClass(),
+        element.attributes(),
+        new ModelDelta.Placement("root", rootContainment.get().name()),
+        element.references(),
+        element.evidenceIds());
+  }
+
+  private boolean isContainment(
+      ModelLevel level, String ownerType, String referenceName, String childType) {
+    try {
+      schemas.requireContainment(level, ownerType, referenceName, childType);
+      return true;
+    } catch (PlatformException ignored) {
+      return false;
+    }
+  }
+
   private JsonNode canonicalizeAttributes(ModelLevel level, String type, JsonNode attributes) {
     if (!(attributes instanceof ObjectNode object)) {
       return attributes;
@@ -104,19 +274,65 @@ public class DeltaNormalizer {
     object
         .fields()
         .forEachRemaining(
-            entry ->
-                attributeContract(level, type, entry.getKey())
-                    .filter(attribute -> !attribute.enumLiterals().isEmpty())
-                    .flatMap(
-                        attribute ->
-                            attribute.enumLiterals().stream()
-                                .filter(
-                                    option -> option.equalsIgnoreCase(entry.getValue().asText("")))
-                                .findFirst())
-                    .ifPresent(option -> result.put(entry.getKey(), option)));
+            entry -> {
+              attributeContract(level, type, entry.getKey())
+                  .ifPresent(
+                      attribute -> {
+                        if (attribute.enumLiterals().isEmpty()) {
+                          return;
+                        }
+                        JsonNode canonical = canonicalizeEnumValue(attribute, entry.getValue());
+                        if (canonical != null) {
+                          result.set(entry.getKey(), canonical);
+                        }
+                      });
+            });
     result.remove("id");
     result.remove("eClass");
     return result;
+  }
+
+  private JsonNode canonicalizeEnumValue(AttributeContract attribute, JsonNode value) {
+    if (attribute.enumLiterals().isEmpty()) {
+      return value;
+    }
+    String text = value == null || value.isNull() ? "" : value.asText("").trim();
+    if (text.isBlank()) {
+      return JsonNodeFactory.instance.textNode(attribute.enumLiterals().get(0));
+    }
+    for (String option : attribute.enumLiterals()) {
+      if (option.equalsIgnoreCase(text)) {
+        return JsonNodeFactory.instance.textNode(option);
+      }
+    }
+    String alias = enumAlias(attribute.name(), text);
+    if (alias != null) {
+      for (String option : attribute.enumLiterals()) {
+        if (option.equalsIgnoreCase(alias)) {
+          return JsonNodeFactory.instance.textNode(option);
+        }
+      }
+    }
+    return JsonNodeFactory.instance.textNode(attribute.enumLiterals().get(0));
+  }
+
+  private String enumAlias(String attributeName, String value) {
+    if (attributeName == null || value == null || value.isBlank()) {
+      return null;
+    }
+    String normalized = value.trim().toLowerCase(Locale.ROOT);
+    if ("functionKind".equals(attributeName)) {
+      return switch (normalized) {
+        case "standard", "default", "generic", "handler", "lambda", "function" -> "EVENT_HANDLER";
+        case "command", "write", "mutation" -> "COMMAND_HANDLER";
+        case "query", "read" -> "QUERY_HANDLER";
+        case "policy" -> "POLICY_HANDLER";
+        case "scheduled", "cron", "timer" -> "SCHEDULED_TASK";
+        case "stream", "processor" -> "STREAM_PROCESSOR";
+        default -> null;
+      };
+    }
+    return null;
   }
 
   private java.util.Optional<AttributeContract> attributeContract(
@@ -179,6 +395,43 @@ public class DeltaNormalizer {
               schemas, level, sourceType, referenceName, targetType);
     }
     return new ModelDelta.Reference(sourceId, referenceName, targetId);
+  }
+
+  private ModelDelta.Element pruneElementReferences(
+      ModelLevel level, ModelDelta.Element element, Map<String, String> elementTypes) {
+    List<ModelDelta.Reference> references =
+        element.references().stream()
+            .filter(reference -> isGroundedReference(level, reference, elementTypes))
+            .toList();
+    return new ModelDelta.Element(
+        element.localId(),
+        element.eClass(),
+        element.attributes(),
+        element.placement(),
+        references,
+        element.evidenceIds());
+  }
+
+  private boolean isGroundedReference(
+      ModelLevel level, ModelDelta.Reference reference, Map<String, String> elementTypes) {
+    if (reference == null
+        || reference.sourceId() == null
+        || reference.sourceId().isBlank()
+        || reference.targetId() == null
+        || reference.targetId().isBlank()
+        || reference.referenceName() == null
+        || reference.referenceName().isBlank()) {
+      return false;
+    }
+    String sourceType = elementTypes.get(reference.sourceId());
+    String targetType = elementTypes.get(reference.targetId());
+    if (sourceType == null || targetType == null) {
+      return false;
+    }
+    String referenceName =
+        DeltaReferenceNames.canonicalReferenceName(
+            schemas, level, sourceType, reference.referenceName(), targetType);
+    return schemas.acceptsReferenceTarget(level, sourceType, referenceName, targetType);
   }
 
   private ModelDelta.AttributeUpdate normalizeUpdate(

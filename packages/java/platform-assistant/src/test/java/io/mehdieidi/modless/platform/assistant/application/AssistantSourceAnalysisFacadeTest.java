@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 class AssistantSourceAnalysisFacadeTest {
 
   @Test
-  void smallAttachmentUsesFastLocalPathWithoutProvider() {
+  void preferLlmExtractionUsesProviderBackedUnderstanding() {
     SlowSourceUnderstandingService slow = new SlowSourceUnderstandingService();
     AssistantSourceAnalysisFacade facade =
         new AssistantSourceAnalysisFacade(
@@ -26,7 +26,8 @@ class AssistantSourceAnalysisFacadeTest {
             new SourceEvidenceMerger(),
             null,
             null,
-            new ObjectMapper());
+            new ObjectMapper(),
+            true);
     AssistantSessionStore.AssistantSession session =
         new AssistantSessionStore.AssistantSession(
             "session-1",
@@ -50,7 +51,48 @@ class AssistantSourceAnalysisFacadeTest {
             24);
 
     assertTrue(result.success());
-    assertTrue(slow.invoked == 0, "fast path should not call LLM source understanding");
+    assertTrue(slow.invoked > 0, "LLM-backed source understanding should run for CIM attachments");
+    assertTrue(result.graph().coverage().size() >= 1);
+  }
+
+  @Test
+  void fastLocalPathStillAvailableWhenLlmExtractionDisabled() {
+    SlowSourceUnderstandingService slow = new SlowSourceUnderstandingService();
+    AssistantSourceAnalysisFacade facade =
+        new AssistantSourceAnalysisFacade(
+            slow,
+            new SourceChunker(),
+            new SourceEvidenceExtractor(),
+            new SourceEvidenceMerger(),
+            null,
+            null,
+            new ObjectMapper(),
+            false);
+
+    AssistantSessionStore.AssistantSession session =
+        new AssistantSessionStore.AssistantSession(
+            "session-2",
+            "user-1",
+            "project-1",
+            ModelLevel.CIM,
+            "Clinic",
+            Instant.now(),
+            Instant.now());
+
+    AssistantSourceAnalysisFacade.SourceAnalysisResult result =
+        facade.analyze(
+            session,
+            new AssistantSourceAnalysisFacade.SourceTurnRequest(
+                "Create a CIM model",
+                null,
+                "notes.md",
+                "Patient books an appointment and receives a reminder.",
+                ""),
+            4000,
+            24);
+
+    assertTrue(result.success());
+    assertEquals(0, slow.invoked, "fast path should not call LLM source understanding");
     assertEquals(1, result.graph().coverage().size());
   }
 

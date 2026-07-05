@@ -326,6 +326,49 @@ class ModelDeltaParserTest {
   }
 
   @Test
+  void expandsIdAndTypeAliasesOnElements() {
+    ModelDelta delta =
+        parser.parse(
+            """
+            {
+              "intent": "MUTATION",
+              "kind": "MODEL_DELTA",
+              "message": "Created actor.",
+              "elements": [
+                {
+                  "id": "actor-1",
+                  "type": "Actor",
+                  "attributes": {"name": "Patient"},
+                  "containment": {"parentId": "root", "container": "actors"}
+                }
+              ]
+            }
+            """);
+
+    assertEquals("actor-1", delta.elements().get(0).localId());
+    assertEquals("Actor", delta.elements().get(0).eClass());
+    assertEquals("actors", delta.elements().get(0).placement().referenceName());
+  }
+
+  @Test
+  void extractsJsonObjectFromProsePrefix() {
+    ModelDelta delta =
+        parser.parse(
+            """
+            Here is the ModelDelta:
+            {
+              "intent": "MUTATION",
+              "kind": "MODEL_DELTA",
+              "message": "Created actor.",
+              "elements": []
+            }
+            Extra notes after JSON.
+            """);
+
+    assertEquals(ModelDelta.Kind.MODEL_DELTA, delta.kind());
+  }
+
+  @Test
   void rejectsUnsupportedFields() {
     assertThrows(
         PlatformException.class,

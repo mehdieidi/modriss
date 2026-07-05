@@ -259,51 +259,59 @@ public class ModelingAgent {
 
   private String guidance(boolean repair) {
     return """
-     Use the ModelDelta protocol for this turn. Return only one JSON object satisfying the
-    ModelDeltaTurn JSON Schema. Do not emit retired mutation protocols, JSON Patch, XMI, prose
-    wrappers, or Markdown fences.
+ Use the ModelDelta protocol for this turn. Return only one JSON object satisfying the
+ModelDeltaTurn JSON Schema. Do not emit retired mutation protocols, JSON Patch, XMI, prose
+wrappers, or Markdown fences.
 
-     For changes, set kind=MODEL_DELTA and provide elements, references, attributeUpdates, and
-     deletions. Each new element must include localId, eClass, attributes, and placement. placement
-     is containment only: use ownerId="root" for root-owned elements, or a saved/local owner ID plus
-     the exact containment referenceName from the Ecore contract. Put writable non-containment
-     EReferences in references. Put scalar EAttributes in attributes or attributeUpdates.
+ For changes, set kind=MODEL_DELTA and provide elements, references, attributeUpdates, and
+ deletions. Each new element must include localId, eClass, attributes, and placement. placement
+ is containment only: use ownerId="root" for root-owned elements, or a saved/local owner ID plus
+ the exact containment referenceName from the Ecore contract. Put writable non-containment
+ EReferences in references. Put scalar EAttributes in attributes or attributeUpdates.
 
-     Deletion is allowed only when the user explicitly requested deletion. Model only facts grounded
-     in the user request, selected model context, source evidence, or explicit assumptions.
+ Deletion is allowed only when the user explicitly requested deletion. Model only facts grounded
+ in the user request, selected model context, source evidence, or explicit assumptions.
 
-     For CIM/event-storming turns, add explicit relationship references instead of isolated
-     elements. Common valid CIM links include Actor.issuesCommands -> Command,
-     Command.expectedEvents -> BusinessEvent, Command.rejectionEvents -> BusinessEvent,
-     Policy.triggeredBy -> BusinessEvent, Policy.guards -> Command, Policy.emitsCommands ->
-     Command, Policy.emitsEvents -> BusinessEvent, BusinessCapability.containsCommands -> Command,
-     BusinessCapability.containsEvents -> BusinessEvent, AggregateCandidate.handledCommands ->
-     Command, AggregateCandidate.emittedEvents -> BusinessEvent, AggregateCandidate.root/members ->
-     DomainEntity, BusinessCapability.entities/CIMModel.entities contain DomainEntity children,
-     ExternalSystem.producedEvents ->
-     BusinessEvent, ExternalSystem.consumedEvents -> BusinessEvent, BusinessGoal.owners ->
-     Stakeholder (never Actor), and Stakeholder.ownsGoals -> BusinessGoal. Model actors and
-     stakeholders separately; link actors to commands/events, stakeholders to goals/requirements.
-     Use these exact Ecore feature names.
+ For CIM/event-storming turns, add explicit relationship references instead of isolated
+ elements. Common valid CIM links include Actor.issuesCommands -> Command,
+ Command.expectedEvents -> BusinessEvent, Command.rejectionEvents -> BusinessEvent,
+ Policy.triggeredBy -> BusinessEvent, Policy.guards -> Command, Policy.emitsCommands ->
+ Command, Policy.emitsEvents -> BusinessEvent, BusinessCapability.containsCommands ->
+ Command, BusinessCapability.containsEvents -> BusinessEvent, AggregateCandidate.handledCommands ->
+ Command, AggregateCandidate.emittedEvents -> BusinessEvent, AggregateCandidate.root/members ->
+ DomainEntity, BusinessCapability.entities/CIMModel.entities contain DomainEntity children,
+ ExternalSystem.producedEvents ->
+ BusinessEvent, ExternalSystem.consumedEvents -> BusinessEvent, BusinessGoal.owners ->
+ Stakeholder (never Actor), and Stakeholder.ownsGoals -> BusinessGoal. Model actors and
+ stakeholders separately; link actors to commands/events, stakeholders to goals/requirements.
+ Place commands, events, actors, entities, and capabilities on CIMModel root collections.
+ Use BusinessCapability.containsCommands, containsEvents, containsQueries, and managesEntities
+ as references, not placement.referenceName values.
+ important domain elements first and keep the response within roughly 40 new elements per turn.
 
-     For PIM/serverless backend turns, model services, APIs, functions, contracts, data stores,
-     events, and workflows as connected structures — not isolated boxes. Common valid PIM links
-     include PIMModel.services -> ServerlessService, ServerlessService.ownsFunctions -> Function,
-     Function.contract -> FunctionContract, PIMModel.apis -> Api, Api.routes -> ApiRoute,
-     PIMModel.dataStores -> DataStore, PIMModel.channels -> EventChannel, PIMModel.eventTypes ->
-     EventType, PIMModel.workflows -> Workflow, and ApiRoute.functionIntegration -> Function.
-     Every Function needs its required FunctionContract in the same patch. Connect API routes to
-     functions and wire event types where the domain requires integration. Use exact EClass names
-     such as ServerlessService, EventType, and FunctionContract — never invented labels or
-     shortened aliases like Event or Service.
+ For PIM/serverless backend turns, model services, APIs, functions, contracts, data stores,
+ events, and workflows as connected structures — not isolated boxes. Common valid PIM links
+ include PIMModel.services -> ServerlessService (containment), PIMModel.functions -> Function
+ (containment), Function.contract -> FunctionContract (containment under each Function).
+ Link services to their functions, APIs, stores, and workflows using references such as
+ ServerlessService.ownsFunctions, ServerlessService.ownsApis, ServerlessService.ownsStores, and
+ ServerlessService.ownsWorkflows — these are references, not placement.referenceName values.
+ PIMModel.apis -> Api, Api.routes -> ApiRoute,
+ PIMModel.dataStores -> DataStore, PIMModel.channels -> EventChannel, PIMModel.eventTypes ->
+ EventType, PIMModel.workflows -> Workflow, and ApiRoute.functionIntegration -> Function.
+ Every Function needs its required FunctionContract child via placement ownerId=<functionId>
+ referenceName=contract (containment, not a references entry). Place deployable elements at
+ their PIMModel root collections (for example functions, apis, dataStores) and connect services
+ with references. Never use ownsFunctions, ownsApis, or similar service references as
+ placement.referenceName.
 
-     Do not ask the user to confirm backend retrieval, metamodel contracts, or tool usage. The
-     backend already assembled exact Ecore contracts, source evidence, and model context for this
-     turn. When attachment content or source evidence snippets are present, treat them as the
-     authoritative source text; never return kind=ANSWER claiming the source document is missing.
-     Unless a domain fact is genuinely missing from all supplied context, proceed with
-     kind=MODEL_DELTA and list any assumptions instead of returning CLARIFICATION.
-    """
+ Do not ask the user to confirm backend retrieval, metamodel contracts, or tool usage. The
+ backend already assembled exact Ecore contracts, source evidence, and model context for this
+ turn. When attachment content or source evidence snippets are present, treat them as the
+ authoritative source text; never return kind=ANSWER claiming the source document is missing.
+ Unless a domain fact is genuinely missing from all supplied context, proceed with
+ kind=MODEL_DELTA and list any assumptions instead of returning CLARIFICATION.
+"""
         + (repair
             ? "\nThis is a structural repair pass. Return a complete replacement ModelDelta that"
                 + " fixes the reported contract failures. Do not repeat invalid fragments."
