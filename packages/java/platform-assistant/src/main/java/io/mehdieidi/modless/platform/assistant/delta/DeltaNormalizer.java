@@ -1,6 +1,7 @@
 package io.mehdieidi.modless.platform.assistant.delta;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelKnowledgeService;
 import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelKnowledgeService.AttributeContract;
@@ -40,6 +41,8 @@ public class DeltaNormalizer {
             .filter(element -> !isRootModelType(level, element.eClass()))
             .map(element -> normalizeElement(level, element, localIds))
             .toList();
+    Map<String, String> elementTypes = new LinkedHashMap<>();
+    elements.forEach(element -> elementTypes.put(element.localId(), element.eClass()));
     return new ModelDelta(
         delta.intent(),
         delta.kind(),
@@ -49,7 +52,9 @@ public class DeltaNormalizer {
         delta.references().stream()
             .map(reference -> normalizeReference(reference, localIds))
             .toList(),
-        delta.attributeUpdates().stream().map(update -> normalizeUpdate(update, localIds)).toList(),
+        delta.attributeUpdates().stream()
+            .map(update -> normalizeUpdate(level, update, localIds, elementTypes))
+            .toList(),
         delta.deletions(),
         delta.assumptions());
   }
@@ -136,11 +141,40 @@ public class DeltaNormalizer {
   }
 
   private ModelDelta.AttributeUpdate normalizeUpdate(
-      ModelDelta.AttributeUpdate update, Map<String, String> localIds) {
-    return new ModelDelta.AttributeUpdate(
-        localIds.getOrDefault(update.elementId(), update.elementId()),
-        update.attributeName(),
-        update.value());
+      ModelLevel level,
+      ModelDelta.AttributeUpdate update,
+      Map<String, String> localIds,
+      Map<String, String> elementTypes) {
+    String elementId = localIds.getOrDefault(update.elementId(), update.elementId());
+    String attributeName = update.attributeName();
+    String elementType = elementTypes.get(elementId);
+    if (elementType != null && attributeName != null && !attributeName.isBlank()) {
+      attributeName =
+          schemas
+              .canonicalAttribute(level, elementType, attributeName)
+              .map(AssistantMetamodelSchemaService.AttributeSchema::name)
+              .orElse(attributeName);
+    }
+    final JsonNode rawValue = update.value();
+    JsonNode value = rawValue;
+    if (elementType != null
+        && attributeName != null
+        && !attributeName.isBlank()
+        && rawValue != null) {
+      java.util.Optional<JsonNode> canonicalValue =
+          attributeContract(level, elementType, attributeName)
+              .filter(attribute -> !attribute.enumLiterals().isEmpty())
+              .flatMap(
+                  attribute ->
+                      attribute.enumLiterals().stream()
+                          .filter(option -> option.equalsIgnoreCase(rawValue.asText("")))
+                          .findFirst()
+                          .map(JsonNodeFactory.instance::textNode));
+      if (canonicalValue.isPresent()) {
+        value = canonicalValue.get();
+      }
+    }
+    return new ModelDelta.AttributeUpdate(elementId, attributeName, value);
   }
 
   private String canonical(ModelLevel level, String type) {

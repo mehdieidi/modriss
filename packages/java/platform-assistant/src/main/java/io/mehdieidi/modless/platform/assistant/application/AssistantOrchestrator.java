@@ -461,16 +461,18 @@ public class AssistantOrchestrator {
       checkTurnActive(session);
       ensureDurableThread(user, session);
       logTurnPhase("durable_thread_ready", turnStarted, "threadId", threadId);
-      appendUserMessage(threadId, sessionId, request);
+      ProviderCallBudget.bind(providerCallBudgetFor(request));
+      AssistantTurnRequest enrichedRequest = enrichWithSourceAnalysis(session, request);
+      appendUserMessage(threadId, sessionId, enrichedRequest);
       logTurnPhase("user_message_appended", turnStarted);
 
       long readStarted = System.nanoTime();
       checkTurnActive(session);
       ProjectRecord project = projects.get(user, session.projectId());
       publishProgress(sessionId, "READING_MODEL", "Reading the active model and validation state");
-      String modelId = resolveModelId(request.modelId(), project, session.level());
+      String modelId = resolveModelId(enrichedRequest.modelId(), project, session.level());
       ModelRecord model = modelId == null ? null : models.get(user, session.level(), modelId);
-      requireCurrentRevision(request.revision(), model);
+      requireCurrentRevision(enrichedRequest.revision(), model);
       checkTurnActive(session);
       logTurnPhase(
           "active_model_loaded",
@@ -480,9 +482,7 @@ public class AssistantOrchestrator {
           "modelRevision",
           model == null ? null : model.revision(),
           "requestedRevision",
-          request.revision());
-      AssistantTurnRequest enrichedRequest = enrichWithSourceAnalysis(session, request);
-      ProviderCallBudget.bind(providerCallBudgetFor(enrichedRequest));
+          enrichedRequest.revision());
 
       long contextStarted = System.nanoTime();
       checkTurnActive(session);
@@ -561,7 +561,7 @@ public class AssistantOrchestrator {
             "toolCalls",
             toolCalls);
       } catch (PlatformException failure) {
-        if (isDeltaCompileFailure(failure)) {
+        if (ModelDeltaFailureClassifier.isCompileFailure(failure)) {
           throw failure;
         }
         if (failure.status() < 500 && failure.status() != 429) {
@@ -713,6 +713,7 @@ public class AssistantOrchestrator {
       if (failure.status() == 499
           || failure.status() == 504
           || failure.status() == 502
+          || (failure.status() == 422 && ModelDeltaFailureClassifier.isCompileFailure(failure))
           || error.retryable()) {
         AssistantTurnResponse response =
             finishTurn(
@@ -893,12 +894,17 @@ public class AssistantOrchestrator {
     }
     if (intent != null
         && intent.intent() == IntentPlanner.Intent.INFORMATION
+        && !IntentPlanner.requiresMutation(intent)
         && readOnlyAnswerAgent != null) {
       AssistantTurnPlan answer = readOnlyAnswerAgent.answer(prompt);
       return new InitialPlanResult(answer, 0);
     }
     List<String> candidateTypes =
-        intent == null || intent.candidateTypes() == null ? List.of() : intent.candidateTypes();
+        schemas.knownTypes(
+            session.level(),
+            intent == null || intent.candidateTypes() == null
+                ? List.of()
+                : intent.candidateTypes());
     int maxCompileRepairs = Math.max(0, properties.validationRepairAttempts());
     String compileFailure = null;
     AssistantTurnPlan plan = null;
@@ -954,10 +960,10 @@ public class AssistantOrchestrator {
         }
         compileFailure = "The ModelDelta compiled to no semantic operations.";
       } catch (PlatformException failure) {
-        if (!isDeltaCompileFailure(failure)) {
+        if (!ModelDeltaFailureClassifier.isCompileFailure(failure)) {
           throw failure;
         }
-        if (isModelDeltaProviderFailure(failure)) {
+        if (ModelDeltaFailureClassifier.isProviderFailure(failure)) {
           throw failure;
         }
         compileFailure = failure.getMessage();
@@ -1001,44 +1007,15 @@ public class AssistantOrchestrator {
     return new InitialPlanResult(plan, toolCalls);
   }
 
-  private boolean isModelDeltaProviderFailure(PlatformException failure) {
-    if (failure == null) {
-      return false;
-    }
-    String message = failure.getMessage();
-    if (message == null) {
-      return false;
-    }
-    String normalized = message.toLowerCase(java.util.Locale.ROOT);
-    return normalized.contains("modeldelta") || normalized.contains("schema parsing");
-  }
-
-  private boolean isDeltaCompileFailure(PlatformException failure) {
-    if (failure == null) {
-      return false;
-    }
-    if (isModelDeltaProviderFailure(failure)) {
-      return true;
-    }
-    if (failure.status() != 422) {
-      return false;
-    }
-    String message = failure.getMessage();
-    if (message == null || message.isBlank()) {
-      return false;
-    }
-    String normalized = message.toLowerCase(java.util.Locale.ROOT);
-    return normalized.contains("modeldelta")
-        || normalized.contains("not grounded in the metamodel")
-        || normalized.contains("requires localid")
-        || normalized.contains("containment")
-        || normalized.contains("unknown or cyclic owner");
-  }
-
   private AssistantTurnRequest enrichWithSourceAnalysis(
       AssistantSessionStore.AssistantSession session, AssistantTurnRequest request) {
-    if (!sourceAnalysisFacade.requiresSourceAnalysis(
-        session, AssistantSourceAnalysisFacade.SourceTurnRequest.from(request))) {
+    AssistantSourceAnalysisFacade.SourceTurnRequest sourceRequest =
+        AssistantSourceAnalysisFacade.SourceTurnRequest.from(request);
+    if (!blank(request.sourceAnalysis())) {
+      sourceAnalysisFacade.persistIfPresent(session, sourceRequest);
+      return request;
+    }
+    if (!sourceAnalysisFacade.requiresSourceAnalysis(session, sourceRequest)) {
       logTurnInfo(
           "source_analysis_skipped",
           "reason",
@@ -1046,16 +1023,23 @@ public class AssistantOrchestrator {
           "attachmentChars",
           request.attachmentContent().length());
       sourceAnalysisFacade.persistIfPresent(
-          session, AssistantSourceAnalysisFacade.SourceTurnRequest.from(request));
+          session, sourceRequest);
       return request;
     }
     long started = System.nanoTime();
     publishProgress(
         session.id(), "ANALYZING_SOURCE", "Extracting source evidence for CIM planning");
+    if (traceEvents != null) {
+      traceEvents.progress(
+          session.id(),
+          "",
+          "ANALYZING_SOURCE",
+          "Starting source evidence extraction before model planning");
+    }
     AssistantSourceAnalysisFacade.SourceAnalysisResult result =
         sourceAnalysisFacade.analyze(
             session,
-            AssistantSourceAnalysisFacade.SourceTurnRequest.from(request),
+            sourceRequest,
             properties.maxSourceChunkTokens(),
             properties.maxSourceChunksPerTurn());
     if (!result.success() || blank(result.json())) {
@@ -1183,7 +1167,6 @@ public class AssistantOrchestrator {
         "intent",
         acceptedPlan.intent());
     checkTurnActive(session);
-    publishDraftPreviewProgress(session, model, baseModel, acceptedPlan);
     SourceCoverageExpectation coverageExpectation = sourceCoverageExpectation(session, request);
     logTurnInfo(
         "coverage_expectation_ready",
@@ -1283,7 +1266,8 @@ public class AssistantOrchestrator {
                 attempt.feedback(),
                 repairNumber);
       } catch (PlatformException failure) {
-        if (isDeltaCompileFailure(failure) || isModelDeltaProviderFailure(failure)) {
+        if (ModelDeltaFailureClassifier.isCompileFailure(failure)
+            || ModelDeltaFailureClassifier.isProviderFailure(failure)) {
           logTurnInfo(
               "repair_pass_failed",
               "repairNumber",
@@ -1395,6 +1379,7 @@ public class AssistantOrchestrator {
     }
     metrics.recordAssistantRepairAttempts(repairNumber);
 
+    publishDraftPreviewProgress(session, model, baseModel, acceptedPlan);
     publishProgress(session.id(), "APPLYING", "Applying the validated change");
     checkTurnActive(session);
     AssistantTurnResponse response =
@@ -1531,10 +1516,7 @@ public class AssistantOrchestrator {
 
   private boolean shouldForceMutationProposal(AssistantTurnRequest request) {
     IntentPlanner.IntentDecision decision = currentIntentDecision.get();
-    if (decision != null) {
-      return decision.intent() == IntentPlanner.Intent.MUTATION;
-    }
-    return false;
+    return decision != null && IntentPlanner.requiresMutation(decision);
   }
 
   private boolean samePatch(AssistantTurnPlan left, AssistantTurnPlan right) {
@@ -2479,10 +2461,12 @@ public class AssistantOrchestrator {
     Set<String> selectedTypes = selectedElementTypes(context, selectedElementIds);
     List<String> intentCandidateTypes = intent == null ? List.of() : intent.candidateTypes();
     List<String> candidateTypes =
-        Stream.concat(selectedTypes.stream(), intentCandidateTypes.stream())
-            .filter(type -> type != null && !type.isBlank())
-            .distinct()
-            .toList();
+        schemas.knownTypes(
+            level,
+            Stream.concat(selectedTypes.stream(), intentCandidateTypes.stream())
+                .filter(type -> type != null && !type.isBlank())
+                .distinct()
+                .toList());
     if (candidateTypes.isEmpty()) {
       tier1.addAll(schemas.allPlanningContracts(level));
     } else {
@@ -2541,7 +2525,7 @@ public class AssistantOrchestrator {
 
     List<AssistantModelProvider.ContextSnippet> tier4 = new ArrayList<>();
     tier4.addAll(retrievalOptional);
-    if (!blank(request.attachmentContent())) {
+    if (!blank(request.attachmentContent()) && blank(request.sourceAnalysis())) {
       tier4.add(
           new AssistantModelProvider.ContextSnippet(
               "user-attachment",

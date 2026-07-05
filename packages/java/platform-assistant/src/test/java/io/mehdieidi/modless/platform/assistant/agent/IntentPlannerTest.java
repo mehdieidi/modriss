@@ -1,6 +1,7 @@
 package io.mehdieidi.modless.platform.assistant.agent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
@@ -10,6 +11,22 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class IntentPlannerTest {
+
+  @Test
+  void requiresMutationWhenTaskKindRequestsModelChangeEvenIfIntentIsInformation() {
+    assertTrue(
+        IntentPlanner.requiresMutation(
+            new IntentPlanner.IntentDecision(
+                IntentPlanner.Intent.INFORMATION,
+                "CREATE_MODEL",
+                false,
+                List.of(),
+                List.of("Function"))));
+    assertFalse(
+        IntentPlanner.requiresMutation(
+            new IntentPlanner.IntentDecision(
+                IntentPlanner.Intent.INFORMATION, "EXPLAIN_MODEL", false, List.of(), List.of())));
+  }
 
   @Test
   void usesStructuredProviderDecisionInsteadOfLocalKeywordRouting() {
@@ -34,7 +51,10 @@ class IntentPlannerTest {
         planner.classify(
             ModelLevel.PIM,
             new AssistantModelProvider.AssistantPrompt(
-                AssistantModelRole.PLANNER, "system", "لطفا پرداخت را کامل تر کن", List.of()),
+                AssistantModelRole.PLANNER,
+                "Conversation memory:\nassistant: I can create a vending machine PIM.",
+                "لطفا پرداخت را کامل تر کن",
+                List.of()),
             List.of(
                 new AssistantModelProvider.ContextSnippet("model", "current slice", "Checkout")));
 
@@ -43,6 +63,7 @@ class IntentPlannerTest {
     assertEquals(List.of("Function"), decision.candidateTypes());
     assertEquals(1, provider.structuredCalls);
     assertTrue(provider.lastPrompt.system().contains("not from keyword matching"));
+    assertTrue(provider.lastPrompt.system().contains("Conversation memory"));
     assertTrue(provider.lastPrompt.user().contains("لطفا پرداخت"));
   }
 

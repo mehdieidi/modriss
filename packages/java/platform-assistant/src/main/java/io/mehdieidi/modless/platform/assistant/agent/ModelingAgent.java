@@ -146,6 +146,9 @@ public class ModelingAgent {
       AssistantModelContext context, AssistantModelProvider.AssistantPrompt prompt) {
     int snippets = prompt == null || prompt.snippets() == null ? 0 : prompt.snippets().size();
     int reserved = settings == null ? 10 : settings.reservedSchemaSnippets();
+    if (hasSourceEvidenceSnippets(prompt)) {
+      return false;
+    }
     if (context != null && !context.elements().isEmpty()) {
       return snippets < Math.max(4, reserved / 2);
     }
@@ -153,6 +156,19 @@ public class ModelingAgent {
       return false;
     }
     return snippets < Math.max(4, reserved);
+  }
+
+  private boolean hasSourceEvidenceSnippets(AssistantModelProvider.AssistantPrompt prompt) {
+    if (prompt == null || prompt.snippets() == null) {
+      return false;
+    }
+    return prompt.snippets().stream()
+        .anyMatch(
+            snippet ->
+                snippet != null
+                    && snippet.source() != null
+                    && (snippet.source().startsWith("source-")
+                        || snippet.source().contains("source-evidence")));
   }
 
   private AssistantModelProvider.AssistantPrompt explorationPrompt(
@@ -256,6 +272,17 @@ public class ModelingAgent {
      Stakeholder (never Actor), and Stakeholder.ownsGoals -> BusinessGoal. Model actors and
      stakeholders separately; link actors to commands/events, stakeholders to goals/requirements.
      Use these exact Ecore feature names.
+
+     For PIM/serverless backend turns, model services, APIs, functions, contracts, data stores,
+     events, and workflows as connected structures — not isolated boxes. Common valid PIM links
+     include PIMModel.services -> ServerlessService, ServerlessService.ownsFunctions -> Function,
+     Function.contract -> FunctionContract, PIMModel.apis -> Api, Api.routes -> ApiRoute,
+     PIMModel.dataStores -> DataStore, PIMModel.channels -> EventChannel, PIMModel.eventTypes ->
+     EventType, PIMModel.workflows -> Workflow, and ApiRoute.functionIntegration -> Function.
+     Every Function needs its required FunctionContract in the same patch. Connect API routes to
+     functions and wire event types where the domain requires integration. Use exact EClass names
+     such as ServerlessService, EventType, and FunctionContract — never invented labels or
+     shortened aliases like Event or Service.
 
      Do not ask the user to confirm backend retrieval, metamodel contracts, or tool usage. The
      backend already assembled exact Ecore contracts, source evidence, and model context for this

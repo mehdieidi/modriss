@@ -79,4 +79,33 @@ class SourceUnderstandingServiceTest {
             .allMatch(entry -> entry.state() == SourceChunk.CoverageState.COMPRESSED));
     assertTrue(graph.gaps().isEmpty());
   }
+
+  @Test
+  void notifiesListenerBeforeChunkExtractionStarts() {
+    SourceUnderstandingService service = new SourceUnderstandingService(new SourceChunker());
+    java.util.List<String> events = new java.util.ArrayList<>();
+
+    service.understand(
+        "source-1",
+        "notes.md",
+        "Patient books an appointment and receives a reminder.",
+        80,
+        4,
+        new SourceChunkProgressListener() {
+          @Override
+          public void onChunkStarting(int chunkIndex, int totalChunks, SourceChunk chunk) {
+            events.add("start:" + chunkIndex + "/" + totalChunks + ":" + chunk.id());
+          }
+
+          @Override
+          public void onChunkProcessed(
+              int chunkIndex, int totalChunks, SourceEvidenceGraph partialGraph) {
+            events.add("done:" + chunkIndex);
+          }
+        });
+
+    assertFalse(events.isEmpty());
+    assertTrue(events.get(0).startsWith("start:1/"));
+    assertTrue(events.stream().anyMatch(event -> event.startsWith("done:")));
+  }
 }

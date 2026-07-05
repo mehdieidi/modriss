@@ -15,6 +15,32 @@ class AssistantMetamodelSchemaServiceTest {
   private final AssistantMetamodelSchemaService schemas = new AssistantMetamodelSchemaService();
 
   @Test
+  void canonicalizesSpacedAndUnderscoredTypeNames() {
+    assertEquals("ServerlessService", schemas.canonicalType(ModelLevel.PIM, "Serverless Service"));
+    assertEquals("FunctionContract", schemas.canonicalType(ModelLevel.PIM, "Function_Contract"));
+  }
+
+  @Test
+  void filtersUnknownCandidateTypesWithoutThrowing() {
+    List<String> known =
+        schemas.knownTypes(
+            ModelLevel.PIM, List.of("Function", "Machine Operations Service", "Api", "Event"));
+    assertEquals(List.of("Function", "Api"), known);
+  }
+
+  @Test
+  void canonicalizesAttributeNamesWithCaseAndCommonAliases() {
+    assertEquals(
+        "summary",
+        schemas.canonicalAttribute(ModelLevel.CIM, "Actor", "Summary").orElseThrow().name());
+    assertEquals(
+        "description",
+        schemas.canonicalAttribute(ModelLevel.CIM, "Actor", "details").orElseThrow().name());
+    assertEquals(
+        "name", schemas.canonicalAttribute(ModelLevel.CIM, "Actor", "label").orElseThrow().name());
+  }
+
+  @Test
   void canonicalizesOnlyUniqueMetamodelTypePrefixes() {
     assertEquals("ObservabilityConfig", schemas.canonicalType(ModelLevel.PIM, "ObservabilityConf"));
     assertThrows(PlatformException.class, () -> schemas.canonicalType(ModelLevel.PIM, "Event"));

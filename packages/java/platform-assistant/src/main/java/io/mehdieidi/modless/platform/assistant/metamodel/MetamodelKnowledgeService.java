@@ -102,7 +102,7 @@ public class MetamodelKnowledgeService {
   public List<AssistantModelProvider.ContextSnippet> contractClosure(
       ModelLevel level, List<String> candidateTypes) {
     List<AssistantModelProvider.ContextSnippet> result = new ArrayList<>();
-    for (String type : candidateTypes == null ? List.<String>of() : candidateTypes) {
+    for (String type : schemas.knownTypes(level, candidateTypes)) {
       result.add(typeContractSnippet(level, type));
       typeContract(level, type).references().stream()
           .filter(MetamodelKnowledgeService.ReferenceContract::required)

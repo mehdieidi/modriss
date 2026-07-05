@@ -1,7 +1,6 @@
 package io.mehdieidi.modless.platform.assistant.delta;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -9,7 +8,6 @@ import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
 import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
-import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -56,7 +54,7 @@ class DeltaCompilerTest {
   }
 
   @Test
-  void rejectsUnknownFeatureBeforeApply() throws Exception {
+  void canonicalizesSingleRootContainmentWhenOnlyOneLegalFeatureExists() throws Exception {
     ModelDelta delta =
         new ModelDelta(
             AssistantTurnPlan.Intent.MUTATION,
@@ -76,17 +74,17 @@ class DeltaCompilerTest {
             List.of(),
             List.of());
 
-    assertThrows(
-        PlatformException.class,
-        () ->
-            compiler.compile(
-                ModelLevel.PIM,
-                mapper.readTree(
-                    """
-                    {"id":"root","eClass":"PIMModel","modelLevel":"PIM","functions":[]}
-                    """),
-                Map.of(),
-                delta));
+    SemanticModelPatch patch =
+        compiler.compile(
+            ModelLevel.PIM,
+            mapper.readTree(
+                """
+                {"id":"root","eClass":"PIMModel","modelLevel":"PIM","functions":[]}
+                """),
+            Map.of(),
+            delta);
+
+    assertEquals("functions", patch.operations().get(0).referenceName());
   }
 
   @Test
@@ -135,5 +133,47 @@ class DeltaCompilerTest {
             .orElseThrow();
 
     assertEquals("expectedEvents", connection.referenceName());
+  }
+
+  @Test
+  void canonicalizesCaseInsensitiveAttributeUpdates() throws Exception {
+    ModelDelta delta =
+        new ModelDelta(
+            AssistantTurnPlan.Intent.MUTATION,
+            ModelDelta.Kind.MODEL_DELTA,
+            "Rename actor",
+            List.of(),
+            List.of(
+                new ModelDelta.Element(
+                    "patient",
+                    "Actor",
+                    JsonNodeFactory.instance.objectNode().put("name", "Patient"),
+                    new ModelDelta.Placement("root", "actors"),
+                    List.of(),
+                    List.of())),
+            List.of(),
+            List.of(
+                new ModelDelta.AttributeUpdate(
+                    "patient", "Summary", JsonNodeFactory.instance.textNode("Books visits"))),
+            List.of(),
+            List.of());
+
+    SemanticModelPatch patch =
+        compiler.compile(
+            ModelLevel.CIM,
+            mapper.readTree(
+                """
+                {"id":"root","eClass":"CIMModel","modelLevel":"CIM","actors":[]}
+                """),
+            Map.of(),
+            delta);
+
+    SemanticModelPatch.Operation update =
+        patch.operations().stream()
+            .filter(operation -> operation.type() == SemanticModelPatch.OperationType.SET_ATTRIBUTE)
+            .findFirst()
+            .orElseThrow();
+    assertEquals("summary", update.referenceName());
+    assertEquals("Books visits", update.attributes().asText());
   }
 }

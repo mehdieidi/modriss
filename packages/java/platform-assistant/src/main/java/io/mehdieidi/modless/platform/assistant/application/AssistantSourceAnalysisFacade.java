@@ -3,6 +3,8 @@ package io.mehdieidi.modless.platform.assistant.application;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.assistant.session.AssistantSessionStore;
+import io.mehdieidi.modless.platform.assistant.source.SourceChunk;
+import io.mehdieidi.modless.platform.assistant.source.SourceChunkProgressListener;
 import io.mehdieidi.modless.platform.assistant.source.SourceCoverageMatrix;
 import io.mehdieidi.modless.platform.assistant.source.SourceEvidenceGraph;
 import io.mehdieidi.modless.platform.assistant.source.SourceUnderstandingService;
@@ -75,8 +77,18 @@ public class AssistantSourceAnalysisFacade {
             request.attachmentContent(),
             maxChunkTokens,
             maxChunks,
-            (chunkIndex, totalChunks, partialGraph) ->
-                publishSourceCoverage(session.id(), partialGraph, chunkIndex, totalChunks));
+            new SourceChunkProgressListener() {
+              @Override
+              public void onChunkStarting(int chunkIndex, int totalChunks, SourceChunk chunk) {
+                publishChunkExtractionStarted(session.id(), chunkIndex, totalChunks, chunk);
+              }
+
+              @Override
+              public void onChunkProcessed(
+                  int chunkIndex, int totalChunks, SourceEvidenceGraph partialGraph) {
+                publishSourceCoverage(session.id(), partialGraph, chunkIndex, totalChunks);
+              }
+            });
     try {
       String json = mapper.writeValueAsString(graph);
       persistSourceEvidence(session, request, graph, json);
@@ -142,6 +154,29 @@ public class AssistantSourceAnalysisFacade {
     } catch (Exception ex) {
       log.warn("Could not persist assistant source evidence.", ex);
     }
+  }
+
+  private void publishChunkExtractionStarted(
+      String sessionId, int chunkIndex, int totalChunks, SourceChunk chunk) {
+    if (traceEvents == null) {
+      return;
+    }
+    String chunkId = chunk == null || chunk.id().isBlank() ? "chunk-" + chunkIndex : chunk.id();
+    traceEvents.progress(
+        sessionId,
+        "",
+        "ANALYZING_SOURCE",
+        "Calling provider to extract source evidence for chunk "
+            + chunkIndex
+            + " of "
+            + totalChunks);
+    traceEvents.sourceCoverage(
+        sessionId,
+        Math.max(0, chunkIndex - 1),
+        totalChunks,
+        chunkId,
+        "EXTRACTING",
+        "Extracting chunk " + chunkIndex + " of " + totalChunks);
   }
 
   private void publishSourceCoverage(

@@ -43,7 +43,11 @@ public class SourceUnderstandingService {
     }
     List<SourceEvidenceGraph> graphs = new java.util.ArrayList<>();
     for (int index = 0; index < chunks.size(); index++) {
-      graphs.add(extractor.extract(sourceId, chunks.get(index)));
+      SourceChunk chunk = chunks.get(index);
+      if (listener != null) {
+        listener.onChunkStarting(index + 1, chunks.size(), chunk);
+      }
+      graphs.add(extractor.extract(sourceId, chunk));
       if (listener != null) {
         listener.onChunkProcessed(index + 1, chunks.size(), merger.merge(sourceId, graphs));
       }

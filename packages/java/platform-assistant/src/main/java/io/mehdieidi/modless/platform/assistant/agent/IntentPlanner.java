@@ -27,25 +27,54 @@ public class IntentPlanner {
       ModelLevel level,
       AssistantModelProvider.AssistantPrompt prompt,
       List<AssistantModelProvider.ContextSnippet> context) {
+    String parentSystem = prompt == null || prompt.system() == null ? "" : prompt.system().trim();
+    String classifyInstructions =
+        """
+Classify the user's turn using structured output. Decide intent semantically from
+the full request, conversation memory, and context — not from keyword matching.
+Return only one JSON object:
+{"intent":"INFORMATION|MUTATION|CLARIFICATION","taskKind":"CREATE_MODEL|EXTEND_MODEL|EDIT_MODEL|DELETE_MODEL|EXPLAIN_MODEL|TRANSFORM_SOURCE_TO_MODEL|REPAIR_STRUCTURE","sourceUse":true|false,"concepts":["..."],"candidateTypes":["ExactEClass"]}
+Do not produce ModelDelta, patch operations, prose, Markdown, or chain-of-thought.
+Short confirmations such as "ok", "do it", "yes", or "go ahead" that continue an earlier
+modeling request must be intent=MUTATION with the same modeling taskKind as the prior turn.
+candidateTypes must list only exact creatable EClass names from the metamodel; omit invalid
+guesses and domain service labels that are not formal EClasses.
+Level:\
+"""
+            + level.apiName();
+    String system =
+        parentSystem.isBlank()
+            ? classifyInstructions
+            : parentSystem + "\n\n" + classifyInstructions;
     AssistantModelProvider.AssistantPrompt request =
         prompts.build(
             new AssistantModelProvider.AssistantPrompt(
-                AssistantModelRole.PLANNER,
-                """
-Classify the user's turn using structured output. Decide intent semantically from
-the full request and context, not from keyword matching. Return only one JSON object:
-{"intent":"INFORMATION|MUTATION|CLARIFICATION","taskKind":"CREATE_MODEL|EXTEND_MODEL|EDIT_MODEL|DELETE_MODEL|EXPLAIN_MODEL|TRANSFORM_SOURCE_TO_MODEL|REPAIR_STRUCTURE","sourceUse":true|false,"concepts":["..."],"candidateTypes":["ExactEClass"]}
-Do not produce ModelDelta, patch operations, prose, Markdown, or chain-of-thought.
-Level:\
-"""
-                    + level.apiName(),
-                prompt.user(),
-                context),
+                AssistantModelRole.PLANNER, system, prompt == null ? "" : prompt.user(), context),
             List.of(),
             List.of(),
             context);
     AssistantModelProvider.AssistantReply reply = provider.completeStructured(request);
     return parse(reply.content());
+  }
+
+  /** Returns whether the structured turn decision requires the mutation-capable agent path. */
+  public static boolean requiresMutation(IntentDecision intent) {
+    if (intent == null) {
+      return false;
+    }
+    if (intent.intent() == Intent.MUTATION) {
+      return true;
+    }
+    return switch (intent.taskKind().toUpperCase(java.util.Locale.ROOT)) {
+      case "CREATE_MODEL",
+          "EXTEND_MODEL",
+          "EDIT_MODEL",
+          "DELETE_MODEL",
+          "TRANSFORM_SOURCE_TO_MODEL",
+          "REPAIR_STRUCTURE" ->
+          true;
+      default -> false;
+    };
   }
 
   private IntentDecision parse(String content) {

@@ -113,10 +113,7 @@ public class ModelDeltaSchemaFactory {
   private String schemaCacheKey(ModelLevel level, List<String> candidateTypes) {
     LinkedHashSet<String> types = new LinkedHashSet<>();
     if (candidateTypes != null) {
-      candidateTypes.stream()
-          .filter(type -> type != null && !type.isBlank())
-          .map(type -> metamodels.canonicalType(level, type))
-          .forEach(types::add);
+      schemas.knownTypes(level, candidateTypes).forEach(types::add);
     }
     return level.name() + "|" + metamodels.metamodelHash(level) + "|" + String.join(",", types);
   }
@@ -372,10 +369,8 @@ public class ModelDeltaSchemaFactory {
           .toArray(String[]::new);
     }
     LinkedHashSet<String> names = new LinkedHashSet<>();
-    for (String candidate : candidateTypes) {
-      if (candidate != null && !candidate.isBlank()) {
-        names.add(schemas.canonicalType(level, candidate));
-      }
+    for (String candidate : schemas.knownTypes(level, candidateTypes)) {
+      names.add(candidate);
     }
     if (names.isEmpty()) {
       return metamodels.typeContracts(level).stream()

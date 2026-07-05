@@ -47,6 +47,12 @@ public final class AgentErrorResolver {
       case 504 -> "PROVIDER_TIMEOUT";
       case 400 ->
           message.contains("clarification") ? "CLARIFICATION_REQUIRED" : "STRUCTURE_REJECTED";
+      case 422 ->
+          message.contains("unknown metamodel")
+                  || message.contains("modeldelta")
+                  || message.contains("containment")
+              ? "STRUCTURE_REJECTED"
+              : "STRUCTURE_REJECTED";
       case 413 -> "CONTEXT_TOO_LARGE";
       case 503 -> "PROVIDER_UNAVAILABLE";
       default -> "INTERNAL_ERROR";

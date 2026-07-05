@@ -283,11 +283,20 @@ class DeltaPatchCompiler {
   private SemanticModelPatch.Operation attributeOperation(
       ModelLevel level, Map<String, String> types, AttributeUpdate update) {
     String targetType = types.get(update.elementId());
-    if (targetType == null
-        || update.attributeName().isBlank()
-        || schemas.attribute(level, targetType, update.attributeName()).isEmpty()) {
+    java.util.Optional<AssistantMetamodelSchemaService.AttributeSchema> attribute =
+        targetType == null || update.attributeName().isBlank()
+            ? java.util.Optional.empty()
+            : schemas.canonicalAttribute(level, targetType, update.attributeName());
+    if (targetType == null || update.attributeName().isBlank() || attribute.isEmpty()) {
       throw new PlatformException(
-          422, "ModelDelta attribute update is not grounded in the metamodel.");
+          422,
+          "ModelDelta attribute update is not grounded in the metamodel: elementId="
+              + update.elementId()
+              + ", attributeName="
+              + update.attributeName()
+              + ", elementType="
+              + (targetType == null ? "unknown" : targetType)
+              + ".");
     }
     return new SemanticModelPatch.Operation(
         SemanticModelPatch.OperationType.SET_ATTRIBUTE,
@@ -295,7 +304,7 @@ class DeltaPatchCompiler {
         null,
         update.value(),
         null,
-        update.attributeName());
+        attribute.get().name());
   }
 
   private Reference referenceWithSource(Element element, Reference reference) {

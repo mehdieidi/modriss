@@ -3,11 +3,17 @@ package io.mehdieidi.modless.platform.assistant.provider;
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.time.Duration;
+import java.time.Instant;
 
 /** Checks the dedicated AI proxy without affecting non-AI outbound traffic. */
 public class ProxyAvailability {
 
+  private static final Duration CACHE_TTL = Duration.ofSeconds(30);
+
   private final AiProperties properties;
+  private volatile ProxyCheck cachedCheck;
+  private volatile Instant cachedAt = Instant.EPOCH;
 
   /**
    * Creates the proxy checker.
@@ -26,8 +32,31 @@ public class ProxyAvailability {
   public ProxyCheck check() {
     AiProperties.Proxy proxy = properties.proxy();
     if (!proxy.enabled() || proxy.type() == AiProperties.ProxyType.DIRECT) {
-      return new ProxyCheck(true, "AI proxy is disabled.");
+      return cachedOrResolve(new ProxyCheck(true, "AI proxy is disabled."));
     }
+    Instant now = Instant.now();
+    ProxyCheck snapshot = cachedCheck;
+    if (snapshot != null && cachedAt.plus(CACHE_TTL).isAfter(now)) {
+      return snapshot;
+    }
+    ProxyCheck resolved = checkReachable(proxy);
+    cachedCheck = resolved;
+    cachedAt = now;
+    return resolved;
+  }
+
+  private ProxyCheck cachedOrResolve(ProxyCheck resolved) {
+    Instant now = Instant.now();
+    ProxyCheck snapshot = cachedCheck;
+    if (snapshot != null && cachedAt.plus(CACHE_TTL).isAfter(now)) {
+      return snapshot;
+    }
+    cachedCheck = resolved;
+    cachedAt = now;
+    return resolved;
+  }
+
+  private ProxyCheck checkReachable(AiProperties.Proxy proxy) {
     InetSocketAddress address = proxy.address();
     try (Socket socket = new Socket()) {
       socket.connect(address, Math.toIntExact(proxy.connectTimeout().toMillis()));

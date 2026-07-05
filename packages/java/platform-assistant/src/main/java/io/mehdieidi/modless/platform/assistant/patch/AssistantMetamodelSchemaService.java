@@ -53,6 +53,28 @@ public class AssistantMetamodelSchemaService {
                                 422, "Element type is not defined by an active metamodel.")));
   }
 
+  /** Returns the canonical case-sensitive EClass name when it can be resolved safely. */
+  public Optional<String> tryCanonicalType(ModelLevel level, String type) {
+    try {
+      return Optional.of(canonicalType(level, type));
+    } catch (PlatformException ignored) {
+      return Optional.empty();
+    }
+  }
+
+  /** Returns only creatable EClass names that resolve against the active metamodel. */
+  public List<String> knownTypes(ModelLevel level, List<String> candidates) {
+    if (candidates == null || candidates.isEmpty()) {
+      return List.of();
+    }
+    LinkedHashMap<String, String> resolved = new LinkedHashMap<>();
+    for (String candidate : candidates) {
+      tryCanonicalType(level, candidate)
+          .ifPresent(canonical -> resolved.putIfAbsent(canonical, canonical));
+    }
+    return List.copyOf(resolved.keySet());
+  }
+
   /** Returns the canonical case-sensitive EClass name. */
   public String canonicalType(ModelLevel level, String type) {
     LevelSchema schema = schema(level);
@@ -71,6 +93,17 @@ public class AssistantMetamodelSchemaService {
             .toList();
     if (caseInsensitiveMatches.size() == 1) {
       return caseInsensitiveMatches.get(0);
+    }
+    String compact = compactTypeName(candidate);
+    if (!compact.isBlank() && !compact.equals(candidate)) {
+      List<String> compactMatches =
+          schema.types().values().stream()
+              .map(TypeSchema::name)
+              .filter(name -> name.equalsIgnoreCase(compact))
+              .toList();
+      if (compactMatches.size() == 1) {
+        return compactMatches.get(0);
+      }
     }
     String normalized = candidate.toLowerCase(Locale.ROOT);
     List<String> suffixMatches =
@@ -145,7 +178,46 @@ public class AssistantMetamodelSchemaService {
 
   /** Verifies a writable attribute and canonicalizes enum values when possible. */
   public Optional<AttributeSchema> attribute(ModelLevel level, String type, String feature) {
-    return schema(level).type(type).flatMap(value -> value.attribute(feature));
+    return canonicalAttribute(level, type, feature);
+  }
+
+  /** Resolves a writable attribute using exact, case-insensitive, and common alias matching. */
+  public Optional<AttributeSchema> canonicalAttribute(
+      ModelLevel level, String type, String feature) {
+    if (feature == null || feature.isBlank()) {
+      return Optional.empty();
+    }
+    TypeSchema typeSchema;
+    try {
+      typeSchema =
+          schema(level)
+              .type(canonicalType(level, type))
+              .orElseThrow(() -> new PlatformException(422, "Unknown metamodel type: " + type));
+    } catch (PlatformException failure) {
+      return Optional.empty();
+    }
+    Optional<AttributeSchema> exact = typeSchema.attribute(feature);
+    if (exact.isPresent()) {
+      return exact;
+    }
+    List<AttributeSchema> caseInsensitive =
+        typeSchema.attributes().stream()
+            .filter(attribute -> attribute.name().equalsIgnoreCase(feature))
+            .toList();
+    if (caseInsensitive.size() == 1) {
+      return Optional.of(caseInsensitive.get(0));
+    }
+    String compact = compactTypeName(feature);
+    if (!compact.isBlank()) {
+      List<AttributeSchema> compactMatches =
+          typeSchema.attributes().stream()
+              .filter(attribute -> compactTypeName(attribute.name()).equalsIgnoreCase(compact))
+              .toList();
+      if (compactMatches.size() == 1) {
+        return Optional.of(compactMatches.get(0));
+      }
+    }
+    return attributeAlias(typeSchema, feature).flatMap(typeSchema::attribute);
   }
 
   /** Returns a reference inherited by the supplied type. */
@@ -485,6 +557,30 @@ public class AssistantMetamodelSchemaService {
       result.put(level, new LevelSchema(text(starter, "eClass"), types));
     }
     return Map.copyOf(result);
+  }
+
+  private String compactTypeName(String candidate) {
+    if (candidate == null || candidate.isBlank()) {
+      return "";
+    }
+    return candidate.replaceAll("[\\s_-]+", "");
+  }
+
+  private Optional<String> attributeAlias(TypeSchema typeSchema, String feature) {
+    String normalized = feature.trim().toLowerCase(Locale.ROOT);
+    List<String> priorities =
+        switch (normalized) {
+          case "title", "label" -> List.of("displayName", "name");
+          case "text", "notes" -> List.of("summary", "description");
+          case "details", "desc" -> List.of("description", "summary");
+          default -> List.of();
+        };
+    for (String candidate : priorities) {
+      if (typeSchema.attribute(candidate).isPresent()) {
+        return Optional.of(candidate);
+      }
+    }
+    return Optional.empty();
   }
 
   private String text(Map<String, Object> map, String key) {
