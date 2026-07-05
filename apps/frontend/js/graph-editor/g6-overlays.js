@@ -1,6 +1,7 @@
 import { state } from "../state.js";
 import { el } from "../dom.js";
 import { nodeSizeForDiagram } from "./g6-style.js";
+import { routePointOnIconAnchor } from "./icon-node-metrics.js";
 
 let overlayRoot = null;
 let labelInput = null;
@@ -17,13 +18,6 @@ function ensureOverlayRoot() {
   overlayRoot.className = "g6-overlay-root";
   el.canvasViewport?.appendChild(overlayRoot);
   return overlayRoot;
-}
-
-export function mountNodeExploreToolbar(toolbar) {
-  if (!toolbar) {
-    return;
-  }
-  ensureOverlayRoot().appendChild(toolbar);
 }
 
 function viewportPointFromClient(clientX, clientY) {
@@ -140,11 +134,17 @@ export function updateConnectionPreview(graph, sourceNode, clientX, clientY) {
     return;
   }
   const size = nodeSizeForDiagram(state.activeType, sourceNode);
-  const startClient = graphClientPoint(
-    graph,
-    sourceNode.x + size.width,
-    sourceNode.y + size.height / 2,
+  const startPoint = routePointOnIconAnchor(
+    sourceNode.x,
+    sourceNode.y,
+    size.width,
+    size.height,
+    "right",
+    undefined,
+    false,
+    sourceNode.label || sourceNode.id || "",
   );
+  const startClient = graphClientPoint(graph, startPoint.x, startPoint.y);
   const start = viewportPointFromClient(startClient.x, startClient.y);
   const end = viewportPointFromClient(clientX, clientY);
   const svg = ensurePreviewSvg();

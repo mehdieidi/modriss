@@ -20,6 +20,11 @@ import {
 } from "./graph-store.js";
 import { materializeActiveView } from "./view-materializer.js";
 import {
+  iconAnchorBoundsFromNodeRect,
+  measureIconNodeSize,
+  routePointOnIconAnchor,
+} from "./graph-editor/icon-node-metrics.js";
+import {
   contextNameFromNode,
   fitViewportToDiagram,
   renderDiagram,
@@ -1155,6 +1160,10 @@ function _separateBoundedContextOverlaps(nodeSize) {
 }
 
 function spreadEdgeAnchorsForNode(node, edges, nodeSize) {
+  const labelText = node.label || node.id || "";
+  const measured = measureIconNodeSize(labelText, { width: nodeSize.width, low: false });
+  const size = { width: nodeSize.width, height: measured.height };
+  const anchor = iconAnchorBoundsFromNodeRect(0, 0, size.width, size.height, false, labelText);
   const byEndpoint = [
     {
       items: edges.filter((edge) => edge.sourceId === node.id && edge.sourceAnchor),
@@ -1191,13 +1200,10 @@ function spreadEdgeAnchorsForNode(node, edges, nodeSize) {
           String(left.id || "").localeCompare(String(right.id || ""))
         );
       });
-      const step = Math.max(
-        10,
-        Math.min(24, (nodeSize.height - 20) / Math.max(1, sideEdges.length - 1)),
-      );
-      const start = Math.max(10, (nodeSize.height - step * (sideEdges.length - 1)) / 2);
+      const step = Math.max(8, Math.min(18, anchor.height / Math.max(1, sideEdges.length - 1)));
+      const start = anchor.top + Math.max(2, (anchor.height - step * (sideEdges.length - 1)) / 2);
       sideEdges.forEach((edge, index) => {
-        const offsetY = Math.round(Math.min(nodeSize.height - 10, start + index * step));
+        const offsetY = Math.round(start + index * step);
         edge[anchorKey].offsetY = offsetY;
         if (!Array.isArray(edge.pinPoints) || !edge.pinPoints.length) {
           return;
@@ -1232,13 +1238,22 @@ function routePointForAnchor(node, anchor, nodeSize) {
   }
   const side = anchor.side === "left" ? "left" : anchor.side === "right" ? "right" : null;
   const offsetY = Number(anchor.offsetY);
-  if (!side || !Number.isFinite(offsetY)) {
+  if (!side) {
     return null;
   }
-  return {
-    x: Math.round(node.x + (side === "right" ? nodeSize.width : 0)),
-    y: Math.round(node.y + Math.max(8, Math.min(nodeSize.height - 8, offsetY))),
-  };
+  const labelText = node.label || node.id || "";
+  const measured = measureIconNodeSize(labelText, { width: nodeSize.width, low: false });
+  const size = { width: nodeSize.width, height: measured.height };
+  return routePointOnIconAnchor(
+    node.x,
+    node.y,
+    size.width,
+    size.height,
+    side,
+    Number.isFinite(offsetY) ? offsetY : undefined,
+    false,
+    labelText,
+  );
 }
 
 function samePoint(left, right) {

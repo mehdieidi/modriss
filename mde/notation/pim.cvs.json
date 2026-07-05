@@ -2938,8 +2938,8 @@
   "canvasPolicy": {
     "roleSizes": {
       "node": {
-        "width": 236,
-        "height": 116
+        "width": 120,
+        "height": 118
       },
       "container": {
         "width": 328,

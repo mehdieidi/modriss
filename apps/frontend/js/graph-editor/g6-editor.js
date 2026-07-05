@@ -23,6 +23,7 @@ import {
   shouldShowEdgeLabels,
 } from "./g6-performance.js";
 import { bindG6Interactions } from "./g6-interactions.js";
+import { renderIconCentricNodeG6, iconAnchorBoundsLocal } from "./icon-node-layout.js";
 import {
   clearG6Overlays,
   renderContextBoxes,
@@ -283,128 +284,21 @@ function renderOpenControl(
   );
 }
 
-function renderPortGlyphs(
-  shape,
-  container,
-  {
-    left,
-    top,
-    width,
-    height,
-    accent,
-    low = false,
-    selected = false,
-    hovered = false,
-    connectSource = false,
-    connectLegal = false,
-    connectIllegal = false,
-  },
-) {
-  const centerY = top + height / 2;
-  const active = selected || hovered || connectSource || connectLegal;
-  const opacity = connectIllegal ? 0.38 : active ? 1 : low ? 0.48 : 0.68;
-  const portFill = cssVar("--node-bg", "#131923");
-  const portStroke = connectLegal
-    ? "#16a34a"
-    : active
-      ? cssVar("--accent-select", "#5ecbff")
-      : "rgba(148, 163, 184, 0.48)";
-  const wellFill = low ? "rgba(15,23,42,0.22)" : "rgba(15,23,42,0.42)";
-  const railStroke = connectSource
-    ? cssVar("--accent-select", "#5ecbff")
-    : colorWithFallback(accent, "rgba(94, 203, 255, 0.78)");
-
+function clearPortGlyphs(shape, container) {
   [
-    {
-      side: "left",
-      x: left,
-      railX: left + 13,
-      arrow: [
-        ["M", left - 2, centerY - 4],
-        ["L", left + 4, centerY],
-        ["L", left - 2, centerY + 4],
-      ],
-    },
-    {
-      side: "right",
-      x: left + width,
-      railX: left + width - 13,
-      arrow: [
-        ["M", left + width + 2, centerY - 4],
-        ["L", left + width + 8, centerY],
-        ["L", left + width + 2, centerY + 4],
-      ],
-    },
-  ].forEach((port) => {
-    shape.upsert(
-      `${port.side}PortRail`,
-      "path",
-      low
-        ? false
-        : {
-            d: [
-              ["M", port.railX, top + 42],
-              ["L", port.railX, top + height - 26],
-            ],
-            stroke: railStroke,
-            lineWidth: 1,
-            opacity: 0.22,
-            pointerEvents: "none",
-          },
-      container,
-    );
-    shape.upsert(
-      `${port.side}PortWell`,
-      "rect",
-      {
-        x: port.x - 5,
-        y: centerY - 13,
-        width: 10,
-        height: 26,
-        radius: 2,
-        fill: wellFill,
-        stroke: "rgba(148, 163, 184, 0.18)",
-        lineWidth: 1,
-        opacity,
-        pointerEvents: "none",
-      },
-      container,
-    );
-    shape.upsert(
-      `${port.side}PortCore`,
-      "circle",
-      {
-        cx: port.x,
-        cy: centerY,
-        r: active ? 5.5 : 4.5,
-        fill: portFill,
-        stroke: portStroke,
-        lineWidth: active ? 2 : 1.4,
-        opacity,
-        pointerEvents: "none",
-      },
-      container,
-    );
-    shape.upsert(
-      `${port.side}PortArrow`,
-      "path",
-      low
-        ? false
-        : {
-            d: port.arrow,
-            stroke: portStroke,
-            lineWidth: 1.3,
-            fill: "transparent",
-            opacity: Math.min(1, opacity + 0.1),
-            pointerEvents: "none",
-          },
-      container,
-    );
+    "leftPortRail",
+    "rightPortRail",
+    "leftPortWell",
+    "rightPortWell",
+    "leftPortCore",
+    "rightPortCore",
+    "leftPortArrow",
+    "rightPortArrow",
+  ].forEach((key) => {
+    shape.upsert(key, "path", false, container);
+    shape.upsert(key, "rect", false, container);
+    shape.upsert(key, "circle", false, container);
   });
-}
-
-function colorWithFallback(value, fallback) {
-  return String(value || "").trim() || fallback;
 }
 
 function renderNodeTags(
@@ -554,12 +448,12 @@ function registerModlessG6Extensions() {
 
   class ModlessNode extends Rect {
     render(attributes = this.parsedAttributes, container) {
-      const size = attributes.size || [attributes.width || 228, attributes.height || 112];
-      const width = Number(size[0]) || Number(attributes.width) || 228;
-      const height = Number(size[1]) || Number(attributes.height) || 112;
+      const size = attributes.size || [attributes.width || 120, attributes.height || 118];
+      const width = Number(size[0]) || Number(attributes.width) || 120;
+      const height = Number(size[1]) || Number(attributes.height) || 118;
       const left = -width / 2;
       const top = -height / 2;
-      const diagramType = attributes.diagramType || "";
+      const labelText = attributes.labelText || attributes.id || "";
       const accent = attributes.accent || cssVar("--accent", "#00a6e0");
       const stateSet = states(attributes);
       const selected = attributes.selected || stateSet.has("selected");
@@ -582,390 +476,67 @@ function registerModlessG6Extensions() {
       const openControlHover = attributes.openControlHover || stateSet.has("open-control-hover");
       const low = attributes.detailLevel === "low";
       const containerNode = Boolean(attributes.isContainer);
-      const handleVisible = Boolean(attributes.showHandles) || connectSource;
-      const badges = Array.isArray(attributes.badges) ? attributes.badges.slice(0, 4) : [];
-      const headerHeight = low ? 0 : 32;
-      const tagStripHeight = low ? 0 : 24;
-      const hasIcon = Boolean(attributes.iconSrc);
-      const notationGlyph =
-        low || hasIcon
-          ? null
-          : notationGlyphPath(attributes.notationGeometry, left + 10, top + 7, 20, 18);
+      const handleVisible =
+        Boolean(attributes.showHandles) || connectSource || connectLegal || selected || hovered;
+      const anchor = iconAnchorBoundsLocal(width, height, low, labelText);
+      const handleStroke = connectLegal
+        ? "#16a34a"
+        : connectSource || selected
+          ? cssVar("--accent-select", "#5ecbff")
+          : "rgba(148, 163, 184, 0.72)";
+      const handleFill = connectLegal ? "#16a34a" : cssVar("--node-bg", "#131923");
 
-      if (attributes.sticky) {
-        const fill = attributes.sticky || "#fde68a";
-        super.render(
-          {
-            ...attributes,
-            fill,
-            stroke: selected ? cssVar("--accent-select", "#5ecbff") : "rgba(21, 28, 40, 0.24)",
-            lineWidth: selected ? 2.4 : 1,
-            radius: 2,
-            labelText: "",
-          },
-          container,
-        );
-        this.upsert(
-          "key",
-          "rect",
-          {
-            x: left,
-            y: top,
-            width,
-            height,
-            radius: 2,
-            fill,
-            stroke: connectLegal
-              ? "#16a34a"
-              : connectSource
-                ? cssVar("--accent-select", "#5ecbff")
-                : connectIllegal
-                  ? "rgba(15, 23, 42, 0.22)"
-                  : selected
-                    ? cssVar("--accent-select", "#5ecbff")
-                    : impact
-                      ? "#f97316"
-                      : "rgba(21, 28, 40, 0.24)",
-            lineWidth: selected || connectLegal || connectSource || draft ? 2.4 : 1,
-            lineDash: draft ? [6, 4] : undefined,
-            shadowColor:
-              selected || hovered || connectLegal
-                ? "rgba(8, 14, 24, 0.36)"
-                : "rgba(12, 18, 28, 0.28)",
-            shadowBlur: selected || hovered || connectLegal ? 18 : 10,
-            opacity: dimmed || connectIllegal ? 0.48 : 1,
-            cursor: "pointer",
-          },
-          container,
-        );
-        this.upsert(
-          "header",
-          "rect",
-          low
-            ? false
-            : {
-                x: left,
-                y: top,
-                width,
-                height: headerHeight,
-                radius: [2, 2, 0, 0],
-                fill: "rgba(255,255,255,0.34)",
-                stroke: "transparent",
-                pointerEvents: "none",
-              },
-          container,
-        );
-        this.upsert(
-          "semanticShape",
-          "path",
-          notationGlyph
-            ? {
-                d: notationGlyph,
-                fill: "rgba(255,255,255,0.2)",
-                stroke: accent,
-                lineWidth: 1.6,
-                pointerEvents: "none",
-              }
-            : false,
-          container,
-        );
-        this.upsert("corner", "path", false, container);
-        this.upsert("icon", "rect", false, container);
-        this.upsert("dot", "circle", false, container);
-        if (notationGlyph) {
-          clearPlaceholderIcon(this, container);
-        } else {
-          renderNodeIcon(this, container, {
-            left,
-            top,
-            accent,
-            diagramType,
-            low,
-            iconSrc: attributes.iconSrc,
-          });
-        }
-        this.upsert(
-          "type",
-          "text",
-          low
-            ? false
-            : {
-                x: left + 38,
-                y: top + 7,
-                text: boundedText(
-                  attributes.kindText || attributes.typeText || "Element",
-                  containerNode ? 13 : 18,
-                  2,
-                ),
-                fontFamily: cssVar("--font-display", "sans-serif"),
-                fontSize: 8,
-                lineHeight: 8.5,
-                fontWeight: 800,
-                fill: "rgba(35, 28, 18, 0.86)",
-                textBaseline: "top",
-                pointerEvents: "none",
-              },
-          container,
-        );
-        const labelText = lineBreak(attributes.labelText || "", low ? 20 : 24, low ? 1 : 2);
-        const labelLineHeight = low ? 12 : 14;
-        const labelY = top + (low ? 24 : 39);
-        const idY = Math.min(
-          top + height - tagStripHeight - 10,
-          labelY + lineCount(labelText) * labelLineHeight + 8,
-        );
-        this.upsert(
-          "label",
-          "text",
-          {
-            x: left + 10,
-            y: labelY,
-            text: labelText,
-            fontFamily: cssVar("--font-ui", "sans-serif"),
-            fontSize: low ? 10 : 12,
-            lineHeight: labelLineHeight,
-            fontWeight: 700,
-            fill: "rgba(24, 20, 14, 0.92)",
-            textBaseline: "top",
-            pointerEvents: "none",
-          },
-          container,
-        );
-        this.upsert(
-          "notation",
-          "text",
-          low
-            ? false
-            : {
-                x: left + 10,
-                y: idY,
-                text: truncate(attributes.elementId || attributes.id || "", 30),
-                fontFamily: cssVar("--font-ui", "sans-serif"),
-                fontSize: 7.4,
-                fontWeight: 700,
-                fill: "rgba(45, 38, 26, 0.58)",
-                textBaseline: "middle",
-                pointerEvents: "none",
-              },
-          container,
-        );
-        renderNodeTags(this, container, {
-          badges,
-          diagramType,
-          left,
-          top,
-          width,
-          height,
-          low,
-        });
-        if (containerNode) {
-          renderOpenControl(this, container, {
-            left,
-            top,
-            width,
-            height,
-            diagramType,
-            selected,
-            openControlHover,
-            low,
-          });
-        } else {
-          this.upsert("openControl", "rect", false, container);
-          this.upsert("openControlText", "text", false, container);
-        }
-      } else {
-        const fill = cssVar("--node-bg", "#131923");
-        const border = cssVar("--node-border", "#3d495f");
-        super.render(
-          {
-            ...attributes,
-            fill,
-            stroke: selected ? cssVar("--accent-select", "#5ecbff") : border,
-            lineWidth: selected ? 2.4 : 1,
-            radius: 2,
-            labelText: "",
-          },
-          container,
-        );
-        this.upsert(
-          "key",
-          "rect",
-          {
-            x: left,
-            y: top,
-            width,
-            height,
-            radius: 2,
-            fill,
-            stroke: connectLegal
-              ? "#16a34a"
-              : connectSource
-                ? cssVar("--accent-select", "#5ecbff")
-                : selected
-                  ? cssVar("--accent-select", "#5ecbff")
-                  : impact
-                    ? "#f97316"
-                    : border,
-            lineWidth: selected || connectLegal || connectSource || draft ? 2.4 : 1,
-            lineDash: draft ? [6, 4] : undefined,
-            shadowColor:
-              selected || hovered || connectLegal
-                ? "rgba(8, 14, 24, 0.44)"
-                : "rgba(6, 11, 20, 0.32)",
-            shadowBlur: selected || hovered || connectLegal ? 18 : 8,
-            opacity: dimmed || connectIllegal ? 0.48 : 1,
-            cursor: "pointer",
-          },
-          container,
-        );
-        this.upsert(
-          "header",
-          "rect",
-          low
-            ? false
-            : {
-                x: left,
-                y: top,
-                width,
-                height: headerHeight,
-                radius: [2, 2, 0, 0],
-                fill: "rgba(35,42,55,0.58)",
-                stroke: "transparent",
-                pointerEvents: "none",
-              },
-          container,
-        );
-        this.upsert("icon", "rect", false, container);
-        if (notationGlyph) {
-          clearPlaceholderIcon(this, container);
-        } else {
-          renderNodeIcon(this, container, {
-            left,
-            top,
-            accent,
-            diagramType,
-            low,
-            iconSrc: attributes.iconSrc,
-          });
-        }
-        this.upsert(
-          "type",
-          "text",
-          low
-            ? false
-            : {
-                x: left + 40,
-                y: top + 7,
-                text: boundedText(
-                  attributes.kindText || attributes.typeText || "Element",
-                  containerNode ? 18 : 24,
-                  2,
-                ),
-                fontFamily: cssVar("--font-display", "sans-serif"),
-                fontSize: 8.2,
-                lineHeight: 8.8,
-                fontWeight: 800,
-                fill: accent,
-                textBaseline: "top",
-                pointerEvents: "none",
-              },
-          container,
-        );
-        this.upsert("dot", "circle", false, container);
-        this.upsert(
-          "semanticShape",
-          "path",
-          notationGlyph
-            ? {
-                d: notationGlyph,
-                fill: "rgba(255,255,255,0.04)",
-                stroke: accent,
-                lineWidth: 1.6,
-                pointerEvents: "none",
-              }
-            : false,
-          container,
-        );
-        const labelText = lineBreak(attributes.labelText || "", low ? 28 : 30, low ? 1 : 2);
-        const labelLineHeight = low ? 12.5 : 14;
-        const labelY = top + (low ? 18 : 42);
-        const idY = Math.min(
-          top + height - tagStripHeight - 10,
-          labelY + lineCount(labelText) * labelLineHeight + 8,
-        );
-        this.upsert(
-          "label",
-          "text",
-          {
-            x: left + 11,
-            y: labelY,
-            text: labelText,
-            fontFamily: cssVar("--font-ui", "sans-serif"),
-            fontSize: low ? 10.5 : 12,
-            lineHeight: labelLineHeight,
-            fontWeight: 700,
-            fill: cssVar("--text", "#e3e8f2"),
-            textBaseline: "top",
-            pointerEvents: "none",
-          },
-          container,
-        );
-        this.upsert(
-          "notation",
-          "text",
-          low
-            ? false
-            : {
-                x: left + 11,
-                y: idY,
-                text: truncate(attributes.elementId || attributes.id || "", 36),
-                fontFamily: cssVar("--font-ui", "sans-serif"),
-                fontSize: 7.5,
-                fontWeight: 700,
-                fill: "rgba(152, 168, 192, 0.72)",
-                textBaseline: "middle",
-                pointerEvents: "none",
-              },
-          container,
-        );
-        renderNodeTags(this, container, {
-          badges,
-          diagramType,
-          left,
-          top,
-          width,
-          height,
-          low,
-        });
-        if (containerNode) {
-          renderOpenControl(this, container, {
-            left,
-            top,
-            width,
-            height,
-            diagramType,
-            selected,
-            openControlHover,
-            low,
-          });
-        } else {
-          this.upsert("openControl", "rect", false, container);
-          this.upsert("openControlText", "text", false, container);
-        }
-      }
+      super.render(
+        {
+          ...attributes,
+          fill: "transparent",
+          stroke: "transparent",
+          lineWidth: 0,
+          labelText: "",
+          pointerEvents: "none",
+        },
+        container,
+      );
 
+      renderIconCentricNodeG6(this, container, {
+        width,
+        height,
+        low,
+        selected,
+        iconSrc: attributes.iconSrc,
+        labelText: attributes.labelText || attributes.id || "",
+        kindText: attributes.kindText || attributes.displayName || "",
+        warm: Boolean(attributes.sticky),
+        warmFill: attributes.sticky || "#fde68a",
+        container: containerNode,
+        accent,
+        openControlHover,
+        draft,
+        dimmed,
+        connectIllegal,
+        flags: {
+          selected,
+          hovered,
+          impact,
+          connectLegal,
+          connectSource,
+          connectIllegal,
+        },
+      });
+
+      this.upsert("corner", "path", false, container);
       this.upsert(
         "leftHandle",
         "circle",
         handleVisible
           ? {
-              cx: left,
-              cy: 0,
-              r: 7,
-              fill: cssVar("--node-bg", "#131923"),
-              stroke: cssVar("--accent-select", "#5ecbff"),
-              lineWidth: 2,
-              opacity: low ? 0.75 : 1,
+              cx: anchor.left,
+              cy: anchor.centerY,
+              r: 5,
+              fill: handleFill,
+              stroke: handleStroke,
+              lineWidth: 1.5,
+              opacity: connectIllegal ? 0.45 : 1,
               cursor: "crosshair",
             }
           : false,
@@ -976,13 +547,13 @@ function registerModlessG6Extensions() {
         "circle",
         handleVisible
           ? {
-              cx: left + width,
-              cy: 0,
-              r: 7,
-              fill: cssVar("--node-bg", "#131923"),
-              stroke: cssVar("--accent-select", "#5ecbff"),
-              lineWidth: 2,
-              opacity: low ? 0.75 : 1,
+              cx: anchor.right,
+              cy: anchor.centerY,
+              r: 5,
+              fill: handleFill,
+              stroke: handleStroke,
+              lineWidth: 1.5,
+              opacity: connectIllegal ? 0.45 : 1,
               cursor: "crosshair",
             }
           : false,
@@ -1007,19 +578,7 @@ function registerModlessG6Extensions() {
           : false,
         container,
       );
-      renderPortGlyphs(this, container, {
-        left,
-        top,
-        width,
-        height,
-        accent,
-        low,
-        selected,
-        hovered,
-        connectSource,
-        connectLegal,
-        connectIllegal,
-      });
+      clearPortGlyphs(this, container);
     }
   }
 

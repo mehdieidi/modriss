@@ -91,7 +91,8 @@ public class SourceChunker {
   }
 
   private List<String> packSections(List<String> sections, int maxChars, int chunkLimit) {
-    if (sections.size() > 1 && sections.stream().allMatch(section -> section.length() <= maxChars)) {
+    if (sections.size() > 1
+        && sections.stream().allMatch(section -> section.length() <= maxChars)) {
       List<String> parts = new ArrayList<>();
       for (String section : sections) {
         if (parts.size() >= chunkLimit) {

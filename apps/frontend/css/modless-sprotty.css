@@ -16,6 +16,11 @@ html.light .glsp-editor-host {
 
 .glsp-editor-host .modless-node-body {
   vector-effect: non-scaling-stroke;
+  fill: transparent !important;
+}
+
+.glsp-editor-host .modless-node-label-holder {
+  display: none;
 }
 
 .glsp-editor-host .modless-node-glyph {
@@ -27,20 +32,25 @@ html.light .glsp-editor-host {
   user-select: none;
 }
 
-.glsp-node.is-selected .modless-node-body {
+.glsp-node.is-selected .modless-node-icon-anchor {
   filter: drop-shadow(0 4px 14px rgba(94, 203, 255, 0.28));
 }
 
-.glsp-node.is-hovered .modless-node-body {
-  stroke-width: 2;
-  filter: drop-shadow(0 2px 10px color-mix(in srgb, var(--accent, #00a6e0) 22%, transparent));
+.glsp-editor-host .modless-node-kind {
+  font-family: var(--font-display, var(--font-ui));
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.glsp-node.has-validation .modless-node-body {
+.glsp-editor-host .modless-node-icon {
+  pointer-events: none;
+}
+
+.glsp-node.has-validation .modless-node-icon-anchor {
   stroke: var(--danger, #dc2626) !important;
 }
 
-.glsp-node.has-impact .modless-node-body {
+.glsp-node.has-impact .modless-node-icon-anchor {
   stroke: var(--warning, #f59e0b) !important;
 }
 
@@ -54,7 +64,7 @@ html.light .glsp-editor-host {
 }
 
 html.light .glsp-editor-host .modless-node-body {
-  fill: var(--node-bg, rgba(255, 255, 255, 0.98));
+  fill: transparent !important;
 }
 
 /* Sprotty ships a visible viewport/svg border that looks like a lone rectangle */

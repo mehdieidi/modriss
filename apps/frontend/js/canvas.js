@@ -80,10 +80,6 @@ import {
   updateCanvasViewport,
   zoomCanvasBy as adapterZoomCanvasBy,
 } from "./graph-editor/renderer-adapter.js";
-import {
-  canvasToViewportPoint as graphCanvasToViewportPoint,
-  mountNodeExploreToolbar,
-} from "./graph-editor/g6-overlays.js";
 
 function requiredConfiguredKind(value, context) {
   const kind = String(value || "").trim();
@@ -1206,7 +1202,6 @@ export function openNeighborhoodFocus(elementId, depth = 1) {
   materializeActiveView();
   renderDiagram();
   notifyModelToolsChanged();
-  updateNodeExploreToolbar();
   setStatus(`Opened ${node.label || node.id} neighborhood depth ${normalizedDepth}.`);
   return true;
 }
@@ -1397,15 +1392,12 @@ function ensureCanvas() {
           state.viewport.scale >= 0.35 && state.viewport.scale < 0.75,
         );
         el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
-        updateNodeExploreToolbar();
         // G6 only: pull viewport metrics from the graph. GLSP notifies us via this callback
         // already — calling back into the renderer would recurse infinitely.
         if (activeRendererKind() !== "glsp-sprotty") {
           onCanvasViewportChanged();
         }
       },
-      onViewportTranslate: updateNodeExploreToolbar,
-      onViewportSynced: updateNodeExploreToolbar,
     },
   });
   return mountActiveCanvas();
@@ -1893,7 +1885,6 @@ export function applyViewport() {
     state.viewport.scale >= 0.35 && state.viewport.scale < 0.75,
   );
   el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
-  updateNodeExploreToolbar();
   // Defer cursor rendering to batch with other updates, don't render on every pan
   if (!viewportUpdateScheduled) {
     viewportUpdateScheduled = true;
@@ -2727,97 +2718,6 @@ export function renderNodes() {
   return;
 }
 
-// ── Node explore toolbar ──────────────────────────────────────────────────────
-
-let nodeExploreToolbarBound = false;
-
-function shouldShowNodeExploreToolbar() {
-  return (
-    isModelingLevel(state.activeType) &&
-    Boolean(state.selectedNodeId) &&
-    !state.connectMode &&
-    !state.impactMode &&
-    !state.boundedContextCreateMode
-  );
-}
-
-const NODE_EXPLORE_TOOLBAR_CANVAS_W = 68;
-const NODE_EXPLORE_TOOLBAR_CANVAS_H = 18;
-const NODE_EXPLORE_TOOLBAR_GAP = 4;
-
-function positionNodeExploreToolbar(node) {
-  const graph = getCanvasEditor()?.graph;
-  if (!el.nodeExploreToolbar || !node || !graph) {
-    return;
-  }
-  const nodeW = getNodeWidth();
-  const centerX = node.x + nodeW / 2;
-  const topY = node.y - NODE_EXPLORE_TOOLBAR_GAP - NODE_EXPLORE_TOOLBAR_CANVAS_H;
-  const leftX = centerX - NODE_EXPLORE_TOOLBAR_CANVAS_W / 2;
-
-  const topLeft = graphCanvasToViewportPoint(graph, leftX, topY);
-  const bottomRight = graphCanvasToViewportPoint(
-    graph,
-    leftX + NODE_EXPLORE_TOOLBAR_CANVAS_W,
-    topY + NODE_EXPLORE_TOOLBAR_CANVAS_H,
-  );
-
-  const left = Math.min(topLeft.x, bottomRight.x);
-  const top = Math.min(topLeft.y, bottomRight.y);
-  const width = Math.max(1, Math.abs(bottomRight.x - topLeft.x));
-  const height = Math.max(1, Math.abs(bottomRight.y - topLeft.y));
-
-  el.nodeExploreToolbar.style.left = `${Math.round(left)}px`;
-  el.nodeExploreToolbar.style.top = `${Math.round(top)}px`;
-  el.nodeExploreToolbar.style.width = `${Math.round(width)}px`;
-  el.nodeExploreToolbar.style.height = `${Math.round(height)}px`;
-  el.nodeExploreToolbar.style.transform = "none";
-  el.nodeExploreToolbar.style.fontSize = `${Math.max(5, Math.round(height * 0.42))}px`;
-}
-
-export function updateNodeExploreToolbar() {
-  if (!el.nodeExploreToolbar) {
-    return;
-  }
-  mountNodeExploreToolbar(el.nodeExploreToolbar);
-  if (!shouldShowNodeExploreToolbar()) {
-    el.nodeExploreToolbar.classList.add("hidden");
-    return;
-  }
-  const node = state.nodesById.get(state.selectedNodeId);
-  if (!node) {
-    el.nodeExploreToolbar.classList.add("hidden");
-    return;
-  }
-  el.nodeExploreToolbar.classList.remove("hidden");
-  // Measure while visible so width/height are available before positioning.
-  positionNodeExploreToolbar(node);
-}
-
-function ensureNodeExploreToolbarBindings() {
-  if (nodeExploreToolbarBound) {
-    return;
-  }
-  nodeExploreToolbarBound = true;
-  mountNodeExploreToolbar(el.nodeExploreToolbar);
-  el.nodeExploreNearbyBtn?.addEventListener("click", (event) => {
-    event.stopPropagation();
-    if (!state.selectedNodeId) {
-      setStatus("Select an element before opening nearby neighbors.");
-      return;
-    }
-    openNeighborhoodFocus(state.selectedNodeId, 1);
-  });
-  el.nodeExploreExtendedBtn?.addEventListener("click", (event) => {
-    event.stopPropagation();
-    if (!state.selectedNodeId) {
-      setStatus("Select an element before opening extended neighbors.");
-      return;
-    }
-    openNeighborhoodFocus(state.selectedNodeId, 2);
-  });
-}
-
 // ── Edge rendering ────────────────────────────────────────────────────────────
 
 let edgeKindPickerBound = false;
@@ -2984,7 +2884,6 @@ function ensureEdgeKindPickerBindings() {
     return;
   }
   edgeKindPickerBound = true;
-  ensureNodeExploreToolbarBindings();
   el.edgeKindTrigger?.addEventListener("click", (event) => {
     if (!state.edgeKindPicker.open) {
       return;
@@ -3219,7 +3118,6 @@ export function syncRendererSelection() {
   ensureCanvas();
   updateCanvasSelection();
   updateCanvasContextBoxes(null, { useCache: true });
-  updateNodeExploreToolbar();
 }
 
 // ── Canvas event handlers ─────────────────────────────────────────────────────
@@ -3345,9 +3243,6 @@ function moveG6NodeDrag(nodeId, position) {
   state.dragNode.moved = true;
   if (activeRendererKind() !== "glsp-sprotty") {
     updateCanvasNodeIcons();
-  }
-  if (nodeId === state.selectedNodeId && activeRendererKind() !== "glsp-sprotty") {
-    updateNodeExploreToolbar();
   }
 }
 

@@ -1248,17 +1248,7 @@ public class AssistantOrchestrator {
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantTurnPlan initialPlan) {
     return proposalResponse(
-        user,
-        session,
-        threadId,
-        request,
-        model,
-        baseModel,
-        context,
-        snippets,
-        initialPlan,
-        1,
-        0);
+        user, session, threadId, request, model, baseModel, context, snippets, initialPlan, 1, 0);
   }
 
   private AssistantTurnResponse proposalResponse(
@@ -1291,7 +1281,8 @@ public class AssistantOrchestrator {
         "intent",
         acceptedPlan.intent());
     checkTurnActive(session);
-    SourceCoverageExpectation totalCoverageExpectation = sourceCoverageExpectation(session, request);
+    SourceCoverageExpectation totalCoverageExpectation =
+        sourceCoverageExpectation(session, request);
     SourceCoverageExpectation coverageExpectation =
         perPassCoverageExpectation(totalCoverageExpectation, cumulativeAdditions);
     logTurnInfo(
@@ -1548,8 +1539,7 @@ public class AssistantOrchestrator {
         || passNumber >= properties.maxCimModelingPasses()) {
       return response;
     }
-    int passAdditions =
-        coverageStats(session.level(), acceptedPlan.patch(), baseModel).additions();
+    int passAdditions = coverageStats(session.level(), acceptedPlan.patch(), baseModel).additions();
     int updatedCumulative = cumulativeAdditions + passAdditions;
     if (!needsMoreSourceCoverage(totalCoverageExpectation, updatedCumulative)) {
       return response;
@@ -1600,16 +1590,16 @@ public class AssistantOrchestrator {
             + " of "
             + properties.maxCimModelingPasses()
             + " from source evidence");
-    ModelRecord updatedModel =
-        models.get(user, session.level(), appliedResponse.modelId());
+    ModelRecord updatedModel = models.get(user, session.level(), appliedResponse.modelId());
     JsonNode baseModel = updatedModel.modelJson();
     ModelService.ValidationResult currentValidation =
         assistantValidation(session.level(), baseModel);
-    AssistantModelContext context =
-        modelContexts.snapshot(updatedModel, currentValidation);
+    AssistantModelContext context = modelContexts.snapshot(updatedModel, currentValidation);
     AssistantTurnRequest passRequest =
         request
-            .withMessage(incrementalCimPassMessage(request, passNumber, totalCoverageExpectation, cumulativeAdditions))
+            .withMessage(
+                incrementalCimPassMessage(
+                    request, passNumber, totalCoverageExpectation, cumulativeAdditions))
             .withRevision(updatedModel.revision());
     IntentPlanner.IntentDecision intentDecision =
         classifyIntentForRetrieval(session, passRequest, context, baseModel);
@@ -1623,8 +1613,7 @@ public class AssistantOrchestrator {
             passRequest.selectedElementIds(),
             intentDecision);
     InitialPlanResult nextPlan =
-        planInitialTurn(
-            session, passRequest, context, passSnippets, baseModel, intentDecision);
+        planInitialTurn(session, passRequest, context, passSnippets, baseModel, intentDecision);
     if (nextPlan.plan().kind() != AssistantTurnPlan.Kind.PATCH
         || nextPlan.plan().patch().operations().isEmpty()) {
       logTurnInfo(
@@ -1743,9 +1732,7 @@ public class AssistantOrchestrator {
     int minAdditions = Math.min(perPassCap, remainingAdditions);
     int remainingOperations = Math.max(0, total.minOperations() - cumulativeAdditions);
     int minOperations =
-        remainingOperations == 0
-            ? minAdditions
-            : Math.min(minAdditions + 10, remainingOperations);
+        remainingOperations == 0 ? minAdditions : Math.min(minAdditions + 10, remainingOperations);
     int minConnections =
         cumulativeAdditions >= total.minConnections()
             ? 0
@@ -1756,9 +1743,7 @@ public class AssistantOrchestrator {
 
   private boolean needsMoreSourceCoverage(
       SourceCoverageExpectation total, int cumulativeAdditions) {
-    return total != null
-        && total.required()
-        && cumulativeAdditions < total.minAdditions();
+    return total != null && total.required() && cumulativeAdditions < total.minAdditions();
   }
 
   private AssistantTurnPlan preparePlan(

@@ -9,8 +9,8 @@ export function mapNodeToGlsp(node, options = {}) {
     type: node.type,
     x: Number(node.x || 0),
     y: Number(node.y || 0),
-    width: finiteNumber(g6Node.style.width, 228),
-    height: finiteNumber(g6Node.style.height, 112),
+    width: finiteNumber(g6Node.style.width, 120),
+    height: finiteNumber(g6Node.style.height, 118),
     label: g6Node.data.label || node.label || node.id,
     lines: g6Node.data.detailText || "",
     g6: {

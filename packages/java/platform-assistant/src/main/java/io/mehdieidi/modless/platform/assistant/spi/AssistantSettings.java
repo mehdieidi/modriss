@@ -79,7 +79,9 @@ public interface AssistantSettings {
     return false;
   }
 
-  /** Turn timeout when a source attachment is processed (often longer than {@link #turnTimeout()}). */
+  /**
+   * Turn timeout when a source attachment is processed (often longer than {@link #turnTimeout()}).
+   */
   default Duration sourceTurnTimeout() {
     return turnTimeout();
   }
@@ -94,7 +96,9 @@ public interface AssistantSettings {
     return 4;
   }
 
-  /** Whether CIM source attachments should use LLM evidence extraction instead of a local fast path. */
+  /**
+   * Whether CIM source attachments should use LLM evidence extraction instead of a local fast path.
+   */
   default boolean preferLlmSourceExtraction() {
     return true;
   }

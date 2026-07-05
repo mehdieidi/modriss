@@ -2000,8 +2000,8 @@
   "canvasPolicy": {
     "roleSizes": {
       "node": {
-        "width": 228,
-        "height": 112
+        "width": 120,
+        "height": 118
       },
       "container": {
         "width": 316,

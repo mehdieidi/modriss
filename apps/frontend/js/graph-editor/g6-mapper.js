@@ -6,6 +6,11 @@ import {
   modelingRelationshipPresentation,
 } from "../modeling-config-data.js";
 import {
+  resolveIconSource,
+  measureIconNodeSize,
+  routePointOnIconAnchor,
+} from "./icon-node-layout.js";
+import {
   canvasBackgroundColor,
   cssVar,
   edgeStyleForKind,
@@ -105,6 +110,10 @@ function humanizeType(value) {
     .trim();
 }
 
+export function nodeTypeLabel(definition, nodeType) {
+  return definition?.displayName || definition?.label || humanizeType(nodeType);
+}
+
 function nodeDetailLine(node, notation, definition) {
   const meta = node?.meta || {};
   const candidates = [
@@ -123,16 +132,7 @@ function nodeDetailLine(node, notation, definition) {
 function nodeIconSource(definition) {
   const ui = definition?.ui && typeof definition.ui === "object" ? definition.ui : {};
   const icon = String(ui.icon || definition?.icon || "").trim();
-  if (!icon) {
-    return "";
-  }
-  if (icon.startsWith("/") || icon.startsWith(".") || icon.endsWith(".svg")) {
-    return icon;
-  }
-  if (/^[a-z0-9_-]+$/i.test(icon)) {
-    return `/assets/icons/${icon}.svg`;
-  }
-  return "";
+  return resolveIconSource(icon);
 }
 
 function badgeText(value) {
@@ -200,14 +200,26 @@ function routeEndpoint(node, anchor, typeKey, fallbackSide = "right") {
   if (!node) {
     return null;
   }
-  const size = nodeSizeForDiagram(typeKey, node);
+  const configured = nodeSizeForDiagram(typeKey, node);
+  const low = false;
+  const measured = measureIconNodeSize(node.label || node.id || "", {
+    width: configured.width,
+    low,
+  });
+  const size = { width: configured.width, height: measured.height };
   const side = anchor?.side === "left" || anchor?.side === "right" ? anchor.side : fallbackSide;
   const offsetY = Number(anchor?.offsetY);
-  const yOffset = Number.isFinite(offsetY) ? offsetY : size.height / 2;
-  return {
-    x: Math.round(node.x + (side === "right" ? size.width : 0)),
-    y: Math.round(node.y + Math.max(8, Math.min(size.height - 8, yOffset))),
-  };
+  const bounds = routePointOnIconAnchor(
+    node.x,
+    node.y,
+    size.width,
+    size.height,
+    side,
+    Number.isFinite(offsetY) ? offsetY : undefined,
+    low,
+    node.label || node.id || "",
+  );
+  return bounds;
 }
 
 export function mapNodeToG6(
@@ -220,12 +232,17 @@ export function mapNodeToG6(
     viewProfile = "",
   } = {},
 ) {
-  const size = nodeSizeForDiagram(typeKey, node);
+  const configured = nodeSizeForDiagram(typeKey, node);
+  const measured = measureIconNodeSize(node.label || node.id || "", {
+    width: configured.width,
+    low: detailLevel === "low",
+  });
+  const size = { width: configured.width, height: measured.height };
   const definition = cachedElementDefinition(typeKey, node.type);
   const notation = notationFromDefinition(typeKey, node, definition);
   const accent = nodeAccent(node, definition);
   const sticky = stickyColor(node, definition);
-  const kindText = humanizeType(node.type);
+  const kindText = nodeTypeLabel(definition, node.type);
   const detailText = nodeDetailLine(node, notation, definition);
   const iconSrc = nodeIconSource(definition);
   const token = nodeToken(typeKey, node, notation);
@@ -285,12 +302,12 @@ export function mapNodeToG6(
       showHandles: Boolean(node.showHandles),
       accent,
       sticky,
-      fill: "rgba(19, 25, 35, 0.98)",
-      stroke: "rgba(61, 73, 95, 0.92)",
-      lineWidth: 1,
+      fill: "transparent",
+      stroke: "transparent",
+      lineWidth: 0,
       radius: Number(definition?.notation?.cornerRadius ?? 8),
-      shadowColor: "rgba(6, 11, 20, 0.32)",
-      shadowBlur: 8,
+      shadowColor: "transparent",
+      shadowBlur: 0,
       detailLevel,
       isContainer: container,
     },

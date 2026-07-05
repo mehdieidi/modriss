@@ -11,40 +11,63 @@ function humanizeType(value) {
     .trim();
 }
 
+function resolveIconSource(icon) {
+  const normalized = String(icon || "").trim();
+  if (!normalized) {
+    return "";
+  }
+  if (normalized.startsWith("/") || normalized.startsWith(".") || normalized.endsWith(".svg")) {
+    return normalized;
+  }
+  if (/^[a-z0-9_-]+$/i.test(normalized)) {
+    return `/assets/icons/${normalized}.svg`;
+  }
+  return "";
+}
+
 export function materializeDiagram(model, viewId) {
   return materializeDiagramFromModel(model, viewId);
 }
 
 function nodePorts(nodeId, width, height) {
-  const w = Number(width) || 228;
-  const h = Number(height) || 112;
+  const w = Number(width) || 120;
+  const iconSize = 72;
+  const iconLeft = (w - iconSize) / 2;
+  const iconTop = 4;
+  const gap = 2;
+  const left = iconLeft - gap;
+  const right = iconLeft + iconSize + gap;
+  const top = iconTop - gap;
+  const bottom = iconTop + iconSize + gap;
+  const centerX = w / 2;
+  const centerY = iconTop + iconSize / 2;
   const half = 4;
   return [
     {
       type: "port",
       id: `${nodeId}-port-n`,
-      position: { x: w / 2 - half, y: -half },
+      position: { x: centerX - half, y: top - half },
       size: { width: half * 2, height: half * 2 },
       args: { placement: "north" },
     },
     {
       type: "port",
       id: `${nodeId}-port-s`,
-      position: { x: w / 2 - half, y: h - half },
+      position: { x: centerX - half, y: bottom - half },
       size: { width: half * 2, height: half * 2 },
       args: { placement: "south" },
     },
     {
       type: "port",
       id: `${nodeId}-port-e`,
-      position: { x: w - half, y: h / 2 - half },
+      position: { x: right - half, y: centerY - half },
       size: { width: half * 2, height: half * 2 },
       args: { placement: "east" },
     },
     {
       type: "port",
       id: `${nodeId}-port-w`,
-      position: { x: -half, y: h / 2 - half },
+      position: { x: left - half, y: centerY - half },
       size: { width: half * 2, height: half * 2 },
       args: { placement: "west" },
     },
@@ -81,8 +104,8 @@ export function toSprottyGraph(diagram, levelConfig = {}, options = {}) {
       .filter((value) => value !== undefined && value !== null && String(value).trim())
       .map((value) => String(value));
 
-    const nodeWidth = node.width || 228;
-    const nodeHeight = node.height || 112;
+    const nodeWidth = node.width || 120;
+    const nodeHeight = node.height || 118;
 
     children.push({
       type: "node",
@@ -93,11 +116,13 @@ export function toSprottyGraph(diagram, levelConfig = {}, options = {}) {
         elementType: node.type,
         color: def.color || mapping.color || "#475569",
         icon: def.icon || mapping.icon || "category",
+        iconSrc: resolveIconSource(def.icon || mapping.icon || "category"),
         tag: notation.tag || card.tag || node.type.slice(0, 4).toUpperCase(),
         kindText:
-          mapping.category ||
-          def.category ||
-          notation.category ||
+          def.displayName ||
+          def.label ||
+          mapping.displayName ||
+          mapping.label ||
           humanizeType(node.type),
         typeText: notation.tag || card.tag || "",
         category: mapping.category || def.category || "",

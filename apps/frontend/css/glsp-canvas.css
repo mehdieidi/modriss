@@ -177,19 +177,15 @@
   font: inherit;
 }
 
-.glsp-node.is-selected .modless-node-body {
+.glsp-node.is-selected .modless-node-icon-anchor {
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent, #00a6e0) 45%, transparent));
 }
 
-.glsp-node.is-hovered .modless-node-body {
-  stroke-width: 2;
-}
-
-.glsp-node.has-validation .modless-node-body {
+.glsp-node.has-validation .modless-node-icon-anchor {
   stroke: var(--danger, #dc2626);
 }
 
-.glsp-node.has-impact .modless-node-body {
+.glsp-node.has-impact .modless-node-icon-anchor {
   stroke: var(--warning, #f59e0b);
 }
 

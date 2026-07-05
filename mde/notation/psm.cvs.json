@@ -4767,8 +4767,8 @@
   "canvasPolicy": {
     "roleSizes": {
       "node": {
-        "width": 244,
-        "height": 120
+        "width": 120,
+        "height": 118
       },
       "container": {
         "width": 336,

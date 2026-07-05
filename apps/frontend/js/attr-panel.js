@@ -115,6 +115,22 @@ const TRACE_ATTR_KEYS = new Set([
   "reviewNotes",
   "manuallyMaintained",
 ]);
+let attrFieldSeq = 0;
+
+function resetAttrFieldIds() {
+  attrFieldSeq = 0;
+}
+
+function nextAttrFieldDomId(key) {
+  attrFieldSeq += 1;
+  const safeKey =
+    String(key || "field")
+      .trim()
+      .replace(/[^a-zA-Z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "field";
+  return `attr-${safeKey}-${attrFieldSeq}`;
+}
+
 const IDENTITY_FIELDS = new Set([
   "id",
   "name",
@@ -287,6 +303,7 @@ function renderConnectionFields(connection, source, target) {
 
 function renderConfiguredConnectionFields(connection, source, target) {
   el.attrPanelBody.innerHTML = "";
+  resetAttrFieldIds();
   const relationship = state.graph?.relationshipsById?.get(connection.id) || connection;
   const semanticType = relationship.eClass || "Connection";
   let definition = null;
@@ -392,6 +409,7 @@ export function openBoundedContextPanel(contextName) {
     el.attrPanelDeleteBtn.textContent = "🗑 Delete Context";
   }
   el.attrPanelBody.innerHTML = "";
+  resetAttrFieldIds();
   el.attrPanelBody.appendChild(buildAttrField("contextName", contextName, { fieldType: "text" }));
   const members = [...state.diagram.nodes].filter(
     (node) => contextNameFromNode(node) === contextName,
@@ -439,6 +457,7 @@ export function openBoundedContextPanel(contextName) {
 
 function renderAttributeFields(node) {
   el.attrPanelBody.innerHTML = "";
+  resetAttrFieldIds();
   const meta = node.meta || {};
   let definition = null;
   try {
@@ -463,6 +482,7 @@ function rootEditableFields(definition) {
 
 function renderRootModelFields(root, definition) {
   el.attrPanelBody.innerHTML = "";
+  resetAttrFieldIds();
   const sections = semanticInspectorSections();
   const rootType = modelingRootType(state.activeType);
   const rendered = new Set();
@@ -578,7 +598,7 @@ function renderConfiguredAttributeFields(node, meta, definition) {
   });
   appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.relationships);
-  appendTraceabilitySection(node, sections.trace, { includeTitle: false });
+  appendTraceabilitySection(node, sections.trace, { includeTitle: false, rendered });
   appendConfiguredValidationSummary(sections.validation, meta, node.type);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
@@ -656,7 +676,7 @@ function _renderRelationshipAttributeFields(node, meta, definition) {
   });
   appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.relationships);
-  appendTraceabilitySection(node, sections.trace, { includeTitle: false });
+  appendTraceabilitySection(node, sections.trace, { includeTitle: false, rendered });
   appendConfiguredValidationSummary(sections.validation, meta, node.type);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
@@ -717,7 +737,7 @@ function _renderPlatformAttributeFields(node, meta, definition) {
   });
   appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.containment);
-  appendTraceabilitySection(node, sections.trace, { includeTitle: false });
+  appendTraceabilitySection(node, sections.trace, { includeTitle: false, rendered });
   appendPlatformValidationSummary(sections.validation, meta, node.type);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
@@ -1093,7 +1113,11 @@ function buildAttrSectionTitle(title) {
   return section;
 }
 
-function appendTraceabilitySection(node, host = el.attrPanelBody, { includeTitle = true } = {}) {
+function appendTraceabilitySection(
+  node,
+  host = el.attrPanelBody,
+  { includeTitle = true, rendered = null } = {},
+) {
   if (!isModelingLevel(state.activeType)) {
     return;
   }
@@ -1135,24 +1159,15 @@ function appendTraceabilitySection(node, host = el.attrPanelBody, { includeTitle
         .join("")
     : `<div class="attr-field-hint">No trace links for this element.</div>`;
   host.appendChild(summary);
-  [
-    "sourceReference",
-    "sourceExcerpt",
-    "sourceQualifiedName",
-    "sourceUri",
-    "sourceLine",
-    "traceId",
-    "generatedFrom",
-    "generatedByTransformation",
-    "rationale",
-    "reviewStatus",
-    "reviewNotes",
-    "manuallyMaintained",
-  ].forEach((key) => {
+  TRACE_ATTR_KEYS.forEach((key) => {
+    if (rendered?.has(key) || host.querySelector(`[data-attr-key="${CSS.escape(key)}"]`)) {
+      return;
+    }
     const booleanField = key === "generatedByTransformation" || key === "manuallyMaintained";
     if (!Object.prototype.hasOwnProperty.call(node.meta || {}, key)) {
       node.meta[key] = booleanField ? false : "";
     }
+    rendered?.add(key);
     host.appendChild(
       buildAttrField(key, node.meta?.[key], {
         fieldType: booleanField ? "boolean" : inferFieldType(node.meta?.[key]),
@@ -1925,13 +1940,14 @@ function buildAttrField(key, value, field) {
   if (fieldType === "boolean") {
     wrapper.className = "attr-field attr-field-checkbox";
     const input = document.createElement("input");
+    const fieldId = nextAttrFieldDomId(key);
     input.type = "checkbox";
-    input.id = `attr-${key}`;
+    input.id = fieldId;
     input.checked = Boolean(value);
     input.dataset.attrKey = key;
     input.dataset.attrType = "boolean";
     const lbl = document.createElement("label");
-    lbl.htmlFor = `attr-${key}`;
+    lbl.htmlFor = fieldId;
     lbl.textContent = key;
     wrapper.appendChild(input);
     wrapper.appendChild(lbl);
@@ -1939,8 +1955,9 @@ function buildAttrField(key, value, field) {
   }
 
   wrapper.className = "attr-field";
+  const fieldId = nextAttrFieldDomId(key);
   const lbl = document.createElement("label");
-  lbl.htmlFor = `attr-${key}`;
+  lbl.htmlFor = fieldId;
   lbl.textContent = field?.required ? `${key} *` : key;
   wrapper.appendChild(lbl);
 
@@ -1984,7 +2001,7 @@ function buildAttrField(key, value, field) {
     input.type = "text";
     input.value = String(value ?? "");
   }
-  input.id = `attr-${key}`;
+  input.id = fieldId;
   input.dataset.attrKey = key;
   input.dataset.attrType = fieldType;
   if (field?.many) {

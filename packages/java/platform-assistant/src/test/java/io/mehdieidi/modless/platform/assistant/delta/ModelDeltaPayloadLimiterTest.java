@@ -19,10 +19,7 @@ class ModelDeltaPayloadLimiterTest {
             ModelDelta.Kind.MODEL_DELTA,
             "batch",
             List.of(),
-            List.of(
-                element("e1", "Actor"),
-                element("e2", "Actor"),
-                element("e3", "Actor")),
+            List.of(element("e1", "Actor"), element("e2", "Actor"), element("e3", "Actor")),
             List.of(new ModelDelta.Reference("e1", "interactsWith", "e3")),
             List.of(),
             List.of(),

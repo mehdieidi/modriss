@@ -117,8 +117,7 @@ public record AiProperties(
     models = models == null ? new Models(null, null, null) : models;
     maxProviderCallsPerTurn = maxProviderCallsPerTurn <= 0 ? 8 : maxProviderCallsPerTurn;
     maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 12 : maxProviderCallsSourceTurn;
-    sourceTurnTimeout =
-        sourceTurnTimeout == null ? Duration.ofMinutes(12) : sourceTurnTimeout;
+    sourceTurnTimeout = sourceTurnTimeout == null ? Duration.ofMinutes(12) : sourceTurnTimeout;
     maxModelDeltaElementsPerPass =
         maxModelDeltaElementsPerPass <= 0 ? 40 : maxModelDeltaElementsPerPass;
     maxCimModelingPasses = maxCimModelingPasses <= 0 ? 4 : maxCimModelingPasses;

@@ -108,15 +108,25 @@ function nodeBoundsForIndex(node, fallbackSize = {}) {
   const centerX = Number(style.x);
   const centerY = Number(style.y);
   const x = Number.isFinite(centerX) ? centerX - width / 2 : finiteNumber(node.x, 0);
-  const y = Number.isFinite(centerY) ? centerY - height / 2 : finiteNumber(node.y, 0);
+  let y = Number.isFinite(centerY) ? centerY - height / 2 : finiteNumber(node.y, 0);
+  let indexedHeight = height;
+  const data = node.data && typeof node.data === "object" ? node.data : {};
+  const isContainer = Boolean(style.isContainer || data.container);
+  if (isContainer) {
+    const low = style.detailLevel === "low";
+    const controlHeight = low ? 14 : 15;
+    const topExtension = controlHeight + 4 + 16;
+    y -= topExtension;
+    indexedHeight += topExtension;
+  }
   return {
     id: node.id,
     x,
     y,
     width,
-    height,
+    height: indexedHeight,
     maxX: x + width,
-    maxY: y + height,
+    maxY: y + indexedHeight,
   };
 }
 

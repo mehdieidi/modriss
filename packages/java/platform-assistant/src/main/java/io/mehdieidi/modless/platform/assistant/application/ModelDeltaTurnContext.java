@@ -1,6 +1,9 @@
 package io.mehdieidi.modless.platform.assistant.application;
 
-/** Per-turn limits for ModelDelta provider responses (thread-local, like {@link ProviderCallBudget}). */
+/**
+ * Per-turn limits for ModelDelta provider responses (thread-local, like {@link
+ * ProviderCallBudget}).
+ */
 public final class ModelDeltaTurnContext {
 
   private static final ThreadLocal<Context> CURRENT = new ThreadLocal<>();

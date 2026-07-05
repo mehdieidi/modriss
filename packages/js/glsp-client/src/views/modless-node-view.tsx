@@ -4,83 +4,104 @@ import {
   RenderingContext,
   Selectable,
   ShapeView,
-  svg,
 } from "@eclipse-glsp/sprotty";
 import { injectable } from "inversify";
 import { VNode } from "snabbdom";
-import {
-  boundedText,
-  lineBreak,
-  lineCount,
-  truncate,
-} from "./modless-text.js";
 
-function notationGlyphPath(
-  geometry: string,
-  left: number,
-  top: number,
-  width: number,
-  height: number,
-): string {
-  const name = String(geometry || "rectangle").toLowerCase();
-  const right = left + width;
-  const bottom = top + height;
-  const midX = left + width / 2;
-  const midY = top + height / 2;
-  const pointsToD = (points: Array<[number, number]>) =>
-    points.map(([x, y], index) => `${index === 0 ? "M" : "L"}${x} ${y}`).join(" ") + " Z";
+const ICON_GAP = 2;
+const ICON_SIZE_NORMAL = 72;
+const ICON_SIZE_LOW = 44;
+const ICON_NODE_WIDTH = 120;
+const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
 
-  if (name === "diamond") {
-    return pointsToD([
-      [midX, top],
-      [right, midY],
-      [midX, bottom],
-      [left, midY],
-    ]);
+function resolveIconSource(icon: unknown): string {
+  const normalized = String(icon || "").trim();
+  if (!normalized) {
+    return "";
   }
-  if (name === "hexagon") {
-    const inset = width * 0.24;
-    return pointsToD([
-      [left + inset, top],
-      [right - inset, top],
-      [right, midY],
-      [right - inset, bottom],
-      [left + inset, bottom],
-      [left, midY],
-    ]);
+  if (normalized.startsWith("/") || normalized.startsWith(".") || normalized.endsWith(".svg")) {
+    return normalized;
   }
-  if (name === "ellipse") {
-    return `M ${midX} ${top} A ${width / 2} ${height / 2} 0 1 1 ${midX} ${bottom} A ${width / 2} ${height / 2} 0 1 1 ${midX} ${top} Z`;
+  if (/^[a-z0-9_-]+$/i.test(normalized)) {
+    return `/assets/icons/${normalized}.svg`;
   }
   return "";
 }
 
-function textLines(
-  x: number,
-  y: number,
-  text: string,
-  style: Record<string, string | number | undefined>,
-  lineHeight: number,
-): VNode {
-  const lines = String(text || "")
-    .split("\n")
-    .filter(Boolean);
-  if (!lines.length) {
-    return <text />;
+function wrapLabelLines(text: string, maxCharsPerLine = 17): string[] {
+  const value = String(text || "").trim();
+  if (!value) {
+    return [];
   }
-  return (
-    <text
-      x={x}
-      y={y}
-      style={style}
-    >
-      {lines.map((line, index) => (
-        <tspan x={x} dy={index === 0 ? 0 : lineHeight}>
-          {line}
-        </tspan>
-      ))}
-    </text>
-  );
+  const lines: string[] = [];
+  let current = "";
+  const flush = () => {
+    if (current) {
+      lines.push(current);
+      current = "";
+    }
+  };
+  value.split(/\s+/).forEach((word) => {
+    if (!word) {
+      return;
+    }
+    if (word.length > maxCharsPerLine) {
+      flush();
+      for (let index = 0; index < word.length; index += maxCharsPerLine) {
+        lines.push(word.slice(index, index + maxCharsPerLine));
+      }
+      return;
+    }
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > maxCharsPerLine && current) {
+      flush();
+      current = word;
+    } else {
+      current = next;
+    }
+  });
+  flush();
+  return lines.length ? lines : [""];
+}
+
+function measureIconNodeSize(labelText: string, low: boolean, width = ICON_NODE_WIDTH) {
+  const iconSize = low ? ICON_SIZE_LOW : ICON_SIZE_NORMAL;
+  const padTop = low ? 2 : 4;
+  const gapAfterIcon = low ? 4 : 6;
+  const kindLineHeight = low ? 10 : 11;
+  const nameLineHeight = low ? 12 : 13;
+  const gapKindName = 2;
+  const padBottom = 4;
+  const maxChars = Math.max(10, Math.floor(width / (low ? 5.8 : 6.2)));
+  const nameLines = wrapLabelLines(labelText, maxChars);
+  const nameHeight = Math.max(nameLineHeight, nameLines.length * nameLineHeight);
+  const height =
+    padTop + iconSize + gapAfterIcon + kindLineHeight + gapKindName + nameHeight + padBottom;
+  return {
+    width,
+    height,
+    iconSize,
+    padTop,
+    gapAfterIcon,
+    kindLineHeight,
+    nameLineHeight,
+    gapKindName,
+    nameLines,
+  };
+}
+
+function humanizeType(value: string): string {
+  return String(value || "Element")
+    .replaceAll("_", " ")
+    .replaceAll(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatKindText(text: string): string {
+  return String(text || "Element")
+    .trim()
+    .toUpperCase();
 }
 
 @injectable()
@@ -101,39 +122,42 @@ export class ModlessNodeView extends ShapeView {
     }
 
     const args = (node as unknown as { args?: Record<string, unknown> }).args || {};
-    const accent = String(args.color || "var(--accent, #00a6e0)");
-    const width = node.size?.width || 228;
-    const height = node.size?.height || 112;
-    const low = args.lod === "minimal" || args.lod === "summary";
-    const showBadges = args.showBadges !== false && !low;
-    const showDetail = args.showDetailLines !== false && !low;
-    const geometry = String(args.geometry || args.sprottyShape || "rectangle");
     const labels = (node.children || []).filter((child) => child.type === "label");
     const title = String((labels[0] as { text?: string } | undefined)?.text || node.id);
-    const lines = String(
-      args.detailText || (labels[1] as { text?: string } | undefined)?.text || "",
+    const low = args.lod === "minimal" || args.lod === "summary";
+    const measured = measureIconNodeSize(title, low);
+    const width = node.size?.width || measured.width;
+    const height = node.size?.height || measured.height;
+    const kindText = String(
+      args.kindText ||
+        args.displayName ||
+        args.label ||
+        humanizeType(String(args.elementType || "Element")),
     );
-    const badges = showBadges && Array.isArray(args.badges) ? args.badges.slice(0, 4) : [];
+    const accent = String(args.color || "var(--accent, #00a6e0)");
     const selected = Boolean(node.selected);
     const hovered = Boolean(node.hoverFeedback);
     const hasValidation = Boolean(args.hasValidation);
     const hasImpact = Boolean(args.hasImpact);
-    const headerHeight = low ? 0 : 32;
-    const tagStripHeight = low ? 0 : 24;
-    const glyphPath = low ? "" : notationGlyphPath(geometry, 10, 9, 20, 18);
-    const kindText = String(args.kindText || args.category || args.tag || "Element");
-    const bodyStroke = selected
-      ? "var(--accent-select, #5ecbff)"
-      : hasImpact
-        ? "#f97316"
-        : hasValidation
-          ? "var(--danger, #dc2626)"
+    const isContainer = String(args.visualRole || "") === "container";
+    const iconSrc = resolveIconSource(args.iconSrc || args.icon) || PLACEHOLDER_ICON;
+    const iconLeft = (width - measured.iconSize) / 2;
+    const iconTop = measured.padTop;
+    const anchorLeft = iconLeft - ICON_GAP;
+    const anchorTop = iconTop - ICON_GAP;
+    const anchorSize = measured.iconSize + ICON_GAP * 2;
+    const kindY = iconTop + measured.iconSize + measured.gapAfterIcon;
+    const nameY = kindY + measured.kindLineHeight + measured.gapKindName;
+
+    const showOutline = selected || hasValidation || hasImpact;
+
+    const bodyStroke = hasImpact
+      ? "#f97316"
+      : hasValidation
+        ? "var(--danger, #dc2626)"
+        : selected
+          ? "var(--accent-select, #5ecbff)"
           : "var(--node-border, #3d495f)";
-    const titleText = lineBreak(title, low ? 28 : 30, low ? 1 : 2);
-    const titleLineHeight = low ? 12.5 : 14;
-    const titleY = low ? 18 : 42;
-    const detailY = titleY + lineCount(titleText) * titleLineHeight + 4;
-    const clipId = `modless-clip-${node.id}`;
 
     return (
       <g
@@ -151,124 +175,109 @@ export class ModlessNodeView extends ShapeView {
         class-selected={selected}
         class-mouseover={hovered}
       >
-        <defs>
-          <clipPath id={clipId}>
-            <rect x={0} y={0} width={width} height={height} rx={2} ry={2} />
-          </clipPath>
-        </defs>
         <rect
           x={0}
           y={0}
           width={width}
           height={height}
-          rx={2}
-          ry={2}
           class={{
             "modless-node-body": true,
             "glsp-node-body": true,
             "sprotty-node": true,
           }}
           class-sprotty-node={true}
-          class-selected={selected}
-          class-mouseover={hovered}
           style={{
-            fill: "var(--node-bg, #131923)",
-            stroke: bodyStroke,
-            strokeWidth: selected || hasValidation || hasImpact ? 2.4 : 1,
-            filter:
-              selected || hovered
-                ? "drop-shadow(0 4px 14px rgba(8, 14, 24, 0.44))"
-                : undefined,
+            fill: "transparent",
+            stroke: "transparent",
           }}
         />
-        <g attrs-clip-path={`url(#${clipId})`}>
-          {!low ? (
+        <rect
+          x={anchorLeft}
+          y={anchorTop}
+          width={anchorSize}
+          height={anchorSize}
+          rx={3}
+          class-modless-node-icon-anchor={true}
+          style={{
+            fill: "transparent",
+            stroke: showOutline ? bodyStroke : "transparent",
+            strokeWidth: selected || hasValidation || hasImpact ? 2 : 1,
+            filter: selected ? "drop-shadow(0 4px 10px rgba(8, 14, 24, 0.24))" : undefined,
+          }}
+        />
+        <image
+          attrs-href={iconSrc}
+          x={iconLeft}
+          y={iconTop}
+          width={measured.iconSize}
+          height={measured.iconSize}
+          class-modless-node-icon={true}
+        />
+        <text
+          x={width / 2}
+          y={kindY}
+          attrs-text-anchor="middle"
+          attrs-dominant-baseline="hanging"
+          class-modless-node-kind={true}
+          style={{
+            fill: accent,
+            fontSize: low ? "7px" : "7.5px",
+            fontWeight: 800,
+            fontFamily: "var(--font-display)",
+            letterSpacing: "0.08em",
+          }}
+        >
+          {formatKindText(kindText)}
+        </text>
+        <text
+          x={width / 2}
+          y={nameY}
+          attrs-text-anchor="middle"
+          attrs-dominant-baseline="hanging"
+          class-modless-node-name={true}
+          style={{
+            fill: "var(--text, #e3e8f2)",
+            fontSize: low ? "9px" : "10px",
+            fontWeight: 600,
+            fontFamily: "var(--font-ui)",
+          }}
+        >
+          {measured.nameLines.map((line, index) => (
+            <tspan x={width / 2} dy={index === 0 ? 0 : measured.nameLineHeight}>
+              {line}
+            </tspan>
+          ))}
+        </text>
+        {isContainer && hovered ? (
+          <g class-modless-open-control={true}>
             <rect
-              x={0}
-              y={0}
-              width={width}
-              height={headerHeight}
+              x={iconLeft + measured.iconSize / 2 - 18}
+              y={iconTop - 19}
+              width={36}
+              height={15}
               rx={2}
-              class-modless-node-header={true}
-              style={{ fill: "rgba(35, 42, 55, 0.58)" }}
+              style={{
+                fill: "var(--surface-elevated, #ffffff)",
+                stroke: "var(--accent-select, #0ea5e9)",
+                strokeWidth: 1,
+              }}
             />
-          ) : undefined}
-          {glyphPath ? (
-            <path
-              d={glyphPath}
-              class-modless-node-glyph={true}
-              style={{ fill: "rgba(255,255,255,0.04)", stroke: accent, strokeWidth: 1.6 }}
-            />
-          ) : undefined}
-          {!low
-            ? textLines(
-                40,
-                12,
-                boundedText(kindText, 18, 2),
-                {
-                  fill: accent,
-                  fontSize: "8px",
-                  fontWeight: 800,
-                  fontFamily: "var(--font-display)",
-                  letterSpacing: "0.06em",
-                },
-                9,
-              )
-            : undefined}
-          {textLines(
-            11,
-            titleY,
-            titleText,
-            {
-              fill: "var(--text, #e3e8f2)",
-              fontSize: low ? "10.5px" : "12px",
-              fontWeight: 700,
-              fontFamily: "var(--font-ui)",
-            },
-            titleLineHeight,
-          )}
-          {showDetail && lines
-            ? textLines(
-                11,
-                detailY,
-                truncate(lines, 42),
-                {
-                  fill: "var(--text-secondary, #98a8c0)",
-                  fontSize: "9.5px",
-                  fontWeight: 500,
-                  fontFamily: "var(--font-ui)",
-                },
-                11,
-              )
-            : undefined}
-          {badges.map((badge, index) => {
-            const label = truncate(String(badge), 12).toUpperCase();
-            const x = 10 + index * 58;
-            return (
-              <g class-modless-node-badge={true} transform={`translate(${x}, ${height - tagStripHeight - 2})`}>
-                <rect
-                  width={52}
-                  height={13}
-                  rx={3}
-                  style={{ fill: "rgba(71, 85, 105, 0.82)", stroke: "rgba(148, 163, 184, 0.14)" }}
-                />
-                <text
-                  x={26}
-                  y={9}
-                  attrs-text-anchor="middle"
-                  style={{
-                    fill: "rgba(248,250,252,0.96)",
-                    fontSize: "6.8px",
-                    fontWeight: 800,
-                    fontFamily: "var(--font-ui)",
-                  }}
-                >
-                  {label}
-                </text>
-              </g>
-            );
-          })}
-        </g>
+            <text
+              x={iconLeft + measured.iconSize / 2}
+              y={iconTop - 11.5}
+              attrs-text-anchor="middle"
+              attrs-dominant-baseline="middle"
+              style={{
+                fill: "var(--text-strong, #0f172a)",
+                fontSize: "7px",
+                fontWeight: 800,
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              OPEN
+            </text>
+          </g>
+        ) : undefined}
       </g>
     );
   }
