@@ -7,7 +7,6 @@ import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
 import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes.AssistantModelContext;
-import io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes.ContextElement;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompleter;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
@@ -74,6 +73,20 @@ public class DeltaRepairService {
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantTurnPlan rejected,
       List<String> feedback) {
+    return replanWithSafeDefaults(
+            level, systemPrompt, rootMessage, context, snippets, rejected, feedback, List.of())
+        .plan();
+  }
+
+  public ModelingAgent.AgentLoopResult replanWithSafeDefaults(
+      ModelLevel level,
+      String systemPrompt,
+      String rootMessage,
+      AssistantModelContext context,
+      List<AssistantModelProvider.ContextSnippet> snippets,
+      AssistantTurnPlan rejected,
+      List<String> feedback,
+      List<String> candidateTypes) {
     String rejectedSummary =
         rejected == null || rejected.patch().operations().isEmpty()
             ? "none"
@@ -105,7 +118,56 @@ public class DeltaRepairService {
                 + "\n\nReturn one ModelDelta JSON object that satisfies the request using safe"
                 + " defaults. Omit unchanged elements.",
             snippets);
-    return modelingAgent.repair(level, null, context, prompt);
+    return modelingAgent.repair(
+        level, null, context, prompt, candidateTypes == null ? List.of() : candidateTypes);
+  }
+
+  /** Performs one compile-error repair pass with the rejected ModelDelta draft in context. */
+  public ModelingAgent.AgentLoopResult repairCompileFailure(
+      ModelLevel level,
+      String systemPrompt,
+      String requestMessage,
+      JsonNode baseModel,
+      AssistantModelContext context,
+      List<AssistantModelProvider.ContextSnippet> snippets,
+      ModelDelta rejectedDelta,
+      List<String> feedback,
+      List<String> candidateTypes,
+      int repairNumber) {
+    List<String> safeFeedback = feedback == null ? List.of() : feedback;
+    String feedbackText = safeFeedback.stream().limit(8).collect(Collectors.joining("\n"));
+    List<AssistantModelProvider.ContextSnippet> repairContext = new ArrayList<>();
+    repairContext.addAll(
+        feedbackResolver.contractsForFeedback(
+            level, safeFeedback, new SemanticModelPatch(List.of()), 12));
+    repairContext.addAll(schemas.planningContracts(level, feedbackText, 8));
+    safeFeedback.stream()
+        .limit(8)
+        .forEach(issue -> repairContext.addAll(catalogs.search(issue, level.name(), 2)));
+    repairContext.addAll(snippets == null ? List.of() : snippets);
+    String requestWithFeedback =
+        "Original user request:\n"
+            + (requestMessage == null ? "" : requestMessage)
+            + "\n\nRejected ModelDelta draft summary:\n"
+            + ModelDeltaTexts.summary(rejectedDelta)
+            + "\n\nModelDelta compile failure:\n"
+            + feedbackText
+            + "\n\nReturn a complete replacement ModelDelta that fixes the compile failure."
+            + " Use exact Ecore containment names in placement and exact writable reference names"
+            + " in references. Do not use containment feature names as references.";
+    AssistantModelProvider.AssistantPrompt prompt =
+        new AssistantModelProvider.AssistantPrompt(
+            AssistantModelRole.PLANNER,
+            systemPrompt
+                + "\nThis is compile-error repair pass "
+                + repairNumber
+                + " of "
+                + settings.validationRepairAttempts()
+                + ".",
+            requestWithFeedback,
+            repairContext);
+    return modelingAgent.repair(
+        level, baseModel, context, prompt, candidateTypes == null ? List.of() : candidateTypes);
   }
 
   /** Performs one validator-guided LLM repair pass through the ModelDelta agent. */
@@ -118,6 +180,31 @@ public class DeltaRepairService {
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantTurnPlan failed,
       List<String> feedback,
+      int repairNumber) {
+    return repair(
+            level,
+            systemPrompt,
+            requestMessage,
+            baseModel,
+            context,
+            snippets,
+            failed,
+            feedback,
+            List.of(),
+            repairNumber)
+        .plan();
+  }
+
+  public ModelingAgent.AgentLoopResult repair(
+      ModelLevel level,
+      String systemPrompt,
+      String requestMessage,
+      JsonNode baseModel,
+      AssistantModelContext context,
+      List<AssistantModelProvider.ContextSnippet> snippets,
+      AssistantTurnPlan failed,
+      List<String> feedback,
+      List<String> candidateTypes,
       int repairNumber) {
     List<String> safeFeedback = feedback == null ? List.of() : feedback;
     String feedbackText = safeFeedback.stream().limit(8).collect(Collectors.joining("\n"));
@@ -166,7 +253,8 @@ public class DeltaRepairService {
                 + ". Do not repeat rejected operations.",
             requestWithFeedback,
             repairContext);
-    return modelingAgent.repair(level, baseModel, context, prompt);
+    return modelingAgent.repair(
+        level, baseModel, context, prompt, candidateTypes == null ? List.of() : candidateTypes);
   }
 
   private Map<String, String> existingTypes(AssistantModelContext context) {
@@ -176,8 +264,12 @@ public class DeltaRepairService {
     return context.elements().stream()
         .collect(
             Collectors.toMap(
-                ContextElement::id,
-                ContextElement::type,
+                io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes
+                        .ContextElement
+                    ::id,
+                io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes
+                        .ContextElement
+                    ::type,
                 (left, right) -> left,
                 LinkedHashMap::new));
   }

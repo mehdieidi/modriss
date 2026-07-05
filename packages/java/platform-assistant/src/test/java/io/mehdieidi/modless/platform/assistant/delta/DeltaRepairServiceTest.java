@@ -37,7 +37,8 @@ class DeltaRepairServiceTest {
             "repaired",
             List.of(),
             new SemanticModelPatch(List.of()));
-    when(modelingAgent.repair(eq(ModelLevel.PIM), any(), any(), any())).thenReturn(expected);
+    when(modelingAgent.repair(eq(ModelLevel.PIM), any(), any(), any(), any()))
+        .thenReturn(new ModelingAgent.AgentLoopResult(expected, null, null, 0, 1));
     DeltaRepairService service = service(modelingAgent);
 
     AssistantTurnPlan actual =
@@ -58,7 +59,8 @@ class DeltaRepairServiceTest {
     assertEquals(expected, actual);
     ArgumentCaptor<AssistantModelProvider.AssistantPrompt> prompt =
         ArgumentCaptor.forClass(AssistantModelProvider.AssistantPrompt.class);
-    verify(modelingAgent).repair(eq(ModelLevel.PIM), eq(null), eq(null), prompt.capture());
+    verify(modelingAgent)
+        .repair(eq(ModelLevel.PIM), eq(null), eq(null), prompt.capture(), eq(List.of()));
     assertTrue(prompt.getValue().system().contains("mandatory replanning pass"));
     assertTrue(prompt.getValue().system().contains("Function.name is required"));
     assertTrue(prompt.getValue().user().contains("Create ordering"));
@@ -74,7 +76,8 @@ class DeltaRepairServiceTest {
             "fixed",
             List.of(),
             new SemanticModelPatch(List.of()));
-    when(modelingAgent.repair(eq(ModelLevel.PIM), any(), any(), any())).thenReturn(expected);
+    when(modelingAgent.repair(eq(ModelLevel.PIM), any(), any(), any(), any()))
+        .thenReturn(new ModelingAgent.AgentLoopResult(expected, null, null, 0, 1));
     DeltaRepairService service = service(modelingAgent);
     SemanticModelPatch failedPatch =
         new SemanticModelPatch(
@@ -107,7 +110,8 @@ class DeltaRepairServiceTest {
     assertEquals(expected, actual);
     ArgumentCaptor<AssistantModelProvider.AssistantPrompt> prompt =
         ArgumentCaptor.forClass(AssistantModelProvider.AssistantPrompt.class);
-    verify(modelingAgent).repair(eq(ModelLevel.PIM), eq(null), eq(null), prompt.capture());
+    verify(modelingAgent)
+        .repair(eq(ModelLevel.PIM), eq(null), eq(null), prompt.capture(), eq(List.of()));
     assertTrue(prompt.getValue().system().contains("validator-guided repair pass 1"));
     assertTrue(prompt.getValue().user().contains("Rejected semantic operations summary"));
     assertTrue(prompt.getValue().user().contains("focused ModelDelta patch"));

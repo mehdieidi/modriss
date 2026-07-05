@@ -372,7 +372,8 @@ function trackSourceCoverageEvent(payload) {
     sourceCoverageState = { total, covered: 0, chunks: [] };
   }
   sourceCoverageState.total = total;
-  sourceCoverageState.covered = Number(payload?.coveredChunks) || sourceCoverageState.covered;
+  sourceCoverageState.covered =
+    Number(payload?.processedChunks ?? payload?.coveredChunks) || sourceCoverageState.covered;
   const chunkId = payload?.chunkId || `chunk-${sourceCoverageState.chunks.length + 1}`;
   const status = payload?.status || "PENDING";
   const existing = sourceCoverageState.chunks.find((entry) => entry.chunkId === chunkId);
@@ -1044,14 +1045,15 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
   }
   if (eventType === "assistant.source.coverage") {
     trackSourceCoverageEvent(payload);
-    const covered = Number(payload?.coveredChunks) || 0;
+    const processed = Number(payload?.processedChunks ?? payload?.coveredChunks) || 0;
     const total = Number(payload?.totalChunks) || 0;
     const chunkLabel = payload?.chunkId ? ` (${payload.chunkId})` : "";
     const statusLabel = payload?.status ? ` ${payload.status}` : "";
     updateThinkingStatus(
-      payload?.message || `Source coverage${chunkLabel}:${statusLabel} ${covered}/${total || "?"}`,
+      payload?.message ||
+        `Source coverage${chunkLabel}:${statusLabel} ${processed}/${total || "?"}`,
       "ANALYZING_SOURCE",
-      total > 0 ? { index: covered, count: total } : null,
+      total > 0 ? { index: processed, count: total } : null,
     );
     return;
   }

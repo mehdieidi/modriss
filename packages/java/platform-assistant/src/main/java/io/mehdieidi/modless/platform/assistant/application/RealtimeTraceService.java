@@ -112,6 +112,8 @@ public class RealtimeTraceService {
         Map.of(
             "coveredChunks",
             Math.max(0, coveredChunks),
+            "processedChunks",
+            Math.max(0, coveredChunks),
             "totalChunks",
             Math.max(0, totalChunks),
             "chunkId",

@@ -43,6 +43,10 @@ public class DeltaNormalizer {
             .toList();
     Map<String, String> elementTypes = new LinkedHashMap<>();
     elements.forEach(element -> elementTypes.put(element.localId(), element.eClass()));
+    elements =
+        elements.stream()
+            .map(element -> canonicalizeElementReferences(level, element, localIds, elementTypes))
+            .toList();
     return new ModelDelta(
         delta.intent(),
         delta.kind(),
@@ -50,7 +54,7 @@ public class DeltaNormalizer {
         delta.questions(),
         elements,
         delta.references().stream()
-            .map(reference -> normalizeReference(reference, localIds))
+            .map(reference -> normalizeReference(level, reference, localIds, elementTypes))
             .toList(),
         delta.attributeUpdates().stream()
             .map(update -> normalizeUpdate(level, update, localIds, elementTypes))
@@ -74,7 +78,7 @@ public class DeltaNormalizer {
         attributes,
         placement,
         element.references().stream()
-            .map(reference -> normalizeReference(reference, localIds))
+            .map(reference -> normalizeReferenceIds(reference, localIds))
             .toList(),
         element.evidenceIds());
   }
@@ -132,12 +136,49 @@ public class DeltaNormalizer {
         attribute.name(), attribute.type(), attribute.required(), attribute.options());
   }
 
-  private ModelDelta.Reference normalizeReference(
+  private ModelDelta.Element canonicalizeElementReferences(
+      ModelLevel level,
+      ModelDelta.Element element,
+      Map<String, String> localIds,
+      Map<String, String> elementTypes) {
+    return new ModelDelta.Element(
+        element.localId(),
+        element.eClass(),
+        element.attributes(),
+        element.placement(),
+        element.references().stream()
+            .map(reference -> normalizeReference(level, reference, localIds, elementTypes))
+            .toList(),
+        element.evidenceIds());
+  }
+
+  private ModelDelta.Reference normalizeReferenceIds(
       ModelDelta.Reference reference, Map<String, String> localIds) {
     return new ModelDelta.Reference(
         localIds.getOrDefault(reference.sourceId(), reference.sourceId()),
         reference.referenceName(),
         localIds.getOrDefault(reference.targetId(), reference.targetId()));
+  }
+
+  private ModelDelta.Reference normalizeReference(
+      ModelLevel level,
+      ModelDelta.Reference reference,
+      Map<String, String> localIds,
+      Map<String, String> elementTypes) {
+    String sourceId = localIds.getOrDefault(reference.sourceId(), reference.sourceId());
+    String targetId = localIds.getOrDefault(reference.targetId(), reference.targetId());
+    String sourceType = elementTypes.get(sourceId);
+    String targetType = elementTypes.get(targetId);
+    String referenceName = reference.referenceName();
+    if (sourceType != null
+        && targetType != null
+        && referenceName != null
+        && !referenceName.isBlank()) {
+      referenceName =
+          DeltaReferenceNames.canonicalReferenceName(
+              schemas, level, sourceType, referenceName, targetType);
+    }
+    return new ModelDelta.Reference(sourceId, referenceName, targetId);
   }
 
   private ModelDelta.AttributeUpdate normalizeUpdate(

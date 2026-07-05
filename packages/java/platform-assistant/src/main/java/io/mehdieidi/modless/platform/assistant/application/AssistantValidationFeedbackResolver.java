@@ -20,6 +20,10 @@ public class AssistantValidationFeedbackResolver {
   private static final Pattern ELEMENT_TYPE =
       Pattern.compile(
           "(?:of|for)\\s+'([^']+)'@|@([A-Za-z][A-Za-z0-9_]*)", Pattern.CASE_INSENSITIVE);
+  private static final Pattern GROUNDING_REFERENCE =
+      Pattern.compile("sourceType=([^,]+),\\s*referenceName=([^,]+)", Pattern.CASE_INSENSITIVE);
+  private static final Pattern GROUNDING_ELEMENT_TYPE =
+      Pattern.compile("elementType=([^,\\.]+)", Pattern.CASE_INSENSITIVE);
   private static final Pattern ELEMENT_UUID =
       Pattern.compile(
           "#([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})",
@@ -67,6 +71,16 @@ public class AssistantValidationFeedbackResolver {
       if (featureMatcher.find()) {
         String feature = featureMatcher.group(1);
         resolveOwnerTypes(level, feature, patch).forEach(types::add);
+      }
+      Matcher groundingMatcher = GROUNDING_REFERENCE.matcher(line);
+      if (groundingMatcher.find()) {
+        addType(level, types, groundingMatcher.group(1));
+        String referenceName = groundingMatcher.group(2);
+        resolveReferenceTargetTypes(level, referenceName, patch).forEach(types::add);
+      }
+      Matcher groundingElementMatcher = GROUNDING_ELEMENT_TYPE.matcher(line);
+      if (groundingElementMatcher.find()) {
+        addType(level, types, groundingElementMatcher.group(1));
       }
       Matcher typeMatcher = ELEMENT_TYPE.matcher(line);
       while (typeMatcher.find()) {
@@ -198,5 +212,40 @@ public class AssistantValidationFeedbackResolver {
       }
     }
     return List.copyOf(owners);
+  }
+
+  private void addType(ModelLevel level, Set<String> types, String raw) {
+    if (raw == null || raw.isBlank()) {
+      return;
+    }
+    try {
+      types.add(schemas.canonicalType(level, raw.trim()));
+    } catch (RuntimeException ignored) {
+      types.add(raw.trim());
+    }
+  }
+
+  private List<String> resolveReferenceTargetTypes(
+      ModelLevel level, String referenceName, SemanticModelPatch patch) {
+    if (referenceName == null || referenceName.isBlank() || patch == null) {
+      return List.of();
+    }
+    Set<String> targets = new LinkedHashSet<>();
+    for (SemanticModelPatch.Operation operation : patch.operations()) {
+      if (operation == null || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT) {
+        continue;
+      }
+      try {
+        String ownerType = schemas.canonicalType(level, operation.elementType());
+        schemas
+            .reference(level, ownerType, referenceName)
+            .filter(reference -> !reference.containment() && !reference.readonly())
+            .map(AssistantMetamodelSchemaService.ReferenceSchema::targetType)
+            .ifPresent(targets::add);
+      } catch (RuntimeException ignored) {
+        // Ignore unknown operation types.
+      }
+    }
+    return List.copyOf(targets);
   }
 }

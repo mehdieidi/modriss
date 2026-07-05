@@ -12,6 +12,7 @@ import io.mehdieidi.modless.platform.assistant.agent.ReadOnlyAnswerAgent;
 import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
 import io.mehdieidi.modless.platform.assistant.delta.DeltaNormalizer;
 import io.mehdieidi.modless.platform.assistant.delta.DeltaRepairService;
+import io.mehdieidi.modless.platform.assistant.delta.ModelDelta;
 import io.mehdieidi.modless.platform.assistant.delta.ModelDeltaParser;
 import io.mehdieidi.modless.platform.assistant.delta.ModelDeltaSchemaFactory;
 import io.mehdieidi.modless.platform.assistant.delta.StructuralValidationGate;
@@ -424,6 +425,7 @@ public class AssistantOrchestrator {
             request.revision(),
             idempotencyKey,
             properties.turnTimeout());
+    Instant deadlineAt = startedTurn.deadlineAt();
     TurnTrace trace =
         new TurnTrace(
             startedTurn.turnId(),
@@ -432,8 +434,8 @@ public class AssistantOrchestrator {
             session.projectId(),
             session.level(),
             request.modelId(),
-            turnStarted);
-    Instant deadlineAt = startedTurn.deadlineAt();
+            turnStarted,
+            deadlineAt);
     currentTrace.set(trace);
     currentPhaseTimings.set(new LinkedHashMap<>());
     putTraceMdc(trace);
@@ -768,6 +770,16 @@ public class AssistantOrchestrator {
     }
   }
 
+  private boolean hasTurnBudgetRemaining(java.time.Duration minimum) {
+    TurnTrace trace = currentTrace.get();
+    if (trace == null || trace.deadlineAt() == null) {
+      return true;
+    }
+    java.time.Duration remaining =
+        java.time.Duration.between(java.time.Instant.now(), trace.deadlineAt());
+    return remaining.compareTo(minimum) > 0;
+  }
+
   private String idempotencyKey(AssistantTurnRequest request) {
     if (request != null && !blank(request.idempotencyKey())) {
       return request.idempotencyKey();
@@ -840,6 +852,13 @@ public class AssistantOrchestrator {
     if (request != null && !blank(request.sourceAnalysis())) {
       snippets.addAll(sourceEvidenceSnippets(request.sourceAnalysis()));
     }
+    if (request != null && !blank(request.attachmentContent())) {
+      snippets.add(
+          new AssistantModelProvider.ContextSnippet(
+              "source-document",
+              nonBlank(request.attachmentName(), "attachment"),
+              request.attachmentContent()));
+    }
     if (request != null && !blank(request.attachmentName())) {
       snippets.add(
           new AssistantModelProvider.ContextSnippet(
@@ -908,65 +927,48 @@ public class AssistantOrchestrator {
     int maxCompileRepairs = Math.max(0, properties.validationRepairAttempts());
     String compileFailure = null;
     AssistantTurnPlan plan = null;
+    ModelDelta lastDelta = null;
     int toolCalls = 0;
     int agentSteps = 0;
     for (int compileAttempt = 0; compileAttempt <= maxCompileRepairs; compileAttempt++) {
-      try {
-        if (compileAttempt == 0) {
-          ModelingAgent.AgentLoopResult loopResult =
-              modelingAgent.plan(
-                  session.level(),
-                  baseModel,
-                  context,
-                  prompt,
-                  (stage, message) -> publishProgress(session.id(), stage, message),
-                  candidateTypes);
-          plan = loopResult.plan();
-          toolCalls = Math.max(toolCalls, loopResult.toolCalls());
-          agentSteps = loopResult.steps();
-        } else {
-          publishProgress(
-              session.id(),
-              "COMPLETING",
-              "Fixing ModelDelta structural compile errors before validation");
-          checkTurnActive(session);
-          AssistantTurnPlan failedPlan =
-              plan == null
-                  ? new AssistantTurnPlan(
-                      AssistantTurnPlan.Intent.MUTATION,
-                      AssistantTurnPlan.Kind.PATCH,
-                      "",
-                      List.of(),
-                      new SemanticModelPatch(List.of()))
-                  : plan;
-          plan =
-              repairService.repair(
-                  session.level(),
-                  turnPrompt(session, request, context),
-                  request.message(),
-                  baseModel,
-                  context,
-                  snippets,
-                  failedPlan,
-                  List.of(compileFailure),
-                  compileAttempt);
-          toolCalls = Math.max(toolCalls, tools.consumeToolCallCount());
-        }
-        if (plan != null && plan.kind() != AssistantTurnPlan.Kind.PATCH) {
-          break;
-        }
-        if (plan != null && !plan.patch().operations().isEmpty()) {
-          break;
-        }
-        compileFailure = "The ModelDelta compiled to no semantic operations.";
-      } catch (PlatformException failure) {
-        if (!ModelDeltaFailureClassifier.isCompileFailure(failure)) {
-          throw failure;
-        }
-        if (ModelDeltaFailureClassifier.isProviderFailure(failure)) {
-          throw failure;
-        }
-        compileFailure = failure.getMessage();
+      if (compileAttempt == 0) {
+        ModelingAgent.AgentLoopResult loopResult =
+            modelingAgent.plan(
+                session.level(),
+                baseModel,
+                context,
+                prompt,
+                (stage, message) -> publishProgress(session.id(), stage, message),
+                candidateTypes);
+        plan = loopResult.plan();
+        lastDelta = loopResult.delta();
+        compileFailure = loopResult.compileError();
+        toolCalls = Math.max(toolCalls, loopResult.toolCalls());
+        agentSteps = loopResult.steps();
+      } else {
+        publishProgress(
+            session.id(),
+            "COMPLETING",
+            "Fixing ModelDelta structural compile errors before validation");
+        checkTurnActive(session);
+        ModelingAgent.AgentLoopResult repairResult =
+            repairService.repairCompileFailure(
+                session.level(),
+                turnPrompt(session, request, context),
+                request.message(),
+                baseModel,
+                context,
+                snippets,
+                lastDelta,
+                List.of(compileFailure == null ? "ModelDelta compile failed." : compileFailure),
+                candidateTypes,
+                compileAttempt);
+        plan = repairResult.plan();
+        lastDelta = repairResult.delta();
+        compileFailure = repairResult.compileError();
+        toolCalls = Math.max(toolCalls, tools.consumeToolCallCount());
+      }
+      if (compileFailure != null && !compileFailure.isBlank()) {
         logTurnInfo(
             "model_delta_compile_failed",
             "compileAttempt",
@@ -974,9 +976,17 @@ public class AssistantOrchestrator {
             "message",
             compileFailure);
         if (compileAttempt >= maxCompileRepairs) {
-          throw failure;
+          throw new PlatformException(422, compileFailure);
         }
+        continue;
       }
+      if (plan != null && plan.kind() != AssistantTurnPlan.Kind.PATCH) {
+        break;
+      }
+      if (plan != null && !plan.patch().operations().isEmpty()) {
+        break;
+      }
+      compileFailure = "The ModelDelta compiled to no semantic operations.";
     }
     if (plan == null) {
       throw new PlatformException(
@@ -1022,8 +1032,7 @@ public class AssistantOrchestrator {
           blank(request.attachmentContent()) ? "no-attachment" : "not-cim-or-already-analyzed",
           "attachmentChars",
           request.attachmentContent().length());
-      sourceAnalysisFacade.persistIfPresent(
-          session, sourceRequest);
+      sourceAnalysisFacade.persistIfPresent(session, sourceRequest);
       return request;
     }
     long started = System.nanoTime();
@@ -1255,16 +1264,22 @@ public class AssistantOrchestrator {
       try {
         checkTurnActive(session);
         repaired =
-            repairService.repair(
-                session.level(),
-                turnPrompt(session, request, context),
-                request.message(),
-                baseModel,
-                context,
-                snippetsForFollowup(snippets),
-                acceptedPlan,
-                attempt.feedback(),
-                repairNumber);
+            repairService
+                .repair(
+                    session.level(),
+                    turnPrompt(session, request, context),
+                    request.message(),
+                    baseModel,
+                    context,
+                    snippetsForFollowup(snippets),
+                    acceptedPlan,
+                    attempt.feedback(),
+                    schemas.knownTypes(
+                        session.level(),
+                        feedbackResolver.resolveTypes(
+                            session.level(), attempt.feedback(), acceptedPlan.patch())),
+                    repairNumber)
+                .plan();
       } catch (PlatformException failure) {
         if (ModelDeltaFailureClassifier.isCompileFailure(failure)
             || ModelDeltaFailureClassifier.isProviderFailure(failure)) {
@@ -1492,6 +1507,10 @@ public class AssistantOrchestrator {
         gated, request.rootMessage(), sourceContextAvailable(request))) {
       return gated;
     }
+    if (!hasTurnBudgetRemaining(java.time.Duration.ofSeconds(90))) {
+      logTurnInfo("replan_skipped", "reason", "turn_deadline_near");
+      return clarificationGate.apply(gated, request.rootMessage(), sourceContextAvailable(request));
+    }
     publishProgress(
         session.id(), "PLANNING", "Choosing safe defaults and drafting a complete model change");
     AssistantTurnPlan replanned =
@@ -1499,7 +1518,8 @@ public class AssistantOrchestrator {
     if (replanned.kind() == AssistantTurnPlan.Kind.CLARIFICATION
         && clarificationGate.shouldDeferToProposal(
             replanned, request.rootMessage(), sourceContextAvailable(request))
-        && ProviderCallBudget.hasRemaining()) {
+        && ProviderCallBudget.hasRemaining()
+        && hasTurnBudgetRemaining(java.time.Duration.ofSeconds(90))) {
       replanned = replanWithSafeDefaults(session, request, context, snippets, replanned);
     }
     if (replanned.kind() == AssistantTurnPlan.Kind.CLARIFICATION) {
@@ -1546,18 +1566,46 @@ public class AssistantOrchestrator {
       logTurnInfo("replan_skipped", "reason", "provider_call_budget_exceeded");
       return rejected;
     }
+    if (!hasTurnBudgetRemaining(java.time.Duration.ofSeconds(60))) {
+      logTurnInfo("replan_skipped", "reason", "turn_deadline_near");
+      return rejected;
+    }
     publishProgress(
         session.id(),
         "PLANNING",
         "Replanning with structural validation feedback and metamodel context");
-    return repairService.replanWithSafeDefaults(
-        session.level(),
-        turnPrompt(session, request, context),
-        request.rootMessage(),
-        context,
-        snippetsForFollowup(snippets),
-        rejected,
-        feedback);
+    List<String> candidateTypes =
+        schemas.knownTypes(
+            session.level(),
+            currentIntentDecision.get() == null
+                ? List.of()
+                : currentIntentDecision.get().candidateTypes());
+    ModelingAgent.AgentLoopResult replanned =
+        repairService.replanWithSafeDefaults(
+            session.level(),
+            turnPrompt(session, request, context),
+            request.rootMessage(),
+            context,
+            snippetsForFollowup(snippets),
+            rejected,
+            feedback,
+            candidateTypes);
+    if (replanned.compileError() != null && !replanned.compileError().isBlank()) {
+      ModelingAgent.AgentLoopResult repaired =
+          repairService.repairCompileFailure(
+              session.level(),
+              turnPrompt(session, request, context),
+              request.rootMessage(),
+              null,
+              context,
+              snippetsForFollowup(snippets),
+              replanned.delta(),
+              List.of(replanned.compileError()),
+              candidateTypes,
+              1);
+      return repaired.plan();
+    }
+    return replanned.plan();
   }
 
   private String patchSignature(SemanticModelPatch patch) {
@@ -2525,10 +2573,10 @@ public class AssistantOrchestrator {
 
     List<AssistantModelProvider.ContextSnippet> tier4 = new ArrayList<>();
     tier4.addAll(retrievalOptional);
-    if (!blank(request.attachmentContent()) && blank(request.sourceAnalysis())) {
+    if (!blank(request.attachmentContent())) {
       tier4.add(
           new AssistantModelProvider.ContextSnippet(
-              "user-attachment",
+              "source-document",
               nonBlank(request.attachmentName(), "attachment"),
               request.attachmentContent()));
     }
@@ -3860,7 +3908,8 @@ public class AssistantOrchestrator {
       String projectId,
       ModelLevel level,
       String requestedModelId,
-      long startedNanos) {}
+      long startedNanos,
+      java.time.Instant deadlineAt) {}
 
   private record PlanAttempt(
       AssistantTurnPlan plan,

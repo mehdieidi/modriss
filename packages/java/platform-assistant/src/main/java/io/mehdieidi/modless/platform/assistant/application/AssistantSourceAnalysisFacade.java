@@ -5,15 +5,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.assistant.session.AssistantSessionStore;
 import io.mehdieidi.modless.platform.assistant.source.SourceChunk;
 import io.mehdieidi.modless.platform.assistant.source.SourceChunkProgressListener;
+import io.mehdieidi.modless.platform.assistant.source.SourceChunker;
 import io.mehdieidi.modless.platform.assistant.source.SourceCoverageMatrix;
+import io.mehdieidi.modless.platform.assistant.source.SourceEvidenceExtractor;
 import io.mehdieidi.modless.platform.assistant.source.SourceEvidenceGraph;
+import io.mehdieidi.modless.platform.assistant.source.SourceEvidenceMerger;
 import io.mehdieidi.modless.platform.assistant.source.SourceUnderstandingService;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantSourceEvidenceStore;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +28,12 @@ public class AssistantSourceAnalysisFacade {
 
   private static final Logger log = LoggerFactory.getLogger(AssistantSourceAnalysisFacade.class);
 
+  private static final int FAST_PATH_MAX_CHARS = 12_000;
+
   private final SourceUnderstandingService sourceUnderstanding;
+  private final SourceChunker chunker;
+  private final SourceEvidenceExtractor localExtractor;
+  private final SourceEvidenceMerger merger;
   private final AssistantSourceEvidenceStore sourceEvidenceStore;
   private final RealtimeTraceService traceEvents;
   private final ObjectMapper mapper;
@@ -33,8 +43,22 @@ public class AssistantSourceAnalysisFacade {
       AssistantSourceEvidenceStore sourceEvidenceStore,
       RealtimeTraceService traceEvents,
       ObjectMapper mapper) {
+    this(sourceUnderstanding, null, null, null, sourceEvidenceStore, traceEvents, mapper);
+  }
+
+  public AssistantSourceAnalysisFacade(
+      SourceUnderstandingService sourceUnderstanding,
+      SourceChunker chunker,
+      SourceEvidenceExtractor localExtractor,
+      SourceEvidenceMerger merger,
+      AssistantSourceEvidenceStore sourceEvidenceStore,
+      RealtimeTraceService traceEvents,
+      ObjectMapper mapper) {
     this.sourceUnderstanding =
         sourceUnderstanding == null ? new SourceUnderstandingService(null) : sourceUnderstanding;
+    this.chunker = chunker == null ? new SourceChunker() : chunker;
+    this.localExtractor = localExtractor == null ? new SourceEvidenceExtractor() : localExtractor;
+    this.merger = merger == null ? new SourceEvidenceMerger() : merger;
     this.sourceEvidenceStore =
         sourceEvidenceStore == null ? AssistantSourceEvidenceStore.noop() : sourceEvidenceStore;
     this.traceEvents = traceEvents;
@@ -70,25 +94,32 @@ public class AssistantSourceAnalysisFacade {
     }
     String sourceId = nonBlank(request.attachmentName(), "source");
     long started = System.nanoTime();
-    SourceEvidenceGraph graph =
-        sourceUnderstanding.understand(
-            sourceId,
-            request.attachmentName(),
-            request.attachmentContent(),
-            maxChunkTokens,
-            maxChunks,
-            new SourceChunkProgressListener() {
-              @Override
-              public void onChunkStarting(int chunkIndex, int totalChunks, SourceChunk chunk) {
-                publishChunkExtractionStarted(session.id(), chunkIndex, totalChunks, chunk);
-              }
+    List<SourceChunk> chunks =
+        chunker.chunk(
+            request.attachmentName(), request.attachmentContent(), maxChunkTokens, maxChunks);
+    SourceChunkProgressListener listener =
+        new SourceChunkProgressListener() {
+          @Override
+          public void onChunkStarting(int chunkIndex, int totalChunks, SourceChunk chunk) {
+            publishChunkExtractionStarted(session.id(), chunkIndex, totalChunks, chunk);
+          }
 
-              @Override
-              public void onChunkProcessed(
-                  int chunkIndex, int totalChunks, SourceEvidenceGraph partialGraph) {
-                publishSourceCoverage(session.id(), partialGraph, chunkIndex, totalChunks);
-              }
-            });
+          @Override
+          public void onChunkProcessed(
+              int chunkIndex, int totalChunks, SourceEvidenceGraph partialGraph) {
+            publishSourceCoverage(session.id(), partialGraph, chunkIndex, totalChunks);
+          }
+        };
+    SourceEvidenceGraph graph =
+        shouldUseFastLocalPath(chunks, request.attachmentContent())
+            ? understandLocally(sourceId, chunks, listener)
+            : sourceUnderstanding.understand(
+                sourceId,
+                request.attachmentName(),
+                request.attachmentContent(),
+                maxChunkTokens,
+                maxChunks,
+                listener);
     try {
       String json = mapper.writeValueAsString(graph);
       persistSourceEvidence(session, request, graph, json);
@@ -179,6 +210,33 @@ public class AssistantSourceAnalysisFacade {
         "Extracting chunk " + chunkIndex + " of " + totalChunks);
   }
 
+  private boolean shouldUseFastLocalPath(List<SourceChunk> chunks, String content) {
+    if (chunks == null || chunks.size() != 1) {
+      return false;
+    }
+    int chars = content == null ? 0 : content.length();
+    return chars > 0 && chars <= FAST_PATH_MAX_CHARS;
+  }
+
+  private SourceEvidenceGraph understandLocally(
+      String sourceId, List<SourceChunk> chunks, SourceChunkProgressListener listener) {
+    if (chunks == null || chunks.isEmpty()) {
+      return new SourceEvidenceGraph(sourceId, List.of(), List.of(), List.of());
+    }
+    List<SourceEvidenceGraph> graphs = new ArrayList<>();
+    for (int index = 0; index < chunks.size(); index++) {
+      SourceChunk chunk = chunks.get(index);
+      if (listener != null) {
+        listener.onChunkStarting(index + 1, chunks.size(), chunk);
+      }
+      graphs.add(localExtractor.extract(sourceId, chunk));
+      if (listener != null) {
+        listener.onChunkProcessed(index + 1, chunks.size(), merger.merge(sourceId, graphs));
+      }
+    }
+    return merger.merge(sourceId, graphs);
+  }
+
   private void publishSourceCoverage(
       String sessionId, SourceEvidenceGraph graph, int chunkIndex, int totalChunks) {
     if (graph == null || traceEvents == null) {
@@ -187,7 +245,10 @@ public class AssistantSourceAnalysisFacade {
     int covered = 0;
     for (SourceEvidenceGraph.CoverageEntry entry : graph.coverage()) {
       if (entry.state()
-          == io.mehdieidi.modless.platform.assistant.source.SourceChunk.CoverageState.COVERED) {
+              == io.mehdieidi.modless.platform.assistant.source.SourceChunk.CoverageState.COVERED
+          || entry.state()
+              == io.mehdieidi.modless.platform.assistant.source.SourceChunk.CoverageState
+                  .COMPRESSED) {
         covered++;
       }
     }

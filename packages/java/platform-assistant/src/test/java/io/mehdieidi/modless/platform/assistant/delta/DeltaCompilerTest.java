@@ -176,4 +176,52 @@ class DeltaCompilerTest {
     assertEquals("summary", update.referenceName());
     assertEquals("Books visits", update.attributes().asText());
   }
+
+  @Test
+  void canonicalizesAggregateEntityAliasToMembers() throws Exception {
+    ModelDelta delta =
+        new ModelDelta(
+            AssistantTurnPlan.Intent.MUTATION,
+            ModelDelta.Kind.MODEL_DELTA,
+            "Link aggregate to entity",
+            List.of(),
+            List.of(
+                new ModelDelta.Element(
+                    "agg1",
+                    "AggregateCandidate",
+                    JsonNodeFactory.instance.objectNode().put("name", "Booking aggregate"),
+                    new ModelDelta.Placement("root", "aggregates"),
+                    List.of(),
+                    List.of()),
+                new ModelDelta.Element(
+                    "ent1",
+                    "DomainEntity",
+                    JsonNodeFactory.instance.objectNode().put("name", "Appointment"),
+                    new ModelDelta.Placement("root", "entities"),
+                    List.of(),
+                    List.of())),
+            List.of(new ModelDelta.Reference("agg1", "entities", "ent1")),
+            List.of(),
+            List.of(),
+            List.of());
+
+    SemanticModelPatch patch =
+        compiler.compile(
+            ModelLevel.CIM,
+            mapper.readTree(
+                """
+                {"id":"root","eClass":"CIMModel","modelLevel":"CIM","aggregates":[],"entities":[]}
+                """),
+            Map.of(),
+            delta);
+
+    SemanticModelPatch.Operation connection =
+        patch.operations().stream()
+            .filter(
+                operation -> operation.type() == SemanticModelPatch.OperationType.CONNECT_ELEMENTS)
+            .findFirst()
+            .orElseThrow();
+
+    assertEquals("members", connection.referenceName());
+  }
 }

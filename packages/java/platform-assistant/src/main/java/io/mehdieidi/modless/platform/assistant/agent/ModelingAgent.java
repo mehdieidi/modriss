@@ -105,8 +105,9 @@ public class ModelingAgent {
         providerClient.complete(
             level, withModelDeltaProtocol(level, prompt, candidateTypes, false));
     toolCalls = Math.max(toolCalls, safeToolCount());
-    AssistantTurnPlan plan = toTurnPlan(level, baseModel, context, delta);
-    return new AgentLoopResult(plan, toolCalls, steps);
+    CompileAttempt compiled = compileAttempt(level, baseModel, context, delta);
+    AssistantTurnPlan plan = toTurnPlan(delta, compiled.patch());
+    return new AgentLoopResult(plan, delta, compiled.error(), toolCalls, steps);
   }
 
   public AgentLoopResult plan(
@@ -119,7 +120,7 @@ public class ModelingAgent {
   }
 
   /** Plans one validation-guided repair pass through the same ModelDelta contract. */
-  public AssistantTurnPlan repair(
+  public AgentLoopResult repair(
       ModelLevel level,
       JsonNode baseModel,
       AssistantModelContext context,
@@ -127,10 +128,11 @@ public class ModelingAgent {
       List<String> candidateTypes) {
     ModelDelta delta =
         providerClient.complete(level, withModelDeltaProtocol(level, prompt, candidateTypes, true));
-    return toTurnPlan(level, baseModel, context, delta);
+    CompileAttempt compiled = compileAttempt(level, baseModel, context, delta);
+    return new AgentLoopResult(toTurnPlan(delta, compiled.patch()), delta, compiled.error(), 0, 1);
   }
 
-  public AssistantTurnPlan repair(
+  public AgentLoopResult repair(
       ModelLevel level,
       JsonNode baseModel,
       AssistantModelContext context,
@@ -168,7 +170,8 @@ public class ModelingAgent {
                 snippet != null
                     && snippet.source() != null
                     && (snippet.source().startsWith("source-")
-                        || snippet.source().contains("source-evidence")));
+                        || snippet.source().contains("source-evidence")
+                        || "source-document".equals(snippet.source())));
   }
 
   private AssistantModelProvider.AssistantPrompt explorationPrompt(
@@ -193,9 +196,17 @@ public class ModelingAgent {
         prompt.snippets());
   }
 
-  private AssistantTurnPlan toTurnPlan(
+  private CompileAttempt compileAttempt(
       ModelLevel level, JsonNode baseModel, AssistantModelContext context, ModelDelta delta) {
-    SemanticModelPatch patch = compiler.compile(level, baseModel, existingTypes(context), delta);
+    try {
+      return new CompileAttempt(
+          compiler.compile(level, baseModel, existingTypes(context), delta), null);
+    } catch (PlatformException failure) {
+      return new CompileAttempt(new SemanticModelPatch(List.of()), failure.getMessage());
+    }
+  }
+
+  private AssistantTurnPlan toTurnPlan(ModelDelta delta, SemanticModelPatch patch) {
     AssistantTurnPlan.Kind kind =
         patch.operations().isEmpty()
             ? switch (delta.kind()) {
@@ -267,7 +278,9 @@ public class ModelingAgent {
      Policy.triggeredBy -> BusinessEvent, Policy.guards -> Command, Policy.emitsCommands ->
      Command, Policy.emitsEvents -> BusinessEvent, BusinessCapability.containsCommands -> Command,
      BusinessCapability.containsEvents -> BusinessEvent, AggregateCandidate.handledCommands ->
-     Command, AggregateCandidate.emittedEvents -> BusinessEvent, ExternalSystem.producedEvents ->
+     Command, AggregateCandidate.emittedEvents -> BusinessEvent, AggregateCandidate.root/members ->
+     DomainEntity, BusinessCapability.entities/CIMModel.entities contain DomainEntity children,
+     ExternalSystem.producedEvents ->
      BusinessEvent, ExternalSystem.consumedEvents -> BusinessEvent, BusinessGoal.owners ->
      Stakeholder (never Actor), and Stakeholder.ownsGoals -> BusinessGoal. Model actors and
      stakeholders separately; link actors to commands/events, stakeholders to goals/requirements.
@@ -316,5 +329,8 @@ public class ModelingAgent {
     return new PlatformException(502, "AI assistant ModelDelta was rejected by schema parsing.");
   }
 
-  public record AgentLoopResult(AssistantTurnPlan plan, int toolCalls, int steps) {}
+  public record AgentLoopResult(
+      AssistantTurnPlan plan, ModelDelta delta, String compileError, int toolCalls, int steps) {}
+
+  private record CompileAttempt(SemanticModelPatch patch, String error) {}
 }

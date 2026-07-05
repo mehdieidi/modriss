@@ -11,6 +11,7 @@ import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelKnowledgeServi
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,15 +48,19 @@ public class ModelDeltaSchemaFactory {
   /** Turn-scoped snippets with candidate type closure for schema and contracts. */
   public List<AssistantModelProvider.ContextSnippet> snippets(
       ModelLevel level, List<String> candidateTypes) {
-    return List.of(
+    List<AssistantModelProvider.ContextSnippet> result = new ArrayList<>();
+    result.add(
         new AssistantModelProvider.ContextSnippet(
             "model-delta-json-schema",
             "ModelDelta JSON Schema",
-            pretty(responseSchema(level, candidateTypes))),
+            pretty(responseSchema(level, candidateTypes))));
+    result.add(
         new AssistantModelProvider.ContextSnippet(
             "model-delta-metamodel-contract",
             "Ecore-derived writable contracts",
             metamodelContract(level, candidateTypes)));
+    result.addAll(metamodels.contractClosure(level, candidateTypes));
+    return result;
   }
 
   /** JSON Schema for a structured ModelDelta response. */
@@ -232,27 +237,13 @@ public class ModelDeltaSchemaFactory {
   }
 
   private ObjectNode referenceSchema(ModelLevel level, List<String> candidateTypes) {
-    LinkedHashSet<String> writableRefs = new LinkedHashSet<>();
-    for (String typeName : scopedTypeNames(level, candidateTypes)) {
-      metamodels
-          .typeContract(level, typeName)
-          .references()
-          .forEach(
-              reference -> {
-                if (!reference.containment() && !reference.readonly()) {
-                  writableRefs.add(reference.name());
-                }
-              });
-    }
     ObjectNode schema = mapper.createObjectNode();
     schema.put("type", "object");
     schema.put("additionalProperties", false);
     schema.putArray("required").add("sourceId").add("referenceName").add("targetId");
     ObjectNode properties = schema.putObject("properties");
     properties.putObject("sourceId").put("type", "string");
-    properties.set(
-        "referenceName",
-        writableRefs.isEmpty() ? stringSchema() : enumSchema(writableRefs.toArray(String[]::new)));
+    properties.putObject("referenceName").put("type", "string");
     properties.putObject("targetId").put("type", "string");
     return schema;
   }
@@ -332,33 +323,69 @@ public class ModelDeltaSchemaFactory {
         types.length == 0
             ? ""
             : "\nCandidate types for this turn: " + String.join(", ", types) + "\n";
-    int attributeCount = 0;
-    int containmentCount = 0;
-    int relationshipCount = 0;
+    StringBuilder contracts = new StringBuilder();
+    contracts.append(
+        "Canonical source: combined Ecore metamodel\nRoot EClass: "
+            + schemas.rootType(level)
+            + scoped
+            + "\nUse placement.referenceName for containments and references.referenceName for"
+            + " writable non-containment EReferences only.\n"
+            + "DomainEntity is contained by CIMModel.entities or BusinessCapability.entities — not"
+            + " by AggregateCandidate.entities. AggregateCandidate uses root/members for"
+            + " DomainEntity links.\n\n");
     for (String type : types) {
       TypeContract contract = metamodels.typeContract(level, type);
-      attributeCount += contract.attributes().size();
-      containmentCount +=
-          (int) contract.references().stream().filter(ReferenceContract::containment).count();
-      relationshipCount +=
-          (int)
-              contract.references().stream()
-                  .filter(reference -> !reference.containment())
-                  .filter(reference -> !reference.readonly())
-                  .count();
+      contracts.append("EClass ").append(contract.eClass()).append('\n');
+      if (!contract.attributes().isEmpty()) {
+        contracts.append("  attributes: ");
+        contract
+            .attributes()
+            .forEach(
+                attribute ->
+                    contracts
+                        .append(attribute.name())
+                        .append(attribute.required() ? "*" : "")
+                        .append(":")
+                        .append(attribute.type())
+                        .append(' '));
+        contracts.append('\n');
+      }
+      List<ReferenceContract> containments =
+          contract.references().stream().filter(ReferenceContract::containment).toList();
+      if (!containments.isEmpty()) {
+        contracts.append("  containments: ");
+        containments.forEach(
+            reference ->
+                contracts
+                    .append(reference.name())
+                    .append(reference.required() ? "*" : "")
+                    .append(" -> ")
+                    .append(reference.targetType())
+                    .append(reference.many() ? "[*]" : "")
+                    .append(' '));
+        contracts.append('\n');
+      }
+      List<ReferenceContract> relationships =
+          contract.references().stream()
+              .filter(reference -> !reference.containment())
+              .filter(reference -> !reference.readonly())
+              .toList();
+      if (!relationships.isEmpty()) {
+        contracts.append("  relationships: ");
+        relationships.forEach(
+            reference ->
+                contracts
+                    .append(reference.name())
+                    .append(reference.required() ? "*" : "")
+                    .append(" -> ")
+                    .append(reference.targetType())
+                    .append(reference.many() ? "[*]" : "")
+                    .append(' '));
+        contracts.append('\n');
+      }
+      contracts.append('\n');
     }
-    return "Canonical source: combined Ecore metamodel\nRoot EClass: "
-        + schemas.rootType(level)
-        + scoped
-        + "\nCoverage: "
-        + types.length
-        + " candidate EClasses, "
-        + attributeCount
-        + " writable attributes, "
-        + containmentCount
-        + " containments, "
-        + relationshipCount
-        + " writable relationships.\nUse only the EClasses and feature names in these contracts.";
+    return contracts.toString().trim();
   }
 
   private String[] scopedTypeNames(ModelLevel level, List<String> candidateTypes) {
