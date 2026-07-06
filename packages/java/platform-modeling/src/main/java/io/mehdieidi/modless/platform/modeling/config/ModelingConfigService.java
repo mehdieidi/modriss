@@ -574,7 +574,8 @@ public final class ModelingConfigService {
     }
     Map<String, Object> palettes = new LinkedHashMap<>();
     for (Map<String, Object> owner : elements) {
-      if (!hasContainment(owner)) {
+      boolean hasPaletteExtras = !optionalList(owner, "containmentPaletteExtras").isEmpty();
+      if (!hasContainment(owner) && !hasPaletteExtras) {
         continue;
       }
       String ownerType = String.valueOf(owner.get("type"));
@@ -614,6 +615,7 @@ public final class ModelingConfigService {
                     "many",
                     reference.get("many") == null || Boolean.TRUE.equals(reference.get("many")))));
       }
+      paletteTypes.addAll(containmentPaletteExtras(owner, elementsByType, relationshipElementTypes));
       if (!paletteTypes.isEmpty()) {
         palettes.put(
             ownerType,
@@ -623,6 +625,37 @@ public final class ModelingConfigService {
       }
     }
     return palettes;
+  }
+
+  /**
+   * Adds UI-configured palette types for referenced concepts that are edited inside a focus
+   * container even when they are not val-owned by that container.
+   *
+   * @param owner owner element metadata
+   * @param elementsByType element lookup by type
+   * @param relationshipElementTypes relationship object types excluded from palettes
+   * @return extra palette type names
+   */
+  private Set<String> containmentPaletteExtras(
+      Map<String, Object> owner,
+      Map<String, Map<String, Object>> elementsByType,
+      Set<String> relationshipElementTypes) {
+    LinkedHashSet<String> paletteTypes = new LinkedHashSet<>();
+    for (Object item : optionalList(owner, "containmentPaletteExtras")) {
+      String extraType = String.valueOf(item);
+      if (extraType.isBlank()) {
+        continue;
+      }
+      List<String> types =
+          concreteTypesFor(elementsByType, extraType).stream()
+              .filter(
+                  type ->
+                      containmentPaletteElement(
+                          elementsByType.get(type), relationshipElementTypes))
+              .toList();
+      paletteTypes.addAll(types);
+    }
+    return paletteTypes;
   }
 
   private List<String> concreteTypesFor(

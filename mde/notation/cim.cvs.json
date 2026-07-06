@@ -510,7 +510,8 @@
         "tag": "PROC",
         "lineFields": ["processKind", "criticality", "longRunning"],
         "detailFields": ["processKind", "criticality", "longRunning"]
-      }
+      },
+      "containmentPaletteExtras": ["DecisionTable", "DecisionRule"]
     },
     {
       "type": "ProcessStep",
@@ -1189,7 +1190,8 @@
         "tag": "TABLE",
         "lineFields": ["hitPolicy", "defaultOutcome", "complete"],
         "detailFields": ["hitPolicy", "defaultOutcome", "complete"]
-      }
+      },
+      "containmentPaletteExtras": ["DecisionRule"]
     },
     {
       "type": "DecisionRule",
@@ -1199,6 +1201,7 @@
       "color": "#EA580C",
       "category": "Policy and Decision",
       "containedOnly": true,
+      "creatable": true,
       "primitive": "decision-rule-row",
       "card": {
         "tag": "RULE",
@@ -1765,25 +1768,9 @@
         "ExternalInteractionStep",
         "DecisionStep",
         "WaitStep",
-        "DecisionTable",
-        "DecisionRule",
         "ProcessTransition"
       ],
-      "palette": [
-        "BusinessProcess",
-        "StartStep",
-        "EndStep",
-        "CommandStep",
-        "QueryStep",
-        "EventStep",
-        "PolicyStep",
-        "HumanTaskStep",
-        "ExternalInteractionStep",
-        "DecisionStep",
-        "WaitStep",
-        "TemporalConstraint",
-        "ExceptionScenario"
-      ],
+      "palette": ["BusinessProcess"],
       "relationshipKinds": ["TRANSITION", "USES", "RESULTS_IN", "TRIGGERS"],
       "layoutHint": "PROCESS"
     },

@@ -767,8 +767,6 @@
         "ExternalInteractionStep",
         "DecisionStep",
         "WaitStep",
-        "DecisionTable",
-        "DecisionRule",
         "ProcessTransition"
       ],
       "palette": ["BusinessProcess"],
@@ -1391,6 +1389,7 @@
         "shape": "process-container",
         "lineFields": ["processKind", "criticality", "longRunning"]
       },
+      "containmentPaletteExtras": ["DecisionTable", "DecisionRule"],
       "processPhaseId": "cim.ph4",
       "processTaskIds": ["cim.ph4.st2.ss1.t1"],
       "processStageId": "cim.ph4.st2.ss1"
@@ -2118,8 +2117,9 @@
         "shape": "decision-table",
         "lineFields": ["hitPolicy", "defaultOutcome", "complete"]
       },
+      "containmentPaletteExtras": ["DecisionRule"],
       "processPhaseId": "cim.ph4",
-      "processTaskIds": ["cim.ph4.st2.ss2.t1"],
+      "processTaskIds": ["cim.ph4.st2.ss2.t1", "cim.ph4.st2.ss1.t1"],
       "processStageId": "cim.ph4.st2.ss2"
     },
     {
@@ -2135,8 +2135,9 @@
         "lineFields": ["priorityOrder", "condition", "outcome"]
       },
       "containedOnly": true,
+      "creatable": true,
       "processPhaseId": "cim.ph4",
-      "processTaskIds": ["cim.ph4.st2.ss2.t1"],
+      "processTaskIds": ["cim.ph4.st2.ss2.t1", "cim.ph4.st2.ss1.t1"],
       "processStageId": "cim.ph4.st2.ss2"
     },
     {

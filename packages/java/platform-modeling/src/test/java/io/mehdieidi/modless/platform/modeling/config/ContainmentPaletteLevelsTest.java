@@ -22,6 +22,10 @@ class ContainmentPaletteLevelsTest {
     assertPaletteExcludes(cim, "business-process", "StartStep", "EndStep");
     assertPaletteIncludes(cim, "business-process", "BusinessProcess");
     assertContainmentPaletteIncludes(cim, "BusinessProcess", "StartStep");
+    assertPaletteExcludes(cim, "business-process", "DecisionTable", "DecisionRule");
+    assertContainmentPaletteIncludes(cim, "BusinessProcess", "DecisionTable");
+    assertContainmentPaletteIncludes(cim, "BusinessProcess", "DecisionRule");
+    assertContainmentPaletteIncludes(cim, "DecisionTable", "DecisionRule");
   }
 
   @Test
