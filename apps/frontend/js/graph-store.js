@@ -739,6 +739,16 @@ function rebuildGraphIndexes(graph) {
   });
 
   graph.elementsById.forEach((element, elementId) => {
+    const ownerId = String(element.__ownerId || "").trim();
+    if (ownerId && ownerId !== elementId && graph.elementsById.has(ownerId)) {
+      addToIndex(graph.containmentByParent, ownerId, elementId);
+      if (!graph.parentByChild.has(elementId)) {
+        graph.parentByChild.set(elementId, ownerId);
+      }
+    }
+  });
+
+  graph.elementsById.forEach((element, elementId) => {
     const contextName = String(element?.contextName || element?.context || "").trim();
     if (!contextName) {
       return;
@@ -1001,6 +1011,56 @@ function containedDescendantElementIds(graph, rootElementId) {
   return result;
 }
 
+function semanticParentId(graph, elementId, element) {
+  const indexedParent = graph.parentByChild?.get(elementId);
+  if (indexedParent && graph.elementsById.has(indexedParent)) {
+    return String(indexedParent);
+  }
+  const ownerId = String(element?.__ownerId || "").trim();
+  return ownerId && graph.elementsById.has(ownerId) ? ownerId : "";
+}
+
+function isDescendantOfScopeRoot(graph, elementId, scopeRootId) {
+  const rootId = String(scopeRootId || "").trim();
+  if (!rootId) {
+    return false;
+  }
+  if (elementId === rootId) {
+    return true;
+  }
+  let current = elementId;
+  const seen = new Set();
+  while (current) {
+    const parentId = semanticParentId(graph, current, graph.elementsById.get(current));
+    if (!parentId) {
+      return false;
+    }
+    if (parentId === rootId) {
+      return true;
+    }
+    if (seen.has(parentId)) {
+      return false;
+    }
+    seen.add(parentId);
+    current = parentId;
+  }
+  return false;
+}
+
+function shouldExcludeContainedElementFromView(graph, view, elementId, element) {
+  if (isContainerScopeView(view)) {
+    return false;
+  }
+  if (!semanticParentId(graph, elementId, element)) {
+    return false;
+  }
+  const scopeRootId = String(view?.scope?.rootElementId || "").trim();
+  if (scopeRootId && isDescendantOfScopeRoot(graph, elementId, scopeRootId)) {
+    return false;
+  }
+  return true;
+}
+
 export function selectElementIdsForView(graph, view, typeKey) {
   const hidden = new Set(safeArray(view?.hidden?.elementIds));
   const pinned = new Set(safeArray(view?.pinnedElementIds).map(String));
@@ -1054,6 +1114,9 @@ export function selectElementIdsForView(graph, view, typeKey) {
     if (!element || hidden.has(elementId)) {
       return;
     }
+    if (shouldExcludeContainedElementFromView(graph, view, elementId, element)) {
+      return;
+    }
     if (hasExplicitNodes) {
       selected.push(elementId);
       return;
@@ -1070,7 +1133,16 @@ export function selectElementIdsForView(graph, view, typeKey) {
     }
   });
   if (!selected.length && typeKey && !filterTypes.size && !view?.scope?.rootElementId) {
-    return [...graph.elementsById.keys()].filter((elementId) => !hidden.has(elementId));
+    return [...graph.elementsById.keys()].filter(
+      (elementId) =>
+        !hidden.has(elementId) &&
+        !shouldExcludeContainedElementFromView(
+          graph,
+          view,
+          elementId,
+          graph.elementsById.get(elementId),
+        ),
+    );
   }
   const selectedSet = new Set(selected);
   if (!isContainerScope) {
@@ -1097,11 +1169,13 @@ export function selectElementIdsForView(graph, view, typeKey) {
       (relationshipId) => {
         const relationship = graph.relationshipsById.get(relationshipId);
         [relationship?.sourceElementId, relationship?.targetElementId].forEach((elementId) => {
+          const endpoint = graph.elementsById.get(elementId);
           if (
             elementId &&
-            graph.elementsById.has(elementId) &&
+            endpoint &&
             !hidden.has(elementId) &&
-            !selectedSet.has(elementId)
+            !selectedSet.has(elementId) &&
+            !shouldExcludeContainedElementFromView(graph, view, elementId, endpoint)
           ) {
             selectedSet.add(elementId);
             selected.push(elementId);
