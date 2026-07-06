@@ -51,15 +51,15 @@ Every EClass receives a `visualRole`:
 CIM communicates business meaning and discovery decisions. Its visual language therefore favors
 recognizable domain and event-storming notation over implementation detail.
 
-| Role                | Main choices and examples                                                                                                                                                        |
-| ------------------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Containers          | `BusinessCapability`, `BoundedContextCandidate`, `AggregateCandidate`, and `BusinessProcess` are openable context/process containers.                                            |
-| Concept nodes       | Goals, requirements, actors, domain entities, value objects, commands, queries, events, policies, risks, assumptions, and constraints are cards or meaning-specific nodes.       |
-| Behavioral notation | Cards carry configured semantic-shape glyphs: commands use lozenges, queries trapezoids, events hexagons, errors octagons, decisions diamonds, and start/end concepts circles.   |
-| Semantic edges      | `DomainRelationship`, `CapabilityDependency`, `RequirementLink`, `GoalSatisfactionLink`, and `ProcessTransition` are presented as edges rather than duplicate nodes.             |
-| Reference edges     | Examples include `SUPPORTS`, `CONSTRAINS`, `TRIGGERS`, `USES`, `MANAGES`, `ROOT`, and `MEMBER`.                                                                                  |
-| Contained details   | Process steps, decision rules, quality scenarios, acceptance criteria, glossary terms, lifecycle states, and readiness checks use contained rows or drill-down views.            |
-| Complexity views    | Overview, goals/requirements, capability, domain model, business process, actor map, aggregate lifecycle, event storming, policy/decision, governance/risk, and traceability.    |
+| Role                | Main choices and examples                                                                                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Containers          | `BusinessCapability`, `BoundedContextCandidate`, `AggregateCandidate`, and `BusinessProcess` are openable context/process containers.                                          |
+| Concept nodes       | Goals, requirements, actors, domain entities, value objects, commands, queries, events, policies, risks, assumptions, and constraints are cards or meaning-specific nodes.     |
+| Behavioral notation | Cards carry configured semantic-shape glyphs: commands use lozenges, queries trapezoids, events hexagons, errors octagons, decisions diamonds, and start/end concepts circles. |
+| Semantic edges      | `DomainRelationship`, `CapabilityDependency`, `RequirementLink`, `GoalSatisfactionLink`, and `ProcessTransition` are presented as edges rather than duplicate nodes.           |
+| Reference edges     | Examples include `SUPPORTS`, `CONSTRAINS`, `TRIGGERS`, `USES`, `MANAGES`, `ROOT`, and `MEMBER`.                                                                                |
+| Contained details   | Process steps, decision rules, quality scenarios, acceptance criteria, glossary terms, lifecycle states, and readiness checks use contained rows or drill-down views.          |
+| Complexity views    | Overview, goals/requirements, capability, domain model, business process, actor map, aggregate lifecycle, event storming, policy/decision, governance/risk, and traceability.  |
 
 The CIM canvas intentionally uses warm, lightweight notation because CIM models are collaborative
 business artifacts. Meaning is carried by shape, token, label, and edge semantics, not color alone.

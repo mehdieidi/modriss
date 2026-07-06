@@ -218,10 +218,6 @@ export const el = {
   validationSubtitle: document.getElementById("validationSubtitle"),
   validationIssues: document.getElementById("validationIssues"),
   validationCloseBtn: document.getElementById("validationCloseBtn"),
-  boundedContextNameOverlay: document.getElementById("boundedContextNameOverlay"),
-  boundedContextNameInput: document.getElementById("boundedContextNameInput"),
-  boundedContextNameSaveBtn: document.getElementById("boundedContextNameSaveBtn"),
-  boundedContextNameCancelBtn: document.getElementById("boundedContextNameCancelBtn"),
   notFoundOverlay: document.getElementById("notFoundOverlay"),
   notFoundGoHomeBtn: document.getElementById("notFoundGoHomeBtn"),
 };

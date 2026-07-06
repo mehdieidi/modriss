@@ -118,13 +118,12 @@ function buildRenderState() {
     selection: {
       nodeId: state.selectedNodeId,
       edgeId: state.selectedConnectionId,
-      contextName: state.selectedBoundedContextName,
     },
     hovered: {
       nodeId: editor?.hoveredNodeId || null,
       edgeId: editor?.hoveredEdgeId || null,
     },
-    selectedContextName: state.selectedBoundedContextName || "",
+    selectedContextName: "",
     connectionDrag: state.linkDrag,
     overlays: buildOverlays(),
   };

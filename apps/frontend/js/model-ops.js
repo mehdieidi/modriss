@@ -25,7 +25,6 @@ import {
   routePointOnIconAnchor,
 } from "./graph-editor/icon-node-metrics.js";
 import {
-  contextNameFromNode,
   fitViewportToDiagram,
   renderDiagram,
   renderDiagramAsync,
@@ -88,23 +87,6 @@ function defaultModelName(typeKey = state.activeType) {
 
 function isModelingType(typeKey = state.activeType) {
   return isModelingLevel(typeKey);
-}
-
-function supportsBoundedContext(typeKey = state.activeType) {
-  try {
-    return Boolean(modelingLevelConfig(typeKey).boundedContext?.enabled);
-  } catch {
-    return false;
-  }
-}
-
-function resetBoundedContextState() {
-  state.boundedContextCreateMode = false;
-  state.boundedContextDraftNodeIds = new Set();
-  state.boundedContextDraftName = "";
-  state.boundedContextViewMode = "normal";
-  state.activeBoundedContextName = "";
-  state.selectedBoundedContextName = null;
 }
 
 async function centerCurrentDiagram({ fit = true } = {}) {
@@ -790,9 +772,6 @@ export async function loadModelById(
   );
   await yieldToMain();
   state.diagram = materializeActiveView();
-  if (supportsBoundedContext(typeKey)) {
-    resetBoundedContextState();
-  }
   if (state.tabs[typeKey]) {
     state.tabs[typeKey].modelId = record.id;
     state.tabs[typeKey].modelRevision = state.modelRevision;
@@ -1097,66 +1076,6 @@ function moveLayoutNodes(nodes, dx, dy, movedNodeIds) {
     node.meta.y = node.y;
     movedNodeIds.add(node.id);
   });
-}
-
-function _separateBoundedContextOverlaps(nodeSize) {
-  const movedNodeIds = new Set();
-  if (!supportsBoundedContext() || state.diagram.nodes.length < 2) {
-    return movedNodeIds;
-  }
-  const contextGroups = new Map();
-  state.diagram.nodes.forEach((node) => {
-    const contextName = contextNameFromNode(node);
-    if (!contextName) {
-      return;
-    }
-    if (!contextGroups.has(contextName)) {
-      contextGroups.set(contextName, []);
-    }
-    contextGroups.get(contextName).push(node);
-  });
-  if (!contextGroups.size) {
-    return movedNodeIds;
-  }
-
-  const gap = 88;
-  for (let pass = 0; pass < 6; pass += 1) {
-    let changed = false;
-    for (const [contextName, contextNodes] of contextGroups.entries()) {
-      const shiftedTargets = new Set();
-      const contextBounds = groupRect(contextNodes, nodeSize, {
-        padX: 22,
-        padY: 26,
-      });
-      for (const node of state.diagram.nodes) {
-        const nodeContext = contextNameFromNode(node);
-        if (nodeContext === contextName) {
-          continue;
-        }
-        const targetKey = nodeContext || node.id;
-        if (shiftedTargets.has(targetKey)) {
-          continue;
-        }
-        const targetNodes =
-          nodeContext && contextGroups.has(nodeContext) ? contextGroups.get(nodeContext) : [node];
-        const targetBounds =
-          targetNodes.length > 1
-            ? groupRect(targetNodes, nodeSize, { padX: 22, padY: 26 })
-            : nodeRect(node, nodeSize);
-        if (!rectsOverlap(contextBounds, targetBounds)) {
-          continue;
-        }
-        const dx = contextBounds.maxX - targetBounds.minX + gap;
-        moveLayoutNodes(targetNodes, dx, 0, movedNodeIds);
-        shiftedTargets.add(targetKey);
-        changed = true;
-      }
-    }
-    if (!changed) {
-      break;
-    }
-  }
-  return movedNodeIds;
 }
 
 function spreadEdgeAnchorsForNode(node, edges, nodeSize) {
@@ -1569,9 +1488,6 @@ export async function switchTab(type) {
   }
 
   state.activeType = type;
-  if (!supportsBoundedContext(type)) {
-    resetBoundedContextState();
-  }
   Array.from(el.modelTabs.querySelectorAll(".tab")).forEach((t) =>
     t.classList.toggle("active", t.dataset.type === type),
   );
@@ -1615,9 +1531,6 @@ export async function switchTab(type) {
   state.modelRevision = tabState.modelRevision || 0;
   state.baseModel = tabState.baseModel;
   state.diagram = tabState.diagram || emptyDiagram(type);
-  if (supportsBoundedContext(type)) {
-    resetBoundedContextState();
-  }
   restoreTabGraphState(type);
   materializeActiveView();
   clearValidationIssues({ keepPanelState: false });
@@ -1971,9 +1884,6 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
       body.name || defaultModelName(),
     );
     state.diagram = materializeActiveView();
-    if (supportsBoundedContext()) {
-      resetBoundedContextState();
-    }
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].baseModel = structuredClone(state.baseModel);
       state.tabs[state.activeType].diagram = structuredClone(state.diagram);

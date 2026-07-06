@@ -711,11 +711,6 @@ export async function loadProject(project) {
     state.modelRevision = state.tabs[defaultLevel]?.modelRevision || 0;
     state.baseModel = state.tabs[defaultLevel]?.baseModel || null;
     state.diagram = state.tabs[defaultLevel]?.diagram || emptyDiagram(defaultLevel);
-    state.boundedContextCreateMode = false;
-    state.boundedContextDraftNodeIds = new Set();
-    state.boundedContextDraftName = "";
-    state.boundedContextViewMode = "normal";
-    state.activeBoundedContextName = "";
     restoreTabGraphState(defaultLevel);
     materializeActiveView();
 
@@ -807,11 +802,6 @@ export async function deleteCurrentProject() {
     state.diagram = state.tabs[defaultLevel]?.diagram || emptyDiagram(defaultLevel);
     state.selectedNodeId = null;
     state.selectedConnectionId = null;
-    state.boundedContextCreateMode = false;
-    state.boundedContextDraftNodeIds = new Set();
-    state.boundedContextDraftName = "";
-    state.boundedContextViewMode = "normal";
-    state.activeBoundedContextName = "";
     restoreTabGraphState(defaultLevel);
     materializeActiveView();
     if (el.projectLabel) {

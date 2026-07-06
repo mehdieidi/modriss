@@ -1917,7 +1917,6 @@ export function updateG6ImpactState() {
     ["impact-upstream", upstream],
     ["impact-downstream", downstream],
     ["impact-connected", connected],
-    ["context-draft", state.boundedContextDraftNodeIds || new Set()],
   ].forEach(([flag, ids]) => {
     replaceFlagSet(editor.nodeStateFlags, flag, ids).forEach((id) => changed.add(id));
   });
@@ -2245,7 +2244,7 @@ export function updateG6ContextBoxes(boxes = null, { useCache = false } = {}) {
     editor.contextBoxesDirty = false;
   }
   renderContextBoxes(editor.graph, resolved, {
-    selectedContextName: state.selectedBoundedContextName,
+    selectedContextName: "",
     onSelect: editor.callbacks?.onContextSelect,
     onOpen: editor.callbacks?.onContextOpen,
   });

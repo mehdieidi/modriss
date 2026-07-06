@@ -3,15 +3,7 @@ import { el } from "./dom.js";
 import { MODEL_TYPES } from "./config.js";
 import { api } from "./api.js";
 import { setStatus } from "./status.js";
-import {
-  contextNameFromNode,
-  deleteBoundedContext,
-  removeElementFromBoundedContext,
-  renameBoundedContext,
-  startConnectionFromNode,
-  syncDiagramRenderer,
-  syncRendererSelection,
-} from "./canvas.js";
+import { startConnectionFromNode, syncDiagramRenderer, syncRendererSelection } from "./canvas.js";
 import { markModelDirty } from "./model-save-ui.js";
 import { isMobileViewport } from "./responsive.js";
 import { syncMobileDockState } from "./mobile-ui.js";
@@ -55,19 +47,6 @@ function safeArray(value) {
 
 function configuredTraceKind() {
   return String(modelingLevelConfig(state.activeType).relationshipSemantics?.traceKind || "");
-}
-
-function boundedContextPanelTypeLabel() {
-  const config = modelingLevelConfig(state.activeType).boundedContext || {};
-  const candidateType = String(config.candidateType || "");
-  if (!candidateType) {
-    return "Context";
-  }
-  try {
-    return modelingElementDefinition(state.activeType, candidateType)?.displayName || candidateType;
-  } catch {
-    return candidateType;
-  }
 }
 
 function isTraceRelationship(relationship) {
@@ -180,7 +159,6 @@ export function openRootModelAttributePanel() {
   state.selectedRootModel = true;
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
-  state.selectedBoundedContextName = null;
   state.selectedConnectionId = null;
 
   el.attrPanelType.textContent = definition?.displayName || rootType || "Model";
@@ -216,7 +194,6 @@ export function openAttributePanel(nodeId) {
   state.selectedRootModel = false;
   state.selectedNodeId = nodeId;
   state.selectedNodeIds = new Set([nodeId]);
-  state.selectedBoundedContextName = null;
   state.selectedConnectionId = null;
 
   el.attrPanelType.textContent = node.type;
@@ -248,7 +225,6 @@ export function closeAttributePanel() {
   state.selectedRootModel = false;
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
-  state.selectedBoundedContextName = null;
   state.selectedConnectionId = null;
   el.attributePanel.classList.add("hidden");
   el.workspace.classList.remove("attr-open");
@@ -265,7 +241,6 @@ export function openConnectionPanel(connectionId) {
   state.selectedRootModel = false;
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
-  state.selectedBoundedContextName = null;
   state.selectedConnectionId = connectionId;
 
   const source = state.nodesById.get(connection.sourceId);
@@ -387,70 +362,6 @@ function renderConfiguredConnectionFields(connection, source, target) {
   appendConfiguredValidationSummary(sections.validation, relationship, semanticType);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
-}
-
-export function openBoundedContextPanel(contextName) {
-  if (!contextName) {
-    return;
-  }
-  state.selectedRootModel = false;
-  state.selectedNodeId = null;
-  state.selectedNodeIds = new Set();
-  state.selectedConnectionId = null;
-  state.selectedBoundedContextName = contextName;
-  el.attrPanelType.textContent = boundedContextPanelTypeLabel();
-  el.attrPanelTitle.textContent = contextName;
-  if (el.attrPanelApplyBtn) {
-    el.attrPanelApplyBtn.hidden = false;
-    el.attrPanelApplyBtn.textContent = "✓ Rename Context";
-  }
-  if (el.attrPanelDeleteBtn) {
-    el.attrPanelDeleteBtn.hidden = false;
-    el.attrPanelDeleteBtn.textContent = "🗑 Delete Context";
-  }
-  el.attrPanelBody.innerHTML = "";
-  resetAttrFieldIds();
-  el.attrPanelBody.appendChild(buildAttrField("contextName", contextName, { fieldType: "text" }));
-  const members = [...state.diagram.nodes].filter(
-    (node) => contextNameFromNode(node) === contextName,
-  );
-  const memberSection = document.createElement("div");
-  memberSection.className = "attr-section bounded-context-members";
-  memberSection.innerHTML = `
-    <div class="attr-section-title">Members</div>
-    ${
-      members.length
-        ? members
-            .map(
-              (node) => `
-      <div class="bounded-context-member-row">
-        <span>${escapeHtml(node.label || node.id)} <em>${escapeHtml(node.type)}</em></span>
-        <button class="btn btn-secondary btn-sm"
-                data-remove-context-member="${escapeHtml(node.id)}"
-                type="button">Remove</button>
-      </div>`,
-            )
-            .join("")
-        : `<div class="attr-empty">No elements assigned.</div>`
-    }`;
-  el.attrPanelBody.appendChild(memberSection);
-  memberSection.querySelectorAll("[data-remove-context-member]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const nodeId = button.dataset.removeContextMember;
-      if (removeElementFromBoundedContext(nodeId, contextName)) {
-        openBoundedContextPanel(contextName);
-      }
-    });
-  });
-  el.modelTreePanel?.classList.add("hidden");
-  el.attributePanel.classList.remove("hidden");
-  el.workspace.classList.remove("views-open", "impact-open");
-  el.workspace.classList.add("attr-open");
-  if (isMobileViewport()) {
-    el.workspace.classList.remove("mobile-left-open");
-    el.workspace.classList.add("mobile-right-open");
-    syncMobileDockState();
-  }
 }
 
 // ── Render attribute form fields ──────────────────────────────────────────────
@@ -2105,23 +2016,6 @@ export function applyAttributePanel() {
     applyRootModelPanel();
     return;
   }
-  if (state.selectedBoundedContextName) {
-    const currentName = state.selectedBoundedContextName;
-    const input = el.attrPanelBody.querySelector('[data-attr-key="contextName"]');
-    const nextName = String(input?.value ?? "").trim();
-    if (!nextName) {
-      setStatus("Bounded context name cannot be empty");
-      return;
-    }
-    if (!renameBoundedContext(currentName, nextName)) {
-      return;
-    }
-    state.selectedBoundedContextName = nextName;
-    el.attrPanelTitle.textContent = nextName;
-    markModelDirty();
-    setStatus(`Renamed bounded context to "${nextName}"`);
-    return;
-  }
   if (state.selectedConnectionId) {
     applyConnectionPanel();
     return;
@@ -2351,25 +2245,6 @@ function synchronizeOppositeReferences(node) {
 }
 
 export async function deleteSelection() {
-  if (state.selectedBoundedContextName) {
-    const contextName = state.selectedBoundedContextName;
-    const confirmed = await confirmAction({
-      title: "Delete Bounded Context",
-      message: `Delete bounded context "${contextName}"?`,
-      confirmLabel: "Delete",
-      danger: true,
-    });
-    if (!confirmed) {
-      return;
-    }
-    if (!deleteBoundedContext(contextName)) {
-      return;
-    }
-    closeAttributePanel();
-    markModelDirty();
-    setStatus(`Deleted bounded context "${contextName}"`);
-    return;
-  }
   if (state.selectedConnectionId) {
     await deleteSelectedConnection();
     return;

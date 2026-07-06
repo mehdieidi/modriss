@@ -430,11 +430,13 @@
     },
     {
       "type": "BoundedContextCandidate",
-      "label": "Bounded Context Candidate",
-      "displayName": "Bounded Context Candidate",
+      "label": "Bounded Context",
+      "displayName": "Bounded Context",
       "icon": "select_window",
       "color": "#0F766E",
       "category": "Capability",
+      "creatable": true,
+      "visualRole": "container",
       "primitive": "context-container",
       "card": {
         "tag": "CTX",
@@ -2008,34 +2010,8 @@
     "veryDenseEdgeLabelsAtOrAbove": 1.7
   },
   "boundedContext": {
-    "enabled": true,
-    "candidateType": "BoundedContextCandidate",
-    "membershipFeatures": [
-      {
-        "sourceType": "BusinessCapability",
-        "feature": "capabilities"
-      },
-      {
-        "sourceType": "DomainEntity",
-        "feature": "entities"
-      },
-      {
-        "sourceType": "Command",
-        "feature": "commands"
-      },
-      {
-        "sourceType": "Query",
-        "feature": "queries"
-      },
-      {
-        "sourceType": "BusinessEvent",
-        "feature": "events"
-      },
-      {
-        "sourceType": "Policy",
-        "feature": "policies"
-      }
-    ]
+    "enabled": false,
+    "candidateType": "BoundedContextCandidate"
   },
   "complexityManagement": [
     {

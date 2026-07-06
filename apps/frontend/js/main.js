@@ -1115,7 +1115,7 @@ function bindEvents() {
     ) {
       return;
     }
-    if (!state.selectedNodeId && !state.selectedConnectionId && !state.selectedBoundedContextName) {
+    if (!state.selectedNodeId && !state.selectedConnectionId) {
       return;
     }
     event.preventDefault();

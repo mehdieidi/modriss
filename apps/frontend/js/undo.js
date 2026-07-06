@@ -171,7 +171,6 @@ export function applyDiagramUndoSnapshot(snapshot) {
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = null;
-  state.selectedBoundedContextName = null;
   state.inlineLabelEditNodeId = null;
   if (state.tabs[snapshot.typeKey]) {
     state.tabs[snapshot.typeKey].modelId = snapshot.modelId;

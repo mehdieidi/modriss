@@ -17,12 +17,9 @@ import { syncMobileDockState } from "./mobile-ui.js";
 import {
   activeCanvasFocus,
   canvasFocusLabel,
-  closeBoundedContextSpecialView,
   closeCanvasFocus,
-  finalizeBoundedContextDraft,
   fitViewportToDiagram,
   renderDiagramAsync,
-  setContextCreateMode,
 } from "./canvas.js";
 
 let renderDiagramCallback = null;
@@ -167,20 +164,15 @@ function viewMatchesLevel(view) {
   return !level || aliases.includes(level);
 }
 
-function supportsBoundedContext() {
-  try {
-    return Boolean(modelingLevelConfig(state.activeType).boundedContext?.enabled);
-  } catch {
-    return false;
-  }
-}
-
-function boundedContextType() {
-  try {
-    return String(modelingLevelConfig(state.activeType).boundedContext?.candidateType || "");
-  } catch {
+function canvasFocusToolMarkup() {
+  if (!activeCanvasFocus()) {
     return "";
   }
+  return `<div class="workbench-context-actions workbench-focus-actions">
+      <button class="sidebar-inline-action context-action-primary"
+              id="canvasFocusBackBtn" type="button">Back</button>
+      <span class="workbench-focus-label">${escapeHtml(canvasFocusLabel())}</span>
+    </div>`;
 }
 
 function metadataViewKeys() {
@@ -248,78 +240,6 @@ function activeViewLabel() {
     return `No ${state.activeType.toUpperCase()} views`;
   }
   return view.name || view.id;
-}
-
-function normalizeBoundedContextToolState() {
-  if (!supportsBoundedContext()) {
-    state.boundedContextViewMode = "normal";
-    state.activeBoundedContextName = "";
-    state.boundedContextCreateMode = false;
-    state.boundedContextDraftNodeIds = new Set();
-    state.boundedContextDraftName = "";
-    return;
-  }
-  const contextNames = new Set();
-  (state.baseModel?.boundedContexts || []).forEach((context) => {
-    const name = String(context?.name || "").trim();
-    if (name) {
-      contextNames.add(name);
-    }
-  });
-  const candidateType = boundedContextType();
-  (state.diagram?.nodes || []).forEach((node) => {
-    if (candidateType && node.type === candidateType) {
-      const name = String(node.label || node.meta?.name || "").trim();
-      if (name) {
-        contextNames.add(name);
-      }
-      return;
-    }
-    const explicit = String(node.meta?.contextName || "").trim();
-    if (explicit) {
-      contextNames.add(explicit);
-    }
-  });
-  if (state.boundedContextViewMode === "overview" && !contextNames.size) {
-    state.boundedContextViewMode = "normal";
-    state.activeBoundedContextName = "";
-  }
-  if (state.boundedContextViewMode === "focus") {
-    const activeName = String(state.activeBoundedContextName || "").trim();
-    const exists = contextNames.has(activeName);
-    if (!activeName || !exists) {
-      state.boundedContextViewMode = "normal";
-      state.activeBoundedContextName = "";
-    }
-  }
-}
-
-function boundedContextToolMarkup() {
-  if (activeCanvasFocus()) {
-    return `<div class="workbench-context-actions workbench-focus-actions">
-      <button class="sidebar-inline-action context-action-primary"
-              id="canvasFocusBackBtn" type="button">Back</button>
-      <span class="workbench-focus-label">${escapeHtml(canvasFocusLabel())}</span>
-    </div>`;
-  }
-  if (!supportsBoundedContext()) {
-    return "";
-  }
-  if (state.boundedContextViewMode !== "normal") {
-    return `<div class="workbench-context-actions">
-      <button class="sidebar-inline-action context-action-primary"
-              id="boundedContextBackBtn" type="button">Back</button>
-    </div>`;
-  }
-  if (state.boundedContextCreateMode) {
-    return `<div class="workbench-context-actions">
-      <button class="sidebar-inline-action context-action-primary"
-              id="boundedContextDoneBtn" type="button">Done</button>
-      <button class="sidebar-inline-action" id="boundedContextCancelBtn"
-              type="button">Cancel</button>
-    </div>`;
-  }
-  return "";
 }
 
 function viewMenuMarkup() {
@@ -596,9 +516,8 @@ export function renderViewWorkbench() {
   if (!isModeling) {
     return;
   }
-  normalizeBoundedContextToolState();
   ensureActiveGraphAndViews();
-  const contextTools = boundedContextToolMarkup();
+  const contextTools = canvasFocusToolMarkup();
   panel.innerHTML = `
     <div class="model-workbench-commandbar">
       <div class="workbench-section workbench-view-section">
@@ -802,24 +721,9 @@ function bindWorkbenchEvents() {
       event.stopPropagation();
       return;
     }
-    if (target?.closest("#boundedContextBackBtn")) {
-      closeBoundedContextSpecialView();
-      renderViewWorkbench();
-      return;
-    }
     if (target?.closest("#canvasFocusBackBtn")) {
       closeCanvasFocus();
       renderViewWorkbench();
-      return;
-    }
-    if (target?.closest("#boundedContextDoneBtn")) {
-      void finalizeBoundedContextDraft().then(renderViewWorkbench);
-      return;
-    }
-    if (target?.closest("#boundedContextCancelBtn")) {
-      setContextCreateMode(false);
-      renderViewWorkbench();
-      setStatus("Bounded context assignment canceled");
       return;
     }
     const selectedView = target?.closest("[data-view-option]")?.dataset?.viewOption;

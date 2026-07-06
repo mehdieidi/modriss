@@ -38,12 +38,7 @@ import { setStatus } from "./status.js";
 // NOTE: These imports form intentional circular references (ES module live bindings).
 // All functions are only called at runtime (event handlers / async), never at module init.
 import { markModelDirty } from "./model-save-ui.js";
-import {
-  closeAttributePanel,
-  openAttributePanel,
-  openBoundedContextPanel,
-  openConnectionPanel,
-} from "./attr-panel.js";
+import { closeAttributePanel, openAttributePanel, openConnectionPanel } from "./attr-panel.js";
 import { fetchImpact } from "./impact.js";
 import {
   captureDiagramUndoSnapshot,
@@ -98,7 +93,6 @@ function configuredRelationshipSemantic(name) {
 
 const DEFAULT_NODE_W = 228;
 const DEFAULT_NODE_H = 112;
-const DEFAULT_BOUNDED_CONTEXT_NAME = "Core";
 const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
 const INTERNAL_TARGET_SUMMARY_PREFIX = "internal-target";
 const edgeIdsByNodeId = new Map(); // nodeId -> Set(edgeId)
@@ -122,21 +116,6 @@ function isFullColorIconSource(src) {
   return /(?:^|\/)aws-[^/]+\.svg(?:[?#].*)?$/i.test(normalized) || /^aws-/i.test(normalized);
 }
 
-function boundedContextConfig() {
-  try {
-    return modelingLevelConfig(state.activeType).boundedContext || {};
-  } catch {
-    return {};
-  }
-}
-
-function supportsBoundedContext() {
-  return Boolean(boundedContextConfig().enabled);
-}
-
-function boundedContextType() {
-  return String(boundedContextConfig().candidateType || "");
-}
 const connectionsById = state.connectionsById;
 let hoveredEdgeId = null;
 let _inlineLabelEditStartLabel = "";
@@ -473,65 +452,6 @@ function clearTransientEdgeLayouts(edgeIds = null) {
   });
 }
 
-function normalizeContextName(value) {
-  return String(value ?? "")
-    .trim()
-    .replace(/\s+/g, " ");
-}
-
-function isValidContextName(value) {
-  return /^[A-Za-z0-9 _-]{1,80}$/.test(value);
-}
-
-function assignContextName(node, contextName) {
-  if (!node || !contextName) {
-    return false;
-  }
-  node.meta = node.meta && typeof node.meta === "object" ? node.meta : {};
-  node.meta.contextName = contextName;
-  syncNodeMetaToGraph(node);
-  return true;
-}
-
-export function contextNameFromNode(node) {
-  const meta = node?.meta || {};
-  const explicit = normalizeContextName(meta.contextName);
-  if (explicit) {
-    return explicit;
-  }
-  const context = meta.context;
-  if (typeof context === "string") {
-    return normalizeContextName(context);
-  }
-  if (context && typeof context === "object") {
-    return normalizeContextName(context.name || context.id || context.$ref);
-  }
-  return "";
-}
-
-function contextNodes(contextName) {
-  return state.diagram.nodes.filter((node) => contextNameFromNode(node) === contextName);
-}
-
-function isBoundedContextNode(node) {
-  const candidateType = boundedContextType();
-  return Boolean(candidateType && node?.type === candidateType);
-}
-
-function boundedContextNameFromContextNode(node) {
-  return normalizeContextName(node?.label || node?.meta?.name || node?.id);
-}
-
-function contextNodeForName(contextName) {
-  const normalized = normalizeContextName(contextName);
-  return (
-    state.diagram.nodes.find(
-      (node) =>
-        isBoundedContextNode(node) && boundedContextNameFromContextNode(node) === normalized,
-    ) || null
-  );
-}
-
 function syncNodeMetaToGraph(node) {
   if (!node?.id || !state.graph?.elementsById) {
     return;
@@ -548,170 +468,6 @@ function syncNodeMetaToGraph(node) {
     x: node.x,
     y: node.y,
   });
-}
-
-function boundedContextNameSet() {
-  const names = new Set();
-  if (!supportsBoundedContext()) {
-    return names;
-  }
-  (state.baseModel?.boundedContexts || []).forEach((context) => {
-    const name = normalizeContextName(context?.name);
-    if (name) {
-      names.add(name);
-    }
-  });
-  state.diagram.nodes.forEach((node) => {
-    if (isBoundedContextNode(node)) {
-      const name = boundedContextNameFromContextNode(node);
-      if (name) {
-        names.add(name);
-      }
-      return;
-    }
-    const name = contextNameFromNode(node);
-    if (name) {
-      names.add(name);
-    }
-  });
-  return names;
-}
-
-function boundsForContextMembers(memberIds = []) {
-  const memberNodes = memberIds
-    .map((nodeId) => state.nodesById.get(nodeId))
-    .filter((node) => node && !isBoundedContextNode(node));
-  if (!memberNodes.length) {
-    return null;
-  }
-  const nodeW = getNodeWidth();
-  const nodeH = getNodeHeight();
-  const minX = Math.min(...memberNodes.map((node) => node.x));
-  const minY = Math.min(...memberNodes.map((node) => node.y));
-  const maxX = Math.max(...memberNodes.map((node) => node.x + nodeW));
-  const maxY = Math.max(...memberNodes.map((node) => node.y + nodeH));
-  return { minX, minY, maxX, maxY };
-}
-
-function contextNodePosition(contextName, memberIds = []) {
-  const bounds = boundsForContextMembers(memberIds);
-  if (bounds) {
-    return {
-      x: Math.max(40, bounds.minX - getNodeWidth() - 70),
-      y: Math.max(40, bounds.minY),
-    };
-  }
-  const existingCount = state.diagram.nodes.filter(isBoundedContextNode).length;
-  const rect = el.canvasViewport?.getBoundingClientRect();
-  const center = rect
-    ? toCanvasCoordinates(rect.left + rect.width / 2, rect.top + rect.height / 2)
-    : { x: 160, y: 140 };
-  return {
-    x: Math.round(center.x + (existingCount % 3) * 220),
-    y: Math.round(center.y + Math.floor(existingCount / 3) * 150),
-  };
-}
-
-function ensureBoundedContextNodeForName(contextName, memberIds = []) {
-  const normalized = normalizeContextName(contextName);
-  const candidateType = boundedContextType();
-  if (!normalized || !supportsBoundedContext() || !candidateType) {
-    return null;
-  }
-  const existing = contextNodeForName(normalized);
-  if (existing) {
-    return existing;
-  }
-  const position = contextNodePosition(normalized, memberIds);
-  const node = getDefaultNode(state.activeType, candidateType, position.x, position.y);
-  node.label = normalized;
-  node.meta.name = normalized;
-  node.meta.label = normalized;
-  node.meta.languageBoundary ??= "";
-  node.meta.ownershipBoundary ??= "";
-  node.meta.externalIntegrationBoundary ??= false;
-  state.diagram.nodes.push(node);
-  addNodeToGraphAndActiveView(node);
-  return node;
-}
-
-function ensureBoundedContextNodesForAllNames() {
-  let created = 0;
-  boundedContextNameSet().forEach((contextName) => {
-    const memberIds = contextNodes(contextName).map((node) => node.id);
-    if (
-      !contextNodeForName(contextName) &&
-      ensureBoundedContextNodeForName(contextName, memberIds)
-    ) {
-      created += 1;
-    }
-  });
-  if (created) {
-    syncActiveViewFromVisibleGraph();
-  }
-  return created;
-}
-
-function boundedContextFeatureForNode(node) {
-  const rules = Array.isArray(boundedContextConfig().membershipFeatures)
-    ? boundedContextConfig().membershipFeatures
-    : [];
-  return (
-    rules.find((rule) => modelTypeMatches(state.activeType, node, String(rule?.sourceType || "")))
-      ?.feature || ""
-  );
-}
-
-function syncBoundedContextMembershipRefs(contextName) {
-  const contextNode = contextNodeForName(contextName);
-  if (!contextNode) {
-    return;
-  }
-  const refs = {};
-  const configuredFeatures = [
-    ...new Set(
-      safeArray(boundedContextConfig().membershipFeatures)
-        .map((rule) => String(rule?.feature || "").trim())
-        .filter(Boolean),
-    ),
-  ];
-  configuredFeatures.forEach((feature) => {
-    refs[feature] = [];
-  });
-  contextNodes(contextName).forEach((node) => {
-    const feature = boundedContextFeatureForNode(node);
-    if (feature && Object.hasOwn(refs, feature)) {
-      refs[feature].push(node.id);
-    }
-  });
-  contextNode.meta =
-    contextNode.meta && typeof contextNode.meta === "object" ? contextNode.meta : {};
-  Object.assign(contextNode.meta, refs);
-  syncNodeMetaToGraph(contextNode);
-  const graphElement = state.graph?.elementsById?.get(contextNode.id);
-  if (graphElement) {
-    Object.assign(graphElement, refs);
-  }
-}
-
-function nodeVisibleInBoundedContextMode(node) {
-  if (!supportsBoundedContext()) {
-    return true;
-  }
-  if (state.boundedContextViewMode === "overview") {
-    return isBoundedContextNode(node);
-  }
-  if (state.boundedContextViewMode === "focus") {
-    const active = normalizeContextName(state.activeBoundedContextName);
-    return Boolean(active && contextNameFromNode(node) === active);
-  }
-  return !isBoundedContextNode(node);
-}
-
-function _visibleBoundedContextNodeIds() {
-  return new Set(
-    state.diagram.nodes.filter(nodeVisibleInBoundedContextMode).map((node) => node.id),
-  );
 }
 
 function elementType(element) {
@@ -1231,54 +987,11 @@ function nodeVisibleInContainerMode(node) {
 }
 
 function nodeVisibleInCurrentCanvasMode(node) {
-  return nodeVisibleInBoundedContextMode(node) && nodeVisibleInContainerMode(node);
-}
-
-function clearContextDraftSelection() {
-  state.boundedContextDraftNodeIds = new Set();
+  return nodeVisibleInContainerMode(node);
 }
 
 function notifyModelToolsChanged() {
   window.dispatchEvent(new Event("model-tools-state-change"));
-}
-
-function g6ContextBoxes() {
-  if (!supportsBoundedContext() || state.boundedContextViewMode === "overview") {
-    return [];
-  }
-  const byContext = new Map();
-  state.diagram.nodes.forEach((node) => {
-    const contextName = contextNameFromNode(node);
-    if (!contextName) {
-      return;
-    }
-    if (
-      state.boundedContextViewMode === "focus" &&
-      normalizeContextName(state.activeBoundedContextName) !== contextName
-    ) {
-      return;
-    }
-    if (!byContext.has(contextName)) {
-      byContext.set(contextName, []);
-    }
-    byContext.get(contextName).push(node);
-  });
-  const nodeW = getNodeWidth();
-  const nodeH = getNodeHeight();
-  const paddingX = 22;
-  const paddingY = 26;
-  const boxes = [];
-  byContext.forEach((nodes, name) => {
-    if (!nodes.length) {
-      return;
-    }
-    const minX = Math.min(...nodes.map((node) => node.x)) - paddingX;
-    const minY = Math.min(...nodes.map((node) => node.y)) - paddingY;
-    const maxX = Math.max(...nodes.map((node) => node.x + nodeW)) + paddingX;
-    const maxY = Math.max(...nodes.map((node) => node.y + nodeH)) + paddingY;
-    boxes.push({ name, minX, minY, maxX, maxY });
-  });
-  return boxes;
 }
 
 function g6ConnectionTargetState(source, target) {
@@ -1343,9 +1056,7 @@ function ensureCanvas() {
   setCanvasMountOptions({
     mapper: {
       visibleNode: nodeVisibleInCurrentCanvasMode,
-      isContainer: (node) =>
-        isContainerElement(node) && !(supportsBoundedContext() && isBoundedContextNode(node)),
-      contextNameFromNode,
+      isContainer: (node) => isContainerElement(node),
       viewProfile: activeConfiguredViewProfile() || activeView()?.viewpoint || "",
     },
     callbacks: {
@@ -1379,9 +1090,6 @@ function ensureCanvas() {
       },
       connectionTargetState: g6ConnectionTargetState,
       connectionTargetTypes: g6ConnectionTargetTypes,
-      contextBoxes: g6ContextBoxes,
-      onContextSelect: selectBoundedContext,
-      onContextOpen: openBoundedContextFocus,
       onOpenContainer: openG6ContainerTool,
       onViewportChange: () => {
         updateZoomControlLabel();
@@ -1447,201 +1155,6 @@ export function getModelingRendererDebug() {
   };
 }
 
-export function setContextCreateMode(enabled) {
-  const isEnabled = Boolean(enabled && supportsBoundedContext());
-  state.boundedContextCreateMode = isEnabled;
-  if (!isEnabled) {
-    clearContextDraftSelection();
-    state.boundedContextDraftName = "";
-  }
-  renderPalette();
-  applyNodeSelectionStyles();
-  notifyModelToolsChanged();
-}
-
-function startBoundedContextAssignment(contextName) {
-  const normalized = normalizeContextName(contextName);
-  if (!normalized) {
-    return;
-  }
-  if (state.boundedContextCreateMode && state.boundedContextDraftName === normalized) {
-    setContextCreateMode(false);
-    setStatus(`Bounded context "${normalized}" selection canceled`);
-    return;
-  }
-  state.boundedContextDraftName = normalized;
-  state.boundedContextCreateMode = true;
-  state.boundedContextDraftNodeIds = new Set();
-  ensureBaseBoundedContext(normalized);
-  ensureBoundedContextNodeForName(normalized);
-  renderPalette();
-  applyNodeSelectionStyles();
-  notifyModelToolsChanged();
-  setStatus(`Bounded context "${normalized}" is active. Select elements, then Done.`);
-}
-
-function ensureBaseWorkshopBoundedContexts() {
-  if (!state.baseModel || typeof state.baseModel !== "object") {
-    return null;
-  }
-  if (!Array.isArray(state.baseModel.boundedContexts)) {
-    state.baseModel.boundedContexts = [];
-  }
-  return state.baseModel.boundedContexts;
-}
-
-function ensureBaseBoundedContext(contextName) {
-  const contexts = ensureBaseWorkshopBoundedContexts();
-  if (!contexts) {
-    return;
-  }
-  if (contexts.some((context) => normalizeContextName(context?.name) === contextName)) {
-    return;
-  }
-  contexts.push({ name: contextName, ubiquitousLanguage: "Domain language" });
-}
-
-function renameBaseBoundedContext(oldName, nextName) {
-  const contexts = ensureBaseWorkshopBoundedContexts();
-  if (!contexts) {
-    return;
-  }
-  contexts.forEach((context) => {
-    if (normalizeContextName(context?.name) !== oldName) {
-      return;
-    }
-    context.name = nextName;
-  });
-}
-
-function removeBaseBoundedContext(contextName) {
-  const contexts = ensureBaseWorkshopBoundedContexts();
-  if (!contexts) {
-    return;
-  }
-  const kept = contexts.filter((context) => normalizeContextName(context?.name) !== contextName);
-  contexts.length = 0;
-  kept.forEach((context) => contexts.push(context));
-}
-
-function applyBoundedContextToNodes(nodeIds, contextName) {
-  let updated = 0;
-  nodeIds.forEach((nodeId) => {
-    const node = state.nodesById.get(nodeId);
-    if (!node) {
-      return;
-    }
-    if (assignContextName(node, contextName)) {
-      updated += 1;
-    }
-  });
-  if (updated) {
-    ensureBaseBoundedContext(contextName);
-    ensureBoundedContextNodeForName(contextName, nodeIds);
-    syncBoundedContextMembershipRefs(contextName);
-  }
-  return updated;
-}
-
-async function persistActiveWorkbenchOperation(operation) {
-  if (!state.modelId || !operation?.opType) {
-    return false;
-  }
-  return true;
-}
-
-function showBoundedContextNameModal(defaultValue = "") {
-  if (
-    !el.boundedContextNameOverlay ||
-    !el.boundedContextNameInput ||
-    !el.boundedContextNameSaveBtn ||
-    !el.boundedContextNameCancelBtn
-  ) {
-    return Promise.resolve(null);
-  }
-  el.boundedContextNameInput.value = defaultValue;
-  el.boundedContextNameOverlay.classList.remove("hidden");
-  document.body.classList.add("modal-open");
-  el.boundedContextNameInput.focus();
-  el.boundedContextNameInput.select();
-  return new Promise((resolve) => {
-    const close = (value) => {
-      el.boundedContextNameOverlay.classList.add("hidden");
-      document.body.classList.remove("modal-open");
-      el.boundedContextNameSaveBtn.removeEventListener("click", onSave);
-      el.boundedContextNameCancelBtn.removeEventListener("click", onCancel);
-      el.boundedContextNameOverlay.removeEventListener("click", onOverlayClick);
-      el.boundedContextNameInput.removeEventListener("keydown", onKeyDown);
-      resolve(value);
-    };
-    const onSave = () => close(el.boundedContextNameInput.value);
-    const onCancel = () => close(null);
-    const onOverlayClick = (event) => {
-      if (event.target === el.boundedContextNameOverlay) {
-        onCancel();
-      }
-    };
-    const onKeyDown = (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        onSave();
-      } else if (event.key === "Escape") {
-        event.preventDefault();
-        onCancel();
-      }
-    };
-    el.boundedContextNameSaveBtn.addEventListener("click", onSave);
-    el.boundedContextNameCancelBtn.addEventListener("click", onCancel);
-    el.boundedContextNameOverlay.addEventListener("click", onOverlayClick);
-    el.boundedContextNameInput.addEventListener("keydown", onKeyDown);
-  });
-}
-
-export async function finalizeBoundedContextDraft() {
-  const selectedIds = [...state.boundedContextDraftNodeIds];
-  if (!selectedIds.length) {
-    const displayName = modelingLevelConfig(state.activeType).displayName || "model";
-    setStatus(`Select one or more ${displayName} elements first`);
-    return;
-  }
-  const contextOptions = availableBoundedContexts();
-  const presetName = normalizeContextName(state.boundedContextDraftName);
-  const chosen =
-    presetName ||
-    (await showBoundedContextNameModal(contextOptions[0] || DEFAULT_BOUNDED_CONTEXT_NAME));
-  if (chosen === null) {
-    setStatus("Bounded context creation canceled");
-    return;
-  }
-  const contextName = normalizeContextName(chosen);
-  if (!contextName) {
-    setStatus("Bounded context name cannot be empty");
-    return;
-  }
-  if (!isValidContextName(contextName)) {
-    setStatus("Use 1-80 chars: letters, numbers, spaces, '-' or '_'");
-    return;
-  }
-  pushDiagramUndoSnapshot();
-  const updated = applyBoundedContextToNodes(selectedIds, contextName);
-  syncActiveViewFromVisibleGraph();
-  await persistActiveWorkbenchOperation({
-    opType: "BOUNDED_CONTEXT_ASSIGN",
-    viewId: state.views.activeViewId,
-    contextName,
-    elementIds: selectedIds,
-  });
-  state.selectedBoundedContextName = contextName;
-  setContextCreateMode(false);
-  renderDiagram();
-  markModelDirty();
-  notifyModelToolsChanged();
-  openBoundedContextPanel(contextName);
-  setStatus(
-    `Assigned ${updated} element${updated !== 1 ? "s" : ""} to bounded context "${contextName}"`,
-  );
-}
-
 function clearNodeMultiSelection() {
   state.selectedNodeIds = new Set();
 }
@@ -1655,10 +1168,9 @@ function commitNodeLabel(node, rawText) {
   const resolved = next || previous;
   node.label = resolved;
   node.meta = node.meta && typeof node.meta === "object" ? node.meta : {};
-  if (supportsBoundedContext()) {
+  node.meta.name = resolved;
+  if (node.meta.label !== undefined) {
     node.meta.label = resolved;
-  } else {
-    node.meta.name = resolved;
   }
   if (state.selectedNodeId === node.id && el.attrPanelTitle) {
     el.attrPanelTitle.textContent = resolved;
@@ -1668,7 +1180,6 @@ function commitNodeLabel(node, rawText) {
 
 function setNodeMultiSelection(ids) {
   state.selectedNodeIds = new Set(ids);
-  state.selectedBoundedContextName = null;
 }
 
 function deselectEdges() {
@@ -1725,140 +1236,6 @@ function toggleNodeInSelection(nodeId) {
   }
 }
 
-function availableBoundedContexts() {
-  const contexts = new Set();
-  if (supportsBoundedContext()) {
-    (state.baseModel?.boundedContexts || []).forEach((context) => {
-      const name = normalizeContextName(context?.name);
-      if (name) {
-        contexts.add(name);
-      }
-    });
-    state.diagram.nodes.forEach((node) => {
-      if (isBoundedContextNode(node)) {
-        const contextNodeName = boundedContextNameFromContextNode(node);
-        if (contextNodeName) {
-          contexts.add(contextNodeName);
-        }
-        return;
-      }
-      const name = contextNameFromNode(node);
-      if (name) {
-        contexts.add(name);
-      }
-    });
-  }
-  return [...contexts];
-}
-
-export function renameBoundedContext(oldName, nextName) {
-  const normalizedOld = normalizeContextName(oldName);
-  const normalizedNext = normalizeContextName(nextName);
-  if (!normalizedOld || !normalizedNext) {
-    return false;
-  }
-  if (normalizedOld === normalizedNext) {
-    return true;
-  }
-  if (!isValidContextName(normalizedNext)) {
-    setStatus("Use 1-80 chars: letters, numbers, spaces, '-' or '_'");
-    return false;
-  }
-  const nodes = contextNodes(normalizedOld);
-  const contextNode = contextNodeForName(normalizedOld);
-  if (!nodes.length && !contextNode) {
-    setStatus("No elements found for selected bounded context");
-    return false;
-  }
-  pushDiagramUndoSnapshot();
-  nodes.forEach((node) => assignContextName(node, normalizedNext));
-  if (contextNode) {
-    contextNode.meta =
-      contextNode.meta && typeof contextNode.meta === "object" ? contextNode.meta : {};
-    contextNode.label = normalizedNext;
-    contextNode.meta.name = normalizedNext;
-    contextNode.meta.label = normalizedNext;
-    syncNodeMetaToGraph(contextNode);
-  }
-  renameBaseBoundedContext(normalizedOld, normalizedNext);
-  ensureBaseBoundedContext(normalizedNext);
-  syncBoundedContextMembershipRefs(normalizedNext);
-  state.selectedBoundedContextName = normalizedNext;
-  syncDiagramRenderer({});
-  return true;
-}
-
-export function removeElementFromBoundedContext(elementId, contextName) {
-  const normalized = normalizeContextName(contextName);
-  const node = state.diagram.nodes.find((candidate) => candidate.id === elementId);
-  if (!node || !normalized || contextNameFromNode(node) !== normalized) {
-    return false;
-  }
-  pushDiagramUndoSnapshot();
-  if (node.meta && typeof node.meta === "object") {
-    delete node.meta.contextName;
-    if (typeof node.meta.context === "string") {
-      delete node.meta.context;
-    }
-  }
-  const graphElement = state.graph?.elementsById?.get(elementId);
-  if (graphElement) {
-    delete graphElement.contextName;
-    if (typeof graphElement.context === "string") {
-      delete graphElement.context;
-    }
-  }
-  if (!contextNodes(normalized).length && !contextNodeForName(normalized)) {
-    removeBaseBoundedContext(normalized);
-    state.selectedBoundedContextName = null;
-  } else {
-    syncBoundedContextMembershipRefs(normalized);
-  }
-  syncDiagramRenderer({});
-  markModelDirty();
-  setStatus(`Removed ${node.label || node.id} from "${normalized}"`);
-  return true;
-}
-
-export function deleteBoundedContext(contextName) {
-  const normalized = normalizeContextName(contextName);
-  if (!normalized) {
-    return false;
-  }
-  const nodes = contextNodes(normalized);
-  const contextNode = contextNodeForName(normalized);
-  if (!nodes.length && !contextNode) {
-    return false;
-  }
-  pushDiagramUndoSnapshot();
-  nodes.forEach((node) => {
-    if (!node.meta || typeof node.meta !== "object") {
-      return;
-    }
-    if (normalizeContextName(node.meta.contextName) === normalized) {
-      delete node.meta.contextName;
-    }
-    if (
-      typeof node.meta.context === "string" &&
-      normalizeContextName(node.meta.context) === normalized
-    ) {
-      delete node.meta.context;
-    }
-    syncNodeMetaToGraph(node);
-  });
-  if (contextNode) {
-    state.diagram.nodes = state.diagram.nodes.filter((node) => node.id !== contextNode.id);
-    state.diagram.connections = state.diagram.connections.filter(
-      (edge) => edge.sourceId !== contextNode.id && edge.targetId !== contextNode.id,
-    );
-    removeElementFromGraph(contextNode.id);
-  }
-  removeBaseBoundedContext(normalized);
-  state.selectedBoundedContextName = null;
-  syncDiagramRenderer({});
-  return true;
-}
-
 // ── Viewport helpers ──────────────────────────────────────────────────────────
 
 export function toCanvasCoordinates(clientX, clientY) {
@@ -1912,12 +1289,12 @@ function nodeExtent(node, defaultW, defaultH) {
   return { minX: x, minY: y, maxX: x + w, maxY: y + h };
 }
 
-function diagramBounds({ includeContexts = true, forFit = false } = {}) {
+function diagramBounds({ forFit = false } = {}) {
   if (!state.diagram?.nodes?.length) {
     return null;
   }
   if (forFit) {
-    includeContexts = false;
+    // Fit uses node geometry only.
   }
   const nodeW = getNodeWidth();
   const nodeH = getNodeHeight();
@@ -1932,36 +1309,6 @@ function diagramBounds({ includeContexts = true, forFit = false } = {}) {
     maxX = Math.max(maxX, extent.maxX);
     maxY = Math.max(maxY, extent.maxY);
   });
-  if (includeContexts && supportsBoundedContext()) {
-    const byContext = new Map();
-    state.diagram.nodes.forEach((node) => {
-      const contextName = contextNameFromNode(node);
-      if (!contextName) {
-        return;
-      }
-      if (!byContext.has(contextName)) {
-        byContext.set(contextName, []);
-      }
-      byContext.get(contextName).push(node);
-    });
-    byContext.forEach((nodes) => {
-      let contextMinX = Infinity;
-      let contextMinY = Infinity;
-      let contextMaxX = -Infinity;
-      let contextMaxY = -Infinity;
-      nodes.forEach((node) => {
-        const extent = nodeExtent(node, nodeW, nodeH);
-        contextMinX = Math.min(contextMinX, extent.minX);
-        contextMinY = Math.min(contextMinY, extent.minY);
-        contextMaxX = Math.max(contextMaxX, extent.maxX);
-        contextMaxY = Math.max(contextMaxY, extent.maxY);
-      });
-      minX = Math.min(minX, contextMinX - 22);
-      minY = Math.min(minY, contextMinY - 26);
-      maxX = Math.max(maxX, contextMaxX + 22);
-      maxY = Math.max(maxY, contextMaxY + 26);
-    });
-  }
   return {
     minX,
     minY,
@@ -2436,52 +1783,6 @@ function setAllPaletteGroupsCollapsed(groupNames, collapsed) {
       setPaletteGroupCollapsed(groupName, collapsed);
     }
   });
-}
-
-function _createBoundedContextActionControls() {
-  if (!modelingLevelConfig(state.activeType).boundedContext?.enabled) {
-    return [];
-  }
-  const controls = [];
-  if (state.boundedContextViewMode !== "normal") {
-    const back = createPaletteActionButton("Back", {
-      done: true,
-      title: `Return to full ${modelingLevelConfig(state.activeType).displayName || "model"} view`,
-    });
-    back.addEventListener("click", closeBoundedContextSpecialView);
-    controls.push(back);
-  } else {
-    const overview = createPaletteActionButton("Contexts", {
-      title: "Show bounded-context overview",
-    });
-    overview.addEventListener("click", openBoundedContextOverview);
-    controls.push(overview);
-  }
-
-  if (state.boundedContextCreateMode) {
-    const done = createPaletteActionButton("Done", {
-      done: true,
-      compact: true,
-      title: "Create bounded context from selected elements",
-    });
-    done.addEventListener("click", () => {
-      finalizeBoundedContextDraft();
-    });
-    controls.push(done);
-    const cancel = createPaletteActionButton("Cancel", {
-      compact: true,
-      title: "Cancel bounded context assignment",
-    });
-    cancel.addEventListener("click", () => {
-      setContextCreateMode(false);
-      setStatus("Bounded context assignment canceled");
-    });
-    controls.push(cancel);
-  }
-  const row = document.createElement("div");
-  row.className = "palette-context-inline-row";
-  controls.forEach((control) => row.appendChild(control));
-  return [row];
 }
 
 export function renderPalette() {
@@ -3133,38 +2434,9 @@ function eventModifierState(event) {
 }
 
 function handleG6NodeClick(nodeId, event = {}) {
-  if (supportsBoundedContext() && state.boundedContextCreateMode) {
-    const node = state.nodesById.get(nodeId);
-    if (isBoundedContextNode(node)) {
-      return;
-    }
-    const next = new Set(state.boundedContextDraftNodeIds);
-    if (next.has(nodeId)) {
-      next.delete(nodeId);
-    } else {
-      next.add(nodeId);
-    }
-    state.boundedContextDraftNodeIds = next;
-    updateCanvasImpactState();
-    setStatus(`${next.size} element${next.size !== 1 ? "s" : ""} selected for bounded context`);
-    return;
-  }
-
   const modifiers = eventModifierState(event);
   if (modifiers.shiftKey || modifiers.ctrlKey || modifiers.metaKey) {
     toggleNodeInSelection(nodeId);
-    return;
-  }
-  const node = state.nodesById.get(nodeId);
-  if (supportsBoundedContext() && isBoundedContextNode(node)) {
-    if (state.boundedContextViewMode === "overview") {
-      setNodeMultiSelection([nodeId]);
-      selectBoundedContext(boundedContextNameFromContextNode(node));
-      return;
-    }
-    startBoundedContextAssignment(boundedContextNameFromContextNode(node));
-    setNodeMultiSelection([nodeId]);
-    updateCanvasSelection();
     return;
   }
   setNodeMultiSelection([nodeId]);
@@ -3178,10 +2450,6 @@ function handleG6NodeDoubleClick(nodeId, event = {}) {
     return;
   }
   event?.preventDefault?.();
-  if (supportsBoundedContext() && isBoundedContextNode(node)) {
-    openBoundedContextFocus(boundedContextNameFromContextNode(node));
-    return;
-  }
   if (isContainerElement(node)) {
     openContainerFocus(nodeId);
     return;
@@ -3208,7 +2476,6 @@ function handleG6CanvasClick() {
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = null;
-  state.selectedBoundedContextName = null;
   updateCanvasSelection();
 }
 
@@ -3280,11 +2547,6 @@ function startG6ConnectionDrag(sourceId) {
 }
 
 function openG6ContainerTool(nodeId) {
-  const node = state.nodesById.get(nodeId);
-  if (supportsBoundedContext() && isBoundedContextNode(node)) {
-    openBoundedContextFocus(boundedContextNameFromContextNode(node));
-    return;
-  }
   openContainerFocus(nodeId);
 }
 
@@ -3351,75 +2613,6 @@ function activateNode(nodeId) {
 
   setNodeMultiSelection([nodeId]);
   openAttributePanel(nodeId);
-}
-
-function selectBoundedContext(contextName) {
-  const normalized = normalizeContextName(contextName);
-  if (!normalized) {
-    return;
-  }
-  state.selectedBoundedContextName = normalized;
-  state.selectedNodeId = null;
-  state.selectedNodeIds = new Set();
-  state.selectedConnectionId = null;
-  applyNodeSelectionStyles();
-  openBoundedContextPanel(normalized);
-  ensureCanvas();
-  updateCanvasContextBoxes();
-  updateCanvasSelection();
-}
-
-function openBoundedContextFocus(contextName) {
-  const normalized = normalizeContextName(contextName);
-  if (!normalized) {
-    return;
-  }
-  state.boundedContextViewMode = "focus";
-  state.activeBoundedContextName = normalized;
-  state.boundedContextCreateMode = false;
-  clearContextDraftSelection();
-  renderDiagram();
-  notifyModelToolsChanged();
-  setStatus(`Opened bounded context "${normalized}". Use Back to return.`);
-}
-
-export function openBoundedContextOverview() {
-  const createdContextNodes = ensureBoundedContextNodesForAllNames();
-  const hasContextNodes = state.diagram.nodes.some(isBoundedContextNode);
-  if (!hasContextNodes) {
-    state.boundedContextViewMode = "normal";
-    state.activeBoundedContextName = "";
-    state.boundedContextCreateMode = false;
-    clearContextDraftSelection();
-    renderDiagram();
-    notifyModelToolsChanged();
-    setStatus(
-      `No bounded contexts yet. Use New Context or add a ${
-        modelingElementDefinition(state.activeType, boundedContextType())?.displayName ||
-        boundedContextType() ||
-        "context"
-      }.`,
-    );
-    return;
-  }
-  state.boundedContextViewMode = "overview";
-  state.activeBoundedContextName = "";
-  state.boundedContextCreateMode = false;
-  clearContextDraftSelection();
-  renderDiagram();
-  if (createdContextNodes) {
-    markModelDirty();
-  }
-  notifyModelToolsChanged();
-  setStatus("Bounded context overview");
-}
-
-export function closeBoundedContextSpecialView() {
-  state.boundedContextViewMode = "normal";
-  state.activeBoundedContextName = "";
-  renderDiagram();
-  notifyModelToolsChanged();
-  setStatus("Returned to full model view");
 }
 
 // ── Drag-and-drop from palette ────────────────────────────────────────────────

@@ -137,7 +137,6 @@ export function installG6LargeGraphDevHelper({
     state.selectedNodeId = null;
     state.selectedNodeIds = new Set();
     state.selectedConnectionId = null;
-    state.selectedBoundedContextName = null;
     state.viewport.x = 0;
     state.viewport.y = 0;
     state.viewport.scale = 0.55;

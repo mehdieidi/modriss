@@ -4,34 +4,8 @@
     "defaultViewDefinitionId": "business-process"
   },
   "boundedContext": {
-    "enabled": true,
-    "candidateType": "BoundedContextCandidate",
-    "membershipFeatures": [
-      {
-        "sourceType": "BusinessCapability",
-        "feature": "capabilities"
-      },
-      {
-        "sourceType": "DomainEntity",
-        "feature": "entities"
-      },
-      {
-        "sourceType": "Command",
-        "feature": "commands"
-      },
-      {
-        "sourceType": "Query",
-        "feature": "queries"
-      },
-      {
-        "sourceType": "BusinessEvent",
-        "feature": "events"
-      },
-      {
-        "sourceType": "Policy",
-        "feature": "policies"
-      }
-    ]
+    "enabled": false,
+    "candidateType": "BoundedContextCandidate"
   },
   "elementVisualDefaults": {
     "icon": "category",
@@ -1299,11 +1273,13 @@
     },
     {
       "type": "BoundedContextCandidate",
-      "label": "Bounded Context Candidate",
+      "label": "Bounded Context",
       "icon": "select_window",
       "color": "#0F766E",
       "category": "Capability",
-      "displayName": "Bounded Context Candidate",
+      "displayName": "Bounded Context",
+      "creatable": true,
+      "visualRole": "container",
       "notation": {
         "tag": "CTX",
         "shape": "context-container",
