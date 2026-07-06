@@ -2,10 +2,7 @@ import { MODEL_TYPES } from "./config.js";
 import { state } from "./state.js";
 import { api } from "./api.js";
 import { serializeModelAsync } from "./diagram.js";
-import {
-  saveCurrentTabGraphStateAsync,
-  syncActiveViewFromVisibleGraph,
-} from "./graph-store.js";
+import { saveCurrentTabGraphStateAsync, syncActiveViewFromVisibleGraph } from "./graph-store.js";
 import { stringifyJsonAsync, yieldToMain } from "./utils.js";
 
 const MAX_PATCH_OPERATIONS = 500;
@@ -148,11 +145,7 @@ export async function prepareModelForSave({ syncView = true } = {}) {
   return { nextModel, operations };
 }
 
-export async function flushCurrentModelPatch({
-  name,
-  rethrow = false,
-  prepared = null,
-} = {}) {
+export async function flushCurrentModelPatch({ name, rethrow = false, prepared = null } = {}) {
   if (!state.modelId || !MODEL_TYPES[state.activeType]) {
     return false;
   }

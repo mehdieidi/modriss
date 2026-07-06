@@ -6,16 +6,22 @@ export const ICON_NODE_SIZE = { width: ICON_NODE_WIDTH, height: 118 };
 export const ICON_NODE_LOW_SIZE = { width: 88, height: 86 };
 export const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
 
+const ICON_ALIASES = {
+  cancel: "block",
+  layers: "map",
+};
+
 export function resolveIconSource(icon) {
   const normalized = String(icon || "").trim();
   if (!normalized) {
     return "";
   }
-  if (normalized.startsWith("/") || normalized.startsWith(".") || normalized.endsWith(".svg")) {
-    return normalized;
+  const resolved = ICON_ALIASES[normalized] || normalized;
+  if (resolved.startsWith("/") || resolved.startsWith(".") || resolved.endsWith(".svg")) {
+    return resolved;
   }
-  if (/^[a-z0-9_-]+$/i.test(normalized)) {
-    return `/assets/icons/${normalized}.svg`;
+  if (/^[a-z0-9_-]+$/i.test(resolved)) {
+    return `/assets/icons/${resolved}.svg`;
   }
   return "";
 }

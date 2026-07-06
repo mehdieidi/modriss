@@ -196,15 +196,15 @@ foreach ($literalValue in @("EMERGENCY_STOP", "THERMAL_LIMIT", "INTERLOCK_OPEN",
   Set-Attribute $literal "rationale" "Controller event contract."
   [void]$signalTypeField.AppendChild($literal)
 }
-Add-SchemaField $signalSchema "field-signal-value" "measuredValue" "NUMBER" $true $true
-Add-SchemaField $signalSchema "field-signal-unit" "unit" "STRING" $true $false
-Add-SchemaField $signalSchema "field-signal-time" "observedAt" "DATETIME" $true $false
+$null = Add-SchemaField $signalSchema "field-signal-value" "measuredValue" "NUMBER" $true $true
+$null = Add-SchemaField $signalSchema "field-signal-unit" "unit" "STRING" $true $false
+$null = Add-SchemaField $signalSchema "field-signal-time" "observedAt" "DATETIME" $true $false
 
 $resolutionSchema = Find-ByName "schemas" "MaintenanceResolution Object Schema"
-Add-SchemaField $resolutionSchema "field-resolution-diagnosis" "diagnosis" "STRING" $true $true
-Add-SchemaField $resolutionSchema "field-resolution-action" "repairAction" "STRING" $true $true
-Add-SchemaField $resolutionSchema "field-resolution-check" "independentCheckPassed" "BOOLEAN" $true $false
-Add-SchemaField $resolutionSchema "field-resolution-time" "verifiedAt" "DATETIME" $true $false
+$null = Add-SchemaField $resolutionSchema "field-resolution-diagnosis" "diagnosis" "STRING" $true $true
+$null = Add-SchemaField $resolutionSchema "field-resolution-action" "repairAction" "STRING" $true $true
+$null = Add-SchemaField $resolutionSchema "field-resolution-check" "independentCheckPassed" "BOOLEAN" $true $false
+$null = Add-SchemaField $resolutionSchema "field-resolution-time" "verifiedAt" "DATETIME" $true $false
 
 $operationsApi = Find-ByName "apis" "Equipment Operations Context Service API"
 $qualificationApi = Find-ByName "apis" "Safety Qualification Context Service API"
@@ -257,7 +257,7 @@ foreach ($workflow in @($root.SelectNodes("workflows"))) {
   Set-Attribute $workflow "lifecycleStatus" "APPROVED"
   Set-Attribute $workflow "reviewStatus" "reviewed"
   Set-Attribute $workflow "manuallyMaintained" "true"
-  foreach ($handler in @($workflow.SelectNodes("states/catchHandlers"))) {
+  foreach ($handler in @($workflow.SelectNodes("steps/catchHandlers"))) {
     if ([string]::IsNullOrWhiteSpace($handler.GetAttribute("errorSelector"))) {
       Set-Attribute $handler "errorSelector" "ModeledBusinessException"
     }

@@ -138,17 +138,6 @@ enum WorkflowKind {
   EVENT_ROUTING_PROCESS;
 }
 
-enum WorkflowStateKind {
-  TASK;
-  CHOICE;
-  PARALLEL;
-  MAP;
-  WAIT;
-  PASS;
-  SUCCESS;
-  FAILURE;
-}
-
 enum IdentityKind {
   USER_DIRECTORY;
   FEDERATED_IDENTITY;

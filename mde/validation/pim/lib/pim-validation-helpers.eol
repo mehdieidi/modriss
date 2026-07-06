@@ -81,8 +81,11 @@ operation reachableFunctionIds() : Set {
   for (routeItem in PIM!ApiRoute.all.select(r | r.functionIntegration.isDefined())) {
     ids.add(routeItem.functionIntegration.`id`);
   }
-  for (stateItem in PIM!WorkflowState.all.select(s | s.invokesFunction.isDefined())) {
+  for (stateItem in PIM!TaskStep.all.select(s | s.invokesFunction.isDefined())) {
     ids.add(stateItem.invokesFunction.`id`);
+  }
+  for (choiceItem in PIM!ChoiceStep.all.select(s | s.invokesFunction.isDefined())) {
+    ids.add(choiceItem.invokesFunction.`id`);
   }
   for (channelItem in PIM!EventChannel.all) {
     for (functionItem in channelItem.producers) {
@@ -218,7 +221,7 @@ operation PIM!EventChannel carriesPersonalData() : Boolean {
 
 @cached
 /** Computes outgoing transitions. */
-operation PIM!WorkflowState outgoingTransitions() : Collection {
+operation PIM!WorkflowStep outgoingTransitions() : Collection {
   var transitions = workflowTransitionsBySourceId().get(self.`id`);
   if (transitions.isUndefined()) {
     return Sequence{};
@@ -228,7 +231,7 @@ operation PIM!WorkflowState outgoingTransitions() : Collection {
 
 @cached
 /** Computes incoming transitions. */
-operation PIM!WorkflowState incomingTransitions() : Collection {
+operation PIM!WorkflowStep incomingTransitions() : Collection {
   var transitions = workflowTransitionsByTargetId().get(self.`id`);
   if (transitions.isUndefined()) {
     return Sequence{};
@@ -268,12 +271,24 @@ operation addWorkflowTransition(index : Map, key : String, transitionItem) {
 
 @cached
 /** Computes action count. */
-operation PIM!WorkflowState actionCount() : Integer {
+operation PIM!TaskStep actionCount() : Integer {
   var total = 0;
   if (self.invokesFunction.isDefined()) { total = total + 1; }
   if (self.invokesAdapter.isDefined()) { total = total + 1; }
   if (self.nestedWorkflow.isDefined()) { total = total + 1; }
   return total;
+}
+
+@cached
+/** Computes start steps. */
+operation PIM!Workflow startSteps() : Collection {
+  return self.steps.select(stepItem | stepItem.isKindOf(PIM!StartStep));
+}
+
+@cached
+/** Computes end steps. */
+operation PIM!Workflow endSteps() : Collection {
+  return self.steps.select(stepItem | stepItem.isKindOf(PIM!SuccessEndStep) or stepItem.isKindOf(PIM!FailureEndStep));
 }
 
 @cached

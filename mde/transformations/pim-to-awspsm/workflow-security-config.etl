@@ -204,22 +204,23 @@ operation createAslDocument(w) {
   d.content = "{}";
   d.comment = firstText(w.summary, "Generated from PIM workflow " + w.name);
   d.queryLanguage = "JSONPath";
-  if (w.states.isEmpty()) {
-    manualDecision("WORKFLOW_STATES_REQUIRED",
-      "Workflow " + w.name + " has no states.",
+  if (w.steps.isEmpty()) {
+    manualDecision("WORKFLOW_STEPS_REQUIRED",
+      "Workflow " + w.name + " has no steps.",
       KERNEL!Severity#BLOCKER, true, Sequence{w},
-      "Add at least one WorkflowState and define start/end states before AWS PSM generation.");
+      "Add at least one StartStep, workflow steps, and SuccessEndStep or FailureEndStep before AWS PSM generation.");
     d.startAt = "Start";
     return d;
   }
-  if (w.startState.isDefined()) {
-    d.startAt = w.startState.name;
+  var startStep = w.steps.select(s | s.isKindOf(PIM!StartStep)).sortBy(s | s.orderIndex).first();
+  if (startStep.isDefined()) {
+    d.startAt = startStep.name;
   }
   else {
-    d.startAt = firstText(w.states.first().name, "Start");
+    d.startAt = firstText(w.steps.first().name, "Start");
   }
   var stateByPimId = new Map;
-  for (ws in w.states) {
+  for (ws in w.steps) {
     var aslState = createAslState(w, ws);
     d.states.add(aslState);
     stateByPimId.put(cacheKeyFor(ws), aslState);
@@ -235,17 +236,17 @@ operation createAslState(w, ws) {
   st.id = generatedId("asl_state", ws, "state");
   st.name = ws.name;
   st.stateName = firstText(ws.name, "State");
-  st.type = mapAslStateType(ws.stateKind);
+  st.type = mapAslStateTypeForStep(ws);
   st.timeoutSeconds = ws.timeoutSeconds;
   st.inputPath = aslJsonPathOrRoot(ws.inputMapping);
   st.outputPath = aslJsonPathOrRoot(ws.outputMapping);
-  st.end = isTrue(ws.terminal) or w.endStates.includes(ws);
-  if (st.type = AWSPSMENUMS!AslStateType#TASK and ws.invokesFunction.isDefined()) {
+  st.end = ws.isKindOf(PIM!SuccessEndStep) or ws.isKindOf(PIM!FailureEndStep);
+  if (st.type = AWSPSMENUMS!AslStateType#TASK and ws.isKindOf(PIM!TaskStep) and ws.invokesFunction.isDefined()) {
     st.invokedResource = awsEquivalent(ws.invokesFunction);
     st.resource = "arn:aws:states:::lambda:invoke";
   }
   else {
-    if (st.type = AWSPSMENUMS!AslStateType#TASK and ws.nestedWorkflow.isDefined()) {
+    if (st.type = AWSPSMENUMS!AslStateType#TASK and ws.isKindOf(PIM!TaskStep) and ws.nestedWorkflow.isDefined()) {
       st.invokedResource = awsEquivalent(ws.nestedWorkflow);
       st.resource = "arn:aws:states:::states:startExecution.sync";
     }
@@ -255,24 +256,24 @@ operation createAslState(w, ws) {
         manualDecision("WORKFLOW_TASK_TARGET_REQUIRED",
           "Provide an executable target for workflow task " + ws.name + ".",
           KERNEL!Severity#ERROR, isProductionRoot(), Sequence{w, ws},
-          "Set WorkflowState.invokesFunction or nestedWorkflow. The generated ASL uses a deployable Pass state until a target is modeled.");
+          "Set TaskStep.invokesFunction or nestedWorkflow. The generated ASL uses a deployable Pass state until a target is modeled.");
       }
     }
   }
   if (ws.retry.isDefined()) {
     st.retry.add(createAslRetry(ws.retry));
   }
-  if (ws.stateKind = PIMTYPES!WorkflowStateKind#PARALLEL) {
+  if (ws.isKindOf(PIM!ParallelStep)) {
     manualDecision("WORKFLOW_PARALLEL_BRANCH_DESIGN",
-      "Define ASL branch details for parallel state " + ws.name + ".",
+      "Define ASL branch details for parallel step " + ws.name + ".",
       KERNEL!Severity#ERROR, isProductionRoot(), Sequence{w, ws},
-      "The PIM identifies a parallel state but does not carry full ASL branch structure.");
+      "The PIM identifies a parallel step but does not carry full ASL branch structure.");
   }
-  if (ws.stateKind = PIMTYPES!WorkflowStateKind#MAP) {
+  if (ws.isKindOf(PIM!MapStep)) {
     manualDecision("WORKFLOW_MAP_PROCESSOR_DESIGN",
-      "Define ASL item processor details for map state " + ws.name + ".",
+      "Define ASL item processor details for map step " + ws.name + ".",
       KERNEL!Severity#ERROR, isProductionRoot(), Sequence{w, ws},
-      "The PIM identifies a map state but does not carry full ASL item processor structure.");
+      "The PIM identifies a map step but does not carry full ASL item processor structure.");
   }
   return st;
 }
@@ -287,7 +288,7 @@ operation aslJsonPathOrRoot(mapping) {
 
 /** Computes complete asl state transitions. */
 operation completeAslStateTransitions(w, stateByPimId) {
-  for (ws in w.states) {
+  for (ws in w.steps) {
     var st = stateByPimId.get(cacheKeyFor(ws));
     var out = w.transitions.select(x | x.source = ws);
     if (st.isDefined() and st.type = AWSPSMENUMS!AslStateType#CHOICE) {
@@ -321,7 +322,7 @@ operation completeAslStateTransitions(w, stateByPimId) {
     }
     if (st.isDefined()) {
       for (h in ws.catchHandlers) {
-        if (h.nextState.isDefined()) {
+        if (h.nextStep.isDefined()) {
           var catchRule = createAslCatch(h, stateByPimId);
           if (catchRule.isDefined()) {
             st.catch.add(catchRule);
@@ -357,27 +358,27 @@ operation createAslChoice(tr, stateByPimId) {
   return c;
 }
 
-/** Computes map asl state type. */
-operation mapAslStateType(kind) {
-  if (kind = PIMTYPES!WorkflowStateKind#TASK) {
+/** Computes map asl state type for step. */
+operation mapAslStateTypeForStep(ws) {
+  if (ws.isKindOf(PIM!TaskStep)) {
     return AWSPSMENUMS!AslStateType#TASK;
   }
-  if (kind = PIMTYPES!WorkflowStateKind#CHOICE) {
+  if (ws.isKindOf(PIM!ChoiceStep)) {
     return AWSPSMENUMS!AslStateType#CHOICE;
   }
-  if (kind = PIMTYPES!WorkflowStateKind#PARALLEL) {
+  if (ws.isKindOf(PIM!ParallelStep)) {
     return AWSPSMENUMS!AslStateType#PARALLEL;
   }
-  if (kind = PIMTYPES!WorkflowStateKind#MAP) {
+  if (ws.isKindOf(PIM!MapStep)) {
     return AWSPSMENUMS!AslStateType#MAP;
   }
-  if (kind = PIMTYPES!WorkflowStateKind#WAIT) {
+  if (ws.isKindOf(PIM!WaitStep)) {
     return AWSPSMENUMS!AslStateType#WAIT;
   }
-  if (kind = PIMTYPES!WorkflowStateKind#SUCCESS) {
+  if (ws.isKindOf(PIM!SuccessEndStep)) {
     return AWSPSMENUMS!AslStateType#SUCCEED;
   }
-  if (kind = PIMTYPES!WorkflowStateKind#FAILURE) {
+  if (ws.isKindOf(PIM!FailureEndStep)) {
     return AWSPSMENUMS!AslStateType#FAIL;
   }
   return AWSPSMENUMS!AslStateType#PASS;
@@ -407,12 +408,12 @@ operation createAslRetry(p) {
 
 /** Creates create asl catch. */
 operation createAslCatch(h, stateByPimId) {
-  var resolvedNextState = stateByPimId.get(cacheKeyFor(h.nextState));
+  var resolvedNextState = stateByPimId.get(cacheKeyFor(h.nextStep));
   if (resolvedNextState.isUndefined()) {
     manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
-      "Resolve catch target state for " + firstText(h.name, h.id) + ".",
+      "Resolve catch target step for " + firstText(h.name, h.id) + ".",
       KERNEL!Severity#ERROR, true, Sequence{h},
-      "Ensure CatchHandler.nextState references a state in the same transformed workflow.");
+      "Ensure ErrorHandler.nextStep references a step in the same transformed workflow.");
     return null;
   }
   var c = new AWSPSMWORKFLOW!AslCatchRule;

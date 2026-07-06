@@ -19,7 +19,7 @@ context PIM!Function {
   /** Checks that function must be reachable. */
   constraint FunctionMustBeReachable {
     check : self.hasAnyIncomingBinding()
-    message : "[PIM-FUNC-003] Function '" + self.displayName() + "' is not reachable from any trigger, API route, workflow state, event channel, or event type. Fix: connect it through a Trigger, ApiRoute.functionIntegration, WorkflowState.invokesFunction, EventChannel producer/consumer, or EventType producedBy/consumedBy reference."
+    message : "[PIM-FUNC-003] Function '" + self.displayName() + "' is not reachable from any trigger, API route, workflow task or choice step, event channel, or event type. Fix: connect it through a Trigger, ApiRoute.functionIntegration, TaskStep.invokesFunction, ChoiceStep.invokesFunction, EventChannel producer/consumer, or EventType producedBy/consumedBy reference."
   }
 
   /** Checks that state changing function needs idempotency. */

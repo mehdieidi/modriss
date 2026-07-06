@@ -192,8 +192,7 @@ function diagramElementFromNode(node) {
 function diagramRelationshipFromEdge(edge, index) {
   return {
     id:
-      edge.id ||
-      connectionIdFor(state.activeType, index, edge.sourceId, edge.targetId, edge.kind),
+      edge.id || connectionIdFor(state.activeType, index, edge.sourceId, edge.targetId, edge.kind),
     kind: edge.kind,
     source: edge.sourceId,
     target: edge.targetId,
@@ -223,7 +222,10 @@ export function serializeModel({ syncView = false, reconcileRelationships = fals
 
 const SERIALIZE_DIAGRAM_CHUNK = 250;
 
-export async function serializeModelAsync({ syncView = false, reconcileRelationships = false } = {}) {
+export async function serializeModelAsync({
+  syncView = false,
+  reconcileRelationships = false,
+} = {}) {
   const { yieldToMain } = await import("./utils.js");
   const { serializeGraphAndViewsIntoAsync } = await import("./graph-store.js");
   await yieldToMain();

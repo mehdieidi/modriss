@@ -14,9 +14,21 @@
     }
   },
   "notationPrimitives": {
-    "workflow-state-node": {
+    "workflow-step-node": {
       "geometry": "rounded-rectangle",
       "cornerRadius": 18
+    },
+    "workflow-task-step": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 18
+    },
+    "workflow-map-step": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 14
+    },
+    "workflow-pass-step": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 12
     },
     "human-task-card": {
       "geometry": "rounded-rectangle",
@@ -184,7 +196,7 @@
         "notation": {
           "tag": "WF",
           "shape": "workflow-node",
-          "lineFields": ["workflowKind", "stateKind", "taskDescription", "conditionExpression"]
+          "lineFields": ["workflowKind", "taskDescription", "conditionExpression", "orderIndex"]
         }
       }
     },
@@ -796,7 +808,7 @@
         "EventBus",
         "ApiRoute",
         "Workflow",
-        "WorkflowState",
+        "WorkflowStep",
         "DataStore",
         "ObjectStore",
         "DataAccess",
@@ -984,7 +996,16 @@
       "viewpoint": "workflow",
       "elementTypes": [
         "Workflow",
-        "WorkflowState",
+        "WorkflowStep",
+        "StartStep",
+        "SuccessEndStep",
+        "FailureEndStep",
+        "TaskStep",
+        "ChoiceStep",
+        "ParallelStep",
+        "MapStep",
+        "WaitStep",
+        "PassStep",
         "WorkflowTransition",
         "ParallelBranch",
         "MapStateConfig",
@@ -997,7 +1018,7 @@
         "Function",
         "ExternalAdapter"
       ],
-      "palette": ["Workflow", "HumanTask", "ApprovalTask", "EscalationPolicy"],
+      "palette": ["Workflow"],
       "relationshipKinds": ["TRANSITION", "INVOKES", "ORCHESTRATES", "EXTERNAL_CALL", "CONTAINS"],
       "layoutHint": "PROCESS"
     },
@@ -1107,9 +1128,7 @@
     "invokesFunction": "INVOKES",
     "invokedResource": "INVOKES",
     "function": "INVOKES",
-    "startState": "STARTS_AT",
-    "nextState": "TRANSITION",
-    "endStates": "ENDS_AT",
+    "nextStep": "TRANSITION",
     "targetResource": "PERMISSION_TARGET",
     "permissions": "PERMISSION",
     "deploysStacks": "DEPLOYS",
@@ -1120,8 +1139,6 @@
     "usesSecrets": "USES_SECRET"
   },
   "semanticReferenceExclusions": [
-    "startState",
-    "endStates",
     "ownsFunctions",
     "ownsApis",
     "ownsChannels",
@@ -1183,8 +1200,8 @@
     {
       "eClass": "WorkflowTransition",
       "matchKinds": ["TRANSITION"],
-      "sourceType": "WorkflowState",
-      "targetType": "WorkflowState",
+      "sourceType": "WorkflowStep",
+      "targetType": "WorkflowStep",
       "rootFeature": "transitions",
       "sourceFeature": "source",
       "targetFeature": "target",
@@ -1701,21 +1718,180 @@
         "shape": "workflow-container",
         "lineFields": ["workflowKind", "executionSemantics", "longRunning"]
       },
+      "containmentPaletteExtras": [
+        "HumanTask",
+        "ApprovalTask",
+        "EscalationPolicy",
+        "CompensationPolicy"
+      ],
       "processPhaseId": "pim.ph4",
       "processTaskIds": ["pim.ph4.st2.t1"],
       "processStageId": "pim.ph4.st2"
     },
     {
-      "type": "WorkflowState",
-      "label": "Workflow State",
-      "icon": "radio_button_checked",
+      "type": "WorkflowStep",
+      "label": "Workflow Step",
+      "icon": "input",
       "color": "#EA580C",
       "category": "Workflow View",
-      "displayName": "Workflow State",
+      "displayName": "Workflow Step",
       "notation": {
-        "tag": "STATE",
-        "shape": "workflow-state-node",
-        "lineFields": ["stateKind", "orderIndex", "terminal"]
+        "tag": "STEP",
+        "shape": "workflow-step-node",
+        "lineFields": ["orderIndex", "timeoutSeconds"]
+      },
+      "supportOnly": true,
+      "creatable": false,
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t1"],
+      "processStageId": "pim.ph4.st2"
+    },
+    {
+      "type": "StartStep",
+      "label": "Start Step",
+      "displayName": "Start Step",
+      "category": "Workflow View",
+      "icon": "play_circle",
+      "color": "#16A34A",
+      "notation": {
+        "tag": "START",
+        "shape": "start-circle",
+        "lineFields": ["orderIndex"]
+      },
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t1"],
+      "processStageId": "pim.ph4.st2"
+    },
+    {
+      "type": "SuccessEndStep",
+      "label": "Success End Step",
+      "displayName": "Success End Step",
+      "category": "Workflow View",
+      "icon": "stop_circle",
+      "color": "#475569",
+      "notation": {
+        "tag": "END",
+        "shape": "end-double-circle",
+        "lineFields": ["orderIndex"]
+      },
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t1"],
+      "processStageId": "pim.ph4.st2"
+    },
+    {
+      "type": "FailureEndStep",
+      "label": "Failure End Step",
+      "displayName": "Failure End Step",
+      "category": "Workflow View",
+      "icon": "block",
+      "color": "#DC2626",
+      "notation": {
+        "tag": "FAIL",
+        "shape": "end-double-circle",
+        "lineFields": ["orderIndex"]
+      },
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t1"],
+      "processStageId": "pim.ph4.st2"
+    },
+    {
+      "type": "TaskStep",
+      "label": "Task Step",
+      "displayName": "Task Step",
+      "category": "Workflow View",
+      "icon": "bolt",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "TASK",
+        "shape": "workflow-task-step",
+        "lineFields": ["invokesFunction", "invokesAdapter", "nestedWorkflow", "orderIndex"]
+      },
+      "containmentPaletteExtras": [
+        "ErrorHandler",
+        "CallbackTaskConfig",
+        "HumanTask",
+        "ApprovalTask"
+      ],
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t1"],
+      "processStageId": "pim.ph4.st2"
+    },
+    {
+      "type": "ChoiceStep",
+      "label": "Choice Step",
+      "displayName": "Choice Step",
+      "category": "Workflow View",
+      "icon": "alt_route",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "CHOICE",
+        "shape": "decision-diamond",
+        "lineFields": ["conditionExpression", "invokesFunction", "orderIndex"]
+      },
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t1"],
+      "processStageId": "pim.ph4.st2"
+    },
+    {
+      "type": "ParallelStep",
+      "label": "Parallel Step",
+      "displayName": "Parallel Step",
+      "category": "Workflow View",
+      "icon": "call_split",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "PAR",
+        "shape": "branch-container",
+        "lineFields": ["orderIndex"]
+      },
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t1"],
+      "processStageId": "pim.ph4.st2"
+    },
+    {
+      "type": "MapStep",
+      "label": "Map Step",
+      "displayName": "Map Step",
+      "category": "Workflow View",
+      "icon": "map",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "MAP",
+        "shape": "workflow-map-step",
+        "lineFields": ["orderIndex"]
+      },
+      "containmentPaletteExtras": ["MapStateConfig"],
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t1"],
+      "processStageId": "pim.ph4.st2"
+    },
+    {
+      "type": "WaitStep",
+      "label": "Wait Step",
+      "displayName": "Wait Step",
+      "category": "Workflow View",
+      "icon": "schedule",
+      "color": "#64748B",
+      "notation": {
+        "tag": "WAIT",
+        "shape": "timer-node",
+        "lineFields": ["waitReason", "conditionExpression", "orderIndex"]
+      },
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t1"],
+      "processStageId": "pim.ph4.st2"
+    },
+    {
+      "type": "PassStep",
+      "label": "Pass Step",
+      "displayName": "Pass Step",
+      "category": "Workflow View",
+      "icon": "arrow_forward",
+      "color": "#64748B",
+      "notation": {
+        "tag": "PASS",
+        "shape": "workflow-pass-step",
+        "lineFields": ["orderIndex"]
       },
       "processPhaseId": "pim.ph4",
       "processTaskIds": ["pim.ph4.st2.t1"],

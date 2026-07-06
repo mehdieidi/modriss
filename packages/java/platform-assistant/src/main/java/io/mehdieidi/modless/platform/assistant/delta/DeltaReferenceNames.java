@@ -110,7 +110,7 @@ final class DeltaReferenceNames {
         return "bus";
       }
     }
-    if ("WorkflowState".equals(sourceType) && "Function".equals(targetType)) {
+    if ("TaskStep".equals(sourceType) && "Function".equals(targetType)) {
       if ((normalized.contains("invoke") || normalized.contains("function"))
           && candidates.contains("invokesFunction")) {
         return "invokesFunction";

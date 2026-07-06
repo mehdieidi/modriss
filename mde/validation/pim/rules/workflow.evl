@@ -4,40 +4,36 @@ import "../lib/pim-validation-helpers.eol";
 /** Validates Workflow elements. */
 context PIM!Workflow {
 
-  /** Checks that states contain start. */
-  constraint StatesContainStart {
-    check : self.startState.isDefined() and self.states.includes(self.startState)
-    message : "[PIM-WF-000A] Workflow '" + self.displayName() + "' must have a startState contained in states."
+  /** Checks that workflow has a start step. */
+  constraint WorkflowHasStartStep {
+    check : self.startSteps().notEmpty()
+    message : "[PIM-WF-000A] Workflow '" + self.displayName() + "' must contain at least one StartStep."
   }
 
-  /** Checks that and end states belong to workflow. */
-  constraint AndEndStatesBelongToWorkflow {
-    check : self.endStates.notEmpty() and self.endStates.forAll(stateItem | self.states.includes(stateItem))
-    message : "[PIM-WF-000B] Workflow '" + self.displayName() + "' must have endStates contained in states."
+  /** Checks that end steps belong to workflow. */
+  constraint WorkflowHasEndSteps {
+    check : self.endSteps().notEmpty() and self.endSteps().forAll(stepItem | self.steps.includes(stepItem))
+    message : "[PIM-WF-000B] Workflow '" + self.displayName() + "' must contain at least one SuccessEndStep or FailureEndStep."
   }
 
   /** Checks that reachable from start. */
   constraint ReachableFromStart {
-    check : self.states.forAll(stateItem | stateItem = self.startState or stateItem.incomingTransitions().notEmpty() or stateItem.rationale.hasText())
-    message : "[PIM-WF-000C] Workflow '" + self.displayName() + "' contains states that are not reachable from startState. Fix transitions or document intentionally detached states."
+    check : self.steps.forAll(stepItem |
+      stepItem.isKindOf(PIM!StartStep) or stepItem.incomingTransitions().notEmpty() or stepItem.rationale.hasText())
+    message : "[PIM-WF-000C] Workflow '" + self.displayName() + "' contains steps that are not reachable from the start step. Fix transitions or document intentionally detached steps."
   }
 
-  /** Checks that workflow start and end states are contained. */
-  constraint WorkflowStartAndEndStatesAreContained {
-    check : self.states.includes(self.startState) and self.endStates.forAll(stateItem | self.states.includes(stateItem))
-    message : "[PIM-WF-001] Workflow '" + self.displayName() + "' has start/end states outside its contained states. Fix: set startState and all endStates to WorkflowState elements contained by this workflow."
+  /** Checks that workflow start and end steps are contained. */
+  constraint WorkflowStartAndEndStepsAreContained {
+    check : self.startSteps().forAll(stepItem | self.steps.includes(stepItem))
+      and self.endSteps().forAll(stepItem | self.steps.includes(stepItem))
+    message : "[PIM-WF-001] Workflow '" + self.displayName() + "' has start/end steps outside its contained steps. Fix: model StartStep and end steps as contained WorkflowStep elements."
   }
 
-  /** Checks that workflow has at least one end state. */
-  constraint WorkflowHasAtLeastOneEndState {
-    check : self.endStates.notEmpty()
-    message : "[PIM-WF-002] Workflow '" + self.displayName() + "' has no endStates. Fix: mark one or more contained states as successful/failure terminal end states."
-  }
-
-  /** Checks that end states must be terminal. */
-  constraint EndStatesMustBeTerminal {
-    check : self.endStates.forAll(stateItem | stateItem.terminal.isTrue() or stateItem.stateKind.enumIn(Sequence{"SUCCESS", "FAILURE"}))
-    message : "[PIM-WF-003] Workflow '" + self.displayName() + "' has end states that are not terminal. Fix: set terminal to true or use SUCCESS/FAILURE stateKind for all endStates."
+  /** Checks that workflow has at least one end step. */
+  constraint WorkflowHasAtLeastOneEndStep {
+    check : self.endSteps().notEmpty()
+    message : "[PIM-WF-002] Workflow '" + self.displayName() + "' has no end steps. Fix: add one or more SuccessEndStep or FailureEndStep elements."
   }
 
   /** Advises that stateful workflow needs idempotency. */
@@ -48,42 +44,61 @@ context PIM!Workflow {
   }
 }
 
-/** Validates Workflow State elements. */
-context PIM!WorkflowState {
+/** Validates Workflow Step elements. */
+context PIM!WorkflowStep {
+
+  /** Advises that non start step should have incoming transition. */
+  critique NonStartStepShouldHaveIncomingTransition {
+    guard : self.workflow.isDefined() and not self.isKindOf(PIM!StartStep)
+    check : self.incomingTransitions().exists(transitionItem | transitionItem.workflow = self.workflow)
+    message : "[PIM-WF-008] Workflow step '" + self.displayName() + "' is not a start step and has no incoming transition. Suggested fix: connect it from another step or remove the unreachable step."
+  }
+
+  /** Advises that timed step should use timeout policy. */
+  critique TimedStepShouldUseTimeoutPolicy {
+    guard : self.timeoutSeconds.isDefined() and self.timeoutSeconds > 0
+    check : self.retry.isDefined() or self.catchHandlers.notEmpty() or self.rationale.hasText()
+    message : "[PIM-WF-009] Workflow step '" + self.displayName() + "' has timeoutSeconds but no retry/catch/rationale. Suggested fix: define retry/error handling or explain why timeout failure needs no handling."
+  }
+}
+
+/** Validates Choice Step elements. */
+context PIM!ChoiceStep {
 
   /** Checks that choice has at least two transitions. */
   constraint ChoiceHasAtLeastTwoTransitions {
-    guard : self.stateKind.enumIs("CHOICE")
     check : self.outgoingTransitions().atLeastNMatch(transitionItem | true, 2)
-    message : "[PIM-WF-005] Choice state '" + self.displayName() + "' has fewer than two outgoing transitions. Fix: add at least two transitions with conditions/default handling."
+    message : "[PIM-WF-005] Choice step '" + self.displayName() + "' has fewer than two outgoing transitions. Fix: add at least two transitions with conditions/default handling."
   }
+}
 
-  /** Checks that terminal states have no outgoing transitions. */
-  constraint TerminalStatesHaveNoOutgoingTransitions {
-    guard : self.terminal.isTrue() or self.stateKind.enumIn(Sequence{"SUCCESS", "FAILURE"})
+/** Validates success end step elements. */
+context PIM!SuccessEndStep {
+
+  /** Checks that end steps have no outgoing transitions. */
+  constraint EndStepsHaveNoOutgoingTransitions {
     check : self.outgoingTransitions().isEmpty()
-    message : "[PIM-WF-006] Terminal workflow state '" + self.displayName() + "' has outgoing transitions. Fix: remove outgoing transitions or mark the state as non-terminal."
+    message : "[PIM-WF-006] End workflow step '" + self.displayName() + "' has outgoing transitions. Fix: remove outgoing transitions from terminal end steps."
   }
+}
 
-  /** Checks that task state invokes exactly one action. */
-  constraint TaskStateInvokesExactlyOneAction {
-    guard : self.stateKind.enumIs("TASK")
+/** Validates failure end step elements. */
+context PIM!FailureEndStep {
+
+  /** Checks that end steps have no outgoing transitions. */
+  constraint EndStepsHaveNoOutgoingTransitions {
+    check : self.outgoingTransitions().isEmpty()
+    message : "[PIM-WF-006] End workflow step '" + self.displayName() + "' has outgoing transitions. Fix: remove outgoing transitions from terminal end steps."
+  }
+}
+
+/** Validates Task Step elements. */
+context PIM!TaskStep {
+
+  /** Checks that task step invokes exactly one action. */
+  constraint TaskStepInvokesExactlyOneAction {
     check : self.actionCount() = 1
-    message : "[PIM-WF-007] Task state '" + self.displayName() + "' must invoke exactly one function, adapter or nested workflow. Fix: set one of invokesFunction, invokesAdapter or nestedWorkflow and clear the others."
-  }
-
-  /** Advises that non start state should have incoming transition. */
-  critique NonStartStateShouldHaveIncomingTransition {
-    guard : self.workflow.isDefined() and self <> self.workflow.startState
-    check : self.incomingTransitions().exists(transitionItem | transitionItem.workflow = self.workflow)
-    message : "[PIM-WF-008] Workflow state '" + self.displayName() + "' is not the start state and has no incoming transition. Suggested fix: connect it from another state or remove the unreachable state."
-  }
-
-  /** Advises that timed state should use timeout policy. */
-  critique TimedStateShouldUseTimeoutPolicy {
-    guard : self.timeoutSeconds.isDefined() and self.timeoutSeconds > 0
-    check : self.retry.isDefined() or self.catchHandlers.notEmpty() or self.rationale.hasText()
-    message : "[PIM-WF-009] Workflow state '" + self.displayName() + "' has timeoutSeconds but no retry/catch/rationale. Suggested fix: define retry/error handling or explain why timeout failure needs no handling."
+    message : "[PIM-WF-007] Task step '" + self.displayName() + "' must invoke exactly one function, adapter or nested workflow. Fix: set one of invokesFunction, invokesAdapter or nestedWorkflow and clear the others."
   }
 }
 
@@ -94,14 +109,14 @@ context PIM!WorkflowTransition {
   constraint SameWorkflow {
     check : self.source.isDefined() and self.target.isDefined() and self.workflow.isDefined()
       and self.source.workflow = self.workflow and self.target.workflow = self.workflow
-    message : "[PIM-WF-010A] Transition '" + self.displayName() + "' must connect states in its owning workflow."
+    message : "[PIM-WF-010A] Transition '" + self.displayName() + "' must connect steps in its owning workflow."
   }
 
   /** Checks that transition stays inside workflow. */
   constraint TransitionStaysInsideWorkflow {
     check : self.source.isDefined() and self.target.isDefined() and self.workflow.isDefined()
       and self.source.workflow = self.workflow and self.target.workflow = self.workflow
-    message : "[PIM-WF-010] Transition '" + self.displayName() + "' connects states outside its owning workflow. Fix: set workflow, source and target, and use source/target states contained by the same workflow."
+    message : "[PIM-WF-010] Transition '" + self.displayName() + "' connects steps outside its owning workflow. Fix: set workflow, source and target, and use source/target steps contained by the same workflow."
   }
 
   /** Advises that conditional transition should have condition unless default. */
@@ -114,17 +129,17 @@ context PIM!WorkflowTransition {
 /** Validates Error Handler elements. */
 context PIM!ErrorHandler {
 
-  /** Checks that next state in same workflow. */
-  constraint NextStateInSameWorkflow {
-    guard : self.nextState.isDefined()
-    check : self.state.isDefined() and self.state.workflow.isDefined() and self.nextState.workflow = self.state.workflow
-    message : "[PIM-WF-012A] ErrorHandler '" + self.displayName() + "' routes to a state outside the owning workflow. Fix: choose a nextState in the same workflow."
+  /** Checks that next step in same workflow. */
+  constraint NextStepInSameWorkflow {
+    guard : self.nextStep.isDefined()
+    check : self.step.isDefined() and self.step.workflow.isDefined() and self.nextStep.workflow = self.step.workflow
+    message : "[PIM-WF-012A] ErrorHandler '" + self.displayName() + "' routes to a step outside the owning workflow. Fix: choose a nextStep in the same workflow."
   }
 
   /** Checks that error handler has recovery target. */
   constraint ErrorHandlerHasRecoveryTarget {
-    check : self.nextState.isDefined() or self.handlerFunction.isDefined()
-    message : "[PIM-WF-012] ErrorHandler '" + self.displayName() + "' has neither nextState nor handlerFunction. Fix: route recovery to a state or handler function."
+    check : self.nextStep.isDefined() or self.handlerFunction.isDefined()
+    message : "[PIM-WF-012] ErrorHandler '" + self.displayName() + "' has neither nextStep nor handlerFunction. Fix: route recovery to a step or handler function."
   }
 
   /** Advises that error handler should select errors. */
@@ -140,7 +155,7 @@ context PIM!CompensationPolicy {
   /** Checks that compensation policy is root owned. */
   constraint CompensationPolicyIsRootOwned {
     check : rootPolicyIds().includes(self.`id`)
-    message : "[PIM-WF-013A] CompensationPolicy '" + self.displayName() + "' must be owned by PIMModel.policies and referenced from WorkflowState.compensation."
+    message : "[PIM-WF-013A] CompensationPolicy '" + self.displayName() + "' must be owned by PIMModel.policies and referenced from StartStep.compensation or TaskStep.compensation."
   }
 
   /** Checks that compensation policy has action. */

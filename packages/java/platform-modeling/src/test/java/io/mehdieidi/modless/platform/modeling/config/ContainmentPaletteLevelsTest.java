@@ -32,16 +32,18 @@ class ContainmentPaletteLevelsTest {
   void pimNestedApiAndWorkflowDetailsAreContainedOnly() {
     Map<String, Object> pim = level("pim");
     assertEquals(Boolean.TRUE, element(pim, "ApiRoute").get("containedOnly"));
-    assertEquals(Boolean.TRUE, element(pim, "WorkflowState").get("containedOnly"));
+    assertEquals(Boolean.TRUE, element(pim, "StartStep").get("containedOnly"));
+    assertEquals(Boolean.TRUE, element(pim, "TaskStep").get("containedOnly"));
     assertEquals(Boolean.TRUE, element(pim, "ErrorMapping").get("containedOnly"));
     assertFalse(Boolean.TRUE.equals(element(pim, "Api").get("containedOnly")));
     assertFalse(Boolean.TRUE.equals(element(pim, "Workflow").get("containedOnly")));
     assertPaletteExcludes(pim, "pim-api-surface", "ApiRoute", "ErrorMapping", "ApiContract");
     assertPaletteIncludes(pim, "pim-api-surface", "Api");
-    assertPaletteExcludes(pim, "pim-workflow-designer", "WorkflowState");
+    assertPaletteExcludes(pim, "pim-workflow-designer", "StartStep", "TaskStep");
     assertPaletteIncludes(pim, "pim-workflow-designer", "Workflow");
     assertContainmentPaletteIncludes(pim, "Api", "ApiRoute");
-    assertContainmentPaletteIncludes(pim, "Workflow", "WorkflowState");
+    assertContainmentPaletteIncludes(pim, "Workflow", "StartStep");
+    assertContainmentPaletteIncludes(pim, "Workflow", "TaskStep");
   }
 
   @Test

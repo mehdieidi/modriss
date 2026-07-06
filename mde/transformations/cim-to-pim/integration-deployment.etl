@@ -342,23 +342,23 @@ operation createPolicyRoutingRules() {
 
 /** Creates create external integration flows. */
 operation createExternalIntegrationFlows() {
-  for (state in WORKFLOW!WorkflowState.all.select(s | s.invokesAdapter.isDefined())) {
-    var flowId = newId("flow_external", state.id + "_" + state.invokesAdapter.id);
+  for (step in WORKFLOW!TaskStep.all.select(s | s.invokesAdapter.isDefined())) {
+    var flowId = newId("flow_external", step.id + "_" + step.invokesAdapter.id);
     if (not cachedPimExternalFlowIds.includes(flowId)) {
       cachedPimExternalFlowIds.add(flowId);
       var flow = new INTEGRATION!ExternalIntegrationFlow;
       flow.id = flowId;
-      flow.name = state.name + " calls " + state.invokesAdapter.name;
-      flow.flowPurpose = "External adapter invocation from workflow state.";
+      flow.name = step.name + " calls " + step.invokesAdapter.name;
+      flow.flowPurpose = "External adapter invocation from workflow task step.";
       flow.criticalPath = true;
       flow.containsPersonalData = false;
-      flow.source = state;
-      flow.target = state.invokesAdapter;
-      flow.adapter = state.invokesAdapter;
+      flow.source = step;
+      flow.target = step.invokesAdapter;
+      flow.adapter = step.invokesAdapter;
       flow.observability = createDefaultObservability(flow, "TR-140", true, true);
       flow.resilience = createDefaultResilience(flow, "TR-140", false);
       pimRoot().flows.add(flow);
-      traceGenerated(state.invokesAdapter, flow, "TR-140", "MEDIUM");
+      traceGenerated(step.invokesAdapter, flow, "TR-140", "MEDIUM");
     }
   }
   for (adapter in EXTERNAL!ExternalAdapter.all) {

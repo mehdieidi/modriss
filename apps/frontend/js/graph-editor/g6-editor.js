@@ -1581,6 +1581,18 @@ export function addG6Edge(edge) {
     if (!editor?.graph) {
       return;
     }
+    const sourceId = String(mapped.source || edge.sourceId || "");
+    const targetId = String(mapped.target || edge.targetId || "");
+    if (!sourceId || !targetId) {
+      return;
+    }
+    const endpointReady = (nodeId) =>
+      hasKnownNode(nodeId) ||
+      (typeof editor.graph.getElementDataById === "function" &&
+        Boolean(editor.graph.getElementDataById(nodeId)));
+    if (!endpointReady(sourceId) || !endpointReady(targetId)) {
+      return;
+    }
     editor.graph.addEdgeData?.([mapped]);
     editor.adjacency.add(edge);
     rememberEdgeData(mapped);

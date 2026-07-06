@@ -1592,16 +1592,6 @@
       <eLiterals name="BATCH_COORDINATION" value="4"/>
       <eLiterals name="EVENT_ROUTING_PROCESS" value="5"/>
     </eClassifiers>
-    <eClassifiers xsi:type="ecore:EEnum" name="WorkflowStateKind">
-      <eLiterals name="TASK"/>
-      <eLiterals name="CHOICE" value="1"/>
-      <eLiterals name="PARALLEL" value="2"/>
-      <eLiterals name="MAP" value="3"/>
-      <eLiterals name="WAIT" value="4"/>
-      <eLiterals name="PASS" value="5"/>
-      <eLiterals name="SUCCESS" value="6"/>
-      <eLiterals name="FAILURE" value="7"/>
-    </eClassifiers>
     <eClassifiers xsi:type="ecore:EEnum" name="IdentityKind">
       <eLiterals name="USER_DIRECTORY"/>
       <eLiterals name="FEDERATED_IDENTITY" value="1"/>
@@ -1769,47 +1759,63 @@
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="workflowKind" lowerBound="1"
           eType="#/12/WorkflowKind"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="states" upperBound="-1"
-          eType="#/13/WorkflowState" containment="true" eOpposite="#/13/WorkflowState/workflow"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="steps" lowerBound="1"
+          upperBound="-1" eType="#/13/WorkflowStep" containment="true" eOpposite="#/13/WorkflowStep/workflow"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="transitions" upperBound="-1"
           eType="#/13/WorkflowTransition" containment="true" eOpposite="#/13/WorkflowTransition/workflow"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="startState" eType="#/13/WorkflowState"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="endStates" upperBound="-1"
-          eType="#/13/WorkflowState"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="observability" eType="#/10/ObservabilityConfig"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="resilience" eType="#/10/ResiliencePolicy"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="idempotency" eType="#/10/IdempotencyPolicy"/>
     </eClassifiers>
-    <eClassifiers xsi:type="ecore:EClass" name="WorkflowState" eSuperTypes="#/1/TraceableElement #/1/FlowEndpoint #/1/PolicyTarget #/1/ProtectedResource">
+    <eClassifiers xsi:type="ecore:EClass" name="WorkflowStep" abstract="true" eSuperTypes="#/1/TraceableElement #/1/FlowEndpoint #/1/PolicyTarget #/1/ProtectedResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="orderIndex" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EIntegerObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="timeoutSeconds" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EIntegerObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="inputMapping" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="outputMapping" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-      <eStructuralFeatures xsi:type="ecore:EAttribute" name="conditionExpression"
-          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-      <eStructuralFeatures xsi:type="ecore:EAttribute" name="terminal" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
-      <eStructuralFeatures xsi:type="ecore:EAttribute" name="stateKind" lowerBound="1"
-          eType="#/12/WorkflowStateKind"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="condition" eType="#/1/Expression"
-          containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="branches" upperBound="-1"
-          eType="#/13/ParallelBranch" containment="true" eOpposite="#/13/ParallelBranch/ownerState"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="mapConfig" eType="#/13/MapStateConfig"
-          containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="callbackConfig" eType="#/13/CallbackTaskConfig"
-          containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="retry" eType="#/10/RetryPolicy"
           containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="catchHandlers" upperBound="-1"
-          eType="#/13/ErrorHandler" containment="true" eOpposite="#/13/ErrorHandler/state"/>
+          eType="#/13/ErrorHandler" containment="true" eOpposite="#/13/ErrorHandler/step"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="workflow" lowerBound="1"
-          eType="#/13/Workflow" changeable="false" transient="true" eOpposite="#/13/Workflow/states"/>
+          eType="#/13/Workflow" changeable="false" transient="true" eOpposite="#/13/Workflow/steps"/>
+    </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="StartStep" eSuperTypes="#/13/WorkflowStep">
+      <eStructuralFeatures xsi:type="ecore:EReference" name="compensation" eType="#/13/CompensationPolicy"/>
+    </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="SuccessEndStep" eSuperTypes="#/13/WorkflowStep"/>
+    <eClassifiers xsi:type="ecore:EClass" name="FailureEndStep" eSuperTypes="#/13/WorkflowStep"/>
+    <eClassifiers xsi:type="ecore:EClass" name="TaskStep" eSuperTypes="#/13/WorkflowStep">
       <eStructuralFeatures xsi:type="ecore:EReference" name="invokesFunction" eType="#/3/Function"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="invokesAdapter" eType="#/8/ExternalAdapter"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="nestedWorkflow" eType="#/13/Workflow"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="humanTask" eType="#/13/HumanTask"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="compensation" eType="#/13/CompensationPolicy"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="callbackConfig" eType="#/13/CallbackTaskConfig"
+          containment="true"/>
     </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="ChoiceStep" eSuperTypes="#/13/WorkflowStep">
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="conditionExpression"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="condition" eType="#/1/Expression"
+          containment="true"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="invokesFunction" eType="#/3/Function"/>
+    </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="ParallelStep" eSuperTypes="#/13/WorkflowStep">
+      <eStructuralFeatures xsi:type="ecore:EReference" name="branches" upperBound="-1"
+          eType="#/13/ParallelBranch" containment="true" eOpposite="#/13/ParallelBranch/ownerStep"/>
+    </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="MapStep" eSuperTypes="#/13/WorkflowStep">
+      <eStructuralFeatures xsi:type="ecore:EReference" name="mapConfig" eType="#/13/MapStateConfig"
+          containment="true"/>
+    </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="WaitStep" eSuperTypes="#/13/WorkflowStep">
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="conditionExpression"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="waitReason" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="condition" eType="#/1/Expression"
+          containment="true"/>
+    </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="PassStep" eSuperTypes="#/13/WorkflowStep"/>
     <eClassifiers xsi:type="ecore:EClass" name="WorkflowTransition" eSuperTypes="#/1/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="conditionExpression"
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -1819,30 +1825,26 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="workflow" lowerBound="1"
           eType="#/13/Workflow" changeable="false" transient="true" eOpposite="#/13/Workflow/transitions"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="source" lowerBound="1"
-          eType="#/13/WorkflowState"/>
+          eType="#/13/WorkflowStep"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="target" lowerBound="1"
-          eType="#/13/WorkflowState"/>
+          eType="#/13/WorkflowStep"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="ErrorHandler" eSuperTypes="#/1/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="errorSelector" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="recoveryAction" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="continueWorkflow" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="state" lowerBound="1"
-          eType="#/13/WorkflowState" changeable="false" transient="true" eOpposite="#/13/WorkflowState/catchHandlers"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="nextState" eType="#/13/WorkflowState"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="step" lowerBound="1"
+          eType="#/13/WorkflowStep" changeable="false" transient="true" eOpposite="#/13/WorkflowStep/catchHandlers"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="nextStep" eType="#/13/WorkflowStep"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="handlerFunction" eType="#/3/Function"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="ParallelBranch" eSuperTypes="#/1/TraceableElement">
-      <eStructuralFeatures xsi:type="ecore:EReference" name="ownerState" lowerBound="1"
-          eType="#/13/WorkflowState" changeable="false" transient="true" eOpposite="#/13/WorkflowState/branches"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="states" lowerBound="1"
-          upperBound="-1" eType="#/13/WorkflowState" containment="true"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="ownerStep" lowerBound="1"
+          eType="#/13/ParallelStep" changeable="false" transient="true" eOpposite="#/13/ParallelStep/branches"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="steps" lowerBound="1"
+          upperBound="-1" eType="#/13/WorkflowStep" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="transitions" upperBound="-1"
           eType="#/13/WorkflowTransition" containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="startState" lowerBound="1"
-          eType="#/13/WorkflowState"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="endStates" lowerBound="1"
-          upperBound="-1" eType="#/13/WorkflowState"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="MapStateConfig" eSuperTypes="#/1/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="itemsPath" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

@@ -100,16 +100,22 @@ const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
 const INTERNAL_TARGET_SUMMARY_PREFIX = "internal-target";
 const edgeIdsByNodeId = new Map(); // nodeId -> Set(edgeId)
 
+const ICON_ALIASES = {
+  cancel: "block",
+  layers: "map",
+};
+
 function resolveIconSource(src) {
   const normalized = String(src || "").trim();
   if (!normalized) {
     return PLACEHOLDER_ICON;
   }
-  if (normalized.startsWith("/") || normalized.startsWith(".") || normalized.endsWith(".svg")) {
-    return normalized;
+  const resolved = ICON_ALIASES[normalized] || normalized;
+  if (resolved.startsWith("/") || resolved.startsWith(".") || resolved.endsWith(".svg")) {
+    return resolved;
   }
-  if (/^[a-z0-9_-]+$/i.test(normalized)) {
-    return `/assets/icons/${normalized}.svg`;
+  if (/^[a-z0-9_-]+$/i.test(resolved)) {
+    return `/assets/icons/${resolved}.svg`;
   }
   return PLACEHOLDER_ICON;
 }
@@ -2632,7 +2638,9 @@ function diagramEdgeFromRelationship(relationship, viewEdge = null) {
     sourceId: relationship.sourceElementId,
     targetId: relationship.targetElementId,
     kind: relationship.kind,
-    pinPoints: Array.isArray(viewEdge?.pinPoints) ? viewEdge.pinPoints.map((point) => ({ ...point })) : [],
+    pinPoints: Array.isArray(viewEdge?.pinPoints)
+      ? viewEdge.pinPoints.map((point) => ({ ...point }))
+      : [],
     sourceAnchor: viewEdge?.sourceAnchor ? { ...viewEdge.sourceAnchor } : undefined,
     targetAnchor: viewEdge?.targetAnchor ? { ...viewEdge.targetAnchor } : undefined,
   };
@@ -2660,15 +2668,21 @@ function paletteDroppedNodeIsVisible(node) {
   );
 }
 
+function diagramNodeIsOnCanvas(nodeId) {
+  const normalized = String(nodeId || "").trim();
+  if (!normalized) {
+    return false;
+  }
+  return state.diagram.nodes.some((candidate) => candidate.id === normalized);
+}
+
 function syncPaletteDropContainmentEdges(node) {
   const incomingRelationshipIds = state.graph.relationshipsByTarget.get(node.id);
   if (!incomingRelationshipIds?.size) {
     return;
   }
   const view = activeView();
-  const viewEdgesById = new Map(
-    (view?.edges || []).map((edge) => [edge.relationshipId, edge]),
-  );
+  const viewEdgesById = new Map((view?.edges || []).map((edge) => [edge.relationshipId, edge]));
   const knownConnectionIds = new Set(state.diagram.connections.map((edge) => edge.id));
   incomingRelationshipIds.forEach((relationshipId) => {
     const relationship = state.graph.relationshipsById.get(relationshipId);
@@ -2680,6 +2694,9 @@ function syncPaletteDropContainmentEdges(node) {
     }
     const edge = diagramEdgeFromRelationship(relationship, viewEdgesById.get(relationshipId));
     if (!edge) {
+      return;
+    }
+    if (!diagramNodeIsOnCanvas(edge.sourceId) || !diagramNodeIsOnCanvas(edge.targetId)) {
       return;
     }
     state.diagram.connections.push(edge);
@@ -2697,8 +2714,8 @@ function applyPaletteDropToCanvas(node) {
     state.diagram.nodes.push(node);
   }
   state.nodesById.set(node.id, node);
-  syncPaletteDropContainmentEdges(node);
   addCanvasNode(node);
+  syncPaletteDropContainmentEdges(node);
   const ownerId = String(node.meta?.__ownerId || "").trim();
   if (ownerId && state.nodesById.has(ownerId)) {
     updateCanvasNode(ownerId);

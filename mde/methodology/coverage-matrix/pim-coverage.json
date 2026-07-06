@@ -757,7 +757,31 @@
       "covered": true
     },
     {
-      "concept": "WorkflowState",
+      "concept": "WorkflowStep",
+      "kind": "EClass",
+      "taskIds": ["pim.ph4.st2.t1"],
+      "covered": true
+    },
+    {
+      "concept": "StartStep",
+      "kind": "EClass",
+      "taskIds": ["pim.ph4.st2.t1"],
+      "covered": true
+    },
+    {
+      "concept": "TaskStep",
+      "kind": "EClass",
+      "taskIds": ["pim.ph4.st2.t1"],
+      "covered": true
+    },
+    {
+      "concept": "ChoiceStep",
+      "kind": "EClass",
+      "taskIds": ["pim.ph4.st2.t1"],
+      "covered": true
+    },
+    {
+      "concept": "SuccessEndStep",
       "kind": "EClass",
       "taskIds": ["pim.ph4.st2.t1"],
       "covered": true
@@ -968,12 +992,6 @@
     },
     {
       "concept": "WorkflowKind",
-      "kind": "EEnum",
-      "taskIds": ["pim.ph4.st2.t1"],
-      "covered": true
-    },
-    {
-      "concept": "WorkflowStateKind",
       "kind": "EEnum",
       "taskIds": ["pim.ph4.st2.t1"],
       "covered": true

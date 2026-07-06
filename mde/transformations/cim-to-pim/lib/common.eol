@@ -201,7 +201,11 @@ operation deterministicEquivalentId(source, ruleName : String, className : Strin
   if (ruleName = "Policy2PolicyHandlerFunction") return idFor("fn_policy", source);
   if (ruleName = "DecisionTable2ChoiceLogic") return idFor("fn_decision", source);
   if (ruleName = "BusinessProcess2Workflow") return idFor("workflow", source);
-  if (ruleName = "ProcessStep2WorkflowState") return idFor("state", source);
+  if (ruleName = "StartStep2WorkflowStartStep") return idFor("step", source);
+  if (ruleName = "EndStep2WorkflowSuccessEndStep") return idFor("step", source);
+  if (ruleName = "DecisionStep2WorkflowChoiceStep") return idFor("step", source);
+  if (ruleName = "WaitLikeStep2WorkflowWaitStep") return idFor("step", source);
+  if (ruleName = "ProcessStep2WorkflowTaskStep") return idFor("step", source);
   if (ruleName = "ProcessTransition2WorkflowTransition") return idFor("wf_transition", source);
   if (ruleName = "ExceptionScenario2ErrorHandler") return idFor("errorhandler", source);
   return "";

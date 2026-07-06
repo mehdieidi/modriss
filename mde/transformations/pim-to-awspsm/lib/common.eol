@@ -101,8 +101,8 @@ operation cachePimOwnership() {
     }
     for (workflow in service.ownsWorkflows) {
       cachePimServiceOwner(workflow, service);
-      for (state in workflow.states) {
-        cachePimServiceOwner(state, service);
+      for (step in workflow.steps) {
+        cachePimServiceOwner(step, service);
       }
     }
     for (adapter in service.ownsAdapters) {

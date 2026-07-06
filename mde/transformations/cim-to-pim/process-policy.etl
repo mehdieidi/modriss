@@ -14,9 +14,21 @@ operation shouldGenerateWorkflow(bp : CIMPROCESS!BusinessProcess) {
     (cimRoot().transformationProfile.isDefined() and cimRoot().transformationProfile.preferProcessAsWorkflowCandidate);
 }
 
-/** Computes workflow state for. */
-operation workflowStateFor(step : CIMPROCESS!ProcessStep) {
-  return cachedEquivalent(step, "ProcessStep2WorkflowState");
+/** Computes workflow step for. */
+operation workflowStepFor(step : CIMPROCESS!ProcessStep) {
+  if (step.isKindOf(CIMPROCESS!StartStep)) {
+    return cachedEquivalent(step, "StartStep2WorkflowStartStep");
+  }
+  if (step.isKindOf(CIMPROCESS!EndStep)) {
+    return cachedEquivalent(step, "EndStep2WorkflowSuccessEndStep");
+  }
+  if (step.isKindOf(CIMPROCESS!DecisionStep)) {
+    return cachedEquivalent(step, "DecisionStep2WorkflowChoiceStep");
+  }
+  if (step.isKindOf(CIMPROCESS!WaitStep) or step.isKindOf(CIMPROCESS!EventStep)) {
+    return cachedEquivalent(step, "WaitLikeStep2WorkflowWaitStep");
+  }
+  return cachedEquivalent(step, "ProcessStep2WorkflowTaskStep");
 }
 
 /** Computes first integer text. */
@@ -384,16 +396,98 @@ rule BusinessProcess2Workflow
 }
 
 @greedy
-/** Transforms Process Step elements into Workflow State elements. */
-rule ProcessStep2WorkflowState
-  transform s : CIMPROCESS!ProcessStep
-  to ws : WORKFLOW!WorkflowState {
+/** Transforms Start Step elements into Workflow Start Step elements. */
+rule StartStep2WorkflowStartStep
+  transform s : CIMPROCESS!StartStep
+  to ws : WORKFLOW!StartStep {
 
-  ws.id = idFor("state", s);
+  ws.id = idFor("step", s);
   ws.name = s.name;
-  ws.stateKind = mapStateKind(s);
   ws.orderIndex = s.orderIndex;
-  ws.terminal = s.isKindOf(CIMPROCESS!EndStep);
+  ws.inputMapping = "TBD";
+  ws.outputMapping = "TBD";
+  ws.timeoutSeconds = 0;
+  traceGenerated(s, ws, "TR-120", "HIGH");
+}
+
+@greedy
+/** Transforms End Step elements into Workflow Success End Step elements. */
+rule EndStep2WorkflowSuccessEndStep
+  transform s : CIMPROCESS!EndStep
+  to ws : WORKFLOW!SuccessEndStep {
+
+  ws.id = idFor("step", s);
+  ws.name = s.name;
+  ws.orderIndex = s.orderIndex;
+  ws.inputMapping = "TBD";
+  ws.outputMapping = "TBD";
+  ws.timeoutSeconds = 0;
+  traceGenerated(s, ws, "TR-120", "HIGH");
+}
+
+@greedy
+/** Transforms Decision Step elements into Workflow Choice Step elements. */
+rule DecisionStep2WorkflowChoiceStep
+  transform s : CIMPROCESS!DecisionStep
+  to ws : WORKFLOW!ChoiceStep {
+
+  ws.id = idFor("step", s);
+  ws.name = s.name;
+  ws.orderIndex = s.orderIndex;
+  ws.inputMapping = "TBD";
+  ws.outputMapping = "TBD";
+  ws.timeoutSeconds = 0;
+  if (s.condition.isDefined()) {
+    ws.condition = cloneConditionExpression(s.condition, "choice_condition", s);
+    ws.conditionExpression = expressionText(s.condition);
+  }
+  if (s.decisionTable.isDefined()) {
+    var decisionFn = cachedEquivalent(s.decisionTable, "DecisionTable2ChoiceLogic");
+    if (decisionFn.isDefined()) {
+      ws.invokesFunction = decisionFn;
+      traceGenerated(s, decisionFn, "TR-120", "MEDIUM");
+    }
+  }
+  traceGenerated(s, ws, "TR-120", "HIGH");
+}
+
+@greedy
+/** Transforms Wait-like Step elements into Workflow Wait Step elements. */
+rule WaitLikeStep2WorkflowWaitStep
+  transform s : CIMPROCESS!ProcessStep
+  to ws : WORKFLOW!WaitStep {
+
+  guard : s.isKindOf(CIMPROCESS!WaitStep) or s.isKindOf(CIMPROCESS!EventStep)
+
+  ws.id = idFor("step", s);
+  ws.name = s.name;
+  ws.orderIndex = s.orderIndex;
+  ws.inputMapping = "TBD";
+  ws.outputMapping = "TBD";
+  ws.timeoutSeconds = 0;
+  if (s.isKindOf(CIMPROCESS!WaitStep)) {
+    ws.waitReason = s.waitReason;
+    if (s.durationExpressionModel.isDefined()) {
+      ws.condition = cloneKernelExpression(s.durationExpressionModel, "wait_condition", s);
+    }
+    ws.conditionExpression = s.durationExpression;
+  }
+  traceGenerated(s, ws, "TR-120", "HIGH");
+}
+
+@greedy
+/** Transforms executable Process Step elements into Workflow Task Step elements. */
+rule ProcessStep2WorkflowTaskStep
+  transform s : CIMPROCESS!ProcessStep
+  to ws : WORKFLOW!TaskStep {
+
+  guard : s.isKindOf(CIMPROCESS!CommandStep) or s.isKindOf(CIMPROCESS!QueryStep) or
+    s.isKindOf(CIMPROCESS!PolicyStep) or s.isKindOf(CIMPROCESS!HumanTaskStep) or
+    s.isKindOf(CIMPROCESS!ExternalInteractionStep)
+
+  ws.id = idFor("step", s);
+  ws.name = s.name;
+  ws.orderIndex = s.orderIndex;
   ws.inputMapping = "TBD";
   ws.outputMapping = "TBD";
   ws.timeoutSeconds = 0;
@@ -409,17 +503,6 @@ rule ProcessStep2WorkflowState
   }
   if (s.isKindOf(CIMPROCESS!ExternalInteractionStep)) {
     ws.invokesAdapter = adapterFor(s.externalSystem);
-  }
-  if (s.isKindOf(CIMPROCESS!DecisionStep) and s.condition.isDefined()) {
-    ws.condition = cloneConditionExpression(s.condition, "state_condition", s);
-    ws.conditionExpression = expressionText(s.condition);
-  }
-  if (s.isKindOf(CIMPROCESS!DecisionStep) and s.decisionTable.isDefined()) {
-    var decisionFn = cachedEquivalent(s.decisionTable, "DecisionTable2ChoiceLogic");
-    if (decisionFn.isDefined()) {
-      ws.invokesFunction = decisionFn;
-      traceGenerated(s, decisionFn, "TR-120", "MEDIUM");
-    }
   }
   if (s.isKindOf(CIMPROCESS!HumanTaskStep)) {
     var taskFn = new COMPUTE!Function;
@@ -466,8 +549,8 @@ rule ProcessTransition2WorkflowTransition
 
   wt.id = idFor("wf_transition", t);
   wt.name = t.name.orDefault(t.source.name + " -> " + t.target.name);
-  wt.source = workflowStateFor(t.source);
-  wt.target = workflowStateFor(t.target);
+  wt.source = workflowStepFor(t.source);
+  wt.target = workflowStepFor(t.target);
   if (t.condition.isDefined()) {
     wt.condition = cloneKernelExpression(t.condition, "wf_transition_condition", t);
   }
@@ -494,22 +577,9 @@ post AttachWorkflowDetails {
       continue;
     }
     for (step in bp.steps) {
-      var state = workflowStateFor(step);
-      if (state.isDefined() and not wf.states.includes(state)) {
-        wf.states.add(state);
-      }
-    }
-    if (wf.states.notEmpty()) {
-      var starts = wf.states.select(s | s.stateKind = PIMTYPES!WorkflowStateKind#PASS);
-      if (starts.notEmpty()) {
-        wf.startState = starts.first();
-      }
-      else {
-        wf.startState = wf.states.sortBy(s | s.orderIndex).first();
-      }
-      wf.endStates.addAll(wf.states.select(s | s.terminal));
-      if (wf.endStates.isEmpty()) {
-        wf.endStates.add(wf.states.sortBy(s | s.orderIndex).last());
+      var workflowStep = workflowStepFor(step);
+      if (workflowStep.isDefined() and not wf.steps.includes(workflowStep)) {
+        wf.steps.add(workflowStep);
       }
     }
     for (t in bp.transitions) {
@@ -518,18 +588,22 @@ post AttachWorkflowDetails {
         wf.transitions.add(transition);
       }
     }
-    if (wf.states.notEmpty()) {
+    if (wf.steps.notEmpty()) {
       for (ex in bp.exceptions) {
         var handler = cachedEquivalent(ex, "ExceptionScenario2ErrorHandler");
         if (handler.isDefined()) {
-          var recoveryTarget = wf.states.sortBy(s | s.orderIndex).selectOne(s | not s.terminal and s <> wf.startState);
-          if (recoveryTarget.isUndefined() and wf.endStates.notEmpty()) {
-            recoveryTarget = wf.endStates.first();
+          var startStep = wf.steps.select(s | s.isKindOf(WORKFLOW!StartStep)).sortBy(s | s.orderIndex).first();
+          var recoveryTarget = wf.steps.sortBy(s | s.orderIndex).selectOne(s |
+            not s.isKindOf(WORKFLOW!SuccessEndStep) and not s.isKindOf(WORKFLOW!FailureEndStep) and s <> startStep);
+          if (recoveryTarget.isUndefined()) {
+            recoveryTarget = wf.steps.select(s | s.isKindOf(WORKFLOW!SuccessEndStep) or s.isKindOf(WORKFLOW!FailureEndStep)).sortBy(s | s.orderIndex).first();
           }
           if (recoveryTarget.isDefined()) {
-            handler.nextState = recoveryTarget;
+            handler.nextStep = recoveryTarget;
           }
-          wf.startState.catchHandlers.add(handler);
+          if (startStep.isDefined()) {
+            startStep.catchHandlers.add(handler);
+          }
         }
         if (ex.compensationRequired) {
           var comp = new WORKFLOW!CompensationPolicy;
@@ -540,7 +614,10 @@ post AttachWorkflowDetails {
           comp.compensationStrategy = ex.recoveryAction.orDefault("TBD");
           comp.automatic = hasText(ex.recoveryAction);
           comp.compensationEvents.addAll(ex.resultingEvents.collect(e | eventTypeFor(e)).select(e | e.isDefined()));
-          wf.startState.compensation = comp;
+          var startStep = wf.steps.select(s | s.isKindOf(WORKFLOW!StartStep)).sortBy(s | s.orderIndex).first();
+          if (startStep.isDefined()) {
+            startStep.compensation = comp;
+          }
           pimRoot().policies.add(comp);
           traceGenerated(ex, comp, "TR-130", "MEDIUM");
           if (not hasText(ex.recoveryAction)) {
@@ -549,23 +626,23 @@ post AttachWorkflowDetails {
         }
       }
     }
-    for (state in wf.states.select(s | s.invokesAdapter.isDefined())) {
-      var flowId = newId("flow_external", state.id + "_" + state.invokesAdapter.id);
+    for (step in wf.steps.select(s | s.isKindOf(WORKFLOW!TaskStep) and s.invokesAdapter.isDefined())) {
+      var flowId = newId("flow_external", step.id + "_" + step.invokesAdapter.id);
       if (not cachedPimExternalFlowIds.includes(flowId)) {
         cachedPimExternalFlowIds.add(flowId);
         var flow = new INTEGRATION!ExternalIntegrationFlow;
         flow.id = flowId;
-        flow.name = state.name + " calls " + state.invokesAdapter.name;
-        flow.flowPurpose = "External adapter invocation from workflow state.";
+        flow.name = step.name + " calls " + step.invokesAdapter.name;
+        flow.flowPurpose = "External adapter invocation from workflow task step.";
         flow.criticalPath = true;
         flow.containsPersonalData = false;
-        flow.source = state;
-        flow.target = state.invokesAdapter;
-        flow.adapter = state.invokesAdapter;
+        flow.source = step;
+        flow.target = step.invokesAdapter;
+        flow.adapter = step.invokesAdapter;
         flow.observability = createDefaultObservability(flow, "TR-140", true, true);
         flow.resilience = createDefaultResilience(flow, "TR-140", false);
         pimRoot().flows.add(flow);
-        traceGenerated(state, flow, "TR-140", "MEDIUM");
+        traceGenerated(step, flow, "TR-140", "MEDIUM");
       }
     }
   }
@@ -711,7 +788,7 @@ rule TemporalConstraint2TimeoutPolicy
         target.resilience = createDefaultResilience(target, "TR-130", false);
       }
     }
-    if (target.isKindOf(WORKFLOW!WorkflowState) and timeout.timeoutSeconds > 0) {
+    if (target.isKindOf(WORKFLOW!WorkflowStep) and timeout.timeoutSeconds > 0) {
       target.timeoutSeconds = timeout.timeoutSeconds;
     }
   }

@@ -174,8 +174,8 @@ operation policyTargetsFor(source) {
     if (workflowFor(source).isDefined()) targets.add(workflowFor(source));
   }
   else if (source.isKindOf(CIMPROCESS!ProcessStep)) {
-    var state = cachedEquivalent(source, "ProcessStep2WorkflowState");
-    if (state.isDefined()) targets.add(state);
+    var step = workflowStepFor(source);
+    if (step.isDefined()) targets.add(step);
   }
   else if (source.isKindOf(CIMDOMAIN!AggregateCandidate)) {
     if (storeForAggregate(source).isDefined()) targets.add(storeForAggregate(source));

@@ -527,12 +527,12 @@ Model workflows from CIM business processes with human tasks and compensation.
 **Viewpoint:** workflow
 **Duration:** 1-2h
 **Artifacts:** Workflow Model
-**Palette focus:** `Workflow`, `WorkflowState`, `WorkflowTransition`
+**Palette focus:** `Workflow`, `StartStep`, `TaskStep`, `ChoiceStep`, `WaitStep`, `WorkflowTransition`
 
 **Steps:**
 
 1. Create Workflow elements from CIM business processes.
-2. Define states, transitions, and workflow kind.
+2. Define typed workflow steps, transitions, and workflow kind.
 
 **Entry criteria:**
 

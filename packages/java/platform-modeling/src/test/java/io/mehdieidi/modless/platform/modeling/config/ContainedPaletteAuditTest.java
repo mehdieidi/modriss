@@ -25,7 +25,8 @@ class ContainedPaletteAuditTest {
     assertNestedOnly(level("cim"), "StartStep", "ExceptionScenario", "DecisionRule");
     assertRootStandalone(level("cim"), "BusinessProcess", "DecisionTable", "Policy");
 
-    assertNestedOnly(level("pim"), "WorkflowState", "ApiRoute", "ErrorMapping", "ParallelBranch");
+    assertNestedOnly(
+        level("pim"), "StartStep", "TaskStep", "ApiRoute", "ErrorMapping", "ParallelBranch");
     assertRootStandalone(level("pim"), "Workflow", "Api", "Function", "HumanTask");
 
     assertNestedOnly(
@@ -71,7 +72,8 @@ class ContainedPaletteAuditTest {
 
     Map<String, Object> pimPalettes = map(level("pim").get("containmentPalettes"));
     assertTrue(stringList(map(pimPalettes.get("Api")).get("types")).contains("ApiRoute"));
-    assertTrue(stringList(map(pimPalettes.get("Workflow")).get("types")).contains("WorkflowState"));
+    assertTrue(stringList(map(pimPalettes.get("Workflow")).get("types")).contains("StartStep"));
+    assertTrue(stringList(map(pimPalettes.get("Workflow")).get("types")).contains("TaskStep"));
 
     Map<String, Object> psmPalettes = map(level("psm").get("containmentPalettes"));
     assertTrue(stringList(map(psmPalettes.get("SamStack")).get("types")).contains("Vpc"));
@@ -85,7 +87,8 @@ class ContainedPaletteAuditTest {
     Map<String, Object> pim = level("pim");
     List<String> workflowPalette = paletteForView(pim, "pim-workflow");
     assertTrue(workflowPalette.contains("Workflow"));
-    assertFalse(workflowPalette.contains("WorkflowState"));
+    assertFalse(workflowPalette.contains("StartStep"));
+    assertFalse(workflowPalette.contains("TaskStep"));
     assertFalse(workflowPalette.contains("WorkflowTransition"));
 
     List<String> apiPalette = paletteForView(pim, "pim-api-surface");

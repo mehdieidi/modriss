@@ -442,7 +442,7 @@ class ModelServiceXmiImportTest {
     JsonNode routeToFunction =
         relationship(relationships, "route-submit", "fn-submit", "ROUTES_TO");
     JsonNode functionReadsStore = relationship(relationships, "fn-submit", "store-app", "READS");
-    JsonNode workflowTransition = relationship(relationships, "wf-start", "wf-end", "TRANSITION");
+    JsonNode workflowTransition = relationship(relationships, "wf-start", "wf-task", "TRANSITION");
     JsonNode principalPermission =
         relationship(relationships, "principal-resident", "fn-submit", "PERMISSION");
     JsonNode rootContainsApi = relationship(relationships, "pim-root", "api-main", "CONTAINS");
@@ -544,7 +544,7 @@ class ModelServiceXmiImportTest {
     service.attachSourceXmi(created, xmi);
 
     ObjectNode staleJson = (ObjectNode) created.modelJson().deepCopy();
-    ((ObjectNode) staleJson.path("workflows").path(0).path("states").path(0))
+    ((ObjectNode) staleJson.path("workflows").path(0).path("steps").path(0))
         .put("compensation", "missing-compensation");
     service.update(user, ModelLevel.PIM, created.id(), "pim", staleJson);
 
@@ -582,7 +582,7 @@ class ModelServiceXmiImportTest {
                 java.util.List.of(
                     new ModelService.ModelPatchOperation(
                         "add",
-                        "/workflows/0/states/0/compensation",
+                        "/workflows/0/steps/0/compensation",
                         store.objectMapper().getNodeFactory().textNode("missing-compensation")))));
 
     ModelService.ValidationResult validation = service.validate(user, ModelLevel.PIM, created.id());
@@ -862,7 +862,9 @@ class ModelServiceXmiImportTest {
     <?xml version="1.0" encoding="UTF-8"?>
     <pim:PIMModel xmi:version="2.0"
         xmlns:xmi="http://www.omg.org/XMI"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:pim="https://modless.org/pim/1.0"
+        xmlns:workflow="https://modless.org/pim/workflow/1.0"
         id="pim-root"
         name="PIM Test"
         architectureStyle="WORKFLOW_ORCHESTRATED_SERVERLESS"
@@ -886,22 +888,28 @@ class ModelServiceXmiImportTest {
           consistencyNeed="EVENTUAL"/>
       <workflows id="workflow-main"
           name="Main workflow"
-          workflowKind="ORCHESTRATION"
-          startState="wf-start"
-          endStates="wf-end">
-        <states id="wf-start"
+          workflowKind="ORCHESTRATION">
+        <steps xsi:type="workflow:StartStep"
+            id="wf-start"
             name="Start"
-            stateKind="TASK"
-            orderIndex="1"
-            invokesFunction="fn-submit"/>
-        <states id="wf-end"
-            name="End"
-            stateKind="SUCCESS"
+            orderIndex="1"/>
+        <steps xsi:type="workflow:TaskStep"
+            id="wf-task"
+            name="Submit"
             orderIndex="2"
-            terminal="true"/>
+            invokesFunction="fn-submit"/>
+        <steps xsi:type="workflow:SuccessEndStep"
+            id="wf-end"
+            name="End"
+            orderIndex="3"/>
         <transitions id="wf-transition"
-            name="Start to End"
+            name="Start to Submit"
             source="wf-start"
+            target="wf-task"
+            defaultTransition="true"/>
+        <transitions id="wf-transition-end"
+            name="Submit to End"
+            source="wf-task"
             target="wf-end"
             defaultTransition="true"/>
       </workflows>

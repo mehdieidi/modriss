@@ -1443,8 +1443,23 @@
                 },
                 {
                   "metamodel": "pim",
-                  "eClass": "WorkflowState",
+                  "eClass": "WorkflowStep",
                   "cardinality": "1..*"
+                },
+                {
+                  "metamodel": "pim",
+                  "eClass": "StartStep",
+                  "cardinality": "1..*"
+                },
+                {
+                  "metamodel": "pim",
+                  "eClass": "SuccessEndStep",
+                  "cardinality": "1..*"
+                },
+                {
+                  "metamodel": "pim",
+                  "eClass": "TaskStep",
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "pim",
@@ -1455,21 +1470,16 @@
                   "metamodel": "pim",
                   "eEnum": "WorkflowKind",
                   "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "WorkflowStateKind",
-                  "cardinality": "enum-values"
                 }
               ],
               "steps": [
                 "Create Workflow elements from CIM business processes.",
-                "Define states, transitions, and workflow kind."
+                "Define steps, transitions, and workflow kind."
               ],
               "entryCriteria": ["Integration topology defined"],
               "exitCriteria": ["Workflows cover long-running CIM processes"],
               "validationRules": [],
-              "paletteFocus": ["Workflow", "WorkflowState", "WorkflowTransition"],
+              "paletteFocus": ["Workflow", "StartStep", "TaskStep", "WorkflowTransition"],
               "durationEstimate": "1-2h"
             },
             {

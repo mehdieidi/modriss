@@ -7,9 +7,21 @@
     "nsUri": "https://modless.org/pim/1.0"
   },
   "primitives": {
-    "workflow-state-node": {
+    "workflow-step-node": {
       "geometry": "rounded-rectangle",
       "cornerRadius": 18
+    },
+    "workflow-task-step": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 18
+    },
+    "workflow-map-step": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 14
+    },
+    "workflow-pass-step": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 12
     },
     "human-task-card": {
       "geometry": "rounded-rectangle",
@@ -21,9 +33,21 @@
     }
   },
   "notationPrimitives": {
-    "workflow-state-node": {
+    "workflow-step-node": {
       "geometry": "rounded-rectangle",
       "cornerRadius": 18
+    },
+    "workflow-task-step": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 18
+    },
+    "workflow-map-step": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 14
+    },
+    "workflow-pass-step": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 12
     },
     "human-task-card": {
       "geometry": "rounded-rectangle",
@@ -161,7 +185,7 @@
         "notation": {
           "tag": "WF",
           "shape": "workflow-node",
-          "lineFields": ["workflowKind", "stateKind", "taskDescription", "conditionExpression"]
+          "lineFields": ["workflowKind", "taskDescription", "conditionExpression", "orderIndex"]
         }
       }
     },
@@ -566,20 +590,161 @@
         "tag": "WF",
         "lineFields": ["workflowKind", "executionSemantics", "longRunning"],
         "detailFields": ["workflowKind", "executionSemantics", "longRunning"]
+      },
+      "containmentPaletteExtras": [
+        "HumanTask",
+        "ApprovalTask",
+        "EscalationPolicy",
+        "CompensationPolicy"
+      ]
+    },
+    {
+      "type": "WorkflowStep",
+      "label": "Workflow Step",
+      "displayName": "Workflow Step",
+      "icon": "input",
+      "color": "#EA580C",
+      "category": "Workflow View",
+      "supportOnly": true,
+      "creatable": false,
+      "primitive": "workflow-step-node",
+      "card": {
+        "tag": "STEP",
+        "lineFields": ["orderIndex", "timeoutSeconds"],
+        "detailFields": ["orderIndex", "timeoutSeconds"]
       }
     },
     {
-      "type": "WorkflowState",
-      "label": "Workflow State",
-      "displayName": "Workflow State",
-      "icon": "radio_button_checked",
+      "type": "StartStep",
+      "label": "Start Step",
+      "displayName": "Start Step",
+      "icon": "play_circle",
+      "color": "#16A34A",
+      "category": "Workflow View",
+      "primitive": "start-circle",
+      "card": {
+        "tag": "START",
+        "lineFields": ["orderIndex"],
+        "detailFields": ["orderIndex"]
+      }
+    },
+    {
+      "type": "SuccessEndStep",
+      "label": "Success End Step",
+      "displayName": "Success End Step",
+      "icon": "stop_circle",
+      "color": "#475569",
+      "category": "Workflow View",
+      "primitive": "end-double-circle",
+      "card": {
+        "tag": "END",
+        "lineFields": ["orderIndex"],
+        "detailFields": ["orderIndex"]
+      }
+    },
+    {
+      "type": "FailureEndStep",
+      "label": "Failure End Step",
+      "displayName": "Failure End Step",
+      "icon": "block",
+      "color": "#DC2626",
+      "category": "Workflow View",
+      "primitive": "end-double-circle",
+      "card": {
+        "tag": "FAIL",
+        "lineFields": ["orderIndex"],
+        "detailFields": ["orderIndex"]
+      }
+    },
+    {
+      "type": "TaskStep",
+      "label": "Task Step",
+      "displayName": "Task Step",
+      "icon": "bolt",
+      "color": "#2563EB",
+      "category": "Workflow View",
+      "primitive": "workflow-task-step",
+      "card": {
+        "tag": "TASK",
+        "lineFields": ["invokesFunction", "invokesAdapter", "nestedWorkflow", "orderIndex"],
+        "detailFields": ["invokesFunction", "invokesAdapter", "nestedWorkflow", "orderIndex"]
+      },
+      "containmentPaletteExtras": [
+        "ErrorHandler",
+        "CallbackTaskConfig",
+        "HumanTask",
+        "ApprovalTask"
+      ]
+    },
+    {
+      "type": "ChoiceStep",
+      "label": "Choice Step",
+      "displayName": "Choice Step",
+      "icon": "alt_route",
       "color": "#EA580C",
       "category": "Workflow View",
-      "primitive": "workflow-state-node",
+      "primitive": "decision-diamond",
       "card": {
-        "tag": "STATE",
-        "lineFields": ["stateKind", "orderIndex", "terminal"],
-        "detailFields": ["stateKind", "orderIndex", "terminal"]
+        "tag": "CHOICE",
+        "lineFields": ["conditionExpression", "invokesFunction", "orderIndex"],
+        "detailFields": ["conditionExpression", "invokesFunction", "orderIndex"]
+      }
+    },
+    {
+      "type": "ParallelStep",
+      "label": "Parallel Step",
+      "displayName": "Parallel Step",
+      "icon": "call_split",
+      "color": "#7C3AED",
+      "category": "Workflow View",
+      "primitive": "branch-container",
+      "card": {
+        "tag": "PAR",
+        "lineFields": ["orderIndex"],
+        "detailFields": ["orderIndex"]
+      }
+    },
+    {
+      "type": "MapStep",
+      "label": "Map Step",
+      "displayName": "Map Step",
+      "icon": "map",
+      "color": "#0D9488",
+      "category": "Workflow View",
+      "primitive": "workflow-map-step",
+      "card": {
+        "tag": "MAP",
+        "lineFields": ["orderIndex"],
+        "detailFields": ["orderIndex"]
+      },
+      "containmentPaletteExtras": ["MapStateConfig"]
+    },
+    {
+      "type": "WaitStep",
+      "label": "Wait Step",
+      "displayName": "Wait Step",
+      "icon": "schedule",
+      "color": "#64748B",
+      "category": "Workflow View",
+      "primitive": "timer-node",
+      "card": {
+        "tag": "WAIT",
+        "lineFields": ["waitReason", "conditionExpression", "orderIndex"],
+        "detailFields": ["waitReason", "conditionExpression", "orderIndex"]
+      }
+    },
+    {
+      "type": "PassStep",
+      "label": "Pass Step",
+      "displayName": "Pass Step",
+      "icon": "arrow_forward",
+      "color": "#64748B",
+      "category": "Workflow View",
+      "primitive": "workflow-pass-step",
+      "card": {
+        "tag": "PASS",
+        "lineFields": ["orderIndex"],
+        "detailFields": ["orderIndex"]
       }
     },
     {
@@ -1912,8 +2077,8 @@
       "eClass": "WorkflowTransition",
       "visualRole": "relationship",
       "edgeKind": "TRANSITION",
-      "sourceType": "WorkflowState",
-      "targetType": "WorkflowState"
+      "sourceType": "WorkflowStep",
+      "targetType": "WorkflowStep"
     },
     {
       "eClass": "Permission",
@@ -2233,8 +2398,8 @@
     {
       "eClass": "WorkflowTransition",
       "matchKinds": ["TRANSITION"],
-      "sourceType": "WorkflowState",
-      "targetType": "WorkflowState",
+      "sourceType": "WorkflowStep",
+      "targetType": "WorkflowStep",
       "rootFeature": "transitions",
       "sourceFeature": "source",
       "targetFeature": "target",
@@ -2447,9 +2612,7 @@
     "invokesFunction": "INVOKES",
     "invokedResource": "INVOKES",
     "function": "INVOKES",
-    "startState": "STARTS_AT",
-    "nextState": "TRANSITION",
-    "endStates": "ENDS_AT",
+    "nextStep": "TRANSITION",
     "targetResource": "PERMISSION_TARGET",
     "permissions": "PERMISSION",
     "deploysStacks": "DEPLOYS",
@@ -2460,8 +2623,6 @@
     "usesSecrets": "USES_SECRET"
   },
   "semanticReferenceExclusions": [
-    "startState",
-    "endStates",
     "ownsFunctions",
     "ownsApis",
     "ownsChannels",
@@ -2621,7 +2782,7 @@
         "EventBus",
         "ApiRoute",
         "Workflow",
-        "WorkflowState",
+        "WorkflowStep",
         "DataStore",
         "ObjectStore",
         "DataAccess",
@@ -2639,7 +2800,7 @@
         "Topic",
         "EventBus",
         "ApiRoute",
-        "WorkflowState"
+        "Workflow"
       ],
       "relationshipKinds": [
         "TRIGGERS",
@@ -2818,7 +2979,16 @@
       "viewpoint": "workflow",
       "elementTypes": [
         "Workflow",
-        "WorkflowState",
+        "WorkflowStep",
+        "StartStep",
+        "SuccessEndStep",
+        "FailureEndStep",
+        "TaskStep",
+        "ChoiceStep",
+        "ParallelStep",
+        "MapStep",
+        "WaitStep",
+        "PassStep",
         "WorkflowTransition",
         "ParallelBranch",
         "MapStateConfig",
@@ -2831,7 +3001,7 @@
         "Function",
         "ExternalAdapter"
       ],
-      "palette": ["Workflow", "WorkflowState", "HumanTask", "ApprovalTask", "EscalationPolicy"],
+      "palette": ["Workflow"],
       "relationshipKinds": ["TRANSITION", "INVOKES", "ORCHESTRATES", "EXTERNAL_CALL", "CONTAINS"],
       "layoutHint": "PROCESS"
     },

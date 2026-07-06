@@ -134,16 +134,6 @@ operation mapWorkflowKind(bp : CIMPROCESS!BusinessProcess) {
   return PIMTYPES!WorkflowKind#ORCHESTRATION;
 }
 
-/** Computes map state kind. */
-operation mapStateKind(step : CIMPROCESS!ProcessStep) {
-  if (step.isKindOf(CIMPROCESS!StartStep)) return PIMTYPES!WorkflowStateKind#PASS;
-  if (step.isKindOf(CIMPROCESS!EndStep)) return PIMTYPES!WorkflowStateKind#SUCCESS;
-  if (step.isKindOf(CIMPROCESS!DecisionStep)) return PIMTYPES!WorkflowStateKind#CHOICE;
-  if (step.isKindOf(CIMPROCESS!WaitStep)) return PIMTYPES!WorkflowStateKind#WAIT;
-  if (step.isKindOf(CIMPROCESS!EventStep)) return PIMTYPES!WorkflowStateKind#WAIT;
-  return PIMTYPES!WorkflowStateKind#TASK;
-}
-
 /** Computes map risk severity. */
 operation mapRiskSeverity(impact, probability) {
   var i = asText(impact).toLowerCase();

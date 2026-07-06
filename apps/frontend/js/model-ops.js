@@ -1802,7 +1802,9 @@ export async function exportActiveModel(format = "json") {
     },
     body: JSON.stringify({
       name: getActiveModelName(),
-      model: state.modelId ? null : serializeModel({ syncView: true, reconcileRelationships: true }),
+      model: state.modelId
+        ? null
+        : serializeModel({ syncView: true, reconcileRelationships: true }),
       format: normalizedFormat,
     }),
   });

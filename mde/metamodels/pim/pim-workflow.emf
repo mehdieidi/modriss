@@ -19,39 +19,70 @@ class Workflow extends kernel.TraceableElement, kernel.DeployableElement, kernel
   attr Boolean expressLowLatencyRequired;
   attr pimtypes.WorkflowKind[1] workflowKind;
 
-  val WorkflowState[*]#workflow states;
+  val WorkflowStep[+]#workflow steps;
   val WorkflowTransition[*]#workflow transitions;
 
-  ref WorkflowState[?] startState;
-  ref WorkflowState[*] endStates;
   ref policy.ObservabilityConfig[?] observability;
   ref policy.ResiliencePolicy[?] resilience;
   ref policy.IdempotencyPolicy[?] idempotency;
 }
 
-class WorkflowState extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
+abstract class WorkflowStep extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
   attr Integer orderIndex;
   attr Integer timeoutSeconds;
   attr String inputMapping;
   attr String outputMapping;
-  attr String conditionExpression;
-  attr Boolean terminal;
-  attr pimtypes.WorkflowStateKind[1] stateKind;
 
-  val kernel.Expression[?] condition;
-  val ParallelBranch[*]#ownerState branches;
-  val MapStateConfig[?] mapConfig;
-  val CallbackTaskConfig[?] callbackConfig;
   val policy.RetryPolicy[?] retry;
-  val ErrorHandler[*]#state catchHandlers;
+  val ErrorHandler[*]#step catchHandlers;
 
-  readonly transient ref Workflow[1]#states workflow;
+  readonly transient ref Workflow[1]#steps workflow;
+}
 
+class StartStep extends WorkflowStep {
+  ref CompensationPolicy[?] compensation;
+}
+
+class SuccessEndStep extends WorkflowStep {
+}
+
+class FailureEndStep extends WorkflowStep {
+}
+
+class TaskStep extends WorkflowStep {
   ref compute.Function[?] invokesFunction;
   ref external.ExternalAdapter[?] invokesAdapter;
   ref Workflow[?] nestedWorkflow;
   ref HumanTask[?] humanTask;
   ref CompensationPolicy[?] compensation;
+
+  val CallbackTaskConfig[?] callbackConfig;
+}
+
+class ChoiceStep extends WorkflowStep {
+  attr String conditionExpression;
+
+  val kernel.Expression[?] condition;
+
+  ref compute.Function[?] invokesFunction;
+}
+
+class ParallelStep extends WorkflowStep {
+  val ParallelBranch[*]#ownerStep branches;
+}
+
+class MapStep extends WorkflowStep {
+  val MapStateConfig[?] mapConfig;
+}
+
+class WaitStep extends WorkflowStep {
+  attr String conditionExpression;
+  attr String waitReason;
+
+  val kernel.Expression[?] condition;
+}
+
+class PassStep extends WorkflowStep {
 }
 
 class WorkflowTransition extends kernel.TraceableElement {
@@ -62,8 +93,8 @@ class WorkflowTransition extends kernel.TraceableElement {
 
   readonly transient ref Workflow[1]#transitions workflow;
 
-  ref WorkflowState[1] source;
-  ref WorkflowState[1] target;
+  ref WorkflowStep[1] source;
+  ref WorkflowStep[1] target;
 }
 
 class ErrorHandler extends kernel.TraceableElement {
@@ -71,20 +102,17 @@ class ErrorHandler extends kernel.TraceableElement {
   attr String recoveryAction;
   attr Boolean continueWorkflow;
 
-  readonly transient ref WorkflowState[1]#catchHandlers state;
+  readonly transient ref WorkflowStep[1]#catchHandlers step;
 
-  ref WorkflowState[?] nextState;
+  ref WorkflowStep[?] nextStep;
   ref compute.Function[?] handlerFunction;
 }
 
 class ParallelBranch extends kernel.TraceableElement {
-  readonly transient ref WorkflowState[1]#branches ownerState;
+  readonly transient ref ParallelStep[1]#branches ownerStep;
 
-  val WorkflowState[+] states;
+  val WorkflowStep[+] steps;
   val WorkflowTransition[*] transitions;
-
-  ref WorkflowState[1] startState;
-  ref WorkflowState[+] endStates;
 }
 
 class MapStateConfig extends kernel.TraceableElement {
