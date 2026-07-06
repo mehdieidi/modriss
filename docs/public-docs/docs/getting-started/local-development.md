@@ -37,21 +37,8 @@ python -m http.server 8082 --directory apps/frontend
 
 Then open `http://127.0.0.1:8082`.
 
-The packaged modeling config defaults to the AntV G6 canvas renderer. To exercise the GLSP/Sprotty
-editor locally, start the GLSP sidecar and point the backend at it:
-
-```powershell
-$env:MODLESS_DIAGRAM_RENDERER = "glsp-sprotty"
-$env:MODLESS_GLSP_SERVER_URL = "ws://127.0.0.1:8081/modless"
-mvn -pl apps/backend -am spring-boot:run
-npm run dev:glsp
-```
-
-Rebuild the GLSP client bundle after changing `packages/js/glsp-client`:
-
-```powershell
-npm run build:glsp
-```
+The modeling frontend uses the AntV G6 canvas renderer configured through `diagramEditor.renderer`
+in `GET /api/modeling/config`.
 
 ## Build and Test
 

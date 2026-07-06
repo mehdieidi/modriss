@@ -4,8 +4,7 @@
 flowchart TB
     User["Modeler / Developer"]
     Landing["Landing site"]
-    Frontend["Modeling frontend<br/>HTML, CSS, JavaScript<br/>AntV G6 or GLSP/Sprotty"]
-    Glsp["GLSP diagram server<br/>Node.js sidecar"]
+    Frontend["Modeling frontend<br/>HTML, CSS, JavaScript<br/>AntV G6"]
     Backend["Spring Boot backend<br/>API, services, MDE orchestration, assistant"]
     DB[("PostgreSQL + pgvector")]
     MDE["MDE assets<br/>Emfatic, Ecore, EVL, ETL, EGX/EGL"]
@@ -15,8 +14,6 @@ flowchart TB
     User --> Landing
     User --> Frontend
     Frontend -->|"REST, downloads, SSE, WebSocket"| Backend
-    Frontend <-->|"WebSocket when renderer is glsp-sprotty"| Glsp
-    Glsp -->|"Load model JSON and CVS config"| Backend
     Backend --> DB
     Backend --> MDE
     Backend --> AI
@@ -38,9 +35,3 @@ modeling configuration rather than maintaining a second independent metamodel.
 - The backend requires PostgreSQL and filesystem access to the `mde/` assets.
 - AI provider calls are optional and isolated from normal platform traffic.
 - LocalStack is used to test generated AWS projects, not to run Modless itself.
-
-## Deeper Diagrams
-
-The repository's `docs/diagrams/` package contains C4 diagrams, deployment views, dependency graphs,
-storage ERDs, endpoint sequences, assistant flows, MDE internals, frontend architecture, major
-function flows, and security/failure paths.

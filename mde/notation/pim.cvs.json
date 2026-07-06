@@ -9,18 +9,15 @@
   "primitives": {
     "workflow-state-node": {
       "geometry": "rounded-rectangle",
-      "cornerRadius": 18,
-      "sprottyShape": "rectangle"
+      "cornerRadius": 18
     },
     "human-task-card": {
       "geometry": "rounded-rectangle",
-      "cornerRadius": 18,
-      "sprottyShape": "rectangle"
+      "cornerRadius": 18
     },
     "approval-task-card": {
       "geometry": "rounded-rectangle",
-      "cornerRadius": 18,
-      "sprottyShape": "rectangle"
+      "cornerRadius": 18
     }
   },
   "notationPrimitives": {

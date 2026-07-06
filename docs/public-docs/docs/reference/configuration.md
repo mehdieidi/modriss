@@ -46,15 +46,11 @@ Docker Compose overrides `MODLESS_UPLOAD_ROOT` inside the backend container to
 
 ## Diagram Editor
 
-The packaged modeling config defaults to `antv-g6`. The Docker Compose stack overrides
-`MODLESS_DIAGRAM_RENDERER` to `glsp-sprotty` and starts the GLSP sidecar on port `8081`.
+The modeling frontend uses the AntV G6 canvas renderer.
 
-| Variable                   | Default in `.env.example`     | Purpose                        |
-| -------------------------- | ----------------------------- | ------------------------------ |
-| `GLSP_PORT`                | `8081`                        | Host port for the GLSP sidecar |
-| `MODLESS_GLSP_LOG_LEVEL`   | `info`                        | GLSP sidecar log level         |
-| `MODLESS_DIAGRAM_RENDERER` | `glsp-sprotty`                | Frontend diagram renderer      |
-| `MODLESS_GLSP_SERVER_URL`  | `ws://127.0.0.1:8081/modless` | Browser WebSocket URL for GLSP |
+| Variable                   | Default in `.env.example` | Purpose                   |
+| -------------------------- | ------------------------- | ------------------------- |
+| `MODLESS_DIAGRAM_RENDERER` | `antv-g6`                 | Frontend diagram renderer |
 
 ## AI
 
@@ -117,7 +113,6 @@ Dedicated AI proxy variables configure HTTP or SOCKS proxy behavior for provider
 | `BACKEND_PORT`            | `8080`  |
 | `FRONTEND_PORT`           | `8082`  |
 | `LANDING_PORT`            | `8083`  |
-| `GLSP_PORT`               | `8081`  |
 | `LOCALSTACK_GATEWAY_PORT` | `4566`  |
 
 Optional Compose-only overrides:

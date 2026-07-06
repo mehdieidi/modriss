@@ -664,9 +664,6 @@ class ModelingConfigServiceTest {
     Map<String, Object> config = service.config();
     Map<String, Object> diagramEditor = map(config.get("diagramEditor"));
     assertEquals("antv-g6", diagramEditor.get("renderer"));
-    assertNotNull(diagramEditor.get("glspServerUrl"));
-    assertEquals("ws://127.0.0.1:8081/modless", diagramEditor.get("glspServerUrl"));
-    assertTrue(stringList(diagramEditor.get("allowedRenderers")).contains("glsp-sprotty"));
 
     for (String levelKey : List.of("cim", "pim", "psm")) {
       Map<String, Object> level = level(levelKey);
@@ -688,25 +685,17 @@ class ModelingConfigServiceTest {
   /** Verifies diagram editor settings can be overridden via environment variables. */
   @Test
   void diagramEditorConfigHonorsEnvironmentOverrides() {
-    Map<String, Object> platform =
-        Map.of(
-            "diagramEditor",
-            Map.of(
-                "renderer", "antv-g6",
-                "glspServerUrl", "ws://127.0.0.1:8081/modless"));
-    Map<String, Object> diagramEditor =
-        service.diagramEditorConfig(platform, "glsp-sprotty", "ws://localhost:9090/modless");
-    assertEquals("glsp-sprotty", diagramEditor.get("renderer"));
-    assertEquals("ws://localhost:9090/modless", diagramEditor.get("glspServerUrl"));
+    Map<String, Object> platform = Map.of("diagramEditor", Map.of("renderer", "antv-g6"));
+    Map<String, Object> diagramEditor = service.diagramEditorConfig(platform, "antv-g6");
+    assertEquals("antv-g6", diagramEditor.get("renderer"));
   }
 
   /** Verifies invalid renderer env values fall back to platform config. */
   @Test
   void diagramEditorConfigIgnoresInvalidRendererOverride() {
-    Map<String, Object> platform = Map.of("diagramEditor", Map.of("renderer", "glsp-sprotty"));
-    Map<String, Object> diagramEditor =
-        service.diagramEditorConfig(platform, "unknown-renderer", null);
-    assertEquals("glsp-sprotty", diagramEditor.get("renderer"));
+    Map<String, Object> platform = Map.of("diagramEditor", Map.of("renderer", "antv-g6"));
+    Map<String, Object> diagramEditor = service.diagramEditorConfig(platform, "unknown-renderer");
+    assertEquals("antv-g6", diagramEditor.get("renderer"));
   }
 
   /** Verifies PIM CVS exposes workflow/service container notation. */

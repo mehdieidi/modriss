@@ -9,43 +9,35 @@
   "primitives": {
     "command-lozenge": {
       "geometry": "hexagon",
-      "cornerRadius": 0,
-      "sprottyShape": "hexagon"
+      "cornerRadius": 0
     },
     "query-trapezoid": {
       "geometry": "trapezoid",
-      "cornerRadius": 0,
-      "sprottyShape": "trapezoid"
+      "cornerRadius": 0
     },
     "event-hexagon": {
       "geometry": "hexagon",
-      "cornerRadius": 0,
-      "sprottyShape": "hexagon"
+      "cornerRadius": 0
     },
     "error-octagon": {
       "geometry": "octagon",
-      "cornerRadius": 0,
-      "sprottyShape": "octagon"
+      "cornerRadius": 0
     },
     "condition-diamond": {
       "geometry": "diamond",
-      "cornerRadius": 0,
-      "sprottyShape": "diamond"
+      "cornerRadius": 0
     },
     "decision-diamond": {
       "geometry": "diamond",
-      "cornerRadius": 0,
-      "sprottyShape": "diamond"
+      "cornerRadius": 0
     },
     "start-circle": {
       "geometry": "ellipse",
-      "cornerRadius": 0,
-      "sprottyShape": "ellipse"
+      "cornerRadius": 0
     },
     "end-double-circle": {
       "geometry": "ellipse",
-      "cornerRadius": 0,
-      "sprottyShape": "ellipse"
+      "cornerRadius": 0
     }
   },
   "notationPrimitives": {
@@ -1960,30 +1952,6 @@
         "TRACE"
       ],
       "layoutHint": "GOVERNANCE"
-    },
-    {
-      "id": "traceability",
-      "displayName": "Traceability",
-      "viewType": "TRACEABILITY",
-      "viewpoint": "traceability",
-      "elementTypes": [
-        "TraceModel",
-        "TraceLink",
-        "Requirement",
-        "BusinessGoal",
-        "BusinessCapability",
-        "DomainEntity",
-        "Command",
-        "Query",
-        "BusinessEvent",
-        "Policy",
-        "Risk",
-        "Assumption",
-        "Hotspot"
-      ],
-      "palette": ["TraceLink", "Risk", "Assumption", "Hotspot"],
-      "relationshipKinds": ["TRACE", "ATTACHED_TO", "SUPPORTS", "CONSTRAINS"],
-      "layoutHint": "MATRIX"
     }
   ],
   "canvasPolicy": {

@@ -1152,7 +1152,7 @@ async function init() {
   try {
     await initializeModelingRenderer();
   } catch (error) {
-    console.error("GLSP renderer initialization failed", error);
+    console.error("Diagram renderer initialization failed", error);
     setStatus("Diagram renderer unavailable. Check configuration and refresh.");
   }
   setupDnD();

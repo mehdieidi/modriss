@@ -18,9 +18,16 @@
       "type": "object",
       "required": ["level", "ecore"],
       "properties": {
-        "level": { "type": "string", "enum": ["cim", "pim", "psm"] },
-        "ecore": { "type": "string" },
-        "nsUri": { "type": "string" }
+        "level": {
+          "type": "string",
+          "enum": ["cim", "pim", "psm"]
+        },
+        "ecore": {
+          "type": "string"
+        },
+        "nsUri": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
@@ -29,18 +36,27 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "sprottyShape": { "type": "string" },
-          "geometry": { "type": "string" },
-          "cornerRadius": { "type": "number" },
-          "description": { "type": "string" }
+          "geometry": {
+            "type": "string"
+          },
+          "cornerRadius": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          }
         },
         "additionalProperties": true
       }
     },
-    "elementVisualDefaults": { "type": "object" },
+    "elementVisualDefaults": {
+      "type": "object"
+    },
     "elementVisualRules": {
       "type": "array",
-      "items": { "type": "object" }
+      "items": {
+        "type": "object"
+      }
     },
     "elementOverrides": {
       "type": "array",
@@ -48,10 +64,18 @@
         "type": "object",
         "required": ["type"],
         "properties": {
-          "type": { "type": "string" },
-          "visualRole": { "type": "string" },
-          "primitive": { "type": "string" },
-          "card": { "type": "object" }
+          "type": {
+            "type": "string"
+          },
+          "visualRole": {
+            "type": "string"
+          },
+          "primitive": {
+            "type": "string"
+          },
+          "card": {
+            "type": "object"
+          }
         }
       }
     },
@@ -64,19 +88,33 @@
           "match": {
             "type": "object",
             "properties": {
-              "eClass": { "type": "string" },
-              "package": { "type": "string" }
+              "eClass": {
+                "type": "string"
+              },
+              "package": {
+                "type": "string"
+              }
             }
           },
           "visualRole": {
             "type": "string",
             "enum": ["node", "container", "relationship", "detail", "support"]
           },
-          "primitive": { "type": "string" },
-          "card": { "type": "object" },
-          "icon": { "type": "string" },
-          "color": { "type": "string" },
-          "category": { "type": "string" }
+          "primitive": {
+            "type": "string"
+          },
+          "card": {
+            "type": "object"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          }
         }
       }
     },
@@ -86,11 +124,21 @@
         "type": "object",
         "required": ["eReference", "edgeKind"],
         "properties": {
-          "sourceType": { "type": "string" },
-          "targetType": { "type": "string" },
-          "eReference": { "type": "string" },
-          "edgeKind": { "type": "string" },
-          "directed": { "type": "boolean" }
+          "sourceType": {
+            "type": "string"
+          },
+          "targetType": {
+            "type": "string"
+          },
+          "eReference": {
+            "type": "string"
+          },
+          "edgeKind": {
+            "type": "string"
+          },
+          "directed": {
+            "type": "boolean"
+          }
         }
       }
     },
@@ -99,45 +147,113 @@
       "items": {
         "type": "object",
         "properties": {
-          "eClass": { "type": "string" },
-          "visualRole": { "type": "string" },
-          "edgeKind": { "type": "string" }
+          "eClass": {
+            "type": "string"
+          },
+          "visualRole": {
+            "type": "string"
+          },
+          "edgeKind": {
+            "type": "string"
+          }
         }
       }
     },
-    "relationshipRules": { "type": "array" },
-    "relationshipKinds": { "type": "array", "items": { "type": "string" } },
-    "relationshipKindLabels": { "type": "object" },
-    "relationshipVisualRules": { "type": "array" },
-    "semanticReferenceRules": { "type": "array" },
-    "semanticEdgeObjectRules": { "type": "array" },
-    "badgeRules": { "type": "array" },
+    "relationshipRules": {
+      "type": "array"
+    },
+    "relationshipKinds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "relationshipKindLabels": {
+      "type": "object"
+    },
+    "relationshipVisualRules": {
+      "type": "array"
+    },
+    "semanticReferenceRules": {
+      "type": "array"
+    },
+    "semanticEdgeObjectRules": {
+      "type": "array"
+    },
+    "badgeRules": {
+      "type": "array"
+    },
     "viewpoints": {
       "type": "array",
       "items": {
         "type": "object",
         "required": ["id", "displayName"],
         "properties": {
-          "id": { "type": "string" },
-          "displayName": { "type": "string" },
-          "viewType": { "type": "string" },
-          "viewpoint": { "type": "string" },
-          "elementTypes": { "type": "array", "items": { "type": "string" } },
-          "palette": { "type": "array", "items": { "type": "string" } },
-          "relationshipKinds": { "type": "array", "items": { "type": "string" } },
-          "layoutHint": { "type": "string" }
+          "id": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "viewType": {
+            "type": "string"
+          },
+          "viewpoint": {
+            "type": "string"
+          },
+          "elementTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "palette": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "relationshipKinds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "layoutHint": {
+            "type": "string"
+          }
         }
       }
     },
-    "canvasPolicy": { "type": "object" },
-    "boundedContext": { "type": "object" },
-    "notationPrimitives": { "type": "object" },
-    "complexityManagement": { "type": "array" },
-    "workbench": { "type": "object" },
-    "scaffoldRecipes": { "type": "array" },
-    "constraints": { "type": "array" },
-    "strictnessModes": { "type": "array" },
-    "rootTemplate": { "type": "object" },
-    "starterTemplate": { "type": "object" }
+    "canvasPolicy": {
+      "type": "object"
+    },
+    "boundedContext": {
+      "type": "object"
+    },
+    "notationPrimitives": {
+      "type": "object"
+    },
+    "complexityManagement": {
+      "type": "array"
+    },
+    "workbench": {
+      "type": "object"
+    },
+    "scaffoldRecipes": {
+      "type": "array"
+    },
+    "constraints": {
+      "type": "array"
+    },
+    "strictnessModes": {
+      "type": "array"
+    },
+    "rootTemplate": {
+      "type": "object"
+    },
+    "starterTemplate": {
+      "type": "object"
+    }
   }
 }

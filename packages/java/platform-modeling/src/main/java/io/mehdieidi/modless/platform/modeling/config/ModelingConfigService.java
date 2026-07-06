@@ -1742,29 +1742,19 @@ public final class ModelingConfigService {
     return mappings;
   }
 
-  private static final List<String> DEFAULT_ALLOWED_RENDERERS = List.of("antv-g6", "glsp-sprotty");
   private static final String DEFAULT_DIAGRAM_RENDERER = "antv-g6";
-  private static final String DEFAULT_GLSP_SERVER_URL = "ws://127.0.0.1:8081/modless";
 
   /**
    * Returns diagram editor renderer configuration from platform config with defaults.
    *
-   * <p>Environment variables override {@code platform-config.json}:
-   *
-   * <ul>
-   *   <li>{@code MODLESS_DIAGRAM_RENDERER} — {@code antv-g6} or {@code glsp-sprotty}
-   *   <li>{@code MODLESS_GLSP_SERVER_URL} — browser-reachable WebSocket URL (e.g. {@code
-   *       ws://localhost:8081/modless})
-   * </ul>
+   * <p>Environment variable {@code MODLESS_DIAGRAM_RENDERER} overrides {@code platform-config.json}
+   * when set to {@code antv-g6}.
    *
    * @param platform platform configuration map
    * @return diagram editor settings
    */
   private Map<String, Object> diagramEditorConfig(Map<String, Object> platform) {
-    return diagramEditorConfig(
-        platform,
-        System.getenv("MODLESS_DIAGRAM_RENDERER"),
-        System.getenv("MODLESS_GLSP_SERVER_URL"));
+    return diagramEditorConfig(platform, System.getenv("MODLESS_DIAGRAM_RENDERER"));
   }
 
   /**
@@ -1772,46 +1762,30 @@ public final class ModelingConfigService {
    *
    * @param platform platform configuration map
    * @param envRenderer optional renderer override from the environment
-   * @param envGlspServerUrl optional GLSP WebSocket URL override from the environment
    * @return diagram editor settings
    */
-  Map<String, Object> diagramEditorConfig(
-      Map<String, Object> platform, String envRenderer, String envGlspServerUrl) {
+  Map<String, Object> diagramEditorConfig(Map<String, Object> platform, String envRenderer) {
     Map<String, Object> configured = optionalMap(platform, "diagramEditor");
     Map<String, Object> result = new LinkedHashMap<>();
     result.put("renderer", resolveDiagramRenderer(configured, envRenderer));
-    result.put("glspServerUrl", resolveGlspServerUrl(configured, envGlspServerUrl));
-    result.put(
-        "allowedRenderers", configured.getOrDefault("allowedRenderers", DEFAULT_ALLOWED_RENDERERS));
     return result;
   }
 
   private String resolveDiagramRenderer(Map<String, Object> configured, String envRenderer) {
     if (envRenderer != null && !envRenderer.isBlank()) {
       String normalized = envRenderer.trim();
-      if (DEFAULT_ALLOWED_RENDERERS.contains(normalized)) {
+      if (DEFAULT_DIAGRAM_RENDERER.equals(normalized)) {
         return normalized;
       }
     }
     Object fromConfig = configured.get("renderer");
     if (fromConfig != null) {
       String normalized = String.valueOf(fromConfig).trim();
-      if (DEFAULT_ALLOWED_RENDERERS.contains(normalized)) {
+      if (DEFAULT_DIAGRAM_RENDERER.equals(normalized)) {
         return normalized;
       }
     }
     return DEFAULT_DIAGRAM_RENDERER;
-  }
-
-  private String resolveGlspServerUrl(Map<String, Object> configured, String envGlspServerUrl) {
-    if (envGlspServerUrl != null && !envGlspServerUrl.isBlank()) {
-      return envGlspServerUrl.trim();
-    }
-    Object fromConfig = configured.get("glspServerUrl");
-    if (fromConfig != null && !String.valueOf(fromConfig).isBlank()) {
-      return String.valueOf(fromConfig).trim();
-    }
-    return DEFAULT_GLSP_SERVER_URL;
   }
 
   /**

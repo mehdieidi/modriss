@@ -9,13 +9,11 @@
   "primitives": {
     "workflow-node": {
       "geometry": "rounded-rectangle",
-      "cornerRadius": 18,
-      "sprottyShape": "rectangle"
+      "cornerRadius": 18
     },
     "structured-property-row": {
       "geometry": "rectangle",
-      "cornerRadius": 4,
-      "sprottyShape": "rectangle"
+      "cornerRadius": 4
     }
   },
   "notationPrimitives": {

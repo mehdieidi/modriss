@@ -37,9 +37,6 @@ packages/
     mde-evl-validator/       Reusable EVL runner
     mde-etl-runner/          Reusable ETL runner
     mde-m2t-runner/          Reusable EGX/EGL runner
-  js/
-    glsp-client/             Eclipse GLSP + Sprotty diagram client (TypeScript/Vite bundle)
-    glsp-server/             GLSP diagram server sidecar (TypeScript, Docker image)
 tools/
   mde-cli/                 Emfatic-to-Ecore compiler CLI
   mde-evl-cli/             Validation CLI

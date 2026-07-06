@@ -931,30 +931,6 @@
         "TRACE"
       ],
       "layoutHint": "GOVERNANCE"
-    },
-    {
-      "id": "traceability",
-      "displayName": "Traceability",
-      "viewType": "TRACEABILITY",
-      "viewpoint": "traceability",
-      "elementTypes": [
-        "TraceModel",
-        "TraceLink",
-        "Requirement",
-        "BusinessGoal",
-        "BusinessCapability",
-        "DomainEntity",
-        "Command",
-        "Query",
-        "BusinessEvent",
-        "Policy",
-        "Risk",
-        "Assumption",
-        "Hotspot"
-      ],
-      "palette": ["TraceLink", "Risk", "Assumption", "Hotspot"],
-      "relationshipKinds": ["TRACE", "ATTACHED_TO", "SUPPORTS", "CONSTRAINS"],
-      "layoutHint": "MATRIX"
     }
   ],
   "semanticReferenceExclusions": [

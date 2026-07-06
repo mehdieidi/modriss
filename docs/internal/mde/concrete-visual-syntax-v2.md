@@ -24,7 +24,7 @@ Legacy `*-ui-metadata.json` files remain on the classpath as fallback when a CVS
 Each CVS document declares:
 
 - `metamodelRef` — level key, Ecore path, namespace URI
-- `primitives` — reusable visual primitives with `sprottyShape` and geometry
+- `primitives` — reusable visual primitives with geometry
 - `elementVisualRules` / `elementOverrides` — type and package visual rules
 - `referenceMappings` — EReference to semantic edge kind
 - `relationshipMappings` — relationship-object EClasses
@@ -59,8 +59,8 @@ npm run migrate:all -w @modless/notation-migrate
 
 ## Editor binding
 
-- **G6 v1** continues to consume merged `elements`, `notation`, and `relationshipRules`.
-- **GLSP v2** consumes `elementMappings`, `cvsPrimitives`, and viewpoints via the Node sidecar.
+- The AntV G6 canvas consumes merged `elements`, `notation`, `relationshipRules`, and
+  `elementMappings`.
 - Container focus uses backend-derived containment palettes and relationship rules. When users draw
   to a container, the editor offers only legal contained targets, opens the container focus canvas
   for the selected internal target, and records an outer visual-only summary edge for zoomed-out
@@ -69,12 +69,10 @@ npm run migrate:all -w @modless/notation-migrate
   backend layout service consumes those columns from stored view JSON instead of owning DSML class
   groups.
 
-Switch renderers with `diagramEditor.renderer` in `platform-config.json`:
+The diagram editor renderer is configured in `platform-config.json`:
 
 ```json
 "diagramEditor": {
-  "renderer": "glsp-sprotty",
-  "glspServerUrl": "ws://127.0.0.1:8081/modless",
-  "allowedRenderers": ["antv-g6", "glsp-sprotty"]
+  "renderer": "antv-g6"
 }
 ```

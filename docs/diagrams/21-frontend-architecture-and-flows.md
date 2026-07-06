@@ -14,7 +14,6 @@ flowchart TB
     configData["modeling-config-data.js"]
     canvas["canvas.js + renderer-adapter.js"]
     g6["graph-editor/g6-*.js"]
-    glsp["graph-editor/glsp-*.js + vendor/glsp bundle"]
     views["view-explorer.js + view-materializer.js"]
     attrs["attr-panel.js"]
     workbenches["cim/pim/psm workbench modules"]
@@ -29,7 +28,6 @@ flowchart TB
     main --> configData
     main --> canvas
     canvas --> g6
-    canvas --> glsp
     main --> views
     main --> chat
     main --> artifact

@@ -39,7 +39,7 @@ flowchart LR
 ## Current Scope
 
 Modless currently targets AWS serverless architecture. The formal pipeline, backend services,
-frontend workbenches, storage, assistant, CLI tools, GLSP diagram editing, impact-analysis APIs,
+frontend workbenches, storage, assistant, CLI tools, diagram editing, impact-analysis APIs,
 and generated AWS project templates are implemented. Admin workspace APIs under `/api/admin/**`
 remain planned endpoints.
 

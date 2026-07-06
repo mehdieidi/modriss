@@ -3,17 +3,12 @@ name: modless
 # Run from the repository root so Compose can substitute ${VAR} from ./.env:
 #   docker compose up --build
 #
-# Diagram editor (canvas renderer):
-#   MODLESS_DIAGRAM_RENDERER=antv-g6          # legacy AntV G6 canvas
-#   MODLESS_DIAGRAM_RENDERER=glsp-sprotty     # Eclipse GLSP + Sprotty (default)
-#   MODLESS_GLSP_SERVER_URL=ws://127.0.0.1:8081/modless   # browser WebSocket URL (host-published port)
-#
 # After changing files under mde/ (transformations, validation, metamodels), rebuild the backend
 # image so /app/mde inside the container picks up the changes:
 #   docker compose up --build --force-recreate backend
 #
-# The backend exposes these via GET /api/modeling/config → diagramEditor. After changing renderer
-# settings, recreate the backend container:
+# The backend exposes modeling config via GET /api/modeling/config → diagramEditor.
+# After changing renderer settings, recreate the backend container:
 #   docker compose up --build --force-recreate backend
 # The backend loads ../.env via env_file and only overrides container-specific
 # settings in deploy/compose.yaml (database host, upload path, CORS origins).
@@ -89,38 +84,6 @@ services:
       - "${FRONTEND_PORT:-8082}:8082"
     volumes:
       - ../apps/frontend:/app:ro
-    restart: unless-stopped
-
-  glsp-server:
-    build:
-      context: ..
-      dockerfile: packages/js/glsp-server/Dockerfile
-    env_file:
-      - path: ../.env
-        required: false
-    environment:
-      MODLESS_BACKEND_URL: http://backend:8080
-      MODLESS_GLSP_HOST: 0.0.0.0
-      MODLESS_GLSP_PORT: 8081
-      MODLESS_GLSP_PATH: modless
-      MODLESS_GLSP_LOG_LEVEL: ${MODLESS_GLSP_LOG_LEVEL:-info}
-    ports:
-      - "${GLSP_PORT:-8081}:8081"
-    depends_on:
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:8081/').then((r)=>process.exit(r.status===426?0:1)).catch(()=>process.exit(1))",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 15s
     restart: unless-stopped
 
   localstack:

@@ -22,7 +22,6 @@ docker compose up --build
 Wait for PostgreSQL and the backend to become healthy, then open:
 
 - Modeling frontend: `http://127.0.0.1:8082`
-- GLSP diagram server: `ws://127.0.0.1:8081/modless` (default renderer in Compose)
 - Backend health: `http://127.0.0.1:8080/api/health`
 - API browser: `http://127.0.0.1:8080/swagger-ui.html`
 - Landing site: `http://127.0.0.1:8083`

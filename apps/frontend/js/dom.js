@@ -43,7 +43,6 @@ export const el = {
   canvasViewport: document.getElementById("canvasViewport"),
   canvasGrid: document.getElementById("canvasGrid"),
   g6EditorHost: document.getElementById("g6EditorHost"),
-  glspEditorHost: document.getElementById("glspEditorHost"),
   canvasZoomControl: document.getElementById("canvasZoomControl"),
   canvasZoomOutBtn: document.getElementById("canvasZoomOutBtn"),
   canvasZoomResetBtn: document.getElementById("canvasZoomResetBtn"),

@@ -67,7 +67,7 @@ public final class CvsV2Loader {
   }
 
   /**
-   * Returns the raw CVS document for API consumers (GLSP sidecar).
+   * Returns the raw CVS document for API consumers.
    *
    * @param level lowercase level key
    * @return CVS document map
@@ -90,7 +90,7 @@ public final class CvsV2Loader {
   }
 
   /**
-   * Builds per-type element mappings from merged elements for GLSP rendering.
+   * Builds per-type element mappings from merged elements for diagram rendering.
    *
    * @param elements merged element definitions
    * @return element mapping list

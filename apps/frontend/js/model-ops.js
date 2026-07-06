@@ -1984,12 +1984,6 @@ export async function undoLastEdit() {
     setStatus(`Switch to ${modelingLevelListLabel()} to undo.`);
     return;
   }
-  const { activeRendererKind, undoCanvasEdit } = await import("./graph-editor/renderer-adapter.js");
-  if (activeRendererKind() === "glsp-sprotty" && window.modlessGlspState?.mode === "websocket") {
-    undoCanvasEdit?.();
-    setStatus("Undid last diagram edit.");
-    return;
-  }
   if (hasDiagramUndoHistory()) {
     const snapshot = popDiagramUndoSnapshot();
     if (!snapshot || !applyDiagramUndoSnapshot(snapshot)) {

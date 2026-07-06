@@ -47,7 +47,6 @@ import {
 } from "./undo.js";
 import { getCanvasFitArea } from "./canvas-viewport-fit.js";
 import {
-  activeRendererKind,
   addCanvasEdge,
   beginCanvasInlineLabelEdit,
   ensureCanvas as mountActiveCanvas,
@@ -1100,11 +1099,7 @@ function ensureCanvas() {
           state.viewport.scale >= 0.35 && state.viewport.scale < 0.75,
         );
         el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
-        // G6 only: pull viewport metrics from the graph. GLSP notifies us via this callback
-        // already — calling back into the renderer would recurse infinitely.
-        if (activeRendererKind() !== "glsp-sprotty") {
-          onCanvasViewportChanged();
-        }
+        onCanvasViewportChanged();
       },
     },
   });
@@ -1115,11 +1110,7 @@ export async function initializeModelingRenderer() {
   const mountedOrUnavailable = await ensureCanvas();
   syncCanvasIndexesFromState();
   if (mountedOrUnavailable) {
-    if (activeRendererKind() === "glsp-sprotty") {
-      await syncCanvasFromState({});
-    } else {
-      renderCanvasDiagram();
-    }
+    renderCanvasDiagram();
   }
   return mountedOrUnavailable;
 }
@@ -2360,22 +2351,10 @@ async function renderDiagramNow({ full = false } = {}) {
     return;
   }
   syncCanvasIndexesFromState();
-  if (activeRendererKind() === "glsp-sprotty") {
-    try {
-      if (window.modlessGlspState?.mode === "websocket") {
-        await syncCanvasFromState(full ? { full: true, refresh: true } : {});
-      } else {
-        await syncCanvasFromState({ full: true });
-      }
-    } catch (error) {
-      console.warn("GLSP diagram sync failed", error);
-    }
+  if (full) {
+    await syncCanvasFromState({ full: true });
   } else {
-    if (full) {
-      await syncCanvasFromState({ full: true });
-    } else {
-      renderCanvasDiagram();
-    }
+    renderCanvasDiagram();
   }
   el.canvasGrid?.style.setProperty("--viewport-scale", String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
@@ -2510,9 +2489,7 @@ function moveG6NodeDrag(nodeId, position) {
   node.meta.y = node.y;
   state.dragNode = state.dragNode || { id: nodeId };
   state.dragNode.moved = true;
-  if (activeRendererKind() !== "glsp-sprotty") {
-    updateCanvasNodeIcons();
-  }
+  updateCanvasNodeIcons();
 }
 
 function endG6NodeDrag(nodeId, position, { moved = false } = {}) {

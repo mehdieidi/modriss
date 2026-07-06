@@ -26,24 +26,21 @@ Do not commit real secrets. `.env.example` is the safe template. `.env` is your 
 
 These mostly control Docker Compose and what ports are exposed on your host machine.
 
-| Variable                  | Possible values                    | What it means                                                                                                                      |
-| ------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `POSTGRES_PORT`           | Any free host port, usually `5432` | The port on your machine that forwards to PostgreSQL inside Docker. Change it if you already have Postgres running locally.        |
-| `BACKEND_PORT`            | Any free host port, usually `8080` | The host port for the Spring Boot API. The backend still listens on `8080` inside the container.                                   |
-| `FRONTEND_PORT`           | Any free host port, usually `8082` | The host port for the modeling frontend.                                                                                           |
-| `LANDING_PORT`            | Any free host port, usually `8083` | The host port for the landing page.                                                                                                |
-| `LOCALSTACK_GATEWAY_PORT` | Any free host port, usually `4566` | The host port for LocalStack's main AWS-compatible endpoint.                                                                       |
-| `GLSP_PORT`               | Any free host port, usually `8081` | The host port for the GLSP diagram server WebSocket endpoint. This is the port your browser connects to when using `glsp-sprotty`. |
+| Variable                  | Possible values                    | What it means                                                                                                               |
+| ------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_PORT`           | Any free host port, usually `5432` | The port on your machine that forwards to PostgreSQL inside Docker. Change it if you already have Postgres running locally. |
+| `BACKEND_PORT`            | Any free host port, usually `8080` | The host port for the Spring Boot API. The backend still listens on `8080` inside the container.                            |
+| `FRONTEND_PORT`           | Any free host port, usually `8082` | The host port for the modeling frontend.                                                                                    |
+| `LANDING_PORT`            | Any free host port, usually `8083` | The host port for the landing page.                                                                                         |
+| `LOCALSTACK_GATEWAY_PORT` | Any free host port, usually `4566` | The host port for LocalStack's main AWS-compatible endpoint.                                                                |
 
 ## Diagram Editor
 
-These choose which diagram renderer the frontend should use.
+The modeling frontend uses the AntV G6 canvas renderer.
 
-| Variable                   | Possible values                                                          | What it means                                                                                                                   |
-| -------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| `MODLESS_GLSP_LOG_LEVEL`   | `debug`, `info`, `warn`, `error`                                         | Logging detail for the GLSP server. Use `debug` when diagnosing diagram-server behavior; use `info` or higher for quieter logs. |
-| `MODLESS_DIAGRAM_RENDERER` | `antv-g6`, `glsp-sprotty`                                                | `antv-g6` uses the local canvas renderer. `glsp-sprotty` uses the Eclipse GLSP/Sprotty renderer and needs the GLSP server.      |
-| `MODLESS_GLSP_SERVER_URL`  | A browser-reachable WebSocket URL, usually `ws://127.0.0.1:8081/modless` | The URL the browser uses to reach the GLSP server. If you change `GLSP_PORT`, change this URL to match.                         |
+| Variable                   | Possible values | What it means                               |
+| -------------------------- | --------------- | ------------------------------------------- |
+| `MODLESS_DIAGRAM_RENDERER` | `antv-g6`       | Frontend diagram renderer (AntV G6 canvas). |
 
 ## PostgreSQL
 
@@ -212,8 +209,5 @@ LocalStack is the local AWS emulator used for generated-project deployment tests
 - For normal local Docker usage, copy `.env.example` to `.env`, then only change ports that conflict
   and provider keys you actually use.
 - To disable AI completely, set `MODLESS_AI_ENABLED=false`.
-- To use the local canvas renderer, set `MODLESS_DIAGRAM_RENDERER=antv-g6`.
-- To use GLSP/Sprotty, set `MODLESS_DIAGRAM_RENDERER=glsp-sprotty` and make sure
-  `MODLESS_GLSP_SERVER_URL` points at the published `GLSP_PORT`.
 - If something gets slow or memory-heavy, look first at the MDE limits, AI token/context settings,
   and database pool size.

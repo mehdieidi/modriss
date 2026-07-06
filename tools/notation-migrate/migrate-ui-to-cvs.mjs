@@ -26,23 +26,10 @@ const METAMODEL = {
   },
 };
 
-const GEOMETRY_TO_SPROTTY = {
-  hexagon: "hexagon",
-  diamond: "diamond",
-  trapezoid: "trapezoid",
-  octagon: "octagon",
-  ellipse: "ellipse",
-  rectangle: "rectangle",
-};
-
 function enrichPrimitives(notationPrimitives = {}) {
   const primitives = {};
   for (const [key, value] of Object.entries(notationPrimitives)) {
-    const geometry = value.geometry || "rectangle";
-    primitives[key] = {
-      ...value,
-      sprottyShape: GEOMETRY_TO_SPROTTY[geometry] || "rectangle",
-    };
+    primitives[key] = { ...value };
   }
   return primitives;
 }

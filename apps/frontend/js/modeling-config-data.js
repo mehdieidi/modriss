@@ -15,8 +15,6 @@ const EMPTY_CONFIG = Object.freeze({
   impactAnalysis: Object.freeze({}),
   diagramEditor: Object.freeze({
     renderer: "antv-g6",
-    glspServerUrl: "ws://127.0.0.1:8081/modless",
-    allowedRenderers: Object.freeze(["antv-g6", "glsp-sprotty"]),
   }),
 });
 
@@ -96,10 +94,6 @@ function ensureConfigShape(raw) {
     raw.diagramEditor && typeof raw.diagramEditor === "object"
       ? {
           renderer: String(raw.diagramEditor.renderer || "antv-g6"),
-          glspServerUrl: String(raw.diagramEditor.glspServerUrl || "ws://127.0.0.1:8081/modless"),
-          allowedRenderers: Array.isArray(raw.diagramEditor.allowedRenderers)
-            ? raw.diagramEditor.allowedRenderers.map(String)
-            : ["antv-g6", "glsp-sprotty"],
         }
       : { ...EMPTY_CONFIG.diagramEditor };
 

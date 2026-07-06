@@ -117,8 +117,6 @@
     ]
   },
   "diagramEditor": {
-    "renderer": "antv-g6",
-    "glspServerUrl": "ws://127.0.0.1:8081/modless",
-    "allowedRenderers": ["antv-g6", "glsp-sprotty"]
+    "renderer": "antv-g6"
   }
 }

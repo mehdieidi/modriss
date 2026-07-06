@@ -75,7 +75,7 @@ revision. The old selectable modeling-mode switch is removed.
 
 ## Docker Compose
 
-`docker compose up` starts PostgreSQL, backend, frontend, GLSP diagram server, landing, LocalStack,
+`docker compose up` starts PostgreSQL, backend, frontend, landing, LocalStack,
 and Dozzle. The backend ships with assistant code available, but AI calls are disabled by default:
 
 ```bash

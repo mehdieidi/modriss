@@ -9,7 +9,6 @@ flowchart TB
 
     subgraph compose["Docker Compose project: modless"]
         frontend["frontend<br/>python:3.13-alpine static server<br/>port 8082"]
-        glsp["glsp-server<br/>Node.js GLSP sidecar<br/>port 8081"]
         landing["landing<br/>python:3.13-alpine static server<br/>port 8083"]
         backend["backend<br/>Spring Boot image<br/>port 8080"]
         postgres["postgres<br/>pgvector/pgvector:pg16<br/>port 5432"]
@@ -25,8 +24,6 @@ flowchart TB
     browser -->|"HTTP :8082"| frontend
     browser -->|"HTTP :8083"| landing
     browser -->|"REST, SSE, WebSocket :8080"| backend
-    browser <-->|"WebSocket :8081 when renderer is glsp-sprotty"| glsp
-    glsp -->|"Load model JSON and CVS config"| backend
     backend -->|"JDBC; starts after DB healthcheck"| postgres
     postgres --> volume
     backend -->|"Optional proxied AI traffic"| proxy --> provider

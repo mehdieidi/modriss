@@ -7,7 +7,7 @@
 - CIM, PIM, and PSM CRUD with revision-aware updates and patches
 - JSON and XMI import/export
 - Modeling configuration and visual editor metadata
-- Dual diagram renderers: AntV G6 and Eclipse GLSP/Sprotty with Node sidecar
+- AntV G6 diagram canvas renderer
 - Layout and persisted view layout
 - CIM-to-PIM and PIM-to-AWS-PSM transformation profiles
 - AWS PSM artifact generation

@@ -6,11 +6,9 @@
 docker compose up --build
 ```
 
-Compose starts PostgreSQL, backend, frontend, GLSP diagram server, LocalStack, landing site, and
-Dozzle. The default stack sets `MODLESS_DIAGRAM_RENDERER=glsp-sprotty` and publishes the GLSP
-sidecar on port `8081`.
-container is built with Maven, runs on a Java 17 JRE, copies the `mde/` tree into the image, and runs
-as a non-root user.
+Compose starts PostgreSQL, backend, frontend, LocalStack, landing site, and Dozzle. The modeling
+frontend uses the AntV G6 canvas renderer. The backend container is built with Maven, runs on a Java
+17 JRE, copies the `mde/` tree into the image, and runs as a non-root user.
 
 ## Health Checks
 
