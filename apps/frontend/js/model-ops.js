@@ -2,10 +2,10 @@ import { apiUrl, MODEL_TYPES } from "./config.js";
 import { state } from "./state.js";
 import { el } from "./dom.js";
 import { api, apiAuthHeaders } from "./api.js";
-import { flushCurrentModelPatch } from "./model-patch.js";
+import { flushCurrentModelPatch, prepareModelForSave } from "./model-patch.js";
 import { setBusy, setError, setStatus } from "./status.js";
 import { formatUserError } from "./errors.js";
-import { emptyDiagram, genId, scheduleIdleTask, yieldToMain } from "./utils.js";
+import { emptyDiagram, genId, scheduleIdleTask, stringifyJsonAsync, yieldToMain } from "./utils.js";
 import { serializeModel } from "./diagram.js";
 import {
   activeView,
@@ -15,6 +15,7 @@ import {
   installGraphAndViewsAsync,
   restoreTabGraphState,
   saveCurrentTabGraphState,
+  saveCurrentTabGraphStateAsync,
   setActiveViewId,
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
@@ -96,7 +97,9 @@ async function centerCurrentDiagram({ fit = true } = {}) {
 function captureModelReplacementSnapshot(typeKey = state.activeType) {
   const tabState = state.tabs[typeKey];
   const serializedModel =
-    typeKey === state.activeType ? serializeModel() : structuredClone(tabState?.baseModel || {});
+    typeKey === state.activeType
+      ? serializeModel({ syncView: true, reconcileRelationships: true })
+      : structuredClone(tabState?.baseModel || {});
   return {
     typeKey,
     modelId: state.modelId,
@@ -617,9 +620,10 @@ export async function reloadModels() {
 }
 
 async function updateExistingModelWithPayload(payload) {
+  const body = await stringifyJsonAsync(payload);
   const updated = await api(`/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}`, {
     method: "PUT",
-    body: JSON.stringify(payload),
+    body,
   });
   state.modelRevision = Number(updated?.revision) || state.modelRevision;
   return updated;
@@ -643,12 +647,11 @@ async function waitForCanvasPaint(frames = 2) {
   }
 }
 
-function buildSavePayload(selectedName) {
+async function buildSavePayloadFromPrepared(selectedName, nextModel) {
   requireActiveProject("save a model");
-  syncActiveViewFromVisibleGraph();
   return {
     name: selectedName,
-    model: serializeModel(),
+    model: nextModel,
     projectId: state.project.id,
     expectedRevision: state.modelRevision || 1,
   };
@@ -656,7 +659,11 @@ function buildSavePayload(selectedName) {
 
 // ── Save / Load model ─────────────────────────────────────────────────────────
 
-export async function saveCurrentModel({ rethrow = false, quiet = false } = {}) {
+export async function saveCurrentModel({
+  rethrow = false,
+  quiet = false,
+  skipBeginSave = false,
+} = {}) {
   if (!isModelingType()) {
     if (!quiet) {
       setStatus(`Switch to ${modelingLevelListLabel()} to save a model.`);
@@ -668,28 +675,34 @@ export async function saveCurrentModel({ rethrow = false, quiet = false } = {}) 
 
   const doBusy = !quiet;
   try {
-    if (!quiet) {
+    if (!quiet && !skipBeginSave) {
       beginModelSave();
     }
     if (doBusy) {
       setBusy("Saving…");
       await waitForSaveIndicatorPaint();
     }
+    await yieldToMain();
+    const prepared = await prepareModelForSave();
+    await yieldToMain();
     if (state.modelId) {
       let updated = await flushCurrentModelPatch({
         name: selectedName,
         rethrow: true,
+        prepared,
       });
       let savedModel = null;
       if (!updated) {
-        const payload = buildSavePayload(selectedName);
+        const payload = await buildSavePayloadFromPrepared(selectedName, prepared.nextModel);
         savedModel = payload.model;
+        await yieldToMain();
         updated = await updateExistingModelWithPayload(payload);
       }
       if (updated && typeof updated === "object") {
         state.modelRevision = Number(updated.revision) || state.modelRevision;
       }
       if (savedModel) {
+        await yieldToMain();
         state.baseModel = stripServerTransportFields(structuredClone(savedModel));
       }
       setActiveModelName(updated?.name || selectedName);
@@ -697,13 +710,16 @@ export async function saveCurrentModel({ rethrow = false, quiet = false } = {}) 
         setStatus(`Model saved`);
       }
     } else {
-      const payload = buildSavePayload(selectedName);
+      const payload = await buildSavePayloadFromPrepared(selectedName, prepared.nextModel);
+      await yieldToMain();
+      const body = await stringifyJsonAsync(payload);
       const created = await api(`/${MODEL_TYPES[state.activeType].apiType}`, {
         method: "POST",
-        body: JSON.stringify(payload),
+        body,
       });
       state.modelId = created.id;
       state.modelRevision = Number(created.revision) || 1;
+      await yieldToMain();
       state.baseModel = stripServerTransportFields(structuredClone(payload.model));
       setActiveModelName(created.name || payload.name);
       if (!quiet) {
@@ -715,11 +731,12 @@ export async function saveCurrentModel({ rethrow = false, quiet = false } = {}) 
       state.tabs[state.activeType].modelRevision = state.modelRevision;
       state.tabs[state.activeType].baseModel = state.baseModel;
       state.tabs[state.activeType].diagram = state.diagram;
-      saveCurrentTabGraphState(state.activeType);
+      await saveCurrentTabGraphStateAsync(state.activeType);
     }
     await syncProjectActiveModel(state.activeType, state.modelId);
     completeModelSave();
     if (!quiet) {
+      await yieldToMain();
       await reloadModels();
     }
   } catch (error) {
@@ -1785,7 +1802,7 @@ export async function exportActiveModel(format = "json") {
     },
     body: JSON.stringify({
       name: getActiveModelName(),
-      model: state.modelId ? null : serializeModel(),
+      model: state.modelId ? null : serializeModel({ syncView: true, reconcileRelationships: true }),
       format: normalizedFormat,
     }),
   });

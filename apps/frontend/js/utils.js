@@ -153,6 +153,12 @@ export function yieldToMain() {
   });
 }
 
+/** JSON.stringify after yielding so huge payloads do not block the click handler. */
+export async function stringifyJsonAsync(value) {
+  await yieldToMain();
+  return JSON.stringify(value);
+}
+
 /** Runs work when the browser is idle so post-load UI updates do not block interaction. */
 export function scheduleIdleTask(task) {
   return new Promise((resolve) => {

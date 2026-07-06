@@ -794,11 +794,13 @@ export function bindG6Interactions(editor, callbacks = {}) {
     clearConnectionPreview();
     linkDrag = null;
     callbacks.onConnectionDragEnd?.(target);
-    if (target) {
-      callbacks.onConnectionComplete?.(sourceId, target);
-    } else {
-      callbacks.onConnectionCancel?.(sourceId);
-    }
+    requestAnimationFrame(() => {
+      if (target) {
+        callbacks.onConnectionComplete?.(sourceId, target);
+      } else {
+        callbacks.onConnectionCancel?.(sourceId);
+      }
+    });
   };
 
   graph.on("node:pointerdown", (event) => {

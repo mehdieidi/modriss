@@ -170,7 +170,38 @@ export function defaultRootModel(typeKey, modelName) {
   return configured;
 }
 
-export function serializeModel() {
+function diagramElementFromNode(node) {
+  const element = {
+    eClass: node.type,
+    id: node.id,
+    name: node.label,
+    label: node.label,
+    description: "",
+    x: node.x,
+    y: node.y,
+    status: "DRAFT",
+    tags: [],
+    ...node.meta,
+  };
+  if (!element.name && element.label) {
+    element.name = element.label;
+  }
+  return element;
+}
+
+function diagramRelationshipFromEdge(edge, index) {
+  return {
+    id:
+      edge.id ||
+      connectionIdFor(state.activeType, index, edge.sourceId, edge.targetId, edge.kind),
+    kind: edge.kind,
+    source: edge.sourceId,
+    target: edge.targetId,
+    note: "",
+  };
+}
+
+export function serializeModel({ syncView = false, reconcileRelationships = false } = {}) {
   const name = (state.tabs[state.activeType]?.modelName || `${state.activeType}-model`).trim();
   const root = structuredClone(state.baseModel || defaultRootModel(state.activeType, name));
   sanitizeRootForType(state.activeType, root);
@@ -180,41 +211,53 @@ export function serializeModel() {
   root.diagram ??= {};
 
   root.diagram.elements = state.diagram.nodes.map((node) => {
-    const element = {
-      eClass: node.type,
-      id: node.id,
-      name: node.label,
-      label: node.label,
-      description: "",
-      x: node.x,
-      y: node.y,
-      status: "DRAFT",
-      tags: [],
-      ...node.meta,
-    };
-    if (!element.name && element.label) {
-      element.name = element.label;
-    }
-    return element;
+    return diagramElementFromNode(node);
   });
 
   root.diagram.relationships = state.diagram.connections
     .filter((edge) => !edge.bundle && String(edge.kind).toUpperCase() !== "EDGE_BUNDLE")
-    .map((edge, index) => {
-      // Create relationship without layout field (backend doesn't support it).
-      // Layout data is managed separately in frontend-only storage for rendering.
-      const relationship = {
-        id:
-          edge.id ||
-          connectionIdFor(state.activeType, index, edge.sourceId, edge.targetId, edge.kind),
-        kind: edge.kind,
-        source: edge.sourceId,
-        target: edge.targetId,
-        note: "",
-      };
-      return relationship;
-    });
-  serializeGraphAndViewsInto(root);
+    .map((edge, index) => diagramRelationshipFromEdge(edge, index));
+  serializeGraphAndViewsInto(root, { syncView, reconcileRelationships });
+  return root;
+}
+
+const SERIALIZE_DIAGRAM_CHUNK = 250;
+
+export async function serializeModelAsync({ syncView = false, reconcileRelationships = false } = {}) {
+  const { yieldToMain } = await import("./utils.js");
+  const { serializeGraphAndViewsIntoAsync } = await import("./graph-store.js");
+  await yieldToMain();
+  const name = (state.tabs[state.activeType]?.modelName || `${state.activeType}-model`).trim();
+  const root = structuredClone(state.baseModel || defaultRootModel(state.activeType, name));
+  await yieldToMain();
+  sanitizeRootForType(state.activeType, root);
+  if (!String(root.name || "").trim()) {
+    root.name = name;
+  }
+  root.diagram ??= {};
+  root.diagram.elements = [];
+  const nodes = state.diagram.nodes;
+  for (let index = 0; index < nodes.length; index += SERIALIZE_DIAGRAM_CHUNK) {
+    const slice = nodes.slice(index, index + SERIALIZE_DIAGRAM_CHUNK);
+    root.diagram.elements.push(...slice.map((node) => diagramElementFromNode(node)));
+    if (index + SERIALIZE_DIAGRAM_CHUNK < nodes.length) {
+      await yieldToMain();
+    }
+  }
+  const connections = state.diagram.connections.filter(
+    (edge) => !edge.bundle && String(edge.kind).toUpperCase() !== "EDGE_BUNDLE",
+  );
+  root.diagram.relationships = [];
+  for (let index = 0; index < connections.length; index += SERIALIZE_DIAGRAM_CHUNK) {
+    const slice = connections.slice(index, index + SERIALIZE_DIAGRAM_CHUNK);
+    root.diagram.relationships.push(
+      ...slice.map((edge, offset) => diagramRelationshipFromEdge(edge, index + offset)),
+    );
+    if (index + SERIALIZE_DIAGRAM_CHUNK < connections.length) {
+      await yieldToMain();
+    }
+  }
+  await serializeGraphAndViewsIntoAsync(root, { syncView, reconcileRelationships });
   return root;
 }
 

@@ -51,7 +51,8 @@ import {
   showProjectMembersDialog,
   showProjectDialog,
 } from "./project.js";
-import { setError, setStatus } from "./status.js";
+import { setError, setBusy, setStatus } from "./status.js";
+import { beginModelSave } from "./model-save-ui.js";
 import { formatUserError } from "./errors.js";
 import { CHAT_ATTACHMENT_MAX_BYTES } from "./config.js";
 import { isMobileViewport } from "./responsive.js";
@@ -163,7 +164,9 @@ function bindUnsavedModelGuard() {
     try {
       el.unsavedModelSaveBtn.disabled = true;
       el.unsavedModelSaveBtn.textContent = "Saving...";
-      await saveCurrentModel({ rethrow: true });
+      beginModelSave();
+      setBusy("Saving…");
+      await saveCurrentModel({ rethrow: true, skipBeginSave: true });
       hideUnsavedModelDialog();
     } catch {
       el.unsavedModelSaveBtn.disabled = false;
@@ -817,7 +820,11 @@ function bindEvents() {
   document.addEventListener("click", (event) => {
     if (getElementTarget(event)?.closest("#saveModelBtn")) {
       event.preventDefault();
-      void saveCurrentModel({ rethrow: true }).catch(() => {
+      if (isModelingLevel(state.activeType)) {
+        beginModelSave();
+        setBusy("Saving…");
+      }
+      void saveCurrentModel({ rethrow: true, skipBeginSave: true }).catch(() => {
         // saveCurrentModel updates the visible save status.
       });
       return;
@@ -851,7 +858,11 @@ function bindEvents() {
     event.preventDefault();
     try {
       if (key === "s") {
-        await saveCurrentModel({ rethrow: true });
+        if (isModelingLevel(state.activeType)) {
+          beginModelSave();
+          setBusy("Saving…");
+        }
+        await saveCurrentModel({ rethrow: true, skipBeginSave: true });
       } else {
         await undoLastEdit();
       }

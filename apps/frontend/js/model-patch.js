@@ -1,10 +1,15 @@
 import { MODEL_TYPES } from "./config.js";
 import { state } from "./state.js";
 import { api } from "./api.js";
-import { serializeModel } from "./diagram.js";
-import { saveCurrentTabGraphState, syncActiveViewFromVisibleGraph } from "./graph-store.js";
+import { serializeModelAsync } from "./diagram.js";
+import {
+  saveCurrentTabGraphStateAsync,
+  syncActiveViewFromVisibleGraph,
+} from "./graph-store.js";
+import { stringifyJsonAsync, yieldToMain } from "./utils.js";
 
 const MAX_PATCH_OPERATIONS = 500;
+const LARGE_MODEL_PATCH_ELEMENT_THRESHOLD = 300;
 
 function pointerSegment(value) {
   return String(value).replaceAll("~", "~0").replaceAll("/", "~1");
@@ -120,29 +125,57 @@ export function buildModelPatch(previousModel, nextModel) {
   return operations;
 }
 
-export async function flushCurrentModelPatch({ name, rethrow = false } = {}) {
+export async function prepareModelForSave({ syncView = true } = {}) {
+  await yieldToMain();
+  if (syncView) {
+    syncActiveViewFromVisibleGraph();
+  }
+  const nextModel = await serializeModelAsync({
+    syncView: false,
+    reconcileRelationships: false,
+  });
+  await yieldToMain();
+  const elementCount =
+    state.graph?.elementsById?.size ??
+    nextModel?.graph?.elements?.length ??
+    state.diagram?.nodes?.length ??
+    0;
+  if (elementCount > LARGE_MODEL_PATCH_ELEMENT_THRESHOLD) {
+    return { nextModel, operations: null };
+  }
+  const operations = buildModelPatch(state.baseModel || {}, nextModel);
+  await yieldToMain();
+  return { nextModel, operations };
+}
+
+export async function flushCurrentModelPatch({
+  name,
+  rethrow = false,
+  prepared = null,
+} = {}) {
   if (!state.modelId || !MODEL_TYPES[state.activeType]) {
     return false;
   }
-  syncActiveViewFromVisibleGraph();
-  const nextModel = serializeModel();
-  const operations = buildModelPatch(state.baseModel || {}, nextModel);
+  const { nextModel, operations } = prepared || (await prepareModelForSave());
   if (operations === null) {
     return false;
   }
   if (!operations.length) {
+    await yieldToMain();
     state.baseModel = structuredClone(nextModel);
     return true;
   }
   try {
+    const body = await stringifyJsonAsync({
+      name,
+      operations,
+      expectedRevision: state.modelRevision || 1,
+    });
     const updated = await api(`/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}`, {
       method: "PATCH",
-      body: JSON.stringify({
-        name,
-        operations,
-        expectedRevision: state.modelRevision || 1,
-      }),
+      body,
     });
+    await yieldToMain();
     state.baseModel = structuredClone(nextModel);
     if (updated && typeof updated === "object") {
       state.modelRevision = Number(updated.revision) || state.modelRevision;
@@ -152,7 +185,7 @@ export async function flushCurrentModelPatch({ name, rethrow = false } = {}) {
       state.tabs[state.activeType].modelRevision = state.modelRevision;
       state.tabs[state.activeType].baseModel = state.baseModel;
       state.tabs[state.activeType].diagram = state.diagram;
-      saveCurrentTabGraphState(state.activeType);
+      await saveCurrentTabGraphStateAsync(state.activeType);
     }
     return updated || true;
   } catch (error) {

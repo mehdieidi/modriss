@@ -364,6 +364,30 @@ export function scheduleGraphDraw(graph) {
   });
 }
 
+let incrementalMutationFrame = 0;
+const incrementalMutations = [];
+
+export function scheduleIncrementalCanvasMutation(fn) {
+  if (typeof fn !== "function") {
+    return;
+  }
+  incrementalMutations.push(fn);
+  if (incrementalMutationFrame) {
+    return;
+  }
+  incrementalMutationFrame = window.requestAnimationFrame(() => {
+    incrementalMutationFrame = 0;
+    const batch = incrementalMutations.splice(0, incrementalMutations.length);
+    batch.forEach((mutation) => {
+      try {
+        mutation();
+      } catch (error) {
+        console.error("Incremental canvas mutation failed", error);
+      }
+    });
+  });
+}
+
 export function scheduleGraphRender(graph) {
   if (!graph) {
     return;

@@ -7,6 +7,8 @@ import {
   serializeRuntimeGraph,
   serializeRuntimeViews,
   syncActiveViewFromVisibleGraph,
+  removeElementFromGraph,
+  removeRelationshipFromGraph,
 } from "./graph-store.js";
 
 const MAX_DIAGRAM_HISTORY = 100;
@@ -38,17 +40,19 @@ export function clearDiagramUndoHistory(typeKey = state.activeType) {
   state.undo.diagramHistory[typeKey] = [];
 }
 
-export function captureDiagramUndoSnapshot(typeKey = state.activeType) {
+export function captureDiagramUndoSnapshot(typeKey = state.activeType, { syncView = true } = {}) {
   if (!isModelingType(typeKey)) {
     return null;
   }
-  syncActiveViewFromVisibleGraph();
+  if (syncView) {
+    syncActiveViewFromVisibleGraph();
+  }
   return {
     typeKey,
     modelId: state.modelId,
     modelRevision: state.modelRevision || 0,
     modelName: state.tabs[typeKey]?.modelName || defaultModelName(typeKey),
-    baseModel: structuredClone(serializeModel()),
+    baseModel: structuredClone(serializeModel({ reconcileRelationships: true })),
     diagram: structuredClone(state.diagram),
     graph: structuredClone(serializeRuntimeGraph()),
     views: structuredClone(serializeRuntimeViews()),
@@ -86,6 +90,38 @@ export function captureNodePositionUndoSnapshot(nodeIds = [], typeKey = state.ac
     activeViewId: state.views?.activeViewId || null,
     positions,
     signature: `node-position:${positionSignature(positions)}`,
+  };
+}
+
+export function captureAddElementUndoSnapshot(elementId, typeKey = state.activeType) {
+  if (!isModelingType(typeKey) || !elementId) {
+    return null;
+  }
+  return {
+    kind: "add-element",
+    typeKey,
+    elementId: String(elementId),
+    modelId: state.modelId,
+    modelRevision: state.modelRevision || 0,
+    modelName: state.tabs[typeKey]?.modelName || defaultModelName(typeKey),
+    activeViewId: state.views?.activeViewId || null,
+    signature: `add-element:${elementId}:${Date.now()}`,
+  };
+}
+
+export function captureAddConnectionUndoSnapshot(connectionId, typeKey = state.activeType) {
+  if (!isModelingType(typeKey) || !connectionId) {
+    return null;
+  }
+  return {
+    kind: "add-connection",
+    typeKey,
+    connectionId: String(connectionId),
+    modelId: state.modelId,
+    modelRevision: state.modelRevision || 0,
+    modelName: state.tabs[typeKey]?.modelName || defaultModelName(typeKey),
+    activeViewId: state.views?.activeViewId || null,
+    signature: `add-connection:${connectionId}:${Date.now()}`,
   };
 }
 
@@ -157,12 +193,62 @@ function applyNodePositionUndoSnapshot(snapshot) {
   return true;
 }
 
+function applyAddElementUndoSnapshot(snapshot) {
+  const elementId = String(snapshot.elementId || "");
+  if (!elementId) {
+    return false;
+  }
+  removeElementFromGraph(elementId);
+  state.diagram.nodes = safeArray(state.diagram.nodes).filter((node) => node.id !== elementId);
+  state.diagram.connections = safeArray(state.diagram.connections).filter(
+    (edge) => edge.sourceId !== elementId && edge.targetId !== elementId,
+  );
+  state.nodesById?.delete?.(elementId);
+  state.selectedNodeId = null;
+  state.selectedNodeIds = new Set();
+  state.selectedConnectionId = null;
+  state.inlineLabelEditNodeId = null;
+  if (state.tabs[snapshot.typeKey]) {
+    state.tabs[snapshot.typeKey].diagram = state.diagram;
+  }
+  restoreTabGraphState(snapshot.typeKey);
+  return true;
+}
+
+function applyAddConnectionUndoSnapshot(snapshot) {
+  const connectionId = String(snapshot.connectionId || "");
+  if (!connectionId) {
+    return false;
+  }
+  removeRelationshipFromGraph(connectionId);
+  state.diagram.connections = safeArray(state.diagram.connections).filter(
+    (edge) => edge.id !== connectionId,
+  );
+  state.connectionsById?.delete?.(connectionId);
+  state.selectedConnectionId = null;
+  if (state.tabs[snapshot.typeKey]) {
+    state.tabs[snapshot.typeKey].diagram = state.diagram;
+  }
+  restoreTabGraphState(snapshot.typeKey);
+  return true;
+}
+
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 export function applyDiagramUndoSnapshot(snapshot) {
   if (!snapshot || !isModelingType(snapshot.typeKey)) {
     return false;
   }
   if (snapshot.kind === "node-position") {
     return applyNodePositionUndoSnapshot(snapshot);
+  }
+  if (snapshot.kind === "add-element") {
+    return applyAddElementUndoSnapshot(snapshot);
+  }
+  if (snapshot.kind === "add-connection") {
+    return applyAddConnectionUndoSnapshot(snapshot);
   }
   state.modelId = snapshot.modelId;
   state.modelRevision = snapshot.modelRevision || 0;

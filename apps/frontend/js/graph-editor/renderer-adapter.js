@@ -40,7 +40,6 @@ export async function ensureCanvas() {
 
   applyActiveRendererChrome(el);
   if (g6.getCanvasEditor()) {
-    g6.syncCanvasFromState({ full: false });
     return true;
   }
   if (!g6.isCanvasRendererAvailable()) {

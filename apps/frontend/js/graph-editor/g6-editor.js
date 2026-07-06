@@ -20,6 +20,7 @@ import {
   fingerprintElement,
   scheduleGraphDraw,
   scheduleGraphRender,
+  scheduleIncrementalCanvasMutation,
   shouldShowEdgeLabels,
 } from "./g6-performance.js";
 import { bindG6Interactions } from "./g6-interactions.js";
@@ -1473,11 +1474,16 @@ export function addG6Node(node) {
     return;
   }
   const mapped = mapNodeToG6(node, mapperOptions());
-  editor.graph.addNodeData?.([mapped]);
-  rememberNodeData(mapped);
-  editor.contextBoxesDirty = true;
-  scheduleGraphRender(editor.graph);
-  updateG6NodeIcons();
+  scheduleIncrementalCanvasMutation(() => {
+    if (!editor?.graph) {
+      return;
+    }
+    editor.graph.addNodeData?.([mapped]);
+    rememberNodeData(mapped);
+    editor.contextBoxesDirty = true;
+    scheduleGraphDraw(editor.graph);
+    updateG6NodeIcons();
+  });
 }
 
 export function updateG6Node(nodeId, patch = {}) {
@@ -1571,10 +1577,15 @@ export function addG6Edge(edge) {
     return;
   }
   const mapped = mapEdgeToG6(edge, mapperOptions());
-  editor.graph.addEdgeData?.([mapped]);
-  editor.adjacency.add(edge);
-  rememberEdgeData(mapped);
-  scheduleGraphRender(editor.graph);
+  scheduleIncrementalCanvasMutation(() => {
+    if (!editor?.graph) {
+      return;
+    }
+    editor.graph.addEdgeData?.([mapped]);
+    editor.adjacency.add(edge);
+    rememberEdgeData(mapped);
+    scheduleGraphDraw(editor.graph);
+  });
 }
 
 export function updateG6Edge(edgeId, patch = {}) {

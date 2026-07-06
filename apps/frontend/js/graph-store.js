@@ -653,6 +653,212 @@ function refreshViewMembershipFromGraph(view, graph, typeKey = state.activeType)
   return view;
 }
 
+function hasContainmentRelationship(graph, parentId, childId, typeKey = state.activeType) {
+  const configuredContainmentKind = containmentKind(typeKey);
+  const configuredContainmentKinds = containmentKinds(typeKey);
+  const relationshipIds = graph.relationshipsBySource.get(parentId);
+  if (!relationshipIds?.size) {
+    return false;
+  }
+  for (const relationshipId of relationshipIds) {
+    const relationship = graph.relationshipsById.get(relationshipId);
+    if (!relationship || relationship.targetElementId !== childId) {
+      continue;
+    }
+    if (
+      relationship.containment === true ||
+      configuredContainmentKinds.has(String(relationship.kind || "").toUpperCase())
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function addContainmentRelationshipIfMissing(graph, parentId, childId, feature, typeKey) {
+  if (!graph.elementsById.has(parentId) || !graph.elementsById.has(childId)) {
+    return null;
+  }
+  if (hasContainmentRelationship(graph, parentId, childId, typeKey)) {
+    return null;
+  }
+  const configuredContainmentKind = containmentKind(typeKey);
+  const id = `containment-${sanitizeIdPart(parentId)}-${sanitizeIdPart(feature)}-${sanitizeIdPart(childId)}`;
+  const relationship = {
+    id,
+    kind: configuredContainmentKind,
+    source: parentId,
+    target: childId,
+    sourceElementId: parentId,
+    targetElementId: childId,
+    semanticFeature: feature,
+    containment: true,
+    visualOnly: true,
+  };
+  graph.relationshipsById.set(id, relationship);
+  return relationship;
+}
+
+function synthesizeContainmentForElement(graph, typeKey, elementId) {
+  const element = graph.elementsById.get(elementId);
+  if (!element) {
+    return [];
+  }
+  const added = [];
+  const parentId = String(element.__ownerId || "").trim();
+  if (parentId) {
+    const relationship = addContainmentRelationshipIfMissing(
+      graph,
+      parentId,
+      elementId,
+      element.__containmentFeature || "contains",
+      typeKey,
+    );
+    if (relationship) {
+      added.push(relationship);
+    }
+  }
+  let containments = [];
+  try {
+    containments = modelingContainmentsForType(typeKey, semanticType(element));
+  } catch {
+    containments = [];
+  }
+  containments
+    .filter((entry) => !entry.relationshipOnly)
+    .forEach((entry) => {
+      referenceIds(element?.[entry.feature]).forEach((childId) => {
+        const relationship = addContainmentRelationshipIfMissing(
+          graph,
+          elementId,
+          childId,
+          entry.feature,
+          typeKey,
+        );
+        if (relationship) {
+          added.push(relationship);
+        }
+      });
+    });
+  return added;
+}
+
+function hasSemanticRelationship(graph, sourceId, destinationId, kind) {
+  const relationshipIds = graph.relationshipsBySource.get(sourceId);
+  if (!relationshipIds?.size) {
+    return false;
+  }
+  const normalizedKind = String(kind || "").toUpperCase();
+  for (const relationshipId of relationshipIds) {
+    const relationship = graph.relationshipsById.get(relationshipId);
+    if (
+      relationship?.targetElementId === destinationId &&
+      String(relationship.kind || "").toUpperCase() === normalizedKind
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function synthesizeSemanticRefsForElement(graph, typeKey, elementId) {
+  const element = graph.elementsById.get(elementId);
+  if (!element) {
+    return [];
+  }
+  let rules = [];
+  try {
+    const configured = modelingSemanticReferenceRules(typeKey);
+    if (configured.length) {
+      rules = configured;
+    }
+  } catch {
+    rules = [];
+  }
+  const added = [];
+  for (const rule of rules) {
+    if (!matchesSemanticType(element, rule.sourceType, typeKey)) {
+      continue;
+    }
+    for (const targetId of referenceIds(element?.[rule.feature])) {
+      const target = graph.elementsById.get(targetId);
+      if (!matchesSemanticType(target, rule.targetType, typeKey)) {
+        continue;
+      }
+      const kind = String(rule.kind || "REFERENCES");
+      const sourceId = rule.reverse ? targetId : elementId;
+      const destinationId = rule.reverse ? elementId : targetId;
+      if (hasSemanticRelationship(graph, sourceId, destinationId, kind)) {
+        continue;
+      }
+      const relationship = {
+        id: `semantic-ref-${sanitizeIdPart(rule.feature)}-${sanitizeIdPart(
+          sourceId,
+        )}-${sanitizeIdPart(destinationId)}-${sanitizeIdPart(kind)}`,
+        kind,
+        sourceElementId: sourceId,
+        targetElementId: destinationId,
+        source: sourceId,
+        target: destinationId,
+        semanticFeature: rule.feature,
+        visualOnly: true,
+      };
+      graph.relationshipsById.set(relationship.id, relationship);
+      added.push(relationship);
+    }
+  }
+  return added;
+}
+
+function addRelationshipToGraphIndexes(graph, relationship) {
+  if (!relationship?.id) {
+    return;
+  }
+  const configuredContainmentKinds = containmentKinds();
+  addToIndex(graph.relationshipsBySource, relationship.sourceElementId, relationship.id);
+  addToIndex(graph.relationshipsByTarget, relationship.targetElementId, relationship.id);
+  addToIndex(graph.relationshipsByKind, relationship.kind, relationship.id);
+  if (
+    relationship.containment === true ||
+    configuredContainmentKinds.has(String(relationship.kind || "").toUpperCase())
+  ) {
+    addToIndex(
+      graph.containmentByParent,
+      relationship.sourceElementId,
+      relationship.targetElementId,
+    );
+    if (relationship.targetElementId && !graph.parentByChild.has(relationship.targetElementId)) {
+      graph.parentByChild.set(relationship.targetElementId, relationship.sourceElementId);
+    }
+  }
+}
+
+function updateElementOwnershipIndex(graph, elementId) {
+  const element = graph.elementsById.get(elementId);
+  const ownerId = String(element?.__ownerId || "").trim();
+  if (ownerId && ownerId !== elementId && graph.elementsById.has(ownerId)) {
+    addToIndex(graph.containmentByParent, ownerId, elementId);
+    if (!graph.parentByChild.has(elementId)) {
+      graph.parentByChild.set(elementId, ownerId);
+    }
+  }
+}
+
+export function reconcileAddedElementRelationships(elementId, typeKey = state.activeType) {
+  if (!state.graph?.elementsById || !isModelingLevel(typeKey)) {
+    return false;
+  }
+  const relationships = [
+    ...synthesizeContainmentForElement(state.graph, typeKey, elementId),
+    ...synthesizeSemanticRefsForElement(state.graph, typeKey, elementId),
+  ];
+  relationships.forEach((relationship) => {
+    addRelationshipToGraphIndexes(state.graph, relationship);
+  });
+  updateElementOwnershipIndex(state.graph, elementId);
+  return true;
+}
+
 export function reconcileGraphRelationships(
   typeKey = state.activeType,
   { refreshActiveView = true } = {},
@@ -2139,6 +2345,21 @@ export function saveCurrentTabGraphState(typeKey = state.activeType) {
   tab.activeViewId = state.views.activeViewId;
 }
 
+export async function saveCurrentTabGraphStateAsync(typeKey = state.activeType) {
+  const tab = state.tabs[typeKey];
+  if (!tab) {
+    return;
+  }
+  const { yieldToMain } = await import("./utils.js");
+  await yieldToMain();
+  tab.graph = serializeRuntimeGraph();
+  await yieldToMain();
+  tab.views = serializeRuntimeViews();
+  await yieldToMain();
+  tab.fragments = serializeRuntimeFragments();
+  tab.activeViewId = state.views.activeViewId;
+}
+
 export function restoreTabGraphState(typeKey = state.activeType) {
   const tab = state.tabs[typeKey];
   if (!tab?.graph) {
@@ -2349,9 +2570,16 @@ export function persistNodePositionInActiveView(node) {
   return true;
 }
 
-export function serializeGraphAndViewsInto(root) {
-  syncActiveViewFromVisibleGraph();
-  reconcileGraphRelationships(state.activeType);
+export function serializeGraphAndViewsInto(
+  root,
+  { syncView = true, reconcileRelationships = false } = {},
+) {
+  if (syncView) {
+    syncActiveViewFromVisibleGraph();
+  }
+  if (reconcileRelationships) {
+    reconcileGraphRelationships(state.activeType);
+  }
   const graph = serializeRuntimeGraph();
   const manualBacklog = mergeManualBacklog(root.manualBacklog, graph.manualBacklog);
   graph.manualBacklog = manualBacklog.map(clone);
@@ -2374,6 +2602,50 @@ export function serializeGraphAndViewsInto(root) {
   root.manualBacklog = manualBacklog;
   delete root.diagram;
   if (isModelingLevel(state.activeType)) {
+    populateRootContainments(state.activeType, root, state.graph);
+  }
+  return root;
+}
+
+export async function serializeGraphAndViewsIntoAsync(
+  root,
+  { syncView = true, reconcileRelationships = false } = {},
+) {
+  const { yieldToMain } = await import("./utils.js");
+  if (syncView) {
+    await yieldToMain();
+    syncActiveViewFromVisibleGraph();
+  }
+  if (reconcileRelationships) {
+    await yieldToMain();
+    reconcileGraphRelationships(state.activeType);
+  }
+  await yieldToMain();
+  const graph = serializeRuntimeGraph();
+  const manualBacklog = mergeManualBacklog(root.manualBacklog, graph.manualBacklog);
+  graph.manualBacklog = manualBacklog.map(clone);
+  graph.validationIssues = [];
+  state.graph.manualBacklog = manualBacklog.map(clone);
+  state.graph.validationIssues = [];
+  root.graph = graph;
+  await yieldToMain();
+  root.fragments = serializeRuntimeFragments();
+  await yieldToMain();
+  const views = serializeRuntimeViews();
+  root.views = views;
+  const currentView = activeView();
+  const focusStack = Array.isArray(state.canvasFocusStack) ? state.canvasFocusStack : [];
+  const focusBaseViewId = focusStack[focusStack.length - 1]?.previousViewId;
+  root.activeViewId = isFocusView(currentView)
+    ? focusBaseViewId || views[0]?.id || null
+    : state.views.activeViewId;
+  root.traceLinks = graph.traceLinks;
+  root.assumptions = graph.assumptions;
+  root.validationIssues = [];
+  root.manualBacklog = manualBacklog;
+  delete root.diagram;
+  if (isModelingLevel(state.activeType)) {
+    await yieldToMain();
     populateRootContainments(state.activeType, root, state.graph);
   }
   return root;
@@ -2537,7 +2809,7 @@ export function addNodeToGraphAndActiveView(node) {
     view.hidden ??= { elementIds: [], relationshipIds: [] };
     view.hidden.elementIds = safeArray(view.hidden.elementIds).filter((id) => id !== node.id);
   }
-  reconcileGraphRelationships(state.activeType);
+  reconcileAddedElementRelationships(node.id, state.activeType);
 }
 
 export function removeElementFromGraph(elementId) {
@@ -2857,7 +3129,7 @@ export function addConnectionToGraphAndActiveView(edge) {
   if (view && !safeArray(view.edges).some((entry) => entry.relationshipId === edge.id)) {
     view.edges.push({ relationshipId: edge.id, visible: true });
   }
-  rebuildGraphIndexes(state.graph);
+  addRelationshipToGraphIndexes(state.graph, relationship);
 }
 
 export function removeRelationshipFromGraph(relationshipId) {

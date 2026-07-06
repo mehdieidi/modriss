@@ -41,6 +41,8 @@ import { markModelDirty } from "./model-save-ui.js";
 import { closeAttributePanel, openAttributePanel, openConnectionPanel } from "./attr-panel.js";
 import { fetchImpact } from "./impact.js";
 import {
+  captureAddConnectionUndoSnapshot,
+  captureAddElementUndoSnapshot,
   captureDiagramUndoSnapshot,
   captureNodePositionUndoSnapshot,
   pushDiagramUndoSnapshot,
@@ -48,6 +50,7 @@ import {
 import { getCanvasFitArea } from "./canvas-viewport-fit.js";
 import {
   addCanvasEdge,
+  addCanvasNode,
   beginCanvasInlineLabelEdit,
   ensureCanvas as mountActiveCanvas,
   fitCanvasToDiagram,
@@ -74,6 +77,7 @@ import {
   updateCanvasViewport,
   zoomCanvasBy as adapterZoomCanvasBy,
 } from "./graph-editor/renderer-adapter.js";
+import { nodeSizeForDiagram } from "./graph-editor/g6-style.js";
 
 function requiredConfiguredKind(value, context) {
   const kind = String(value || "").trim();
@@ -2619,6 +2623,93 @@ function activateNode(nodeId) {
   openAttributePanel(nodeId);
 }
 
+function diagramEdgeFromRelationship(relationship, viewEdge = null) {
+  if (!relationship) {
+    return null;
+  }
+  return {
+    id: relationship.id,
+    sourceId: relationship.sourceElementId,
+    targetId: relationship.targetElementId,
+    kind: relationship.kind,
+    pinPoints: Array.isArray(viewEdge?.pinPoints) ? viewEdge.pinPoints.map((point) => ({ ...point })) : [],
+    sourceAnchor: viewEdge?.sourceAnchor ? { ...viewEdge.sourceAnchor } : undefined,
+    targetAnchor: viewEdge?.targetAnchor ? { ...viewEdge.targetAnchor } : undefined,
+  };
+}
+
+function registerDiagramEdge(edge) {
+  connectionsById.set(edge.id, edge);
+  [edge.sourceId, edge.targetId].forEach((nodeId) => {
+    if (!edgeIdsByNodeId.has(nodeId)) {
+      edgeIdsByNodeId.set(nodeId, new Set());
+    }
+    edgeIdsByNodeId.get(nodeId).add(edge.id);
+  });
+}
+
+function paletteDroppedNodeIsVisible(node) {
+  const ownerId = String(node?.meta?.__ownerId || "").trim();
+  if (!ownerId) {
+    return true;
+  }
+  const view = activeView();
+  return (
+    String(view?.scope?.scopeKind || "").toUpperCase() === "CONTAINER" &&
+    String(view?.scope?.rootElementId || "") === ownerId
+  );
+}
+
+function syncPaletteDropContainmentEdges(node) {
+  const incomingRelationshipIds = state.graph.relationshipsByTarget.get(node.id);
+  if (!incomingRelationshipIds?.size) {
+    return;
+  }
+  const view = activeView();
+  const viewEdgesById = new Map(
+    (view?.edges || []).map((edge) => [edge.relationshipId, edge]),
+  );
+  const knownConnectionIds = new Set(state.diagram.connections.map((edge) => edge.id));
+  incomingRelationshipIds.forEach((relationshipId) => {
+    const relationship = state.graph.relationshipsById.get(relationshipId);
+    if (!relationship || !isContainmentRelationship(relationship)) {
+      return;
+    }
+    if (knownConnectionIds.has(relationshipId)) {
+      return;
+    }
+    const edge = diagramEdgeFromRelationship(relationship, viewEdgesById.get(relationshipId));
+    if (!edge) {
+      return;
+    }
+    state.diagram.connections.push(edge);
+    registerDiagramEdge(edge);
+    addCanvasEdge(edge);
+    knownConnectionIds.add(relationshipId);
+  });
+}
+
+function applyPaletteDropToCanvas(node) {
+  if (!paletteDroppedNodeIsVisible(node)) {
+    return false;
+  }
+  if (!state.diagram.nodes.some((candidate) => candidate.id === node.id)) {
+    state.diagram.nodes.push(node);
+  }
+  state.nodesById.set(node.id, node);
+  syncPaletteDropContainmentEdges(node);
+  addCanvasNode(node);
+  const ownerId = String(node.meta?.__ownerId || "").trim();
+  if (ownerId && state.nodesById.has(ownerId)) {
+    updateCanvasNode(ownerId);
+  }
+  if (state.tabs[state.activeType]) {
+    state.tabs[state.activeType].diagram = state.diagram;
+  }
+  updateCanvasContextBoxes(null, { useCache: true });
+  return true;
+}
+
 // ── Drag-and-drop from palette ────────────────────────────────────────────────
 
 export function setupDnD() {
@@ -2628,7 +2719,7 @@ export function setupDnD() {
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
   });
-  el.canvasViewport.addEventListener("drop", async (e) => {
+  el.canvasViewport.addEventListener("drop", (e) => {
     e.preventDefault();
     let paletteItem = null;
     try {
@@ -2664,25 +2755,17 @@ export function setupDnD() {
       );
       return;
     }
-    pushDiagramUndoSnapshot();
     const pos = toCanvasCoordinates(e.clientX, e.clientY);
     const node = getDefaultNode(state.activeType, type, Math.round(pos.x), Math.round(pos.y));
-    assignNodeToSemanticContainer(node);
-    state.diagram.nodes.push(node);
-    addNodeToGraphAndActiveView(node);
-    syncActiveViewFromVisibleGraph();
-    materializeActiveView();
-    if (state.tabs[state.activeType]) {
-      state.tabs[state.activeType].diagram = state.diagram;
-    }
-    syncCanvasIndexesFromState();
-    await ensureCanvas();
-    await syncCanvasFromState({ full: false });
-    updateCanvasSelection();
-    updateCanvasContextBoxes();
-    const created = state.graph.elementsById.get(node.id);
-    setStatus(`Added ${created?.eClass || type}`);
-    markModelDirty();
+    requestAnimationFrame(() => {
+      pushDiagramUndoSnapshot(captureAddElementUndoSnapshot(node.id));
+      assignNodeToSemanticContainer(node);
+      addNodeToGraphAndActiveView(node);
+      applyPaletteDropToCanvas(node);
+      const created = state.graph.elementsById.get(node.id);
+      setStatus(`Added ${created?.eClass || type}`);
+      markModelDirty();
+    });
   });
 }
 
@@ -2728,6 +2811,27 @@ function assignNodeToFocusedContainer(node) {
   return true;
 }
 
+function tryAssignNodeToContainerOwner(node, owner) {
+  if (!owner) {
+    return false;
+  }
+  const containment = modelingContainmentsForType(
+    state.activeType,
+    owner.eClass || owner.type,
+  ).find((entry) => !entry.relationshipOnly && containmentAcceptsType(entry, node.type));
+  if (!containment || (containment.many === false && owner[containment.feature])) {
+    return false;
+  }
+  node.meta.__ownerId = owner.id;
+  node.meta.__containmentFeature = containment.feature;
+  addReferenceValue(owner, containment.feature, node.id, containment.many !== false);
+  const ownerNode = state.nodesById.get(owner.id);
+  if (ownerNode?.meta) {
+    ownerNode.meta[containment.feature] = owner[containment.feature];
+  }
+  return true;
+}
+
 function assignNodeToSemanticContainer(node) {
   if (assignNodeToFocusedContainer(node)) {
     return true;
@@ -2739,39 +2843,24 @@ function assignNodeToSemanticContainer(node) {
   ) {
     return false;
   }
-  const candidates = [];
-  state.graph.elementsById.forEach((owner) => {
-    const containment = modelingContainmentsForType(
-      state.activeType,
-      owner.eClass || owner.type,
-    ).find((entry) => !entry.relationshipOnly && containmentAcceptsType(entry, node.type));
-    if (!containment || (containment.many === false && owner[containment.feature])) {
-      return;
+  const size = nodeSizeForDiagram(state.activeType, node);
+  const centerX = node.x + size.width / 2;
+  const centerY = node.y + size.height / 2;
+  const editor = getCanvasEditor();
+  const candidateId = editor?.spatialIndex?.findAt?.(centerX, centerY, { excludeId: "" });
+  if (candidateId) {
+    const owner = state.graph.elementsById.get(candidateId);
+    if (tryAssignNodeToContainerOwner(node, owner)) {
+      return true;
     }
-    const visibleOwner = state.nodesById.get(owner.id);
-    const distance = visibleOwner
-      ? Math.hypot(Number(visibleOwner.x) - node.x, Number(visibleOwner.y) - node.y)
-      : Number.POSITIVE_INFINITY;
-    candidates.push({ owner, containment, distance });
-  });
-  candidates.sort((left, right) => {
-    const leftSelected = left.owner.id === state.selectedNodeId ? 1 : 0;
-    const rightSelected = right.owner.id === state.selectedNodeId ? 1 : 0;
-    return rightSelected - leftSelected || left.distance - right.distance;
-  });
-  const selected = candidates[0];
-  if (!selected) {
-    return false;
   }
-  node.meta.__ownerId = selected.owner.id;
-  node.meta.__containmentFeature = selected.containment.feature;
-  addReferenceValue(
-    selected.owner,
-    selected.containment.feature,
-    node.id,
-    selected.containment.many !== false,
-  );
-  return true;
+  if (state.selectedNodeId) {
+    const owner = state.graph.elementsById.get(state.selectedNodeId);
+    if (tryAssignNodeToContainerOwner(node, owner)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // ── Connection management ─────────────────────────────────────────────────────
@@ -3066,11 +3155,10 @@ export function addConnection(
     targetId: resolvedTarget.id,
     kind,
   };
-  pushDiagramUndoSnapshot();
+  pushDiagramUndoSnapshot(captureAddConnectionUndoSnapshot(edge.id));
   state.diagram.connections.push(edge);
   addConnectionToGraphAndActiveView(edge);
   state.selectedConnectionId = edge.id;
-  ensureCanvas();
   connectionsById.set(edge.id, edge);
   [edge.sourceId, edge.targetId].forEach((nodeId) => {
     if (!edgeIdsByNodeId.has(nodeId)) {
