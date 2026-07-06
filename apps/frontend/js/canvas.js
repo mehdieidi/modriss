@@ -1065,7 +1065,7 @@ function ensureCanvas() {
       onEdgeClick: (edgeId) => selectConnection(edgeId, { openPicker: true }),
       onEdgeHover: setHoveredEdge,
       onCanvasClick: handleG6CanvasClick,
-      onEscape: handleG6CanvasClick,
+      onEscape: handleG6Escape,
       onCanvasPointerDown: closeEdgeKindPicker,
       onCanvasPointerMove: () => {},
       onNodeDragStart: startG6NodeDrag,
@@ -2451,6 +2451,23 @@ function handleG6NodeDoubleClick(nodeId, event = {}) {
 function handleG6CanvasClick() {
   clearHoveredEdge();
   closeEdgeKindPicker();
+  if (cancelConnectionDraw({ silent: true })) {
+    setStatus("Draw mode canceled");
+    return;
+  }
+  closeAttributePanel();
+  state.selectedNodeId = null;
+  state.selectedNodeIds = new Set();
+  state.selectedConnectionId = null;
+  updateCanvasSelection();
+}
+
+function handleG6Escape() {
+  clearHoveredEdge();
+  closeEdgeKindPicker();
+  if (cancelConnectionDraw()) {
+    return;
+  }
   closeAttributePanel();
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
@@ -2561,13 +2578,23 @@ function activateNode(nodeId) {
       setStatus("Source and target cannot be the same");
       return;
     }
+    const drawSourceId = state.connectSourceId;
+    const drawKind = state.preferredConnectionKind;
     addConnection(state.connectSourceId, nodeId, {
       interactivePicker: true,
       preferredKind: state.preferredConnectionKind,
     });
-    state.connectSourceId = null;
+    if (state.connectMode && drawKind) {
+      state.connectSourceId = drawSourceId;
+      const kindLabel = modelingRelationshipKindLabel(state.activeType, drawKind);
+      setStatus(`Drawing ${kindLabel} — select another highlighted target or cancel`);
+    } else {
+      state.connectSourceId = null;
+    }
     ensureCanvas();
     updateCanvasConnectionState();
+    notifyConnectionDrawStateChange();
+    syncConnectionDrawChrome();
     return;
   }
 
@@ -3315,16 +3342,106 @@ function modelingTypeMatchesSafe(expected, actual) {
 
 // ── Connect mode ─────────────────────────────────────────────────────────────
 
-export function setConnectMode(enabled) {
-  state.connectMode = enabled;
-  state.connectSourceId = null;
-  if (!enabled) {
-    state.preferredConnectionKind = null;
-    closeEdgeKindPicker();
+export const CONNECTION_DRAW_STATE_EVENT = "connection-draw-state-change";
+
+let connectionDrawHintEl = null;
+
+export function isConnectionDrawActive() {
+  return Boolean(state.connectMode && state.connectSourceId);
+}
+
+export function notifyConnectionDrawStateChange() {
+  window.dispatchEvent(new Event(CONNECTION_DRAW_STATE_EVENT));
+}
+
+function ensureConnectionDrawHint() {
+  if (connectionDrawHintEl?.isConnected) {
+    return connectionDrawHintEl;
   }
+  const host = el.canvasGrid?.closest(".canvas-stage");
+  if (!host) {
+    return null;
+  }
+  connectionDrawHintEl = document.createElement("div");
+  connectionDrawHintEl.className = "canvas-connection-draw-hint hidden";
+  connectionDrawHintEl.setAttribute("role", "status");
+  host.appendChild(connectionDrawHintEl);
+  return connectionDrawHintEl;
+}
+
+export function syncConnectionDrawChrome() {
+  const active = isConnectionDrawActive();
+  el.canvasGrid?.classList.toggle("is-connection-draw-active", active);
+  el.g6EditorHost?.classList.toggle("is-connection-draw-active", active);
+
+  const hint = ensureConnectionDrawHint();
+  if (!hint) {
+    return;
+  }
+  if (!active) {
+    hint.classList.add("hidden");
+    hint.replaceChildren();
+    return;
+  }
+
+  const source = state.nodesById.get(state.connectSourceId);
+  const kind = state.preferredConnectionKind;
+  const kindLabel = kind ? modelingRelationshipKindLabel(state.activeType, kind) : "relationship";
+  const sourceLabel = source?.label || source?.type || "element";
+
+  hint.classList.remove("hidden");
+  hint.replaceChildren();
+
+  const label = document.createElement("span");
+  label.className = "canvas-connection-draw-hint-label";
+  label.innerHTML = `Drawing <strong>${escapeHtml(kindLabel)}</strong> from <strong>${escapeHtml(
+    sourceLabel,
+  )}</strong> — click a highlighted target`;
+
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "btn btn-secondary btn-sm canvas-connection-draw-hint-cancel";
+  cancel.textContent = "Cancel";
+  cancel.title = "Exit draw mode (Esc)";
+  cancel.addEventListener("click", () => {
+    cancelConnectionDraw();
+  });
+
+  hint.append(label, cancel);
+}
+
+export function cancelConnectionDraw({ silent = false } = {}) {
+  if (!isConnectionDrawActive()) {
+    return false;
+  }
+  state.connectMode = false;
+  state.connectSourceId = null;
+  state.preferredConnectionKind = null;
+  closeEdgeKindPicker();
   ensureCanvas();
   updateCanvasConnectionState();
-  setStatus(enabled ? "Connect mode enabled - click source then target" : "Connect mode disabled");
+  syncConnectionDrawChrome();
+  notifyConnectionDrawStateChange();
+  if (!silent) {
+    setStatus("Draw mode canceled");
+  }
+  return true;
+}
+
+export function setConnectMode(enabled) {
+  if (!enabled) {
+    cancelConnectionDraw({ silent: true });
+    setStatus("Connect mode disabled");
+    return;
+  }
+  state.connectMode = true;
+  state.connectSourceId = null;
+  state.preferredConnectionKind = null;
+  ensureCanvas();
+  updateCanvasConnectionState();
+  syncConnectionDrawChrome();
+  notifyConnectionDrawStateChange();
+  setStatus("Connect mode enabled - click source then target");
 }
 
 export function startConnectionFromNode(nodeId, preferredKind = null) {
@@ -3338,10 +3455,15 @@ export function startConnectionFromNode(nodeId, preferredKind = null) {
   state.preferredConnectionKind = preferredKind || null;
   ensureCanvas();
   updateCanvasConnectionState();
+  syncConnectionDrawChrome();
+  notifyConnectionDrawStateChange();
+  const kindLabel = preferredKind
+    ? modelingRelationshipKindLabel(state.activeType, preferredKind)
+    : null;
   setStatus(
-    preferredKind
-      ? `${preferredKind}: select a highlighted legal target`
-      : "Select a highlighted legal target",
+    kindLabel
+      ? `Drawing ${kindLabel} — click a highlighted target on the canvas`
+      : "Select a highlighted legal target on the canvas",
   );
   return true;
 }

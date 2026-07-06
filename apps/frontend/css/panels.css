@@ -641,6 +641,62 @@
   box-shadow: var(--shadow-sm), var(--glass-pane-highlight);
 }
 
+.attr-custom-select-menu.has-search {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  max-height: 280px;
+  padding: 0;
+}
+
+.attr-custom-select-search {
+  flex-shrink: 0;
+  padding: 6px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+}
+
+.attr-custom-select-search-input {
+  width: 100%;
+  min-height: 30px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  background: color-mix(in srgb, var(--input-bg) 88%, var(--surface-contrast) 12%);
+  color: var(--text);
+  font: 500 12px/1.35 var(--font-ui);
+}
+
+.attr-custom-select-search-input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 75%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-glow) 68%, transparent);
+}
+
+.attr-custom-select-search-input::placeholder {
+  color: var(--muted);
+}
+
+.attr-custom-select-options {
+  display: grid;
+  gap: 3px;
+  overflow: auto;
+  max-height: 220px;
+  padding: 6px;
+}
+
+.attr-custom-select-empty {
+  padding: 8px 6px;
+  color: var(--muted);
+  font: 500 11px/1.35 var(--font-ui);
+  text-align: center;
+}
+
+.attr-custom-select-option.hidden,
+.attr-custom-select-empty.hidden {
+  display: none;
+}
+
 .attr-custom-select-option {
   width: 100%;
   min-height: 28px;
@@ -866,6 +922,10 @@
   border-color: color-mix(in srgb, var(--accent) 72%, transparent);
   background: color-mix(in srgb, var(--accent) 22%, var(--surface-high) 78%);
   color: var(--text-strong);
+}
+
+.attr-relationship-draw-selected .attr-legal-relationship-body strong {
+  color: var(--accent-light);
 }
 
 .attr-legal-relationship-row {

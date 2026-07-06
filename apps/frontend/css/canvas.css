@@ -1104,6 +1104,54 @@
   cursor: pointer !important;
 }
 
+.canvas-grid.is-connection-draw-active,
+.g6-editor-host.is-connection-draw-active,
+.g6-editor-host.is-connection-draw-active canvas {
+  cursor: crosshair !important;
+}
+
+.canvas-connection-draw-hint {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  z-index: 140;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(640px, calc(100% - 28px));
+  padding: 8px 10px 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--glass-pane-bg) 92%, var(--accent-glow) 8%);
+  box-shadow: var(--glass-pane-highlight), var(--shadow-sm);
+  backdrop-filter: var(--glass-pane-blur);
+  -webkit-backdrop-filter: var(--glass-pane-blur);
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.canvas-connection-draw-hint.hidden {
+  display: none;
+}
+
+.canvas-connection-draw-hint-label {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-strong);
+  font: 600 11px/1.35 var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.canvas-connection-draw-hint-label strong {
+  color: var(--accent-light);
+  font-weight: 800;
+}
+
+.canvas-connection-draw-hint-cancel {
+  flex-shrink: 0;
+}
+
 .canvas-zoom-control {
   position: absolute;
   left: var(--canvas-controls-left);

@@ -25,6 +25,7 @@ import {
 import { initArtifactEditor, saveCurrentFile, toggleArtifactTreeCollapsed } from "./artifact.js";
 import {
   applyAttributePanel,
+  bindConnectionDrawStateListener,
   closeAttributePanel,
   deleteSelection,
   openRootModelAttributePanel,
@@ -1101,6 +1102,7 @@ function bindEvents() {
 
   // Attribute panel
   el.attrPanelCloseBtn?.addEventListener("click", closeAttributePanel);
+  bindConnectionDrawStateListener();
   el.attrPanelApplyBtn?.addEventListener("click", applyAttributePanel);
   el.attrPanelDeleteBtn?.addEventListener("click", deleteSelection);
   el.rootModelAttributesBtn?.addEventListener("click", openRootModelAttributePanel);

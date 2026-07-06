@@ -3,7 +3,12 @@ import { el } from "./dom.js";
 import { MODEL_TYPES } from "./config.js";
 import { api } from "./api.js";
 import { setStatus } from "./status.js";
-import { startConnectionFromNode, syncDiagramRenderer, syncRendererSelection } from "./canvas.js";
+import {
+  startConnectionFromNode,
+  cancelConnectionDraw,
+  syncDiagramRenderer,
+  syncRendererSelection,
+} from "./canvas.js";
 import { markModelDirty } from "./model-save-ui.js";
 import { isMobileViewport } from "./responsive.js";
 import { syncMobileDockState } from "./mobile-ui.js";
@@ -222,6 +227,9 @@ export function openAttributePanel(nodeId) {
 }
 
 export function closeAttributePanel() {
+  if (state.connectMode && state.connectSourceId) {
+    cancelConnectionDraw({ silent: true });
+  }
   state.selectedRootModel = false;
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
@@ -1140,24 +1148,64 @@ function legalOutgoingRelationshipOptions(node) {
     .sort((a, b) => a.label.localeCompare(b.label) || a.kind.localeCompare(b.kind));
 }
 
-function appendLegalOutgoingRelationships(node, host = el.attrPanelBody) {
+function connectionDrawActiveForNode(nodeId) {
+  return Boolean(
+    state.connectMode && state.connectSourceId === nodeId && state.preferredConnectionKind,
+  );
+}
+
+function buildLegalRelationshipDrawBanner(node) {
+  const kind = state.preferredConnectionKind;
+  const label = modelingRelationshipKindLabel(state.activeType, kind);
+  const banner = document.createElement("div");
+  banner.className = "attr-relationship-draw-active";
+  banner.setAttribute("role", "status");
+  banner.dataset.legalRelationshipDrawBanner = "true";
+
+  const text = document.createElement("span");
+  text.textContent = `Drawing ${label} — click a highlighted target on the canvas`;
+
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "btn btn-secondary btn-sm";
+  cancel.textContent = "Cancel";
+  cancel.title = "Exit draw mode (Esc)";
+  cancel.addEventListener("click", () => {
+    cancelConnectionDraw();
+  });
+
+  banner.append(text, cancel);
+  return banner;
+}
+
+function renderLegalOutgoingRelationshipsSection(node) {
   const options = legalOutgoingRelationshipOptions(node);
   const section = document.createElement("div");
   section.className = "attr-section attr-legal-relationships";
   section.appendChild(buildAttrSectionTitle("Legal Outgoing Relationships"));
+
+  const drawActive = connectionDrawActiveForNode(node.id);
+  if (drawActive) {
+    section.appendChild(buildLegalRelationshipDrawBanner(node));
+  }
+
   if (!options.length) {
     const hint = document.createElement("div");
     hint.className = "attr-field-hint";
     hint.textContent = "No legal outgoing relationship types for this element.";
     section.appendChild(hint);
-    host.appendChild(section);
-    return;
+    return section;
   }
+
   const list = document.createElement("div");
   list.className = "attr-legal-relationship-list";
   options.forEach((option) => {
+    const isActiveKind = drawActive && option.kind === state.preferredConnectionKind;
     const row = document.createElement("div");
     row.className = "attr-legal-relationship-row";
+    if (isActiveKind) {
+      row.classList.add("attr-relationship-draw-selected");
+    }
     const body = document.createElement("div");
     body.className = "attr-legal-relationship-body";
     const title = document.createElement("strong");
@@ -1170,17 +1218,45 @@ function appendLegalOutgoingRelationships(node, host = el.attrPanelBody) {
     body.append(title, targets);
     const action = document.createElement("button");
     action.type = "button";
-    action.className = "btn btn-secondary btn-sm";
-    action.textContent = "Draw";
-    action.title = `Draw ${option.kind}`;
+    action.className = isActiveKind ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm";
+    action.textContent = isActiveKind ? "Cancel" : "Draw";
+    action.title = isActiveKind ? `Cancel drawing ${option.kind}` : `Draw ${option.kind}`;
+    action.setAttribute("aria-pressed", isActiveKind ? "true" : "false");
     action.addEventListener("click", () => {
+      if (isActiveKind) {
+        cancelConnectionDraw();
+        return;
+      }
       startConnectionFromNode(node.id, option.kind);
     });
     row.append(body, action);
     list.appendChild(row);
   });
   section.appendChild(list);
-  host.appendChild(section);
+  return section;
+}
+
+function syncLegalRelationshipDrawSection() {
+  const nodeId = state.selectedNodeId;
+  if (!nodeId || el.attributePanel?.classList.contains("hidden")) {
+    return;
+  }
+  const node = state.nodesById.get(nodeId);
+  if (!node) {
+    return;
+  }
+  const existing = el.attrPanelBody?.querySelector(".attr-legal-relationships");
+  if (!existing) {
+    return;
+  }
+  if (connectionDrawActiveForNode(nodeId)) {
+    activateAttrTab("relationships");
+  }
+  existing.replaceWith(renderLegalOutgoingRelationshipsSection(node));
+}
+
+function appendLegalOutgoingRelationships(node, host = el.attrPanelBody) {
+  host.appendChild(renderLegalOutgoingRelationshipsSection(node));
 }
 
 function containmentEntriesForType(type) {
@@ -1751,10 +1827,40 @@ function syncCustomSelectState(root, select, emptyLabel) {
   });
 }
 
+function resetCustomSelectSearch(root) {
+  const searchInput = root.querySelector(".attr-custom-select-search-input");
+  if (!searchInput) {
+    return;
+  }
+  searchInput.value = "";
+  filterCustomSelectMenu(root, "");
+}
+
+function filterCustomSelectMenu(root, query) {
+  const normalized = String(query || "")
+    .trim()
+    .toLowerCase();
+  let visibleCount = 0;
+  root.querySelectorAll(".attr-custom-select-option").forEach((optionButton) => {
+    const text = (optionButton.textContent || "").toLowerCase();
+    const matches = !normalized || text.includes(normalized);
+    optionButton.classList.toggle("hidden", !matches);
+    optionButton.hidden = !matches;
+    if (matches) {
+      visibleCount += 1;
+    }
+  });
+  const empty = root.querySelector(".attr-custom-select-empty");
+  if (empty) {
+    empty.classList.toggle("hidden", visibleCount > 0 || !normalized);
+  }
+}
+
 function closeCustomSelect(root) {
   root.classList.remove("is-open");
   root.querySelector(".attr-custom-select-menu")?.classList.add("hidden");
   root.querySelector(".attr-custom-select-trigger")?.setAttribute("aria-expanded", "false");
+  resetCustomSelectSearch(root);
 }
 
 function closeSiblingCustomSelects(root) {
@@ -1774,7 +1880,11 @@ document.addEventListener("click", (event) => {
     .forEach((openRoot) => closeCustomSelect(openRoot));
 });
 
-function appendCustomSelectControl(wrapper, select, { emptyLabel = "Select..." } = {}) {
+function appendCustomSelectControl(
+  wrapper,
+  select,
+  { emptyLabel = "Select...", searchable = false } = {},
+) {
   select.classList.add("attr-native-source");
   const root = document.createElement("div");
   root.className = `attr-custom-select${select.multiple ? " is-multiple" : ""}`;
@@ -1789,11 +1899,39 @@ function appendCustomSelectControl(wrapper, select, { emptyLabel = "Select..." }
     <span class="attr-custom-select-caret" aria-hidden="true"></span>`;
 
   const menu = document.createElement("div");
-  menu.className = "attr-custom-select-menu hidden";
+  menu.className = `attr-custom-select-menu hidden${searchable ? " has-search" : ""}`;
   menu.setAttribute("role", "listbox");
   if (select.multiple) {
     menu.setAttribute("aria-multiselectable", "true");
   }
+
+  let optionsContainer = menu;
+  if (searchable) {
+    const searchWrap = document.createElement("div");
+    searchWrap.className = "attr-custom-select-search";
+    const searchInput = document.createElement("input");
+    searchInput.type = "search";
+    searchInput.className = "attr-custom-select-search-input";
+    searchInput.placeholder = "Search elements...";
+    searchInput.autocomplete = "off";
+    searchInput.setAttribute("aria-label", "Search elements");
+    searchInput.addEventListener("input", () => filterCustomSelectMenu(root, searchInput.value));
+    searchInput.addEventListener("click", (event) => event.stopPropagation());
+    searchInput.addEventListener("keydown", (event) => event.stopPropagation());
+    searchWrap.appendChild(searchInput);
+    menu.appendChild(searchWrap);
+
+    optionsContainer = document.createElement("div");
+    optionsContainer.className = "attr-custom-select-options";
+    optionsContainer.setAttribute("role", "presentation");
+    menu.appendChild(optionsContainer);
+
+    const emptyMessage = document.createElement("div");
+    emptyMessage.className = "attr-custom-select-empty hidden";
+    emptyMessage.textContent = "No matching elements";
+    optionsContainer.appendChild(emptyMessage);
+  }
+
   [...select.options].forEach((sourceOption) => {
     const optionButton = document.createElement("button");
     optionButton.type = "button";
@@ -1811,15 +1949,23 @@ function appendCustomSelectControl(wrapper, select, { emptyLabel = "Select..." }
       select.dispatchEvent(new Event("change", { bubbles: true }));
       syncCustomSelectState(root, select, emptyLabel);
     });
-    menu.appendChild(optionButton);
+    optionsContainer.appendChild(optionButton);
   });
 
   trigger.addEventListener("click", () => {
     const open = root.classList.contains("is-open");
     closeSiblingCustomSelects(root);
-    root.classList.toggle("is-open", !open);
-    menu.classList.toggle("hidden", open);
-    trigger.setAttribute("aria-expanded", String(!open));
+    const nextOpen = !open;
+    root.classList.toggle("is-open", nextOpen);
+    menu.classList.toggle("hidden", !nextOpen);
+    trigger.setAttribute("aria-expanded", String(nextOpen));
+    if (nextOpen) {
+      resetCustomSelectSearch(root);
+      const searchInput = root.querySelector(".attr-custom-select-search-input");
+      if (searchInput) {
+        requestAnimationFrame(() => searchInput.focus());
+      }
+    }
   });
   root.appendChild(trigger);
   root.appendChild(menu);
@@ -1925,6 +2071,7 @@ function buildAttrField(key, value, field) {
   if (input.tagName === "SELECT") {
     appendCustomSelectControl(wrapper, input, {
       emptyLabel: fieldType === "reference" ? "No reference" : "Select...",
+      searchable: fieldType === "reference",
     });
   }
   if (field?.kind === "reference" && field?.targetType) {
@@ -2333,4 +2480,8 @@ export async function deleteSelectedConnection() {
   syncDiagramRenderer({});
   markModelDirty();
   setStatus(`Deleted connection: ${connection.kind}`);
+}
+
+export function bindConnectionDrawStateListener() {
+  window.addEventListener("connection-draw-state-change", syncLegalRelationshipDrawSection);
 }
