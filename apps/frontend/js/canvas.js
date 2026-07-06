@@ -16,13 +16,13 @@ import {
 import { isContainerElement, materializeActiveView } from "./view-materializer.js";
 import {
   modelingElementDefinition,
-  modelingContainmentPalette,
+  modelingCanvasPaletteTypes,
   modelingContainmentEntryForChildType,
   modelingContainerFocusPolicy,
   modelingContainmentsForType,
   isModelingLevel,
   modelingLevelConfig,
-  modelingPalette,
+  modelingStandalonePaletteType,
   modelingRootContainments,
   modelingRootType,
   modelingRelationshipKindLabel,
@@ -2386,7 +2386,9 @@ function availableConfiguredPaletteTypes(allTypes) {
         ...(Array.isArray(viewDefinition.elementTypes) ? viewDefinition.elementTypes : []),
       ]
     : [...activeViewElementTypeFilter()];
-  const filtered = filterScopedPaletteTypes(state.activeType, scoped, allTypes);
+  const filtered = filterScopedPaletteTypes(state.activeType, scoped, allTypes).filter((type) =>
+    modelingStandalonePaletteType(state.activeType, type),
+  );
   return viewDefinition || scoped.length ? filtered : allTypes;
 }
 
@@ -2497,9 +2499,9 @@ export function renderPalette() {
   const containerFocus = activeContainerFocus();
   if (isModelingType) {
     try {
-      allTypes = containerFocus
-        ? modelingContainmentPalette(state.activeType, containerFocus.elementType)
-        : modelingPalette(state.activeType);
+      allTypes = modelingCanvasPaletteTypes(state.activeType, {
+        ownerType: containerFocus?.elementType || null,
+      });
     } catch (error) {
       console.error("Palette rendering failed", error);
       setStatus(error, { prefix: "Backend modeling config is unavailable.", error: true });
@@ -3447,10 +3449,9 @@ export function setupDnD() {
     state.paletteDragType = "";
     const containerFocus = activeContainerFocus();
     const allowedTypes = new Set(
-      (containerFocus
-        ? modelingContainmentPalette(state.activeType, containerFocus.elementType)
-        : modelingPalette(state.activeType)
-      ).filter((candidate) => candidate !== modelingRootType(state.activeType)),
+      modelingCanvasPaletteTypes(state.activeType, {
+        ownerType: containerFocus?.elementType || null,
+      }).filter((candidate) => candidate !== modelingRootType(state.activeType)),
     );
     if (
       !type ||

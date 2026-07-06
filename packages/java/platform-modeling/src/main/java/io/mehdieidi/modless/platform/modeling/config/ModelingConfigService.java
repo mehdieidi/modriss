@@ -228,9 +228,14 @@ public final class ModelingConfigService {
     String rootType =
         String.valueOf(requireMap(metadata, "rootTemplate", key).getOrDefault("eClass", ""));
     CimMetamodel metamodel = readEcoreMetamodel(key, rootType);
-    merged.put(
-        "elements",
-        mergeElements(key, metamodel.elements(), requireList(metadata, "elements", key), metadata));
+    List<Map<String, Object>> mergedElements =
+        mergeElements(key, metamodel.elements(), requireList(metadata, "elements", key), metadata);
+    inferContainedOnlyFlags(mergedElements, rootType);
+    inferApiGatewayRouteContainedOnly(mergedElements);
+    for (Map<String, Object> element : mergedElements) {
+      element.put("visualRole", visualRole(element));
+    }
+    merged.put("elements", mergedElements);
     List<Map<String, Object>> semanticEdgeObjectRules =
         mergeSemanticEdgeObjectRules(
             optionalList(metadata, "semanticEdgeObjectRules"),
@@ -343,6 +348,12 @@ public final class ModelingConfigService {
           }
         }
       }
+      palette.removeIf(
+          type -> {
+            Map<String, Object> element = elementsByType.get(type);
+            return element == null
+                || !standalonePaletteElement(element, standalonePaletteRoles);
+          });
       relatedTypes.addAll(palette);
       view.put("elementTypes", new ArrayList<>(relatedTypes));
       view.put("palette", new ArrayList<>(palette));
@@ -378,6 +389,149 @@ public final class ModelingConfigService {
         && !Boolean.TRUE.equals(element.get("supportOnly"))
         && standalonePaletteRoles.contains(
             String.valueOf(element.getOrDefault("visualRole", "node")));
+  }
+
+  /**
+   * Marks types that are only reachable through nested {@code val} containment as {@code
+   * containedOnly}. Applied to every modeling level (CIM, PIM, PSM) during Ecore merge.
+   *
+   * <p>Root-contained types remain standalone palette candidates. UI metadata may explicitly keep a
+   * root-contained type draggable by setting {@code containedOnly} to {@code false}.
+   *
+   * @param elements merged element metadata
+   * @param rootType root model class name
+   */
+  private void inferContainedOnlyFlags(List<Map<String, Object>> elements, String rootType) {
+    Map<String, Map<String, Object>> elementsByType = new LinkedHashMap<>();
+    for (Map<String, Object> element : elements) {
+      elementsByType.put(String.valueOf(element.get("type")), element);
+    }
+    Set<String> rootContainable =
+        containmentTargetTypes(elementsByType.get(rootType), elementsByType);
+    Set<String> nestedContainable = new LinkedHashSet<>();
+    for (Map<String, Object> owner : elements) {
+      if (rootType.equals(String.valueOf(owner.get("type")))) {
+        continue;
+      }
+      nestedContainable.addAll(detailContainmentTargetTypes(owner, elementsByType));
+    }
+    Set<String> inferContainedOnly = new LinkedHashSet<>(nestedContainable);
+    inferContainedOnly.removeAll(rootContainable);
+    for (Map<String, Object> element : elements) {
+      String type = String.valueOf(element.get("type"));
+      if (!inferContainedOnly.contains(type)) {
+        continue;
+      }
+      if (element.containsKey("containedOnly")
+          && Boolean.FALSE.equals(element.get("containedOnly"))
+          && rootContainable.contains(type)) {
+        continue;
+      }
+      if (!Boolean.TRUE.equals(element.get("containedOnly"))) {
+        element.put("containedOnly", true);
+      }
+    }
+  }
+
+  /**
+   * Collects contained types that belong inside a focus container, excluding membership buckets
+   * such as {@code SamStack.resources} where children remain draggable on level views.
+   *
+   * @param owner owner element metadata
+   * @param elementsByType element lookup by type
+   * @return detail-contained concrete type names
+   */
+  private Set<String> detailContainmentTargetTypes(
+      Map<String, Object> owner, Map<String, Map<String, Object>> elementsByType) {
+    Set<String> result = new LinkedHashSet<>();
+    if (owner == null) {
+      return result;
+    }
+    for (Object item : optionalList(owner, "references")) {
+      if (!(item instanceof Map<?, ?> raw)) {
+        continue;
+      }
+      Map<String, Object> reference = stringKeyMap(raw);
+      if (!Boolean.TRUE.equals(reference.get("containment"))
+          || Boolean.TRUE.equals(reference.get("readonly"))
+          || isMembershipContainmentReference(owner, reference)) {
+        continue;
+      }
+      String targetType = String.valueOf(reference.getOrDefault("targetType", ""));
+      if (targetType.isBlank()) {
+        continue;
+      }
+      result.addAll(concreteTypesFor(elementsByType, targetType));
+    }
+    return result;
+  }
+
+  /**
+   * Checks whether a containment reference groups deployable resources on a view canvas rather than
+   * hiding them as inner-only details.
+   *
+   * @param owner owner element metadata
+   * @param reference containment reference metadata
+   * @return whether children stay standalone palette candidates
+   */
+  private boolean isMembershipContainmentReference(
+      Map<String, Object> owner, Map<String, Object> reference) {
+    String shape =
+        String.valueOf(optionalMap(owner, "notation").getOrDefault("shape", ""));
+    String feature = String.valueOf(reference.getOrDefault("name", ""));
+    return "stack-container".equals(shape) && "resources".equals(feature);
+  }
+
+  /**
+   * Marks concrete API Gateway route types as container-only because routes are owned by APIs via
+   * composition references rather than root/stack placement.
+   *
+   * @param elements merged element metadata
+   */
+  private void inferApiGatewayRouteContainedOnly(List<Map<String, Object>> elements) {
+    for (Map<String, Object> element : elements) {
+      if (Boolean.TRUE.equals(element.get("abstract"))) {
+        continue;
+      }
+      String type = String.valueOf(element.get("type"));
+      if (!type.endsWith("Route")) {
+        continue;
+      }
+      if (objectStringList(element.get("supertypes")).contains("ApiGatewayRoute")) {
+        element.put("containedOnly", true);
+      }
+    }
+  }
+
+  /**
+   * Collects concrete types accepted by an owner's mutable containment references.
+   *
+   * @param owner owner element metadata
+   * @param elementsByType element lookup by type
+   * @return contained concrete type names
+   */
+  private Set<String> containmentTargetTypes(
+      Map<String, Object> owner, Map<String, Map<String, Object>> elementsByType) {
+    Set<String> result = new LinkedHashSet<>();
+    if (owner == null) {
+      return result;
+    }
+    for (Object item : optionalList(owner, "references")) {
+      if (!(item instanceof Map<?, ?> raw)) {
+        continue;
+      }
+      Map<String, Object> reference = stringKeyMap(raw);
+      if (!Boolean.TRUE.equals(reference.get("containment"))
+          || Boolean.TRUE.equals(reference.get("readonly"))) {
+        continue;
+      }
+      String targetType = String.valueOf(reference.getOrDefault("targetType", ""));
+      if (targetType.isBlank()) {
+        continue;
+      }
+      result.addAll(concreteTypesFor(elementsByType, targetType));
+    }
+    return result;
   }
 
   private List<String> standalonePaletteRoles(Map<String, Object> canvasPolicy) {
@@ -556,6 +710,9 @@ public final class ModelingConfigService {
       }
       if (ui != null) {
         mergeInto(merged, ui);
+        if (Boolean.TRUE.equals(ui.get("containedOnly"))) {
+          merged.put("containedOnly", true);
+        }
       }
       completeElementVisualMetadata(type, merged, metadata);
       requireElementVisualMetadata(key, type, merged);

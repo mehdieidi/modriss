@@ -1144,9 +1144,6 @@
         "HttpApi",
         "RestApi",
         "WebSocketApi",
-        "HttpApiRoute",
-        "RestApiRoute",
-        "WebSocketRoute",
         "ApiGatewayIntegration",
         "JwtAuthorizer",
         "CognitoAuthorizer",
@@ -4238,6 +4235,7 @@
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
+      "containedOnly": true,
       "processPhaseId": "psm.ph5",
       "processTaskIds": ["psm.ph5.st1.t1"],
       "processStageId": "psm.ph5.st1"
@@ -4254,6 +4252,7 @@
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
+      "containedOnly": true,
       "processPhaseId": "psm.ph5",
       "processTaskIds": ["psm.ph5.st1.t1"],
       "processStageId": "psm.ph5.st1"
@@ -4306,6 +4305,7 @@
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
+      "containedOnly": true,
       "processPhaseId": "psm.ph5",
       "processTaskIds": ["psm.ph5.st1.t1"],
       "processStageId": "psm.ph5.st1"

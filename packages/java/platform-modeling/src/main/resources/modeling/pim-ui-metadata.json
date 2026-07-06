@@ -775,16 +775,7 @@
         "AuthPolicy",
         "AuthorizationPolicy"
       ],
-      "palette": [
-        "Api",
-        "ApiRoute",
-        "ApiContract",
-        "Schema",
-        "ErrorMapping",
-        "AuthPolicy",
-        "CorsPolicy",
-        "RateLimitPolicy"
-      ],
+      "palette": ["Api", "Schema", "AuthPolicy", "CorsPolicy", "RateLimitPolicy"],
       "relationshipKinds": ["ROUTES_TO", "INVOKES", "AUTHORIZED_BY", "USES", "CONTAINS"],
       "layoutHint": "TABLE"
     },
@@ -815,16 +806,7 @@
         "ArchitecturePolicy",
         "ObservabilityConfig"
       ],
-      "palette": [
-        "Function",
-        "Trigger",
-        "Schedule",
-        "Queue",
-        "Topic",
-        "EventBus",
-        "ApiRoute",
-        "WorkflowState"
-      ],
+      "palette": ["Function", "Trigger", "Schedule", "Queue", "Topic", "EventBus"],
       "relationshipKinds": [
         "TRIGGERS",
         "INVOKES",
@@ -1015,7 +997,7 @@
         "Function",
         "ExternalAdapter"
       ],
-      "palette": ["Workflow", "WorkflowState", "HumanTask", "ApprovalTask", "EscalationPolicy"],
+      "palette": ["Workflow", "HumanTask", "ApprovalTask", "EscalationPolicy"],
       "relationshipKinds": ["TRANSITION", "INVOKES", "ORCHESTRATES", "EXTERNAL_CALL", "CONTAINS"],
       "layoutHint": "PROCESS"
     },

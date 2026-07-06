@@ -326,20 +326,39 @@ export function modelingLevelListLabel() {
   return `${names.slice(0, -1).join(", ")}, or ${names[names.length - 1]}`;
 }
 
-export function modelingPalette(typeKey = state.activeType) {
+export function modelingCanvasPaletteTypes(typeKey = state.activeType, { ownerType = null } = {}) {
+  if (ownerType) {
+    return modelingContainmentPalette(typeKey, ownerType);
+  }
+  return modelingPalette(typeKey);
+}
+
+export function modelingStandalonePaletteType(typeKey, type) {
   const roles = new Set(modelingStandalonePaletteRoles(typeKey));
   const rootType = modelingRootType(typeKey);
+  const normalizedType = String(type || "").trim();
+  if (!normalizedType || normalizedType === rootType) {
+    return false;
+  }
+  try {
+    const entry = modelingElementDefinition(typeKey, normalizedType);
+    return Boolean(
+      entry?.creatable === true &&
+        !entry?.abstract &&
+        !entry?.relationshipElement &&
+        !entry?.containedOnly &&
+        !entry?.supportOnly &&
+        roles.has(String(entry?.visualRole || "node")),
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function modelingPalette(typeKey = state.activeType) {
   return (modelingLevelConfig(typeKey).elements || [])
     .map((entry) =>
-      entry?.creatable === true &&
-      entry?.type !== rootType &&
-      !entry?.abstract &&
-      !entry?.relationshipElement &&
-      !entry?.containedOnly &&
-      !entry?.supportOnly &&
-      roles.has(String(entry?.visualRole || "node"))
-        ? String(entry.type || "").trim()
-        : "",
+      modelingStandalonePaletteType(typeKey, entry?.type) ? String(entry.type || "").trim() : "",
     )
     .filter(Boolean);
 }
