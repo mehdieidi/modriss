@@ -123,11 +123,17 @@ function materializeViewGraph(view, elementIds, relationshipIds) {
   const nodes = elementIds
     .map((elementId) => runtimeNode(elementId, viewNodes.get(elementId)))
     .filter(Boolean);
+  const nodeIds = new Set(nodes.map((node) => node.id));
   const connections = relationshipIds
     .map((relationshipId) =>
       runtimeEdge(state.graph.relationshipsById.get(relationshipId), viewEdges.get(relationshipId)),
     )
-    .filter(Boolean);
+    .filter((connection) => {
+      if (!connection?.sourceId || !connection?.targetId) {
+        return false;
+      }
+      return nodeIds.has(connection.sourceId) && nodeIds.has(connection.targetId);
+    });
   return { nodes, connections };
 }
 

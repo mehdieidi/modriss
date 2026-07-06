@@ -585,9 +585,16 @@ function registerModlessG6Extensions() {
 
   class ModlessEdge extends BaseEdge {
     getKeyPath(attributes) {
-      const [sourcePoint, targetPoint] = this.getEndpoints(attributes);
       const routeStart = attributes.routeStart;
       const routeEnd = attributes.routeEnd;
+      let sourcePoint;
+      let targetPoint;
+      try {
+        [sourcePoint, targetPoint] = this.getEndpoints(attributes);
+      } catch {
+        sourcePoint = null;
+        targetPoint = null;
+      }
       const source =
         Number.isFinite(Number(routeStart?.x)) && Number.isFinite(Number(routeStart?.y))
           ? [Number(routeStart.x), Number(routeStart.y)]
@@ -1035,8 +1042,15 @@ function rememberEdgeData(edgeData) {
   snapshot.edgeFingerprints.set(edgeData.id, fingerprintElement(edgeData));
 }
 
+function edgeEndpointsReady(edge, nodesById) {
+  const sourceId = String(edge?.source || edge?.sourceId || "");
+  const targetId = String(edge?.target || edge?.targetId || "");
+  return Boolean(sourceId && targetId && nodesById?.has?.(sourceId) && nodesById?.has?.(targetId));
+}
+
 function applyDiff(data) {
   const diff = diffGraphData(editor.dataSnapshot, data);
+  const nextNodes = diff.snapshot?.nodesById || new Map();
   if (diff.removeEdgeIds.length) {
     editor.graph.removeEdgeData?.(diff.removeEdgeIds);
     diff.removeEdgeIds.forEach((id) => editor.edgeStateFlags.delete(id));
@@ -1053,15 +1067,17 @@ function applyDiff(data) {
   if (diff.addNodes.length) {
     editor.graph.addNodeData?.(diff.addNodes);
   }
-  if (diff.addEdges.length) {
-    editor.graph.addEdgeData?.(diff.addEdges);
+  const addEdges = diff.addEdges.filter((edge) => edgeEndpointsReady(edge, nextNodes));
+  if (addEdges.length) {
+    editor.graph.addEdgeData?.(addEdges);
   }
   if (diff.updateNodes.length) {
     editor.graph.updateNodeData?.(diff.updateNodes);
   }
-  if (diff.updateEdges.length) {
+  const updateEdges = diff.updateEdges.filter((edge) => edgeEndpointsReady(edge, nextNodes));
+  if (updateEdges.length) {
     try {
-      const result = editor.graph.updateEdgeData?.(diff.updateEdges);
+      const result = editor.graph.updateEdgeData?.(updateEdges);
       result?.catch?.((error) =>
         updateDebugState({
           lastEdgeUpdateError: error.message || String(error),

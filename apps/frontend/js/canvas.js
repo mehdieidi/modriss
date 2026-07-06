@@ -598,21 +598,28 @@ function relationshipsWithinElementSet(elementSet) {
   return relationships;
 }
 
-function isContainmentRelationship(relationship) {
+function isGroupingRelationshipForFocus(relationship) {
   if (!relationship) {
     return false;
   }
   if (relationship.containment === true) {
     return true;
   }
+  const kind = String(relationship.kind || "").toUpperCase();
   try {
-    return (
-      String(relationship.kind || "").toUpperCase() ===
-      configuredRelationshipSemantic("containmentKind").toUpperCase()
+    const kinds = new Set(
+      safeArray(modelingLevelConfig(state.activeType).relationshipSemantics?.containmentKinds).map(
+        (entry) => String(entry).toUpperCase(),
+      ),
     );
+    return kinds.has(kind);
   } catch {
     return false;
   }
+}
+
+function isContainmentRelationship(relationship) {
+  return isGroupingRelationshipForFocus(relationship);
 }
 
 function viewNodesByElement(view) {
@@ -727,12 +734,13 @@ function createContainerFocusView(node) {
   const focusPolicy = modelingContainerFocusPolicy(state.activeType);
   const descendantIds = [...collectContainedDescendantIds(node.id)];
   const descendantSet = new Set(descendantIds);
+  const portalIds = new Set();
   const visibleIds = new Set(descendantIds);
   state.graph.relationshipsById.forEach((relationship) => {
     if (!relationship?.sourceElementId || !relationship?.targetElementId) {
       return;
     }
-    if (isContainmentRelationship(relationship)) {
+    if (isGroupingRelationshipForFocus(relationship)) {
       return;
     }
     const sourceInside = descendantSet.has(relationship.sourceElementId);
@@ -740,7 +748,11 @@ function createContainerFocusView(node) {
     if (sourceInside === targetInside) {
       return;
     }
-    visibleIds.add(sourceInside ? relationship.targetElementId : relationship.sourceElementId);
+    const portalId = sourceInside ? relationship.targetElementId : relationship.sourceElementId;
+    visibleIds.add(portalId);
+    if (!descendantSet.has(portalId)) {
+      portalIds.add(portalId);
+    }
   });
   const visibleElementIds = [...visibleIds];
   const viewNodePositions = viewNodesByElement(previousView);
@@ -755,6 +767,9 @@ function createContainerFocusView(node) {
     };
   });
   state.graph.relationshipsById.forEach((relationship) => {
+    if (isGroupingRelationshipForFocus(relationship)) {
+      return;
+    }
     const sourceId = relationship.sourceElementId || relationship.source;
     const targetId = relationship.targetElementId || relationship.target;
     if (
@@ -774,6 +789,7 @@ function createContainerFocusView(node) {
   });
   const focusNodes = visibleElementIds.map((elementId) => ({
     elementId,
+    portal: portalIds.has(elementId) ? true : undefined,
     ...(viewNodePositions.get(elementId) || {}),
   }));
   const fakeNodes = focusNodes.map((entry, index) => {
@@ -922,7 +938,7 @@ export function openContainerFocus(elementId) {
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = null;
   materializeActiveView();
-  renderDiagram();
+  void renderDiagramAsync({ full: true });
   renderPalette();
   notifyModelToolsChanged();
   const descendantCount = collectContainedDescendantIds(node.id).size;
@@ -965,7 +981,7 @@ export function openNeighborhoodFocus(elementId, depth = 1) {
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = null;
   materializeActiveView();
-  renderDiagram();
+  void renderDiagramAsync({ full: true });
   notifyModelToolsChanged();
   setStatus(`Opened ${node.label || node.id} neighborhood depth ${normalizedDepth}.`);
   return true;
@@ -984,7 +1000,7 @@ export function closeCanvasFocus() {
       ? focus.previousViewId
       : state.views.byId.keys().next().value || null;
   materializeActiveView();
-  renderDiagram();
+  void renderDiagramAsync({ full: true });
   renderPalette();
   notifyModelToolsChanged();
   setStatus("Returned to previous canvas");
@@ -3092,7 +3108,7 @@ function connectToContainedTarget(source, container, targetId, preferredKind = n
   }
   if (ensureFocusPortalNode(source.id, containedTarget.id)) {
     materializeActiveView();
-    renderDiagram();
+    void renderDiagramAsync({ full: true });
   }
   const created = addConnection(source.id, containedTarget.id, {
     interactivePicker: true,

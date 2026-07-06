@@ -504,6 +504,7 @@
   "relationshipSemantics": {
     "containmentKind": "CONTAINS",
     "containmentKinds": ["CONTAINS", "DEPLOYS"],
+    "nestingKinds": ["CONTAINS"],
     "traceKind": "TRACE"
   },
   "relationshipKindLabels": {

@@ -2243,6 +2243,7 @@
   "relationshipSemantics": {
     "containmentKind": "CONTAINS",
     "containmentKinds": ["CONTAINS", "OWNS", "DEPLOYS"],
+    "nestingKinds": ["CONTAINS"],
     "traceKind": "TRACE"
   },
   "relationshipLabelFields": ["name", "flowPurpose", "operation", "transitionName", "effect"],
@@ -2977,6 +2978,8 @@
       "displayName": "Workflow View",
       "viewType": "WORKFLOW_DESIGNER",
       "viewpoint": "workflow",
+      "scopeTypes": ["Workflow"],
+      "defaultDepth": 2,
       "elementTypes": [
         "Workflow",
         "WorkflowStep",

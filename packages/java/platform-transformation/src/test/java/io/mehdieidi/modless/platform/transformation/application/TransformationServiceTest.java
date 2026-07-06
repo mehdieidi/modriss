@@ -66,6 +66,14 @@ class TransformationServiceTest {
     assertFalse(pim.modelJson().path("apis").path(0).path("routes").isEmpty());
     assertFalse(pim.modelJson().path("eventTypes").isEmpty());
     assertFalse(pim.modelJson().path("dataStores").isEmpty());
+    assertFalse(pim.modelJson().path("workflows").isEmpty(), "Expected generated workflows.");
+    assertTrue(
+        pim.modelJson()
+            .path("graph")
+            .path("elements")
+            .findValuesAsText("eClass")
+            .contains("Workflow"),
+        "Generated PIM graph should include workflow containers for the workflow view.");
     assertEquals("GENERATED_BY_ETL", pim.modelJson().path("transformationStatus").asText());
     assertTrue(
         pim.modelJson().path("commands").isMissingNode(),

@@ -429,7 +429,13 @@ export function mapDiagramToG6({
     );
   });
   const g6Edges = edges
-    .filter((edge) => visibleNodeIds.has(edge.sourceId) && visibleNodeIds.has(edge.targetId))
+    .filter(
+      (edge) =>
+        !edge?.bundle &&
+        String(edge?.kind || "").toUpperCase() !== "EDGE_BUNDLE" &&
+        visibleNodeIds.has(edge.sourceId) &&
+        visibleNodeIds.has(edge.targetId),
+    )
     .map((edge) =>
       mapEdgeToG6(edge, {
         typeKey,
