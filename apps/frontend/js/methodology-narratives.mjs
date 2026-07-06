@@ -203,7 +203,7 @@ export function stageNarrative(stage) {
 const VIEWPOINT_LABELS = {
   dashboard: "Overview dashboard",
   requirements: "Goals & requirements view",
-  capability: "Capability map",
+  capability: "Capability",
   domain: "Domain model view",
   process: "Business process view",
   actor: "Actor map",

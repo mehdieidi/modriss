@@ -48,7 +48,7 @@
     },
     {
       "id": "cim-artifact.capability-map",
-      "name": "Capability Map",
+      "name": "Capability",
       "description": "Business capabilities and dependencies"
     },
     {
@@ -746,7 +746,7 @@
               "artifacts": [
                 {
                   "id": "cim-artifact.capability-map",
-                  "name": "Capability Map"
+                  "name": "Capability"
                 }
               ],
               "artifactIds": ["cim-artifact.capability-map"],
@@ -780,7 +780,7 @@
               "artifacts": [
                 {
                   "id": "cim-artifact.capability-map",
-                  "name": "Capability Map"
+                  "name": "Capability"
                 }
               ],
               "artifactIds": ["cim-artifact.capability-map"],
@@ -792,7 +792,7 @@
                 }
               ],
               "steps": ["Model CapabilityDependency relationships between capabilities."],
-              "entryCriteria": ["Capability map drafted"],
+              "entryCriteria": ["Capability drafted"],
               "exitCriteria": ["Dependencies documented for slice"],
               "validationRules": [],
               "paletteFocus": ["CapabilityDependency"],
@@ -843,7 +843,7 @@
                 "Link terms to capabilities where helpful.",
                 "Resolve naming conflicts before entity modeling."
               ],
-              "entryCriteria": ["Capability map drafted"],
+              "entryCriteria": ["Capability drafted"],
               "exitCriteria": ["Glossary covers core domain nouns for slice"],
               "validationRules": [],
               "paletteFocus": ["UbiquitousLanguageTerm"],

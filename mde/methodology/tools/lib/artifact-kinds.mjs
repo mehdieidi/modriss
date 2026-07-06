@@ -28,7 +28,7 @@ export const ARTIFACT_KINDS = {
     },
     {
       id: "cim-artifact.capability-map",
-      name: "Capability Map",
+      name: "Capability",
       description: "Business capabilities and dependencies",
     },
     {

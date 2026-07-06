@@ -349,7 +349,7 @@
       "displayName": "Actor",
       "icon": "person",
       "color": "#7C3AED",
-      "category": "Stakeholder and Actor Map",
+      "category": "Stakeholder and Actor",
       "primitive": "participant-card",
       "card": {
         "tag": "ACT",
@@ -363,7 +363,7 @@
       "displayName": "Role",
       "icon": "badge",
       "color": "#7C3AED",
-      "category": "Stakeholder and Actor Map",
+      "category": "Stakeholder and Actor",
       "primitive": "role-badge-card",
       "card": {
         "tag": "ROLE",
@@ -390,7 +390,7 @@
       "displayName": "External System",
       "icon": "language",
       "color": "#0D9488",
-      "category": "Stakeholder and Actor Map",
+      "category": "Stakeholder and Actor",
       "primitive": "external-boundary",
       "card": {
         "tag": "EXT",
@@ -404,7 +404,7 @@
       "displayName": "Business Capability",
       "icon": "account_tree",
       "color": "#0F766E",
-      "category": "Capability Map",
+      "category": "Capability",
       "primitive": "capability-container",
       "card": {
         "tag": "CAP",
@@ -418,7 +418,7 @@
       "displayName": "Capability Dependency",
       "icon": "link",
       "color": "#0F766E",
-      "category": "Capability Map",
+      "category": "Capability",
       "creatable": false,
       "relationshipElement": true,
       "primitive": "relationship-edge",
@@ -434,7 +434,7 @@
       "displayName": "Bounded Context Candidate",
       "icon": "select_window",
       "color": "#0F766E",
-      "category": "Capability Map",
+      "category": "Capability",
       "primitive": "context-container",
       "card": {
         "tag": "CTX",
@@ -448,7 +448,7 @@
       "displayName": "Aggregate Candidate",
       "icon": "hub",
       "color": "#0F766E",
-      "category": "Aggregate and Lifecycle",
+      "category": "Aggregate",
       "primitive": "aggregate-container",
       "card": {
         "tag": "AGG",
@@ -462,7 +462,7 @@
       "displayName": "Command",
       "icon": "bolt",
       "color": "#DC2626",
-      "category": "Behavior/Event Storming",
+      "category": "Behavior",
       "primitive": "command-lozenge",
       "card": {
         "tag": "CMD",
@@ -476,7 +476,7 @@
       "displayName": "Query",
       "icon": "search",
       "color": "#2563EB",
-      "category": "Behavior/Event Storming",
+      "category": "Behavior",
       "primitive": "query-trapezoid",
       "card": {
         "tag": "QRY",
@@ -490,7 +490,7 @@
       "displayName": "Business Event",
       "icon": "event",
       "color": "#DB2777",
-      "category": "Behavior/Event Storming",
+      "category": "Behavior",
       "primitive": "event-hexagon",
       "card": {
         "tag": "EVT",
@@ -911,7 +911,7 @@
       "displayName": "Stakeholder",
       "icon": "groups",
       "color": "#7C3AED",
-      "category": "Stakeholder and Actor Map",
+      "category": "Stakeholder and Actor",
       "primitive": "participant-card",
       "card": {
         "tag": "STK",
@@ -925,7 +925,7 @@
       "displayName": "Ubiquitous Language Term",
       "icon": "translate",
       "color": "#0F766E",
-      "category": "Capability Map",
+      "category": "Capability",
       "containedOnly": true,
       "primitive": "glossary-row",
       "card": {
@@ -956,7 +956,7 @@
       "displayName": "Lifecycle State",
       "icon": "radio_button_checked",
       "color": "#0F766E",
-      "category": "Aggregate and Lifecycle",
+      "category": "Aggregate",
       "containedOnly": true,
       "primitive": "state-node",
       "card": {
@@ -971,7 +971,7 @@
       "displayName": "Business Invariant",
       "icon": "gavel",
       "color": "#CA8A04",
-      "category": "Aggregate and Lifecycle",
+      "category": "Aggregate",
       "primitive": "constraint-note",
       "card": {
         "tag": "INV",
@@ -985,7 +985,7 @@
       "displayName": "Command Outcome",
       "icon": "done",
       "color": "#DC2626",
-      "category": "Behavior/Event Storming",
+      "category": "Behavior",
       "containedOnly": true,
       "primitive": "outcome-row",
       "card": {
@@ -1000,7 +1000,7 @@
       "displayName": "Business Error",
       "icon": "warning",
       "color": "#DC2626",
-      "category": "Behavior/Event Storming",
+      "category": "Behavior",
       "primitive": "error-octagon",
       "card": {
         "tag": "ERR",
@@ -1696,7 +1696,7 @@
     },
     {
       "id": "capability-map",
-      "displayName": "Capability Map",
+      "displayName": "Capability",
       "viewType": "CAPABILITY_CONTEXT",
       "viewpoint": "capability",
       "elementTypes": [
@@ -1776,7 +1776,7 @@
     },
     {
       "id": "stakeholder-actor-map",
-      "displayName": "Stakeholder and Actor Map",
+      "displayName": "Stakeholder and Actor",
       "viewType": "STAKEHOLDER_ACTOR_MAP",
       "viewpoint": "actor",
       "elementTypes": [
@@ -1810,7 +1810,7 @@
     },
     {
       "id": "aggregate-lifecycle",
-      "displayName": "Aggregate and Lifecycle",
+      "displayName": "Aggregate",
       "viewType": "AGGREGATE_LIFECYCLE",
       "viewpoint": "aggregate",
       "elementTypes": [
@@ -1837,7 +1837,7 @@
     },
     {
       "id": "behavior-event-storming",
-      "displayName": "Behavior/Event Storming",
+      "displayName": "Behavior",
       "viewType": "BEHAVIOR_EVENT_STORMING",
       "viewpoint": "eventstorming",
       "elementTypes": [

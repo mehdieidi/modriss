@@ -91,7 +91,6 @@ class BusinessInvariant extends kernel.TraceableElement {
 
 class InformationItem extends kernel.TraceableElement {
   attr String businessName;
-  attr cimtypes.PrimitiveBusinessType[1] type;
   attr Boolean required;
   attr Boolean collection;
   attr String example;
@@ -112,6 +111,7 @@ class InformationItem extends kernel.TraceableElement {
   attr Boolean searchRelevant;
   attr Boolean reportingRelevant;
   attr Boolean retentionRelevant;
+  attr cimtypes.PrimitiveBusinessType[1] type;
 
   val kernel.Multiplicity[?] cardinality;
   val InformationItem[*]#parent subItems;

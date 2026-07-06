@@ -138,7 +138,7 @@ The case study uses two primary bounded-context candidates:
 These contexts are intentionally distinct but strongly connected through events and shared business
 language, making them useful for evaluating service-boundary inference.
 
-## Capability Map
+## Capability
 
 The core capabilities are:
 

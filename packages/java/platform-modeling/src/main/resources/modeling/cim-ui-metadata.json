@@ -695,7 +695,7 @@
     },
     {
       "id": "capability-map",
-      "displayName": "Capability Map",
+      "displayName": "Capability",
       "viewType": "CAPABILITY_CONTEXT",
       "viewpoint": "capability",
       "elementTypes": [
@@ -775,7 +775,7 @@
     },
     {
       "id": "stakeholder-actor-map",
-      "displayName": "Stakeholder and Actor Map",
+      "displayName": "Stakeholder and Actor",
       "viewType": "STAKEHOLDER_ACTOR_MAP",
       "viewpoint": "actor",
       "elementTypes": [
@@ -809,7 +809,7 @@
     },
     {
       "id": "aggregate-lifecycle",
-      "displayName": "Aggregate and Lifecycle",
+      "displayName": "Aggregate",
       "viewType": "AGGREGATE_LIFECYCLE",
       "viewpoint": "aggregate",
       "elementTypes": [
@@ -836,7 +836,7 @@
     },
     {
       "id": "behavior-event-storming",
-      "displayName": "Behavior/Event Storming",
+      "displayName": "Behavior",
       "viewType": "BEHAVIOR_EVENT_STORMING",
       "viewpoint": "eventstorming",
       "elementTypes": [
@@ -1211,7 +1211,7 @@
       "label": "Actor",
       "icon": "person",
       "color": "#7C3AED",
-      "category": "Stakeholder and Actor Map",
+      "category": "Stakeholder and Actor",
       "displayName": "Actor",
       "notation": {
         "tag": "ACT",
@@ -1227,7 +1227,7 @@
       "label": "Role",
       "icon": "badge",
       "color": "#7C3AED",
-      "category": "Stakeholder and Actor Map",
+      "category": "Stakeholder and Actor",
       "displayName": "Role",
       "notation": {
         "tag": "ROLE",
@@ -1252,7 +1252,7 @@
       "label": "External System",
       "icon": "language",
       "color": "#0D9488",
-      "category": "Stakeholder and Actor Map",
+      "category": "Stakeholder and Actor",
       "displayName": "External System",
       "notation": {
         "tag": "EXT",
@@ -1268,7 +1268,7 @@
       "label": "Business Capability",
       "icon": "account_tree",
       "color": "#0F766E",
-      "category": "Capability Map",
+      "category": "Capability",
       "displayName": "Business Capability",
       "notation": {
         "tag": "CAP",
@@ -1284,7 +1284,7 @@
       "label": "Capability Dependency",
       "icon": "link",
       "color": "#0F766E",
-      "category": "Capability Map",
+      "category": "Capability",
       "displayName": "Capability Dependency",
       "notation": {
         "tag": "DEP",
@@ -1302,7 +1302,7 @@
       "label": "Bounded Context Candidate",
       "icon": "select_window",
       "color": "#0F766E",
-      "category": "Capability Map",
+      "category": "Capability",
       "displayName": "Bounded Context Candidate",
       "notation": {
         "tag": "CTX",
@@ -1318,7 +1318,7 @@
       "label": "Aggregate Candidate",
       "icon": "hub",
       "color": "#0F766E",
-      "category": "Aggregate and Lifecycle",
+      "category": "Aggregate",
       "displayName": "Aggregate Candidate",
       "notation": {
         "tag": "AGG",
@@ -1334,7 +1334,7 @@
       "label": "Command",
       "icon": "bolt",
       "color": "#DC2626",
-      "category": "Behavior/Event Storming",
+      "category": "Behavior",
       "displayName": "Command",
       "notation": {
         "tag": "CMD",
@@ -1350,7 +1350,7 @@
       "label": "Query",
       "icon": "search",
       "color": "#2563EB",
-      "category": "Behavior/Event Storming",
+      "category": "Behavior",
       "displayName": "Query",
       "notation": {
         "tag": "QRY",
@@ -1366,7 +1366,7 @@
       "label": "Business Event",
       "icon": "event",
       "color": "#DB2777",
-      "category": "Behavior/Event Storming",
+      "category": "Behavior",
       "displayName": "Business Event",
       "notation": {
         "tag": "EVT",
@@ -1798,7 +1798,7 @@
       "type": "Stakeholder",
       "label": "Stakeholder",
       "displayName": "Stakeholder",
-      "category": "Stakeholder and Actor Map",
+      "category": "Stakeholder and Actor",
       "icon": "groups",
       "color": "#7C3AED",
       "notation": {
@@ -1814,7 +1814,7 @@
       "type": "UbiquitousLanguageTerm",
       "label": "Ubiquitous Language Term",
       "displayName": "Ubiquitous Language Term",
-      "category": "Capability Map",
+      "category": "Capability",
       "icon": "translate",
       "color": "#0F766E",
       "notation": {
@@ -1849,7 +1849,7 @@
       "type": "LifecycleStateDefinition",
       "label": "Lifecycle State",
       "displayName": "Lifecycle State",
-      "category": "Aggregate and Lifecycle",
+      "category": "Aggregate",
       "icon": "radio_button_checked",
       "color": "#0F766E",
       "notation": {
@@ -1866,7 +1866,7 @@
       "type": "BusinessInvariant",
       "label": "Business Invariant",
       "displayName": "Business Invariant",
-      "category": "Aggregate and Lifecycle",
+      "category": "Aggregate",
       "icon": "gavel",
       "color": "#CA8A04",
       "notation": {
@@ -1882,7 +1882,7 @@
       "type": "CommandOutcome",
       "label": "Command Outcome",
       "displayName": "Command Outcome",
-      "category": "Behavior/Event Storming",
+      "category": "Behavior",
       "icon": "done",
       "color": "#DC2626",
       "notation": {
@@ -1899,7 +1899,7 @@
       "type": "BusinessError",
       "label": "Business Error",
       "displayName": "Business Error",
-      "category": "Behavior/Event Storming",
+      "category": "Behavior",
       "icon": "warning",
       "color": "#DC2626",
       "notation": {

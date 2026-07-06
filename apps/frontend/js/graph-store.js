@@ -908,19 +908,63 @@ function edgeIdsForElementIds(graph, elementIds, relationshipKinds = []) {
   return result;
 }
 
-function withRelationshipEndpoints(graph, elementIds, relationshipIds = []) {
+function shouldIncludeRelationshipEndpointOnView(
+  graph,
+  view,
+  elementId,
+  typeKey,
+  { filterTypes, pinned, hidden } = {},
+) {
+  const element = graph.elementsById.get(elementId);
+  if (!element || hidden?.has(elementId)) {
+    return false;
+  }
+  if (shouldExcludeContainedElementFromView(graph, view, elementId, element)) {
+    return false;
+  }
+  if (pinned?.has(elementId)) {
+    return true;
+  }
+  if (elementId === view?.scope?.rootElementId) {
+    return true;
+  }
+  if (!filterTypes?.size) {
+    return true;
+  }
+  return elementMatchesFilterTypes(element, filterTypes, typeKey);
+}
+
+function withRelationshipEndpoints(
+  graph,
+  elementIds,
+  relationshipIds = [],
+  { view = null, typeKey = null, filterTypes = null, pinned = null, hidden = null } = {},
+) {
   const expanded = new Set(elementIds);
+  const types = filterTypes ?? new Set(safeArray(view?.filters?.elementTypes));
+  const pinnedSet = pinned ?? new Set(safeArray(view?.pinnedElementIds).map(String));
+  const hiddenSet = hidden ?? new Set(safeArray(view?.hidden?.elementIds));
+  const applyEndpointFilter = Boolean(view && typeKey) || types.size > 0;
   safeArray(relationshipIds).forEach((relationshipId) => {
     const relationship = graph.relationshipsById.get(relationshipId);
     if (!relationship) {
       return;
     }
-    if (relationship.sourceElementId) {
-      expanded.add(relationship.sourceElementId);
-    }
-    if (relationship.targetElementId) {
-      expanded.add(relationship.targetElementId);
-    }
+    [relationship.sourceElementId, relationship.targetElementId].forEach((elementId) => {
+      if (!elementId) {
+        return;
+      }
+      if (
+        !applyEndpointFilter ||
+        shouldIncludeRelationshipEndpointOnView(graph, view || {}, elementId, typeKey, {
+          filterTypes: types,
+          pinned: pinnedSet,
+          hidden: hiddenSet,
+        })
+      ) {
+        expanded.add(elementId);
+      }
+    });
   });
   return [...expanded];
 }
@@ -1169,13 +1213,14 @@ export function selectElementIdsForView(graph, view, typeKey) {
       (relationshipId) => {
         const relationship = graph.relationshipsById.get(relationshipId);
         [relationship?.sourceElementId, relationship?.targetElementId].forEach((elementId) => {
-          const endpoint = graph.elementsById.get(elementId);
           if (
             elementId &&
-            endpoint &&
-            !hidden.has(elementId) &&
             !selectedSet.has(elementId) &&
-            !shouldExcludeContainedElementFromView(graph, view, elementId, endpoint)
+            shouldIncludeRelationshipEndpointOnView(graph, view, elementId, typeKey, {
+              filterTypes,
+              pinned,
+              hidden,
+            })
           ) {
             selectedSet.add(elementId);
             selected.push(elementId);
@@ -1404,6 +1449,7 @@ function buildViewFromDefinition(
       graph,
       elementIds,
       relationshipIdsTouchingElements(graph, elementIds, relationshipKinds),
+      { view, typeKey },
     );
   }
   const relationshipIds = selectRelationshipIdsForView(graph, view, elementIds);
@@ -1665,10 +1711,15 @@ function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } 
         ? selectElementIdsForView(graph, normalized, typeKey)
         : normalized.nodes.map((node) => node.elementId);
     const explicitRelationshipIds = normalized.edges.map((edge) => edge.relationshipId);
-    elementIds = withRelationshipEndpoints(graph, elementIds, [
-      ...explicitRelationshipIds,
-      ...relationshipIdsTouchingElements(graph, elementIds, normalized.filters.relationshipKinds),
-    ]);
+    elementIds = withRelationshipEndpoints(
+      graph,
+      elementIds,
+      [
+        ...explicitRelationshipIds,
+        ...relationshipIdsTouchingElements(graph, elementIds, normalized.filters.relationshipKinds),
+      ],
+      { view: normalized, typeKey },
+    );
     normalized.nodes = layoutNodesForElements(graph, elementIds, normalized.nodes, typeKey);
   } else if (deferLayout && !normalized.nodes.length) {
     normalized._lazyContent = true;
