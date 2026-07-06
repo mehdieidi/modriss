@@ -1389,7 +1389,7 @@
         "shape": "process-container",
         "lineFields": ["processKind", "criticality", "longRunning"]
       },
-      "containmentPaletteExtras": ["DecisionTable", "DecisionRule"],
+      "containmentPaletteExtras": ["DecisionTable"],
       "processPhaseId": "cim.ph4",
       "processTaskIds": ["cim.ph4.st2.ss1.t1"],
       "processStageId": "cim.ph4.st2.ss1"

@@ -351,8 +351,7 @@ public final class ModelingConfigService {
       palette.removeIf(
           type -> {
             Map<String, Object> element = elementsByType.get(type);
-            return element == null
-                || !standalonePaletteElement(element, standalonePaletteRoles);
+            return element == null || !standalonePaletteElement(element, standalonePaletteRoles);
           });
       relatedTypes.addAll(palette);
       view.put("elementTypes", new ArrayList<>(relatedTypes));
@@ -476,8 +475,7 @@ public final class ModelingConfigService {
    */
   private boolean isMembershipContainmentReference(
       Map<String, Object> owner, Map<String, Object> reference) {
-    String shape =
-        String.valueOf(optionalMap(owner, "notation").getOrDefault("shape", ""));
+    String shape = String.valueOf(optionalMap(owner, "notation").getOrDefault("shape", ""));
     String feature = String.valueOf(reference.getOrDefault("name", ""));
     return "stack-container".equals(shape) && "resources".equals(feature);
   }
@@ -615,7 +613,8 @@ public final class ModelingConfigService {
                     "many",
                     reference.get("many") == null || Boolean.TRUE.equals(reference.get("many")))));
       }
-      paletteTypes.addAll(containmentPaletteExtras(owner, elementsByType, relationshipElementTypes));
+      paletteTypes.addAll(
+          containmentPaletteExtras(owner, elementsByType, relationshipElementTypes));
       if (!paletteTypes.isEmpty()) {
         palettes.put(
             ownerType,
@@ -650,8 +649,7 @@ public final class ModelingConfigService {
           concreteTypesFor(elementsByType, extraType).stream()
               .filter(
                   type ->
-                      containmentPaletteElement(
-                          elementsByType.get(type), relationshipElementTypes))
+                      containmentPaletteElement(elementsByType.get(type), relationshipElementTypes))
               .toList();
       paletteTypes.addAll(types);
     }

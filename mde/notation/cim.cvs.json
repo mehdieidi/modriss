@@ -511,7 +511,7 @@
         "lineFields": ["processKind", "criticality", "longRunning"],
         "detailFields": ["processKind", "criticality", "longRunning"]
       },
-      "containmentPaletteExtras": ["DecisionTable", "DecisionRule"]
+      "containmentPaletteExtras": ["DecisionTable"]
     },
     {
       "type": "ProcessStep",

@@ -60,12 +60,14 @@ class ContainedPaletteAuditTest {
   @Test
   void containerOwnersExposeContainmentPalettesForNestedTypes() {
     Map<String, Object> cimPalettes = map(level("cim").get("containmentPalettes"));
-    assertTrue(stringList(map(cimPalettes.get("BusinessProcess")).get("types")).contains("StartStep"));
+    assertTrue(
+        stringList(map(cimPalettes.get("BusinessProcess")).get("types")).contains("StartStep"));
     assertTrue(
         stringList(map(cimPalettes.get("BusinessProcess")).get("types")).contains("DecisionTable"));
-    assertTrue(
+    assertFalse(
         stringList(map(cimPalettes.get("BusinessProcess")).get("types")).contains("DecisionRule"));
-    assertTrue(stringList(map(cimPalettes.get("DecisionTable")).get("types")).contains("DecisionRule"));
+    assertTrue(
+        stringList(map(cimPalettes.get("DecisionTable")).get("types")).contains("DecisionRule"));
 
     Map<String, Object> pimPalettes = map(level("pim").get("containmentPalettes"));
     assertTrue(stringList(map(pimPalettes.get("Api")).get("types")).contains("ApiRoute"));

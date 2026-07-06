@@ -24,7 +24,7 @@ class ContainmentPaletteLevelsTest {
     assertContainmentPaletteIncludes(cim, "BusinessProcess", "StartStep");
     assertPaletteExcludes(cim, "business-process", "DecisionTable", "DecisionRule");
     assertContainmentPaletteIncludes(cim, "BusinessProcess", "DecisionTable");
-    assertContainmentPaletteIncludes(cim, "BusinessProcess", "DecisionRule");
+    assertContainmentPaletteExcludes(cim, "BusinessProcess", "DecisionRule");
     assertContainmentPaletteIncludes(cim, "DecisionTable", "DecisionRule");
   }
 
@@ -116,5 +116,16 @@ class ContainmentPaletteLevelsTest {
     List<String> types = (List<String>) ownerPalette.get("types");
     assertTrue(
         types.contains(childType), ownerType + " containment palette must include " + childType);
+  }
+
+  @SuppressWarnings("unchecked")
+  private void assertContainmentPaletteExcludes(
+      Map<String, Object> level, String ownerType, String childType) {
+    Map<String, Object> palettes = (Map<String, Object>) level.get("containmentPalettes");
+    Map<String, Object> ownerPalette = (Map<String, Object>) palettes.get(ownerType);
+    List<String> types = (List<String>) ownerPalette.get("types");
+    assertFalse(
+        types.contains(childType),
+        ownerType + " containment palette must not include " + childType);
   }
 }
