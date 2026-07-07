@@ -13,9 +13,8 @@ const EMPTY_CONFIG = Object.freeze({
   transformations: Object.freeze({}),
   artifactAction: Object.freeze({}),
   impactAnalysis: Object.freeze({}),
-  diagramEditor: Object.freeze({
-    renderer: "antv-g6",
-  }),
+  diagramEditor: Object.freeze({}),
+  layoutStrategies: Object.freeze([]),
 });
 
 function emptyLevel(displayName) {
@@ -92,10 +91,9 @@ function ensureConfigShape(raw) {
     raw.impactAnalysis && typeof raw.impactAnalysis === "object" ? raw.impactAnalysis : {};
   normalized.diagramEditor =
     raw.diagramEditor && typeof raw.diagramEditor === "object"
-      ? {
-          renderer: String(raw.diagramEditor.renderer || "antv-g6"),
-        }
+      ? { ...raw.diagramEditor }
       : { ...EMPTY_CONFIG.diagramEditor };
+  normalized.layoutStrategies = Array.isArray(raw.layoutStrategies) ? raw.layoutStrategies : [];
 
   const incomingLevels = raw.levels && typeof raw.levels === "object" ? raw.levels : {};
   const levelOrder = Array.isArray(raw.levelOrder) ? raw.levelOrder.map(String) : [];
@@ -146,6 +144,14 @@ function ensureConfigShape(raw) {
       semanticReferenceRules: Array.isArray(incoming.semanticReferenceRules)
         ? incoming.semanticReferenceRules
         : [],
+      semanticReferenceKindMappings:
+        incoming.semanticReferenceKindMappings &&
+        typeof incoming.semanticReferenceKindMappings === "object"
+          ? incoming.semanticReferenceKindMappings
+          : {},
+      semanticReferenceExclusions: Array.isArray(incoming.semanticReferenceExclusions)
+        ? incoming.semanticReferenceExclusions
+        : [],
       semanticEdgeObjectRules: Array.isArray(incoming.semanticEdgeObjectRules)
         ? incoming.semanticEdgeObjectRules
         : [],
@@ -181,6 +187,22 @@ function ensureConfigShape(raw) {
       syntaxCoverage:
         incoming.syntaxCoverage && typeof incoming.syntaxCoverage === "object"
           ? incoming.syntaxCoverage
+          : {},
+      elementMappings: Array.isArray(incoming.elementMappings) ? incoming.elementMappings : [],
+      cvsVersion: Number(incoming.cvsVersion || 0),
+      cvsPrimitives:
+        incoming.cvsPrimitives && typeof incoming.cvsPrimitives === "object"
+          ? incoming.cvsPrimitives
+          : {},
+      cvsReferenceMappings: Array.isArray(incoming.cvsReferenceMappings)
+        ? incoming.cvsReferenceMappings
+        : [],
+      cvsRelationshipMappings: Array.isArray(incoming.cvsRelationshipMappings)
+        ? incoming.cvsRelationshipMappings
+        : [],
+      cvsMetamodelRef:
+        incoming.cvsMetamodelRef && typeof incoming.cvsMetamodelRef === "object"
+          ? incoming.cvsMetamodelRef
           : {},
       strictnessModes: Array.isArray(incoming.strictnessModes)
         ? incoming.strictnessModes
@@ -297,6 +319,79 @@ export function modelingLevelKeys() {
 export function modelingImpactConfig() {
   const impact = state.modelingConfig.config?.impactAnalysis;
   return impact && typeof impact === "object" ? impact : {};
+}
+
+export function modelingDiagramEditorConfig() {
+  const editor = state.modelingConfig.config?.diagramEditor;
+  return editor && typeof editor === "object" ? editor : {};
+}
+
+export function modelingLayoutStrategies() {
+  const strategies = state.modelingConfig.config?.layoutStrategies;
+  return Array.isArray(strategies) ? strategies : [];
+}
+
+export function modelingDefaultLayoutStrategy() {
+  const configured = String(modelingDiagramEditorConfig().defaultLayoutStrategy || "").trim();
+  if (configured) {
+    return configured.toUpperCase();
+  }
+  const first = modelingLayoutStrategies()[0];
+  return String(first?.id || "").toUpperCase();
+}
+
+export function modelingIconAliases() {
+  const aliases = modelingDiagramEditorConfig().iconAliases;
+  return aliases && typeof aliases === "object" ? aliases : {};
+}
+
+export function modelingPlaceholderIcon() {
+  return String(modelingDiagramEditorConfig().placeholderIcon || "");
+}
+
+export function modelingIconBasePath() {
+  return String(modelingDiagramEditorConfig().iconBasePath || "/assets/icons").replace(/\/$/, "");
+}
+
+export function modelingDefaultNotation() {
+  const notation = modelingDiagramEditorConfig().defaultNotation;
+  return notation && typeof notation === "object" ? notation : {};
+}
+
+export function modelingRoleSize(typeKey = state.activeType, role = "node") {
+  const sizes = modelingCanvasPolicy(typeKey).roleSizes;
+  if (sizes && typeof sizes === "object" && sizes[role]) {
+    return sizes[role];
+  }
+  return null;
+}
+
+export function modelingKernelTypes() {
+  const types = new Set();
+  for (const levelKey of modelingLevelKeys()) {
+    for (const entry of modelingLevelConfig(levelKey).elements || []) {
+      if (entry?.abstract && entry?.type) {
+        types.add(String(entry.type));
+      }
+    }
+  }
+  return types;
+}
+
+export function resolveModelingIconSource(icon) {
+  const normalized = String(icon || "").trim();
+  if (!normalized) {
+    return modelingPlaceholderIcon();
+  }
+  const aliases = modelingIconAliases();
+  const resolved = aliases[normalized] || normalized;
+  if (resolved.startsWith("/") || resolved.startsWith(".") || resolved.endsWith(".svg")) {
+    return resolved;
+  }
+  if (/^[a-z0-9_-]+$/i.test(resolved)) {
+    return `${modelingIconBasePath()}/${resolved}.svg`;
+  }
+  return modelingPlaceholderIcon();
 }
 
 export function isModelingLevel(typeKey) {

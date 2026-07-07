@@ -29,9 +29,11 @@ import {
   modelingRelationshipKindLabel,
   modelingRelationshipPresentation,
   modelingResolveEdgeEndpoints,
+  modelingRoleSize,
   modelingShortcutConnectorRules,
   modelingTypeMatches,
   modelingViewDefinition,
+  resolveModelingIconSource,
 } from "./modeling-config-data.js";
 import { guidedPaletteFocusTypes } from "./guided-modeling.js";
 import { addReferenceValue, modelTypeMatches } from "./model-utils.js";
@@ -95,30 +97,22 @@ function configuredRelationshipSemantic(name) {
   );
 }
 
-const DEFAULT_NODE_W = 228;
-const DEFAULT_NODE_H = 112;
-const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
 const INTERNAL_TARGET_SUMMARY_PREFIX = "internal-target";
 const edgeIdsByNodeId = new Map(); // nodeId -> Set(edgeId)
 
-const ICON_ALIASES = {
-  cancel: "block",
-  layers: "map",
-};
-
 function resolveIconSource(src) {
-  const normalized = String(src || "").trim();
-  if (!normalized) {
-    return PLACEHOLDER_ICON;
-  }
-  const resolved = ICON_ALIASES[normalized] || normalized;
-  if (resolved.startsWith("/") || resolved.startsWith(".") || resolved.endsWith(".svg")) {
-    return resolved;
-  }
-  if (/^[a-z0-9_-]+$/i.test(resolved)) {
-    return `/assets/icons/${resolved}.svg`;
-  }
-  return PLACEHOLDER_ICON;
+  return resolveModelingIconSource(src);
+}
+
+function configuredNodeSize(role = "detail") {
+  const roleSize = modelingRoleSize(state.activeType, role);
+  const policy = modelingLevelConfig(state.activeType).canvasPolicy || {};
+  const width = Number(roleSize?.width ?? policy.nodeWidth ?? modelingRoleSize(state.activeType, "node")?.width);
+  const height = Number(roleSize?.height ?? policy.nodeHeight ?? modelingRoleSize(state.activeType, "node")?.height);
+  return {
+    width: Number.isFinite(width) && width > 0 ? width : 0,
+    height: Number.isFinite(height) && height > 0 ? height : 0,
+  };
 }
 
 function isFullColorIconSource(src) {
@@ -354,19 +348,11 @@ function dragUndoSnapshot(nodeIds = []) {
 }
 
 function getNodeWidth() {
-  try {
-    return Number(modelingLevelConfig(state.activeType).canvasPolicy?.nodeWidth) || DEFAULT_NODE_W;
-  } catch {
-    return DEFAULT_NODE_W;
-  }
+  return configuredNodeSize("detail").width || configuredNodeSize("node").width;
 }
 
 function getNodeHeight() {
-  try {
-    return Number(modelingLevelConfig(state.activeType).canvasPolicy?.nodeHeight) || DEFAULT_NODE_H;
-  } catch {
-    return DEFAULT_NODE_H;
-  }
+  return configuredNodeSize("detail").height || configuredNodeSize("node").height;
 }
 
 export function getCurrentDiagramNodeSize() {

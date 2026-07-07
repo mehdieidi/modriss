@@ -67,6 +67,7 @@ public final class ModelingConfigService {
         Map.entry("transformations", optionalMap(platform, "transformations")),
         Map.entry("artifactAction", optionalMap(platform, "artifactAction")),
         Map.entry("impactAnalysis", optionalMap(platform, "impactAnalysis")),
+        Map.entry("layoutStrategies", optionalList(platform, "layoutStrategies")),
         Map.entry("diagramEditor", diagramEditorConfig(platform)));
   }
 
@@ -1791,7 +1792,7 @@ public final class ModelingConfigService {
    */
   Map<String, Object> diagramEditorConfig(Map<String, Object> platform, String envRenderer) {
     Map<String, Object> configured = optionalMap(platform, "diagramEditor");
-    Map<String, Object> result = new LinkedHashMap<>();
+    Map<String, Object> result = new LinkedHashMap<>(configured);
     result.put("renderer", resolveDiagramRenderer(configured, envRenderer));
     return result;
   }

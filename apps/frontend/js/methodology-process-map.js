@@ -5,7 +5,7 @@ import { state } from "./state.js";
 import { el } from "./dom.js";
 import { escapeHtml } from "./utils.js";
 import { phaseNarrative } from "./methodology-narratives.mjs";
-import { isModelingLevel } from "./modeling-config-data.js";
+import { isModelingLevel, modelingKernelTypes } from "./modeling-config-data.js";
 
 const ICON_BASE = "/assets/icons/process-map";
 const NODE_W = 148;
@@ -582,7 +582,7 @@ function renderDetail(host, node, process, level) {
       parts.push("</ul>");
     }
   } else if (node.phase) {
-    const narrative = phaseNarrative(phase, level);
+    const narrative = phaseNarrative(phase, level, { kernelTypes: modelingKernelTypes() });
     parts.push(`<span class="map-detail-kind">Phase</span>`);
     parts.push(`<h3>${escapeHtml(phase.name)}</h3>`);
     parts.push(`<p>${escapeHtml(phase.objective || narrative.summary)}</p>`);

@@ -116,7 +116,56 @@
       }
     ]
   },
+  "layoutStrategies": [
+    {
+      "id": "SPACIOUS_LAYERED",
+      "label": "Spacious",
+      "title": "Wide layered layout with stronger node and edge separation"
+    },
+    {
+      "id": "RELAXED_SPLINES",
+      "label": "Relaxed",
+      "title": "Curved routes with extra spacing for dense relationship maps"
+    },
+    {
+      "id": "VERTICAL_FLOW",
+      "label": "Vertical",
+      "title": "Top-down flow for process-like views"
+    },
+    {
+      "id": "BALANCED_LAYERED",
+      "label": "Balanced",
+      "title": "Moderate layered layout for smaller views"
+    },
+    {
+      "id": "TREE",
+      "label": "Tree",
+      "title": "Tree layout for hierarchy-heavy views"
+    },
+    {
+      "id": "RADIAL",
+      "label": "Radial",
+      "title": "Radial layout for hub-and-spoke views"
+    },
+    {
+      "id": "FORCE",
+      "label": "Force",
+      "title": "Force-directed layout for exploratory relationship maps"
+    }
+  ],
   "diagramEditor": {
-    "renderer": "antv-g6"
+    "renderer": "antv-g6",
+    "defaultLayoutStrategy": "SPACIOUS_LAYERED",
+    "placeholderIcon": "/assets/icons/placeholder.svg",
+    "iconBasePath": "/assets/icons",
+    "iconAliases": {
+      "cancel": "block",
+      "layers": "map"
+    },
+    "defaultNotation": {
+      "shape": "concept-card",
+      "geometry": "rectangle"
+    },
+    "spatialCellSize": 256
   }
 }

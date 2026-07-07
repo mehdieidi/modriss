@@ -70,6 +70,7 @@ import {
 } from "./model-save-ui.js";
 import {
   isModelingLevel,
+  modelingDefaultLayoutStrategy,
   modelingLevelConfig,
   modelingLevelListLabel,
   transformationForLevel,
@@ -1704,7 +1705,7 @@ async function runAutoLayoutCurrentDiagram({
       await waitForCanvasPaint(1);
     }
     const level = MODEL_TYPES[state.activeType].apiType;
-    const selectedStrategy = String(strategy || view.layoutStrategy || "SPACIOUS_LAYERED");
+    const selectedStrategy = String(strategy || view.layoutStrategy || modelingDefaultLayoutStrategy());
     const response = await api(
       `/${level}/${state.modelId}/views/${encodeURIComponent(
         view.id,

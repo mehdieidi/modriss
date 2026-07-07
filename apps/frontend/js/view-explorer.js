@@ -13,7 +13,7 @@ import {
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
 import { materializeActiveView } from "./view-materializer.js";
-import { isModelingLevel, modelingLevelConfig } from "./modeling-config-data.js";
+import { isModelingLevel, modelingDefaultLayoutStrategy, modelingLayoutStrategies, modelingLevelConfig } from "./modeling-config-data.js";
 import { syncMobileDockState } from "./mobile-ui.js";
 import {
   activeCanvasFocus,
@@ -33,43 +33,14 @@ let layoutMenuOpen = false;
 let treeBodyScrollTop = 0;
 let modelTreeMode = "elements";
 let modelTreeFilter = "";
-const LAYOUT_STRATEGIES = [
-  {
-    id: "SPACIOUS_LAYERED",
-    label: "Spacious",
-    title: "Wide layered layout with stronger node and edge separation",
-  },
-  {
-    id: "RELAXED_SPLINES",
-    label: "Relaxed",
-    title: "Curved routes with extra spacing for dense relationship maps",
-  },
-  {
-    id: "VERTICAL_FLOW",
-    label: "Vertical",
-    title: "Top-down flow for process-like views",
-  },
-  {
-    id: "BALANCED_LAYERED",
-    label: "Balanced",
-    title: "Moderate layered layout for smaller views",
-  },
-  {
-    id: "TREE",
-    label: "Tree",
-    title: "Tree layout for hierarchy-heavy views",
-  },
-  {
-    id: "RADIAL",
-    label: "Radial",
-    title: "Radial layout for hub-and-spoke views",
-  },
-  {
-    id: "FORCE",
-    label: "Force",
-    title: "Force-directed layout for exploratory relationship maps",
-  },
-];
+
+function layoutStrategies() {
+  return modelingLayoutStrategies();
+}
+
+function defaultLayoutStrategy() {
+  return modelingDefaultLayoutStrategy();
+}
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -105,21 +76,40 @@ async function runManualAutoLayout() {
   }
 }
 
+function emptyLayoutStrategyConfig() {
+  return { id: "", label: "Layout", title: "Layout strategies unavailable until modeling config loads." };
+}
+
 function selectedLayoutStrategy() {
+  const strategies = layoutStrategies();
   const view = activeView();
   const stored = window.localStorage.getItem(`modless.layoutStrategy.${state.activeType}`);
-  const value = String(view?.layoutStrategy || stored || "SPACIOUS_LAYERED").toUpperCase();
-  return LAYOUT_STRATEGIES.some((strategy) => strategy.id === value) ? value : "SPACIOUS_LAYERED";
+  const fallback = defaultLayoutStrategy();
+  if (!strategies.length) {
+    return String(view?.layoutStrategy || stored || fallback || "").toUpperCase();
+  }
+  const value = String(view?.layoutStrategy || stored || fallback).toUpperCase();
+  return strategies.some((strategy) => strategy.id === value) ? value : fallback;
 }
 
 function selectedLayoutStrategyConfig() {
+  const strategies = layoutStrategies();
+  if (!strategies.length) {
+    return emptyLayoutStrategyConfig();
+  }
   const selected = selectedLayoutStrategy();
-  return LAYOUT_STRATEGIES.find((strategy) => strategy.id === selected) || LAYOUT_STRATEGIES[0];
+  return strategies.find((strategy) => strategy.id === selected) || strategies[0];
 }
 
 function layoutStrategyMenuMarkup() {
+  const strategies = layoutStrategies();
+  if (!strategies.length) {
+    return `<div class="workbench-view-option workbench-layout-option is-disabled" aria-disabled="true">
+      <span class="workbench-view-option-label">No layout strategies in config</span>
+    </div>`;
+  }
   const selected = selectedLayoutStrategy();
-  return LAYOUT_STRATEGIES.map(
+  return strategies.map(
     (strategy) =>
       `<button class="workbench-view-option workbench-layout-option${
         strategy.id === selected ? " is-active" : ""
@@ -136,10 +126,13 @@ function layoutStrategyMenuMarkup() {
 }
 
 function setLayoutStrategy(strategyId) {
-  const strategy = String(strategyId || "SPACIOUS_LAYERED").toUpperCase();
-  const selected = LAYOUT_STRATEGIES.some((item) => item.id === strategy)
-    ? strategy
-    : "SPACIOUS_LAYERED";
+  const strategies = layoutStrategies();
+  if (!strategies.length) {
+    return;
+  }
+  const fallback = defaultLayoutStrategy();
+  const strategy = String(strategyId || fallback).toUpperCase();
+  const selected = layoutStrategies().some((item) => item.id === strategy) ? strategy : fallback;
   const view = activeView();
   if (view) {
     view.layoutStrategy = selected;

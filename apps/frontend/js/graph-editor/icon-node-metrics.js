@@ -1,29 +1,19 @@
+import { modelingPlaceholderIcon, resolveModelingIconSource } from "../modeling-config-data.js";
+
 export const ICON_GAP = 2;
 export const ICON_SIZE_NORMAL = 72;
 export const ICON_SIZE_LOW = 44;
 export const ICON_NODE_WIDTH = 120;
 export const ICON_NODE_SIZE = { width: ICON_NODE_WIDTH, height: 118 };
 export const ICON_NODE_LOW_SIZE = { width: 88, height: 86 };
-export const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
 
-const ICON_ALIASES = {
-  cancel: "block",
-  layers: "map",
-};
+export function placeholderIcon() {
+  return modelingPlaceholderIcon();
+}
 
 export function resolveIconSource(icon) {
-  const normalized = String(icon || "").trim();
-  if (!normalized) {
-    return "";
-  }
-  const resolved = ICON_ALIASES[normalized] || normalized;
-  if (resolved.startsWith("/") || resolved.startsWith(".") || resolved.endsWith(".svg")) {
-    return resolved;
-  }
-  if (/^[a-z0-9_-]+$/i.test(resolved)) {
-    return `/assets/icons/${resolved}.svg`;
-  }
-  return "";
+  const resolved = resolveModelingIconSource(icon);
+  return resolved || "";
 }
 
 export function wrapLabelLines(text, maxCharsPerLine = 17) {

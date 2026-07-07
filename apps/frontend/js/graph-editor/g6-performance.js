@@ -1,21 +1,33 @@
+import { modelingDiagramEditorConfig } from "../modeling-config-data.js";
 import { state } from "../state.js";
 
 let drawFrame = 0;
 let pendingRender = false;
 let renderAgain = false;
-const DEFAULT_SPATIAL_CELL_SIZE = 256;
 
 function canvasPolicy() {
   const level = state.modelingConfig?.config?.levels?.[state.activeType];
   return level?.canvasPolicy && typeof level.canvasPolicy === "object" ? level.canvasPolicy : {};
 }
 
+function policyNumber(policy, key) {
+  const value = Number(policy?.[key]);
+  return Number.isFinite(value) ? value : null;
+}
+
+function spatialCellSize() {
+  const configured = Number(modelingDiagramEditorConfig().spatialCellSize);
+  return Number.isFinite(configured) && configured > 0 ? configured : null;
+}
+
 export function detailLevelForZoom(zoom = 1) {
   const policy = canvasPolicy();
-  if (zoom < Number(policy.lowDetailBelow ?? 0.35)) {
+  const low = policyNumber(policy, "lowDetailBelow");
+  const high = policyNumber(policy, "highDetailAtOrAbove");
+  if (low !== null && zoom < low) {
     return "low";
   }
-  if (zoom >= Number(policy.highDetailAtOrAbove ?? 1.45)) {
+  if (high !== null && zoom >= high) {
     return "high";
   }
   return "normal";
@@ -23,18 +35,27 @@ export function detailLevelForZoom(zoom = 1) {
 
 export function shouldShowEdgeLabels(zoom = 1, edgeCount = 0) {
   const policy = canvasPolicy();
-  if (zoom < Number(policy.edgeLabelsAtOrAbove ?? 0.75)) {
+  const labelsAt = policyNumber(policy, "edgeLabelsAtOrAbove");
+  if (labelsAt !== null && zoom < labelsAt) {
     return false;
   }
+  const denseThreshold = policyNumber(policy, "denseEdgeThreshold");
+  const denseLabelsAt = policyNumber(policy, "denseEdgeLabelsAtOrAbove");
   if (
-    edgeCount > Number(policy.denseEdgeThreshold ?? 1200) &&
-    zoom < Number(policy.denseEdgeLabelsAtOrAbove ?? 1.25)
+    denseThreshold !== null &&
+    denseLabelsAt !== null &&
+    edgeCount > denseThreshold &&
+    zoom < denseLabelsAt
   ) {
     return false;
   }
+  const veryDenseThreshold = policyNumber(policy, "veryDenseEdgeThreshold");
+  const veryDenseLabelsAt = policyNumber(policy, "veryDenseEdgeLabelsAtOrAbove");
   if (
-    edgeCount > Number(policy.veryDenseEdgeThreshold ?? 2500) &&
-    zoom < Number(policy.veryDenseEdgeLabelsAtOrAbove ?? 1.65)
+    veryDenseThreshold !== null &&
+    veryDenseLabelsAt !== null &&
+    edgeCount > veryDenseThreshold &&
+    zoom < veryDenseLabelsAt
   ) {
     return false;
   }
@@ -132,7 +153,7 @@ function nodeBoundsForIndex(node, fallbackSize = {}) {
 
 export function createSpatialIndex(
   nodes = [],
-  { cellSize = DEFAULT_SPATIAL_CELL_SIZE, fallbackSize = {} } = {},
+  { cellSize = spatialCellSize() || 1, fallbackSize = {} } = {},
 ) {
   const cells = new Map();
   const entries = new Map();

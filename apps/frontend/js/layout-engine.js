@@ -1,22 +1,32 @@
-import { modelingLevelConfig } from "./modeling-config-data.js";
+import { modelingLevelConfig, modelingRoleSize } from "./modeling-config-data.js";
+import { state } from "./state.js";
 
-const DEFAULT_NODE_W = 228;
-const DEFAULT_NODE_H = 112;
 const LAYOUT_MARGIN = 48;
 const GAP_X = 72;
 const GAP_Y = 56;
+
+function defaultNodeSize(typeKey) {
+  const detail = modelingRoleSize(typeKey, "detail");
+  const node = modelingRoleSize(typeKey, "node");
+  const policy = modelingLevelConfig(typeKey).canvasPolicy || {};
+  return {
+    width: Number(detail?.width ?? policy.nodeWidth ?? node?.width ?? 0),
+    height: Number(detail?.height ?? policy.nodeHeight ?? node?.height ?? 0),
+  };
+}
 
 function numeric(value, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function normalizeNodeSize(nodeSize = {}) {
-  const width = numeric(nodeSize.width, DEFAULT_NODE_W);
-  const height = numeric(nodeSize.height, DEFAULT_NODE_H);
+function normalizeNodeSize(nodeSize = {}, typeKey = state.activeType) {
+  const defaults = defaultNodeSize(typeKey);
+  const width = numeric(nodeSize.width, defaults.width);
+  const height = numeric(nodeSize.height, defaults.height);
   return {
-    width: width > 0 ? width : DEFAULT_NODE_W,
-    height: height > 0 ? height : DEFAULT_NODE_H,
+    width: width > 0 ? width : defaults.width,
+    height: height > 0 ? height : defaults.height,
   };
 }
 
@@ -331,13 +341,9 @@ function sortLayerNodes(nodes, edgesBySource, edgesByTarget) {
 
 export function nodeSizeForType(typeKey) {
   try {
-    const policy = modelingLevelConfig(typeKey).canvasPolicy || {};
-    return {
-      width: numeric(policy.nodeWidth, DEFAULT_NODE_W),
-      height: numeric(policy.nodeHeight, DEFAULT_NODE_H),
-    };
+    return defaultNodeSize(typeKey);
   } catch {
-    return { width: DEFAULT_NODE_W, height: DEFAULT_NODE_H };
+    return { width: 0, height: 0 };
   }
 }
 

@@ -6,6 +6,8 @@ import { setStatus } from "./status.js";
 import {
   isModelingLevel,
   modelingElementDefinition,
+  modelingKernelTypes,
+  modelingLevelKeys,
   modelingRelationshipKindLabel,
 } from "./modeling-config-data.js";
 import { applyDefinitionAccent, renderPalette, syncPaletteCollapsedUi } from "./canvas.js";
@@ -272,7 +274,7 @@ export async function loadGuidedModelingDefinitions() {
   if (state.guidedModeling.loading) return;
   state.guidedModeling.loading = true;
   try {
-    const levels = ["cim", "pim", "psm"];
+    const levels = modelingLevelKeys();
     const results = await Promise.all(
       levels.map(async (level) => {
         const def = await api(`/modeling/process/${level}`);
@@ -859,7 +861,7 @@ function renderPhaseNavigator(host, process, progress) {
   if (!phase) return;
 
   const index = phases.findIndex((p) => p.id === phase.id);
-  const narrative = phaseNarrative(phase, state.activeType);
+  const narrative = phaseNarrative(phase, state.activeType, { kernelTypes: modelingKernelTypes() });
   const complete = isPhaseComplete(phase, progress);
   const nav = document.createElement("div");
   nav.className = "methodology-nav";

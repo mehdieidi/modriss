@@ -1,10 +1,10 @@
 import { cssVar } from "./g6-style.js";
 import {
-  PLACEHOLDER_ICON,
   computeIconNodeLayout,
   iconAnchorBoundsLocal,
   measureIconNodeSize,
   nodeHitPathLocal,
+  placeholderIcon,
   resolveIconSource,
 } from "./icon-node-metrics.js";
 
@@ -100,7 +100,7 @@ export function renderIconCentricNodeG6(shape, container, options = {}) {
   const border = warm ? "rgba(21, 28, 40, 0.35)" : cssVar("--node-border", "#3d495f");
   const stroke = nodeStroke(flags, selected, border);
   const outlineVisible = showNodeOutline(flags, selected, draft);
-  const resolvedIcon = resolveIconSource(iconSrc) || PLACEHOLDER_ICON;
+  const resolvedIcon = resolveIconSource(iconSrc) || placeholderIcon();
   const kindFill = warm ? "rgba(35, 28, 18, 0.72)" : accent;
   const nameFill = warm ? "rgba(24, 20, 14, 0.92)" : cssVar("--text", "#e3e8f2");
 

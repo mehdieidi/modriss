@@ -1,38 +1,4 @@
 /** Plain-language phase enrichments keyed by process phase id. */
-const KERNEL_TYPES = new Set([
-  "ModelElement",
-  "NamedModelElement",
-  "TraceableElement",
-  "DeployableElement",
-  "InvocationSource",
-  "InvocationTarget",
-  "FunctionTarget",
-  "WorkflowTarget",
-  "SubscriptionTarget",
-  "RoutingTarget",
-  "FlowEndpoint",
-  "ProtectedResource",
-  "PolicyTarget",
-  "DataAccessTarget",
-  "ExternalCallTarget",
-  "EnvironmentTarget",
-  "CredentialRequirementLike",
-  "RouteEndpoint",
-  "EventCarrier",
-  "ConfigurableElement",
-  "KeyValue",
-  "Annotation",
-  "SemanticRelationship",
-  "Multiplicity",
-  "Cardinality",
-  "Expression",
-  "StructuredDocument",
-  "DomainConcept",
-  "Objective",
-  "StakeholderConcern",
-  "Persona",
-]);
-
 export const PHASE_NARRATIVES = {
   "cim.ph1": {
     summary:
@@ -254,14 +220,14 @@ function collectLeafTasks(phase) {
   return walkStages(phase?.stages);
 }
 
-export function phaseNarrative(phase, level) {
+export function phaseNarrative(phase, level, { kernelTypes = new Set() } = {}) {
   const custom = PHASE_NARRATIVES[phase?.id];
   const tasks = collectLeafTasks(phase);
   const mainTask = tasks[0];
   const focusTypes = mainTask?.paletteFocus || [];
   const steps = mainTask?.steps || [];
   const concepts = [...new Set(focusTypes)].filter(
-    (name) => name && !KERNEL_TYPES.has(name) && !name.endsWith("Type"),
+    (name) => name && !kernelTypes.has(name) && !name.endsWith("Type"),
   );
 
   return {

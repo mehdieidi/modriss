@@ -1,5 +1,6 @@
 import { state } from "../state.js";
 import { el } from "../dom.js";
+import { modelingPlaceholderIcon } from "../modeling-config-data.js";
 import { getCanvasFitArea, getCanvasFitPadding } from "../canvas-viewport-fit.js";
 import { mapDiagramToG6, mapEdgeToG6, mapNodeToG6 } from "./g6-mapper.js";
 import {
@@ -209,7 +210,7 @@ function renderNodeIcon(shape, container, { left, top, low = false, iconSrc = ""
       y: top + (low ? 9 : 6),
       width: size,
       height: size,
-      src: iconSrc || "/assets/icons/placeholder.svg",
+      src: iconSrc || modelingPlaceholderIcon(),
       opacity: 0.9,
       pointerEvents: "none",
     },

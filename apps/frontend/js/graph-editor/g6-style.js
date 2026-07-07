@@ -1,14 +1,19 @@
 import { state } from "../state.js";
-import { modelingElementDefinition, modelingLevelConfig } from "../modeling-config-data.js";
+import { modelingElementDefinition, modelingLevelConfig, modelingRoleSize } from "../modeling-config-data.js";
 import { measureIconNodeSize } from "./icon-node-metrics.js";
 
 export const MODLESS_NODE_TYPE = "modless-node";
 export const MODLESS_EDGE_TYPE = "modless-edge";
 export const G6_BASE_NODE_TYPE = MODLESS_NODE_TYPE;
 export const G6_BASE_EDGE_TYPE = MODLESS_EDGE_TYPE;
-export const NODE_SIZE = {
-  default: { width: 120, height: 118 },
-};
+
+function defaultNodeSize(typeKey) {
+  const node = modelingRoleSize(typeKey, "node");
+  return {
+    width: Number(node?.width || 0),
+    height: Number(node?.height || 0),
+  };
+}
 
 let cssVarCacheKey = "";
 const cssVarCache = new Map();
@@ -27,23 +32,23 @@ export function nodeSizeForDiagram(typeKey = state.activeType, nodeOrType = null
     const definition = type ? modelingElementDefinition(typeKey, type) : null;
     const configured = definition?.notation?.size;
     const policy = modelingLevelConfig(typeKey).canvasPolicy || {};
-    const fallback = policy.roleSizes?.node || NODE_SIZE.default;
+    const fallback = policy.roleSizes?.node || defaultNodeSize(typeKey);
     const width = Math.max(
       48,
-      Number(configured?.width || fallback.width || NODE_SIZE.default.width),
+      Number(configured?.width || fallback.width || defaultNodeSize(typeKey).width),
     );
     const measured = label
       ? measureIconNodeSize(label, { width, low })
-      : { height: Number(configured?.height || fallback.height || NODE_SIZE.default.height) };
+      : { height: Number(configured?.height || fallback.height || defaultNodeSize(typeKey).height) };
     return {
       width,
-      height: Math.max(40, Number(measured.height || fallback.height || NODE_SIZE.default.height)),
+      height: Math.max(40, Number(measured.height || fallback.height || defaultNodeSize(typeKey).height)),
     };
   } catch {
     if (label) {
-      return measureIconNodeSize(label, { width: NODE_SIZE.default.width, low });
+      return measureIconNodeSize(label, { width: defaultNodeSize(typeKey).width, low });
     }
-    return NODE_SIZE.default;
+    return defaultNodeSize(typeKey);
   }
 }
 

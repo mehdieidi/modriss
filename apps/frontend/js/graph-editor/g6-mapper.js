@@ -1,5 +1,6 @@
 import { state } from "../state.js";
 import {
+  modelingDefaultNotation,
   modelingElementDefinition,
   modelingLevelConfig,
   modelingRelationshipKindLabel,
@@ -20,6 +21,14 @@ import {
   nodeSizeForDiagram,
   stickyColor,
 } from "./g6-style.js";
+
+function fallbackNotation() {
+  const defaults = modelingDefaultNotation();
+  return {
+    shape: String(defaults.shape || ""),
+    geometry: String(defaults.geometry || ""),
+  };
+}
 
 const elementDefinitionCache = new Map();
 
@@ -259,8 +268,8 @@ export function mapNodeToG6(
       meta: node.meta || {},
       diagramType: typeKey,
       notation: notation?.tag || "",
-      notationShape: definition?.notation?.shape || "concept-card",
-      notationGeometry: definition?.notation?.geometry || "rectangle",
+      notationShape: definition?.notation?.shape || fallbackNotation().shape,
+      notationGeometry: definition?.notation?.geometry || fallbackNotation().geometry,
       iconSrc,
       kindText,
       detailText,
@@ -295,8 +304,8 @@ export function mapNodeToG6(
       fullTypeText: node.type,
       notationText: detailText,
       notation: notation?.tag || "",
-      notationShape: definition?.notation?.shape || "concept-card",
-      notationGeometry: definition?.notation?.geometry || "rectangle",
+      notationShape: definition?.notation?.shape || fallbackNotation().shape,
+      notationGeometry: definition?.notation?.geometry || fallbackNotation().geometry,
       iconSrc,
       badges,
       showHandles: Boolean(node.showHandles),
