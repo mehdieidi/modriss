@@ -32,6 +32,8 @@ import {
 } from "./modeling-config-data.js";
 import {
   addNodeToGraphAndActiveView,
+  markGraphRelationshipsDirty,
+  reconcileElementRelationships,
   removeElementFromGraph,
   removeRelationshipFromGraph,
   syncActiveViewFromVisibleGraph,
@@ -1672,6 +1674,7 @@ function deleteContainedChild(childId) {
     if (parentNode?.meta) {
       parentNode.meta[feature] = nextIds;
     }
+    reconcileElementRelationships(parentId);
   }
   removeElementFromGraph(childId);
   const diagramNode = state.diagram?.nodes?.find((node) => node.id === childId);
@@ -2215,8 +2218,9 @@ export function applyAttributePanel() {
         node.meta[key] = value;
       }
     });
-    syncActiveViewFromVisibleGraph();
+    syncActiveViewFromVisibleGraph({ rebuildIndexes: false });
     synchronizeOppositeReferences(node);
+    markGraphRelationshipsDirty();
   } catch {
     setStatus("One property contains invalid JSON. Fix it before applying changes.");
     return;

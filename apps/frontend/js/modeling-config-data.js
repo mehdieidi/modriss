@@ -256,6 +256,7 @@ function emptyTabState(typeKey, level) {
 }
 
 function initializeModelingRuntimeState(config) {
+  rebuildModelingConfigIndexes(config);
   const levels = config?.levels || {};
   const order = Array.isArray(config?.levelOrder) ? config.levelOrder : Object.keys(levels);
   order.forEach((typeKey) => {
@@ -357,6 +358,11 @@ export function modelingPalette(typeKey = state.activeType) {
     .filter(Boolean);
 }
 
+export function modelingLevelLabel(typeKey = state.activeType) {
+  const root = modelingLevelConfig(typeKey).rootTemplate || {};
+  return String(root.modelLevel || modelingLevelConfig(typeKey).chatType || typeKey.toUpperCase());
+}
+
 export function modelingCanvasPolicy(typeKey = state.activeType) {
   const policy = modelingLevelConfig(typeKey).canvasPolicy;
   return policy && typeof policy === "object" ? policy : {};
@@ -422,9 +428,36 @@ export function modelingContainmentEntryForChildType(typeKey, ownerType, childTy
   };
 }
 
+const elementDefinitionByType = new Map();
+const concreteTypesCache = new Map();
+const containmentCache = new Map();
+
+function rebuildModelingConfigIndexes(config) {
+  elementDefinitionByType.clear();
+  concreteTypesCache.clear();
+  containmentCache.clear();
+  const levels = config?.levels || {};
+  Object.keys(levels).forEach((typeKey) => {
+    const byType = new Map();
+    (levels[typeKey].elements || []).forEach((entry) => {
+      if (entry?.type) {
+        byType.set(entry.type, entry);
+      }
+    });
+    elementDefinitionByType.set(typeKey, byType);
+  });
+}
+
+function containmentCacheKey(typeKey, ownerType) {
+  return `${typeKey}:${ownerType}`;
+}
+
+function concreteTypesCacheKey(typeKey, expectedType) {
+  return `${typeKey}:${expectedType}`;
+}
+
 export function modelingElementDefinition(typeKey, elementType) {
-  const level = modelingLevelConfig(typeKey);
-  return (level.elements || []).find((entry) => entry.type === elementType) || null;
+  return elementDefinitionByType.get(typeKey)?.get(elementType) || null;
 }
 
 function normalizeViewDefinitionName(value) {
@@ -598,8 +631,12 @@ export function modelingRootType(typeKey = state.activeType) {
 }
 
 export function modelingConcreteTypesFor(typeKey, expectedType) {
+  const cacheKey = concreteTypesCacheKey(typeKey, expectedType);
+  if (concreteTypesCache.has(cacheKey)) {
+    return concreteTypesCache.get(cacheKey);
+  }
   const level = modelingLevelConfig(typeKey);
-  return (level.elements || [])
+  const result = (level.elements || [])
     .filter((entry) => {
       if (!entry?.type || entry.abstract) {
         return false;
@@ -607,6 +644,8 @@ export function modelingConcreteTypesFor(typeKey, expectedType) {
       return modelingTypeMatches(typeKey, expectedType, entry.type);
     })
     .map((entry) => entry.type);
+  concreteTypesCache.set(cacheKey, result);
+  return result;
 }
 
 export function modelingRelationshipElementTypes(typeKey = state.activeType) {
@@ -623,9 +662,13 @@ function containmentTitle(feature) {
 }
 
 export function modelingContainmentsForType(typeKey, ownerType) {
+  const cacheKey = containmentCacheKey(typeKey, ownerType);
+  if (containmentCache.has(cacheKey)) {
+    return containmentCache.get(cacheKey);
+  }
   const definition = modelingElementDefinition(typeKey, ownerType);
   const relationshipTypes = new Set(modelingRelationshipElementTypes(typeKey));
-  return (definition?.references || [])
+  const result = (definition?.references || [])
     .filter(
       (reference) =>
         reference?.containment && !reference.readonly && reference.name && reference.targetType,
@@ -644,6 +687,8 @@ export function modelingContainmentsForType(typeKey, ownerType) {
         relationshipOnly: types.length > 0 && types.every((type) => relationshipTypes.has(type)),
       };
     });
+  containmentCache.set(cacheKey, result);
+  return result;
 }
 
 export function modelingRootContainments(typeKey = state.activeType) {

@@ -22,6 +22,7 @@ import {
   modelingContainmentsForType,
   isModelingLevel,
   modelingLevelConfig,
+  modelingLevelLabel,
   modelingStandalonePaletteType,
   modelingRootContainments,
   modelingRootType,
@@ -814,7 +815,7 @@ function createContainerFocusView(node) {
   return {
     id: focusViewIdFor(node.id),
     name: `${node.label || node.id} Contents`,
-    level: String(state.activeType || "").toUpperCase(),
+    level: modelingLevelLabel(state.activeType),
     kind: String(focusPolicy.viewKind || "FOCUS"),
     scope: {
       rootElementId: node.id,
@@ -885,7 +886,7 @@ function createNeighborhoodFocusView(node, depth = 1) {
   return {
     id: focusViewIdFor(`${node.id}-n${normalizedDepth}`),
     name: `${node.label || node.id} Neighborhood ${normalizedDepth}`,
-    level: String(state.activeType || "").toUpperCase(),
+    level: modelingLevelLabel(state.activeType),
     kind: "FOCUS",
     scope: {
       rootElementId: node.id,
@@ -1118,13 +1119,6 @@ function ensureCanvas() {
       onOpenContainer: openG6ContainerTool,
       onViewportChange: () => {
         updateZoomControlLabel();
-        el.canvasGrid?.style.setProperty("--viewport-scale", String(state.viewport.scale || 1));
-        el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
-        el.canvasGrid?.classList.toggle(
-          "lod-medium",
-          state.viewport.scale >= 0.35 && state.viewport.scale < 0.75,
-        );
-        el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
         onCanvasViewportChanged();
       },
     },
@@ -2971,7 +2965,11 @@ function assignEntryTypeViewOwner(node) {
   }
   const containment =
     ownerSpecs.find((entry) =>
-      modelTypeMatches(state.activeType, entry.ownerType, selectedOwner.eClass || selectedOwner.type),
+      modelTypeMatches(
+        state.activeType,
+        entry.ownerType,
+        selectedOwner.eClass || selectedOwner.type,
+      ),
     ) || ownerSpecs[0];
   return Boolean(attachNestedNode(node, containment));
 }

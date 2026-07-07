@@ -207,9 +207,7 @@ function metadataViewDefinitionIds() {
 }
 
 function viewMatchesCatalogDefinition(view) {
-  const definitionId = normalizeLabel(
-    String(view?.definitionId || view?.sourceDefinitionId || ""),
-  );
+  const definitionId = normalizeLabel(String(view?.definitionId || view?.sourceDefinitionId || ""));
   if (!definitionId) {
     return false;
   }
@@ -392,6 +390,7 @@ function relationshipsForActiveView(view) {
 
 function relationshipRowsMarkup(view) {
   const filter = normalizeLabel(modelTreeFilter);
+  const hiddenRelationshipIds = new Set(safeArray(view?.hidden?.relationshipIds));
   const relationships = relationshipsForActiveView(view).map((relationship) => {
     const sourceId = relationshipEndpointId(relationship, "source");
     const targetId = relationshipEndpointId(relationship, "target");
@@ -407,7 +406,7 @@ function relationshipRowsMarkup(view) {
       targetLabel,
       kind,
       label,
-      checked: !new Set(safeArray(view?.hidden?.relationshipIds)).has(relationship.id),
+      checked: !hiddenRelationshipIds.has(relationship.id),
       search: normalizeLabel(
         `${label} ${kind} ${sourceLabel} ${targetLabel} ${relationship.id || ""}`,
       ),

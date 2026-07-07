@@ -2,7 +2,7 @@ import { state } from "./state.js";
 import { emptyDiagram } from "./utils.js";
 import {
   activeView,
-  reconcileGraphRelationships,
+  reconcileGraphRelationshipsIfDirty,
   selectElementIdsForView,
   selectRelationshipIdsForView,
 } from "./graph-store.js";
@@ -14,10 +14,6 @@ import {
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
-}
-
-function clone(value) {
-  return value == null ? value : structuredClone(value);
 }
 
 function elementType(element) {
@@ -57,6 +53,21 @@ function pruneIsolatedGeneratedNodes(graph, view, elementIds, relationshipIds) {
   return elementIds.filter((elementId) => connected.has(elementId) || pinned.has(elementId));
 }
 
+const containerTypeCache = new Map();
+let containerCacheConfigVersion = -1;
+
+function ensureContainerCacheFresh() {
+  const version = Number(state.modelingConfig?.config?.version || 0);
+  if (version !== containerCacheConfigVersion) {
+    containerTypeCache.clear();
+    containerCacheConfigVersion = version;
+  }
+}
+
+function containerCacheKey(typeKey, type) {
+  return `${typeKey}:${type}`;
+}
+
 function hasContainmentCapacity(typeKey, type, definition) {
   if (!definition) {
     return false;
@@ -73,16 +84,25 @@ function hasContainmentCapacity(typeKey, type, definition) {
 }
 
 export function isContainerElement(elementOrType, typeKey = state.activeType) {
+  ensureContainerCacheFresh();
   const type = typeof elementOrType === "string" ? elementOrType : elementType(elementOrType);
+  const cacheKey = containerCacheKey(typeKey, type);
+  if (containerTypeCache.has(cacheKey)) {
+    return containerTypeCache.get(cacheKey);
+  }
+  let result = false;
   try {
     const definition = modelingElementDefinition(typeKey, type);
     if (!definition || definition.relationshipElement || definition.supportOnly) {
-      return false;
+      result = false;
+    } else {
+      result = hasContainmentCapacity(typeKey, type, definition);
     }
-    return hasContainmentCapacity(typeKey, type, definition);
   } catch {
-    return false;
+    result = false;
   }
+  containerTypeCache.set(cacheKey, result);
+  return result;
 }
 
 function runtimeNode(elementId, viewNode) {
@@ -106,7 +126,7 @@ function runtimeNode(elementId, viewNode) {
     label: elementLabel(element),
     x,
     y,
-    meta: clone(element),
+    meta: element,
   };
 }
 
@@ -115,14 +135,14 @@ function runtimeEdge(relationship, viewEdge = null) {
     return null;
   }
   return {
-    ...clone(relationship),
+    ...relationship,
     id: relationship.id,
     sourceId: relationship.sourceElementId,
     targetId: relationship.targetElementId,
     kind: relationship.kind,
-    pinPoints: safeArray(viewEdge?.pinPoints).map(clone),
-    sourceAnchor: viewEdge?.sourceAnchor ? clone(viewEdge.sourceAnchor) : undefined,
-    targetAnchor: viewEdge?.targetAnchor ? clone(viewEdge.targetAnchor) : undefined,
+    pinPoints: safeArray(viewEdge?.pinPoints).map((point) => ({ ...point })),
+    sourceAnchor: viewEdge?.sourceAnchor ? { ...viewEdge.sourceAnchor } : undefined,
+    targetAnchor: viewEdge?.targetAnchor ? { ...viewEdge.targetAnchor } : undefined,
   };
 }
 
@@ -147,7 +167,7 @@ function materializeViewGraph(view, elementIds, relationshipIds) {
 }
 
 export function materializeActiveView() {
-  reconcileGraphRelationships(state.activeType);
+  reconcileGraphRelationshipsIfDirty(state.activeType);
   const view = activeView();
   if (!view) {
     state.visibleGraph = emptyDiagram(state.activeType);

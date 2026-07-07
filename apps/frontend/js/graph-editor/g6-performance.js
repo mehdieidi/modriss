@@ -249,40 +249,69 @@ export function createSpatialIndex(
   return index.rebuild(nodes, { fallbackSize });
 }
 
+function fingerprintStyle(style) {
+  if (!style || typeof style !== "object") {
+    return "";
+  }
+  const size = Array.isArray(style.size) ? style.size : [];
+  return [
+    style.x,
+    style.y,
+    style.width,
+    style.height,
+    size[0],
+    size[1],
+    style.isContainer,
+    style.detailLevel,
+    style.stroke,
+    style.fill,
+    style.lineWidth,
+    style.opacity,
+  ].join("|");
+}
+
+function fingerprintBadges(badges) {
+  if (!Array.isArray(badges) || !badges.length) {
+    return "";
+  }
+  return badges
+    .map((badge) => [badge?.key, badge?.label, badge?.tone, badge?.icon].filter(Boolean).join(":"))
+    .join(",");
+}
+
 export function fingerprintElement(element) {
   const data = element?.data && typeof element.data === "object" ? element.data : {};
-  const renderData = {
-    nodeType: data.nodeType,
-    label: data.label,
-    diagramType: data.diagramType,
-    notation: data.notation,
-    kindText: data.kindText,
-    detailText: data.detailText,
-    tokenText: data.tokenText,
-    badges: data.badges,
-    showHandles: data.showHandles,
-    accent: data.accent,
-    sticky: data.sticky,
-    viewProfile: data.viewProfile,
-    contextName: data.contextName,
-    container: data.container,
-    detailLevel: data.detailLevel,
-    kind: data.kind,
-    presentationClass: data.presentationClass,
-    markerStart: data.markerStart,
-    markerEnd: data.markerEnd,
-    pinPoints: data.pinPoints,
-    sourceAnchor: data.sourceAnchor,
-    targetAnchor: data.targetAnchor,
-  };
-  return JSON.stringify({
-    id: element.id,
-    source: element.source,
-    target: element.target,
-    data: renderData,
-    style: element.style,
-    type: element.type,
-  });
+  return [
+    element.id,
+    element.source,
+    element.target,
+    element.type,
+    data.nodeType,
+    data.label,
+    data.diagramType,
+    data.notation,
+    data.kindText,
+    data.detailText,
+    data.tokenText,
+    fingerprintBadges(data.badges),
+    data.showHandles,
+    data.accent,
+    data.sticky,
+    data.viewProfile,
+    data.contextName,
+    data.container,
+    data.detailLevel,
+    data.kind,
+    data.presentationClass,
+    data.markerStart,
+    data.markerEnd,
+    Array.isArray(data.pinPoints) ? data.pinPoints.length : 0,
+    data.sourceAnchor?.side,
+    data.sourceAnchor?.offsetY,
+    data.targetAnchor?.side,
+    data.targetAnchor?.offsetY,
+    fingerprintStyle(element.style),
+  ].join("\x1e");
 }
 
 export function diffGraphData(previous, next) {

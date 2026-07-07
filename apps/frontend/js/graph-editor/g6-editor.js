@@ -42,7 +42,10 @@ let pendingLodState = null;
 const CONNECT_GLOBAL_TARGET_NODE_LIMIT = 240;
 const CONNECT_ILLEGAL_STATE_NODE_LIMIT = 800;
 const HOVER_FOCUS_EDGE_LIMIT = 64;
-const LOD_UPDATE_IDLE_DELAY_MS = 140;
+const LOD_UPDATE_IDLE_DELAY_MS = 220;
+const VIEWPORT_TRANSFORM_IDLE_MS = 180;
+let viewportTransformEndTimer = 0;
+let viewportTransforming = false;
 
 function g6() {
   return window.G6 || null;
@@ -981,10 +984,29 @@ function updateViewportChrome() {
   el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
 }
 
-function runViewportSync({ syncSelection = false } = {}) {
+function markViewportTransforming() {
+  viewportTransforming = true;
+  if (viewportTransformEndTimer) {
+    window.clearTimeout(viewportTransformEndTimer);
+  }
+  viewportTransformEndTimer = window.setTimeout(() => {
+    viewportTransformEndTimer = 0;
+    viewportTransforming = false;
+    runViewportSync();
+  }, VIEWPORT_TRANSFORM_IDLE_MS);
+}
+
+function runViewportSync({ syncSelection = false, lightweight = false } = {}) {
   syncViewportStateFromGraph();
   setCanvasZoomIndicator();
   updateViewportChrome();
+  if (lightweight || viewportTransforming) {
+    if (syncSelection) {
+      updateG6Selection();
+    }
+    editor?.callbacks?.onViewportSynced?.();
+    return;
+  }
   // Remap only after viewport activity settles. Node detail and edge labels are
   // encoded in graph data, so CSS LOD classes alone cannot reveal them.
   updateG6Lod({ defer: true });
@@ -999,13 +1021,13 @@ function settleNativeViewport() {
   runViewportSync({ syncSelection: true });
 }
 
-function scheduleViewportSync() {
+function scheduleViewportSync({ lightweight = false } = {}) {
   if (pendingViewportSyncFrame) {
     return;
   }
   pendingViewportSyncFrame = window.requestAnimationFrame(() => {
     pendingViewportSyncFrame = 0;
-    runViewportSync();
+    runViewportSync({ lightweight });
   });
 }
 
@@ -1097,8 +1119,18 @@ function applyDiff(data) {
     }),
   );
   editor.dataSnapshot = diff.snapshot;
-  rebuildNodeTypeIndex([...diff.snapshot.nodesById.values()]);
-  editor.adjacency = createAdjacencyIndex(state.diagram.connections);
+  const topologyChanged =
+    diff.addNodes.length ||
+    diff.addEdges.length ||
+    diff.removeNodeIds.length ||
+    diff.removeEdgeIds.length;
+  if (topologyChanged) {
+    rebuildNodeTypeIndex([...diff.snapshot.nodesById.values()]);
+    editor.adjacency = createAdjacencyIndex(state.diagram.connections);
+  } else {
+    diff.updateNodes.forEach((node) => rememberNodeData(node));
+    diff.updateEdges.forEach((edge) => rememberEdgeData(edge));
+  }
   if (
     diff.addNodes.length ||
     diff.addEdges.length ||
@@ -1423,6 +1455,11 @@ export function destroyG6Editor() {
     window.cancelAnimationFrame(pendingViewportSyncFrame);
     pendingViewportSyncFrame = 0;
   }
+  if (viewportTransformEndTimer) {
+    window.clearTimeout(viewportTransformEndTimer);
+    viewportTransformEndTimer = 0;
+  }
+  viewportTransforming = false;
   cancelPendingLodUpdate();
   clearG6Overlays();
   editor?.disposeInteractions?.();
@@ -2302,5 +2339,6 @@ export function onG6ViewportChanged() {
   if (!editor?.graph) {
     return;
   }
-  scheduleViewportSync();
+  markViewportTransforming();
+  scheduleViewportSync({ lightweight: true });
 }

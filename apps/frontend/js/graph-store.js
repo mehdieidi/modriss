@@ -859,6 +859,18 @@ function synthesizeSemanticRefsForElement(graph, typeKey, elementId) {
   return added;
 }
 
+function removeFromIndex(map, key, value) {
+  const normalizedKey = String(key || "").trim();
+  if (!normalizedKey) {
+    return;
+  }
+  const bucket = map.get(normalizedKey);
+  bucket?.delete(value);
+  if (bucket && !bucket.size) {
+    map.delete(normalizedKey);
+  }
+}
+
 function addRelationshipToGraphIndexes(graph, relationship, typeKey = state.activeType) {
   if (!relationship?.id) {
     return;
@@ -882,6 +894,74 @@ function addRelationshipToGraphIndexes(graph, relationship, typeKey = state.acti
   }
 }
 
+function removeRelationshipFromGraphIndexes(graph, relationship, typeKey = state.activeType) {
+  if (!relationship?.id) {
+    return;
+  }
+  removeFromIndex(graph.relationshipsBySource, relationship.sourceElementId, relationship.id);
+  removeFromIndex(graph.relationshipsByTarget, relationship.targetElementId, relationship.id);
+  removeFromIndex(graph.relationshipsByKind, relationship.kind, relationship.id);
+  if (isGroupingContainmentRelationship(relationship, typeKey)) {
+    removeFromIndex(
+      graph.containmentByParent,
+      relationship.sourceElementId,
+      relationship.targetElementId,
+    );
+  }
+  if (
+    isStructuralNestRelationship(relationship, typeKey) &&
+    relationship.targetElementId &&
+    graph.parentByChild.get(relationship.targetElementId) === relationship.sourceElementId
+  ) {
+    graph.parentByChild.delete(relationship.targetElementId);
+  }
+}
+
+function removeSyntheticRelationshipsForElement(graph, elementId, typeKey = state.activeType) {
+  const configuredContainmentKinds = containmentKinds(typeKey);
+  const removeIds = [];
+  graph.relationshipsById.forEach((relationship, relationshipId) => {
+    if (!relationship.visualOnly) {
+      return;
+    }
+    const kind = String(relationship.kind || "").toUpperCase();
+    const isSyntheticContainment =
+      relationship.containment === true || configuredContainmentKinds.has(kind);
+    const isSyntheticReference = Boolean(relationship.semanticFeature);
+    if (!isSyntheticContainment && !isSyntheticReference) {
+      return;
+    }
+    if (relationship.sourceElementId === elementId) {
+      removeIds.push(relationshipId);
+    }
+  });
+  removeIds.forEach((relationshipId) => {
+    const relationship = graph.relationshipsById.get(relationshipId);
+    if (!relationship) {
+      return;
+    }
+    removeRelationshipFromGraphIndexes(graph, relationship, typeKey);
+    graph.relationshipsById.delete(relationshipId);
+  });
+  return removeIds.length;
+}
+
+export function markGraphRelationshipsDirty(graph = state.graph) {
+  if (graph) {
+    graph._relationshipsDirty = true;
+  }
+}
+
+function graphRelationshipsDirty(graph = state.graph) {
+  return graph?._relationshipsDirty === true;
+}
+
+function clearGraphRelationshipsDirty(graph = state.graph) {
+  if (graph) {
+    graph._relationshipsDirty = false;
+  }
+}
+
 function updateElementOwnershipIndex(graph, elementId) {
   const element = graph.elementsById.get(elementId);
   const ownerId = String(element?.__ownerId || "").trim();
@@ -893,19 +973,28 @@ function updateElementOwnershipIndex(graph, elementId) {
   }
 }
 
-export function reconcileAddedElementRelationships(elementId, typeKey = state.activeType) {
+export function reconcileElementRelationships(elementId, typeKey = state.activeType) {
   if (!state.graph?.elementsById || !isModelingLevel(typeKey)) {
     return false;
   }
+  const normalizedId = String(elementId || "").trim();
+  if (!normalizedId || !state.graph.elementsById.has(normalizedId)) {
+    return false;
+  }
+  removeSyntheticRelationshipsForElement(state.graph, normalizedId, typeKey);
   const relationships = [
-    ...synthesizeContainmentForElement(state.graph, typeKey, elementId),
-    ...synthesizeSemanticRefsForElement(state.graph, typeKey, elementId),
+    ...synthesizeContainmentForElement(state.graph, typeKey, normalizedId),
+    ...synthesizeSemanticRefsForElement(state.graph, typeKey, normalizedId),
   ];
   relationships.forEach((relationship) => {
     addRelationshipToGraphIndexes(state.graph, relationship);
   });
-  updateElementOwnershipIndex(state.graph, elementId);
+  updateElementOwnershipIndex(state.graph, normalizedId);
   return true;
+}
+
+export function reconcileAddedElementRelationships(elementId, typeKey = state.activeType) {
+  return reconcileElementRelationships(elementId, typeKey);
 }
 
 export function reconcileGraphRelationships(
@@ -921,10 +1010,21 @@ export function reconcileGraphRelationships(
     synthesizeSemanticRefRelationships(state.graph, typeKey);
   }
   rebuildGraphIndexes(state.graph);
+  clearGraphRelationshipsDirty(state.graph);
   if (refreshActiveView) {
     refreshViewMembershipFromGraph(activeView(), state.graph, typeKey);
   }
   return true;
+}
+
+export function reconcileGraphRelationshipsIfDirty(
+  typeKey = state.activeType,
+  { refreshActiveView = false } = {},
+) {
+  if (!graphRelationshipsDirty(state.graph)) {
+    return false;
+  }
+  return reconcileGraphRelationships(typeKey, { refreshActiveView });
 }
 
 function createEmptyGraph() {
@@ -1141,7 +1241,7 @@ function configuredElementTypes(typeKey) {
   }
 }
 
-function edgeIdsForElementIds(graph, elementIds, relationshipKinds = []) {
+function relationshipIdsBetweenElements(graph, elementIds, relationshipKinds = []) {
   const ids = new Set(elementIds);
   const allowedKinds = new Set(
     safeArray(relationshipKinds)
@@ -1152,17 +1252,28 @@ function edgeIdsForElementIds(graph, elementIds, relationshipKinds = []) {
       )
       .filter(Boolean),
   );
+  const candidateIds = new Set();
+  elementIds.forEach((elementId) => {
+    graph.relationshipsBySource.get(elementId)?.forEach((relationshipId) => {
+      candidateIds.add(relationshipId);
+    });
+  });
   const result = [];
-  graph.relationshipsById.forEach((relationship) => {
-    if (!ids.has(relationship.sourceElementId) || !ids.has(relationship.targetElementId)) {
+  candidateIds.forEach((relationshipId) => {
+    const relationship = graph.relationshipsById.get(relationshipId);
+    if (!relationship || !ids.has(relationship.targetElementId)) {
       return;
     }
     if (!relationshipKindMatches(relationship.kind, allowedKinds)) {
       return;
     }
-    result.push(relationship.id);
+    result.push(relationshipId);
   });
   return result;
+}
+
+function edgeIdsForElementIds(graph, elementIds, relationshipKinds = []) {
+  return relationshipIdsBetweenElements(graph, elementIds, relationshipKinds);
 }
 
 function shouldIncludeRelationshipEndpointOnView(
@@ -1237,17 +1348,29 @@ function relationshipIdsTouchingElements(graph, elementIds, relationshipKinds = 
       )
       .filter(Boolean),
   );
+  if (!ids.size) {
+    return [...graph.relationshipsById.keys()];
+  }
+  const candidateIds = new Set();
+  elementIds.forEach((elementId) => {
+    graph.relationshipsBySource.get(elementId)?.forEach((relationshipId) => {
+      candidateIds.add(relationshipId);
+    });
+    graph.relationshipsByTarget.get(elementId)?.forEach((relationshipId) => {
+      candidateIds.add(relationshipId);
+    });
+  });
   const result = [];
-  graph.relationshipsById.forEach((relationship) => {
+  candidateIds.forEach((relationshipId) => {
+    const relationship = graph.relationshipsById.get(relationshipId);
+    if (!relationship) {
+      return;
+    }
     if (allowedKinds.size && !relationshipKindMatches(relationship.kind, allowedKinds)) {
       return;
     }
-    if (
-      !ids.size ||
-      ids.has(relationship.sourceElementId) ||
-      ids.has(relationship.targetElementId)
-    ) {
-      result.push(relationship.id);
+    if (ids.has(relationship.sourceElementId) || ids.has(relationship.targetElementId)) {
+      result.push(relationshipId);
     }
   });
   return result;
@@ -1353,10 +1476,7 @@ function viewSurfaceEntryTypes(typeKey, view) {
   if (!definition) {
     return new Set();
   }
-  return new Set([
-    ...safeArray(definition.viewEntryTypes),
-    ...safeArray(definition.scopeTypes),
-  ]);
+  return new Set([...safeArray(definition.viewEntryTypes), ...safeArray(definition.scopeTypes)]);
 }
 
 function shouldExcludeContainedElementFromView(graph, view, elementId, element, typeKey) {
@@ -1542,7 +1662,20 @@ export function selectRelationshipIdsForView(graph, view, elementIds, typeKey = 
   const containerScope = isContainerScopeView(view);
   const relationshipIds = [];
   const seenRelationshipKeys = new Set();
-  graph.relationshipsById.forEach((relationship, relationshipId) => {
+  const candidateIds = new Set();
+  elementIds.forEach((elementId) => {
+    graph.relationshipsBySource.get(elementId)?.forEach((relationshipId) => {
+      candidateIds.add(relationshipId);
+    });
+    graph.relationshipsByTarget.get(elementId)?.forEach((relationshipId) => {
+      candidateIds.add(relationshipId);
+    });
+  });
+  candidateIds.forEach((relationshipId) => {
+    const relationship = graph.relationshipsById.get(relationshipId);
+    if (!relationship) {
+      return;
+    }
     if (hidden.has(relationshipId)) {
       return;
     }
@@ -2425,7 +2558,9 @@ export function ensureActiveGraphAndViews(typeKey = state.activeType) {
   }
   const currentView = state.views?.byId?.get(state.views.activeViewId);
   const hasActiveView =
-    state.views?.activeViewId && currentView && viewBelongsToLevel(currentView, typeKey);
+    state.views?.activeViewId &&
+    currentView &&
+    (viewBelongsToLevel(currentView, typeKey) || isFocusView(currentView));
   if (state.graph?.elementsById instanceof Map && hasActiveView) {
     return false;
   }
@@ -2948,6 +3083,7 @@ export function removeElementFromGraph(elementId) {
     }
   });
   relationshipIds.forEach((relationshipId) => state.graph.relationshipsById.delete(relationshipId));
+  markGraphRelationshipsDirty(state.graph);
   state.views.byId.forEach((view) => {
     view.nodes = safeArray(view.nodes).filter((node) => node.elementId !== id);
     viewNodeIndexes.delete(view);
