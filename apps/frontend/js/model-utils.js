@@ -670,6 +670,63 @@ export function populateRootContainments(typeKey, root, graph) {
   return root;
 }
 
+const POPULATE_CONTAINMENTS_YIELD_EVERY = 80;
+
+export async function populateRootContainmentsAsync(typeKey, root, graph) {
+  if (!root || !graph?.elementsById) {
+    return root;
+  }
+  const { yieldToMain } = await import("./utils.js");
+  const rootType = modelingRootType(typeKey);
+  if (rootType) {
+    root.eClass ||= rootType;
+  }
+  modelingRootContainments(typeKey).forEach((entry) => {
+    root[entry.feature] = entry.singleton ? null : [];
+  });
+  let processed = 0;
+  for (const element of graph.elementsById.values()) {
+    if (element.__ownerId) {
+      continue;
+    }
+    const containment = rootContainmentForType(typeKey, modelTypeOf(element));
+    if (!containment || containment.relationshipOnly) {
+      continue;
+    }
+    const copy = stripRuntimeFields(typeKey, element);
+    attachNestedContainments(typeKey, copy, element, graph);
+    if (containment.singleton) {
+      root[containment.feature] = copy;
+    } else {
+      root[containment.feature].push(copy);
+    }
+    processed += 1;
+    if (processed % POPULATE_CONTAINMENTS_YIELD_EVERY === 0) {
+      await yieldToMain();
+    }
+  }
+  for (const relationship of graph.relationshipsById?.values() || []) {
+    if (relationship.visualOnly) {
+      continue;
+    }
+    const containment = rootContainmentForType(typeKey, modelTypeOf(relationship));
+    if (!containment || !containment.relationshipOnly) {
+      continue;
+    }
+    const copy = relationshipSemanticCopy(typeKey, relationship, graph);
+    if (containment.singleton) {
+      root[containment.feature] = copy;
+    } else {
+      root[containment.feature].push(copy);
+    }
+    processed += 1;
+    if (processed % POPULATE_CONTAINMENTS_YIELD_EVERY === 0) {
+      await yieldToMain();
+    }
+  }
+  return root;
+}
+
 export function createConfiguredElement(
   typeKey,
   type,

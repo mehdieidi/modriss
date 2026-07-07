@@ -147,6 +147,21 @@ function sanitizeRootForType(typeKey, root) {
   return root;
 }
 
+function buildSaveRootFromBase(typeKey, name) {
+  const root = defaultRootModel(typeKey, name);
+  const base = state.baseModel;
+  if (!base || typeof base !== "object") {
+    return root;
+  }
+  if (base.id) {
+    root.id = base.id;
+  }
+  if (base.eClass) {
+    root.eClass = base.eClass;
+  }
+  return root;
+}
+
 export function defaultRootModel(typeKey, modelName) {
   const configured = modelingRootTemplate(typeKey, modelName);
   if (!configured || !Object.keys(configured).length) {
@@ -202,7 +217,7 @@ function diagramRelationshipFromEdge(edge, index) {
 
 export function serializeModel({ syncView = false, reconcileRelationships = false } = {}) {
   const name = (state.tabs[state.activeType]?.modelName || `${state.activeType}-model`).trim();
-  const root = structuredClone(state.baseModel || defaultRootModel(state.activeType, name));
+  const root = buildSaveRootFromBase(state.activeType, name);
   sanitizeRootForType(state.activeType, root);
   if (!String(root.name || "").trim()) {
     root.name = name;
@@ -220,8 +235,6 @@ export function serializeModel({ syncView = false, reconcileRelationships = fals
   return root;
 }
 
-const SERIALIZE_DIAGRAM_CHUNK = 250;
-
 export async function serializeModelAsync({
   syncView = false,
   reconcileRelationships = false,
@@ -230,34 +243,10 @@ export async function serializeModelAsync({
   const { serializeGraphAndViewsIntoAsync } = await import("./graph-store.js");
   await yieldToMain();
   const name = (state.tabs[state.activeType]?.modelName || `${state.activeType}-model`).trim();
-  const root = structuredClone(state.baseModel || defaultRootModel(state.activeType, name));
-  await yieldToMain();
+  const root = buildSaveRootFromBase(state.activeType, name);
   sanitizeRootForType(state.activeType, root);
   if (!String(root.name || "").trim()) {
     root.name = name;
-  }
-  root.diagram ??= {};
-  root.diagram.elements = [];
-  const nodes = state.diagram.nodes;
-  for (let index = 0; index < nodes.length; index += SERIALIZE_DIAGRAM_CHUNK) {
-    const slice = nodes.slice(index, index + SERIALIZE_DIAGRAM_CHUNK);
-    root.diagram.elements.push(...slice.map((node) => diagramElementFromNode(node)));
-    if (index + SERIALIZE_DIAGRAM_CHUNK < nodes.length) {
-      await yieldToMain();
-    }
-  }
-  const connections = state.diagram.connections.filter(
-    (edge) => !edge.bundle && String(edge.kind).toUpperCase() !== "EDGE_BUNDLE",
-  );
-  root.diagram.relationships = [];
-  for (let index = 0; index < connections.length; index += SERIALIZE_DIAGRAM_CHUNK) {
-    const slice = connections.slice(index, index + SERIALIZE_DIAGRAM_CHUNK);
-    root.diagram.relationships.push(
-      ...slice.map((edge, offset) => diagramRelationshipFromEdge(edge, index + offset)),
-    );
-    if (index + SERIALIZE_DIAGRAM_CHUNK < connections.length) {
-      await yieldToMain();
-    }
   }
   await serializeGraphAndViewsIntoAsync(root, { syncView, reconcileRelationships });
   return root;

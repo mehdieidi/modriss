@@ -1,12 +1,12 @@
+import { clearDirtySaveHints, consumeViewSyncNeeded, getDirtySaveHints } from "./model-save-ui.js";
 import { MODEL_TYPES } from "./config.js";
 import { state } from "./state.js";
 import { api } from "./api.js";
 import { serializeModelAsync } from "./diagram.js";
-import { saveCurrentTabGraphStateAsync, syncActiveViewFromVisibleGraph } from "./graph-store.js";
+import { syncActiveViewFromVisibleGraph } from "./graph-store.js";
 import { stringifyJsonAsync, yieldToMain } from "./utils.js";
 
 const MAX_PATCH_OPERATIONS = 500;
-const LARGE_MODEL_PATCH_ELEMENT_THRESHOLD = 300;
 
 function pointerSegment(value) {
   return String(value).replaceAll("~", "~0").replaceAll("/", "~1");
@@ -17,7 +17,48 @@ function pointerJoin(base, segment) {
 }
 
 function jsonEqual(left, right) {
-  return JSON.stringify(left) === JSON.stringify(right);
+  if (left === right) {
+    return true;
+  }
+  if (left == null || right == null) {
+    return left === right;
+  }
+  const leftType = typeof left;
+  const rightType = typeof right;
+  if (leftType !== rightType) {
+    return false;
+  }
+  if (leftType !== "object") {
+    return false;
+  }
+  if (Array.isArray(left)) {
+    if (!Array.isArray(right) || left.length !== right.length) {
+      return false;
+    }
+    for (let index = 0; index < left.length; index += 1) {
+      if (!jsonEqual(left[index], right[index])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  if (Array.isArray(right)) {
+    return false;
+  }
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) {
+    return false;
+  }
+  for (const key of leftKeys) {
+    if (!Object.prototype.hasOwnProperty.call(right, key)) {
+      return false;
+    }
+    if (!jsonEqual(left[key], right[key])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function keyedById(array) {
@@ -89,7 +130,7 @@ function diffArrays(previous, next, path) {
     return [{ op: "replace", path: path || "/", value: next }];
   }
   const operations = [];
-  for (let index = previous.length - 1; index >= 0; index--) {
+  for (let index = previous.length - 1; index >= 0; index -= 1) {
     const id = String(previous[index].id);
     if (!nextById.has(id)) {
       operations.push({ op: "remove", path: pointerJoin(path, index) });
@@ -108,6 +149,117 @@ function diffArrays(previous, next, path) {
   return operations;
 }
 
+function graphElementIndexById(baseModel) {
+  const index = new Map();
+  const elements = baseModel?.graph?.elements;
+  if (!Array.isArray(elements)) {
+    return index;
+  }
+  elements.forEach((element, elementIndex) => {
+    const id = String(element?.id || "").trim();
+    if (id) {
+      index.set(id, elementIndex);
+    }
+  });
+  return index;
+}
+
+function viewNodeIndexesByElementId(baseModel) {
+  const paths = new Map();
+  const views = baseModel?.views;
+  if (!Array.isArray(views)) {
+    return paths;
+  }
+  views.forEach((view, viewIndex) => {
+    const nodes = view?.nodes;
+    if (!Array.isArray(nodes)) {
+      return;
+    }
+    nodes.forEach((node, nodeIndex) => {
+      const elementId = String(node?.elementId || "").trim();
+      if (!elementId) {
+        return;
+      }
+      const existing = paths.get(elementId) || [];
+      existing.push({ viewIndex, nodeIndex });
+      paths.set(elementId, existing);
+    });
+  });
+  return paths;
+}
+
+function buildPositionPatch(baseModel, positions) {
+  const graphIndex = graphElementIndexById(baseModel);
+  const viewPaths = viewNodeIndexesByElementId(baseModel);
+  const operations = [];
+  for (const [elementId, coords] of positions.entries()) {
+    const graphElementIndex = graphIndex.get(elementId);
+    if (graphElementIndex !== undefined) {
+      const element = baseModel.graph.elements[graphElementIndex];
+      const x = Math.round(coords.x);
+      const y = Math.round(coords.y);
+      if (element.x !== x) {
+        operations.push({
+          op: "replace",
+          path: `/graph/elements/${graphElementIndex}/x`,
+          value: x,
+        });
+      }
+      if (element.y !== y) {
+        operations.push({
+          op: "replace",
+          path: `/graph/elements/${graphElementIndex}/y`,
+          value: y,
+        });
+      }
+    }
+    const nodePaths = viewPaths.get(elementId) || [];
+    for (const { viewIndex, nodeIndex } of nodePaths) {
+      const viewNode = baseModel.views[viewIndex].nodes[nodeIndex];
+      const x = Math.round(coords.x);
+      const y = Math.round(coords.y);
+      if (viewNode.x !== x) {
+        operations.push({
+          op: "replace",
+          path: `/views/${viewIndex}/nodes/${nodeIndex}/x`,
+          value: x,
+        });
+      }
+      if (viewNode.y !== y) {
+        operations.push({
+          op: "replace",
+          path: `/views/${viewIndex}/nodes/${nodeIndex}/y`,
+          value: y,
+        });
+      }
+    }
+  }
+  return operations;
+}
+
+function applyPositionPatchToBaseModel(baseModel, positions) {
+  if (!baseModel || !positions.size) {
+    return;
+  }
+  const graphIndex = graphElementIndexById(baseModel);
+  const viewPaths = viewNodeIndexesByElementId(baseModel);
+  for (const [elementId, coords] of positions.entries()) {
+    const x = Math.round(coords.x);
+    const y = Math.round(coords.y);
+    const graphElementIndex = graphIndex.get(elementId);
+    if (graphElementIndex !== undefined) {
+      const element = baseModel.graph.elements[graphElementIndex];
+      element.x = x;
+      element.y = y;
+    }
+    for (const { viewIndex, nodeIndex } of viewPaths.get(elementId) || []) {
+      const viewNode = baseModel.views[viewIndex].nodes[nodeIndex];
+      viewNode.x = x;
+      viewNode.y = y;
+    }
+  }
+}
+
 export function buildModelPatch(previousModel, nextModel) {
   const operations = diffJson(previousModel || {}, nextModel || {});
   if (!operations.length) {
@@ -122,9 +274,65 @@ export function buildModelPatch(previousModel, nextModel) {
   return operations;
 }
 
-export async function prepareModelForSave({ syncView = true } = {}) {
+async function buildModelPatchAsync(previousModel, nextModel) {
+  const operations = diffJson(previousModel || {}, nextModel || {});
+  if (!operations.length) {
+    return [];
+  }
+  if (
+    operations.length > MAX_PATCH_OPERATIONS ||
+    operations.some((operation) => operation.path === "/")
+  ) {
+    return null;
+  }
+  return operations;
+}
+
+function adoptSavedBaseModel(nextModel) {
+  if (!nextModel || typeof nextModel !== "object") {
+    return;
+  }
+  delete nextModel._sourceXmiBase64;
+  delete nextModel._sourceXmiToken;
+  state.baseModel = nextModel;
+}
+
+export async function prepareModelForSave({ syncView = true, forceFull = false } = {}) {
+  if (!forceFull) {
+    const hints = getDirtySaveHints();
+    if (hints.positionOnly && state.baseModel?.graph?.elements) {
+      const operations = buildPositionPatch(state.baseModel, hints.positions);
+      if (!operations.length) {
+        const graphIndex = graphElementIndexById(state.baseModel);
+        const viewPaths = viewNodeIndexesByElementId(state.baseModel);
+        const canResolve = [...hints.positions.keys()].every(
+          (id) => graphIndex.has(id) || (viewPaths.get(id)?.length ?? 0) > 0,
+        );
+        if (canResolve) {
+          applyPositionPatchToBaseModel(state.baseModel, hints.positions);
+          return {
+            nextModel: null,
+            operations: [],
+            incremental: "positions",
+            positions: hints.positions,
+          };
+        }
+      } else if (
+        operations.length <= MAX_PATCH_OPERATIONS &&
+        !operations.some((operation) => operation.path === "/")
+      ) {
+        return {
+          nextModel: null,
+          operations,
+          incremental: "positions",
+          positions: hints.positions,
+        };
+      }
+    }
+  }
+
   await yieldToMain();
-  if (syncView) {
+  if (syncView && consumeViewSyncNeeded()) {
     syncActiveViewFromVisibleGraph();
   }
   const nextModel = await serializeModelAsync({
@@ -132,16 +340,7 @@ export async function prepareModelForSave({ syncView = true } = {}) {
     reconcileRelationships: false,
   });
   await yieldToMain();
-  const elementCount =
-    state.graph?.elementsById?.size ??
-    nextModel?.graph?.elements?.length ??
-    state.diagram?.nodes?.length ??
-    0;
-  if (elementCount > LARGE_MODEL_PATCH_ELEMENT_THRESHOLD) {
-    return { nextModel, operations: null };
-  }
-  const operations = buildModelPatch(state.baseModel || {}, nextModel);
-  await yieldToMain();
+  const operations = await buildModelPatchAsync(state.baseModel || {}, nextModel);
   return { nextModel, operations };
 }
 
@@ -155,7 +354,12 @@ export async function flushCurrentModelPatch({ name, rethrow = false, prepared =
   }
   if (!operations.length) {
     await yieldToMain();
-    state.baseModel = structuredClone(nextModel);
+    if (prepared?.incremental === "positions") {
+      applyPositionPatchToBaseModel(state.baseModel, prepared.positions);
+    } else if (nextModel) {
+      adoptSavedBaseModel(nextModel);
+    }
+    clearDirtySaveHints();
     return true;
   }
   try {
@@ -169,16 +373,14 @@ export async function flushCurrentModelPatch({ name, rethrow = false, prepared =
       body,
     });
     await yieldToMain();
-    state.baseModel = structuredClone(nextModel);
+    if (prepared?.incremental === "positions") {
+      applyPositionPatchToBaseModel(state.baseModel, prepared.positions);
+    } else if (nextModel) {
+      adoptSavedBaseModel(nextModel);
+    }
+    clearDirtySaveHints();
     if (updated && typeof updated === "object") {
       state.modelRevision = Number(updated.revision) || state.modelRevision;
-    }
-    if (state.tabs[state.activeType]) {
-      state.tabs[state.activeType].modelId = state.modelId;
-      state.tabs[state.activeType].modelRevision = state.modelRevision;
-      state.tabs[state.activeType].baseModel = state.baseModel;
-      state.tabs[state.activeType].diagram = state.diagram;
-      await saveCurrentTabGraphStateAsync(state.activeType);
     }
     return updated || true;
   } catch (error) {

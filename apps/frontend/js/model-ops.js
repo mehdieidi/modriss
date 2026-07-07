@@ -15,7 +15,6 @@ import {
   installGraphAndViewsAsync,
   restoreTabGraphState,
   saveCurrentTabGraphState,
-  saveCurrentTabGraphStateAsync,
   setActiveViewId,
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
@@ -77,6 +76,11 @@ import {
 } from "./modeling-config-data.js";
 
 let autoLayoutPromise = null;
+let saveInFlight = null;
+
+export function isModelSaveInFlight() {
+  return Boolean(saveInFlight);
+}
 
 // ── Model list (sidebar select) ───────────────────────────────────────────────
 
@@ -359,6 +363,32 @@ function stripServerTransportFields(model) {
   delete model._sourceXmiBase64;
   delete model._sourceXmiToken;
   return model;
+}
+
+function adoptSavedBaseModel(nextModel) {
+  state.baseModel = stripServerTransportFields(nextModel);
+}
+
+function updateActiveTabAfterSave() {
+  const tab = state.tabs[state.activeType];
+  if (!tab) {
+    return;
+  }
+  tab.modelId = state.modelId;
+  tab.modelRevision = state.modelRevision;
+  tab.baseModel = state.baseModel;
+  tab.diagram = state.diagram;
+}
+
+function schedulePostSaveHousekeeping(typeKey, modelId, summary) {
+  rememberModelSummary(typeKey, summary);
+  void scheduleIdleTask(async () => {
+    if (state.activeType === typeKey && state.tabs[typeKey]) {
+      saveCurrentTabGraphState(typeKey);
+    }
+    await syncProjectActiveModel(typeKey, modelId);
+    await reloadModels();
+  });
 }
 
 function mergePersistedViewIntoBaseModel(view) {
@@ -664,7 +694,24 @@ export async function saveCurrentModel({
   rethrow = false,
   quiet = false,
   skipBeginSave = false,
+  force = false,
 } = {}) {
+  if (saveInFlight) {
+    return saveInFlight;
+  }
+  if (!force && !quiet && state.modelId && !hasUnsavedModelChanges()) {
+    if (!quiet) {
+      setStatus("Model is up to date.");
+    }
+    return;
+  }
+  saveInFlight = performSaveCurrentModel({ rethrow, quiet, skipBeginSave }).finally(() => {
+    saveInFlight = null;
+  });
+  return saveInFlight;
+}
+
+async function performSaveCurrentModel({ rethrow = false, quiet = false, skipBeginSave = false } = {}) {
   if (!isModelingType()) {
     if (!quiet) {
       setStatus(`Switch to ${modelingLevelListLabel()} to save a model.`);
@@ -673,6 +720,7 @@ export async function saveCurrentModel({
   }
   const selectedName = getActiveModelName();
   setActiveModelName(selectedName);
+  const typeKey = state.activeType;
 
   const doBusy = !quiet;
   try {
@@ -681,35 +729,32 @@ export async function saveCurrentModel({
     }
     if (doBusy) {
       setBusy("Saving…");
-      await waitForSaveIndicatorPaint();
     }
     await yieldToMain();
-    const prepared = await prepareModelForSave();
-    await yieldToMain();
+    let prepared = await prepareModelForSave();
+    const positionOnlySave = prepared.incremental === "positions";
+    if (doBusy && !positionOnlySave) {
+      await waitForSaveIndicatorPaint();
+    }
     if (state.modelId) {
       let updated = await flushCurrentModelPatch({
         name: selectedName,
         rethrow: true,
         prepared,
       });
-      let savedModel = null;
       if (!updated) {
+        if (!prepared.nextModel) {
+          prepared = await prepareModelForSave({ forceFull: true });
+        }
         const payload = await buildSavePayloadFromPrepared(selectedName, prepared.nextModel);
-        savedModel = payload.model;
         await yieldToMain();
         updated = await updateExistingModelWithPayload(payload);
+        adoptSavedBaseModel(prepared.nextModel);
       }
       if (updated && typeof updated === "object") {
         state.modelRevision = Number(updated.revision) || state.modelRevision;
       }
-      if (savedModel) {
-        await yieldToMain();
-        state.baseModel = stripServerTransportFields(structuredClone(savedModel));
-      }
       setActiveModelName(updated?.name || selectedName);
-      if (!quiet) {
-        setStatus(`Model saved`);
-      }
     } else {
       const payload = await buildSavePayloadFromPrepared(selectedName, prepared.nextModel);
       await yieldToMain();
@@ -721,24 +766,21 @@ export async function saveCurrentModel({
       state.modelId = created.id;
       state.modelRevision = Number(created.revision) || 1;
       await yieldToMain();
-      state.baseModel = stripServerTransportFields(structuredClone(payload.model));
+      adoptSavedBaseModel(payload.model);
       setActiveModelName(created.name || payload.name);
-      if (!quiet) {
-        setStatus(`Model saved (${created.id.slice(0, 8)}…)`);
-      }
     }
-    if (state.tabs[state.activeType]) {
-      state.tabs[state.activeType].modelId = state.modelId;
-      state.tabs[state.activeType].modelRevision = state.modelRevision;
-      state.tabs[state.activeType].baseModel = state.baseModel;
-      state.tabs[state.activeType].diagram = state.diagram;
-      await saveCurrentTabGraphStateAsync(state.activeType);
-    }
-    await syncProjectActiveModel(state.activeType, state.modelId);
+    updateActiveTabAfterSave();
     completeModelSave();
     if (!quiet) {
-      await yieldToMain();
-      await reloadModels();
+      setStatus("Model saved");
+      schedulePostSaveHousekeeping(typeKey, state.modelId, {
+        id: state.modelId,
+        projectId: state.project?.id,
+        level: typeKey,
+        name: getActiveModelName(),
+        revision: state.modelRevision,
+        updatedAt: new Date().toISOString(),
+      });
     }
   } catch (error) {
     if (isMethodologyValidationError(error)) {
@@ -1045,9 +1087,10 @@ function isTransformationApiError(error, path) {
 }
 
 function rememberModelSummary(typeKey, record) {
-  if (!record?.id || !state.modelsCache?.[typeKey]) {
+  if (!record?.id) {
     return;
   }
+  state.modelsCache[typeKey] ??= [];
   const summary = {
     id: record.id,
     projectId: record.projectId,

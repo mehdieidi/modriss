@@ -2233,7 +2233,7 @@ export function applyAttributePanel() {
   syncDiagramRenderer({});
 
   el.attrPanelTitle.textContent = node.label;
-  markModelDirty();
+  markModelDirty({ viewSynced: true });
   setStatus(`Attributes updated for ${node.id}`);
 }
 

@@ -16,6 +16,7 @@ import {
   addReferenceValue,
   modelTypeOf,
   populateRootContainments,
+  populateRootContainmentsAsync,
   relationshipSemanticCopy,
   removeReferenceValue,
   semanticEdgeObjectSpec,
@@ -2678,6 +2679,39 @@ export function serializeRuntimeGraph() {
   };
 }
 
+const SERIALIZE_GRAPH_CHUNK = 200;
+
+async function cloneArrayChunked(items, chunkSize = SERIALIZE_GRAPH_CHUNK) {
+  const { yieldToMain } = await import("./utils.js");
+  const result = [];
+  for (let index = 0; index < items.length; index += chunkSize) {
+    result.push(...items.slice(index, index + chunkSize).map(clone));
+    if (index + chunkSize < items.length) {
+      await yieldToMain();
+    }
+  }
+  return result;
+}
+
+export async function serializeRuntimeGraphAsync() {
+  const elements = [...state.graph.elementsById.values()].filter(
+    (element) => !isRootScopeElement(state.activeType, element),
+  );
+  const relationships = [...state.graph.relationshipsById.values()];
+  const traceLinks = [...state.graph.traceLinksById.values()];
+  const assumptions = [...state.graph.assumptionsById.values()];
+  const validationIssues = safeArray(state.graph.validationIssues);
+  const manualBacklog = safeArray(state.graph.manualBacklog);
+  return {
+    elements: await cloneArrayChunked(elements),
+    relationships: await cloneArrayChunked(relationships),
+    traceLinks: await cloneArrayChunked(traceLinks),
+    assumptions: await cloneArrayChunked(assumptions),
+    validationIssues: await cloneArrayChunked(validationIssues),
+    manualBacklog: await cloneArrayChunked(manualBacklog),
+  };
+}
+
 function manualBacklogKey(task, _index) {
   const explicit = String(task?.id || "").trim();
   if (explicit) {
@@ -2730,8 +2764,20 @@ export function serializeRuntimeViews() {
   ).map(clone);
 }
 
+export async function serializeRuntimeViewsAsync() {
+  const views = sanitizeWorkbenchViews(
+    [...state.views.byId.values()].filter((view) => !isFocusView(view) && !view._lazyContent),
+    state.activeType,
+  );
+  return cloneArrayChunked(views);
+}
+
 export function serializeRuntimeFragments() {
   return [...state.fragments.byId.values()].map(clone);
+}
+
+export async function serializeRuntimeFragmentsAsync() {
+  return cloneArrayChunked([...state.fragments.byId.values()]);
 }
 
 export function syncActiveViewFromVisibleGraph({ rebuildIndexes = true } = {}) {
@@ -2879,7 +2925,7 @@ export async function serializeGraphAndViewsIntoAsync(
     reconcileGraphRelationships(state.activeType);
   }
   await yieldToMain();
-  const graph = serializeRuntimeGraph();
+  const graph = await serializeRuntimeGraphAsync();
   const manualBacklog = mergeManualBacklog(root.manualBacklog, graph.manualBacklog);
   graph.manualBacklog = manualBacklog.map(clone);
   graph.validationIssues = [];
@@ -2887,9 +2933,9 @@ export async function serializeGraphAndViewsIntoAsync(
   state.graph.validationIssues = [];
   root.graph = graph;
   await yieldToMain();
-  root.fragments = serializeRuntimeFragments();
+  root.fragments = await serializeRuntimeFragmentsAsync();
   await yieldToMain();
-  const views = serializeRuntimeViews();
+  const views = await serializeRuntimeViewsAsync();
   root.views = views;
   const currentView = activeView();
   const focusStack = Array.isArray(state.canvasFocusStack) ? state.canvasFocusStack : [];
@@ -2904,7 +2950,7 @@ export async function serializeGraphAndViewsIntoAsync(
   delete root.diagram;
   if (isModelingLevel(state.activeType)) {
     await yieldToMain();
-    populateRootContainments(state.activeType, root, state.graph);
+    await populateRootContainmentsAsync(state.activeType, root, state.graph);
   }
   return root;
 }

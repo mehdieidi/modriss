@@ -11,8 +11,14 @@ function saveState() {
     saving: false,
     lastSavedAt: null,
     error: "",
+    needsViewSync: false,
+    dirtyKinds: new Set(),
+    dirtyPositions: new Map(),
   };
-  return state.modelSave;
+  const current = state.modelSave;
+  current.dirtyKinds ??= new Set();
+  current.dirtyPositions ??= new Map();
+  return current;
 }
 
 function activeTab() {
@@ -56,18 +62,57 @@ export function updateModelSaveUi() {
   }
 }
 
-export function markModelDirty() {
+export function markModelDirty({
+  viewSynced = false,
+  kind = "semantics",
+  position = null,
+} = {}) {
   if (!isModelingType()) {
     return;
   }
   const current = saveState();
   const tab = activeTab();
   current.dirty = true;
+  current.dirtyKinds.add(kind);
+  if (position?.elementId) {
+    current.dirtyPositions.set(String(position.elementId), {
+      x: position.x,
+      y: position.y,
+    });
+  }
+  if (!viewSynced) {
+    current.needsViewSync = true;
+  }
   if (tab) {
     tab.dirty = true;
   }
   current.error = "";
   updateModelSaveUi();
+}
+
+export function consumeViewSyncNeeded() {
+  const current = saveState();
+  const needed = Boolean(current.needsViewSync);
+  current.needsViewSync = false;
+  return needed;
+}
+
+export function getDirtySaveHints() {
+  const current = saveState();
+  return {
+    positionOnly:
+      current.dirtyKinds.size === 1 &&
+      current.dirtyKinds.has("positions") &&
+      current.dirtyPositions.size > 0,
+    positions: new Map(current.dirtyPositions),
+    kinds: new Set(current.dirtyKinds),
+  };
+}
+
+export function clearDirtySaveHints() {
+  const current = saveState();
+  current.dirtyKinds.clear();
+  current.dirtyPositions.clear();
 }
 
 export function beginModelSave() {
@@ -87,6 +132,7 @@ export function completeModelSave() {
   current.saving = false;
   current.error = "";
   current.lastSavedAt = Date.now();
+  clearDirtySaveHints();
   updateModelSaveUi();
 }
 
@@ -112,5 +158,7 @@ export function resetModelSaveState({ dirty = false } = {}) {
   current.saving = false;
   current.error = "";
   current.lastSavedAt = dirty ? null : Date.now();
+  clearDirtySaveHints();
+  current.needsViewSync = false;
   updateModelSaveUi();
 }

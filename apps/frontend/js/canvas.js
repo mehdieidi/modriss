@@ -2621,7 +2621,11 @@ function endG6NodeDrag(nodeId, position, { moved = false } = {}) {
   if (moved || state.dragNode?.moved) {
     commitUndoSnapshot(state.dragNode?.undoSnapshot);
     persistNodePositionInActiveView(node);
-    markModelDirty();
+    markModelDirty({
+      viewSynced: true,
+      kind: "positions",
+      position: { elementId: node.id, x: node.x, y: node.y },
+    });
   }
   refreshCanvasEdges([...(edgeIdsByNodeId.get(node.id) || [])]);
   updateCanvasContextBoxes();
@@ -3397,7 +3401,7 @@ function createShortcutConnection(source, target) {
   ensureCanvas();
   syncCanvasIndexesFromState();
   syncCanvasFromState({ full: false });
-  markModelDirty();
+  markModelDirty({ viewSynced: true });
   setStatus(`Created ${rule.label || "shortcut connector"}`);
   return true;
 }

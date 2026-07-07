@@ -17,6 +17,7 @@ import {
   exportActiveModel,
   generateForCurrentContext,
   importActiveModel,
+  isModelSaveInFlight,
   saveCurrentModel,
   switchTab,
   undoLastEdit,
@@ -824,10 +825,11 @@ function bindEvents() {
   document.addEventListener("click", (event) => {
     if (getElementTarget(event)?.closest("#saveModelBtn")) {
       event.preventDefault();
-      if (isModelingLevel(state.activeType)) {
-        beginModelSave();
-        setBusy("Saving…");
+      if (!isModelingLevel(state.activeType) || isModelSaveInFlight()) {
+        return;
       }
+      beginModelSave();
+      setBusy("Saving…");
       void saveCurrentModel({ rethrow: true, skipBeginSave: true }).catch(() => {
         // saveCurrentModel updates the visible save status.
       });
@@ -862,10 +864,15 @@ function bindEvents() {
     event.preventDefault();
     try {
       if (key === "s") {
-        if (isModelingLevel(state.activeType)) {
-          beginModelSave();
-          setBusy("Saving…");
+        if (!isModelingLevel(state.activeType) || isModelSaveInFlight()) {
+          return;
         }
+        if (state.modelId && !hasUnsavedModelChanges()) {
+          setStatus("Model is up to date.");
+          return;
+        }
+        beginModelSave();
+        setBusy("Saving…");
         await saveCurrentModel({ rethrow: true, skipBeginSave: true });
       } else {
         await undoLastEdit();
