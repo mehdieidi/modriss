@@ -23,14 +23,14 @@ You can also open `tools/cvs-editor/index.html` directly in a browser; **Load** 
 
 ## Sections
 
-| Panel | What you edit |
-|-------|----------------|
-| **Overview** | Level metadata, metamodel reference, document stats |
-| **Elements** | Per-type icons, colors, shapes, tags, visual roles |
-| **Primitives** | Geometry library (hexagon, diamond, cards, …) |
+| Panel             | What you edit                                        |
+| ----------------- | ---------------------------------------------------- |
+| **Overview**      | Level metadata, metamodel reference, document stats  |
+| **Elements**      | Per-type icons, colors, shapes, tags, visual roles   |
+| **Primitives**    | Geometry library (hexagon, diamond, cards, …)        |
 | **Package rules** | Package-level visual defaults (`elementVisualRules`) |
-| **Viewpoints** | Views, palettes, scoped element types |
-| **Canvas** | Role sizes and semantic-zoom thresholds |
-| **Relationships** | Kinds, labels, edge styling rules |
-| **Badges** | Node badge rules |
-| **Advanced** | Defaults, templates, raw JSON |
+| **Viewpoints**    | Views, palettes, scoped element types                |
+| **Canvas**        | Role sizes and semantic-zoom thresholds              |
+| **Relationships** | Kinds, labels, edge styling rules                    |
+| **Badges**        | Node badge rules                                     |
+| **Advanced**      | Defaults, templates, raw JSON                        |

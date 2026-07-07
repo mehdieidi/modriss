@@ -693,6 +693,10 @@ function bindEvents() {
   if (el.themeRailToggleBtn) {
     el.themeRailToggleBtn.addEventListener("click", toggleTheme);
   }
+  document.documentElement.addEventListener("modless:theme-change", () => {
+    renderDiagram();
+    renderPalette();
+  });
   if (el.undoModelReplaceBtn) {
     el.undoModelReplaceBtn.addEventListener("click", async () => {
       try {

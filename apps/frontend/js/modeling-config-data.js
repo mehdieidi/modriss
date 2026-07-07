@@ -2,6 +2,7 @@ import { api } from "./api.js";
 import { applyModelingRuntimeConfig } from "./config.js";
 import { state } from "./state.js";
 import { setError } from "./status.js";
+import { resolveThemeColor } from "./theme-colors.js";
 import { emptyDiagram } from "./utils.js";
 
 const EMPTY_CONFIG = Object.freeze({
@@ -677,7 +678,11 @@ function applyVisualRule(presentation, rule) {
   const style = {};
   ["stroke", "lineWidth", "opacity", "lineDash"].forEach((field) => {
     if (Object.hasOwn(rule, field)) {
-      style[field] = rule[field];
+      let value = rule[field];
+      if (field === "stroke") {
+        value = resolveThemeColor(value, resolveThemeColor("#64748b", "#64748b"));
+      }
+      style[field] = value;
     }
   });
   presentation.style = { ...presentation.style, ...style };

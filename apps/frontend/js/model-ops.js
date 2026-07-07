@@ -1705,7 +1705,9 @@ async function runAutoLayoutCurrentDiagram({
       await waitForCanvasPaint(1);
     }
     const level = MODEL_TYPES[state.activeType].apiType;
-    const selectedStrategy = String(strategy || view.layoutStrategy || modelingDefaultLayoutStrategy());
+    const selectedStrategy = String(
+      strategy || view.layoutStrategy || modelingDefaultLayoutStrategy(),
+    );
     const response = await api(
       `/${level}/${state.modelId}/views/${encodeURIComponent(
         view.id,

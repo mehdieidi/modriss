@@ -7,12 +7,7 @@ import {
   SHAPE_PRESETS,
   VISUAL_ROLES,
 } from "./constants.js";
-import {
-  appState,
-  elementCategories,
-  levelFromDoc,
-  resolveElementVisual,
-} from "./state.js";
+import { appState, elementCategories, levelFromDoc, resolveElementVisual } from "./state.js";
 import {
   chipList,
   edgePreviewSvg,
@@ -22,6 +17,7 @@ import {
   primitivePreviewSvg,
   roleSizePreview,
 } from "./preview.js";
+import { normalizeThemeColor } from "./theme-colors.js";
 
 function doc() {
   return appState.doc;
@@ -31,7 +27,12 @@ function sel() {
   return appState.selection;
 }
 
-function field(label, id, value, { type = "text", list = "", placeholder = "", min, max, step } = {}) {
+function field(
+  label,
+  id,
+  value,
+  { type = "text", list = "", placeholder = "", min, max, step } = {},
+) {
   const attrs = [
     `id="${id}"`,
     `name="${id}"`,
@@ -52,6 +53,18 @@ function field(label, id, value, { type = "text", list = "", placeholder = "", m
     return `<label class="field field-color"><span>${escapeHtml(label)}</span><input ${attrs} value="${val}"/><span class="color-swatch" style="background:${val || "#475569"}"></span></label>`;
   }
   return `<label class="field"><span>${escapeHtml(label)}</span><input ${attrs} value="${val}"/></label>`;
+}
+
+function themeColorFields(label, idPrefix, value) {
+  const pair = normalizeThemeColor(value);
+  return `
+    ${field(`${label} (light theme)`, `${idPrefix}-light`, pair.light, { type: "color" })}
+    ${field(`${label} (dark theme)`, `${idPrefix}-dark`, pair.dark, { type: "color" })}
+  `;
+}
+
+function previewColor(value) {
+  return normalizeThemeColor(value).dark;
 }
 
 function selectField(label, id, value, options) {
@@ -220,7 +233,7 @@ function renderElementInspector(index) {
       ${field("Label", "el-label", el.label || el.displayName)}
       ${field("Category", "el-category", el.category)}
       ${selectField("Visual role", "el-visualRole", el.visualRole || "node", VISUAL_ROLES)}
-      <label class="field field-color"><span>Color</span><input type="color" id="el-color" value="${escapeHtml(el.color || visual.color)}"/><span class="color-swatch" style="background:${escapeHtml(el.color || visual.color)}"></span></label>
+      ${themeColorFields("Color", "el-color", el.color || visual.color)}
       <label class="field"><span>Primitive / shape</span><input id="el-primitive" list="shape-presets" value="${escapeHtml(el.primitive || "")}"/><datalist id="shape-presets">${SHAPE_PRESETS.map((s) => `<option value="${s}">`).join("")}</datalist></label>
       ${field("Card tag", "el-tag", el.card?.tag)}
       <div class="field"><span>Line fields</span><div class="chip-editor" id="el-lineFields">${chipList(lineFields, { removable: true })}</div><input class="chip-input" id="el-lineFieldInput" placeholder="Add field + Enter"/></div>
@@ -280,7 +293,7 @@ export function renderPackageRules() {
       const pkgs = (rule.match?.packages || []).join(", ") || "—";
       const active = index === idx ? " is-selected" : "";
       return `<button type="button" class="package-rule-card${active}" data-package-index="${index}">
-        <div class="swatch" style="background:${escapeHtml(meta.color || "#334155")}"></div>
+        <div class="swatch" style="background:${escapeHtml(previewColor(meta.color))}"></div>
         <div><strong>${escapeHtml(pkgs)}</strong><span>${escapeHtml(meta.category || "")}</span></div>
       </button>`;
     })
@@ -311,7 +324,7 @@ function renderPackageInspector(index) {
       ${field("Packages (comma-separated)", "pkg-packages", (rule.match?.packages || []).join(", "))}
       ${field("Category", "pkg-category", meta.category)}
       ${field("Icon", "pkg-icon", meta.icon)}
-      <label class="field field-color"><span>Color</span><input type="color" id="pkg-color" value="${escapeHtml(meta.color || "#475569")}"/></label>
+      ${themeColorFields("Color", "pkg-color", meta.color)}
       ${field("Shape", "pkg-shape", notation.shape)}
       ${field("Tag", "pkg-tag", notation.tag)}
       ${field("Line fields", "pkg-lineFields", (notation.lineFields || []).join(", "))}
@@ -442,7 +455,7 @@ export function renderRelationships() {
         ${field("Match kinds", "edge-kinds", (rule.matchKinds || []).join(", "))}
         ${field("Match EClasses", "edge-eclasses", (rule.matchEClasses || []).join(", "))}
         ${field("CSS class", "edge-className", rule.className)}
-        <label class="field field-color"><span>Stroke</span><input type="color" id="edge-stroke" value="${escapeHtml(rule.stroke || "#64748b")}"/></label>
+        ${themeColorFields("Stroke", "edge-stroke", rule.stroke)}
         ${field("Line width", "edge-lineWidth", rule.lineWidth ?? 2, { type: "number", step: 0.1 })}
         ${field("Line dash", "edge-lineDash", (rule.lineDash || []).join(", "))}
         ${selectField("Marker end", "edge-markerEnd", rule.markerEnd || "arrow", MARKER_ENDS)}
@@ -520,7 +533,7 @@ export function renderAdvanced() {
       <article class="panel">
         <h3>Element visual defaults</h3>
         ${field("Icon", "def-icon", defaults.icon)}
-        <label class="field field-color"><span>Color</span><input type="color" id="def-color" value="${escapeHtml(defaults.color || "#475569")}"/></label>
+        ${themeColorFields("Color", "def-color", defaults.color)}
         ${field("Category", "def-category", defaults.category)}
         ${field("Shape", "def-shape", notation.shape)}
         ${field("Tag", "def-tag", notation.tag)}

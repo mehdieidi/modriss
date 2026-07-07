@@ -26,6 +26,7 @@ import {
 } from "./g6-performance.js";
 import { bindG6Interactions } from "./g6-interactions.js";
 import { renderIconCentricNodeG6, iconAnchorBoundsLocal } from "./icon-node-layout.js";
+import { applyTintedIconsToNodes, onIconTintsUpdated, primeIconTints } from "./icon-tint.js";
 import {
   clearG6Overlays,
   renderContextBoxes,
@@ -34,6 +35,19 @@ import {
 } from "./g6-overlays.js";
 
 let editor = null;
+let iconTintListenerInstalled = false;
+
+function ensureIconTintListener() {
+  if (iconTintListenerInstalled) {
+    return;
+  }
+  iconTintListenerInstalled = true;
+  onIconTintsUpdated(() => {
+    if (editor?.graph) {
+      scheduleGraphDraw(editor.graph);
+    }
+  });
+}
 let extensionsRegistered = false;
 let pendingViewportFrame = 0;
 let pendingViewportSyncFrame = 0;
@@ -844,6 +858,32 @@ function graphDataFromState(options = mapperOptions()) {
   });
 }
 
+async function ensureTintedNode(node) {
+  if (!node?.style?.iconSrc || !node?.style?.accent) {
+    return node;
+  }
+  await primeIconTints([
+    {
+      src: node.style.iconSrc,
+      color: node.style.accent,
+    },
+  ]);
+  applyTintedIconsToNodes([node]);
+  return node;
+}
+
+async function prepareGraphData(options = mapperOptions()) {
+  const data = graphDataFromState(options);
+  await primeIconTints(
+    data.nodes.map((node) => ({
+      src: node.style?.iconSrc,
+      color: node.style?.accent,
+    })),
+  );
+  applyTintedIconsToNodes(data.nodes);
+  return data;
+}
+
 function rememberDataSnapshot(data) {
   const nodeFingerprints = new Map();
   const edgeFingerprints = new Map();
@@ -1441,6 +1481,7 @@ export function mountG6Editor(container, { callbacks = {}, mapper = {} } = {}) {
     }
   };
   bindG6Interactions(editor, callbacks);
+  ensureIconTintListener();
   resizeGraphToHost();
   updateDebugState({ lastError: "", lastMount: "mounted", hostSize: { width, height } });
   return editor;
@@ -1482,15 +1523,27 @@ export function setG6Data(nodes, edges) {
     updateDebugState({ lastError: "setG6Data before mount" });
     return;
   }
-  const data = { nodes, edges };
   updateDebugState({ lastSetData: { nodes: nodes.length, edges: edges.length } });
   resizeGraphToHost();
-  editor.graph.setData?.(data);
-  rememberDataSnapshot(data);
-  rebuildSpatialIndex(data.nodes);
-  editor.contextBoxesDirty = true;
-  scheduleGraphRender(editor.graph);
-  updateG6NodeIcons();
+  void (async () => {
+    await primeIconTints(
+      nodes.map((node) => ({
+        src: node.style?.iconSrc,
+        color: node.style?.accent,
+      })),
+    );
+    applyTintedIconsToNodes(nodes);
+    if (!editor?.graph) {
+      return;
+    }
+    const data = { nodes, edges };
+    editor.graph.setData?.(data);
+    rememberDataSnapshot(data);
+    rebuildSpatialIndex(data.nodes);
+    editor.contextBoxesDirty = true;
+    scheduleGraphRender(editor.graph);
+    updateG6NodeIcons();
+  })();
 }
 
 export function syncG6FromState({ full = false } = {}) {
@@ -1499,28 +1552,32 @@ export function syncG6FromState({ full = false } = {}) {
     return;
   }
   const options = mapperOptions();
-  const data = graphDataFromState(options);
   cancelPendingLodUpdate();
   editor.lastLod = options.detailLevel;
   editor.lastShowLabels = options.showLabels;
-  updateDebugState({ lastSync: { full, nodes: data.nodes.length, edges: data.edges.length } });
   resizeGraphToHost();
-  if (full || !editor.dataSnapshot) {
-    editor.graph.setData?.(data);
-    rememberDataSnapshot(data);
-    rebuildSpatialIndex(data.nodes);
-    editor.adjacency = createAdjacencyIndex(state.diagram.connections);
-    editor.connectStateKey = "";
-    editor.contextBoxesDirty = true;
-    scheduleGraphRender(editor.graph);
-  } else {
-    applyDiff(data);
-  }
-  updateG6Selection();
-  updateG6ConnectionState();
-  updateG6ImpactState();
-  updateG6NodeIcons();
-  updateG6ContextBoxes();
+  void prepareGraphData(options).then((data) => {
+    if (!editor?.graph) {
+      return;
+    }
+    updateDebugState({ lastSync: { full, nodes: data.nodes.length, edges: data.edges.length } });
+    if (full || !editor.dataSnapshot) {
+      editor.graph.setData?.(data);
+      rememberDataSnapshot(data);
+      rebuildSpatialIndex(data.nodes);
+      editor.adjacency = createAdjacencyIndex(state.diagram.connections);
+      editor.connectStateKey = "";
+      editor.contextBoxesDirty = true;
+      scheduleGraphRender(editor.graph);
+    } else {
+      applyDiff(data);
+    }
+    updateG6Selection();
+    updateG6ConnectionState();
+    updateG6ImpactState();
+    updateG6NodeIcons();
+    updateG6ContextBoxes();
+  });
 }
 
 export function addG6Node(node) {
@@ -1529,14 +1586,16 @@ export function addG6Node(node) {
   }
   const mapped = mapNodeToG6(node, mapperOptions());
   scheduleIncrementalCanvasMutation(() => {
-    if (!editor?.graph) {
-      return;
-    }
-    editor.graph.addNodeData?.([mapped]);
-    rememberNodeData(mapped);
-    editor.contextBoxesDirty = true;
-    scheduleGraphDraw(editor.graph);
-    updateG6NodeIcons();
+    void ensureTintedNode(mapped).then((tinted) => {
+      if (!editor?.graph) {
+        return;
+      }
+      editor.graph.addNodeData?.([tinted]);
+      rememberNodeData(tinted);
+      editor.contextBoxesDirty = true;
+      scheduleGraphDraw(editor.graph);
+      updateG6NodeIcons();
+    });
   });
 }
 
@@ -1551,11 +1610,16 @@ export function updateG6Node(nodeId, patch = {}) {
   }
   Object.assign(node, patch);
   const mapped = mapNodeToG6(node, mapperOptions());
-  editor.graph.updateNodeData?.([mapped]);
-  rememberNodeData(mapped);
-  editor.contextBoxesDirty = true;
-  scheduleGraphDraw(editor.graph);
-  updateG6NodeIcons();
+  void ensureTintedNode(mapped).then((tinted) => {
+    if (!editor?.graph) {
+      return;
+    }
+    editor.graph.updateNodeData?.([tinted]);
+    rememberNodeData(tinted);
+    editor.contextBoxesDirty = true;
+    scheduleGraphDraw(editor.graph);
+    updateG6NodeIcons();
+  });
 }
 
 export function updateG6NodePosition(nodeId, x, y) {

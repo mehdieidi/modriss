@@ -13,7 +13,12 @@ import {
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
 import { materializeActiveView } from "./view-materializer.js";
-import { isModelingLevel, modelingDefaultLayoutStrategy, modelingLayoutStrategies, modelingLevelConfig } from "./modeling-config-data.js";
+import {
+  isModelingLevel,
+  modelingDefaultLayoutStrategy,
+  modelingLayoutStrategies,
+  modelingLevelConfig,
+} from "./modeling-config-data.js";
 import { syncMobileDockState } from "./mobile-ui.js";
 import {
   activeCanvasFocus,
@@ -77,7 +82,11 @@ async function runManualAutoLayout() {
 }
 
 function emptyLayoutStrategyConfig() {
-  return { id: "", label: "Layout", title: "Layout strategies unavailable until modeling config loads." };
+  return {
+    id: "",
+    label: "Layout",
+    title: "Layout strategies unavailable until modeling config loads.",
+  };
 }
 
 function selectedLayoutStrategy() {
@@ -109,11 +118,12 @@ function layoutStrategyMenuMarkup() {
     </div>`;
   }
   const selected = selectedLayoutStrategy();
-  return strategies.map(
-    (strategy) =>
-      `<button class="workbench-view-option workbench-layout-option${
-        strategy.id === selected ? " is-active" : ""
-      }"
+  return strategies
+    .map(
+      (strategy) =>
+        `<button class="workbench-view-option workbench-layout-option${
+          strategy.id === selected ? " is-active" : ""
+        }"
                type="button"
                role="option"
                aria-selected="${strategy.id === selected ? "true" : "false"}"
@@ -122,7 +132,8 @@ function layoutStrategyMenuMarkup() {
          <span class="workbench-view-option-label">${escapeHtml(strategy.label)}</span>
          <span class="workbench-view-option-kind">${escapeHtml(strategy.title)}</span>
        </button>`,
-  ).join("");
+    )
+    .join("");
 }
 
 function setLayoutStrategy(strategyId) {

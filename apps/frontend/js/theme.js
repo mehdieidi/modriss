@@ -30,4 +30,5 @@ export function toggleTheme() {
   const isLight = document.documentElement.classList.toggle(THEME_LIGHT);
   localStorage.setItem("theme", isLight ? THEME_LIGHT : THEME_DARK);
   updateThemeToggleIcon();
+  document.documentElement.dispatchEvent(new CustomEvent("modless:theme-change"));
 }

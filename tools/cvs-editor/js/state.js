@@ -1,4 +1,5 @@
 import { METAMODEL } from "./constants.js";
+import { normalizeThemeColor } from "./theme-colors.js";
 
 /** @type {{ doc: object|null, fileName: string, dirty: boolean, selection: object, filters: object }} */
 export const appState = {
@@ -24,12 +25,16 @@ export function createEmptyDoc(level = "cim") {
       nsUri: meta.nsUri,
     },
     primitives: {
-      "concept-card": { geometry: "rounded-rectangle", cornerRadius: 12, description: "Default concept card" },
+      "concept-card": {
+        geometry: "rounded-rectangle",
+        cornerRadius: 12,
+        description: "Default concept card",
+      },
     },
     notationPrimitives: {},
     elementVisualDefaults: {
       icon: "category",
-      color: "#475569",
+      color: { light: "#475569", dark: "#94a3b8" },
       category: meta.displayName,
       notation: {
         tag: meta.displayName,
@@ -171,9 +176,10 @@ export function elementCategories() {
 export function resolveElementVisual(element) {
   const doc = appState.doc;
   const defaults = doc?.elementVisualDefaults || {};
+  const defaultColor = normalizeThemeColor(defaults.color);
   const merged = {
     icon: defaults.icon || "category",
-    color: defaults.color || "#475569",
+    color: defaultColor,
     category: defaults.category || "",
     visualRole: element?.visualRole || "node",
     primitive: element?.primitive || defaults.notation?.shape || "concept-card",
@@ -182,7 +188,7 @@ export function resolveElementVisual(element) {
     label: element?.displayName || element?.label || element?.type || "Element",
   };
   if (element?.icon) merged.icon = element.icon;
-  if (element?.color) merged.color = element.color;
+  if (element?.color) merged.color = normalizeThemeColor(element.color);
   if (element?.category) merged.category = element.category;
   if (element?.primitive) merged.primitive = element.primitive;
   if (element?.card?.tag) merged.tag = element.card.tag;

@@ -105,4 +105,11 @@ export const LAYOUT_HINTS = [
   "RADIAL",
 ];
 
-export const MARKER_ENDS = ["", "arrow", "triangle-hollow", "triangle-filled", "diamond-filled", "diamond-hollow"];
+export const MARKER_ENDS = [
+  "",
+  "arrow",
+  "triangle-hollow",
+  "triangle-filled",
+  "diamond-filled",
+  "diamond-hollow",
+];

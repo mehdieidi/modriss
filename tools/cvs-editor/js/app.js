@@ -10,9 +10,26 @@ import {
   setDoc,
 } from "./state.js";
 import { renderActiveSection } from "./render.js";
+import { normalizeThemeColor, themeColorPairFromHex } from "./theme-colors.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+function bindThemeColorPair(prefix, getCurrent, applyPair) {
+  const lightInput = $(`#${prefix}-light`);
+  const darkInput = $(`#${prefix}-dark`);
+  if (!lightInput || !darkInput) {
+    return;
+  }
+  const apply = () => {
+    applyPair({
+      light: lightInput.value,
+      dark: darkInput.value,
+    });
+  };
+  lightInput.addEventListener("input", apply);
+  darkInput.addEventListener("input", apply);
+}
 
 function render() {
   const main = $("#mainContent");
@@ -186,7 +203,7 @@ function bindElements() {
         type: type.trim(),
         label: type.trim(),
         icon: "category",
-        color: "#2563EB",
+        color: themeColorPairFromHex("#2563EB"),
         category: "New",
         primitive: "concept-card",
         card: { tag: type.slice(0, 4).toUpperCase(), lineFields: ["name"], detailFields: [] },
@@ -218,9 +235,6 @@ function bindElements() {
     "el-visualRole": (el, v) => {
       el.visualRole = v;
     },
-    "el-color": (el, v) => {
-      el.color = v;
-    },
     "el-primitive": (el, v) => {
       el.primitive = v;
     },
@@ -248,6 +262,12 @@ function bindElements() {
       applyEl((item) => fn(item, value));
     });
   });
+
+  bindThemeColorPair(
+    "el-color",
+    () => appState.doc.elementOverrides[idx].color,
+    (pair) => applyEl((el) => (el.color = pair)),
+  );
 
   setupChipInput("el-lineFieldInput", "el-lineFields", idx, "lineFields");
   setupChipInput("el-detailFieldInput", "el-detailFields", idx, "detailFields");
@@ -334,11 +354,15 @@ function bindPrimitives() {
     appState.selection.id = newKey;
     render();
   });
-  $("#prim-geometry")?.addEventListener("change", (e) => apply((p) => (p.geometry = e.target.value)));
+  $("#prim-geometry")?.addEventListener("change", (e) =>
+    apply((p) => (p.geometry = e.target.value)),
+  );
   $("#prim-cornerRadius")?.addEventListener("input", (e) =>
     apply((p) => (p.cornerRadius = Number(e.target.value))),
   );
-  $("#prim-description")?.addEventListener("input", (e) => apply((p) => (p.description = e.target.value)));
+  $("#prim-description")?.addEventListener("input", (e) =>
+    apply((p) => (p.description = e.target.value)),
+  );
   $("#deletePrimitiveBtn")?.addEventListener("click", () => {
     if (!confirm("Delete primitive?")) return;
     mutate((doc) => delete doc.primitives[key]);
@@ -358,7 +382,12 @@ function bindPackageRules() {
     mutate((doc) => {
       doc.elementVisualRules.push({
         match: { packages: ["newpackage"] },
-        metadata: { icon: "category", color: "#475569", category: "New", notation: { tag: "NEW", shape: "concept-card", lineFields: [] } },
+        metadata: {
+          icon: "category",
+          color: themeColorPairFromHex("#475569"),
+          category: "New",
+          notation: { tag: "NEW", shape: "concept-card", lineFields: [] },
+        },
       });
     });
     appState.selection.index = appState.doc.elementVisualRules.length - 1;
@@ -373,7 +402,10 @@ function bindPackageRules() {
   $("#pkg-packages")?.addEventListener("change", (e) =>
     apply((r) => {
       r.match ??= {};
-      r.match.packages = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+      r.match.packages = e.target.value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
     }),
   );
   $("#pkg-category")?.addEventListener("input", (e) =>
@@ -388,11 +420,14 @@ function bindPackageRules() {
       r.metadata.icon = e.target.value;
     }),
   );
-  $("#pkg-color")?.addEventListener("input", (e) =>
-    apply((r) => {
-      r.metadata ??= {};
-      r.metadata.color = e.target.value;
-    }),
+  bindThemeColorPair(
+    "pkg-color",
+    () => appState.doc.elementVisualRules[idx]?.metadata?.color,
+    (pair) =>
+      apply((r) => {
+        r.metadata ??= {};
+        r.metadata.color = pair;
+      }),
   );
   $("#pkg-shape")?.addEventListener("input", (e) =>
     apply((r) => {
@@ -412,7 +447,10 @@ function bindPackageRules() {
     apply((r) => {
       r.metadata ??= {};
       r.metadata.notation ??= {};
-      r.metadata.notation.lineFields = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+      r.metadata.notation.lineFields = e.target.value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
     }),
   );
   $("#deletePackageRuleBtn")?.addEventListener("click", () => {
@@ -456,8 +494,12 @@ function bindViewpoints() {
   };
   ["id", "displayName", "viewType", "viewpoint", "layoutHint"].forEach((field) => {
     const el = $(`#view-${field}`);
-    el?.addEventListener("input", () => apply((v) => (v[field === "id" ? "id" : field] = el.value)));
-    el?.addEventListener("change", () => apply((v) => (v[field === "id" ? "id" : field] = el.value)));
+    el?.addEventListener("input", () =>
+      apply((v) => (v[field === "id" ? "id" : field] = el.value)),
+    );
+    el?.addEventListener("change", () =>
+      apply((v) => (v[field === "id" ? "id" : field] = el.value)),
+    );
   });
   $$(".type-toggle").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -537,7 +579,10 @@ function bindCanvas() {
 function bindRelationships() {
   $("#rel-kinds")?.addEventListener("change", (e) => {
     mutate((doc) => {
-      doc.relationshipKinds = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+      doc.relationshipKinds = e.target.value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
     });
   });
   $("#rel-kindLabels")?.addEventListener("change", (e) => {
@@ -561,7 +606,7 @@ function bindRelationships() {
       doc.relationshipVisualRules.push({
         matchKinds: ["NEW_KIND"],
         className: "edge-custom",
-        stroke: "#64748b",
+        stroke: themeColorPairFromHex("#64748b"),
         lineWidth: 2,
       });
     });
@@ -575,19 +620,49 @@ function bindRelationships() {
     render();
   };
   $("#edge-kinds")?.addEventListener("change", (e) =>
-    apply((r) => (r.matchKinds = e.target.value.split(",").map((s) => s.trim()).filter(Boolean))),
+    apply(
+      (r) =>
+        (r.matchKinds = e.target.value
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)),
+    ),
   );
   $("#edge-eclasses")?.addEventListener("change", (e) =>
-    apply((r) => (r.matchEClasses = e.target.value.split(",").map((s) => s.trim()).filter(Boolean))),
+    apply(
+      (r) =>
+        (r.matchEClasses = e.target.value
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)),
+    ),
   );
-  $("#edge-className")?.addEventListener("input", (e) => apply((r) => (r.className = e.target.value)));
-  $("#edge-stroke")?.addEventListener("input", (e) => apply((r) => (r.stroke = e.target.value)));
-  $("#edge-lineWidth")?.addEventListener("input", (e) => apply((r) => (r.lineWidth = Number(e.target.value))));
+  $("#edge-className")?.addEventListener("input", (e) =>
+    apply((r) => (r.className = e.target.value)),
+  );
+  bindThemeColorPair(
+    "edge-stroke",
+    () => appState.doc.relationshipVisualRules[idx]?.stroke,
+    (pair) => apply((r) => (r.stroke = pair)),
+  );
+  $("#edge-lineWidth")?.addEventListener("input", (e) =>
+    apply((r) => (r.lineWidth = Number(e.target.value))),
+  );
   $("#edge-lineDash")?.addEventListener("change", (e) =>
-    apply((r) => (r.lineDash = e.target.value.split(",").map((s) => Number(s.trim())).filter((n) => !Number.isNaN(n)))),
+    apply(
+      (r) =>
+        (r.lineDash = e.target.value
+          .split(",")
+          .map((s) => Number(s.trim()))
+          .filter((n) => !Number.isNaN(n))),
+    ),
   );
-  $("#edge-markerEnd")?.addEventListener("change", (e) => apply((r) => (r.markerEnd = e.target.value)));
-  $("#edge-markerStart")?.addEventListener("change", (e) => apply((r) => (r.markerStart = e.target.value)));
+  $("#edge-markerEnd")?.addEventListener("change", (e) =>
+    apply((r) => (r.markerEnd = e.target.value)),
+  );
+  $("#edge-markerStart")?.addEventListener("change", (e) =>
+    apply((r) => (r.markerStart = e.target.value)),
+  );
   $("#deleteEdgeRuleBtn")?.addEventListener("click", () => {
     if (!confirm("Delete edge rule?")) return;
     mutate((doc) => doc.relationshipVisualRules.splice(idx, 1));
@@ -618,8 +693,12 @@ function bindBadges() {
   };
   $("#badge-field")?.addEventListener("input", (e) => apply((r) => (r.field = e.target.value)));
   $("#badge-label")?.addEventListener("input", (e) => apply((r) => (r.label = e.target.value)));
-  $("#badge-useValue")?.addEventListener("change", (e) => apply((r) => (r.useValue = e.target.checked)));
-  $("#badge-when")?.addEventListener("change", (e) => apply((r) => (r.when = e.target.checked ? true : undefined)));
+  $("#badge-useValue")?.addEventListener("change", (e) =>
+    apply((r) => (r.useValue = e.target.checked)),
+  );
+  $("#badge-when")?.addEventListener("change", (e) =>
+    apply((r) => (r.when = e.target.checked ? true : undefined)),
+  );
   $("#deleteBadgeRuleBtn")?.addEventListener("click", () => {
     if (!confirm("Delete badge rule?")) return;
     mutate((doc) => doc.badgeRules.splice(idx, 1));
@@ -637,8 +716,14 @@ function bindAdvanced() {
     render();
   };
   $("#def-icon")?.addEventListener("input", (e) => applyDefaults((d) => (d.icon = e.target.value)));
-  $("#def-color")?.addEventListener("input", (e) => applyDefaults((d) => (d.color = e.target.value)));
-  $("#def-category")?.addEventListener("input", (e) => applyDefaults((d) => (d.category = e.target.value)));
+  bindThemeColorPair(
+    "def-color",
+    () => appState.doc.elementVisualDefaults?.color,
+    (pair) => applyDefaults((d) => (d.color = pair)),
+  );
+  $("#def-category")?.addEventListener("input", (e) =>
+    applyDefaults((d) => (d.category = e.target.value)),
+  );
   $("#def-shape")?.addEventListener("input", (e) =>
     applyDefaults((d) => {
       d.notation ??= {};
@@ -654,7 +739,10 @@ function bindAdvanced() {
   $("#def-lineFields")?.addEventListener("change", (e) =>
     applyDefaults((d) => {
       d.notation ??= {};
-      d.notation.lineFields = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+      d.notation.lineFields = e.target.value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
     }),
   );
   $("#applyRawJsonBtn")?.addEventListener("click", () => {

@@ -81,6 +81,7 @@ import {
   zoomCanvasBy as adapterZoomCanvasBy,
 } from "./graph-editor/renderer-adapter.js";
 import { nodeSizeForDiagram } from "./graph-editor/g6-style.js";
+import { isFullColorIconSource, resolveThemeColor } from "./theme-colors.js";
 
 function requiredConfiguredKind(value, context) {
   const kind = String(value || "").trim();
@@ -107,17 +108,16 @@ function resolveIconSource(src) {
 function configuredNodeSize(role = "detail") {
   const roleSize = modelingRoleSize(state.activeType, role);
   const policy = modelingLevelConfig(state.activeType).canvasPolicy || {};
-  const width = Number(roleSize?.width ?? policy.nodeWidth ?? modelingRoleSize(state.activeType, "node")?.width);
-  const height = Number(roleSize?.height ?? policy.nodeHeight ?? modelingRoleSize(state.activeType, "node")?.height);
+  const width = Number(
+    roleSize?.width ?? policy.nodeWidth ?? modelingRoleSize(state.activeType, "node")?.width,
+  );
+  const height = Number(
+    roleSize?.height ?? policy.nodeHeight ?? modelingRoleSize(state.activeType, "node")?.height,
+  );
   return {
     width: Number.isFinite(width) && width > 0 ? width : 0,
     height: Number.isFinite(height) && height > 0 ? height : 0,
   };
-}
-
-function isFullColorIconSource(src) {
-  const normalized = String(src || "").trim();
-  return /(?:^|\/)aws-[^/]+\.svg(?:[?#].*)?$/i.test(normalized) || /^aws-/i.test(normalized);
 }
 
 const connectionsById = state.connectionsById;
@@ -1410,17 +1410,33 @@ export function applyDefinitionAccent(element, definition) {
   if (!element) {
     return;
   }
-  const color = String(definitionUi(definition).color || "").trim();
+  const color = resolveThemeColor(definitionUi(definition).color, "");
   if (color) {
     element.style.setProperty("--node-accent", color);
+    const icon = element.querySelector(".palette-item-icon");
+    if (icon) {
+      icon.style.color = color;
+    }
   } else {
     element.style.removeProperty("--node-accent");
+    const icon = element.querySelector(".palette-item-icon");
+    if (icon) {
+      icon.style.removeProperty("color");
+    }
   }
 }
 
 function createPaletteNotationIcon(definition) {
   const configuredIcon = String(definitionUi(definition).icon || "").trim();
-  return configuredIcon ? createMaskIcon("palette-item-icon", configuredIcon) : null;
+  if (!configuredIcon) {
+    return null;
+  }
+  const icon = createMaskIcon("palette-item-icon", configuredIcon);
+  const color = resolveThemeColor(definitionUi(definition).color, "");
+  if (color) {
+    icon.style.color = color;
+  }
+  return icon;
 }
 
 // ── Palette ───────────────────────────────────────────────────────────────────

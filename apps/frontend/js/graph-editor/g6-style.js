@@ -1,5 +1,10 @@
 import { state } from "../state.js";
-import { modelingElementDefinition, modelingLevelConfig, modelingRoleSize } from "../modeling-config-data.js";
+import { resolveThemeColor } from "../theme-colors.js";
+import {
+  modelingElementDefinition,
+  modelingLevelConfig,
+  modelingRoleSize,
+} from "../modeling-config-data.js";
 import { measureIconNodeSize } from "./icon-node-metrics.js";
 
 export const MODLESS_NODE_TYPE = "modless-node";
@@ -39,10 +44,15 @@ export function nodeSizeForDiagram(typeKey = state.activeType, nodeOrType = null
     );
     const measured = label
       ? measureIconNodeSize(label, { width, low })
-      : { height: Number(configured?.height || fallback.height || defaultNodeSize(typeKey).height) };
+      : {
+          height: Number(configured?.height || fallback.height || defaultNodeSize(typeKey).height),
+        };
     return {
       width,
-      height: Math.max(40, Number(measured.height || fallback.height || defaultNodeSize(typeKey).height)),
+      height: Math.max(
+        40,
+        Number(measured.height || fallback.height || defaultNodeSize(typeKey).height),
+      ),
     };
   } catch {
     if (label) {
@@ -76,11 +86,11 @@ export function normalizeColor(value, fallback) {
 
 export function nodeAccent(node, definition = null) {
   const ui = definition?.ui && typeof definition.ui === "object" ? definition.ui : {};
-  return normalizeColor(ui.color || definition?.color, cssVar("--accent", "#00a6e0"));
+  return resolveThemeColor(ui.color || definition?.color, cssVar("--accent", "#00a6e0"));
 }
 
 export function stickyColor(node, definition = null) {
-  return normalizeColor(
+  return resolveThemeColor(
     definition?.notation?.fill || definition?.color,
     cssVar("--node-warm", "#fde68a"),
   );
@@ -93,11 +103,11 @@ export function edgeStyleForKind(kind, presentation = {}) {
     opacity: 0.9,
     lineDash: undefined,
   };
-  return { ...base, ...(presentation.style || {}) };
-}
-
-export function isLightTheme() {
-  return document.documentElement?.classList.contains("light");
+  const merged = { ...base, ...(presentation.style || {}) };
+  if (merged.stroke) {
+    merged.stroke = resolveThemeColor(merged.stroke, merged.stroke);
+  }
+  return merged;
 }
 
 export function canvasBackgroundColor() {

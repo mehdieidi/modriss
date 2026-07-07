@@ -6,6 +6,29 @@
   "type": "object",
   "required": ["cvsVersion", "metamodelRef", "primitives", "viewpoints", "canvasPolicy"],
   "additionalProperties": true,
+  "$defs": {
+    "themeColor": {
+      "description": "Icon/accent or edge stroke color for light and dark UI themes.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "required": ["light", "dark"],
+          "properties": {
+            "light": {
+              "type": "string"
+            },
+            "dark": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
   "properties": {
     "cvsVersion": {
       "type": "integer",
@@ -110,7 +133,7 @@
             "type": "string"
           },
           "color": {
-            "type": "string"
+            "$ref": "#/$defs/themeColor"
           },
           "category": {
             "type": "string"

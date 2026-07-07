@@ -28,7 +28,10 @@
   },
   "elementVisualDefaults": {
     "icon": "aws-cloud",
-    "color": "#475569",
+    "color": {
+      "light": "#475569",
+      "dark": "#94a3b8"
+    },
     "category": "AWS PSM",
     "notation": {
       "tag": "AWS",
@@ -43,7 +46,10 @@
       },
       "metadata": {
         "icon": "aws-cloud",
-        "color": "#334155",
+        "color": {
+          "light": "#334155",
+          "dark": "#94a3b8"
+        },
         "category": "Root",
         "notation": {
           "tag": "ROOT",
@@ -58,7 +64,10 @@
       },
       "metadata": {
         "icon": "aws-cloudformation",
-        "color": "#0F766E",
+        "color": {
+          "light": "#0f766e",
+          "dark": "#2dd4bf"
+        },
         "category": "CloudFormation / SAM",
         "notation": {
           "tag": "CFN",
@@ -73,7 +82,10 @@
       },
       "metadata": {
         "icon": "aws-lambda",
-        "color": "#2563EB",
+        "color": {
+          "light": "#2563eb",
+          "dark": "#60a5fa"
+        },
         "category": "Lambda",
         "notation": {
           "tag": "LAMBDA",
@@ -88,7 +100,10 @@
       },
       "metadata": {
         "icon": "aws-api-gateway",
-        "color": "#7C3AED",
+        "color": {
+          "light": "#7c3aed",
+          "dark": "#a78bfa"
+        },
         "category": "API Gateway",
         "notation": {
           "tag": "API",
@@ -103,7 +118,10 @@
       },
       "metadata": {
         "icon": "aws-eventbridge",
-        "color": "#DB2777",
+        "color": {
+          "light": "#db2777",
+          "dark": "#f472b6"
+        },
         "category": "EventBridge",
         "notation": {
           "tag": "EVB",
@@ -118,7 +136,10 @@
       },
       "metadata": {
         "icon": "aws-sqs",
-        "color": "#DB2777",
+        "color": {
+          "light": "#db2777",
+          "dark": "#f472b6"
+        },
         "category": "Messaging",
         "notation": {
           "tag": "MSG",
@@ -133,7 +154,10 @@
       },
       "metadata": {
         "icon": "aws-s3",
-        "color": "#0891B2",
+        "color": {
+          "light": "#0891b2",
+          "dark": "#22d3ee"
+        },
         "category": "Storage",
         "notation": {
           "tag": "STORE",
@@ -148,7 +172,10 @@
       },
       "metadata": {
         "icon": "aws-iam",
-        "color": "#CA8A04",
+        "color": {
+          "light": "#ca8a04",
+          "dark": "#fbbf24"
+        },
         "category": "IAM / KMS / Secrets",
         "notation": {
           "tag": "SEC",
@@ -163,7 +190,10 @@
       },
       "metadata": {
         "icon": "aws-cognito",
-        "color": "#CA8A04",
+        "color": {
+          "light": "#ca8a04",
+          "dark": "#fbbf24"
+        },
         "category": "Cognito Identity",
         "notation": {
           "tag": "ID",
@@ -178,7 +208,10 @@
       },
       "metadata": {
         "icon": "aws-step-functions",
-        "color": "#EA580C",
+        "color": {
+          "light": "#ea580c",
+          "dark": "#fb923c"
+        },
         "category": "Step Functions",
         "notation": {
           "tag": "SFN",
@@ -193,7 +226,10 @@
       },
       "metadata": {
         "icon": "aws-cloudwatch",
-        "color": "#64748B",
+        "color": {
+          "light": "#64748b",
+          "dark": "#cbd5e1"
+        },
         "category": "Observability",
         "notation": {
           "tag": "OBS",
@@ -208,7 +244,10 @@
       },
       "metadata": {
         "icon": "aws-vpc",
-        "color": "#0D9488",
+        "color": {
+          "light": "#0D9488",
+          "dark": "#73c1ba"
+        },
         "category": "Networking",
         "notation": {
           "tag": "NET",
@@ -223,7 +262,10 @@
       },
       "metadata": {
         "icon": "aws-eventbridge",
-        "color": "#475569",
+        "color": {
+          "light": "#475569",
+          "dark": "#94a3b8"
+        },
         "category": "Relationship Views",
         "relationshipElement": true,
         "notation": {
@@ -239,7 +281,10 @@
       },
       "metadata": {
         "icon": "tag",
-        "color": "#475569",
+        "color": {
+          "light": "#475569",
+          "dark": "#94a3b8"
+        },
         "category": "Kernel / Trace",
         "supportOnly": true,
         "creatable": false,
@@ -340,7 +385,10 @@
       "label": "Aws Lambda Function",
       "displayName": "Aws Lambda Function",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "visualRole": "container",
       "primitive": "resource-card",
@@ -365,7 +413,10 @@
       "type": "ApiGatewayTrigger",
       "label": "API Gateway Trigger",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API",
       "creatable": false,
       "supportOnly": true,
@@ -379,7 +430,10 @@
       "label": "Sqs Lambda Event Source Mapping",
       "displayName": "Sqs Lambda Event Source Mapping",
       "icon": "aws-sqs",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "primitive": "resource-card",
       "card": {
@@ -392,7 +446,10 @@
       "type": "EventBridgeLambdaTarget",
       "label": "EventBridge Lambda Target",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "messaging",
       "creatable": false,
       "supportOnly": true,
@@ -406,7 +463,10 @@
       "label": "Api Gateway Api",
       "displayName": "Api Gateway Api",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "supportOnly": true,
@@ -423,7 +483,10 @@
       "label": "Api Gateway Route",
       "displayName": "Api Gateway Route",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "supportOnly": true,
@@ -440,7 +503,10 @@
       "label": "Event Bridge Bus",
       "displayName": "Event Bridge Bus",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "primitive": "resource-card",
       "card": {
@@ -454,7 +520,10 @@
       "label": "Event Bridge Rule",
       "displayName": "Event Bridge Rule",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "primitive": "resource-card",
       "card": {
@@ -468,7 +537,10 @@
       "label": "Sqs Queue",
       "displayName": "Sqs Queue",
       "icon": "aws-sqs",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "primitive": "resource-card",
       "card": {
@@ -482,7 +554,10 @@
       "label": "Sns Topic",
       "displayName": "Sns Topic",
       "icon": "aws-sns",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "primitive": "resource-card",
       "card": {
@@ -495,7 +570,10 @@
       "type": "EventSchema",
       "label": "Event Schema",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "messaging",
       "creatable": false,
       "supportOnly": true,
@@ -509,7 +587,10 @@
       "label": "Step Function State Machine",
       "displayName": "Step Function State Machine",
       "icon": "aws-step-functions",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Step Functions / ASL View",
       "primitive": "resource-card",
       "card": {
@@ -523,7 +604,10 @@
       "label": "Dynamo Db Table",
       "displayName": "Dynamo Db Table",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "primitive": "resource-card",
       "card": {
@@ -537,7 +621,10 @@
       "label": "Dynamo Db Attribute Definition",
       "displayName": "Dynamo Db Attribute Definition",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -553,7 +640,10 @@
       "label": "Dynamo Db Global Secondary Index",
       "displayName": "Dynamo Db Global Secondary Index",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -569,7 +659,10 @@
       "label": "S3 Bucket",
       "displayName": "S3 Bucket",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "primitive": "resource-card",
       "card": {
@@ -583,7 +676,10 @@
       "label": "Sam Stack",
       "displayName": "Sam Stack",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "visualRole": "container",
       "primitive": "stack-container",
@@ -598,7 +694,10 @@
       "label": "Aws Stage",
       "displayName": "Aws Stage",
       "icon": "aws-api-gateway",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "visualRole": "container",
       "primitive": "stage-container",
@@ -613,7 +712,10 @@
       "label": "Lambda Event Source Mapping",
       "displayName": "Lambda Event Source Mapping",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -629,7 +731,10 @@
       "label": "Cognito User Pool",
       "displayName": "Cognito User Pool",
       "icon": "aws-cognito",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Cognito Identity View",
       "primitive": "resource-card",
       "card": {
@@ -643,7 +748,10 @@
       "label": "Iam Policy",
       "displayName": "Iam Policy",
       "icon": "aws-iam",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "primitive": "resource-card",
       "card": {
@@ -657,7 +765,10 @@
       "label": "Iam Statement",
       "displayName": "Iam Statement",
       "icon": "aws-iam",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "primitive": "resource-card",
       "card": {
@@ -671,7 +782,10 @@
       "label": "Iam Role",
       "displayName": "Iam Role",
       "icon": "aws-iam",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "primitive": "resource-card",
       "card": {
@@ -685,7 +799,10 @@
       "label": "Secrets Manager Secret",
       "displayName": "Secrets Manager Secret",
       "icon": "aws-secrets-manager",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "primitive": "resource-card",
       "card": {
@@ -699,7 +816,10 @@
       "label": "Ssm Parameter",
       "displayName": "Ssm Parameter",
       "icon": "aws-systems-manager",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "primitive": "resource-card",
       "card": {
@@ -713,7 +833,10 @@
       "label": "Kms Key",
       "displayName": "Kms Key",
       "icon": "aws-kms",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "primitive": "resource-card",
       "card": {
@@ -726,7 +849,10 @@
       "type": "VpcConfig",
       "label": "VPC Config",
       "icon": "aws-vpc",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "Networking",
       "creatable": false,
       "supportOnly": true,
@@ -739,7 +865,10 @@
       "type": "EnvironmentConfig",
       "label": "Environment Config",
       "icon": "aws-lambda",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "Deployment",
       "creatable": false,
       "supportOnly": true,
@@ -753,7 +882,10 @@
       "label": "Lambda Environment Variable",
       "displayName": "Lambda Environment Variable",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -769,7 +901,10 @@
       "label": "Cloud Watch Alarm",
       "displayName": "Cloud Watch Alarm",
       "icon": "aws-cloudwatch",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -783,7 +918,10 @@
       "label": "Cloud Watch Log Group",
       "displayName": "Cloud Watch Log Group",
       "icon": "aws-cloudwatch",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -796,7 +934,10 @@
       "type": "XRayTracingConfig",
       "label": "X-Ray Tracing Config",
       "icon": "aws-xray",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Operations",
       "creatable": false,
       "supportOnly": true,
@@ -810,7 +951,10 @@
       "label": "Aws Psm Model",
       "displayName": "Aws Psm Model",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "primitive": "structured-property-row",
       "card": {
@@ -824,7 +968,10 @@
       "label": "Aws Resource",
       "displayName": "Aws Resource",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "creatable": false,
       "supportOnly": true,
@@ -841,7 +988,10 @@
       "label": "Aws Tag",
       "displayName": "Aws Tag",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "creatable": false,
       "containedOnly": true,
@@ -857,7 +1007,10 @@
       "label": "Resource Import",
       "displayName": "Resource Import",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "creatable": false,
       "containedOnly": true,
@@ -873,7 +1026,10 @@
       "label": "Native Property",
       "displayName": "Native Property",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "creatable": false,
       "containedOnly": true,
@@ -889,7 +1045,10 @@
       "label": "Value Expression",
       "displayName": "Value Expression",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "creatable": false,
       "containedOnly": true,
@@ -905,7 +1064,10 @@
       "label": "Named Value Expression",
       "displayName": "Named Value Expression",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "creatable": false,
       "containedOnly": true,
@@ -921,7 +1083,10 @@
       "label": "Cors Configuration",
       "displayName": "Cors Configuration",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "creatable": false,
       "containedOnly": true,
@@ -937,7 +1102,10 @@
       "label": "Tracing Config",
       "displayName": "Tracing Config",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "creatable": false,
       "supportOnly": true,
@@ -954,7 +1122,10 @@
       "label": "Aws Native Resource",
       "displayName": "Aws Native Resource",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "primitive": "structured-property-row",
       "card": {
@@ -968,7 +1139,10 @@
       "label": "Cfn Parameter",
       "displayName": "Cfn Parameter",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "primitive": "structured-property-row",
       "card": {
@@ -982,7 +1156,10 @@
       "label": "Cfn Mapping",
       "displayName": "Cfn Mapping",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "primitive": "structured-property-row",
       "card": {
@@ -996,7 +1173,10 @@
       "label": "Cfn Condition",
       "displayName": "Cfn Condition",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "primitive": "structured-property-row",
       "card": {
@@ -1010,7 +1190,10 @@
       "label": "Cfn Output",
       "displayName": "Cfn Output",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "primitive": "structured-property-row",
       "card": {
@@ -1024,7 +1207,10 @@
       "label": "Sam Globals",
       "displayName": "Sam Globals",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "primitive": "structured-property-row",
       "card": {
@@ -1038,7 +1224,10 @@
       "label": "Aws Naming Policy",
       "displayName": "Aws Naming Policy",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "primitive": "structured-property-row",
       "card": {
@@ -1052,7 +1241,10 @@
       "label": "Aws Tagging Policy",
       "displayName": "Aws Tagging Policy",
       "icon": "aws-cloudformation",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "primitive": "structured-property-row",
       "card": {
@@ -1066,7 +1258,10 @@
       "label": "Aws Security Baseline",
       "displayName": "Aws Security Baseline",
       "icon": "aws-iam",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "CloudFormation / SAM",
       "primitive": "structured-property-row",
       "card": {
@@ -1080,7 +1275,10 @@
       "label": "Iam Inline Policy",
       "displayName": "Iam Inline Policy",
       "icon": "aws-iam",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "containedOnly": true,
       "primitive": "resource-card",
@@ -1095,7 +1293,10 @@
       "label": "Iam Managed Policy",
       "displayName": "Iam Managed Policy",
       "icon": "aws-iam",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "primitive": "resource-card",
       "card": {
@@ -1109,7 +1310,10 @@
       "label": "Iam Policy Document",
       "displayName": "Iam Policy Document",
       "icon": "aws-iam",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "containedOnly": true,
       "primitive": "resource-card",
@@ -1124,7 +1328,10 @@
       "label": "Iam Principal",
       "displayName": "Iam Principal",
       "icon": "aws-iam",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "containedOnly": true,
       "primitive": "resource-card",
@@ -1139,7 +1346,10 @@
       "label": "Iam Condition",
       "displayName": "Iam Condition",
       "icon": "aws-iam",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "containedOnly": true,
       "primitive": "resource-card",
@@ -1154,7 +1364,10 @@
       "label": "Kms Alias",
       "displayName": "Kms Alias",
       "icon": "aws-kms",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "primitive": "resource-card",
       "card": {
@@ -1168,7 +1381,10 @@
       "label": "Generate Secret String Config",
       "displayName": "Generate Secret String Config",
       "icon": "aws-secrets-manager",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "containedOnly": true,
       "primitive": "resource-card",
@@ -1183,7 +1399,10 @@
       "label": "Secret Rotation Rules",
       "displayName": "Secret Rotation Rules",
       "icon": "aws-secrets-manager",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "containedOnly": true,
       "primitive": "resource-card",
@@ -1198,7 +1417,10 @@
       "label": "Secret Rotation Schedule",
       "displayName": "Secret Rotation Schedule",
       "icon": "aws-secrets-manager",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "primitive": "resource-card",
       "card": {
@@ -1212,7 +1434,10 @@
       "label": "Secrets Manager Resource Policy",
       "displayName": "Secrets Manager Resource Policy",
       "icon": "aws-secrets-manager",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "primitive": "resource-card",
       "card": {
@@ -1226,7 +1451,10 @@
       "label": "Ssm Parameter Value Expression",
       "displayName": "Ssm Parameter Value Expression",
       "icon": "aws-systems-manager",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "containedOnly": true,
       "primitive": "resource-card",
@@ -1241,7 +1469,10 @@
       "label": "Secret Value Expression",
       "displayName": "Secret Value Expression",
       "icon": "aws-secrets-manager",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security, IAM, and Secrets View",
       "containedOnly": true,
       "primitive": "resource-card",
@@ -1256,7 +1487,10 @@
       "label": "Cloud Watch Metric Filter",
       "displayName": "Cloud Watch Metric Filter",
       "icon": "aws-cloudwatch",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -1270,7 +1504,10 @@
       "label": "Cloud Watch Metric Transformation",
       "displayName": "Cloud Watch Metric Transformation",
       "icon": "aws-cloudwatch",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Observability and Networking View",
       "containedOnly": true,
       "primitive": "resource-card",
@@ -1285,7 +1522,10 @@
       "label": "Cloud Watch Log Subscription Filter",
       "displayName": "Cloud Watch Log Subscription Filter",
       "icon": "aws-cloudwatch",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -1299,7 +1539,10 @@
       "label": "Metric Dimension",
       "displayName": "Metric Dimension",
       "icon": "aws-cloudwatch",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -1313,7 +1556,10 @@
       "label": "Cloud Watch Composite Alarm",
       "displayName": "Cloud Watch Composite Alarm",
       "icon": "aws-cloudwatch",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -1327,7 +1573,10 @@
       "label": "Cloud Watch Dashboard",
       "displayName": "Cloud Watch Dashboard",
       "icon": "aws-cloudwatch",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -1341,7 +1590,10 @@
       "label": "Vpc Attachment Config",
       "displayName": "Vpc Attachment Config",
       "icon": "aws-vpc",
-      "color": "#0D9488",
+      "color": {
+        "light": "#0D9488",
+        "dark": "#73c1ba"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -1355,7 +1607,10 @@
       "label": "Vpc Endpoint Reference",
       "displayName": "Vpc Endpoint Reference",
       "icon": "aws-vpc",
-      "color": "#0D9488",
+      "color": {
+        "light": "#0D9488",
+        "dark": "#73c1ba"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -1369,7 +1624,10 @@
       "label": "Vpc",
       "displayName": "Vpc",
       "icon": "aws-vpc",
-      "color": "#0D9488",
+      "color": {
+        "light": "#0D9488",
+        "dark": "#73c1ba"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -1383,7 +1641,10 @@
       "label": "Subnet",
       "displayName": "Subnet",
       "icon": "aws-vpc",
-      "color": "#0D9488",
+      "color": {
+        "light": "#0D9488",
+        "dark": "#73c1ba"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -1397,7 +1658,10 @@
       "label": "Vpc Endpoint",
       "displayName": "Vpc Endpoint",
       "icon": "aws-vpc",
-      "color": "#0D9488",
+      "color": {
+        "light": "#0D9488",
+        "dark": "#73c1ba"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -1411,7 +1675,10 @@
       "label": "Security Group",
       "displayName": "Security Group",
       "icon": "aws-vpc",
-      "color": "#0D9488",
+      "color": {
+        "light": "#0D9488",
+        "dark": "#73c1ba"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -1425,7 +1692,10 @@
       "label": "Security Group Rule",
       "displayName": "Security Group Rule",
       "icon": "aws-vpc",
-      "color": "#0D9488",
+      "color": {
+        "light": "#0D9488",
+        "dark": "#73c1ba"
+      },
       "category": "Observability and Networking View",
       "primitive": "resource-card",
       "card": {
@@ -1439,7 +1709,10 @@
       "label": "Sqs Redrive Policy",
       "displayName": "Sqs Redrive Policy",
       "icon": "aws-sqs",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -1455,7 +1728,10 @@
       "label": "Sqs Redrive Allow Policy",
       "displayName": "Sqs Redrive Allow Policy",
       "icon": "aws-sqs",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -1471,7 +1747,10 @@
       "label": "Sqs Queue Policy",
       "displayName": "Sqs Queue Policy",
       "icon": "aws-sqs",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "primitive": "resource-card",
       "card": {
@@ -1485,7 +1764,10 @@
       "label": "Sns Subscription",
       "displayName": "Sns Subscription",
       "icon": "aws-sns",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "primitive": "resource-card",
       "card": {
@@ -1499,7 +1781,10 @@
       "label": "Sns Filter Rule",
       "displayName": "Sns Filter Rule",
       "icon": "aws-sns",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "containedOnly": true,
       "primitive": "resource-card",
@@ -1514,7 +1799,10 @@
       "label": "Sns Topic Policy",
       "displayName": "Sns Topic Policy",
       "icon": "aws-sns",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "primitive": "resource-card",
       "card": {
@@ -1528,7 +1816,10 @@
       "label": "Dynamo Db Key Schema Element",
       "displayName": "Dynamo Db Key Schema Element",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1544,7 +1835,10 @@
       "label": "Dynamo Db Projection",
       "displayName": "Dynamo Db Projection",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1560,7 +1854,10 @@
       "label": "Dynamo Db Provisioned Throughput",
       "displayName": "Dynamo Db Provisioned Throughput",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1576,7 +1873,10 @@
       "label": "Dynamo Db On Demand Throughput",
       "displayName": "Dynamo Db On Demand Throughput",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1592,7 +1892,10 @@
       "label": "Dynamo Db Local Secondary Index",
       "displayName": "Dynamo Db Local Secondary Index",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1608,7 +1911,10 @@
       "label": "Dynamo Db Replica Specification",
       "displayName": "Dynamo Db Replica Specification",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1624,7 +1930,10 @@
       "label": "Dynamo Db Stream Specification",
       "displayName": "Dynamo Db Stream Specification",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1640,7 +1949,10 @@
       "label": "Dynamo Db Time To Live Specification",
       "displayName": "Dynamo Db Time To Live Specification",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1656,7 +1968,10 @@
       "label": "Dynamo Db Sse Specification",
       "displayName": "Dynamo Db Sse Specification",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1672,7 +1987,10 @@
       "label": "Dynamo Db Backup Policy",
       "displayName": "Dynamo Db Backup Policy",
       "icon": "aws-dynamodb",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1688,7 +2006,10 @@
       "label": "S3 Bucket Encryption",
       "displayName": "S3 Bucket Encryption",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1704,7 +2025,10 @@
       "label": "S3 Ownership Controls",
       "displayName": "S3 Ownership Controls",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1720,7 +2044,10 @@
       "label": "S3 Ownership Rule",
       "displayName": "S3 Ownership Rule",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1736,7 +2063,10 @@
       "label": "S3 Lifecycle Configuration",
       "displayName": "S3 Lifecycle Configuration",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1752,7 +2082,10 @@
       "label": "S3 Lifecycle Rule",
       "displayName": "S3 Lifecycle Rule",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1768,7 +2101,10 @@
       "label": "S3 Lifecycle Filter",
       "displayName": "S3 Lifecycle Filter",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1784,7 +2120,10 @@
       "label": "S3 Tag Filter",
       "displayName": "S3 Tag Filter",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1800,7 +2139,10 @@
       "label": "S3 Transition",
       "displayName": "S3 Transition",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1816,7 +2158,10 @@
       "label": "S3 Public Access Block Configuration",
       "displayName": "S3 Public Access Block Configuration",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1832,7 +2177,10 @@
       "label": "S3 Notification Configuration",
       "displayName": "S3 Notification Configuration",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1848,7 +2196,10 @@
       "label": "S3 Notification Rule",
       "displayName": "S3 Notification Rule",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1864,7 +2215,10 @@
       "label": "S3 Replication Configuration",
       "displayName": "S3 Replication Configuration",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1880,7 +2234,10 @@
       "label": "S3 Replication Rule",
       "displayName": "S3 Replication Rule",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1896,7 +2253,10 @@
       "label": "S3 Replication Destination",
       "displayName": "S3 Replication Destination",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1912,7 +2272,10 @@
       "label": "S3 Bucket Policy",
       "displayName": "S3 Bucket Policy",
       "icon": "aws-s3",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Storage View",
       "primitive": "resource-card",
       "card": {
@@ -1926,7 +2289,10 @@
       "label": "Cognito Password Policy",
       "displayName": "Cognito Password Policy",
       "icon": "aws-cognito",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Cognito Identity View",
       "creatable": false,
       "containedOnly": true,
@@ -1942,7 +2308,10 @@
       "label": "Cognito Schema Attribute",
       "displayName": "Cognito Schema Attribute",
       "icon": "aws-cognito",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Cognito Identity View",
       "creatable": false,
       "containedOnly": true,
@@ -1958,7 +2327,10 @@
       "label": "Cognito Email Configuration",
       "displayName": "Cognito Email Configuration",
       "icon": "aws-cognito",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Cognito Identity View",
       "creatable": false,
       "containedOnly": true,
@@ -1974,7 +2346,10 @@
       "label": "Cognito Account Recovery Setting",
       "displayName": "Cognito Account Recovery Setting",
       "icon": "aws-cognito",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Cognito Identity View",
       "creatable": false,
       "containedOnly": true,
@@ -1990,7 +2365,10 @@
       "label": "Cognito Recovery Mechanism",
       "displayName": "Cognito Recovery Mechanism",
       "icon": "aws-cognito",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Cognito Identity View",
       "creatable": false,
       "containedOnly": true,
@@ -2006,7 +2384,10 @@
       "label": "Cognito Lambda Config",
       "displayName": "Cognito Lambda Config",
       "icon": "aws-cognito",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Cognito Identity View",
       "creatable": false,
       "containedOnly": true,
@@ -2022,7 +2403,10 @@
       "label": "Cognito User Pool Client",
       "displayName": "Cognito User Pool Client",
       "icon": "aws-cognito",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Cognito Identity View",
       "primitive": "resource-card",
       "card": {
@@ -2036,7 +2420,10 @@
       "label": "Cognito OAuth Configuration",
       "displayName": "Cognito OAuth Configuration",
       "icon": "aws-cognito",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Cognito Identity View",
       "creatable": false,
       "containedOnly": true,
@@ -2052,7 +2439,10 @@
       "label": "Cognito User Pool Group",
       "displayName": "Cognito User Pool Group",
       "icon": "aws-cognito",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Cognito Identity View",
       "primitive": "resource-card",
       "card": {
@@ -2066,7 +2456,10 @@
       "label": "Cognito User Pool Domain",
       "displayName": "Cognito User Pool Domain",
       "icon": "aws-cognito",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Cognito Identity View",
       "primitive": "resource-card",
       "card": {
@@ -2080,7 +2473,10 @@
       "label": "Cognito Identity Pool",
       "displayName": "Cognito Identity Pool",
       "icon": "aws-cognito",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Cognito Identity View",
       "primitive": "resource-card",
       "card": {
@@ -2094,7 +2490,10 @@
       "label": "Asl Document",
       "displayName": "Asl Document",
       "icon": "aws-step-functions",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Step Functions / ASL View",
       "creatable": false,
       "containedOnly": true,
@@ -2110,7 +2509,10 @@
       "label": "Asl State",
       "displayName": "Asl State",
       "icon": "aws-step-functions",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Step Functions / ASL View",
       "creatable": false,
       "supportOnly": true,
@@ -2127,7 +2529,10 @@
       "label": "Asl Branch",
       "displayName": "Asl Branch",
       "icon": "aws-step-functions",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Step Functions / ASL View",
       "creatable": false,
       "containedOnly": true,
@@ -2143,7 +2548,10 @@
       "label": "Asl Map Config",
       "displayName": "Asl Map Config",
       "icon": "aws-step-functions",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Step Functions / ASL View",
       "creatable": false,
       "containedOnly": true,
@@ -2159,7 +2567,10 @@
       "label": "Asl Retry Rule",
       "displayName": "Asl Retry Rule",
       "icon": "aws-step-functions",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Step Functions / ASL View",
       "creatable": false,
       "containedOnly": true,
@@ -2175,7 +2586,10 @@
       "label": "Asl Catch Rule",
       "displayName": "Asl Catch Rule",
       "icon": "aws-step-functions",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Step Functions / ASL View",
       "creatable": false,
       "containedOnly": true,
@@ -2191,7 +2605,10 @@
       "label": "Asl Choice Rule",
       "displayName": "Asl Choice Rule",
       "icon": "aws-step-functions",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Step Functions / ASL View",
       "creatable": false,
       "containedOnly": true,
@@ -2207,7 +2624,10 @@
       "label": "Step Function Logging Config",
       "displayName": "Step Function Logging Config",
       "icon": "aws-step-functions",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Step Functions / ASL View",
       "primitive": "resource-card",
       "card": {
@@ -2221,7 +2641,10 @@
       "label": "Step Function Tracing Config",
       "displayName": "Step Function Tracing Config",
       "icon": "aws-step-functions",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Step Functions / ASL View",
       "primitive": "resource-card",
       "card": {
@@ -2235,7 +2658,10 @@
       "label": "Sam State Machine Event",
       "displayName": "Sam State Machine Event",
       "icon": "aws-step-functions",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Step Functions / ASL View",
       "creatable": false,
       "containedOnly": true,
@@ -2251,7 +2677,10 @@
       "label": "Lambda Code Config",
       "displayName": "Lambda Code Config",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "supportOnly": true,
@@ -2268,7 +2697,10 @@
       "label": "Lambda Zip Code Config",
       "displayName": "Lambda Zip Code Config",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2284,7 +2716,10 @@
       "label": "Lambda Image Code Config",
       "displayName": "Lambda Image Code Config",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2300,7 +2735,10 @@
       "label": "Lambda Image Config",
       "displayName": "Lambda Image Config",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2316,7 +2754,10 @@
       "label": "Lambda Invocation Binding",
       "displayName": "Lambda Invocation Binding",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "supportOnly": true,
@@ -2333,7 +2774,10 @@
       "label": "Sam Function Event",
       "displayName": "Sam Function Event",
       "icon": "aws-cloudformation",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2349,7 +2793,10 @@
       "label": "Dynamo Db Stream Lambda Event Source Mapping",
       "displayName": "Dynamo Db Stream Lambda Event Source Mapping",
       "icon": "aws-dynamodb",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "primitive": "resource-card",
       "card": {
@@ -2363,7 +2810,10 @@
       "label": "Generic Lambda Event Source Mapping",
       "displayName": "Generic Lambda Event Source Mapping",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "primitive": "resource-card",
       "card": {
@@ -2377,7 +2827,10 @@
       "label": "Lambda Dead Letter Config",
       "displayName": "Lambda Dead Letter Config",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2393,7 +2846,10 @@
       "label": "Lambda Event Invoke Config",
       "displayName": "Lambda Event Invoke Config",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2409,7 +2865,10 @@
       "label": "Lambda Destination Config",
       "displayName": "Lambda Destination Config",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2425,7 +2884,10 @@
       "label": "Lambda Tracing Config",
       "displayName": "Lambda Tracing Config",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2441,7 +2903,10 @@
       "label": "Lambda Logging Config",
       "displayName": "Lambda Logging Config",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2457,7 +2922,10 @@
       "label": "Lambda Layer Version",
       "displayName": "Lambda Layer Version",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "primitive": "resource-card",
       "card": {
@@ -2471,7 +2939,10 @@
       "label": "Lambda Layer Permission",
       "displayName": "Lambda Layer Permission",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2487,7 +2958,10 @@
       "label": "Lambda Version",
       "displayName": "Lambda Version",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "primitive": "resource-card",
       "card": {
@@ -2501,7 +2975,10 @@
       "label": "Lambda Alias",
       "displayName": "Lambda Alias",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "primitive": "resource-card",
       "card": {
@@ -2515,7 +2992,10 @@
       "label": "Lambda Provisioned Concurrency Config",
       "displayName": "Lambda Provisioned Concurrency Config",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2531,7 +3011,10 @@
       "label": "Lambda Permission",
       "displayName": "Lambda Permission",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "primitive": "resource-card",
       "card": {
@@ -2545,7 +3028,10 @@
       "label": "Lambda Function Url",
       "displayName": "Lambda Function Url",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "primitive": "resource-card",
       "card": {
@@ -2559,7 +3045,10 @@
       "label": "Lambda Url Cors Configuration",
       "displayName": "Lambda Url Cors Configuration",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2575,7 +3064,10 @@
       "label": "Lambda File System Config",
       "displayName": "Lambda File System Config",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "creatable": false,
       "containedOnly": true,
@@ -2591,7 +3083,10 @@
       "label": "Code Signing Config",
       "displayName": "Code Signing Config",
       "icon": "aws-lambda",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Lambda Detail View",
       "primitive": "resource-card",
       "card": {
@@ -2605,7 +3100,10 @@
       "label": "Http Api",
       "displayName": "Http Api",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "visualRole": "container",
       "primitive": "resource-card",
@@ -2627,7 +3125,10 @@
       "label": "Rest Api",
       "displayName": "Rest Api",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "visualRole": "container",
       "primitive": "resource-card",
@@ -2652,7 +3153,10 @@
       "label": "Web Socket Api",
       "displayName": "Web Socket Api",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "visualRole": "container",
       "primitive": "resource-card",
@@ -2674,7 +3178,10 @@
       "label": "Http Api Route",
       "displayName": "Http Api Route",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -2688,7 +3195,10 @@
       "label": "Rest Api Route",
       "displayName": "Rest Api Route",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -2702,7 +3212,10 @@
       "label": "Rest Api Resource",
       "displayName": "Rest Api Resource",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -2718,7 +3231,10 @@
       "label": "Rest Api Method",
       "displayName": "Rest Api Method",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -2734,7 +3250,10 @@
       "label": "Web Socket Route",
       "displayName": "Web Socket Route",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -2748,7 +3267,10 @@
       "label": "Api Gateway Request Model",
       "displayName": "Api Gateway Request Model",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -2764,7 +3286,10 @@
       "label": "Api Gateway Response Model",
       "displayName": "Api Gateway Response Model",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -2780,7 +3305,10 @@
       "label": "Api Gateway Request Validator",
       "displayName": "Api Gateway Request Validator",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -2796,7 +3324,10 @@
       "label": "Api Gateway Route Setting",
       "displayName": "Api Gateway Route Setting",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -2812,7 +3343,10 @@
       "label": "Api Gateway Access Log Setting",
       "displayName": "Api Gateway Access Log Setting",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -2828,7 +3362,10 @@
       "label": "Api Gateway Integration",
       "displayName": "Api Gateway Integration",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -2842,7 +3379,10 @@
       "label": "Api Gateway Integration Request Template",
       "displayName": "Api Gateway Integration Request Template",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -2858,7 +3398,10 @@
       "label": "Api Gateway Integration Response Parameter",
       "displayName": "Api Gateway Integration Response Parameter",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -2874,7 +3417,10 @@
       "label": "Api Gateway Stage",
       "displayName": "Api Gateway Stage",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "supportOnly": true,
@@ -2891,7 +3437,10 @@
       "label": "Http Api Stage",
       "displayName": "Http Api Stage",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -2905,7 +3454,10 @@
       "label": "Rest Api Stage",
       "displayName": "Rest Api Stage",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -2919,7 +3471,10 @@
       "label": "Web Socket Stage",
       "displayName": "Web Socket Stage",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -2933,7 +3488,10 @@
       "label": "Api Gateway Authorizer",
       "displayName": "Api Gateway Authorizer",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "supportOnly": true,
@@ -2950,7 +3508,10 @@
       "label": "Jwt Authorizer",
       "displayName": "Jwt Authorizer",
       "icon": "aws-cognito",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -2964,7 +3525,10 @@
       "label": "Cognito Authorizer",
       "displayName": "Cognito Authorizer",
       "icon": "aws-cognito",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -2978,7 +3542,10 @@
       "label": "Lambda Authorizer",
       "displayName": "Lambda Authorizer",
       "icon": "aws-lambda",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -2992,7 +3559,10 @@
       "label": "Api Gateway Domain Name",
       "displayName": "Api Gateway Domain Name",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -3006,7 +3576,10 @@
       "label": "Api Gateway Base Path Mapping",
       "displayName": "Api Gateway Base Path Mapping",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -3022,7 +3595,10 @@
       "label": "Api Gateway Api Key",
       "displayName": "Api Gateway Api Key",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -3036,7 +3612,10 @@
       "label": "Api Gateway Usage Plan",
       "displayName": "Api Gateway Usage Plan",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -3050,7 +3629,10 @@
       "label": "Api Gateway Usage Plan Key",
       "displayName": "Api Gateway Usage Plan Key",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -3066,7 +3648,10 @@
       "label": "Api Gateway Deployment",
       "displayName": "Api Gateway Deployment",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -3082,7 +3667,10 @@
       "label": "Api Gateway Tracing Config",
       "displayName": "Api Gateway Tracing Config",
       "icon": "aws-api-gateway",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "creatable": false,
       "containedOnly": true,
@@ -3098,7 +3686,10 @@
       "label": "Waf Web Acl Association",
       "displayName": "Waf Web Acl Association",
       "icon": "aws-waf",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API Gateway View",
       "primitive": "resource-card",
       "card": {
@@ -3112,7 +3703,10 @@
       "label": "Event Bridge Bus Policy",
       "displayName": "Event Bridge Bus Policy",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3128,7 +3722,10 @@
       "label": "Event Pattern",
       "displayName": "Event Pattern",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3144,7 +3741,10 @@
       "label": "Event Bridge Target",
       "displayName": "Event Bridge Target",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3160,7 +3760,10 @@
       "label": "Event Bridge Target Parameters",
       "displayName": "Event Bridge Target Parameters",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "supportOnly": true,
@@ -3177,7 +3780,10 @@
       "label": "Event Bridge Sqs Target Parameters",
       "displayName": "Event Bridge Sqs Target Parameters",
       "icon": "aws-sqs",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3193,7 +3799,10 @@
       "label": "Event Bridge Http Target Parameters",
       "displayName": "Event Bridge Http Target Parameters",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3209,7 +3818,10 @@
       "label": "Http Parameter",
       "displayName": "Http Parameter",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3225,7 +3837,10 @@
       "label": "Event Bridge Batch Target Parameters",
       "displayName": "Event Bridge Batch Target Parameters",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3241,7 +3856,10 @@
       "label": "Event Bridge Input Transformer",
       "displayName": "Event Bridge Input Transformer",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3257,7 +3875,10 @@
       "label": "Event Bridge Archive",
       "displayName": "Event Bridge Archive",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "primitive": "resource-card",
       "card": {
@@ -3271,7 +3892,10 @@
       "label": "Event Bridge Schedule",
       "displayName": "Event Bridge Schedule",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "primitive": "resource-card",
       "card": {
@@ -3285,7 +3909,10 @@
       "label": "Event Bridge Flexible Time Window",
       "displayName": "Event Bridge Flexible Time Window",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3301,7 +3928,10 @@
       "label": "Event Bridge Pipe",
       "displayName": "Event Bridge Pipe",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "primitive": "resource-card",
       "card": {
@@ -3315,7 +3945,10 @@
       "label": "Event Bridge Auth Parameters",
       "displayName": "Event Bridge Auth Parameters",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "supportOnly": true,
@@ -3332,7 +3965,10 @@
       "label": "Event Bridge Api Key Auth Parameters",
       "displayName": "Event Bridge Api Key Auth Parameters",
       "icon": "aws-api-gateway",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3348,7 +3984,10 @@
       "label": "Event Bridge Basic Auth Parameters",
       "displayName": "Event Bridge Basic Auth Parameters",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3364,7 +4003,10 @@
       "label": "Event Bridge OAuth Parameters",
       "displayName": "Event Bridge OAuth Parameters",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3380,7 +4022,10 @@
       "label": "Event Bridge Http Parameters",
       "displayName": "Event Bridge Http Parameters",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "supportOnly": true,
@@ -3397,7 +4042,10 @@
       "label": "Event Bridge Connection",
       "displayName": "Event Bridge Connection",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "primitive": "resource-card",
       "card": {
@@ -3411,7 +4059,10 @@
       "label": "Event Bridge Api Destination",
       "displayName": "Event Bridge Api Destination",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "primitive": "resource-card",
       "card": {
@@ -3425,7 +4076,10 @@
       "label": "Aws Retry Policy",
       "displayName": "Aws Retry Policy",
       "icon": "aws-eventbridge",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "EventBridge and Messaging View",
       "creatable": false,
       "containedOnly": true,
@@ -3441,7 +4095,10 @@
       "label": "Aws Relationship View",
       "displayName": "Aws Relationship View",
       "icon": "aws-cloudformation",
-      "color": "#475569",
+      "color": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "category": "Generated Relationship Views",
       "relationshipElement": true,
       "primitive": "relationship-edge",
@@ -3456,7 +4113,10 @@
       "label": "Api Gateway Lambda Integration View",
       "displayName": "Api Gateway Lambda Integration View",
       "icon": "aws-api-gateway",
-      "color": "#475569",
+      "color": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "category": "Generated Relationship Views",
       "relationshipElement": true,
       "primitive": "relationship-edge",
@@ -3471,7 +4131,10 @@
       "label": "Event Bridge Lambda Target View",
       "displayName": "Event Bridge Lambda Target View",
       "icon": "aws-eventbridge",
-      "color": "#475569",
+      "color": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "category": "Generated Relationship Views",
       "relationshipElement": true,
       "primitive": "relationship-edge",
@@ -3486,7 +4149,10 @@
       "label": "Sns Lambda Subscription View",
       "displayName": "Sns Lambda Subscription View",
       "icon": "aws-sns",
-      "color": "#475569",
+      "color": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "category": "Generated Relationship Views",
       "relationshipElement": true,
       "primitive": "relationship-edge",
@@ -3501,7 +4167,10 @@
       "label": "Sqs Lambda Event Source View",
       "displayName": "Sqs Lambda Event Source View",
       "icon": "aws-sqs",
-      "color": "#475569",
+      "color": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "category": "Generated Relationship Views",
       "relationshipElement": true,
       "primitive": "relationship-edge",
@@ -3516,7 +4185,10 @@
       "label": "Step Function Event Bridge Target View",
       "displayName": "Step Function Event Bridge Target View",
       "icon": "aws-eventbridge",
-      "color": "#475569",
+      "color": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "category": "Generated Relationship Views",
       "relationshipElement": true,
       "primitive": "relationship-edge",
@@ -3531,7 +4203,10 @@
       "label": "S3 Lambda Notification View",
       "displayName": "S3 Lambda Notification View",
       "icon": "aws-s3",
-      "color": "#475569",
+      "color": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "category": "Generated Relationship Views",
       "relationshipElement": true,
       "primitive": "relationship-edge",
@@ -3546,7 +4221,10 @@
       "label": "S3 Queue Notification View",
       "displayName": "S3 Queue Notification View",
       "icon": "aws-s3",
-      "color": "#475569",
+      "color": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "category": "Generated Relationship Views",
       "relationshipElement": true,
       "primitive": "relationship-edge",
@@ -3561,7 +4239,10 @@
       "label": "S3 Topic Notification View",
       "displayName": "S3 Topic Notification View",
       "icon": "aws-s3",
-      "color": "#475569",
+      "color": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "category": "Generated Relationship Views",
       "relationshipElement": true,
       "primitive": "relationship-edge",
@@ -3576,7 +4257,10 @@
       "label": "Waf Associable Resource",
       "displayName": "Waf Associable Resource",
       "icon": "aws-waf",
-      "color": "#475569",
+      "color": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "category": "Model",
       "creatable": false,
       "supportOnly": true,
@@ -3592,7 +4276,10 @@
       "type": "DynamoTable",
       "label": "Dynamo Table",
       "icon": "aws-dynamodb",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Support",
       "creatable": false,
       "supportOnly": true,
@@ -3790,24 +4477,36 @@
     {
       "matchKinds": ["CONTAINS", "DEPLOYS", "DEPLOYS_TO"],
       "className": "edge-domain-ownership",
-      "stroke": "#475569",
+      "stroke": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "lineWidth": 2.6
     },
     {
       "matchKinds": ["DEPENDS_ON", "NETWORKS_WITH", "TARGETS"],
       "className": "edge-domain-dependency",
-      "stroke": "#0f766e",
+      "stroke": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "lineDash": [7, 4]
     },
     {
       "matchKinds": ["ROUTES_TO", "INVOKES", "EVENT_FLOW", "MESSAGE_FLOW"],
       "className": "edge-pim-event",
-      "stroke": "#0891b2"
+      "stroke": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      }
     },
     {
       "matchKinds": ["READS", "WRITES"],
       "className": "edge-pim-data",
-      "stroke": "#15803d",
+      "stroke": {
+        "light": "#15803d",
+        "dark": "#77b58e"
+      },
       "lineDash": [4, 3]
     },
     {
@@ -3820,20 +4519,29 @@
         "ATTACHED_TO"
       ],
       "className": "edge-conflict",
-      "stroke": "#dc2626",
+      "stroke": {
+        "light": "#dc2626",
+        "dark": "#f87171"
+      },
       "lineDash": [8, 3, 2, 3]
     },
     {
       "matchKinds": ["OBSERVES", "WRITES_LOGS_TO", "TRACE"],
       "matchEClasses": ["TraceLink"],
       "className": "edge-trace-link",
-      "stroke": "#7c3aed",
+      "stroke": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "lineDash": [2, 5]
     },
     {
       "matchKinds": ["TRANSITION"],
       "className": "edge-process-transition",
-      "stroke": "#0f766e"
+      "stroke": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      }
     }
   ],
   "semanticReferenceRules": [],

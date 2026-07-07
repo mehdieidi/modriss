@@ -60,7 +60,10 @@
   },
   "elementVisualDefaults": {
     "icon": "category",
-    "color": "#475569",
+    "color": {
+      "light": "#475569",
+      "dark": "#94a3b8"
+    },
     "category": "PIM",
     "notation": {
       "tag": "PIM",
@@ -75,7 +78,10 @@
       },
       "metadata": {
         "icon": "dashboard",
-        "color": "#334155",
+        "color": {
+          "light": "#334155",
+          "dark": "#94a3b8"
+        },
         "category": "Root",
         "notation": {
           "tag": "ROOT",
@@ -90,7 +96,10 @@
       },
       "metadata": {
         "icon": "inventory_2",
-        "color": "#0F766E",
+        "color": {
+          "light": "#0f766e",
+          "dark": "#2dd4bf"
+        },
         "category": "Deployment",
         "notation": {
           "tag": "DPL",
@@ -105,7 +114,10 @@
       },
       "metadata": {
         "icon": "api",
-        "color": "#7C3AED",
+        "color": {
+          "light": "#7c3aed",
+          "dark": "#a78bfa"
+        },
         "category": "API",
         "notation": {
           "tag": "API",
@@ -120,7 +132,10 @@
       },
       "metadata": {
         "icon": "functions",
-        "color": "#2563EB",
+        "color": {
+          "light": "#2563eb",
+          "dark": "#60a5fa"
+        },
         "category": "Compute",
         "notation": {
           "tag": "FN",
@@ -135,7 +150,10 @@
       },
       "metadata": {
         "icon": "description",
-        "color": "#4F46E5",
+        "color": {
+          "light": "#4f46e5",
+          "dark": "#818cf8"
+        },
         "category": "Contracts",
         "notation": {
           "tag": "SCHEMA",
@@ -150,7 +168,10 @@
       },
       "metadata": {
         "icon": "database",
-        "color": "#0891B2",
+        "color": {
+          "light": "#0891b2",
+          "dark": "#22d3ee"
+        },
         "category": "Data",
         "notation": {
           "tag": "DATA",
@@ -165,7 +186,10 @@
       },
       "metadata": {
         "icon": "hub",
-        "color": "#DB2777",
+        "color": {
+          "light": "#db2777",
+          "dark": "#f472b6"
+        },
         "category": "Messaging",
         "notation": {
           "tag": "FLOW",
@@ -180,7 +204,10 @@
       },
       "metadata": {
         "icon": "schema",
-        "color": "#EA580C",
+        "color": {
+          "light": "#ea580c",
+          "dark": "#fb923c"
+        },
         "category": "Workflow",
         "notation": {
           "tag": "WF",
@@ -195,7 +222,10 @@
       },
       "metadata": {
         "icon": "language",
-        "color": "#0D9488",
+        "color": {
+          "light": "#0D9488",
+          "dark": "#73c1ba"
+        },
         "category": "External Integration",
         "notation": {
           "tag": "EXT",
@@ -210,7 +240,10 @@
       },
       "metadata": {
         "icon": "security",
-        "color": "#CA8A04",
+        "color": {
+          "light": "#ca8a04",
+          "dark": "#fbbf24"
+        },
         "category": "Security",
         "notation": {
           "tag": "SEC",
@@ -225,7 +258,10 @@
       },
       "metadata": {
         "icon": "policy",
-        "color": "#64748B",
+        "color": {
+          "light": "#64748b",
+          "dark": "#cbd5e1"
+        },
         "category": "Operations / Policy",
         "notation": {
           "tag": "POL",
@@ -240,7 +276,10 @@
       },
       "metadata": {
         "icon": "tune",
-        "color": "#64748B",
+        "color": {
+          "light": "#64748b",
+          "dark": "#cbd5e1"
+        },
         "category": "Configuration",
         "notation": {
           "tag": "CFG",
@@ -255,7 +294,10 @@
       },
       "metadata": {
         "icon": "tag",
-        "color": "#475569",
+        "color": {
+          "light": "#475569",
+          "dark": "#94a3b8"
+        },
         "category": "Kernel / Trace",
         "supportOnly": true,
         "creatable": false,
@@ -382,7 +424,10 @@
       "label": "Function",
       "displayName": "Function",
       "icon": "functions",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Compute",
       "primitive": "function-card",
       "card": {
@@ -396,7 +441,10 @@
       "label": "Function Contract",
       "displayName": "Function Contract",
       "icon": "description",
-      "color": "#4F46E5",
+      "color": {
+        "light": "#4f46e5",
+        "dark": "#818cf8"
+      },
       "category": "API and Contract View",
       "creatable": false,
       "containedOnly": true,
@@ -412,7 +460,10 @@
       "label": "Api",
       "displayName": "Api",
       "icon": "api",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API and Contract View",
       "primitive": "api-container",
       "card": {
@@ -426,7 +477,10 @@
       "label": "Api Route",
       "displayName": "Api Route",
       "icon": "route",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API and Contract View",
       "primitive": "route-row",
       "card": {
@@ -439,7 +493,10 @@
       "type": "EventSource",
       "label": "Event Source",
       "icon": "input",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Messaging",
       "creatable": false,
       "supportOnly": true,
@@ -453,7 +510,10 @@
       "label": "Trigger",
       "displayName": "Trigger",
       "icon": "bolt",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Function and Trigger View",
       "primitive": "trigger-connector",
       "card": {
@@ -467,7 +527,10 @@
       "label": "Event Channel",
       "displayName": "Event Channel",
       "icon": "hub",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "creatable": false,
       "supportOnly": true,
@@ -483,7 +546,10 @@
       "label": "Event Routing Rule",
       "displayName": "Event Routing Rule",
       "icon": "rule",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "creatable": false,
       "containedOnly": true,
@@ -499,7 +565,10 @@
       "label": "Queue",
       "displayName": "Queue",
       "icon": "inbox",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "primitive": "queue-card",
       "card": {
@@ -513,7 +582,10 @@
       "label": "Topic",
       "displayName": "Topic",
       "icon": "rss_feed",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "primitive": "topic-card",
       "card": {
@@ -527,7 +599,10 @@
       "label": "Event Bus",
       "displayName": "Event Bus",
       "icon": "hub",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "primitive": "event-bus-card",
       "card": {
@@ -541,7 +616,10 @@
       "label": "Event Type",
       "displayName": "Event Type",
       "icon": "event",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "primitive": "event-type-card",
       "card": {
@@ -555,7 +633,10 @@
       "label": "Serverless Service",
       "displayName": "Serverless Service",
       "icon": "account_tree",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "Service Landscape",
       "creatable": true,
       "visualRole": "container",
@@ -583,7 +664,10 @@
       "label": "Deployment Unit",
       "displayName": "Deployment Unit",
       "icon": "inventory_2",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "Service Landscape",
       "primitive": "deployment-container",
       "card": {
@@ -597,7 +681,10 @@
       "label": "Workflow",
       "displayName": "Workflow",
       "icon": "schema",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Workflow View",
       "visualRole": "container",
       "primitive": "workflow-container",
@@ -612,7 +699,10 @@
       "label": "Workflow Step",
       "displayName": "Workflow Step",
       "icon": "input",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Workflow View",
       "supportOnly": true,
       "creatable": false,
@@ -628,7 +718,10 @@
       "label": "Start Step",
       "displayName": "Start Step",
       "icon": "play_circle",
-      "color": "#16A34A",
+      "color": {
+        "light": "#16a34a",
+        "dark": "#4ade80"
+      },
       "category": "Workflow View",
       "primitive": "start-circle",
       "card": {
@@ -642,7 +735,10 @@
       "label": "Success End Step",
       "displayName": "Success End Step",
       "icon": "stop_circle",
-      "color": "#475569",
+      "color": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "category": "Workflow View",
       "primitive": "end-double-circle",
       "card": {
@@ -656,7 +752,10 @@
       "label": "Failure End Step",
       "displayName": "Failure End Step",
       "icon": "block",
-      "color": "#DC2626",
+      "color": {
+        "light": "#dc2626",
+        "dark": "#f87171"
+      },
       "category": "Workflow View",
       "primitive": "end-double-circle",
       "card": {
@@ -670,7 +769,10 @@
       "label": "Task Step",
       "displayName": "Task Step",
       "icon": "bolt",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Workflow View",
       "primitive": "workflow-task-step",
       "card": {
@@ -690,7 +792,10 @@
       "label": "Choice Step",
       "displayName": "Choice Step",
       "icon": "alt_route",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Workflow View",
       "primitive": "decision-diamond",
       "card": {
@@ -704,7 +809,10 @@
       "label": "Parallel Step",
       "displayName": "Parallel Step",
       "icon": "call_split",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "Workflow View",
       "primitive": "branch-container",
       "card": {
@@ -718,7 +826,10 @@
       "label": "Map Step",
       "displayName": "Map Step",
       "icon": "map",
-      "color": "#0D9488",
+      "color": {
+        "light": "#0D9488",
+        "dark": "#73c1ba"
+      },
       "category": "Workflow View",
       "primitive": "workflow-map-step",
       "card": {
@@ -733,7 +844,10 @@
       "label": "Wait Step",
       "displayName": "Wait Step",
       "icon": "schedule",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Workflow View",
       "primitive": "timer-node",
       "card": {
@@ -747,7 +861,10 @@
       "label": "Pass Step",
       "displayName": "Pass Step",
       "icon": "arrow_forward",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Workflow View",
       "primitive": "workflow-pass-step",
       "card": {
@@ -761,7 +878,10 @@
       "label": "Flow",
       "displayName": "Flow",
       "icon": "arrow_forward",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "creatable": false,
       "supportOnly": true,
@@ -777,7 +897,10 @@
       "label": "Request Response Flow",
       "displayName": "Request Response Flow",
       "icon": "sync_alt",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "Event and Flow View",
       "primitive": "request-response-edge",
       "card": {
@@ -791,7 +914,10 @@
       "label": "Event Flow",
       "displayName": "Event Flow",
       "icon": "event",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "primitive": "event-flow-edge",
       "card": {
@@ -805,7 +931,10 @@
       "label": "Message Flow",
       "displayName": "Message Flow",
       "icon": "mail",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "primitive": "message-flow-edge",
       "card": {
@@ -819,7 +948,10 @@
       "label": "Orchestration Flow",
       "displayName": "Orchestration Flow",
       "icon": "schema",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Event and Flow View",
       "primitive": "orchestration-flow-edge",
       "card": {
@@ -833,7 +965,10 @@
       "label": "Data Store",
       "displayName": "Data Store",
       "icon": "database",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Data and Storage View",
       "primitive": "data-store-card",
       "card": {
@@ -847,7 +982,10 @@
       "label": "Object Store",
       "displayName": "Object Store",
       "icon": "folder",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Data and Storage View",
       "primitive": "object-store-card",
       "card": {
@@ -861,7 +999,10 @@
       "label": "Identity Provider",
       "displayName": "Identity Provider",
       "icon": "security",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security View",
       "primitive": "identity-card",
       "card": {
@@ -875,7 +1016,10 @@
       "label": "Principal",
       "displayName": "Principal",
       "icon": "person",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security View",
       "primitive": "principal-card",
       "card": {
@@ -889,7 +1033,10 @@
       "label": "Permission",
       "displayName": "Permission",
       "icon": "lock",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security View",
       "creatable": false,
       "containedOnly": true,
@@ -905,7 +1052,10 @@
       "label": "Secret",
       "displayName": "Secret",
       "icon": "key",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Configuration and Secrets View",
       "primitive": "secret-card",
       "card": {
@@ -919,7 +1069,10 @@
       "label": "Config Parameter",
       "displayName": "Config Parameter",
       "icon": "tune",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Configuration and Secrets View",
       "creatable": false,
       "containedOnly": true,
@@ -935,7 +1088,10 @@
       "label": "Environment Variable",
       "displayName": "Environment Variable",
       "icon": "terminal",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Configuration and Secrets View",
       "creatable": false,
       "containedOnly": true,
@@ -951,7 +1107,10 @@
       "label": "Resilience Policy",
       "displayName": "Resilience Policy",
       "icon": "health_and_safety",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -965,7 +1124,10 @@
       "label": "Observability Config",
       "displayName": "Observability Config",
       "icon": "monitoring",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "ops-card",
       "card": {
@@ -979,7 +1141,10 @@
       "label": "Idempotency Policy",
       "displayName": "Idempotency Policy",
       "icon": "fingerprint",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -993,7 +1158,10 @@
       "label": "Concurrency Policy",
       "displayName": "Concurrency Policy",
       "icon": "speed",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1007,7 +1175,10 @@
       "label": "Cost Policy",
       "displayName": "Cost Policy",
       "icon": "paid",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1021,7 +1192,10 @@
       "label": "PIMModel",
       "displayName": "PIMModel",
       "icon": "dashboard",
-      "color": "#334155",
+      "color": {
+        "light": "#334155",
+        "dark": "#94a3b8"
+      },
       "category": "Overview",
       "creatable": false,
       "containedOnly": true,
@@ -1037,7 +1211,10 @@
       "label": "Service Element Membership",
       "displayName": "Service Element Membership",
       "icon": "link",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "Service Landscape",
       "creatable": false,
       "containedOnly": true,
@@ -1053,7 +1230,10 @@
       "label": "Environment",
       "displayName": "Environment",
       "icon": "public",
-      "color": "#0F766E",
+      "color": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "category": "Service Landscape",
       "primitive": "environment-card",
       "card": {
@@ -1067,7 +1247,10 @@
       "label": "Implementation Profile",
       "displayName": "Implementation Profile",
       "icon": "settings",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Service Landscape",
       "primitive": "settings-panel",
       "card": {
@@ -1081,7 +1264,10 @@
       "label": "Platform Capability",
       "displayName": "Platform Capability",
       "icon": "extension",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Service Landscape",
       "primitive": "capability-badge",
       "card": {
@@ -1095,7 +1281,10 @@
       "label": "Platform Mapping Assessment",
       "displayName": "Platform Mapping Assessment",
       "icon": "fact_check",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Service Landscape",
       "primitive": "assessment-row",
       "card": {
@@ -1109,7 +1298,10 @@
       "label": "Schema",
       "displayName": "Schema",
       "icon": "description",
-      "color": "#4F46E5",
+      "color": {
+        "light": "#4f46e5",
+        "dark": "#818cf8"
+      },
       "category": "API and Contract View",
       "primitive": "schema-tree",
       "card": {
@@ -1123,7 +1315,10 @@
       "label": "Schema Field",
       "displayName": "Schema Field",
       "icon": "short_text",
-      "color": "#4F46E5",
+      "color": {
+        "light": "#4f46e5",
+        "dark": "#818cf8"
+      },
       "category": "API and Contract View",
       "creatable": false,
       "containedOnly": true,
@@ -1139,7 +1334,10 @@
       "label": "Schema Enum Literal",
       "displayName": "Schema Enum Literal",
       "icon": "list",
-      "color": "#4F46E5",
+      "color": {
+        "light": "#4f46e5",
+        "dark": "#818cf8"
+      },
       "category": "API and Contract View",
       "creatable": false,
       "containedOnly": true,
@@ -1155,7 +1353,10 @@
       "label": "Schema Validation Constraint",
       "displayName": "Schema Validation Constraint",
       "icon": "rule",
-      "color": "#4F46E5",
+      "color": {
+        "light": "#4f46e5",
+        "dark": "#818cf8"
+      },
       "category": "API and Contract View",
       "creatable": false,
       "containedOnly": true,
@@ -1171,7 +1372,10 @@
       "label": "Schema Constraint",
       "displayName": "Schema Constraint",
       "icon": "rule",
-      "color": "#4F46E5",
+      "color": {
+        "light": "#4f46e5",
+        "dark": "#818cf8"
+      },
       "category": "API and Contract View",
       "creatable": false,
       "containedOnly": true,
@@ -1187,7 +1391,10 @@
       "label": "Api Contract",
       "displayName": "Api Contract",
       "icon": "description",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API and Contract View",
       "creatable": false,
       "containedOnly": true,
@@ -1203,7 +1410,10 @@
       "label": "Event Envelope",
       "displayName": "Event Envelope",
       "icon": "event",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "containedOnly": true,
       "primitive": "event-envelope",
@@ -1218,7 +1428,10 @@
       "label": "Architecture Policy",
       "displayName": "Architecture Policy",
       "icon": "policy",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1232,7 +1445,10 @@
       "label": "Policy Setting",
       "displayName": "Policy Setting",
       "icon": "tune",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "creatable": false,
       "containedOnly": true,
@@ -1248,7 +1464,10 @@
       "label": "Data Protection Policy",
       "displayName": "Data Protection Policy",
       "icon": "privacy_tip",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1262,7 +1481,10 @@
       "label": "Data Quality Policy",
       "displayName": "Data Quality Policy",
       "icon": "verified",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1276,7 +1498,10 @@
       "label": "Compliance Policy",
       "displayName": "Compliance Policy",
       "icon": "gavel",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1290,7 +1515,10 @@
       "label": "Business Rule",
       "displayName": "Business Rule",
       "icon": "rule",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Policy and Observability View",
       "primitive": "rule-card",
       "card": {
@@ -1304,7 +1532,10 @@
       "label": "Decision Model",
       "displayName": "Decision Model",
       "icon": "table",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Policy and Observability View",
       "primitive": "decision-table",
       "card": {
@@ -1318,7 +1549,10 @@
       "label": "Decision Rule",
       "displayName": "Decision Rule",
       "icon": "rule",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Policy and Observability View",
       "creatable": false,
       "containedOnly": true,
@@ -1334,7 +1568,10 @@
       "label": "Retry Policy",
       "displayName": "Retry Policy",
       "icon": "replay",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-row",
       "card": {
@@ -1348,7 +1585,10 @@
       "label": "Dead Letter Policy",
       "displayName": "Dead Letter Policy",
       "icon": "move_to_inbox",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-row",
       "card": {
@@ -1362,7 +1602,10 @@
       "label": "Timeout Policy",
       "displayName": "Timeout Policy",
       "icon": "timer",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "clock-badge-card",
       "card": {
@@ -1376,7 +1619,10 @@
       "label": "Rate Limit Policy",
       "displayName": "Rate Limit Policy",
       "icon": "speed",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1390,7 +1636,10 @@
       "label": "Batch Policy",
       "displayName": "Batch Policy",
       "icon": "inventory_2",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-row",
       "card": {
@@ -1404,7 +1653,10 @@
       "label": "Ordering Policy",
       "displayName": "Ordering Policy",
       "icon": "sort",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1418,7 +1670,10 @@
       "label": "Cache Policy",
       "displayName": "Cache Policy",
       "icon": "cached",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1432,7 +1687,10 @@
       "label": "Backup Policy",
       "displayName": "Backup Policy",
       "icon": "backup",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1446,7 +1704,10 @@
       "label": "Retention Policy",
       "displayName": "Retention Policy",
       "icon": "event_repeat",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1460,7 +1721,10 @@
       "label": "Logging Policy",
       "displayName": "Logging Policy",
       "icon": "article",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-row",
       "card": {
@@ -1474,7 +1738,10 @@
       "label": "Metric Policy",
       "displayName": "Metric Policy",
       "icon": "monitoring",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "metric-row",
       "card": {
@@ -1488,7 +1755,10 @@
       "label": "Metric Dimension",
       "displayName": "Metric Dimension",
       "icon": "sell",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "creatable": false,
       "containedOnly": true,
@@ -1504,7 +1774,10 @@
       "label": "Tracing Policy",
       "displayName": "Tracing Policy",
       "icon": "timeline",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1518,7 +1791,10 @@
       "label": "Alert Policy",
       "displayName": "Alert Policy",
       "icon": "notifications",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1532,7 +1808,10 @@
       "label": "Slo",
       "displayName": "Slo",
       "icon": "track_changes",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Policy and Observability View",
       "primitive": "slo-card",
       "card": {
@@ -1546,7 +1825,10 @@
       "label": "Cors Policy",
       "displayName": "Cors Policy",
       "icon": "policy",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "API and Contract View",
       "primitive": "policy-badge-card",
       "card": {
@@ -1560,7 +1842,10 @@
       "label": "Configuration Set",
       "displayName": "Configuration Set",
       "icon": "tune",
-      "color": "#64748B",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
       "category": "Configuration and Secrets View",
       "primitive": "config-set-card",
       "card": {
@@ -1574,7 +1859,10 @@
       "label": "Credential Requirement",
       "displayName": "Credential Requirement",
       "icon": "vpn_key",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Configuration and Secrets View",
       "creatable": false,
       "containedOnly": true,
@@ -1590,7 +1878,10 @@
       "label": "Security Policy",
       "displayName": "Security Policy",
       "icon": "security",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security View",
       "primitive": "security-card",
       "card": {
@@ -1604,7 +1895,10 @@
       "label": "Auth Policy",
       "displayName": "Auth Policy",
       "icon": "verified_user",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security View",
       "primitive": "auth-badge-card",
       "card": {
@@ -1618,7 +1912,10 @@
       "label": "Authorization Policy",
       "displayName": "Authorization Policy",
       "icon": "lock",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Security View",
       "primitive": "authz-card",
       "card": {
@@ -1632,7 +1929,10 @@
       "label": "Storage Element",
       "displayName": "Storage Element",
       "icon": "database",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Data and Storage View",
       "primitive": "storage-card",
       "card": {
@@ -1646,7 +1946,10 @@
       "label": "Data Change Stream",
       "displayName": "Data Change Stream",
       "icon": "waterfall_chart",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Data and Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1662,7 +1965,10 @@
       "label": "Object Notification Rule",
       "displayName": "Object Notification Rule",
       "icon": "notifications",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Data and Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1678,7 +1984,10 @@
       "label": "Data Model",
       "displayName": "Data Model",
       "icon": "table",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Data and Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1694,7 +2003,10 @@
       "label": "Data Field",
       "displayName": "Data Field",
       "icon": "short_text",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Data and Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1710,7 +2022,10 @@
       "label": "Access Pattern",
       "displayName": "Access Pattern",
       "icon": "manage_search",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Data and Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1726,7 +2041,10 @@
       "label": "Index Candidate",
       "displayName": "Index Candidate",
       "icon": "view_column",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Data and Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1742,7 +2060,10 @@
       "label": "Data Access",
       "displayName": "Data Access",
       "icon": "link",
-      "color": "#0891B2",
+      "color": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
       "category": "Data and Storage View",
       "creatable": false,
       "containedOnly": true,
@@ -1758,7 +2079,10 @@
       "label": "Compute Element",
       "displayName": "Compute Element",
       "icon": "memory",
-      "color": "#2563EB",
+      "color": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
       "category": "Function and Trigger View",
       "creatable": false,
       "containedOnly": true,
@@ -1774,7 +2098,10 @@
       "label": "Error Mapping",
       "displayName": "Error Mapping",
       "icon": "warning",
-      "color": "#DC2626",
+      "color": {
+        "light": "#dc2626",
+        "dark": "#f87171"
+      },
       "category": "API and Contract View",
       "primitive": "error-mapping-row",
       "card": {
@@ -1788,7 +2115,10 @@
       "label": "External Endpoint",
       "displayName": "External Endpoint",
       "icon": "language",
-      "color": "#0D9488",
+      "color": {
+        "light": "#0D9488",
+        "dark": "#73c1ba"
+      },
       "category": "Function and Trigger View",
       "primitive": "external-boundary",
       "card": {
@@ -1802,7 +2132,10 @@
       "label": "External Adapter",
       "displayName": "External Adapter",
       "icon": "sync_alt",
-      "color": "#0D9488",
+      "color": {
+        "light": "#0D9488",
+        "dark": "#73c1ba"
+      },
       "category": "Function and Trigger View",
       "primitive": "adapter-card",
       "card": {
@@ -1816,7 +2149,10 @@
       "label": "Workflow Transition",
       "displayName": "Workflow Transition",
       "icon": "arrow_forward",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Workflow View",
       "creatable": false,
       "containedOnly": true,
@@ -1832,7 +2168,10 @@
       "label": "Error Handler",
       "displayName": "Error Handler",
       "icon": "warning",
-      "color": "#DC2626",
+      "color": {
+        "light": "#dc2626",
+        "dark": "#f87171"
+      },
       "category": "Workflow View",
       "creatable": false,
       "containedOnly": true,
@@ -1848,7 +2187,10 @@
       "label": "Parallel Branch",
       "displayName": "Parallel Branch",
       "icon": "call_split",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Workflow View",
       "creatable": false,
       "containedOnly": true,
@@ -1864,7 +2206,10 @@
       "label": "Map State Config",
       "displayName": "Map State Config",
       "icon": "map",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Workflow View",
       "creatable": false,
       "containedOnly": true,
@@ -1880,7 +2225,10 @@
       "label": "Callback Task Config",
       "displayName": "Callback Task Config",
       "icon": "pending_actions",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Workflow View",
       "creatable": false,
       "containedOnly": true,
@@ -1896,7 +2244,10 @@
       "label": "Escalation Policy",
       "displayName": "Escalation Policy",
       "icon": "priority_high",
-      "color": "#CA8A04",
+      "color": {
+        "light": "#ca8a04",
+        "dark": "#fbbf24"
+      },
       "category": "Workflow View",
       "creatable": true,
       "containedOnly": false,
@@ -1912,7 +2263,10 @@
       "label": "Human Task",
       "displayName": "Human Task",
       "icon": "person",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "Workflow View",
       "primitive": "human-task-card",
       "card": {
@@ -1926,7 +2280,10 @@
       "label": "Approval Task",
       "displayName": "Approval Task",
       "icon": "approval",
-      "color": "#7C3AED",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "category": "Workflow View",
       "primitive": "approval-task-card",
       "card": {
@@ -1940,7 +2297,10 @@
       "label": "Compensation Policy",
       "displayName": "Compensation Policy",
       "icon": "undo",
-      "color": "#EA580C",
+      "color": {
+        "light": "#ea580c",
+        "dark": "#fb923c"
+      },
       "category": "Workflow View",
       "creatable": false,
       "containedOnly": true,
@@ -1956,7 +2316,10 @@
       "label": "Integration Element",
       "displayName": "Integration Element",
       "icon": "hub",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "creatable": false,
       "containedOnly": true,
@@ -1972,7 +2335,10 @@
       "label": "Schedule",
       "displayName": "Schedule",
       "icon": "schedule",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Function and Trigger View",
       "primitive": "schedule-card",
       "card": {
@@ -1986,7 +2352,10 @@
       "label": "Subscription",
       "displayName": "Subscription",
       "icon": "link",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "creatable": false,
       "containedOnly": true,
@@ -2002,7 +2371,10 @@
       "label": "Pub Sub Flow",
       "displayName": "Pub Sub Flow",
       "icon": "rss_feed",
-      "color": "#DB2777",
+      "color": {
+        "light": "#db2777",
+        "dark": "#f472b6"
+      },
       "category": "Event and Flow View",
       "primitive": "pubsub-flow-edge",
       "card": {
@@ -2016,7 +2388,10 @@
       "label": "External Integration Flow",
       "displayName": "External Integration Flow",
       "icon": "language",
-      "color": "#0D9488",
+      "color": {
+        "light": "#0D9488",
+        "dark": "#73c1ba"
+      },
       "category": "Event and Flow View",
       "primitive": "external-flow-edge",
       "card": {
@@ -2304,13 +2679,19 @@
     {
       "matchKinds": ["CONTAINS", "OWNS", "DEPLOYS", "DEPLOYS_TO"],
       "className": "edge-domain-ownership",
-      "stroke": "#475569",
+      "stroke": {
+        "light": "#475569",
+        "dark": "#94a3b8"
+      },
       "lineWidth": 2.6
     },
     {
       "matchKinds": ["EXTERNAL_CALL", "CALLS", "FLOW", "REQUEST_RESPONSE", "ORCHESTRATES"],
       "className": "edge-domain-dependency",
-      "stroke": "#0f766e",
+      "stroke": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      },
       "lineDash": [7, 4]
     },
     {
@@ -2325,31 +2706,46 @@
         "TRIGGERS"
       ],
       "className": "edge-pim-event",
-      "stroke": "#0891b2"
+      "stroke": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      }
     },
     {
       "matchKinds": ["READS", "WRITES", "DATA_ACCESS", "APPEND", "DELETE"],
       "className": "edge-pim-data",
-      "stroke": "#15803d",
+      "stroke": {
+        "light": "#15803d",
+        "dark": "#77b58e"
+      },
       "lineDash": [4, 3]
     },
     {
       "matchKinds": ["PERMISSION", "AUTHORIZED_BY", "USES_SECRET", "CONSTRAINS", "ATTACHED_TO"],
       "className": "edge-conflict",
-      "stroke": "#dc2626",
+      "stroke": {
+        "light": "#dc2626",
+        "dark": "#f87171"
+      },
       "lineDash": [8, 3, 2, 3]
     },
     {
       "matchKinds": ["TRANSITION"],
       "matchEClasses": ["WorkflowTransition"],
       "className": "edge-process-transition",
-      "stroke": "#0f766e"
+      "stroke": {
+        "light": "#0f766e",
+        "dark": "#2dd4bf"
+      }
     },
     {
       "matchKinds": ["TRACE"],
       "matchEClasses": ["TraceLink"],
       "className": "edge-trace-link",
-      "stroke": "#7c3aed",
+      "stroke": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
       "lineDash": [2, 5]
     }
   ],

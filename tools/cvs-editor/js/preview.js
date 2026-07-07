@@ -1,4 +1,5 @@
 import { GEOMETRIES, ICON_PATH } from "./constants.js";
+import { normalizeThemeColor } from "./theme-colors.js";
 
 export function escapeHtml(value) {
   return String(value ?? "")
@@ -20,7 +21,8 @@ function geometryPath(geometry, x, y, w, h) {
   const midX = x + w / 2;
   const midY = y + h / 2;
   const pointsToD = (points) =>
-    points.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ") + " Z";
+    points.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ") +
+    " Z";
 
   if (name === "diamond") {
     return pointsToD([
@@ -86,7 +88,7 @@ export function primitivePreviewSvg(primitive, { width = 120, height = 72 } = {}
 }
 
 export function nodePreviewSvg(visual, { width = 200, height = 112, selected = false } = {}) {
-  const color = visual.color || "#475569";
+  const color = normalizeThemeColor(visual.color).dark;
   const tag = escapeHtml(visual.tag || visual.primitive?.slice(0, 4)?.toUpperCase() || "TYPE");
   const label = escapeHtml(visual.label || "Element");
   const role = escapeHtml(visual.visualRole || "node");
@@ -115,7 +117,7 @@ export function nodePreviewSvg(visual, { width = 200, height = 112, selected = f
 }
 
 export function edgePreviewSvg(rule, { width = 220, height = 56 } = {}) {
-  const stroke = rule?.stroke || "#64748b";
+  const stroke = normalizeThemeColor(rule?.stroke, "#64748b").dark;
   const dash = Array.isArray(rule?.lineDash) ? rule.lineDash.join(",") : "";
   const dashAttr = dash ? `stroke-dasharray="${dash}"` : "";
   const kinds = (rule?.matchKinds || []).slice(0, 2).join(", ") || "edge";
@@ -143,7 +145,9 @@ export function chipList(items, { removable = false, dataAttr = "" } = {}) {
     .map(
       (item, index) =>
         `<span class="chip" ${dataAttr} data-index="${index}">${escapeHtml(item)}${
-          removable ? `<button type="button" class="chip-remove" data-remove="${index}" aria-label="Remove">×</button>` : ""
+          removable
+            ? `<button type="button" class="chip-remove" data-remove="${index}" aria-label="Remove">×</button>`
+            : ""
         }</span>`,
     )
     .join("");

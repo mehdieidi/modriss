@@ -1,4 +1,5 @@
 import { cssVar } from "./g6-style.js";
+import { getTintedIconUrlSync } from "./icon-tint.js";
 import {
   computeIconNodeLayout,
   iconAnchorBoundsLocal,
@@ -100,7 +101,12 @@ export function renderIconCentricNodeG6(shape, container, options = {}) {
   const border = warm ? "rgba(21, 28, 40, 0.35)" : cssVar("--node-border", "#3d495f");
   const stroke = nodeStroke(flags, selected, border);
   const outlineVisible = showNodeOutline(flags, selected, draft);
-  const resolvedIcon = resolveIconSource(iconSrc) || placeholderIcon();
+  const originalIcon = String(iconSrc || "").startsWith("data:")
+    ? iconSrc
+    : resolveIconSource(iconSrc) || placeholderIcon();
+  const resolvedIcon = String(originalIcon).startsWith("data:")
+    ? originalIcon
+    : getTintedIconUrlSync(originalIcon, accent) || originalIcon;
   const kindFill = warm ? "rgba(35, 28, 18, 0.72)" : accent;
   const nameFill = warm ? "rgba(24, 20, 14, 0.92)" : cssVar("--text", "#e3e8f2");
 
