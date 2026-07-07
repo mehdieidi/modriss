@@ -1,9 +1,9 @@
 {
   "level": "pim",
   "processId": "modless.pim.modeling",
-  "generatedAt": "2026-06-28T10:50:34.452Z",
-  "totalConcepts": 179,
-  "coveredConcepts": 179,
+  "generatedAt": "2026-07-07T15:28:43.268Z",
+  "totalConcepts": 187,
+  "coveredConcepts": 187,
   "orphanedConcepts": [],
   "entries": [
     {
@@ -769,6 +769,18 @@
       "covered": true
     },
     {
+      "concept": "SuccessEndStep",
+      "kind": "EClass",
+      "taskIds": ["pim.ph4.st2.t1"],
+      "covered": true
+    },
+    {
+      "concept": "FailureEndStep",
+      "kind": "EClass",
+      "taskIds": ["pim.ph4.st2.t1"],
+      "covered": true
+    },
+    {
       "concept": "TaskStep",
       "kind": "EClass",
       "taskIds": ["pim.ph4.st2.t1"],
@@ -781,7 +793,25 @@
       "covered": true
     },
     {
-      "concept": "SuccessEndStep",
+      "concept": "ParallelStep",
+      "kind": "EClass",
+      "taskIds": ["pim.ph4.st2.t1"],
+      "covered": true
+    },
+    {
+      "concept": "MapStep",
+      "kind": "EClass",
+      "taskIds": ["pim.ph4.st2.t1"],
+      "covered": true
+    },
+    {
+      "concept": "WaitStep",
+      "kind": "EClass",
+      "taskIds": ["pim.ph4.st2.t1"],
+      "covered": true
+    },
+    {
+      "concept": "PassStep",
       "kind": "EClass",
       "taskIds": ["pim.ph4.st2.t1"],
       "covered": true

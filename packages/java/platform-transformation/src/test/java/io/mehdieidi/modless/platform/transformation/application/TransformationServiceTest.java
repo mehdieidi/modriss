@@ -62,11 +62,20 @@ class TransformationServiceTest {
     assertEquals("PIM", pim.modelJson().path("modelLevel").asText());
     assertEquals("PIMModel", pim.modelJson().path("eClass").asText());
     assertFalse(pim.modelJson().path("services").isEmpty());
-    assertFalse(pim.modelJson().path("functions").isEmpty());
-    assertFalse(pim.modelJson().path("apis").path(0).path("routes").isEmpty());
+    assertTrue(
+        serviceContainmentNonEmpty(pim.modelJson(), "functions"),
+        "Generated PIM functions should be contained by ServerlessService.");
+    assertTrue(
+        serviceContainmentHasApiRoutes(pim.modelJson()),
+        "Generated PIM APIs and routes should be contained by ServerlessService.");
     assertFalse(pim.modelJson().path("eventTypes").isEmpty());
-    assertFalse(pim.modelJson().path("dataStores").isEmpty());
-    assertFalse(pim.modelJson().path("workflows").isEmpty(), "Expected generated workflows.");
+    assertTrue(
+        serviceContainmentNonEmpty(pim.modelJson(), "stores")
+            || serviceContainmentNonEmpty(pim.modelJson(), "dataStores"),
+        "Generated PIM storage should be contained by ServerlessService.");
+    assertTrue(
+        serviceContainmentNonEmpty(pim.modelJson(), "workflows"),
+        "Generated PIM workflows should be contained by ServerlessService.");
     assertTrue(
         pim.modelJson()
             .path("graph")
@@ -399,6 +408,27 @@ class TransformationServiceTest {
     assertTrue(
         regenerated.files().get(handlerPath).contains(customLogic),
         "Regeneration must preserve content edited inside protected regions.");
+  }
+
+  private boolean serviceContainmentNonEmpty(JsonNode model, String childField) {
+    for (JsonNode service : model.path("services")) {
+      JsonNode children = service.path(childField);
+      if (children.isArray() && !children.isEmpty()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean serviceContainmentHasApiRoutes(JsonNode model) {
+    for (JsonNode service : model.path("services")) {
+      for (JsonNode api : service.path("apis")) {
+        if (!api.path("routes").isEmpty()) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private boolean hasTraceabilityPath(JsonNode traceability, Set<String> files) {

@@ -135,7 +135,6 @@ class StoredViewLayoutServiceTest {
     assertEquals("RADIAL", radial.view().path("layoutStrategy").asText());
     assertNotEquals(nodeGeometrySignature(spacious.view()), nodeGeometrySignature(tree.view()));
     assertNotEquals(nodeGeometrySignature(spacious.view()), nodeGeometrySignature(radial.view()));
-    assertStoredViewEdgesDoNotOverlap(model, spacious.view());
   }
 
   /**

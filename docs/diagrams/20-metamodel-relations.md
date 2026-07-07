@@ -107,6 +107,8 @@ classDiagram
     class Schema
     class Function
     class Api
+    class ApiRoute
+    class Trigger
     class EventType
     class EventChannel
     class DataStore
@@ -125,21 +127,23 @@ classDiagram
     PIMModel *-- "*" DeploymentUnit
     PIMModel *-- "*" Environment
     PIMModel *-- "*" Schema
-    PIMModel *-- "*" Function
-    PIMModel *-- "*" Api
     PIMModel *-- "*" EventType
-    PIMModel *-- "*" EventChannel
-    PIMModel *-- "*" DataStore
-    PIMModel *-- "*" ObjectStore
-    PIMModel *-- "*" Workflow
     PIMModel *-- "*" ExternalEndpoint
-    PIMModel *-- "*" ExternalAdapter
     PIMModel *-- "*" IdentityProvider
     PIMModel *-- "*" Principal
     PIMModel *-- "*" ArchitecturePolicy
     PIMModel *-- "*" Flow
     PIMModel *-- "*" ConfigurationSet
     PIMModel *-- "*" Secret
+    ServerlessService *-- "*" Function
+    ServerlessService *-- "*" Api
+    ServerlessService *-- "*" EventChannel
+    ServerlessService *-- "*" DataStore
+    ServerlessService *-- "*" ObjectStore
+    ServerlessService *-- "*" Workflow
+    ServerlessService *-- "*" ExternalAdapter
+    Api *-- "*" ApiRoute
+    Function *-- "*" Trigger
 ```
 
 ## AWS PSM Root and Resource Families

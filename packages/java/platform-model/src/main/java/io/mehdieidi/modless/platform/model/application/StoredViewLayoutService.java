@@ -248,25 +248,38 @@ public final class StoredViewLayoutService {
     result.edges().forEach(edge -> edgesById.put(edge.id(), edge));
     Map<String, LayoutService.LayoutEdge> requestsById = new HashMap<>();
     request.edges().forEach(edge -> requestsById.put(edge.id(), edge));
-    List<EdgeRoute> routes = new ArrayList<>();
-    for (LayoutService.LayoutEdge edgeRequest : request.edges()) {
-      NodeBox source = nodesById.get(edgeRequest.sourceNodeId());
-      NodeBox target = nodesById.get(edgeRequest.targetNodeId());
-      if (source == null || target == null) {
-        continue;
-      }
-      routes.add(orthogonalRoute(edgeRequest, source, target));
-    }
-    spreadAnchors(nodesById, routes);
-    assignSeparatedPinPoints(nodesById, routes);
+    boolean denseDashboard = shouldUseDenseDashboardGrid(view, request);
     Map<String, EdgeRoute> routesById = new HashMap<>();
-    routes.forEach(route -> routesById.put(route.id, route));
+    if (!denseDashboard) {
+      List<EdgeRoute> routes = new ArrayList<>();
+      for (LayoutService.LayoutEdge edgeRequest : request.edges()) {
+        NodeBox source = nodesById.get(edgeRequest.sourceNodeId());
+        NodeBox target = nodesById.get(edgeRequest.targetNodeId());
+        if (source == null || target == null) {
+          continue;
+        }
+        routes.add(orthogonalRoute(edgeRequest, source, target));
+      }
+      spreadAnchors(nodesById, routes);
+      assignSeparatedPinPoints(nodesById, routes);
+      routes.forEach(route -> routesById.put(route.id, route));
+    }
     for (JsonNode edge : view.path("edges")) {
       if (!(edge instanceof ObjectNode objectEdge)) {
         continue;
       }
       String id = text(edge, "relationshipId", text(edge, "id", ""));
       if (!edgesById.containsKey(id) || !requestsById.containsKey(id)) {
+        continue;
+      }
+      LayoutService.LayoutEdge edgeRequest = requestsById.get(id);
+      NodeBox source = nodesById.get(edgeRequest.sourceNodeId());
+      NodeBox target = nodesById.get(edgeRequest.targetNodeId());
+      if (source == null || target == null) {
+        continue;
+      }
+      if (denseDashboard) {
+        writeLayoutServiceEdge(objectEdge, edgesById.get(id), source, target);
         continue;
       }
       EdgeRoute routed = routesById.get(id);
@@ -441,22 +454,29 @@ public final class StoredViewLayoutService {
    */
   private void assignSeparatedPinPoints(Map<String, NodeBox> nodesById, List<EdgeRoute> routes) {
     List<RouteSegment> occupiedSegments = new ArrayList<>();
-    for (EdgeRoute route : routes) {
+    List<EdgeRoute> ordered = new ArrayList<>(routes);
+    ordered.sort(Comparator.comparing(route -> route.id));
+    int routeIndex = 0;
+    for (EdgeRoute route : ordered) {
       NodeBox source = nodesById.get(route.sourceNodeId);
       NodeBox target = nodesById.get(route.targetNodeId);
       if (source == null || target == null) {
         continue;
       }
+      int attemptOffset = routeIndex * 5;
+      routeIndex += 1;
       List<Point> selected = null;
       for (int attempt = 0; attempt < MAX_ROUTE_ATTEMPTS; attempt++) {
-        List<Point> candidate = candidatePath(route, source, target, attempt);
+        List<Point> candidate =
+            candidatePath(route, source, target, attempt + attemptOffset, routeIndex);
         if (!overlapsExistingSegments(candidate, occupiedSegments)) {
           selected = candidate;
           break;
         }
       }
       if (selected == null) {
-        selected = candidatePath(route, source, target, MAX_ROUTE_ATTEMPTS - 1);
+        selected =
+            candidatePath(route, source, target, MAX_ROUTE_ATTEMPTS + attemptOffset, routeIndex);
       }
       route.pinPoints.clear();
       route.pinPoints.addAll(selected.subList(1, selected.size() - 1));
@@ -473,7 +493,8 @@ public final class StoredViewLayoutService {
    * @param attempt candidate attempt
    * @return full path including endpoints
    */
-  private List<Point> candidatePath(EdgeRoute route, NodeBox source, NodeBox target, int attempt) {
+  private List<Point> candidatePath(
+      EdgeRoute route, NodeBox source, NodeBox target, int attempt, int routeIndex) {
     Point start = pointForAnchor(source, route.sourceAnchor);
     Point end = pointForAnchor(target, route.targetAnchor);
     int lane = lane(attempt / 2);
@@ -491,7 +512,7 @@ public final class StoredViewLayoutService {
               new Point(end.x, loopY),
               end));
     }
-    double corridorY = corridorY(source, target, start, end, lane, jitter);
+    double corridorY = corridorY(source, target, start, end, lane, jitter, routeIndex);
     double detour = ROUTE_STUB + Math.abs(lane) * ROUTE_LANE_STEP + jitter;
     double sourceX = start.x + detour;
     double targetX = end.x - detour;
@@ -510,7 +531,12 @@ public final class StoredViewLayoutService {
                 end));
       }
       return compactPath(
-          List.of(start, new Point(start.x, corridorY), new Point(end.x, corridorY), end));
+          List.of(
+              start,
+              new Point(start.x, corridorY),
+              new Point(targetX, corridorY),
+              new Point(targetX, end.y),
+              end));
     }
     return compactPath(
         List.of(
@@ -534,16 +560,25 @@ public final class StoredViewLayoutService {
    * @return corridor y
    */
   private double corridorY(
-      NodeBox source, NodeBox target, Point start, Point end, int lane, double jitter) {
+      NodeBox source,
+      NodeBox target,
+      Point start,
+      Point end,
+      int lane,
+      double jitter,
+      int routeIndex) {
+    double routeBand = routeIndex * ROUTE_LANE_STEP;
     if (Math.abs(start.y - end.y) > 80.0d) {
-      return Math.round((start.y + end.y) / 2.0d + lane * ROUTE_LANE_STEP + jitter);
+      return Math.round((start.y + end.y) / 2.0d + lane * ROUTE_LANE_STEP + jitter + routeBand);
     }
     double top = Math.min(source.y, target.y);
     double bottom = Math.max(source.y + source.height, target.y + target.height);
     if (lane == 0 || lane > 0) {
-      return Math.round(top - ROUTE_STUB - Math.max(0, lane - 1) * ROUTE_LANE_STEP - jitter);
+      return Math.round(
+          top - ROUTE_STUB - Math.max(0, lane - 1) * ROUTE_LANE_STEP - jitter - routeBand);
     }
-    return Math.round(bottom + ROUTE_STUB + Math.abs(lane + 1) * ROUTE_LANE_STEP + jitter);
+    return Math.round(
+        bottom + ROUTE_STUB + Math.abs(lane + 1) * ROUTE_LANE_STEP + jitter + routeBand);
   }
 
   /**
@@ -729,6 +764,51 @@ public final class StoredViewLayoutService {
    */
   private boolean same(double left, double right) {
     return Math.abs(left - right) < 0.5d;
+  }
+
+  /**
+   * Writes routed edge geometry produced by the shared layout service.
+   *
+   * @param edge stored edge JSON
+   * @param routed routed edge from layout service
+   * @param source source node box
+   * @param target target node box
+   */
+  private void writeLayoutServiceEdge(
+      ObjectNode edge, LayoutService.RoutedEdge routed, NodeBox source, NodeBox target) {
+    if (routed == null || routed.sections().isEmpty()) {
+      return;
+    }
+    LayoutService.EdgeSection section = routed.sections().get(0);
+    writeAnchorFromPoint(
+        edge, "sourceAnchor", source, section.startPoint().x(), section.startPoint().y());
+    writeAnchorFromPoint(
+        edge, "targetAnchor", target, section.endPoint().x(), section.endPoint().y());
+    ArrayNode pinPoints = edge.putArray("pinPoints");
+    List<LayoutService.LayoutPoint> bends =
+        routed.bendPoints().isEmpty() ? section.bendPoints() : routed.bendPoints();
+    bends.forEach(
+        point -> {
+          ObjectNode pin = pinPoints.addObject();
+          pin.put("x", Math.round(point.x()));
+          pin.put("y", Math.round(point.y()));
+        });
+  }
+
+  /**
+   * Writes an anchor derived from an absolute route point on a node boundary.
+   *
+   * @param edge edge JSON object
+   * @param field target field name
+   * @param node positioned node box
+   * @param pointX absolute x coordinate
+   * @param pointY absolute y coordinate
+   */
+  private void writeAnchorFromPoint(
+      ObjectNode edge, String field, NodeBox node, double pointX, double pointY) {
+    String side = pointX >= node.x + node.width / 2.0d ? "right" : "left";
+    double offsetY = Math.max(8.0d, Math.min(node.height - 8.0d, pointY - node.y));
+    writeAnchor(edge, field, new Anchor(side, offsetY));
   }
 
   /**

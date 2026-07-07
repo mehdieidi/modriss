@@ -1123,6 +1123,21 @@ paths:
           description: Assistant response accepted
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /api/chatbot/sessions/{sessionId}/cancel:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Assistant]
+      summary: Cancel active assistant turn
+      responses:
+        "200":
+          description: Cancellation accepted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/chatbot/sessions/{sessionId}/attachments:
     parameters:
       - name: sessionId

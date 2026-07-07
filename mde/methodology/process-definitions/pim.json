@@ -1179,13 +1179,13 @@
                 }
               ],
               "steps": [
-                "Create Api elements with routes and HTTP methods.",
+                "Open a ServerlessService focus view and create Api elements with routes and HTTP methods.",
                 "Connect routes to function handlers."
               ],
               "entryCriteria": ["Compute units defined"],
               "exitCriteria": ["API routes cover public endpoints"],
               "validationRules": [],
-              "paletteFocus": ["Api", "ApiRoute"],
+              "paletteFocus": ["ServerlessService"],
               "durationEstimate": "1h"
             },
             {
@@ -1459,6 +1459,36 @@
                 {
                   "metamodel": "pim",
                   "eClass": "TaskStep",
+                  "cardinality": "0..*"
+                },
+                {
+                  "metamodel": "pim",
+                  "eClass": "ChoiceStep",
+                  "cardinality": "0..*"
+                },
+                {
+                  "metamodel": "pim",
+                  "eClass": "WaitStep",
+                  "cardinality": "0..*"
+                },
+                {
+                  "metamodel": "pim",
+                  "eClass": "FailureEndStep",
+                  "cardinality": "0..*"
+                },
+                {
+                  "metamodel": "pim",
+                  "eClass": "ParallelStep",
+                  "cardinality": "0..*"
+                },
+                {
+                  "metamodel": "pim",
+                  "eClass": "MapStep",
+                  "cardinality": "0..*"
+                },
+                {
+                  "metamodel": "pim",
+                  "eClass": "PassStep",
                   "cardinality": "0..*"
                 },
                 {
