@@ -427,28 +427,46 @@ export function modelingElementDefinition(typeKey, elementType) {
   return (level.elements || []).find((entry) => entry.type === elementType) || null;
 }
 
+function normalizeViewDefinitionName(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9]+/g, " ");
+}
+
 export function modelingViewDefinition(typeKey, view) {
-  const level = modelingLevelConfig(typeKey);
-  const viewId = String(
-    view?.definitionId || view?.sourceDefinitionId || view?.id || "",
-  ).toLowerCase();
-  const viewpoint = String(view?.viewpoint || "").toLowerCase();
-  const kind = String(view?.kind || "")
+  const definitions = modelingLevelConfig(typeKey).viewDefinitions || [];
+  const definitionId = String(view?.definitionId || view?.sourceDefinitionId || "")
+    .trim()
+    .toLowerCase();
+  const viewpoint = String(view?.viewpoint || "")
+    .trim()
+    .toLowerCase();
+  const kind = String(view?.kind || view?.viewType || "")
+    .trim()
     .toLowerCase()
     .replaceAll("_", "-");
+  const nameKey = normalizeViewDefinitionName(view?.name || view?.displayName || "");
   return (
-    (level.viewDefinitions || []).find((entry) => {
-      const entryId = String(entry.id || "").toLowerCase();
-      const entryKind = String(entry.viewType || "")
+    definitions.find((definition) => {
+      const id = String(definition?.id || "")
+        .trim()
+        .toLowerCase();
+      const definitionViewpoint = String(definition?.viewpoint || "")
+        .trim()
+        .toLowerCase();
+      const viewType = String(definition?.viewType || "")
+        .trim()
         .toLowerCase()
         .replaceAll("_", "-");
-      const entryViewpoint = String(entry.viewpoint || "").toLowerCase();
+      const displayName = normalizeViewDefinitionName(
+        definition?.displayName || definition?.name || "",
+      );
       return (
-        entryId &&
-        (viewId.includes(entryId) ||
-          kind.includes(entryId) ||
-          kind.includes(entryKind) ||
-          (viewpoint && viewpoint === entryViewpoint))
+        (definitionId && id === definitionId) ||
+        (viewpoint && definitionViewpoint === viewpoint) ||
+        (kind && (id === kind || viewType === kind)) ||
+        (nameKey && displayName === nameKey)
       );
     }) || null
   );

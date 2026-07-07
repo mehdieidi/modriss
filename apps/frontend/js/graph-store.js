@@ -1923,6 +1923,9 @@ function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } 
     if (!normalized.viewpoint) {
       normalized.viewpoint = String(definition.viewpoint || "");
     }
+    if (!safeArray(normalized.palette).length) {
+      normalized.palette = safeArray(definition.palette).map(String);
+    }
     normalized.filters.elementTypes = [
       ...new Set([
         ...normalized.filters.elementTypes,

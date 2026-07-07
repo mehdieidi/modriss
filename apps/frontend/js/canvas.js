@@ -1686,7 +1686,7 @@ function appendPaletteActionGroup(groupName, buildButtons) {
   title.appendChild(titleCount);
   title.addEventListener("click", () => {
     setPaletteGroupCollapsed(groupName, !isPaletteGroupCollapsed(groupName));
-    renderPalette();
+    togglePaletteGroupDom(group, title, groupName);
   });
   group.appendChild(title);
 
@@ -1738,22 +1738,14 @@ function availableConfiguredPaletteTypes(allTypes) {
   if (!view || String(view.kind || "").toUpperCase() === "MAIN") {
     return allTypes;
   }
-  let viewDefinition = null;
-  try {
-    viewDefinition = modelingViewDefinition(state.activeType, view);
-  } catch {
-    viewDefinition = null;
-  }
-  const scoped = viewDefinition
-    ? [
-        ...(Array.isArray(viewDefinition.palette) ? viewDefinition.palette : []),
-        ...(Array.isArray(viewDefinition.elementTypes) ? viewDefinition.elementTypes : []),
-      ]
-    : [...activeViewElementTypeFilter()];
+  const scoped = [
+    ...(Array.isArray(view.palette) ? view.palette : []),
+    ...activeViewElementTypeFilter(),
+  ];
   const filtered = filterScopedPaletteTypes(state.activeType, scoped, allTypes).filter((type) =>
     modelingStandalonePaletteType(state.activeType, type),
   );
-  return viewDefinition || scoped.length ? filtered : allTypes;
+  return scoped.length ? filtered : allTypes;
 }
 
 function renderWizardActions() {
@@ -1792,6 +1784,26 @@ function setPaletteGroupCollapsed(groupName, collapsed) {
   state.paletteGroupCollapsed ??= {};
   state.paletteGroupCollapsed[state.activeType] ??= {};
   state.paletteGroupCollapsed[state.activeType][groupName] = Boolean(collapsed);
+}
+
+function togglePaletteGroupDom(group, title, groupName) {
+  const collapsed = isPaletteGroupCollapsed(groupName);
+  group.classList.toggle("palette-group-collapsed", collapsed);
+  title?.setAttribute("aria-expanded", String(!collapsed));
+}
+
+function syncAllPaletteGroupsDom() {
+  if (!el.palette) {
+    return;
+  }
+  el.palette.querySelectorAll(".palette-group").forEach((group) => {
+    const groupName = group.querySelector(".palette-group-name")?.textContent?.trim();
+    if (!groupName) {
+      return;
+    }
+    const title = group.querySelector(".palette-group-title");
+    togglePaletteGroupDom(group, title, groupName);
+  });
 }
 
 function setAllPaletteGroupsCollapsed(groupNames, collapsed) {
@@ -1876,7 +1888,7 @@ export function renderPalette() {
     expandBtn.textContent = "Expand All";
     expandBtn.addEventListener("click", () => {
       setAllPaletteGroupsCollapsed(namedGroups, false);
-      renderPalette();
+      syncAllPaletteGroupsDom();
     });
     const collapseBtn = document.createElement("button");
     collapseBtn.type = "button";
@@ -1884,7 +1896,7 @@ export function renderPalette() {
     collapseBtn.textContent = "Collapse All";
     collapseBtn.addEventListener("click", () => {
       setAllPaletteGroupsCollapsed(namedGroups, true);
-      renderPalette();
+      syncAllPaletteGroupsDom();
     });
     toolbarActions.appendChild(expandBtn);
     toolbarActions.appendChild(collapseBtn);
@@ -1919,7 +1931,7 @@ export function renderPalette() {
       title.appendChild(titleCount);
       title.addEventListener("click", () => {
         setPaletteGroupCollapsed(groupName, !isPaletteGroupCollapsed(groupName));
-        renderPalette();
+        togglePaletteGroupDom(group, title, groupName);
       });
       group.appendChild(title);
     }

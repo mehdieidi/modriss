@@ -6,7 +6,11 @@ import {
   selectElementIdsForView,
   selectRelationshipIdsForView,
 } from "./graph-store.js";
-import { modelingElementDefinition } from "./modeling-config-data.js";
+import {
+  modelingContainmentsForType,
+  modelingElementDefinition,
+  modelingLevelConfig,
+} from "./modeling-config-data.js";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -53,24 +57,29 @@ function pruneIsolatedGeneratedNodes(graph, view, elementIds, relationshipIds) {
   return elementIds.filter((elementId) => connected.has(elementId) || pinned.has(elementId));
 }
 
+function hasContainmentCapacity(typeKey, type, definition) {
+  if (!definition) {
+    return false;
+  }
+  const containments = modelingContainmentsForType(typeKey, type);
+  if (containments.some((entry) => !entry.relationshipOnly)) {
+    return true;
+  }
+  if (safeArray(definition.containmentPaletteExtras).length) {
+    return true;
+  }
+  const palette = modelingLevelConfig(typeKey).containmentPalettes?.[type];
+  return Boolean(palette?.types?.length);
+}
+
 export function isContainerElement(elementOrType, typeKey = state.activeType) {
   const type = typeof elementOrType === "string" ? elementOrType : elementType(elementOrType);
   try {
     const definition = modelingElementDefinition(typeKey, type);
-    if (
-      !definition ||
-      definition.relationshipElement ||
-      definition.containedOnly ||
-      definition.supportOnly
-    ) {
+    if (!definition || definition.relationshipElement || definition.supportOnly) {
       return false;
     }
-    return (
-      definition.visualRole === "container" ||
-      safeArray(definition.references).some(
-        (reference) => reference?.containment === true && reference?.many !== false,
-      )
-    );
+    return hasContainmentCapacity(typeKey, type, definition);
   } catch {
     return false;
   }
