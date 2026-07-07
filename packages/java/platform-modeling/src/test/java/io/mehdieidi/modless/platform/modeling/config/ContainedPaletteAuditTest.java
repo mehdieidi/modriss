@@ -69,9 +69,13 @@ class ContainedPaletteAuditTest {
           listOfMaps(modelingLevel.get("elements")).stream()
               .collect(Collectors.toMap(item -> String.valueOf(item.get("type")), item -> item));
       for (Map<String, Object> view : listOfMaps(modelingLevel.get("viewDefinitions"))) {
+        List<String> scopeTypes = stringList(view.get("scopeTypes"));
         for (String type : stringList(view.get("palette"))) {
           Map<String, Object> element = elementsByType.get(type);
           assertTrue(element != null, key + " " + view.get("id") + " unknown palette type " + type);
+          if (scopeTypes.contains(type)) {
+            continue;
+          }
           assertFalse(
               Boolean.TRUE.equals(element.get("containedOnly")),
               key + " " + view.get("id") + " palette must not include contained-only type " + type);
@@ -112,9 +116,12 @@ class ContainedPaletteAuditTest {
   void workflowAndApiViewsOnlyExposeStandalonePaletteTypes() {
     Map<String, Object> pim = level("pim");
     List<String> workflowPalette = paletteForView(pim, "pim-workflow-designer");
-    assertFalse(workflowPalette.contains("Workflow"));
+    assertTrue(workflowPalette.contains("Workflow"));
     assertFalse(workflowPalette.contains("StartStep"));
     assertFalse(workflowPalette.contains("TaskStep"));
+    assertFalse(workflowPalette.contains("HumanTask"));
+    assertFalse(workflowPalette.contains("ApprovalTask"));
+    assertFalse(workflowPalette.contains("EscalationPolicy"));
 
     List<String> apiPalette = paletteForView(pim, "pim-api-surface");
     assertTrue(apiPalette.contains("ServerlessService"));

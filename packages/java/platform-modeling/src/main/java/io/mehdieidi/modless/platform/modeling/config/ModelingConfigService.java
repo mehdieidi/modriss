@@ -337,17 +337,24 @@ public final class ModelingConfigService {
       }
       Map<String, Object> view = stringKeyMap(raw);
       List<String> configuredPalette = objectStringList(view.get("palette"));
+      List<String> scopeTypes = objectStringList(view.get("scopeTypes"));
       LinkedHashSet<String> relatedTypes =
           new LinkedHashSet<>(objectStringList(view.get("elementTypes")));
       LinkedHashSet<String> palette = new LinkedHashSet<>();
       if (!configuredPalette.isEmpty()) {
         for (String type : configuredPalette) {
           Map<String, Object> element = elementsByType.get(type);
-          if (element != null && standalonePaletteElement(element, standalonePaletteRoles)) {
+          if (element == null) {
+            continue;
+          }
+          if (standalonePaletteElement(element, standalonePaletteRoles)
+              || (scopeTypes.contains(type) && paletteEntryTypeAllowed(element))) {
             palette.add(type);
           }
         }
         relatedTypes.addAll(palette);
+      } else if (!scopeTypes.isEmpty()) {
+        relatedTypes.addAll(configuredPalette);
       } else {
         relatedTypes.addAll(configuredPalette);
         for (String relatedType : relatedTypes) {
@@ -399,6 +406,13 @@ public final class ModelingConfigService {
         && !Boolean.TRUE.equals(element.get("supportOnly"))
         && standalonePaletteRoles.contains(
             String.valueOf(element.getOrDefault("visualRole", "node")));
+  }
+
+  private boolean paletteEntryTypeAllowed(Map<String, Object> element) {
+    return Boolean.TRUE.equals(element.get("creatable"))
+        && !Boolean.TRUE.equals(element.get("abstract"))
+        && !Boolean.TRUE.equals(element.get("relationshipElement"))
+        && !Boolean.TRUE.equals(element.get("supportOnly"));
   }
 
   /**

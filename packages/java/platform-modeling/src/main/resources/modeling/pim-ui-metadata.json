@@ -982,14 +982,10 @@
         "MapStateConfig",
         "CallbackTaskConfig",
         "ErrorHandler",
-        "CompensationPolicy",
-        "EscalationPolicy",
-        "HumanTask",
-        "ApprovalTask",
         "Function",
         "ExternalAdapter"
       ],
-      "palette": [],
+      "palette": ["Workflow"],
       "relationshipKinds": ["TRANSITION", "INVOKES", "ORCHESTRATES", "EXTERNAL_CALL", "CONTAINS"],
       "layoutHint": "PROCESS"
     },
@@ -1693,12 +1689,6 @@
         "shape": "workflow-container",
         "lineFields": ["workflowKind", "executionSemantics", "longRunning"]
       },
-      "containmentPaletteExtras": [
-        "HumanTask",
-        "ApprovalTask",
-        "EscalationPolicy",
-        "CompensationPolicy"
-      ],
       "processPhaseId": "pim.ph4",
       "processTaskIds": ["pim.ph4.st2.t1"],
       "processStageId": "pim.ph4.st2"

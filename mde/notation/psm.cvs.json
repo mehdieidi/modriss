@@ -4823,7 +4823,9 @@
       "behavior": "Views persist filters, layout, camera positions, and edge-layer choices."
     }
   ],
-  "workbench": {},
+  "workbench": {
+    "defaultViewDefinitionId": "psm-resource-topology"
+  },
   "scaffoldRecipes": [],
   "constraints": [],
   "strictnessModes": ["exploration", "methodology", "production"],

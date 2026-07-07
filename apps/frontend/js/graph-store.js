@@ -19,7 +19,6 @@ import {
   relationshipSemanticCopy,
   removeReferenceValue,
   semanticEdgeObjectSpec,
-  semanticElementsFromRoot,
   semanticRelationshipsFromRoot,
   modelTypeMatches,
 } from "./model-utils.js";
@@ -69,13 +68,32 @@ function isStructuralNestRelationship(relationship, typeKey = state.activeType) 
   return nestingKinds(typeKey).has(relationshipKindUpper(relationship));
 }
 
-function scopeElementIsContainer(typeKey, element) {
+function scopeElementHasContainmentCapacity(typeKey, element) {
+  const type = semanticType(element);
   try {
-    const definition = modelingElementDefinition(typeKey, semanticType(element));
-    return definition?.visualRole === "container";
+    const definition = modelingElementDefinition(typeKey, type);
+    if (!definition || definition.relationshipElement || definition.supportOnly) {
+      return false;
+    }
+    if (definition.visualRole === "container") {
+      return true;
+    }
+    const containments = modelingContainmentsForType(typeKey, type);
+    if (containments.some((entry) => !entry.relationshipOnly)) {
+      return true;
+    }
+    if (safeArray(definition.containmentPaletteExtras).length) {
+      return true;
+    }
+    const palette = modelingLevelConfig(typeKey).containmentPalettes?.[type];
+    return Boolean(palette?.types?.length);
   } catch {
     return false;
   }
+}
+
+function scopeElementIsContainer(typeKey, element) {
+  return scopeElementHasContainmentCapacity(typeKey, element);
 }
 
 function clone(value) {
@@ -158,7 +176,7 @@ function isFocusView(view) {
 
 function elementRecords(modelJson, typeKey = state.activeType) {
   const semanticElements = isModelingLevel(typeKey)
-    ? semanticElementsFromRoot(typeKey, modelJson)
+    ? semanticElementsFromConfiguredRoot(typeKey, modelJson)
     : [];
   const graphElements = Array.isArray(modelJson?.graph?.elements) ? modelJson.graph.elements : [];
   if (semanticElements.length) {
@@ -363,7 +381,7 @@ function collectConfiguredNestedElements(typeKey, parent, result, seen) {
   });
 }
 
-function _semanticElementsFromConfiguredRoot(typeKey, modelJson) {
+function semanticElementsFromConfiguredRoot(typeKey, modelJson) {
   const result = [];
   const seen = new Set();
   if (!modelJson || typeof modelJson !== "object") {
@@ -1041,6 +1059,8 @@ function buildGraph(typeKey, modelJson) {
     synthesizeSemanticRefRelationships(graph, typeKey);
   }
 
+  rebuildGraphIndexes(graph, typeKey);
+
   safeArray(modelJson?.graph?.traceLinks || modelJson?.traceLinks).forEach((traceLink, index) => {
     const id = String(traceLink?.id || `trace-${index + 1}`);
     graph.traceLinksById.set(id, { ...clone(traceLink), id });
@@ -1156,7 +1176,7 @@ function shouldIncludeRelationshipEndpointOnView(
   if (!element || hidden?.has(elementId)) {
     return false;
   }
-  if (shouldExcludeContainedElementFromView(graph, view, elementId, element)) {
+  if (shouldExcludeContainedElementFromView(graph, view, elementId, element, typeKey)) {
     return false;
   }
   if (pinned?.has(elementId)) {
@@ -1294,7 +1314,11 @@ function containedDescendantElementIds(graph, rootElementId) {
 
 function semanticParentId(graph, elementId, element) {
   const ownerId = String(element?.__ownerId || "").trim();
-  return ownerId && graph.elementsById.has(ownerId) ? ownerId : "";
+  if (ownerId && graph.elementsById.has(ownerId)) {
+    return ownerId;
+  }
+  const parentId = String(graph.parentByChild?.get(elementId) || "").trim();
+  return parentId && graph.elementsById.has(parentId) ? parentId : "";
 }
 
 function isDescendantOfScopeRoot(graph, elementId, scopeRootId) {
@@ -1324,7 +1348,18 @@ function isDescendantOfScopeRoot(graph, elementId, scopeRootId) {
   return false;
 }
 
-function shouldExcludeContainedElementFromView(graph, view, elementId, element) {
+function viewSurfaceEntryTypes(typeKey, view) {
+  const definition = matchingViewDefinition(typeKey, view);
+  if (!definition) {
+    return new Set();
+  }
+  return new Set([
+    ...safeArray(definition.viewEntryTypes),
+    ...safeArray(definition.scopeTypes),
+  ]);
+}
+
+function shouldExcludeContainedElementFromView(graph, view, elementId, element, typeKey) {
   if (isContainerScopeView(view)) {
     return false;
   }
@@ -1335,7 +1370,30 @@ function shouldExcludeContainedElementFromView(graph, view, elementId, element) 
   if (scopeRootId && isDescendantOfScopeRoot(graph, elementId, scopeRootId)) {
     return false;
   }
-  return true;
+  if (typeKey) {
+    const entryTypes = viewSurfaceEntryTypes(typeKey, view);
+    if (entryTypes.size && elementMatchesFilterTypes(element, entryTypes, typeKey)) {
+      return false;
+    }
+  }
+  if (!typeKey) {
+    return true;
+  }
+  try {
+    const definition = modelingElementDefinition(typeKey, semanticType(element));
+    if (!definition) {
+      return true;
+    }
+    if (definition.containedOnly || definition.supportOnly || definition.relationshipElement) {
+      return true;
+    }
+    if (definition.visualRole === "detail" || definition.visualRole === "support") {
+      return true;
+    }
+    return false;
+  } catch {
+    return true;
+  }
 }
 
 export function selectElementIdsForView(graph, view, typeKey) {
@@ -1391,7 +1449,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
     if (!element || hidden.has(elementId)) {
       return;
     }
-    if (shouldExcludeContainedElementFromView(graph, view, elementId, element)) {
+    if (shouldExcludeContainedElementFromView(graph, view, elementId, element, typeKey)) {
       return;
     }
     if (hasExplicitNodes) {
@@ -1418,6 +1476,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
           view,
           elementId,
           graph.elementsById.get(elementId),
+          typeKey,
         ),
     );
   }
@@ -1753,21 +1812,38 @@ function defaultMainView(
   };
 }
 
+export function isNamedInstanceView(typeKey, view) {
+  if (!view) {
+    return false;
+  }
+  const kind = String(view?.kind || "").toUpperCase();
+  if (kind === "SAVED_VIEWPOINT") {
+    return false;
+  }
+  if (String(view?.scope?.rootElementId || "").trim()) {
+    return true;
+  }
+  const definition = matchingViewDefinition(typeKey, view);
+  if (!definition) {
+    return false;
+  }
+  const globalName = String(definition.displayName || definition.id || "").trim();
+  const viewName = String(view?.name || "").trim();
+  if (!globalName || !viewName || viewName === globalName) {
+    return false;
+  }
+  return viewName.endsWith(` - ${globalName}`) || viewName.includes(` - ${globalName}`);
+}
+
+function sanitizeWorkbenchViews(views, typeKey) {
+  return safeArray(views).filter((view) => !isNamedInstanceView(typeKey, view));
+}
+
 function generateViews(typeKey, graph, modelName) {
   const views = [defaultMainView(typeKey, graph, modelName)];
   const definitions = viewDefinitions(typeKey);
   definitions.forEach((definition) => {
     views.push(buildViewFromDefinition(typeKey, graph, definition));
-    const scopeTypes = new Set(safeArray(definition.scopeTypes));
-    graph.elementsById.forEach((element) => {
-      if (!scopeTypes.has(semanticType(element))) {
-        return;
-      }
-      const view = buildViewFromDefinition(typeKey, graph, definition, element);
-      if (view.nodes.length > 1 || view.edges.length) {
-        views.push(view);
-      }
-    });
   });
   const seen = new Set();
   return views.filter((view) => {
@@ -1983,9 +2059,12 @@ function buildViews(typeKey, graph, modelJson, fallbackName) {
     // scoped view here performs repeated selection and layout work, then discards
     // those scoped views below.
     const generatedViews = generateLazyGlobalViews(typeKey, graph, modelJson?.name || fallbackName);
-    const normalizedViews = rawViews
-      .map((view) => normalizeView(view, graph, typeKey, fallbackName, { deferLayout: true }))
-      .filter((view) => viewBelongsToLevel(view, typeKey) && !isFocusView(view));
+    const normalizedViews = sanitizeWorkbenchViews(
+      rawViews
+        .map((view) => normalizeView(view, graph, typeKey, fallbackName, { deferLayout: true }))
+        .filter((view) => viewBelongsToLevel(view, typeKey) && !isFocusView(view)),
+      typeKey,
+    );
     const existingKeys = new Set();
     normalizedViews.forEach((view) => {
       existingKeys.add(view.id);
@@ -2095,7 +2174,7 @@ function defaultViewDefinitionId(typeKey) {
   const fallbacks = {
     cim: "business-process",
     pim: "pim-workflow-designer",
-    psm: "psm-workflow-asl",
+    psm: "psm-resource-topology",
   };
   try {
     const configured = String(
@@ -2145,7 +2224,7 @@ function resolveActiveViewId(byId, typeKey, activeViewId) {
 
 function installViews(views, activeViewId, typeKey = state.activeType, modelName = "") {
   const byId = new Map();
-  safeArray(views)
+  sanitizeWorkbenchViews(views, typeKey)
     .filter((view) => viewBelongsToLevel(view, typeKey) && !isFocusView(view))
     .forEach((view) => byId.set(view.id, view));
   generateLazyGlobalViews(typeKey, state.graph, modelName)
@@ -2295,6 +2374,9 @@ export function installGraphAndViews(
   const active = state.views?.byId?.get(state.views?.activeViewId);
   if (active) {
     ensureViewContent(active, typeKey, { skipClientLayout });
+    if (matchingViewDefinition(typeKey, active)) {
+      refreshViewContent(active, typeKey, { skipClientLayout });
+    }
   }
   return {
     graph: state.graph,
@@ -2325,6 +2407,9 @@ export async function installGraphAndViewsAsync(
   const active = state.views?.byId?.get(state.views?.activeViewId);
   if (active) {
     await ensureViewContentAsync(active, typeKey, { skipClientLayout });
+    if (matchingViewDefinition(typeKey, active)) {
+      refreshViewContent(active, typeKey, { skipClientLayout });
+    }
   }
   await yieldToMain();
   return {
@@ -2504,9 +2589,10 @@ function mergeManualBacklog(primary, secondary) {
 }
 
 export function serializeRuntimeViews() {
-  return [...state.views.byId.values()]
-    .filter((view) => !isFocusView(view) && !view._lazyContent)
-    .map(clone);
+  return sanitizeWorkbenchViews(
+    [...state.views.byId.values()].filter((view) => !isFocusView(view) && !view._lazyContent),
+    state.activeType,
+  ).map(clone);
 }
 
 export function serializeRuntimeFragments() {

@@ -599,18 +599,13 @@
       "icon": "schema",
       "color": "#EA580C",
       "category": "Workflow View",
+      "visualRole": "container",
       "primitive": "workflow-container",
       "card": {
         "tag": "WF",
         "lineFields": ["workflowKind", "executionSemantics", "longRunning"],
         "detailFields": ["workflowKind", "executionSemantics", "longRunning"]
-      },
-      "containmentPaletteExtras": [
-        "HumanTask",
-        "ApprovalTask",
-        "EscalationPolicy",
-        "CompensationPolicy"
-      ]
+      }
     },
     {
       "type": "WorkflowStep",
@@ -2953,14 +2948,10 @@
         "MapStateConfig",
         "CallbackTaskConfig",
         "ErrorHandler",
-        "CompensationPolicy",
-        "EscalationPolicy",
-        "HumanTask",
-        "ApprovalTask",
         "Function",
         "ExternalAdapter"
       ],
-      "palette": [],
+      "palette": ["Workflow"],
       "relationshipKinds": ["TRANSITION", "INVOKES", "ORCHESTRATES", "EXTERNAL_CALL", "CONTAINS"],
       "layoutHint": "PROCESS"
     },
@@ -3123,7 +3114,9 @@
       "behavior": "Views persist filters, layout, camera positions, and edge-layer choices."
     }
   ],
-  "workbench": {},
+  "workbench": {
+    "defaultViewDefinitionId": "pim-workflow-designer"
+  },
   "scaffoldRecipes": [],
   "constraints": [],
   "strictnessModes": ["exploration", "methodology", "production"],

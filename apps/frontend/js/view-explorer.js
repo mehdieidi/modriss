@@ -6,6 +6,7 @@ import { markModelDirty, updateModelSaveUi } from "./model-save-ui.js";
 import {
   activeView,
   ensureActiveGraphAndViews,
+  isNamedInstanceView,
   refreshViewContent,
   saveCurrentTabGraphState,
   setActiveViewId,
@@ -195,17 +196,35 @@ function viewMetadataKey(view) {
   );
 }
 
-function metadataKeyMatches(viewKey, metadataKey) {
-  return (
-    Boolean(viewKey && metadataKey) &&
-    (viewKey.includes(metadataKey) || metadataKey.includes(viewKey))
+function metadataViewDefinitionIds() {
+  try {
+    return safeArray(modelingLevelConfig(state.activeType).viewDefinitions).map((definition) =>
+      normalizeLabel(String(definition?.id || "")),
+    );
+  } catch {
+    return [];
+  }
+}
+
+function viewMatchesCatalogDefinition(view) {
+  const definitionId = normalizeLabel(
+    String(view?.definitionId || view?.sourceDefinitionId || ""),
   );
+  if (!definitionId) {
+    return false;
+  }
+  return metadataViewDefinitionIds().includes(definitionId);
+}
+
+function metadataKeyMatches(viewKey, metadataKey) {
+  return Boolean(viewKey && metadataKey) && viewKey === metadataKey;
 }
 
 function levelViews() {
   const all = [...state.views.byId.values()].filter(viewMatchesLevel);
   const wanted = metadataViewKeys();
   const wantedSet = new Set(wanted);
+  const definitionIds = new Set(metadataViewDefinitionIds());
   const rank = (view) => {
     const kind = String(view?.kind || "").toUpperCase();
     if (kind === "MAIN") {
@@ -214,6 +233,12 @@ function levelViews() {
     if (kind === "SAVED_VIEWPOINT") {
       return 350;
     }
+    const definitionId = normalizeLabel(
+      String(view?.definitionId || view?.sourceDefinitionId || ""),
+    );
+    if (definitionId && definitionIds.has(definitionId)) {
+      return [...definitionIds].indexOf(definitionId);
+    }
     const specIndex = wanted.findIndex((key) => metadataKeyMatches(viewMetadataKey(view), key));
     if (specIndex >= 0) {
       return specIndex;
@@ -221,13 +246,18 @@ function levelViews() {
     return 500;
   };
   const filtered = all.filter((view) => {
+    if (isNamedInstanceView(state.activeType, view)) {
+      return false;
+    }
     const kind = String(view?.kind || "").toUpperCase();
-    return (
-      kind === "MAIN" ||
-      kind === "SAVED_VIEWPOINT" ||
-      [...wantedSet].some((key) => metadataKeyMatches(viewMetadataKey(view), key)) ||
-      !view.scope?.rootElementId
-    );
+    if (kind === "MAIN" || kind === "SAVED_VIEWPOINT") {
+      return true;
+    }
+    if (viewMatchesCatalogDefinition(view)) {
+      return true;
+    }
+    const viewName = normalizeLabel(String(view?.name || ""));
+    return wantedSet.has(viewName);
   });
   return filtered.sort(
     (a, b) => rank(a) - rank(b) || String(a.name || "").localeCompare(String(b.name || "")),

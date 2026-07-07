@@ -1696,6 +1696,80 @@ function appendPaletteActionGroup(groupName, buildButtons) {
   return true;
 }
 
+function scopedViewContainmentOwnerType() {
+  const view = activeView();
+  const rootId = String(view?.scope?.rootElementId || "").trim();
+  if (!rootId) {
+    return null;
+  }
+  const element = state.graph.elementsById.get(rootId);
+  if (!element || !isContainerElement(element)) {
+    return null;
+  }
+  return element.eClass || element.type || null;
+}
+
+function isEntryTypeViewDefinition(definition) {
+  return Boolean(definition) && safeArray(definition.scopeTypes).length > 0;
+}
+
+function entryTypeViewPaletteTypes(definition) {
+  if (!isEntryTypeViewDefinition(definition)) {
+    return null;
+  }
+  const configured = safeArray(definition.palette).map(String).filter(Boolean);
+  if (configured.length) {
+    return configured;
+  }
+  return [];
+}
+
+function paletteTypesForActiveView() {
+  const containerFocus = activeContainerFocus();
+  if (containerFocus) {
+    return modelingCanvasPaletteTypes(state.activeType, {
+      ownerType: containerFocus.elementType,
+    }).filter((type) => type !== modelingRootType(state.activeType));
+  }
+  if (!isModelingLevel(state.activeType)) {
+    const config = MODEL_TYPES[state.activeType];
+    return Array.isArray(config?.palette) ? config.palette : [];
+  }
+  const definition = modelingViewDefinition(state.activeType, activeView());
+  const entryPalette = entryTypeViewPaletteTypes(definition);
+  if (entryPalette !== null) {
+    return entryPalette;
+  }
+  return availableConfiguredPaletteTypes(
+    modelingCanvasPaletteTypes(state.activeType, { ownerType: null }),
+  ).filter((type) => type !== modelingRootType(state.activeType));
+}
+
+function paletteEmptyHint() {
+  const containerFocus = activeContainerFocus();
+  if (containerFocus) {
+    return `No containable elements configured for ${containerFocus.label || containerFocus.elementType}`;
+  }
+  if (!isModelingLevel(state.activeType)) {
+    return "No matching elements";
+  }
+  try {
+    const definition = modelingViewDefinition(state.activeType, activeView());
+    if (isEntryTypeViewDefinition(definition) && !safeArray(definition.palette).length) {
+      const entryType = String(definition.scopeTypes[0] || "").trim();
+      const entryDefinition = entryType
+        ? modelingElementDefinition(state.activeType, entryType)
+        : null;
+      const entryLabel = entryDefinition?.displayName || entryType || "container";
+      const entryPlural = entryLabel.endsWith("s") ? entryLabel : `${entryLabel}s`;
+      return `Open a ${entryLabel} to add its inner elements. Create ${entryPlural} from Service Landscape.`;
+    }
+  } catch {
+    // Fall through to generic hint.
+  }
+  return "No backend palette available";
+}
+
 function activeViewElementTypeFilter() {
   return new Set((activeView()?.filters?.elementTypes || []).map(String));
 }
@@ -1738,10 +1812,18 @@ function availableConfiguredPaletteTypes(allTypes) {
   if (!view || String(view.kind || "").toUpperCase() === "MAIN") {
     return allTypes;
   }
-  const scoped = [
-    ...(Array.isArray(view.palette) ? view.palette : []),
-    ...activeViewElementTypeFilter(),
-  ];
+  const scopeOwnerType = scopedViewContainmentOwnerType();
+  if (scopeOwnerType) {
+    return modelingCanvasPaletteTypes(state.activeType, { ownerType: scopeOwnerType });
+  }
+  const definition = modelingViewDefinition(state.activeType, view);
+  const entryPalette = entryTypeViewPaletteTypes(definition);
+  if (entryPalette !== null) {
+    return entryPalette;
+  }
+  const configuredPalette = Array.isArray(view.palette) ? view.palette : null;
+  const hasExplicitPalette = configuredPalette !== null;
+  const scoped = hasExplicitPalette ? [...configuredPalette] : [...activeViewElementTypeFilter()];
   const filtered = filterScopedPaletteTypes(state.activeType, scoped, allTypes).filter((type) =>
     modelingStandalonePaletteType(state.activeType, type),
   );
@@ -1825,31 +1907,15 @@ export function renderPalette() {
     el.paletteSearchInput.value = isModelingType ? state.paletteSearch[state.activeType] || "" : "";
     el.paletteSearchInput.placeholder = isModelingType ? "Search elements..." : "Search disabled";
   }
-  let allTypes = [];
-  const containerFocus = activeContainerFocus();
-  if (isModelingType) {
-    try {
-      allTypes = modelingCanvasPaletteTypes(state.activeType, {
-        ownerType: containerFocus?.elementType || null,
-      });
-    } catch (error) {
-      console.error("Palette rendering failed", error);
-      setStatus(error, { prefix: "Backend modeling config is unavailable.", error: true });
-      allTypes = [];
-    }
-  } else {
-    allTypes = Array.isArray(config.palette) ? config.palette : [];
-  }
   const query = ((state.paletteSearch[state.activeType] || "") + "").trim().toLowerCase();
-  const activeViewElementTypes = activeViewElementTypeFilter();
-  const viewScopedTypes = containerFocus
-    ? allTypes
-    : isModelingType
-      ? availableConfiguredPaletteTypes(allTypes)
-      : activeViewElementTypes.size
-        ? allTypes.filter((type) => activeViewElementTypes.has(type))
-        : allTypes;
-  const actionableTypes = viewScopedTypes;
+  let actionableTypes = [];
+  try {
+    actionableTypes = paletteTypesForActiveView();
+  } catch (error) {
+    console.error("Palette rendering failed", error);
+    setStatus(error, { prefix: "Backend modeling config is unavailable.", error: true });
+    actionableTypes = [];
+  }
   const filteredTypes = query
     ? actionableTypes.filter((type) => {
         const definition = modelingElementDefinition(state.activeType, type);
@@ -1874,7 +1940,7 @@ export function renderPalette() {
   if (hasQuickActionsGroup) {
     namedGroups.unshift("Quick Actions");
   }
-  if (namedGroups.length > 1) {
+  if (namedGroups.filter(Boolean).length >= 1) {
     const groupToolbar = document.createElement("div");
     groupToolbar.className = "palette-group-toolbar";
     const toolbarLabel = document.createElement("div");
@@ -1983,12 +2049,7 @@ export function renderPalette() {
   if (!filteredTypes.length) {
     const empty = document.createElement("div");
     empty.className = "palette-empty";
-    const containerFocus = activeContainerFocus();
-    empty.textContent = containerFocus
-      ? `No containable elements configured for ${containerFocus.label || containerFocus.elementType}`
-      : isModelingType
-        ? "No backend palette available"
-        : "No matching elements";
+    empty.textContent = paletteEmptyHint();
     el.palette.appendChild(empty);
   }
 }
@@ -2781,11 +2842,7 @@ export function setupDnD() {
     ).trim();
     state.paletteDragType = "";
     const containerFocus = activeContainerFocus();
-    const allowedTypes = new Set(
-      modelingCanvasPaletteTypes(state.activeType, {
-        ownerType: containerFocus?.elementType || null,
-      }).filter((candidate) => candidate !== modelingRootType(state.activeType)),
-    );
+    const allowedTypes = new Set(paletteTypesForActiveView());
     if (
       !type ||
       (paletteItem?.level && paletteItem.level !== state.activeType) ||
@@ -2877,8 +2934,53 @@ function tryAssignNodeToContainerOwner(node, owner) {
   return true;
 }
 
+function assignEntryTypeViewOwner(node) {
+  if (!node?.type || !isModelingLevel(state.activeType)) {
+    return false;
+  }
+  let definition;
+  try {
+    definition = modelingViewDefinition(state.activeType, activeView());
+  } catch {
+    return false;
+  }
+  const scopeTypes = new Set(safeArray(definition?.scopeTypes).map(String));
+  if (!scopeTypes.has(node.type)) {
+    return false;
+  }
+  const ownerSpecs = containingFeaturesForChild(node.type);
+  if (!ownerSpecs.length) {
+    return false;
+  }
+  const ownerTypes = [...new Set(ownerSpecs.map((entry) => entry.ownerType))];
+  const candidates = [...state.graph.elementsById.values()].filter((element) =>
+    ownerTypes.some((ownerType) =>
+      modelTypeMatches(state.activeType, ownerType, element.eClass || element.type),
+    ),
+  );
+  if (!candidates.length) {
+    setStatus(`Create a ${ownerTypes[0]} first (Service Landscape view).`, { error: true });
+    return false;
+  }
+  const selectedOwner =
+    candidates.find((candidate) => candidate.id === state.selectedNodeId) ||
+    (candidates.length === 1 ? candidates[0] : null);
+  if (!selectedOwner) {
+    setStatus(`Select a parent ${ownerTypes[0]} before adding ${node.type}.`, { error: true });
+    return false;
+  }
+  const containment =
+    ownerSpecs.find((entry) =>
+      modelTypeMatches(state.activeType, entry.ownerType, selectedOwner.eClass || selectedOwner.type),
+    ) || ownerSpecs[0];
+  return Boolean(attachNestedNode(node, containment));
+}
+
 function assignNodeToSemanticContainer(node) {
   if (assignNodeToFocusedContainer(node)) {
+    return true;
+  }
+  if (assignEntryTypeViewOwner(node)) {
     return true;
   }
   if (
