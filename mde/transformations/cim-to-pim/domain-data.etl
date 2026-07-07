@@ -232,7 +232,7 @@ rule Aggregate2DataStore
   ix.supportsAccessPatterns.add(ap);
   store.indexCandidates.add(ix);
 
-  pimRoot().dataStores.add(store);
+  serviceFor(ag).stores.add(store);
   traceGenerated(ag, store, "TR-050", "MEDIUM");
   traceGenerated(ag, dataModel, "TR-050", "HIGH");
 

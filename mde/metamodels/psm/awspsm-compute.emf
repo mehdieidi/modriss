@@ -36,15 +36,15 @@ class AwsLambdaFunction extends awspsmcore.AwsResource, awspsmcore.S3Notificatio
   val awspsmnetworking.VpcAttachmentConfig[?] vpcConfig;
 
   ref LambdaLayerVersion[*] layers;
-  ref LambdaPermission[*]#function permissions;
-  ref LambdaVersion[*]#function versions;
-  ref LambdaAlias[*]#function aliases;
-  ref LambdaEventInvokeConfig[*]#function eventInvokeConfigs;
-  ref LambdaEventSourceMapping[*]#function eventSourceMappings;
+  val LambdaPermission[*]#function permissions;
+  val LambdaVersion[*]#function versions;
+  val LambdaAlias[*]#function aliases;
+  val LambdaEventInvokeConfig[*]#function eventInvokeConfigs;
+  val LambdaEventSourceMapping[*]#function eventSourceMappings;
   ref awspsmobservability.CloudWatchLogGroup[1] logGroup;
   ref awspsmsecurity.IamRole[1] role;
   ref awspsmsecurity.KmsKey[?] kmsKey;
-  ref LambdaFunctionUrl[?]#function functionUrl;
+  val LambdaFunctionUrl[?]#function functionUrl;
   ref CodeSigningConfig[?] codeSigningConfig;
 }
 
@@ -111,7 +111,7 @@ abstract class LambdaEventSourceMapping extends awspsmcore.AwsResource {
 
   val LambdaDestinationConfig[?] destinationConfig;
 
-  ref AwsLambdaFunction[1]#eventSourceMappings function;
+  readonly transient ref AwsLambdaFunction[1]#eventSourceMappings function;
 }
 
 class SqsLambdaEventSourceMapping extends LambdaEventSourceMapping {
@@ -143,7 +143,7 @@ class LambdaEventInvokeConfig extends awspsmcore.AwsResource {
 
   val LambdaDestinationConfig[?] destinationConfig;
 
-  ref AwsLambdaFunction[1]#eventInvokeConfigs function;
+  readonly transient ref AwsLambdaFunction[1]#eventInvokeConfigs function;
   ref LambdaAlias[?] qualifierAlias;
 }
 
@@ -184,7 +184,7 @@ class LambdaVersion extends awspsmcore.AwsResource {
 
   val LambdaProvisionedConcurrencyConfig[?] provisionedConcurrencyConfig;
 
-  ref AwsLambdaFunction[1]#versions function;
+  readonly transient ref AwsLambdaFunction[1]#versions function;
 }
 
 class LambdaAlias extends awspsmcore.AwsResource {
@@ -194,7 +194,7 @@ class LambdaAlias extends awspsmcore.AwsResource {
 
   val LambdaProvisionedConcurrencyConfig[?] provisionedConcurrencyConfig;
 
-  ref AwsLambdaFunction[1]#aliases function;
+  readonly transient ref AwsLambdaFunction[1]#aliases function;
   ref LambdaVersion[?] version;
 }
 
@@ -209,7 +209,7 @@ class LambdaPermission extends awspsmcore.AwsResource {
   attr String sourceAccount;
   attr awspsmenums.LambdaFunctionUrlAuthType functionUrlAuthType;
 
-  ref AwsLambdaFunction[1]#permissions function;
+  readonly transient ref AwsLambdaFunction[1]#permissions function;
 }
 
 class LambdaFunctionUrl extends awspsmcore.AwsResource {
@@ -218,7 +218,7 @@ class LambdaFunctionUrl extends awspsmcore.AwsResource {
 
   val LambdaUrlCorsConfiguration[?] cors;
 
-  ref AwsLambdaFunction[1]#functionUrl function;
+  readonly transient ref AwsLambdaFunction[1]#functionUrl function;
 }
 
 class LambdaUrlCorsConfiguration extends awspsmcore.CorsConfiguration {

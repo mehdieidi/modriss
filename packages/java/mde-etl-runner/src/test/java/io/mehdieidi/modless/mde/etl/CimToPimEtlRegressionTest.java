@@ -14,6 +14,7 @@ import io.mehdieidi.modless.mde.validation.FileEvlModelConfiguration;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
@@ -104,10 +105,12 @@ final class CimToPimEtlRegressionTest {
     EObject root = pimResource.getContents().get(0);
     assertEquals("PIMModel", root.eClass().getName());
     assertFalse(values(root, "services").isEmpty(), "Expected generated services.");
-    assertFalse(values(root, "functions").isEmpty(), "Expected command/query functions.");
-    assertFalse(values(root, "apis").isEmpty(), "Expected an API for user-facing behavior.");
+    assertFalse(
+        serviceDeployables(root, "functions").isEmpty(), "Expected command/query functions.");
+    assertFalse(
+        serviceDeployables(root, "apis").isEmpty(), "Expected an API for user-facing behavior.");
     assertFalse(values(root, "eventTypes").isEmpty(), "Expected business event types.");
-    assertFalse(values(root, "dataStores").isEmpty(), "Expected aggregate data stores.");
+    assertFalse(serviceDeployables(root, "stores").isEmpty(), "Expected aggregate data stores.");
     assertFalse(values(root, "deploymentUnits").isEmpty(), "Expected deployment units.");
 
     EObject readiness = reference(root, "readiness");
@@ -154,14 +157,14 @@ final class CimToPimEtlRegressionTest {
         values(reference(root, "traceModel"), "links").isEmpty(),
         "Expected generated trace links.");
 
-    assertFalse(values(root, "functions").isEmpty(), "Expected generated functions.");
+    assertFalse(serviceDeployables(root, "functions").isEmpty(), "Expected generated functions.");
     assertTrue(
-        values(root, "functions").stream()
+        serviceDeployables(root, "functions").stream()
             .allMatch(function -> reference(function, "contract") != null),
         "Every generated function should have a function contract.");
-    assertFalse(values(root, "apis").isEmpty(), "Expected generated APIs.");
+    assertFalse(serviceDeployables(root, "apis").isEmpty(), "Expected generated APIs.");
     assertTrue(
-        values(root, "apis").stream().allMatch(api -> !values(api, "routes").isEmpty()),
+        serviceDeployables(root, "apis").stream().allMatch(api -> !values(api, "routes").isEmpty()),
         "Every generated API should have at least one route.");
     assertFalse(values(root, "eventTypes").isEmpty(), "Expected generated event types.");
     assertTrue(
@@ -171,18 +174,18 @@ final class CimToPimEtlRegressionTest {
                     reference(eventType, "schema") != null
                         && reference(eventType, "envelope") != null),
         "Every generated event type should have a schema and envelope.");
-    assertFalse(values(root, "channels").isEmpty(), "Expected generated channels.");
-    assertFalse(values(root, "dataStores").isEmpty(), "Expected generated data stores.");
+    assertFalse(serviceDeployables(root, "channels").isEmpty(), "Expected generated channels.");
+    assertFalse(serviceDeployables(root, "stores").isEmpty(), "Expected generated data stores.");
     assertTrue(
-        values(root, "dataStores").stream()
+        serviceDeployables(root, "stores").stream()
             .allMatch(
                 store ->
                     !values(store, "ownedDataModels").isEmpty()
                         && !values(store, "accessPatterns").isEmpty()),
         "Every generated data store should have data models and access patterns.");
-    assertFalse(values(root, "workflows").isEmpty(), "Expected generated workflows.");
+    assertFalse(serviceDeployables(root, "workflows").isEmpty(), "Expected generated workflows.");
     assertFalse(
-        values(root, "externalAdapters").isEmpty(), "Expected generated external adapters.");
+        serviceDeployables(root, "adapters").isEmpty(), "Expected generated external adapters.");
     assertFalse(
         values(root, "policies").isEmpty(),
         "Expected generated governance, security, resilience, and data policies.");
@@ -261,7 +264,7 @@ final class CimToPimEtlRegressionTest {
 
     EObject root = loadModel(pimMetamodel, pimModel).getContents().get(0);
     assertTrue(
-        values(root, "channels").stream()
+        serviceDeployables(root, "channels").stream()
             .anyMatch(channel -> "Queue".equals(channel.eClass().getName())),
         "Cross-service capability dependency should create a provider-independent queue.");
     assertTrue(
@@ -281,7 +284,7 @@ final class CimToPimEtlRegressionTest {
             .anyMatch(field -> !values(field, "enumValues").isEmpty()),
         "Enumeration information items should become schema enum literals.");
     assertTrue(
-        values(root, "dataStores").stream()
+        serviceDeployables(root, "stores").stream()
             .flatMap(store -> values(store, "ownedDataModels").stream())
             .flatMap(model -> values(model, "storageFields").stream())
             .anyMatch(field -> "inventory".equals(get(field, "name"))),
@@ -310,7 +313,7 @@ final class CimToPimEtlRegressionTest {
                         && Integer.valueOf(300).equals(get(policy, "timeoutSeconds"))),
         "Parseable temporal constraints should set timeout seconds.");
     assertTrue(
-        values(root, "dataStores").stream()
+        serviceDeployables(root, "stores").stream()
             .anyMatch(store -> !values(store, "dataProtectionPolicies").isEmpty()),
         "Classified data in stores should receive data protection policy attachment.");
 
@@ -1079,6 +1082,22 @@ final class CimToPimEtlRegressionTest {
   @SuppressWarnings("unchecked")
   private void addValue(EObject object, String featureName, Object value) {
     ((List<Object>) object.eGet(feature(object, featureName))).add(value);
+  }
+
+  /**
+   * Collects deployable elements from all {@code ServerlessService} instances under a PIM root.
+   *
+   * @param pimRoot PIM model root
+   * @param featureName service containment feature (for example {@code functions} or {@code
+   *     stores})
+   * @return flattened deployable elements
+   */
+  private List<EObject> serviceDeployables(EObject pimRoot, String featureName) {
+    List<EObject> deployables = new ArrayList<>();
+    for (EObject service : values(pimRoot, "services")) {
+      deployables.addAll(values(service, featureName));
+    }
+    return deployables;
   }
 
   /**

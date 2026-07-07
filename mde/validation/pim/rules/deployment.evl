@@ -19,20 +19,20 @@ context PIM!ServerlessService {
   /** Checks that owned elements have membership records. */
   constraint OwnedElementsHaveMembershipRecords {
     check : self.ownedElements().forAll(elementItem | self.hasMembershipFor(elementItem))
-    message : "[PIM-SVC-002A] Service '" + self.displayName() + "' has owned elements without ServiceElementMembership records. Fix: generate one membership for every owns* reference."
+    message : "[PIM-SVC-002A] Service '" + self.displayName() + "' has owned elements without ServiceElementMembership records. Fix: generate one membership for every contained deployable."
   }
 
   /** Checks that externally exposed service needs api. */
   constraint ExternallyExposedServiceNeedsApi {
     guard : self.externallyExposed.isTrue()
-    check : self.ownsApis.notEmpty()
+    check : self.apis.notEmpty()
     message : "[PIM-SVC-003] Externally exposed service '" + self.displayName() + "' owns no API. Fix: add an Api/ApiRoute model or mark externallyExposed as false if exposure is indirect."
   }
 
   /** Checks that data owning service needs store. */
   constraint DataOwningServiceNeedsStore {
     guard : self.ownsData.isTrue()
-    check : self.ownsStores.notEmpty()
+    check : self.stores.notEmpty()
     message : "[PIM-SVC-004] Data-owning service '" + self.displayName() + "' owns no storage element. Fix: attach a DataStore or ObjectStore that represents the owned data boundary."
   }
 
@@ -111,10 +111,7 @@ context PIM!ImplementationProfile {
 context PIM!ServiceElementMembership {
   /** Checks that membership matches service ownership. */
   constraint MembershipMatchesServiceOwnership {
-    check : self.service.isDefined() and self.element.isDefined() and
-      (self.service.ownsFunctions.includes(self.element) or self.service.ownsApis.includes(self.element) or
-       self.service.ownsChannels.includes(self.element) or self.service.ownsStores.includes(self.element) or
-       self.service.ownsWorkflows.includes(self.element) or self.service.ownsAdapters.includes(self.element))
-    message : "[PIM-SVC-006] ServiceElementMembership does not match the service owned references. Fix: synchronize membership metadata with ServerlessService owns* references."
+    check : self.service.isDefined() and self.element.isDefined() and self.service.ownedElements().includes(self.element)
+    message : "[PIM-SVC-006] ServiceElementMembership does not match the service containment parent. Fix: synchronize membership metadata with ServerlessService val containment."
   }
 }

@@ -291,19 +291,13 @@ wrappers, or Markdown fences.
 
  For PIM/serverless backend turns, model services, APIs, functions, contracts, data stores,
  events, and workflows as connected structures — not isolated boxes. Common valid PIM links
- include PIMModel.services -> ServerlessService (containment), PIMModel.functions -> Function
- (containment), Function.contract -> FunctionContract (containment under each Function).
- Link services to their functions, APIs, stores, and workflows using references such as
- ServerlessService.ownsFunctions, ServerlessService.ownsApis, ServerlessService.ownsStores, and
- ServerlessService.ownsWorkflows — these are references, not placement.referenceName values.
- PIMModel.apis -> Api, Api.routes -> ApiRoute,
- PIMModel.dataStores -> DataStore, PIMModel.channels -> EventChannel, PIMModel.eventTypes ->
- EventType, PIMModel.workflows -> Workflow, and ApiRoute.functionIntegration -> Function.
- Every Function needs its required FunctionContract child via placement ownerId=<functionId>
- referenceName=contract (containment, not a references entry). Place deployable elements at
- their PIMModel root collections (for example functions, apis, dataStores) and connect services
- with references. Never use ownsFunctions, ownsApis, or similar service references as
- placement.referenceName.
+ include PIMModel.services -> ServerlessService (containment) and ServerlessService val
+ containment for deployables: functions, apis, channels, schedules, stores, workflows, and
+ adapters. Function.contract -> FunctionContract is containment under each Function.
+ Function.triggers -> Trigger is containment under each Function. Api.routes -> ApiRoute is
+ containment under each Api. Shared concepts such as Schema, EventType, AuthPolicy, and Flow
+ remain at PIMModel root and are linked with references. Never use legacy ownsFunctions,
+ ownsApis, or similar removed references as placement.referenceName values.
 
  Do not ask the user to confirm backend retrieval, metamodel contracts, or tool usage. The
  backend already assembled exact Ecore contracts, source evidence, and model context for this

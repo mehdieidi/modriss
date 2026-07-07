@@ -669,17 +669,32 @@ public final class XmiModelImportService {
           stack -> {
             JsonNode resources = stack.path("resources");
             if (resources.isArray()) {
-              resources.forEach(
-                  resource -> {
-                    String id = scalarText(resource.get("id"));
-                    if (!id.isBlank()) {
-                      allResources.add(id);
-                    }
-                  });
+              resources.forEach(resource -> collectPsmResourceIds(resource, allResources));
             }
           });
     }
     rootJson.set("allResources", allResources);
+  }
+
+  private void collectPsmResourceIds(JsonNode resource, ArrayNode allResources) {
+    if (resource == null || !resource.isObject()) {
+      return;
+    }
+    String id = scalarText(resource.get("id"));
+    if (!id.isBlank()) {
+      allResources.add(id);
+    }
+    resource
+        .fields()
+        .forEachRemaining(
+            entry -> {
+              JsonNode value = entry.getValue();
+              if (value.isArray()) {
+                value.forEach(child -> collectPsmResourceIds(child, allResources));
+              } else if (value.isObject() && value.has("id") && value.has("eClass")) {
+                collectPsmResourceIds(value, allResources);
+              }
+            });
   }
 
   /**

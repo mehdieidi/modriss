@@ -43,14 +43,18 @@ class DeltaCompilerTest {
             ModelLevel.PIM,
             mapper.readTree(
                 """
-                {"id":"root","eClass":"PIMModel","modelLevel":"PIM","functions":[]}
+                {"id":"root","eClass":"PIMModel","modelLevel":"PIM","services":[]}
                 """),
             Map.of(),
             delta);
 
-    assertEquals(1, patch.operations().size());
-    assertEquals(SemanticModelPatch.OperationType.ADD_ELEMENT, patch.operations().get(0).type());
-    assertEquals("Function", patch.operations().get(0).elementType());
+    assertEquals(2, patch.operations().size());
+    SemanticModelPatch.Operation functionOp =
+        patch.operations().stream()
+            .filter(operation -> "Function".equals(operation.elementType()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(SemanticModelPatch.OperationType.ADD_ELEMENT, functionOp.type());
   }
 
   @Test
@@ -66,7 +70,7 @@ class DeltaCompilerTest {
                     "fn",
                     "Function",
                     JsonNodeFactory.instance.objectNode().put("name", "Book order"),
-                    new ModelDelta.Placement("root", "notAContainment"),
+                    new ModelDelta.Placement("root", "functions"),
                     List.of(),
                     List.of())),
             List.of(),
@@ -79,16 +83,22 @@ class DeltaCompilerTest {
             ModelLevel.PIM,
             mapper.readTree(
                 """
-                {"id":"root","eClass":"PIMModel","modelLevel":"PIM","functions":[]}
+                {"id":"root","eClass":"PIMModel","modelLevel":"PIM","services":[]}
                 """),
             Map.of(),
             delta);
 
-    assertEquals("functions", patch.operations().get(0).referenceName());
+    SemanticModelPatch.Operation functionOp =
+        patch.operations().stream()
+            .filter(operation -> "fn".equals(operation.targetElementId()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID, functionOp.sourceElementId());
+    assertEquals("functions", functionOp.referenceName());
   }
 
   @Test
-  void canonicalizesCommonEventStormingReferenceNames() throws Exception {
+  void canonicalizesInvalidRootPlacementToServiceContainment() throws Exception {
     ModelDelta delta =
         new ModelDelta(
             AssistantTurnPlan.Intent.MUTATION,

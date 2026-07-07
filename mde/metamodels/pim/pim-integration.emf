@@ -9,6 +9,7 @@ import "pim-workflow.ecore";
 import "pim-external.ecore";
 import "pim-policy.ecore";
 import "pim-api.ecore";
+import "pim-deployment.ecore";
 
 abstract class IntegrationElement extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
   attr String integrationPurpose;
@@ -22,6 +23,8 @@ abstract class EventChannel extends IntegrationElement, kernel.DeployableElement
   attr pimtypes.ChannelKind[1] channelKind;
   attr pimtypes.OrderingRequirement[1] orderingRequirement;
   attr pimtypes.DeliverySemantics[1] deliverySemantics;
+
+  readonly transient ref deployment.ServerlessService[1]#channels service;
 
   ref contracts.EventType[*] eventTypes;
   ref compute.Function[*] producers;
@@ -62,6 +65,8 @@ class Schedule extends IntegrationElement, kernel.DeployableElement, kernel.Invo
   attr String[1] scheduleExpression;
   attr Boolean enabled;
   attr String timeZone;
+
+  readonly transient ref deployment.ServerlessService[1]#schedules service;
 
   ref kernel.RoutingTarget[*] targets;
 }

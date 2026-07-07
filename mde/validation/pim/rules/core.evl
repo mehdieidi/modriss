@@ -34,9 +34,9 @@ context PIM!PIMModel {
 
   critique ArchitectureStyleShouldMatchContents {
     check :
-      (not self.architectureStyle.enumIs("API_FIRST_SERVERLESS") or self.apis.notEmpty()) and
-      (not self.architectureStyle.enumIs("EVENT_DRIVEN_SERVERLESS") or self.eventTypes.notEmpty() or self.channels.notEmpty()) and
-      (not self.architectureStyle.enumIs("WORKFLOW_ORCHESTRATED_SERVERLESS") or self.workflows.notEmpty())
+      (not self.architectureStyle.enumIs("API_FIRST_SERVERLESS") or self.allServiceApis().notEmpty()) and
+      (not self.architectureStyle.enumIs("EVENT_DRIVEN_SERVERLESS") or self.eventTypes.notEmpty() or self.allServiceChannels().notEmpty()) and
+      (not self.architectureStyle.enumIs("WORKFLOW_ORCHESTRATED_SERVERLESS") or self.allServiceWorkflows().notEmpty())
     message : "The selected architectureStyle does not match the model contents. Suggested fix: add the matching APIs/events/workflows or choose HYBRID_SERVERLESS if multiple styles are intentionally combined."
   }
 }

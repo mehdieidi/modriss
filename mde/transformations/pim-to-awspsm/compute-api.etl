@@ -211,7 +211,7 @@ operation createHttpApiRouteFrom(r, awsApi) {
   gr.responseModelsJson = schemaRefJson(r.responseSchema);
   gr.timeoutInMillis = inferRouteTimeoutMillis(r);
   gr.routeSettingsJson = "{ \"DetailedMetricsEnabled\": true }";
-  gr.api = awsApi;
+  awsApi.routes.add(gr);
   gr.integration = createApiIntegration(r, gr);
   gr.authorizer = findAuthorizerFor(r);
   applyAuthorizerFallback(r, gr);
@@ -244,7 +244,7 @@ operation createRestApiRouteFrom(r, awsApi) {
   gr.responseModelsJson = schemaRefJson(r.responseSchema);
   gr.timeoutInMillis = inferRouteTimeoutMillis(r);
   gr.routeSettingsJson = "{ \"DataTraceEnabled\": false, \"MetricsEnabled\": true }";
-  gr.api = awsApi;
+  awsApi.routes.add(gr);
   gr.integration = createApiIntegration(r, gr);
   attachOpenApiModels(r, gr);
   gr.authorizer = findAuthorizerFor(r);
@@ -592,7 +592,7 @@ operation fillApiStage(apiStage, stage, api, g) {
     apiStage.throttlingBurstLimit = 100;
     apiStage.throttlingRateLimit = 50.0d;
   }
-  apiStage.api = g;
+  g.stages.add(apiStage);
 }
 
 /** Creates create api authorizer. */
@@ -610,7 +610,7 @@ operation createApiAuthorizer(api, g) {
       c.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS;
       c.identitySource = "$request.header.Authorization";
       c.authorizerResultTtlInSeconds = 300;
-      c.api = g;
+      g.authorizers.add(c);
       c.userPool = pool;
       cachedAwsAuthorizerByApiId.put(g.id, c);
       return c;
@@ -632,7 +632,7 @@ operation createApiAuthorizer(api, g) {
     j.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#JWT;
     j.identitySource = "$request.header.Authorization";
     j.authorizerResultTtlInSeconds = 300;
-    j.api = g;
+    g.authorizers.add(j);
     j.issuer = api.auth.tokenValidationRules;
     if (not hasText(j.issuer)) {
       manualDecision("API_ROUTE_AUTHORIZER_MISSING",

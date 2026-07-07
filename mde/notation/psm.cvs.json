@@ -342,7 +342,19 @@
       "icon": "aws-lambda",
       "color": "#2563EB",
       "category": "Lambda Detail View",
+      "visualRole": "container",
       "primitive": "resource-card",
+      "containmentPaletteExtras": [
+        "LambdaPermission",
+        "LambdaVersion",
+        "LambdaAlias",
+        "LambdaEventInvokeConfig",
+        "LambdaEventSourceMapping",
+        "SqsLambdaEventSourceMapping",
+        "DynamoDbStreamLambdaEventSourceMapping",
+        "GenericLambdaEventSourceMapping",
+        "LambdaFunctionUrl"
+      ],
       "card": {
         "tag": "LAMBDA",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"],
@@ -573,6 +585,7 @@
       "icon": "aws-cloudformation",
       "color": "#0F766E",
       "category": "CloudFormation / SAM",
+      "visualRole": "container",
       "primitive": "stack-container",
       "card": {
         "tag": "CFN",
@@ -587,6 +600,7 @@
       "icon": "aws-api-gateway",
       "color": "#0F766E",
       "category": "CloudFormation / SAM",
+      "visualRole": "container",
       "primitive": "stage-container",
       "card": {
         "tag": "STAGE",
@@ -2593,7 +2607,15 @@
       "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "category": "API Gateway View",
+      "visualRole": "container",
       "primitive": "resource-card",
+      "containmentPaletteExtras": [
+        "HttpApiRoute",
+        "HttpApiStage",
+        "JwtAuthorizer",
+        "CognitoAuthorizer",
+        "LambdaAuthorizer"
+      ],
       "card": {
         "tag": "API",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"],
@@ -2607,7 +2629,18 @@
       "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "category": "API Gateway View",
+      "visualRole": "container",
       "primitive": "resource-card",
+      "containmentPaletteExtras": [
+        "RestApiRoute",
+        "RestApiMethod",
+        "RestApiResource",
+        "RestApiStage",
+        "JwtAuthorizer",
+        "CognitoAuthorizer",
+        "LambdaAuthorizer",
+        "ApiGatewayDeployment"
+      ],
       "card": {
         "tag": "API",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"],
@@ -2621,7 +2654,15 @@
       "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "category": "API Gateway View",
+      "visualRole": "container",
       "primitive": "resource-card",
+      "containmentPaletteExtras": [
+        "WebSocketRoute",
+        "WebSocketStage",
+        "JwtAuthorizer",
+        "CognitoAuthorizer",
+        "LambdaAuthorizer"
+      ],
       "card": {
         "tag": "API",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"],
@@ -4283,20 +4324,7 @@
         "SecurityGroup",
         "CloudWatchLogGroup"
       ],
-      "palette": [
-        "SamStack",
-        "AwsLambdaFunction",
-        "HttpApi",
-        "RestApi",
-        "EventBridgeBus",
-        "SqsQueue",
-        "SnsTopic",
-        "DynamoDbTable",
-        "S3Bucket",
-        "StepFunctionStateMachine",
-        "IamRole",
-        "CloudWatchLogGroup"
-      ],
+      "palette": ["SamStack", "AwsStage"],
       "relationshipKinds": [
         "DEPENDS_ON",
         "CONTAINS",
@@ -4339,23 +4367,7 @@
         "StepFunctionStateMachine",
         "CloudWatchLogGroup"
       ],
-      "palette": [
-        "HttpApi",
-        "RestApi",
-        "WebSocketApi",
-        "HttpApiRoute",
-        "RestApiRoute",
-        "WebSocketRoute",
-        "ApiGatewayIntegration",
-        "JwtAuthorizer",
-        "CognitoAuthorizer",
-        "LambdaAuthorizer",
-        "ApiGatewayDomainName",
-        "ApiGatewayApiKey",
-        "ApiGatewayUsagePlan",
-        "AwsLambdaFunction",
-        "StepFunctionStateMachine"
-      ],
+      "palette": ["HttpApi", "RestApi", "WebSocketApi"],
       "relationshipKinds": ["ROUTES_TO", "INVOKES", "AUTHORIZED_BY", "OBSERVES", "CONTAINS"],
       "layoutHint": "TABLE"
     },
@@ -4387,21 +4399,7 @@
         "SnsTopic",
         "DynamoDbTable"
       ],
-      "palette": [
-        "AwsLambdaFunction",
-        "LambdaZipCodeConfig",
-        "LambdaImageCodeConfig",
-        "LambdaEnvironmentVariable",
-        "SqsLambdaEventSourceMapping",
-        "DynamoDbStreamLambdaEventSourceMapping",
-        "GenericLambdaEventSourceMapping",
-        "LambdaLayerVersion",
-        "LambdaVersion",
-        "LambdaAlias",
-        "LambdaPermission",
-        "LambdaFunctionUrl",
-        "CodeSigningConfig"
-      ],
+      "palette": ["AwsLambdaFunction"],
       "relationshipKinds": [
         "INVOKES",
         "EVENT_FLOW",
@@ -4609,7 +4607,7 @@
         "SecurityGroupRule",
         "AwsLambdaFunction"
       ],
-      "palette": ["Vpc", "Subnet", "VpcEndpoint", "SecurityGroup", "AwsLambdaFunction"],
+      "palette": ["Vpc", "SecurityGroup"],
       "relationshipKinds": ["NETWORKS_WITH", "CONTAINS"],
       "layoutHint": "CONTAINER"
     },

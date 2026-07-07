@@ -1704,12 +1704,7 @@
         "Requirement",
         "TraceLink"
       ],
-      "palette": [
-        "BusinessCapability",
-        "CapabilityDependency",
-        "BoundedContextCandidate",
-        "UbiquitousLanguageTerm"
-      ],
+      "palette": ["BusinessCapability", "CapabilityDependency", "BoundedContextCandidate"],
       "relationshipKinds": [
         "SUPPORTS",
         "CONTAINS",

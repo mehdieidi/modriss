@@ -71,8 +71,8 @@ boundaries, contracts, flows, policies, and deployable responsibilities.
 
 | Role               | Main choices and examples                                                                                                                                                                          |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Containers         | Services, deployment units, APIs, workflows, event channels, and other containment-owning concepts open into scoped semantic views.                                                                |
-| Architecture nodes | Functions, APIs, routes, queues, topics, event buses, stores, adapters, identities, secrets, policies, workflows, and environments are canvas cards.                                               |
+| Containers         | `ServerlessService` is the primary deployable container (APIs, functions, channels, stores, workflows, adapters nest inside). Deployment units and workflows retain their own drill-down views.    |
+| Architecture nodes | Shared root concepts (`Schema`, `Flow`, policies, secrets) appear when linked; service-internal deployables are created inside `ServerlessService` focus views.                                    |
 | Semantic edges     | Relationship classes and references become invocation, trigger, routing, flow, data-access, permission, transition, deployment, and policy edges.                                                  |
 | Reference edges    | Examples include `INVOKES`, `TRIGGERS`, `ROUTES_TO`, `READS`, `WRITES`, `PUBLISHES`, `SUBSCRIBES_TO`, `AUTHORIZED_BY`, and `DEPLOYS_TO`.                                                           |
 | Contained details  | Contract fields, schemas, event envelopes, configuration entries, permissions, subscriptions, workflow branches, error handlers, and policy settings use rows, tables, trees, or inspector panels. |
@@ -89,7 +89,7 @@ stacks, integrations, IAM, operations, and generated infrastructure relationship
 
 | Role                  | Main choices and examples                                                                                                                                                                                                             |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Containers            | Any resource owning meaningful contained configuration can be opened semantically; stages, stacks, APIs, event buses, IAM resources, and state machines are primary examples.                                                         |
+| Containers            | `SamStack` and `AwsStage` are topology entry containers; API Gateway and Lambda composites own nested routes, stages, authorizers, permissions, and event-source mappings via drill-down.                                             |
 | Resource nodes        | Lambda, API Gateway, EventBridge, SQS, SNS, DynamoDB, S3, Cognito, VPC, CloudWatch, and related deployable resources use AWS-resource cards.                                                                                          |
 | Semantic edges        | Dedicated relationship/view classes and references represent routes, invocation, targets, permissions, networking, observation, logging, reads/writes, roles, secrets, and transitions.                                               |
 | Reference edges       | Examples include `ROUTES_TO`, `INVOKES`, `TARGETS`, `PERMISSION`, `NETWORKS_WITH`, `OBSERVES`, `USES_ROLE`, and `USES_SECRET`.                                                                                                        |

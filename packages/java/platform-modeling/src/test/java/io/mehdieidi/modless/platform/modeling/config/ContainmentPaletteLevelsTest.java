@@ -35,12 +35,13 @@ class ContainmentPaletteLevelsTest {
     assertEquals(Boolean.TRUE, element(pim, "StartStep").get("containedOnly"));
     assertEquals(Boolean.TRUE, element(pim, "TaskStep").get("containedOnly"));
     assertEquals(Boolean.TRUE, element(pim, "ErrorMapping").get("containedOnly"));
-    assertFalse(Boolean.TRUE.equals(element(pim, "Api").get("containedOnly")));
-    assertFalse(Boolean.TRUE.equals(element(pim, "Workflow").get("containedOnly")));
-    assertPaletteExcludes(pim, "pim-api-surface", "ApiRoute", "ErrorMapping", "ApiContract");
-    assertPaletteIncludes(pim, "pim-api-surface", "Api");
+    assertEquals(Boolean.TRUE, element(pim, "Api").get("containedOnly"));
+    assertEquals(Boolean.TRUE, element(pim, "Workflow").get("containedOnly"));
+    assertPaletteExcludes(pim, "pim-api-surface", "Api", "ApiRoute", "ErrorMapping", "ApiContract");
+    assertPaletteIncludes(pim, "pim-api-surface", "ServerlessService");
     assertPaletteExcludes(pim, "pim-workflow-designer", "StartStep", "TaskStep");
-    assertPaletteIncludes(pim, "pim-workflow-designer", "Workflow");
+    assertContainmentPaletteIncludes(pim, "ServerlessService", "Api");
+    assertContainmentPaletteIncludes(pim, "ServerlessService", "Workflow");
     assertContainmentPaletteIncludes(pim, "Api", "ApiRoute");
     assertContainmentPaletteIncludes(pim, "Workflow", "StartStep");
     assertContainmentPaletteIncludes(pim, "Workflow", "TaskStep");
@@ -55,18 +56,15 @@ class ContainmentPaletteLevelsTest {
     assertEquals(Boolean.TRUE, element(psm, "SecurityGroupRule").get("containedOnly"));
     assertEquals(Boolean.TRUE, element(psm, "CfnParameter").get("containedOnly"));
     assertFalse(Boolean.TRUE.equals(element(psm, "SamStack").get("containedOnly")));
-    assertPaletteIncludes(
-        psm,
-        "psm-resource-topology",
-        "SamStack",
-        "AwsLambdaFunction",
-        "HttpApi",
-        "Vpc",
-        "SqsQueue");
-    assertPaletteIncludes(psm, "psm-networking", "Vpc", "Subnet", "SecurityGroup");
+    assertPaletteIncludes(psm, "psm-resource-topology", "SamStack", "AwsStage");
+    assertPaletteExcludes(
+        psm, "psm-resource-topology", "AwsLambdaFunction", "HttpApi", "Vpc", "SqsQueue");
+    assertPaletteIncludes(psm, "psm-networking", "Vpc", "SecurityGroup");
+    assertPaletteExcludes(psm, "psm-networking", "Subnet");
     assertEquals(Boolean.TRUE, element(psm, "HttpApiRoute").get("containedOnly"));
-    assertPaletteIncludes(psm, "psm-api-edge", "HttpApi", "RestApi", "AwsLambdaFunction");
-    assertPaletteExcludes(psm, "psm-api-edge", "HttpApiRoute", "RestApiRoute");
+    assertPaletteIncludes(psm, "psm-api-edge", "HttpApi", "RestApi", "WebSocketApi");
+    assertPaletteExcludes(psm, "psm-api-edge", "AwsLambdaFunction", "HttpApiRoute", "RestApiRoute");
+    assertPaletteIncludes(psm, "psm-lambda-compute", "AwsLambdaFunction");
     assertContainmentPaletteIncludes(psm, "SamStack", "Subnet");
   }
 

@@ -27,7 +27,6 @@ class CIMModel extends kernel.TraceableElement {
   val cimorg.BusinessCapability[*] capabilities;
   val cimorg.CapabilityDependency[*] capabilityDependencies;
   val cimorg.BoundedContextCandidate[*] boundedContexts;
-  val cimorg.UbiquitousLanguageTerm[*] glossary;
 
   val cimdomain.DomainEntity[*] entities;
   val cimdomain.ValueObject[*] valueObjects;

@@ -31,7 +31,7 @@ abstract class AwsResource extends kernel.TraceableElement {
   val NativeProperty[*] overrides;
   val ResourceImport[?] importDetails;
 
-  readonly transient ref SamStack[1]#resources stack;
+  readonly transient ref SamStack[?]#resources stack;
 
   ref AwsResource[*] dependsOn;
 }

@@ -36,7 +36,7 @@ class AssistantEvalModelFixturesTest {
   @Test
   void pimWorkflowHasRootContainment() {
     AssistantMetamodelSchemaService schemas = new AssistantMetamodelSchemaService();
-    assertTrue(schemas.rootContainment(ModelLevel.PIM, "Workflow").isPresent());
-    assertTrue(schemas.rootContainment(ModelLevel.PIM, "Function").isPresent());
+    assertTrue(schemas.rootContainment(ModelLevel.PIM, "Schema").isPresent());
+    assertFalse(schemas.containments(ModelLevel.PIM, "ServerlessService", "Function").isEmpty());
   }
 }

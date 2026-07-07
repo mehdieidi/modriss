@@ -32,34 +32,16 @@
           eType="#/10/DecisionModel" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="policies" upperBound="-1"
           eType="#/10/ArchitecturePolicy" containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="functions" upperBound="-1"
-          eType="#/3/Function" containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="triggers" upperBound="-1"
-          eType="#/3/Trigger" containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="apis" upperBound="-1"
-          eType="#/2/Api" containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="channels" upperBound="-1"
-          eType="#/9/EventChannel" containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="schedules" upperBound="-1"
-          eType="#/9/Schedule" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="flows" upperBound="-1"
           eType="#/9/Flow" containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="dataStores" upperBound="-1"
-          eType="#/6/DataStore" containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="objectStores" upperBound="-1"
-          eType="#/6/ObjectStore" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="dataAccesses" upperBound="-1"
           eType="#/6/DataAccess" containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="workflows" upperBound="-1"
-          eType="#/13/Workflow" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="humanTasks" upperBound="-1"
           eType="#/13/HumanTask" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="escalationPolicies" upperBound="-1"
           eType="#/13/EscalationPolicy" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="externalEndpoints" upperBound="-1"
           eType="#/8/ExternalEndpoint" containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="externalAdapters" upperBound="-1"
-          eType="#/8/ExternalAdapter" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="identityProviders" upperBound="-1"
           eType="#/11/IdentityProvider" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="principals" upperBound="-1"
@@ -379,6 +361,8 @@
           eType="#/2/ApiRoute" containment="true" eOpposite="#/2/ApiRoute/api"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="contract" eType="#/5/ApiContract"
           containment="true"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="service" lowerBound="1"
+          eType="#/7/ServerlessService" changeable="false" transient="true" eOpposite="#/7/ServerlessService/apis"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="auth" eType="#/11/AuthPolicy"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="cors" eType="#/10/CorsPolicy"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="rateLimit" eType="#/10/RateLimitPolicy"/>
@@ -461,7 +445,9 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="contract" lowerBound="1"
           eType="#/5/FunctionContract" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="triggers" upperBound="-1"
-          eType="#/3/Trigger" eOpposite="#/3/Trigger/invokesFunction"/>
+          eType="#/3/Trigger" containment="true" eOpposite="#/3/Trigger/function"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="service" lowerBound="1"
+          eType="#/7/ServerlessService" changeable="false" transient="true" eOpposite="#/7/ServerlessService/functions"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="reads" upperBound="-1"
           eType="#/6/StorageElement"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="writes" upperBound="-1"
@@ -493,8 +479,8 @@
           eType="#/12/InvocationMode"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="filter" eType="#/1/Expression"
           containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="invokesFunction" eType="#/3/Function"
-          eOpposite="#/3/Function/triggers"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="function" lowerBound="1"
+          eType="#/3/Function" changeable="false" transient="true" eOpposite="#/3/Function/triggers"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="source" lowerBound="1"
           eType="#/1/InvocationSource"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="startsWorkflow" eType="#/1/WorkflowTarget"/>
@@ -703,6 +689,8 @@
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="encrypted" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="containsPersonalData"
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="service" lowerBound="1"
+          eType="#/7/ServerlessService" changeable="false" transient="true" eOpposite="#/7/ServerlessService/stores"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="retentionPolicy" eType="#/10/RetentionPolicy"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="backupPolicy" eType="#/10/BackupPolicy"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="dataProtectionPolicies"
@@ -868,18 +856,20 @@
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="ownsData" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="boundaryType" lowerBound="1"
           eType="#/12/BoundaryType"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="ownsFunctions" upperBound="-1"
-          eType="#/3/Function"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="ownsApis" upperBound="-1"
-          eType="#/2/Api"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="ownsChannels" upperBound="-1"
-          eType="#/9/EventChannel"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="ownsStores" upperBound="-1"
-          eType="#/6/StorageElement"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="ownsWorkflows" upperBound="-1"
-          eType="#/13/Workflow"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="ownsAdapters" upperBound="-1"
-          eType="#/8/ExternalAdapter"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="functions" upperBound="-1"
+          eType="#/3/Function" containment="true" eOpposite="#/3/Function/service"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="apis" upperBound="-1"
+          eType="#/2/Api" containment="true" eOpposite="#/2/Api/service"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="channels" upperBound="-1"
+          eType="#/9/EventChannel" containment="true"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="schedules" upperBound="-1"
+          eType="#/9/Schedule" containment="true"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="stores" upperBound="-1"
+          eType="#/6/StorageElement" containment="true" eOpposite="#/6/StorageElement/service"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="workflows" upperBound="-1"
+          eType="#/13/Workflow" containment="true"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="adapters" upperBound="-1"
+          eType="#/8/ExternalAdapter" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="constrainedBy" upperBound="-1"
           eType="#/10/ArchitecturePolicy"/>
     </eClassifiers>
@@ -976,6 +966,8 @@
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="responsibility" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="credentials" upperBound="-1"
           eType="#/4/CredentialRequirement" containment="true"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="service" lowerBound="1"
+          eType="#/7/ServerlessService" changeable="false" transient="true" eOpposite="#/7/ServerlessService/adapters"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="endpoint" lowerBound="1"
           eType="#/8/ExternalEndpoint"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="adapterFunctions" upperBound="-1"
@@ -1003,6 +995,8 @@
           lowerBound="1" eType="#/12/OrderingRequirement"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="deliverySemantics" lowerBound="1"
           eType="#/12/DeliverySemantics"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="service" lowerBound="1"
+          eType="#/7/ServerlessService" changeable="false" transient="true" eOpposite="#/7/ServerlessService/channels"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="eventTypes" upperBound="-1"
           eType="#/5/EventType"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="producers" upperBound="-1"
@@ -1049,6 +1043,8 @@
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="enabled" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="timeZone" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="service" lowerBound="1"
+          eType="#/7/ServerlessService" changeable="false" transient="true" eOpposite="#/7/ServerlessService/schedules"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="targets" upperBound="-1"
           eType="#/1/RoutingTarget"/>
     </eClassifiers>
@@ -1763,6 +1759,8 @@
           upperBound="-1" eType="#/13/WorkflowStep" containment="true" eOpposite="#/13/WorkflowStep/workflow"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="transitions" upperBound="-1"
           eType="#/13/WorkflowTransition" containment="true" eOpposite="#/13/WorkflowTransition/workflow"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="service" lowerBound="1"
+          eType="#/7/ServerlessService" changeable="false" transient="true" eOpposite="#/7/ServerlessService/workflows"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="observability" eType="#/10/ObservabilityConfig"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="resilience" eType="#/10/ResiliencePolicy"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="idempotency" eType="#/10/IdempotencyPolicy"/>

@@ -46,6 +46,8 @@ public class DeltaNormalizer {
     Map<String, String> elementTypes = new LinkedHashMap<>();
     elements.forEach(element -> elementTypes.put(element.localId(), element.eClass()));
     String rootType = metamodels.rootType(level);
+    elements = ensureDefaultServiceForDeployables(level, elements);
+    elements.forEach(element -> elementTypes.put(element.localId(), element.eClass()));
     elements =
         elements.stream()
             .map(
@@ -114,6 +116,15 @@ public class DeltaNormalizer {
 
   private ModelDelta.Placement normalizePlacement(
       ModelLevel level, String type, ModelDelta.Placement placement, Map<String, String> localIds) {
+    if (placement != null
+        && !placement.referenceName().isBlank()
+        && "root".equalsIgnoreCase(placement.ownerId())
+        && PimDeployablePlacement.isLegacyRootDeployableCollection(
+            "PIMModel", placement.referenceName())) {
+      return PimDeployablePlacement.servicePlacement(
+              schemas, type, PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID)
+          .orElse(placement);
+    }
     if (placement != null && !placement.referenceName().isBlank()) {
       return new ModelDelta.Placement(
           localIds.getOrDefault(placement.ownerId(), placement.ownerId()),
@@ -122,7 +133,50 @@ public class DeltaNormalizer {
     return metamodels
         .rootContainment(level, type)
         .map(reference -> new ModelDelta.Placement("root", reference.name()))
+        .or(
+            () ->
+                level == ModelLevel.PIM
+                    ? PimDeployablePlacement.servicePlacement(
+                        schemas, type, PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID)
+                    : java.util.Optional.empty())
         .orElse(placement);
+  }
+
+  private List<ModelDelta.Element> ensureDefaultServiceForDeployables(
+      ModelLevel level, List<ModelDelta.Element> elements) {
+    if (level != ModelLevel.PIM) {
+      return elements;
+    }
+    boolean needsService =
+        elements.stream()
+            .anyMatch(
+                element ->
+                    PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID.equals(
+                        element.placement() == null ? "" : element.placement().ownerId()));
+    if (!needsService) {
+      return elements;
+    }
+    boolean hasDefaultService =
+        elements.stream()
+            .anyMatch(
+                element ->
+                    "ServerlessService".equals(element.eClass())
+                        && PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID.equals(
+                            element.localId()));
+    if (hasDefaultService) {
+      return elements;
+    }
+    List<ModelDelta.Element> augmented = new ArrayList<>(elements.size() + 1);
+    augmented.add(
+        new ModelDelta.Element(
+            PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID,
+            "ServerlessService",
+            JsonNodeFactory.instance.objectNode().put("name", "Default Service"),
+            new ModelDelta.Placement("root", "services"),
+            List.of(),
+            List.of()));
+    augmented.addAll(elements);
+    return List.copyOf(augmented);
   }
 
   private ModelDelta.Element canonicalizeElementPlacement(
@@ -143,6 +197,19 @@ public class DeltaNormalizer {
     String referenceName =
         DeltaPlacementNames.canonicalContainmentName(
             schemas, level, ownerType, placement.referenceName(), element.eClass());
+    if (PimDeployablePlacement.isLegacyRootDeployableCollection(
+        ownerType, placement.referenceName())) {
+      String serviceId =
+          elementTypes.entrySet().stream()
+              .filter(entry -> "ServerlessService".equals(entry.getValue()))
+              .map(Map.Entry::getKey)
+              .findFirst()
+              .orElse(PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID);
+      referenceName =
+          PimDeployablePlacement.serviceContainmentFeature(schemas, element.eClass())
+              .orElse(referenceName);
+      ownerId = serviceId;
+    }
     return new ModelDelta.Element(
         element.localId(),
         element.eClass(),
@@ -156,6 +223,9 @@ public class DeltaNormalizer {
       ModelLevel level, String ownerId, Map<String, String> elementTypes, String rootType) {
     if (ownerId == null || ownerId.isBlank() || "root".equalsIgnoreCase(ownerId)) {
       return rootType;
+    }
+    if (PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID.equals(ownerId)) {
+      return "ServerlessService";
     }
     return elementTypes.get(ownerId);
   }

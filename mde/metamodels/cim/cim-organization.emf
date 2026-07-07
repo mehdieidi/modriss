@@ -142,6 +142,8 @@ class BoundedContextCandidate extends kernel.TraceableElement {
   attr String ownershipBoundary;
   attr Boolean externalIntegrationBoundary;
 
+  val UbiquitousLanguageTerm[*]#context glossaryTerms;
+
   ref BusinessCapability[*] capabilities;
   ref cimdomain.DomainEntity[*] entities;
   ref cimbehavior.Command[*] commands;
@@ -157,5 +159,5 @@ class UbiquitousLanguageTerm extends kernel.TraceableElement {
   attr String forbiddenSynonyms;
   attr String exampleUsage;
 
-  ref BoundedContextCandidate[?] context;
+  readonly transient ref BoundedContextCandidate[1]#glossaryTerms context;
 }

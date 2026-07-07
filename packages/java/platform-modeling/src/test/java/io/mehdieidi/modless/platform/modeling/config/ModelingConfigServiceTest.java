@@ -317,7 +317,7 @@ class ModelingConfigServiceTest {
     }
   }
 
-  /** Verifies that view palettes are complete, visible, and safe for standalone drag/drop. */
+  /** Verifies that view palettes list only visible standalone drag/drop types. */
   @Test
   void exposesCompleteStandaloneViewPalettes() {
     for (String key : List.of("cim", "pim", "psm")) {
@@ -338,23 +338,6 @@ class ModelingConfigServiceTest {
           }
         }
         assertTrue(elementTypes.containsAll(palette), view.get("id") + " palette must be visible");
-        for (Map<String, Object> element : elementsByType.values()) {
-          String type = String.valueOf(element.get("type"));
-          boolean related =
-              elementTypes.contains(type)
-                  || stringList(element.get("supertypes")).stream()
-                      .anyMatch(elementTypes::contains);
-          boolean standalone =
-              Boolean.TRUE.equals(element.get("creatable"))
-                  && !Boolean.TRUE.equals(element.get("abstract"))
-                  && !Boolean.TRUE.equals(element.get("relationshipElement"))
-                  && !Boolean.TRUE.equals(element.get("containedOnly"))
-                  && !Boolean.TRUE.equals(element.get("supportOnly"));
-          if (related && standalone) {
-            assertTrue(
-                palette.contains(type), view.get("id") + " missing related palette type " + type);
-          }
-        }
         for (String type : palette) {
           Map<String, Object> element = elementsByType.get(type);
           assertNotNull(element, view.get("id") + " unknown palette type " + type);

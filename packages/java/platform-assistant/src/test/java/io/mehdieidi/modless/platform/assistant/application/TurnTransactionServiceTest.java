@@ -194,7 +194,7 @@ class TurnTransactionServiceTest {
               "eClass": "PIMModel",
               "modelLevel": "PIM",
               "name": "Orders",
-              "functions": [],
+              "services": [],
               "diagram": {"elements": [], "relationships": []}
             }
             """);

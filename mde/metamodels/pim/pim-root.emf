@@ -35,25 +35,14 @@ class PIMModel extends kernel.TraceableElement {
   val policy.DecisionModel[*] decisionModels;
   val policy.ArchitecturePolicy[*] policies;
 
-  val compute.Function[*] functions;
-  val compute.Trigger[*] triggers;
-
-  val api.Api[*] apis;
-
-  val integration.EventChannel[*] channels;
-  val integration.Schedule[*] schedules;
   val integration.Flow[*] flows;
 
-  val data.DataStore[*] dataStores;
-  val data.ObjectStore[*] objectStores;
   val data.DataAccess[*] dataAccesses;
 
-  val workflow.Workflow[*] workflows;
   val workflow.HumanTask[*] humanTasks;
   val workflow.EscalationPolicy[*] escalationPolicies;
 
   val external.ExternalEndpoint[*] externalEndpoints;
-  val external.ExternalAdapter[*] externalAdapters;
 
   val security.IdentityProvider[*] identityProviders;
   val security.Principal[*] principals;

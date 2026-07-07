@@ -336,24 +336,35 @@ public final class ModelingConfigService {
         throw new PlatformException(500, "Modeling viewDefinitions entries must be objects.");
       }
       Map<String, Object> view = stringKeyMap(raw);
+      List<String> configuredPalette = objectStringList(view.get("palette"));
       LinkedHashSet<String> relatedTypes =
           new LinkedHashSet<>(objectStringList(view.get("elementTypes")));
-      relatedTypes.addAll(objectStringList(view.get("palette")));
       LinkedHashSet<String> palette = new LinkedHashSet<>();
-      for (String relatedType : relatedTypes) {
-        for (Map<String, Object> element : elementsByType.values()) {
-          if (typeMatches(relatedType, element)
-              && standalonePaletteElement(element, standalonePaletteRoles)) {
-            palette.add(String.valueOf(element.get("type")));
+      if (!configuredPalette.isEmpty()) {
+        for (String type : configuredPalette) {
+          Map<String, Object> element = elementsByType.get(type);
+          if (element != null && standalonePaletteElement(element, standalonePaletteRoles)) {
+            palette.add(type);
           }
         }
+        relatedTypes.addAll(palette);
+      } else {
+        relatedTypes.addAll(configuredPalette);
+        for (String relatedType : relatedTypes) {
+          for (Map<String, Object> element : elementsByType.values()) {
+            if (typeMatches(relatedType, element)
+                && standalonePaletteElement(element, standalonePaletteRoles)) {
+              palette.add(String.valueOf(element.get("type")));
+            }
+          }
+        }
+        palette.removeIf(
+            type -> {
+              Map<String, Object> element = elementsByType.get(type);
+              return element == null || !standalonePaletteElement(element, standalonePaletteRoles);
+            });
+        relatedTypes.addAll(palette);
       }
-      palette.removeIf(
-          type -> {
-            Map<String, Object> element = elementsByType.get(type);
-            return element == null || !standalonePaletteElement(element, standalonePaletteRoles);
-          });
-      relatedTypes.addAll(palette);
       view.put("elementTypes", new ArrayList<>(relatedTypes));
       view.put("palette", new ArrayList<>(palette));
       result.add(view);

@@ -9,6 +9,7 @@ import "pim-external.ecore";
 import "pim-config.ecore";
 import "pim-policy.ecore";
 import "pim-security.ecore";
+import "pim-deployment.ecore";
 
 abstract class ComputeElement extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
   attr String responsibility;
@@ -36,8 +37,9 @@ class Function extends ComputeElement, kernel.DeployableElement, kernel.Invocati
   attr pimtypes.FunctionKind[1] functionKind;
 
   val contracts.FunctionContract[1] contract;
+  val Trigger[*]#function triggers;
 
-  ref Trigger[*]#invokesFunction triggers;
+  readonly transient ref deployment.ServerlessService[1]#functions service;
   ref data.StorageElement[*] reads;
   ref data.StorageElement[*] writes;
   ref contracts.EventType[*] publishes;
@@ -62,7 +64,7 @@ class Trigger extends kernel.TraceableElement, kernel.PolicyTarget {
 
   val kernel.Expression[?] filter;
 
-  ref Function[?]#triggers invokesFunction;
+  readonly transient ref Function[1]#triggers function;
   ref kernel.InvocationSource[1] source;
   ref kernel.WorkflowTarget[?] startsWorkflow;
   ref policy.ResiliencePolicy[?] resilience;

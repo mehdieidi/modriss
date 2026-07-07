@@ -84,51 +84,57 @@ operation cacheExistingTarget(target) {
 operation cachePimOwnership() {
   for (service in cachedPimRoot.services) {
     cachePimServiceOwner(service, service);
-    for (fn in service.ownsFunctions) {
+    for (fn in service.functions) {
       cachePimServiceOwner(fn, service);
     }
-    for (api in service.ownsApis) {
+    for (api in service.apis) {
       cachePimServiceOwner(api, service);
       for (route in api.routes) {
         cachePimServiceOwner(route, service);
       }
     }
-    for (channel in service.ownsChannels) {
+    for (channel in service.channels) {
       cachePimServiceOwner(channel, service);
     }
-    for (store in service.ownsStores) {
+    for (store in service.stores) {
       cachePimServiceOwner(store, service);
     }
-    for (workflow in service.ownsWorkflows) {
+    for (workflow in service.workflows) {
       cachePimServiceOwner(workflow, service);
       for (step in workflow.steps) {
         cachePimServiceOwner(step, service);
       }
     }
-    for (adapter in service.ownsAdapters) {
+    for (adapter in service.adapters) {
       cachePimServiceOwner(adapter, service);
+    }
+    for (schedule in service.schedules) {
+      cachePimServiceOwner(schedule, service);
     }
   }
   for (unit in cachedPimRoot.deploymentUnits) {
     for (service in unit.services) {
       cacheDeploymentAssignment(service, unit);
-      for (fn in service.ownsFunctions) {
+      for (fn in service.functions) {
         cacheDeploymentAssignment(fn, unit);
       }
-      for (api in service.ownsApis) {
+      for (api in service.apis) {
         cacheDeploymentAssignment(api, unit);
       }
-      for (channel in service.ownsChannels) {
+      for (channel in service.channels) {
         cacheDeploymentAssignment(channel, unit);
       }
-      for (store in service.ownsStores) {
+      for (store in service.stores) {
         cacheDeploymentAssignment(store, unit);
       }
-      for (workflow in service.ownsWorkflows) {
+      for (workflow in service.workflows) {
         cacheDeploymentAssignment(workflow, unit);
       }
-      for (adapter in service.ownsAdapters) {
+      for (adapter in service.adapters) {
         cacheDeploymentAssignment(adapter, unit);
+      }
+      for (schedule in service.schedules) {
+        cacheDeploymentAssignment(schedule, unit);
       }
     }
     for (element in unit.contains) {
@@ -447,6 +453,41 @@ operation registerAwsGeneratedResource(resource) {
   if (className = "SqsLambdaEventSourceMapping") cachedSqsLambdaMappings.add(resource);
   if (className = "SnsSubscription") cachedSnsLambdaSubscriptions.add(resource);
   if (className = "EventBridgeRule") cachedEventBridgeRules.add(resource);
+}
+
+/** Returns whether a generated resource is val-contained under another AWS resource. */
+operation isNestedAwsResource(resource) {
+  var container = resource.eContainer();
+  return container.isDefined() and container.isKindOf(AWSPSMCORE!AwsResource);
+}
+
+/** Collects nested AwsResource children for stack propagation and flattening. */
+operation AWSPSMCORE!AwsResource nestedAwsResources() : Sequence {
+  var nested = Sequence{};
+  if (self.isKindOf(AWSPSMAPI!ApiGatewayApi)) {
+    nested.addAll(self.routes);
+    nested.addAll(self.stages);
+    nested.addAll(self.authorizers);
+  }
+  if (self.isKindOf(AWSPSMAPI!RestApi)) {
+    nested.addAll(self.resources);
+  }
+  if (self.isKindOf(AWSPSMCOMPUTE!AwsLambdaFunction)) {
+    nested.addAll(self.permissions);
+    nested.addAll(self.versions);
+    nested.addAll(self.aliases);
+    nested.addAll(self.eventInvokeConfigs);
+    nested.addAll(self.eventSourceMappings);
+    if (self.functionUrl.isDefined()) {
+      nested.add(self.functionUrl);
+    }
+  }
+  var flattened = Sequence{};
+  for (child in nested) {
+    flattened.add(child);
+    flattened.addAll(child.nestedAwsResources());
+  }
+  return flattened;
 }
 
 /** Computes apply production defaults. */

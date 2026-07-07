@@ -4,6 +4,45 @@ import "values.eol";
 import "iam.eol";
 import "paths.eol";
 
+/** Collects nested AwsResource children for CFN flattening. */
+operation AWSPSMCORE!AwsResource nestedAwsResources() : Sequence {
+  var nested = Sequence{};
+  if (self.isKindOf(AWSPSMAPI!ApiGatewayApi)) {
+    nested.addAll(self.routes);
+    nested.addAll(self.stages);
+    nested.addAll(self.authorizers);
+  }
+  if (self.isKindOf(AWSPSMAPI!RestApi)) {
+    nested.addAll(self.resources);
+  }
+  if (self.isKindOf(AWSPSMCOMPUTE!AwsLambdaFunction)) {
+    nested.addAll(self.permissions);
+    nested.addAll(self.versions);
+    nested.addAll(self.aliases);
+    nested.addAll(self.eventInvokeConfigs);
+    nested.addAll(self.eventSourceMappings);
+    if (self.functionUrl.isDefined()) {
+      nested.add(self.functionUrl);
+    }
+  }
+  var flattened = Sequence{};
+  for (child in nested) {
+    flattened.add(child);
+    flattened.addAll(child.nestedAwsResources());
+  }
+  return flattened;
+}
+
+/** Flattens direct and nested stack resources for generation ordering. */
+operation AWSPSMCORE!SamStack flattenedResources() : Sequence {
+  var flattened = Sequence{};
+  for (resObj in self.resources) {
+    flattened.add(resObj);
+    flattened.addAll(resObj.nestedAwsResources());
+  }
+  return flattened;
+}
+
 /** Derives ordered resources. */
 operation AWSPSMCORE!SamStack orderedResources() : Sequence {
   var resSeq = new Sequence;
@@ -23,11 +62,11 @@ operation AWSPSMCORE!SamStack orderedResources() : Sequence {
     "AwsNativeResource"
   };
   for (groupText in groupSeq) {
-    for (resObj in self.resources.select(resObj | resObj.eClass().getName() = groupText and not resObj.omitFromCfnTemplate()).sortBy(resObj | resObj.cfnLogicalId())) {
+    for (resObj in self.flattenedResources().select(resObj | resObj.eClass().getName() = groupText and not resObj.omitFromCfnTemplate()).sortBy(resObj | resObj.cfnLogicalId())) {
       resSeq.add(resObj);
     }
   }
-  for (resObj in self.resources.reject(resObj | groupSeq.includes(resObj.eClass().getName()) or resObj.omitFromCfnTemplate()).sortBy(resObj | resObj.cfnLogicalId())) {
+  for (resObj in self.flattenedResources().reject(resObj | groupSeq.includes(resObj.eClass().getName()) or resObj.omitFromCfnTemplate()).sortBy(resObj | resObj.cfnLogicalId())) {
     resSeq.add(resObj);
   }
   return resSeq;

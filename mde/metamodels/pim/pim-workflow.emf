@@ -8,6 +8,7 @@ import "pim-external.ecore";
 import "pim-policy.ecore";
 import "pim-contracts.ecore";
 import "pim-security.ecore";
+import "pim-deployment.ecore";
 
 class Workflow extends kernel.TraceableElement, kernel.DeployableElement, kernel.InvocationTarget, kernel.WorkflowTarget, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource, kernel.ConfigurableElement {
   attr String executionSemantics;
@@ -21,6 +22,8 @@ class Workflow extends kernel.TraceableElement, kernel.DeployableElement, kernel
 
   val WorkflowStep[+]#workflow steps;
   val WorkflowTransition[*]#workflow transitions;
+
+  readonly transient ref deployment.ServerlessService[1]#workflows service;
 
   ref policy.ObservabilityConfig[?] observability;
   ref policy.ResiliencePolicy[?] resilience;

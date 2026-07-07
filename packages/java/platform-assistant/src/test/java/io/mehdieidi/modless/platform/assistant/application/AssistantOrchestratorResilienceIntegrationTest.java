@@ -356,7 +356,7 @@ class AssistantOrchestratorResilienceIntegrationTest {
               "eClass": "PIMModel",
               "modelLevel": "PIM",
               "name": "Orders",
-              "functions": [],
+              "services": [],
               "diagram": {"elements": [], "relationships": []}
             }
             """);
@@ -371,8 +371,15 @@ class AssistantOrchestratorResilienceIntegrationTest {
               "eClass": "PIMModel",
               "modelLevel": "PIM",
               "name": "Orders",
-              "functions": [
-                {"id": "%s", "eClass": "Function", "name": "%s"}
+              "services": [
+                {
+                  "id": "svc-1",
+                  "eClass": "ServerlessService",
+                  "name": "Orders",
+                  "functions": [
+                    {"id": "%s", "eClass": "Function", "name": "%s"}
+                  ]
+                }
               ],
               "diagram": {
                 "elements": [{"id": "%s", "type": "Function", "label": "%s"}],

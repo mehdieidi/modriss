@@ -83,14 +83,14 @@ class DeltaNormalizerTest {
             .filter(element -> "Function".equals(element.eClass()))
             .findFirst()
             .orElseThrow();
-    assertEquals("root", function.placement().ownerId());
+    assertEquals("svc", function.placement().ownerId());
     assertEquals("functions", function.placement().referenceName());
     assertTrue(
         normalized.references().stream()
-            .anyMatch(
+            .noneMatch(
                 reference ->
                     "svc".equals(reference.sourceId())
-                        && "ownsFunctions".equals(reference.referenceName())
+                        && reference.referenceName().startsWith("owns")
                         && "fn".equals(reference.targetId())));
   }
 

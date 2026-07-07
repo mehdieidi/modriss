@@ -170,7 +170,7 @@ rule Command2Function
   }
   fn.observability = createDefaultObservability(fn, "TR-070", cmd.auditRequired, cmd.auditRequired);
 
-  pimRoot().functions.add(fn);
+  serviceFor(cmd).functions.add(fn);
   traceGenerated(cmd, fn, "TR-070", "HIGH");
 }
 
@@ -232,8 +232,7 @@ rule UserInitiatedCommand2ApiRoute
   trigger.enabled = true;
   trigger.generatedFromFlow = false;
   trigger.source = route;
-  trigger.invokesFunction = route.functionIntegration;
-  pimRoot().triggers.add(trigger);
+  route.functionIntegration.triggers.add(trigger);
   traceGenerated(cmd, trigger, "TR-070", "MEDIUM");
 
   for (err in cmd.possibleErrors) {
@@ -296,7 +295,7 @@ rule Query2Function
   fn.contract = contract;
   fn.observability = createDefaultObservability(fn, "TR-080", false, false);
 
-  pimRoot().functions.add(fn);
+  serviceFor(q).functions.add(fn);
   traceGenerated(q, fn, "TR-080", "HIGH");
 }
 
@@ -352,8 +351,7 @@ rule Query2ApiRoute
   trigger.enabled = true;
   trigger.generatedFromFlow = false;
   trigger.source = route;
-  trigger.invokesFunction = route.functionIntegration;
-  pimRoot().triggers.add(trigger);
+  route.functionIntegration.triggers.add(trigger);
   traceGenerated(q, trigger, "TR-080", "MEDIUM");
 
   if (route.authRequired and not hasText(q.authorizationRule)) {
@@ -446,8 +444,7 @@ rule Query2AccessPattern
     }
     readStore.ownedDataModels.add(readModel);
     readStore.accessPatterns.add(ap);
-    pimRoot().dataStores.add(readStore);
-    serviceFor(q).ownsStores.add(readStore);
+    serviceFor(q).stores.add(readStore);
     traceGenerated(q, readStore, "TR-080", "MEDIUM");
     traceGenerated(q, readModel, "TR-080", "MEDIUM");
     manualDecision("TR-080", "Confirm projection freshness, rebuild strategy, and index keys for read model generated from query '" + q.name + "'.", KERNEL!Severity#WARNING, ap.highCardinality, Sequence{q, readStore, readModel});

@@ -20,12 +20,13 @@ class ServerlessService extends kernel.TraceableElement, kernel.PolicyTarget, ke
   attr Boolean ownsData;
   attr pimtypes.BoundaryType[1] boundaryType;
 
-  ref compute.Function[*] ownsFunctions;
-  ref api.Api[*] ownsApis;
-  ref integration.EventChannel[*] ownsChannels;
-  ref data.StorageElement[*] ownsStores;
-  ref workflow.Workflow[*] ownsWorkflows;
-  ref external.ExternalAdapter[*] ownsAdapters;
+  val compute.Function[*]#service functions;
+  val api.Api[*]#service apis;
+  val integration.EventChannel[*]#service channels;
+  val integration.Schedule[*]#service schedules;
+  val data.StorageElement[*]#service stores;
+  val workflow.Workflow[*]#service workflows;
+  val external.ExternalAdapter[*]#service adapters;
   ref policy.ArchitecturePolicy[*] constrainedBy;
 }
 

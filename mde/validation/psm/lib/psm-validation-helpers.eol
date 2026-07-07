@@ -35,11 +35,46 @@ operation productionStageExists() : Boolean {
 
 
 @cached
+/** Collects nested AwsResource children for validation flattening. */
+operation AWSPSM!AwsResource nestedAwsResources() : Sequence {
+  var nested = Sequence{};
+  if (self.isKindOf(AWSPSM!ApiGatewayApi)) {
+    nested.addAll(self.routes);
+    nested.addAll(self.stages);
+    nested.addAll(self.authorizers);
+  }
+  if (self.isKindOf(AWSPSM!RestApi)) {
+    nested.addAll(self.resources);
+  }
+  if (self.isKindOf(AWSPSM!AwsLambdaFunction)) {
+    nested.addAll(self.permissions);
+    nested.addAll(self.versions);
+    nested.addAll(self.aliases);
+    nested.addAll(self.eventInvokeConfigs);
+    nested.addAll(self.eventSourceMappings);
+    if (self.functionUrl.isDefined()) {
+      nested.add(self.functionUrl);
+    }
+  }
+  var flattened = Sequence{};
+  for (child in nested) {
+    flattened.add(child);
+    flattened.addAll(child.nestedAwsResources());
+  }
+  return flattened;
+}
+
+@cached
 /** Computes stack resource set. */
 operation AWSPSM!AwsPsmModel stackResourceSet() : Set {
   var resourceSet : Set = Set{};
   for (stackItem in self.stacks) {
-    resourceSet.addAll(stackItem.resources);
+    for (resourceItem in stackItem.resources) {
+      resourceSet.add(resourceItem);
+      for (nestedItem in resourceItem.nestedAwsResources()) {
+        resourceSet.add(nestedItem);
+      }
+    }
   }
   return resourceSet;
 }

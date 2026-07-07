@@ -445,7 +445,8 @@ class ModelServiceXmiImportTest {
     JsonNode workflowTransition = relationship(relationships, "wf-start", "wf-task", "TRANSITION");
     JsonNode principalPermission =
         relationship(relationships, "principal-resident", "fn-submit", "PERMISSION");
-    JsonNode rootContainsApi = relationship(relationships, "pim-root", "api-main", "CONTAINS");
+    JsonNode rootContainsService = relationship(relationships, "pim-root", "svc-main", "CONTAINS");
+    JsonNode serviceContainsApi = relationship(relationships, "svc-main", "api-main", "CONTAINS");
     assertNotNull(routeToFunction, relationships::toPrettyString);
     assertEquals("functionIntegration", routeToFunction.path("semanticFeature").asText());
     assertNotNull(functionReadsStore);
@@ -454,8 +455,10 @@ class ModelServiceXmiImportTest {
     assertEquals("WorkflowTransition", workflowTransition.path("eClass").asText());
     assertNotNull(principalPermission);
     assertEquals("Permission", principalPermission.path("eClass").asText());
-    assertNotNull(rootContainsApi);
-    assertTrue(rootContainsApi.path("containment").asBoolean());
+    assertNotNull(rootContainsService);
+    assertTrue(rootContainsService.path("containment").asBoolean());
+    assertNotNull(serviceContainsApi);
+    assertTrue(serviceContainsApi.path("containment").asBoolean());
   }
 
   /** Confirms imported PIM and PSM JSON can be exported and validated by EVL. */
@@ -544,7 +547,8 @@ class ModelServiceXmiImportTest {
     service.attachSourceXmi(created, xmi);
 
     ObjectNode staleJson = (ObjectNode) created.modelJson().deepCopy();
-    ((ObjectNode) staleJson.path("workflows").path(0).path("steps").path(0))
+    ((ObjectNode)
+            staleJson.path("services").path(0).path("workflows").path(0).path("steps").path(0))
         .put("compensation", "missing-compensation");
     service.update(user, ModelLevel.PIM, created.id(), "pim", staleJson);
 
@@ -582,7 +586,7 @@ class ModelServiceXmiImportTest {
                 java.util.List.of(
                     new ModelService.ModelPatchOperation(
                         "add",
-                        "/workflows/0/steps/0/compensation",
+                        "/services/0/workflows/0/steps/0/compensation",
                         store.objectMapper().getNodeFactory().textNode("missing-compensation")))));
 
     ModelService.ValidationResult validation = service.validate(user, ModelLevel.PIM, created.id());
@@ -864,55 +868,60 @@ class ModelServiceXmiImportTest {
         xmlns:xmi="http://www.omg.org/XMI"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:pim="https://modless.org/pim/1.0"
+        xmlns:data="https://modless.org/pim/data/1.0"
         xmlns:workflow="https://modless.org/pim/workflow/1.0"
         id="pim-root"
         name="PIM Test"
         architectureStyle="WORKFLOW_ORCHESTRATED_SERVERLESS"
         domainName="Test Grants">
-      <functions id="fn-submit"
-          name="Submit Handler"
-          functionKind="COMMAND_HANDLER"
-          reads="store-app"/>
-      <apis id="api-main"
-          name="Main API"
-          apiStyle="RESOURCE_ORIENTED_HTTP">
-        <routes id="route-submit"
-            name="Submit route"
-            method="POST"
-            pathTemplate="/submit"
-            functionIntegration="fn-submit"/>
-      </apis>
-      <dataStores id="store-app"
-          name="Application Store"
-          storeKind="DOCUMENT"
-          consistencyNeed="EVENTUAL"/>
-      <workflows id="workflow-main"
-          name="Main workflow"
-          workflowKind="ORCHESTRATION">
-        <steps xsi:type="workflow:StartStep"
-            id="wf-start"
-            name="Start"
-            orderIndex="1"/>
-        <steps xsi:type="workflow:TaskStep"
-            id="wf-task"
-            name="Submit"
-            orderIndex="2"
-            invokesFunction="fn-submit"/>
-        <steps xsi:type="workflow:SuccessEndStep"
-            id="wf-end"
-            name="End"
-            orderIndex="3"/>
-        <transitions id="wf-transition"
-            name="Start to Submit"
-            source="wf-start"
-            target="wf-task"
-            defaultTransition="true"/>
-        <transitions id="wf-transition-end"
-            name="Submit to End"
-            source="wf-task"
-            target="wf-end"
-            defaultTransition="true"/>
-      </workflows>
+      <services id="svc-main"
+          name="Main Service"
+          responsibility="Test service capability">
+        <functions id="fn-submit"
+            name="Submit Handler"
+            functionKind="COMMAND_HANDLER"
+            reads="store-app"/>
+        <apis id="api-main"
+            name="Main API"
+            apiStyle="RESOURCE_ORIENTED_HTTP">
+          <routes id="route-submit"
+              name="Submit route"
+              method="POST"
+              pathTemplate="/submit"
+              functionIntegration="fn-submit"/>
+        </apis>
+        <stores xsi:type="data:DataStore" id="store-app"
+            name="Application Store"
+            storeKind="DOCUMENT"
+            consistencyNeed="EVENTUAL"/>
+        <workflows id="workflow-main"
+            name="Main workflow"
+            workflowKind="ORCHESTRATION">
+          <steps xsi:type="workflow:StartStep"
+              id="wf-start"
+              name="Start"
+              orderIndex="1"/>
+          <steps xsi:type="workflow:TaskStep"
+              id="wf-task"
+              name="Submit"
+              orderIndex="2"
+              invokesFunction="fn-submit"/>
+          <steps xsi:type="workflow:SuccessEndStep"
+              id="wf-end"
+              name="End"
+              orderIndex="3"/>
+          <transitions id="wf-transition"
+              name="Start to Submit"
+              source="wf-start"
+              target="wf-task"
+              defaultTransition="true"/>
+          <transitions id="wf-transition-end"
+              name="Submit to End"
+              source="wf-task"
+              target="wf-end"
+              defaultTransition="true"/>
+        </workflows>
+      </services>
       <principals id="principal-resident"
           name="Resident"
           principalKind="HUMAN_USER"

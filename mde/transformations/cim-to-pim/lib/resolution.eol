@@ -212,8 +212,8 @@ operation policyTargetsForAll(sources) {
 
 /** Creates ensure api for service. */
 operation ensureApiForService(service : DEPLOY!ServerlessService) {
-  if (service.ownsApis.notEmpty()) {
-    return service.ownsApis.first();
+  if (service.apis.notEmpty()) {
+    return service.apis.first();
   }
   var api = new API!Api;
   api.id = "api_" + service.id;
@@ -229,15 +229,14 @@ operation ensureApiForService(service : DEPLOY!ServerlessService) {
   api.observability = createDefaultObservability(api, "TR-070", true, false);
   api.generatedByTransformation = true;
   api.manuallyMaintained = false;
-  service.ownsApis.add(api);
-  pimRoot().apis.add(api);
+  service.apis.add(api);
   traceGenerated(service, api, "TR-070", "MEDIUM");
   return api;
 }
 
 /** Creates ensure event bus for service. */
 operation ensureEventBusForService(service : DEPLOY!ServerlessService) {
-  var existing = service.ownsChannels.selectOne(c | c.isKindOf(INTEGRATION!EventBus));
+  var existing = service.channels.selectOne(c | c.isKindOf(INTEGRATION!EventBus));
   if (existing.isDefined()) {
     return existing;
   }
@@ -256,8 +255,7 @@ operation ensureEventBusForService(service : DEPLOY!ServerlessService) {
   ch.resilience = createDefaultResilience(ch, "TR-090", true);
   ch.generatedByTransformation = true;
   ch.manuallyMaintained = false;
-  service.ownsChannels.add(ch);
-  pimRoot().channels.add(ch);
+  service.channels.add(ch);
   traceGenerated(service, ch, "TR-090", "MEDIUM");
   return ch;
 }

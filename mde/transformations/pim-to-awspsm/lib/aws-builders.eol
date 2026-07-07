@@ -451,7 +451,7 @@ operation createLambdaPermissionFor(prefix : String, origin, fn, principal : Str
       KERNEL!Severity#ERROR, isProductionRoot(), Sequence{origin, fn},
       "Set the invoking API, EventBridge rule/schedule, SNS topic, S3 bucket, or other source so Lambda permission can be least-privilege scoped.");
   }
-  setFeature(p, "function", fn);
+  fn.permissions.add(p);
   cachedLambdaPermissionByKey.put(key, p);
   if (not cachedLambdaPermissionByKey.containsKey(prefix + "::" + principal + "::" + fn.logicalId)) {
     cachedLambdaPermissionByKey.put(prefix + "::" + principal + "::" + fn.logicalId, p);
@@ -585,7 +585,7 @@ operation placeUncontainedAwsResources() {
 
   // Place resources with explicit PIM deployment-unit ownership first.
   for (r in cachedAwsGeneratedResources) {
-    if (r.stack.isUndefined()) {
+    if (r.stack.isUndefined() and not isNestedAwsResource(r)) {
       var targetStack = stackForGeneratedResource(r);
       if (targetStack.isDefined()) {
         targetStack.resources.add(r);
@@ -599,7 +599,7 @@ operation placeUncontainedAwsResources() {
   var madeProgress = true;
   while (madeProgress) {
     madeProgress = false;
-    for (r in cachedAwsGeneratedResources.select(r | r.stack.isUndefined())) {
+    for (r in cachedAwsGeneratedResources.select(r | r.stack.isUndefined() and not isNestedAwsResource(r))) {
       var inferredStack = inferredStackForGeneratedResource(r);
       if (inferredStack.isDefined()) {
         inferredStack.resources.add(r);
@@ -609,7 +609,7 @@ operation placeUncontainedAwsResources() {
   }
 
   // Truly unowned resources remain reviewable in the default stack.
-  for (r in cachedAwsGeneratedResources.select(r | r.stack.isUndefined())) {
+  for (r in cachedAwsGeneratedResources.select(r | r.stack.isUndefined() and not isNestedAwsResource(r))) {
     if (st.isDefined()) {
       st.resources.add(r);
     }
@@ -749,7 +749,10 @@ operation generateRelationshipViews() {
     }
   }
   for (m in cachedSqsLambdaMappings) {
-    var mappedFunction = m.eGet(m.eClass().getEStructuralFeature("function"));
+    var mappedFunction = m.`function`;
+    if (mappedFunction.isUndefined()) {
+      continue;
+    }
     var sqsView = new AWSPSMINTEGRATIONS!SqsLambdaEventSourceView;
     sqsView.id = uniqueId("view_sqs_lambda_" + slug(m.queue.logicalId + "_" + mappedFunction.logicalId));
     sqsView.name = m.queue.name + " to " + mappedFunction.name;
@@ -1077,7 +1080,7 @@ operation createSqsLambdaMapping(origin, queue, fn, batchPolicy, resilience) {
   }
   m.partialBatchFailureHandlingRationale = "Derived from PIM batch policy/resilience.";
   m.queue = queue;
-  setFeature(m, "function", fn);
+  fn.eventSourceMappings.add(m);
   cachedSqsLambdaMappingByKey.put(key, m);
   return m;
 }
@@ -1107,7 +1110,7 @@ operation createDynamoLambdaMapping(origin, table, fn, batchPolicy, resilience) 
   m.bisectBatchOnFunctionError = true;
   m.reportBatchItemFailures = true;
   m.table = table;
-  setFeature(m, "function", fn);
+  fn.eventSourceMappings.add(m);
   cachedSqsLambdaMappingByKey.put(key, m);
   return m;
 }

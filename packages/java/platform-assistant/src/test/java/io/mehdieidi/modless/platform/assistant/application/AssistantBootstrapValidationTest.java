@@ -38,7 +38,9 @@ class AssistantBootstrapValidationTest {
   @Test
   void runtimeSchemaDerivesRootPlacementFromCurrentEcore() {
     AssistantMetamodelSchemaService schemas = new AssistantMetamodelSchemaService();
-    assertTrue(schemas.rootCollection(ModelLevel.PIM, "Function").isPresent());
+    assertTrue(
+        schemas.containments(ModelLevel.PIM, "ServerlessService", "Function").stream()
+            .anyMatch(reference -> "functions".equals(reference.name())));
     assertTrue(schemas.rootCollection(ModelLevel.CIM, "BusinessProcess").isPresent());
     assertTrue(schemas.languageIndex(ModelLevel.PSM).contains("AwsPsmModel"));
   }

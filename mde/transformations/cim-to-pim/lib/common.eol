@@ -419,3 +419,112 @@ operation Any isMany() : Boolean {
   return self.isDefined() and self.eClass().getName() = "Multiplicity" and
     (self.unbounded = true or (self.upperBound.isDefined() and self.upperBound > 1));
 }
+
+/** Returns the ServerlessService val-containment feature name for a deployable element. */
+operation deployableContainmentFeature(element) : String {
+  if (element.isKindOf(COMPUTE!Function)) {
+    return "functions";
+  }
+  if (element.isKindOf(API!Api)) {
+    return "apis";
+  }
+  if (element.isKindOf(INTEGRATION!Schedule)) {
+    return "schedules";
+  }
+  if (element.isKindOf(INTEGRATION!EventChannel)) {
+    return "channels";
+  }
+  if (element.isKindOf(DATA!StorageElement)) {
+    return "stores";
+  }
+  if (element.isKindOf(WORKFLOW!Workflow)) {
+    return "workflows";
+  }
+  if (element.isKindOf(EXTERNAL!ExternalAdapter)) {
+    return "adapters";
+  }
+  return "";
+}
+
+/** Adds a deployable element to a service containment feature once. */
+operation containDeployableOnce(service, element) {
+  if (service.isUndefined() or element.isUndefined()) {
+    return;
+  }
+  var featureName = deployableContainmentFeature(element);
+  if (not hasText(featureName)) {
+    return;
+  }
+  var key = cacheKeyFor(service) + "::" + featureName + "::" + cacheKeyFor(element);
+  if (cachedPimServiceOwnedKeys.includes(key)) {
+    return;
+  }
+  cacheOwnedKey(service, featureName, element);
+  service.eGet(service.eClass().getEStructuralFeature(featureName)).add(element);
+}
+
+/** Collects all functions contained by services. */
+operation allServiceFunctions() : Sequence {
+  var functions = Sequence{};
+  for (service in pimRoot().services) {
+    functions.addAll(service.functions);
+  }
+  return functions;
+}
+
+/** Finds the service that val-contains the deployable element, if any. */
+operation serviceOwningDeployable(element) {
+  if (element.isUndefined()) {
+    return null;
+  }
+  for (service in pimRoot().services) {
+    if (service.functions.includes(element) or service.apis.includes(element) or
+        service.channels.includes(element) or service.stores.includes(element) or
+        service.workflows.includes(element) or service.adapters.includes(element) or
+        service.schedules.includes(element)) {
+      return service;
+    }
+  }
+  if (element.isKindOf(COMPUTE!Trigger) and element.`function`.isDefined()) {
+    return serviceOwningDeployable(element.`function`);
+  }
+  return null;
+}
+
+/** Resolves the service that should own a dead-letter queue for a seed element. */
+operation serviceForDeadLetterSeed(seed) {
+  var owner = serviceOwningDeployable(seed);
+  if (owner.isDefined()) {
+    return owner;
+  }
+  if (seed.isKindOf(INTEGRATION!Flow) and seed.source.isDefined()) {
+    owner = serviceOwningDeployable(seed.source);
+    if (owner.isDefined()) {
+      return owner;
+    }
+  }
+  if (seed.isKindOf(INTEGRATION!Flow) and seed.target.isDefined()) {
+    owner = serviceOwningDeployable(seed.target);
+    if (owner.isDefined()) {
+      return owner;
+    }
+  }
+  if (pimRoot().services.notEmpty()) {
+    return pimRoot().services.first();
+  }
+  return null;
+}
+
+/** Adds a trigger under its hosting function containment. */
+operation addTriggerToService(trigger, service) {
+  if (trigger.isUndefined()) {
+    return;
+  }
+  var host = trigger.`function`;
+  if (host.isUndefined() and service.isDefined()) {
+    host = firstOwnedFunction(service);
+  }
+  if (host.isDefined()) {
+    host.triggers.add(trigger);
+  }
+}

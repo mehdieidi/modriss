@@ -29,8 +29,6 @@
           upperBound="-1" eType="#/4/CapabilityDependency" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="boundedContexts" upperBound="-1"
           eType="#/4/BoundedContextCandidate" containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="glossary" upperBound="-1"
-          eType="#/4/UbiquitousLanguageTerm" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="entities" upperBound="-1"
           eType="#/2/DomainEntity" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="valueObjects" upperBound="-1"
@@ -600,6 +598,8 @@
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="ownershipBoundary" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="externalIntegrationBoundary"
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="glossaryTerms" upperBound="-1"
+          eType="#/4/UbiquitousLanguageTerm" containment="true" eOpposite="#/4/UbiquitousLanguageTerm/context"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="capabilities" upperBound="-1"
           eType="#/4/BusinessCapability"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="entities" upperBound="-1"
@@ -620,7 +620,9 @@
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="synonyms" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="forbiddenSynonyms" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="exampleUsage" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="context" eType="#/4/BoundedContextCandidate"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="context" lowerBound="1"
+          eType="#/4/BoundedContextCandidate" changeable="false" transient="true"
+          eOpposite="#/4/BoundedContextCandidate/glossaryTerms"/>
     </eClassifiers>
   </ecore:EPackage>
   <ecore:EPackage name="cimprocess" nsURI="https://modless.org/cim/process-policy/1.0"

@@ -145,7 +145,7 @@ class AssistantToolServiceTest {
             mapper);
     var model =
         mapper.readTree(
-            "{\"id\":\"root\",\"eClass\":\"PIMModel\",\"modelLevel\":\"PIM\",\"diagram\":{\"elements\":[],\"relationships\":[]}}");
+            "{\"id\":\"root\",\"eClass\":\"PIMModel\",\"modelLevel\":\"PIM\",\"services\":[{\"id\":\"svc-1\",\"eClass\":\"ServerlessService\",\"name\":\"Orders\",\"functions\":[]}],\"diagram\":{\"elements\":[],\"relationships\":[]}}");
     var context =
         new JdbcAssistantModelContextIndex()
             .transientSnapshot("project", ModelLevel.PIM, "Orders", 1L, model, null);
@@ -160,8 +160,8 @@ class AssistantToolServiceTest {
         result.options().stream()
             .anyMatch(
                 option ->
-                    option.root()
-                        && "PIMModel".equals(option.ownerType())
+                    "svc-1".equals(option.ownerElementId())
+                        && "ServerlessService".equals(option.ownerType())
                         && "functions".equals(option.referenceName())));
     tools.clearSession();
   }

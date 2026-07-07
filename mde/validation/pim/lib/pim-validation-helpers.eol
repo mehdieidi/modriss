@@ -75,8 +75,8 @@ operation reachableFunctionIds() : Set {
   for (functionItem in PIM!Function.all.select(f | f.triggers.notEmpty())) {
     ids.add(functionItem.`id`);
   }
-  for (triggerItem in PIM!Trigger.all.select(t | t.invokesFunction.isDefined())) {
-    ids.add(triggerItem.invokesFunction.`id`);
+  for (triggerItem in PIM!Trigger.all.select(t | t.`function`.isDefined())) {
+    ids.add(triggerItem.`function`.`id`);
   }
   for (routeItem in PIM!ApiRoute.all.select(r | r.functionIntegration.isDefined())) {
     ids.add(routeItem.functionIntegration.`id`);
@@ -117,13 +117,44 @@ operation PIM!Function hasAnyIncomingBinding() : Boolean {
 /** Computes owned elements. */
 operation PIM!ServerlessService ownedElements() : Sequence {
   var elements = Sequence{};
-  elements.addAll(self.ownsFunctions);
-  elements.addAll(self.ownsApis);
-  elements.addAll(self.ownsChannels);
-  elements.addAll(self.ownsStores);
-  elements.addAll(self.ownsWorkflows);
-  elements.addAll(self.ownsAdapters);
+  elements.addAll(self.functions);
+  elements.addAll(self.apis);
+  elements.addAll(self.channels);
+  elements.addAll(self.schedules);
+  elements.addAll(self.stores);
+  elements.addAll(self.workflows);
+  elements.addAll(self.adapters);
   return elements;
+}
+
+@cached
+/** Collects APIs contained by all services. */
+operation PIM!PIMModel allServiceApis() : Sequence {
+  var apis = Sequence{};
+  for (serviceItem in self.services) {
+    apis.addAll(serviceItem.apis);
+  }
+  return apis;
+}
+
+@cached
+/** Collects channels contained by all services. */
+operation PIM!PIMModel allServiceChannels() : Sequence {
+  var channels = Sequence{};
+  for (serviceItem in self.services) {
+    channels.addAll(serviceItem.channels);
+  }
+  return channels;
+}
+
+@cached
+/** Collects workflows contained by all services. */
+operation PIM!PIMModel allServiceWorkflows() : Sequence {
+  var workflows = Sequence{};
+  for (serviceItem in self.services) {
+    workflows.addAll(serviceItem.workflows);
+  }
+  return workflows;
 }
 
 @cached

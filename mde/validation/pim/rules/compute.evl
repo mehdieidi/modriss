@@ -77,15 +77,15 @@ context PIM!Trigger {
 
   /** Checks that exactly one invocation target. */
   constraint ExactlyOneInvocationTarget {
-    check : (self.invokesFunction.isDefined() and self.startsWorkflow.isUndefined()) or
-      (self.invokesFunction.isUndefined() and self.startsWorkflow.isDefined())
+    check : (self.`function`.isDefined() and self.startsWorkflow.isUndefined()) or
+      (self.`function`.isUndefined() and self.startsWorkflow.isDefined())
     message : "[PIM-TRIGGER-000] Trigger '" + self.displayName() + "' must target exactly one function or workflow."
   }
 
   /** Checks that trigger targets function or workflow. */
   constraint TriggerTargetsFunctionOrWorkflow {
-    check : self.invokesFunction.isDefined() or self.startsWorkflow.isDefined()
-    message : "[PIM-TRIGGER-001] Trigger '" + self.displayName() + "' does not invoke a function or start a workflow. Fix: set invokesFunction or startsWorkflow."
+    check : self.`function`.isDefined() or self.startsWorkflow.isDefined()
+    message : "[PIM-TRIGGER-001] Trigger '" + self.displayName() + "' does not invoke a function or start a workflow. Fix: contain it under Function.triggers or set startsWorkflow."
   }
 
   /** Advises that disabled trigger should explain why. */

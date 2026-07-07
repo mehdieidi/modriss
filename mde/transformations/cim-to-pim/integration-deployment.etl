@@ -8,55 +8,49 @@ import "lib/resolution.eol";
 /** Adds or records attach owned elements. */
 operation attachOwnedElements() {
   for (service in pimRoot().services) {
-    for (fn in service.ownsFunctions) { cacheOwnedKey(service, "ownsFunctions", fn); }
-    for (api in service.ownsApis) { cacheOwnedKey(service, "ownsApis", api); }
-    for (store in service.ownsStores) { cacheOwnedKey(service, "ownsStores", store); }
-    for (workflow in service.ownsWorkflows) { cacheOwnedKey(service, "ownsWorkflows", workflow); }
-    for (adapter in service.ownsAdapters) { cacheOwnedKey(service, "ownsAdapters", adapter); }
+    for (fn in service.functions) { cacheOwnedKey(service, "functions", fn); }
+    for (api in service.apis) { cacheOwnedKey(service, "apis", api); }
+    for (store in service.stores) { cacheOwnedKey(service, "stores", store); }
+    for (workflow in service.workflows) { cacheOwnedKey(service, "workflows", workflow); }
+    for (adapter in service.adapters) { cacheOwnedKey(service, "adapters", adapter); }
+    for (channel in service.channels) { cacheOwnedKey(service, "channels", channel); }
+    for (schedule in service.schedules) { cacheOwnedKey(service, "schedules", schedule); }
   }
   for (cmd in CIMBEHAVIOR!Command.all) {
     var svc = serviceFor(cmd);
     var fn = commandFunction(cmd);
-    addOwnedOnce(svc, "ownsFunctions", fn);
+    containDeployableOnce(svc, fn);
   }
   for (q in CIMBEHAVIOR!Query.all) {
     var svc = serviceFor(q);
     var fn = queryFunction(q);
-    addOwnedOnce(svc, "ownsFunctions", fn);
+    containDeployableOnce(svc, fn);
   }
   for (ag in CIMDOMAIN!AggregateCandidate.all) {
     var svc = serviceFor(ag);
     var store = storeForAggregate(ag);
-    addOwnedOnce(svc, "ownsStores", store);
+    containDeployableOnce(svc, store);
   }
   for (bp in CIMPROCESS!BusinessProcess.all) {
     var svc = serviceFor(bp);
     var workflow = workflowFor(bp);
-    addOwnedOnce(svc, "ownsWorkflows", workflow);
+    containDeployableOnce(svc, workflow);
   }
   for (es in CIMORG!ExternalSystem.all) {
     var svc = pimRoot().services.first();
     var adapter = adapterFor(es);
-    addOwnedOnce(svc, "ownsAdapters", adapter);
+    containDeployableOnce(svc, adapter);
   }
   for (api in API!Api.all) {
-    if (not cachedPimServiceOwnedKeys.includes("ownsApis::" + cacheKeyFor(api))) {
-      addOwnedOnce(pimRoot().services.first(), "ownsApis", api);
+    if (not cachedPimServiceOwnedKeys.includes("apis::" + cacheKeyFor(api))) {
+      containDeployableOnce(pimRoot().services.first(), api);
     }
   }
 }
 
 /** Adds or records add owned once. */
 operation addOwnedOnce(service, featureName : String, element) {
-  if (service.isUndefined() or element.isUndefined()) {
-    return;
-  }
-  var key = cacheKeyFor(service) + "::" + featureName + "::" + cacheKeyFor(element);
-  if (cachedPimServiceOwnedKeys.includes(key)) {
-    return;
-  }
-  cacheOwnedKey(service, featureName, element);
-  service.eGet(service.eClass().getEStructuralFeature(featureName)).add(element);
+  containDeployableOnce(service, element);
 }
 
 /** Computes cache owned key. */
@@ -124,8 +118,7 @@ operation createEventChannelsAndFlows() {
       topic.eventTypes.add(et);
       topic.observability = createDefaultObservability(topic, "TR-140", true, e.externallyVisible);
       topic.resilience = createDefaultResilience(topic, "TR-140", true);
-      service.ownsChannels.add(topic);
-      pimRoot().channels.add(topic);
+      service.channels.add(topic);
       traceGenerated(e, topic, "TR-140", "MEDIUM");
     }
 
@@ -204,9 +197,8 @@ operation createEventChannelsAndFlows() {
         trigger.filterExpression = et.semanticName;
         trigger.generatedFromFlow = true;
         trigger.source = ch;
-        trigger.invokesFunction = consumer;
         trigger.resilience = createDefaultResilience(trigger, "TR-140", true);
-        pimRoot().triggers.add(trigger);
+        consumer.triggers.add(trigger);
         var consumeFlow = new INTEGRATION!EventFlow;
         consumeFlow.id = newId("flow_event", ch.id + "_" + consumer.id + "_" + et.id);
         consumeFlow.name = et.name + " to " + consumer.name;
@@ -237,7 +229,7 @@ operation createEventChannelsAndFlows() {
         triggerWf.generatedFromFlow = true;
         triggerWf.source = ch;
         triggerWf.startsWorkflow = wf;
-        pimRoot().triggers.add(triggerWf);
+        addTriggerToService(triggerWf, service);
         var wfFlow = new INTEGRATION!EventFlow;
         wfFlow.id = newId("flow_event", ch.id + "_" + wf.id + "_" + et.id);
         wfFlow.name = et.name + " to " + wf.name;
@@ -556,8 +548,8 @@ operation ensureReadinessFindingAffectedElements() {
 
 /** Computes first owned function. */
 operation firstOwnedFunction(service : DEPLOY!ServerlessService) {
-  if (service.ownsFunctions.notEmpty()) {
-    return service.ownsFunctions.first();
+  if (service.functions.notEmpty()) {
+    return service.functions.first();
   }
   return null;
 }
@@ -602,8 +594,7 @@ operation createCapabilityDependencyArtifacts() {
     queue.longPollingRequired = true;
     queue.observability = createDefaultObservability(queue, "TR-140", true, dep.criticalPath);
     queue.resilience = createDefaultResilience(queue, "TR-140", true);
-    sourceService.ownsChannels.add(queue);
-    pimRoot().channels.add(queue);
+    sourceService.channels.add(queue);
     traceGenerated(dep, queue, "TR-140", "MEDIUM");
 
     var dependencyEventType = new CONTRACTS!EventType;
@@ -657,9 +648,8 @@ operation createCapabilityDependencyArtifacts() {
       trigger.enabled = true;
       trigger.generatedFromFlow = true;
       trigger.source = queue;
-      trigger.invokesFunction = targetFn;
       trigger.resilience = createDefaultResilience(trigger, "TR-140", true);
-      pimRoot().triggers.add(trigger);
+      targetFn.triggers.add(trigger);
       traceGenerated(dep, trigger, "TR-140", "MEDIUM");
 
       var consumerFlow = new INTEGRATION!MessageFlow;
@@ -966,7 +956,7 @@ operation ensureDeadLetterQueue(seed) {
     queue.longPollingRequired = true;
     queue.generatedByTransformation = true;
     queue.manuallyMaintained = false;
-    pimRoot().channels.add(queue);
+    containDeployableOnce(serviceForDeadLetterSeed(seed), queue);
     cachedPimQueueById.put(queueId, queue);
     traceGenerated(seed, queue, "TR-140", "LOW");
   }
@@ -1211,7 +1201,7 @@ operation addServiceMembership(service, element) {
   membership.id = newId("svc_membership", service.id + "_" + element.id);
   membership.name = service.name + " owns " + firstText(element.name, element.id);
   membership.ownershipKind = PIMTYPES!OwnershipKind#OWNS;
-  membership.rationale = "Generated from ServerlessService owned references.";
+  membership.rationale = "Generated from ServerlessService containment.";
   membership.service = service;
   membership.element = element;
   pimRoot().serviceMemberships.add(membership);
@@ -1220,12 +1210,13 @@ operation addServiceMembership(service, element) {
 /** Computes generate service memberships. */
 operation generateServiceMemberships() {
   for (service in pimRoot().services) {
-    for (fn in service.ownsFunctions) { addServiceMembership(service, fn); }
-    for (api in service.ownsApis) { addServiceMembership(service, api); }
-    for (channel in service.ownsChannels) { addServiceMembership(service, channel); }
-    for (store in service.ownsStores) { addServiceMembership(service, store); }
-    for (workflow in service.ownsWorkflows) { addServiceMembership(service, workflow); }
-    for (adapter in service.ownsAdapters) { addServiceMembership(service, adapter); }
+    for (fn in service.functions) { addServiceMembership(service, fn); }
+    for (api in service.apis) { addServiceMembership(service, api); }
+    for (channel in service.channels) { addServiceMembership(service, channel); }
+    for (store in service.stores) { addServiceMembership(service, store); }
+    for (workflow in service.workflows) { addServiceMembership(service, workflow); }
+    for (adapter in service.adapters) { addServiceMembership(service, adapter); }
+    for (schedule in service.schedules) { addServiceMembership(service, schedule); }
   }
 }
 
@@ -1242,12 +1233,13 @@ post DeploymentAndConfiguration {
     du.versioningStrategy = "semantic versioning; review required";
     du.services.add(s);
     du.targetEnvironments.addAll(pimRoot().environments);
-    du.contains.addAll(s.ownsFunctions);
-    du.contains.addAll(s.ownsApis);
-    du.contains.addAll(s.ownsChannels);
-    du.contains.addAll(s.ownsStores);
-    du.contains.addAll(s.ownsWorkflows);
-    du.contains.addAll(s.ownsAdapters);
+    du.contains.addAll(s.functions);
+    du.contains.addAll(s.apis);
+    du.contains.addAll(s.channels);
+    du.contains.addAll(s.stores);
+    du.contains.addAll(s.workflows);
+    du.contains.addAll(s.adapters);
+    du.contains.addAll(s.schedules);
     pimRoot().deploymentUnits.add(du);
     addTrace(s, du, "TR-150", KERNEL!TraceLinkType#DEPLOYS_TO, "MEDIUM");
     if (du.contains.isEmpty()) {
@@ -1296,7 +1288,7 @@ post DeploymentAndConfiguration {
       sec.rotationFrequency = cred.rotationFrequency;
       sec.generatedReferenceOnly = true;
       sec.environmentSpecific = true;
-      var ownerService = pimRoot().services.selectOne(service | service.ownsAdapters.includes(adapter));
+      var ownerService = pimRoot().services.selectOne(service | service.adapters.includes(adapter));
       if (ownerService.isUndefined()) {
         ownerService = pimRoot().services.first();
       }
@@ -1311,7 +1303,7 @@ post DeploymentAndConfiguration {
 
 post ValidationAndReadinessClosure {
   etlProfiler.mark("cim.validation.start");
-  if (pimRoot().functions.isEmpty()) {
+  if (allServiceFunctions().isEmpty()) {
     var fn = new COMPUTE!Function;
     fn.id = "fn_tbd_manual_completion";
     fn.name = "Manual Completion Required Function";
@@ -1330,8 +1322,7 @@ post ValidationAndReadinessClosure {
     contract.correlationIdField = "correlationId";
     fn.contract = contract;
     fn.lifecycleStatus = KERNEL!LifecycleStatus#INCOMPLETE;
-    pimRoot().functions.add(fn);
-    pimRoot().services.first().ownsFunctions.add(fn);
+    pimRoot().services.first().functions.add(fn);
     manualDecision("TR-170", "Add at least one executable command, query, process, policy, or event consumer to complete the PIM.", KERNEL!Severity#BLOCKER, true, Sequence{fn});
   }
 
@@ -1399,7 +1390,7 @@ post ValidationAndReadinessClosure {
   var readiness = pimRoot().readiness;
   readiness.transformationReady =
     readiness.findings.forAll(f | not isTrue(f.blocking) or f.findingType <> KERNEL!FindingType#VALIDATION_ERROR) and
-    pimRoot().functions.notEmpty() and pimRoot().services.notEmpty() and pimRoot().deploymentUnits.notEmpty();
+    allServiceFunctions().notEmpty() and pimRoot().services.notEmpty() and pimRoot().deploymentUnits.notEmpty();
   readiness.deploymentReady =
     isTrue(readiness.transformationReady) and pimRoot().implementationProfile.primaryLanguage <> PIMTYPES!RuntimeLanguage#CUSTOM and
     pimRoot().deploymentUnits.forAll(du | du.contains.notEmpty());

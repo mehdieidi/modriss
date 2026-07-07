@@ -26,17 +26,39 @@ class ContainedPaletteAuditTest {
     assertRootStandalone(level("cim"), "BusinessProcess", "DecisionTable", "Policy");
 
     assertNestedOnly(
-        level("pim"), "StartStep", "TaskStep", "ApiRoute", "ErrorMapping", "ParallelBranch");
-    assertRootStandalone(level("pim"), "Workflow", "Api", "Function", "HumanTask");
+        level("pim"),
+        "StartStep",
+        "TaskStep",
+        "ApiRoute",
+        "ErrorMapping",
+        "ParallelBranch",
+        "Api",
+        "Function",
+        "Workflow",
+        "Trigger",
+        "Queue",
+        "Topic",
+        "EventBus",
+        "Schedule",
+        "DataStore",
+        "ObjectStore",
+        "ExternalAdapter");
+    assertRootStandalone(
+        level("pim"), "ServerlessService", "HumanTask", "Schema", "Flow", "DeploymentUnit");
 
     assertNestedOnly(
         level("psm"),
-        "Subnet",
         "SecurityGroupRule",
         "CfnParameter",
         "LambdaEnvironmentVariable",
-        "NativeProperty");
-    assertRootStandalone(level("psm"), "SamStack", "AwsStage");
+        "NativeProperty",
+        "HttpApiRoute",
+        "RestApiRoute",
+        "LambdaPermission",
+        "LambdaEventSourceMapping",
+        "ApiGatewayStage");
+    assertRootStandalone(
+        level("psm"), "SamStack", "AwsStage", "Vpc", "HttpApi", "AwsLambdaFunction");
   }
 
   @Test
@@ -74,25 +96,29 @@ class ContainedPaletteAuditTest {
     assertTrue(stringList(map(pimPalettes.get("Api")).get("types")).contains("ApiRoute"));
     assertTrue(stringList(map(pimPalettes.get("Workflow")).get("types")).contains("StartStep"));
     assertTrue(stringList(map(pimPalettes.get("Workflow")).get("types")).contains("TaskStep"));
+    assertTrue(stringList(map(pimPalettes.get("ServerlessService")).get("types")).contains("Api"));
+    assertTrue(
+        stringList(map(pimPalettes.get("ServerlessService")).get("types")).contains("Function"));
 
     Map<String, Object> psmPalettes = map(level("psm").get("containmentPalettes"));
     assertTrue(stringList(map(psmPalettes.get("SamStack")).get("types")).contains("Vpc"));
+    assertTrue(stringList(map(psmPalettes.get("HttpApi")).get("types")).contains("HttpApiRoute"));
     assertTrue(
-        stringList(map(psmPalettes.get("SecurityGroup")).get("types"))
-            .contains("SecurityGroupRule"));
+        stringList(map(psmPalettes.get("AwsLambdaFunction")).get("types"))
+            .contains("LambdaPermission"));
   }
 
   @Test
   void workflowAndApiViewsOnlyExposeStandalonePaletteTypes() {
     Map<String, Object> pim = level("pim");
-    List<String> workflowPalette = paletteForView(pim, "pim-workflow");
-    assertTrue(workflowPalette.contains("Workflow"));
+    List<String> workflowPalette = paletteForView(pim, "pim-workflow-designer");
+    assertFalse(workflowPalette.contains("Workflow"));
     assertFalse(workflowPalette.contains("StartStep"));
     assertFalse(workflowPalette.contains("TaskStep"));
-    assertFalse(workflowPalette.contains("WorkflowTransition"));
 
     List<String> apiPalette = paletteForView(pim, "pim-api-surface");
-    assertTrue(apiPalette.contains("Api"));
+    assertTrue(apiPalette.contains("ServerlessService"));
+    assertFalse(apiPalette.contains("Api"));
     assertFalse(apiPalette.contains("ApiRoute"));
     assertFalse(apiPalette.contains("ErrorMapping"));
   }
@@ -102,10 +128,11 @@ class ContainedPaletteAuditTest {
     Map<String, Object> psm = level("psm");
     List<String> topologyPalette = paletteForView(psm, "psm-resource-topology");
     assertTrue(topologyPalette.contains("SamStack"));
+    assertTrue(topologyPalette.contains("AwsStage"));
     assertFalse(topologyPalette.contains("Vpc"));
     assertFalse(topologyPalette.contains("AwsLambdaFunction"));
 
-    List<String> networkingPalette = paletteForView(psm, "psm-networking-security");
+    List<String> networkingPalette = paletteForView(psm, "psm-networking");
     assertFalse(networkingPalette.contains("Subnet"));
     assertFalse(networkingPalette.contains("SecurityGroupRule"));
   }

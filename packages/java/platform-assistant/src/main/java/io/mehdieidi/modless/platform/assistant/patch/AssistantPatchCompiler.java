@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.mehdieidi.modless.platform.assistant.delta.PimDeployablePlacement;
 import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import io.mehdieidi.modless.platform.model.application.ModelService;
@@ -50,6 +51,7 @@ public class AssistantPatchCompiler {
                 .filter(java.util.Objects::nonNull)
                 .findFirst()
                 .orElse(root.path("eClass").asText("")));
+    ensureDefaultServerlessService(level, root, semantic, patch, inverse);
     ArrayNode elements = root.with(visualContainer).withArray("elements");
     ArrayNode relationships = root.with(visualContainer).withArray("relationships");
     for (SemanticModelPatch.Operation operation : semantic.operations()) {
@@ -114,10 +116,16 @@ public class AssistantPatchCompiler {
             if (rootContainment.isPresent()) {
               addRootContainedElement(root, patch, inverse, rootContainment.get(), element);
             } else {
-              throw new PlatformException(
-                  422,
-                  "Element type requires a metamodel containment owner: "
-                      + operation.elementType());
+              Optional<ServicePlacement> servicePlacement =
+                  resolveServicePlacement(level, root, operation, patch, inverse);
+              if (servicePlacement.isPresent()) {
+                addServiceContainedElement(root, patch, inverse, servicePlacement.get(), element);
+              } else {
+                throw new PlatformException(
+                    422,
+                    "Element type requires a metamodel containment owner: "
+                        + operation.elementType());
+              }
             }
           }
           patch.add(
@@ -502,6 +510,112 @@ public class AssistantPatchCompiler {
     inverse.add(0, new ModelService.ModelPatchOperation("remove", path + "/" + index, null));
     ((ArrayNode) owned).add(element.deepCopy());
   }
+
+  private void ensureDefaultServerlessService(
+      io.mehdieidi.modless.platform.kernel.ModelLevel level,
+      ObjectNode root,
+      SemanticModelPatch semantic,
+      List<ModelService.ModelPatchOperation> patch,
+      List<ModelService.ModelPatchOperation> inverse) {
+    if (level != io.mehdieidi.modless.platform.kernel.ModelLevel.PIM) {
+      return;
+    }
+    boolean needsService =
+        semantic.operations().stream()
+            .anyMatch(
+                operation ->
+                    operation != null
+                        && operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT
+                        && PimDeployablePlacement.serviceContainmentFeature(
+                                schemas, operation.elementType())
+                            .isPresent()
+                        && (operation.sourceElementId() == null
+                            || operation.sourceElementId().isBlank()));
+    if (!needsService) {
+      return;
+    }
+    JsonNode services = root.get("services");
+    if (services != null && services.isArray() && !services.isEmpty()) {
+      return;
+    }
+    ObjectNode service =
+        JsonNodeFactory.instance
+            .objectNode()
+            .put("id", PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID)
+            .put("eClass", "ServerlessService")
+            .put("name", "Default Service");
+    ArrayNode initial = JsonNodeFactory.instance.arrayNode().add(service);
+    patch.add(0, new ModelService.ModelPatchOperation("add", "/services", initial));
+    inverse.add(0, new ModelService.ModelPatchOperation("remove", "/services", null));
+    root.set("services", initial.deepCopy());
+  }
+
+  private Optional<ServicePlacement> resolveServicePlacement(
+      io.mehdieidi.modless.platform.kernel.ModelLevel level,
+      ObjectNode root,
+      SemanticModelPatch.Operation operation,
+      List<ModelService.ModelPatchOperation> patch,
+      List<ModelService.ModelPatchOperation> inverse) {
+    if (level != io.mehdieidi.modless.platform.kernel.ModelLevel.PIM) {
+      return Optional.empty();
+    }
+    Optional<String> feature =
+        PimDeployablePlacement.serviceContainmentFeature(schemas, operation.elementType());
+    if (feature.isEmpty()) {
+      return Optional.empty();
+    }
+    String serviceId = firstServiceId(root);
+    if (serviceId.isBlank()) {
+      ensureDefaultServerlessService(
+          level, root, new SemanticModelPatch(List.of(operation)), patch, inverse);
+      serviceId = PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID;
+    }
+    return Optional.of(new ServicePlacement(serviceId, feature.get()));
+  }
+
+  private String firstServiceId(ObjectNode root) {
+    JsonNode services = root.get("services");
+    if (services == null || !services.isArray() || services.isEmpty()) {
+      return "";
+    }
+    return services.get(0).path("id").asText("");
+  }
+
+  private void addServiceContainedElement(
+      ObjectNode root,
+      List<ModelService.ModelPatchOperation> patch,
+      List<ModelService.ModelPatchOperation> inverse,
+      ServicePlacement placement,
+      JsonNode element) {
+    LocatedElement owner = locateElement(root, placement.serviceId());
+    if (owner == null || owner.node() == null) {
+      throw new PlatformException(422, "ServerlessService owner was not found for deployable.");
+    }
+    schemas.requireContainment(
+        io.mehdieidi.modless.platform.kernel.ModelLevel.PIM,
+        owner.node().path("eClass").asText(),
+        placement.featureName(),
+        element.path("eClass").asText("Function"));
+    String collectionPath = owner.path() + "/" + escapePointer(placement.featureName());
+    JsonNode owned = owner.node().get(placement.featureName());
+    if (owned == null || owned.isNull()) {
+      ArrayNode initial = JsonNodeFactory.instance.arrayNode().add(element.deepCopy());
+      patch.add(new ModelService.ModelPatchOperation("add", collectionPath, initial));
+      inverse.add(0, new ModelService.ModelPatchOperation("remove", collectionPath, null));
+      owner.node().set(placement.featureName(), initial.deepCopy());
+      return;
+    }
+    if (!owned.isArray()) {
+      throw new PlatformException(400, "Assistant containment reference must target a collection.");
+    }
+    int index = owned.size();
+    patch.add(new ModelService.ModelPatchOperation("add", collectionPath + "/-", element));
+    inverse.add(
+        0, new ModelService.ModelPatchOperation("remove", collectionPath + "/" + index, null));
+    ((ArrayNode) owned).add(element.deepCopy());
+  }
+
+  private record ServicePlacement(String serviceId, String featureName) {}
 
   private JsonNode parent(ObjectNode root, String[] segments, String op) {
     JsonNode current = root;

@@ -218,7 +218,7 @@ rule Policy2PolicyHandlerFunction
     fn.idempotency = createIdempotencyPolicyForTarget(fn, pol, "TR-100", "eventId");
   }
 
-  pimRoot().functions.add(fn);
+  serviceFor(pol).functions.add(fn);
   traceGenerated(pol, fn, "TR-100", "MEDIUM");
 }
 
@@ -279,7 +279,7 @@ rule DecisionTable2ChoiceLogic
   fn.contract = contract;
   fn.observability = createDefaultObservability(fn, "TR-100", false, false);
 
-  pimRoot().functions.add(fn);
+  serviceFor(dt).functions.add(fn);
   traceGenerated(dt, fn, "TR-100", "MEDIUM");
   traceGenerated(dt, inputSchema, "TR-100", "MEDIUM");
 
@@ -391,7 +391,7 @@ rule BusinessProcess2Workflow
     wf.resilience = createDefaultResilience(wf, "TR-110", false);
   }
 
-  pimRoot().workflows.add(wf);
+  serviceFor(bp).workflows.add(wf);
   traceGenerated(bp, wf, "TR-110", "HIGH");
 }
 
@@ -532,7 +532,7 @@ rule ProcessStep2WorkflowTaskStep
     taskFn.contract = taskContract;
     taskFn.idempotency = createIdempotencyPolicyForTarget(taskFn, s, "TR-120", "workflowExecutionAndState");
     taskFn.observability = createDefaultObservability(taskFn, "TR-120", true, true);
-    pimRoot().functions.add(taskFn);
+    serviceFor(s).functions.add(taskFn);
     traceGenerated(s, taskFn, "TR-120", "LOW");
     ws.invokesFunction = taskFn;
     ws.manuallyMaintained = true;
@@ -811,7 +811,7 @@ rule TemporalConstraint2TimeoutPolicy
         "Choose exactly one Function, Workflow, adapter, channel, or other RoutingTarget for temporal constraint '" + tc.name + "'.",
         KERNEL!Severity#ERROR, timeout.productionRequired, Sequence{tc, schedule});
     }
-    pimRoot().schedules.add(schedule);
+    serviceFor(tc).schedules.add(schedule);
     traceGenerated(tc, schedule, "TR-130", "MEDIUM");
   }
 

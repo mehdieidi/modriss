@@ -1,7 +1,7 @@
 package io.mehdieidi.modless.platform.assistant.delta;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
@@ -20,8 +20,8 @@ class DeltaPlacementNamesTest {
   }
 
   @Test
-  void serverlessServiceDoesNotContainFunctionsByContainment() {
-    assertTrue(schemas.containments(ModelLevel.PIM, "ServerlessService", "Function").isEmpty());
+  void serverlessServiceContainsFunctionsByContainment() {
+    assertFalse(schemas.containments(ModelLevel.PIM, "ServerlessService", "Function").isEmpty());
   }
 
   @Test

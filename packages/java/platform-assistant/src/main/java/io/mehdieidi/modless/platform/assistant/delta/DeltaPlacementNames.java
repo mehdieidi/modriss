@@ -60,8 +60,11 @@ final class DeltaPlacementNames {
       String childType,
       String normalized,
       List<AssistantMetamodelSchemaService.ReferenceSchema> candidates) {
-    if ("ServerlessService".equals(ownerType) && "Function".equals(childType)) {
-      return null;
+    if ("ServerlessService".equals(ownerType)) {
+      String legacy = legacyServiceContainmentAlias(normalized, childType, candidates);
+      if (legacy != null) {
+        return legacy;
+      }
     }
     if ("PIMModel".equals(ownerType) && "ServerlessService".equals(childType)) {
       if (List.of("service", "serverlessservice", "serverlessservices").contains(normalized)
@@ -74,18 +77,6 @@ final class DeltaPlacementNames {
               .contains(normalized)
           && candidates.stream().anyMatch(reference -> "contract".equals(reference.name()))) {
         return "contract";
-      }
-    }
-    if ("PIMModel".equals(ownerType) && "Function".equals(childType)) {
-      if (List.of("function", "compute").contains(normalized)
-          && candidates.stream().anyMatch(reference -> "functions".equals(reference.name()))) {
-        return "functions";
-      }
-    }
-    if ("PIMModel".equals(ownerType) && "Api".equals(childType)) {
-      if (List.of("api", "apis", "restapi", "restapis").contains(normalized)
-          && candidates.stream().anyMatch(reference -> "apis".equals(reference.name()))) {
-        return "apis";
       }
     }
     if ("Api".equals(ownerType) && "ApiRoute".equals(childType)) {
@@ -137,6 +128,67 @@ final class DeltaPlacementNames {
     if ("BusinessCapability".equals(ownerType)
         && List.of("Command", "BusinessEvent", "Query", "Policy").contains(childType)) {
       return null;
+    }
+    return null;
+  }
+
+  private static String legacyServiceContainmentAlias(
+      String normalized,
+      String childType,
+      List<AssistantMetamodelSchemaService.ReferenceSchema> candidates) {
+    record Mapping(String legacy, String feature) {}
+    List<Mapping> mappings =
+        List.of(
+            new Mapping("ownsfunctions", "functions"),
+            new Mapping("ownfunctions", "functions"),
+            new Mapping("ownsapis", "apis"),
+            new Mapping("ownapis", "apis"),
+            new Mapping("ownschannels", "channels"),
+            new Mapping("ownsstores", "stores"),
+            new Mapping("ownsworkflows", "workflows"),
+            new Mapping("ownadapters", "adapters"),
+            new Mapping("ownschedules", "schedules"));
+    for (Mapping mapping : mappings) {
+      if (normalized.equals(mapping.legacy())
+          && candidates.stream()
+              .anyMatch(reference -> mapping.feature().equals(reference.name()))) {
+        return mapping.feature();
+      }
+    }
+    if ("Function".equals(childType)
+        && List.of("function", "compute").contains(normalized)
+        && candidates.stream().anyMatch(reference -> "functions".equals(reference.name()))) {
+      return "functions";
+    }
+    if ("Api".equals(childType)
+        && List.of("api", "apis").contains(normalized)
+        && candidates.stream().anyMatch(reference -> "apis".equals(reference.name()))) {
+      return "apis";
+    }
+    if ("EventChannel".equals(childType)
+        && List.of("channel", "channels").contains(normalized)
+        && candidates.stream().anyMatch(reference -> "channels".equals(reference.name()))) {
+      return "channels";
+    }
+    if ("StorageElement".equals(childType)
+        && List.of("store", "stores", "datastore", "datastores").contains(normalized)
+        && candidates.stream().anyMatch(reference -> "stores".equals(reference.name()))) {
+      return "stores";
+    }
+    if ("Workflow".equals(childType)
+        && List.of("workflow", "workflows").contains(normalized)
+        && candidates.stream().anyMatch(reference -> "workflows".equals(reference.name()))) {
+      return "workflows";
+    }
+    if ("ExternalAdapter".equals(childType)
+        && List.of("adapter", "adapters").contains(normalized)
+        && candidates.stream().anyMatch(reference -> "adapters".equals(reference.name()))) {
+      return "adapters";
+    }
+    if ("Schedule".equals(childType)
+        && List.of("schedule", "schedules").contains(normalized)
+        && candidates.stream().anyMatch(reference -> "schedules".equals(reference.name()))) {
+      return "schedules";
     }
     return null;
   }

@@ -28,9 +28,9 @@ abstract class ApiGatewayApi extends awspsmcore.AwsResource {
   val awspsmsecurity.IamPolicyDocument[?] apiPolicy;
 
   ref awspsmobservability.CloudWatchLogGroup[?] accessLogGroup;
-  ref ApiGatewayRoute[*]#api routes;
-  ref ApiGatewayStage[*]#api stages;
-  ref ApiGatewayAuthorizer[*]#api authorizers;
+  val ApiGatewayRoute[*]#api routes;
+  val ApiGatewayStage[*]#api stages;
+  val ApiGatewayAuthorizer[*]#api authorizers;
   ref ApiGatewayDomainName[?]#api apiDomainName;
   ref WafWebAclAssociation[?] wafAssociation;
 }
@@ -48,7 +48,7 @@ class RestApi extends ApiGatewayApi {
   attr Boolean apiKeyRequiredByDefault;
   attr awspsmenums.ApiGatewayEndpointType endpointType;
 
-  ref RestApiResource[*]#api resources;
+  val RestApiResource[*]#api resources;
 }
 
 class WebSocketApi extends ApiGatewayApi {
@@ -70,7 +70,7 @@ abstract class ApiGatewayRoute extends awspsmcore.AwsResource {
   val ApiGatewayResponseModel[*] responseModels;
   val ApiGatewayRouteSetting[?] routeSettings;
 
-  ref ApiGatewayApi[1]#routes api;
+  readonly transient ref ApiGatewayApi[1]#routes api;
   ref ApiGatewayIntegration[1] integration;
   ref ApiGatewayAuthorizer[?] authorizer;
 }
@@ -91,7 +91,7 @@ class RestApiResource extends awspsmcore.AwsResource {
   attr String[1] pathPart;
   attr String fullPath;
 
-  ref RestApi[1]#resources api;
+  readonly transient ref RestApi[1]#resources api;
   ref RestApiResource[?] parentResource;
 }
 
@@ -190,7 +190,7 @@ abstract class ApiGatewayStage extends awspsmcore.AwsResource, awspsmcore.WafAss
   val ApiGatewayAccessLogSetting[?] accessLogSetting;
   val ApiGatewayRouteSetting[?] defaultRouteSettings;
 
-  ref ApiGatewayApi[1]#stages api;
+  readonly transient ref ApiGatewayApi[1]#stages api;
   ref awspsmobservability.CloudWatchLogGroup[?] accessLogGroup;
 }
 
@@ -210,7 +210,7 @@ abstract class ApiGatewayAuthorizer extends awspsmcore.AwsResource {
   attr Integer authorizerResultTtlInSeconds;
   attr awspsmenums.ApiGatewayAuthorizationType[1] authorizationType;
 
-  ref ApiGatewayApi[1]#authorizers api;
+  readonly transient ref ApiGatewayApi[1]#authorizers api;
 }
 
 class JwtAuthorizer extends ApiGatewayAuthorizer {

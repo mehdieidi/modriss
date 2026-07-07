@@ -274,7 +274,7 @@ class AssistantPatchCompilerTest {
     var model =
         mapper.readTree(
             """
-            {"eClass":"PIMModel","modelLevel":"PIM","functions":[],
+            {"eClass":"PIMModel","modelLevel":"PIM","services":[],
              "graph":{"elements":[],"relationships":[]}}
             """);
     SemanticModelPatch patch =
@@ -290,8 +290,8 @@ class AssistantPatchCompilerTest {
 
     var preview = compiler.apply(model, compiler.compile(model, patch));
 
-    assertEquals("function-1", preview.at("/functions/0/id").asText());
-    assertEquals("Function", preview.at("/functions/0/eClass").asText());
+    assertEquals("function-1", preview.at("/services/0/functions/0/id").asText());
+    assertEquals("Function", preview.at("/services/0/functions/0/eClass").asText());
   }
 
   @Test
@@ -434,7 +434,7 @@ class AssistantPatchCompilerTest {
         mapper.readTree(
             """
             {
-              "eClass":"PIMModel","modelLevel":"PIM","apis":[],
+              "eClass":"PIMModel","modelLevel":"PIM","services":[],
               "graph":{"elements":[],"relationships":[]}
             }
             """);
@@ -460,10 +460,10 @@ class AssistantPatchCompilerTest {
     AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
     var preview = compiler.apply(model, compiled);
 
-    assertEquals("/apis/-", compiled.patch().get(0).path());
-    assertEquals("Api", compiled.patch().get(0).value().get("eClass").asText());
-    assertEquals("/apis/0/routes", compiled.patch().get(2).path());
-    assertEquals("resource-1", preview.at("/apis/0/routes/0/id").asText());
+    assertEquals("/services/0/apis", compiled.patch().get(1).path());
+    assertEquals("Api", preview.at("/services/0/apis/0/eClass").asText());
+    assertEquals("/services/0/apis/0/routes", compiled.patch().get(3).path());
+    assertEquals("resource-1", preview.at("/services/0/apis/0/routes/0/id").asText());
   }
 
   @Test
@@ -473,7 +473,7 @@ class AssistantPatchCompilerTest {
             """
             {
               "id":"architecture-root","eClass":"PIMModel","modelLevel":"PIM",
-              "dataStores":[],
+              "services":[],
               "graph":{"elements":[],"relationships":[]}
             }
             """);
@@ -485,14 +485,13 @@ class AssistantPatchCompilerTest {
                     "store-1",
                     "DataStore",
                     mapper.readTree("{\"name\":\"Orders\"}"),
-                    "architecture-root",
-                    "elements")));
+                    null,
+                    null)));
 
     AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
     var preview = compiler.apply(model, compiled);
 
-    assertEquals("/dataStores/-", compiled.patch().get(0).path());
-    assertEquals("store-1", preview.at("/dataStores/0/id").asText());
-    assertEquals(false, preview.has("elements"));
+    assertEquals("/services/0/stores", compiled.patch().get(1).path());
+    assertEquals("store-1", preview.at("/services/0/stores/0/id").asText());
   }
 }

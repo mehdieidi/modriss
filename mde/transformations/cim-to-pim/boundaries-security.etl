@@ -194,7 +194,7 @@ rule ExternalSystem2Adapter
   }
 
   pimRoot().externalEndpoints.add(ep);
-  pimRoot().externalAdapters.add(a);
+  serviceFor(es).adapters.add(a);
   traceGenerated(es, ep, "TR-030", "MEDIUM");
   traceGenerated(es, a, "TR-030", "MEDIUM");
 

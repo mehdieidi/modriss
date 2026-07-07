@@ -108,7 +108,15 @@ class DeltaPatchCompiler {
     String sourceElementId = null;
     if (!ownerId.isBlank()) {
       if (isRoot(ownerId, rootId)) {
-        sourceElementId = rootId.isBlank() ? null : rootId;
+        if (level == ModelLevel.PIM
+            && PimDeployablePlacement.isLegacyRootDeployableCollection(
+                schemas.rootType(level), referenceName)) {
+          referenceName =
+              PimDeployablePlacement.serviceContainmentFeature(schemas, type).orElse(referenceName);
+          sourceElementId = PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID;
+        } else {
+          sourceElementId = rootId.isBlank() ? null : rootId;
+        }
       } else {
         sourceElementId = ownerId;
       }

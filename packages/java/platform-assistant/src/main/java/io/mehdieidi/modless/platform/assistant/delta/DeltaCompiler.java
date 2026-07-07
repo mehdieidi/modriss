@@ -11,8 +11,10 @@ import java.util.Map;
 public class DeltaCompiler {
 
   private final DeltaPatchCompiler compiler;
+  private final AssistantMetamodelSchemaService schemas;
 
   public DeltaCompiler(AssistantMetamodelSchemaService schemas) {
+    this.schemas = schemas;
     this.compiler = new DeltaPatchCompiler(schemas);
   }
 
@@ -22,7 +24,8 @@ public class DeltaCompiler {
     if (delta == null) {
       return new SemanticModelPatch(List.of());
     }
-    return compiler.compile(level, baseModel, existingTypes, toDraft(delta));
+    ModelDelta normalized = new DeltaNormalizer(schemas).normalize(level, delta);
+    return compiler.compile(level, baseModel, existingTypes, toDraft(normalized));
   }
 
   private DeltaPatchCompiler.PatchDraft toDraft(ModelDelta delta) {

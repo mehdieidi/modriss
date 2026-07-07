@@ -5,6 +5,7 @@ import "../shared/kernel.ecore";
 import "pim-types.ecore";
 import "pim-policy.ecore";
 import "pim-config.ecore";
+import "pim-deployment.ecore";
 
 class ExternalEndpoint extends kernel.TraceableElement, kernel.ExternalCallTarget, kernel.PolicyTarget, kernel.ProtectedResource {
   attr String externalSystemName;
@@ -22,6 +23,8 @@ class ExternalAdapter extends kernel.TraceableElement, kernel.DeployableElement,
   attr String responsibility;
 
   val config.CredentialRequirement[*] credentials;
+
+  readonly transient ref deployment.ServerlessService[1]#adapters service;
 
   ref ExternalEndpoint[1] endpoint;
   ref kernel.FunctionTarget[*] adapterFunctions;

@@ -58,11 +58,11 @@
           containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="accessLogGroup" eType="#/10/CloudWatchLogGroup"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="routes" upperBound="-1"
-          eType="#/1/ApiGatewayRoute" eOpposite="#/1/ApiGatewayRoute/api"/>
+          eType="#/1/ApiGatewayRoute" containment="true" eOpposite="#/1/ApiGatewayRoute/api"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="stages" upperBound="-1"
-          eType="#/1/ApiGatewayStage" eOpposite="#/1/ApiGatewayStage/api"/>
+          eType="#/1/ApiGatewayStage" containment="true" eOpposite="#/1/ApiGatewayStage/api"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="authorizers" upperBound="-1"
-          eType="#/1/ApiGatewayAuthorizer" eOpposite="#/1/ApiGatewayAuthorizer/api"/>
+          eType="#/1/ApiGatewayAuthorizer" containment="true" eOpposite="#/1/ApiGatewayAuthorizer/api"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="apiDomainName" eType="#/1/ApiGatewayDomainName"
           eOpposite="#/1/ApiGatewayDomainName/api"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="wafAssociation" eType="#/1/WafWebAclAssociation"/>
@@ -83,7 +83,7 @@
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="endpointType" eType="#/4/ApiGatewayEndpointType"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="resources" upperBound="-1"
-          eType="#/1/RestApiResource" eOpposite="#/1/RestApiResource/api"/>
+          eType="#/1/RestApiResource" containment="true" eOpposite="#/1/RestApiResource/api"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="WebSocketApi" eSuperTypes="#/1/ApiGatewayApi">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="routeSelectionExpression"
@@ -109,7 +109,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="routeSettings" eType="#/1/ApiGatewayRouteSetting"
           containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="api" lowerBound="1" eType="#/1/ApiGatewayApi"
-          eOpposite="#/1/ApiGatewayApi/routes"/>
+          changeable="false" transient="true" eOpposite="#/1/ApiGatewayApi/routes"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="integration" lowerBound="1"
           eType="#/1/ApiGatewayIntegration"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="authorizer" eType="#/1/ApiGatewayAuthorizer"/>
@@ -134,7 +134,7 @@
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="fullPath" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="api" lowerBound="1" eType="#/1/RestApi"
-          eOpposite="#/1/RestApi/resources"/>
+          changeable="false" transient="true" eOpposite="#/1/RestApi/resources"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="parentResource" eType="#/1/RestApiResource"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="RestApiMethod" eSuperTypes="#/1/ApiGatewayRoute">
@@ -241,7 +241,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="defaultRouteSettings"
           eType="#/1/ApiGatewayRouteSetting" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="api" lowerBound="1" eType="#/1/ApiGatewayApi"
-          eOpposite="#/1/ApiGatewayApi/stages"/>
+          changeable="false" transient="true" eOpposite="#/1/ApiGatewayApi/stages"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="accessLogGroup" eType="#/10/CloudWatchLogGroup"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="HttpApiStage" eSuperTypes="#/1/ApiGatewayStage"/>
@@ -258,7 +258,7 @@
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="authorizationType" lowerBound="1"
           eType="#/4/ApiGatewayAuthorizationType"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="api" lowerBound="1" eType="#/1/ApiGatewayApi"
-          eOpposite="#/1/ApiGatewayApi/authorizers"/>
+          changeable="false" transient="true" eOpposite="#/1/ApiGatewayApi/authorizers"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="JwtAuthorizer" eSuperTypes="#/1/ApiGatewayAuthorizer">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="issuer" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -373,22 +373,23 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="layers" upperBound="-1"
           eType="#/2/LambdaLayerVersion"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="permissions" upperBound="-1"
-          eType="#/2/LambdaPermission" eOpposite="#/2/LambdaPermission/function"/>
+          eType="#/2/LambdaPermission" containment="true" eOpposite="#/2/LambdaPermission/function"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="versions" upperBound="-1"
-          eType="#/2/LambdaVersion" eOpposite="#/2/LambdaVersion/function"/>
+          eType="#/2/LambdaVersion" containment="true" eOpposite="#/2/LambdaVersion/function"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="aliases" upperBound="-1"
-          eType="#/2/LambdaAlias" eOpposite="#/2/LambdaAlias/function"/>
+          eType="#/2/LambdaAlias" containment="true" eOpposite="#/2/LambdaAlias/function"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="eventInvokeConfigs" upperBound="-1"
-          eType="#/2/LambdaEventInvokeConfig" eOpposite="#/2/LambdaEventInvokeConfig/function"/>
+          eType="#/2/LambdaEventInvokeConfig" containment="true" eOpposite="#/2/LambdaEventInvokeConfig/function"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="eventSourceMappings"
-          upperBound="-1" eType="#/2/LambdaEventSourceMapping" eOpposite="#/2/LambdaEventSourceMapping/function"/>
+          upperBound="-1" eType="#/2/LambdaEventSourceMapping" containment="true"
+          eOpposite="#/2/LambdaEventSourceMapping/function"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="logGroup" lowerBound="1"
           eType="#/10/CloudWatchLogGroup"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="role" lowerBound="1"
           eType="#/11/IamRole"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="kmsKey" eType="#/11/KmsKey"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="functionUrl" eType="#/2/LambdaFunctionUrl"
-          eOpposite="#/2/LambdaFunctionUrl/function"/>
+          containment="true" eOpposite="#/2/LambdaFunctionUrl/function"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="codeSigningConfig" eType="#/2/CodeSigningConfig"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="LambdaCodeConfig" abstract="true"
@@ -464,7 +465,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="destinationConfig" eType="#/2/LambdaDestinationConfig"
           containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="function" lowerBound="1"
-          eType="#/2/AwsLambdaFunction" eOpposite="#/2/AwsLambdaFunction/eventSourceMappings"/>
+          eType="#/2/AwsLambdaFunction" changeable="false" transient="true" eOpposite="#/2/AwsLambdaFunction/eventSourceMappings"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="SqsLambdaEventSourceMapping" eSuperTypes="#/2/LambdaEventSourceMapping">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="partialBatchFailureHandlingDecision"
@@ -499,7 +500,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="destinationConfig" eType="#/2/LambdaDestinationConfig"
           containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="function" lowerBound="1"
-          eType="#/2/AwsLambdaFunction" eOpposite="#/2/AwsLambdaFunction/eventInvokeConfigs"/>
+          eType="#/2/AwsLambdaFunction" changeable="false" transient="true" eOpposite="#/2/AwsLambdaFunction/eventInvokeConfigs"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="qualifierAlias" eType="#/2/LambdaAlias"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="LambdaDestinationConfig" eSuperTypes="#/14/TraceableElement">
@@ -538,7 +539,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="provisionedConcurrencyConfig"
           eType="#/2/LambdaProvisionedConcurrencyConfig" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="function" lowerBound="1"
-          eType="#/2/AwsLambdaFunction" eOpposite="#/2/AwsLambdaFunction/versions"/>
+          eType="#/2/AwsLambdaFunction" changeable="false" transient="true" eOpposite="#/2/AwsLambdaFunction/versions"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="LambdaAlias" eSuperTypes="#/3/AwsResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="aliasName" lowerBound="1"
@@ -548,7 +549,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="provisionedConcurrencyConfig"
           eType="#/2/LambdaProvisionedConcurrencyConfig" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="function" lowerBound="1"
-          eType="#/2/AwsLambdaFunction" eOpposite="#/2/AwsLambdaFunction/aliases"/>
+          eType="#/2/AwsLambdaFunction" changeable="false" transient="true" eOpposite="#/2/AwsLambdaFunction/aliases"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="version" eType="#/2/LambdaVersion"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="LambdaProvisionedConcurrencyConfig"
@@ -566,7 +567,7 @@
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="functionUrlAuthType"
           eType="#/4/LambdaFunctionUrlAuthType"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="function" lowerBound="1"
-          eType="#/2/AwsLambdaFunction" eOpposite="#/2/AwsLambdaFunction/permissions"/>
+          eType="#/2/AwsLambdaFunction" changeable="false" transient="true" eOpposite="#/2/AwsLambdaFunction/permissions"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="LambdaFunctionUrl" eSuperTypes="#/3/AwsResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="authType" lowerBound="1"
@@ -575,7 +576,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="cors" eType="#/2/LambdaUrlCorsConfiguration"
           containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="function" lowerBound="1"
-          eType="#/2/AwsLambdaFunction" eOpposite="#/2/AwsLambdaFunction/functionUrl"/>
+          eType="#/2/AwsLambdaFunction" changeable="false" transient="true" eOpposite="#/2/AwsLambdaFunction/functionUrl"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="LambdaUrlCorsConfiguration" eSuperTypes="#/3/CorsConfiguration"/>
     <eClassifiers xsi:type="ecore:EClass" name="LambdaFileSystemConfig" eSuperTypes="#/14/TraceableElement">
@@ -618,8 +619,8 @@
           eType="#/3/NativeProperty" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="importDetails" eType="#/3/ResourceImport"
           containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="stack" lowerBound="1"
-          eType="#/3/SamStack" changeable="false" transient="true" eOpposite="#/3/SamStack/resources"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="stack" eType="#/3/SamStack"
+          changeable="false" transient="true" eOpposite="#/3/SamStack/resources"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="dependsOn" upperBound="-1"
           eType="#/3/AwsResource"/>
     </eClassifiers>

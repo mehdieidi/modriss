@@ -557,7 +557,21 @@
       "icon": "account_tree",
       "color": "#0F766E",
       "category": "Service Landscape",
+      "creatable": true,
+      "visualRole": "container",
       "primitive": "service-container",
+      "containmentPaletteExtras": [
+        "Api",
+        "Function",
+        "Queue",
+        "Topic",
+        "EventBus",
+        "Schedule",
+        "DataStore",
+        "ObjectStore",
+        "Workflow",
+        "ExternalAdapter"
+      ],
       "card": {
         "tag": "SVC",
         "lineFields": ["boundaryType", "responsibility", "ownerTeam"],
@@ -2623,14 +2637,6 @@
     "targets": "TARGETS",
     "usesSecrets": "USES_SECRET"
   },
-  "semanticReferenceExclusions": [
-    "ownsFunctions",
-    "ownsApis",
-    "ownsChannels",
-    "ownsStores",
-    "ownsWorkflows",
-    "ownsAdapters"
-  ],
   "shortcutConnectorRules": [],
   "viewpoints": [
     {
@@ -2665,22 +2671,11 @@
       ],
       "palette": [
         "ServerlessService",
-        "Api",
-        "Function",
-        "Workflow",
-        "Queue",
-        "Topic",
-        "EventBus",
-        "Schedule",
-        "DataStore",
-        "ObjectStore",
         "ExternalEndpoint",
-        "ExternalAdapter",
-        "IdentityProvider",
-        "Secret",
+        "HumanTask",
         "BusinessRule",
         "DecisionModel",
-        "HumanTask"
+        "Secret"
       ],
       "relationshipKinds": [
         "OWNS",
@@ -2720,19 +2715,7 @@
         "Topic",
         "EventBus"
       ],
-      "palette": [
-        "ServerlessService",
-        "DeploymentUnit",
-        "Environment",
-        "Function",
-        "Api",
-        "Workflow",
-        "DataStore",
-        "ObjectStore",
-        "Queue",
-        "Topic",
-        "EventBus"
-      ],
+      "palette": ["ServerlessService", "DeploymentUnit", "Environment"],
       "relationshipKinds": ["OWNS", "DEPLOYS", "DEPLOYS_TO", "CONTAINS"],
       "layoutHint": "CONTAINER"
     },
@@ -2742,6 +2725,7 @@
       "viewType": "API_SURFACE",
       "viewpoint": "api",
       "elementTypes": [
+        "ServerlessService",
         "Api",
         "ApiRoute",
         "ApiContract",
@@ -2753,16 +2737,7 @@
         "AuthPolicy",
         "AuthorizationPolicy"
       ],
-      "palette": [
-        "Api",
-        "ApiRoute",
-        "ApiContract",
-        "Schema",
-        "ErrorMapping",
-        "AuthPolicy",
-        "CorsPolicy",
-        "RateLimitPolicy"
-      ],
+      "palette": ["ServerlessService"],
       "relationshipKinds": ["ROUTES_TO", "INVOKES", "AUTHORIZED_BY", "USES", "CONTAINS"],
       "layoutHint": "TABLE"
     },
@@ -2772,6 +2747,7 @@
       "viewType": "FUNCTION_TRIGGER",
       "viewpoint": "compute",
       "elementTypes": [
+        "ServerlessService",
         "Function",
         "ComputeElement",
         "Trigger",
@@ -2793,16 +2769,7 @@
         "ArchitecturePolicy",
         "ObservabilityConfig"
       ],
-      "palette": [
-        "Function",
-        "Trigger",
-        "Schedule",
-        "Queue",
-        "Topic",
-        "EventBus",
-        "ApiRoute",
-        "Workflow"
-      ],
+      "palette": ["ServerlessService"],
       "relationshipKinds": [
         "TRIGGERS",
         "INVOKES",
@@ -2824,6 +2791,7 @@
       "viewType": "EVENT_INTEGRATION",
       "viewpoint": "integration",
       "elementTypes": [
+        "ServerlessService",
         "Queue",
         "Topic",
         "EventBus",
@@ -2842,13 +2810,7 @@
         "ExternalIntegrationFlow"
       ],
       "palette": [
-        "EventType",
-        "Queue",
-        "Topic",
-        "EventBus",
-        "Schedule",
-        "Subscription",
-        "EventRoutingRule",
+        "ServerlessService",
         "RequestResponseFlow",
         "EventFlow",
         "MessageFlow",
@@ -2875,6 +2837,7 @@
       "viewType": "DATA_DESIGN",
       "viewpoint": "data",
       "elementTypes": [
+        "ServerlessService",
         "DataStore",
         "ObjectStore",
         "DataModel",
@@ -2885,14 +2848,7 @@
         "Schema",
         "Function"
       ],
-      "palette": [
-        "DataStore",
-        "ObjectStore",
-        "DataModel",
-        "DataField",
-        "AccessPattern",
-        "IndexCandidate"
-      ],
+      "palette": ["ServerlessService", "Schema"],
       "relationshipKinds": ["READS", "WRITES", "DATA_ACCESS", "USES", "CONTAINS"],
       "layoutHint": "TABLE"
     },
@@ -3004,7 +2960,7 @@
         "Function",
         "ExternalAdapter"
       ],
-      "palette": ["Workflow"],
+      "palette": [],
       "relationshipKinds": ["TRANSITION", "INVOKES", "ORCHESTRATES", "EXTERNAL_CALL", "CONTAINS"],
       "layoutHint": "PROCESS"
     },
