@@ -62,11 +62,7 @@ export function updateModelSaveUi() {
   }
 }
 
-export function markModelDirty({
-  viewSynced = false,
-  kind = "semantics",
-  position = null,
-} = {}) {
+export function markModelDirty({ viewSynced = false, kind = "semantics", position = null } = {}) {
   if (!isModelingType()) {
     return;
   }

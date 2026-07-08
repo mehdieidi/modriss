@@ -711,7 +711,11 @@ export async function saveCurrentModel({
   return saveInFlight;
 }
 
-async function performSaveCurrentModel({ rethrow = false, quiet = false, skipBeginSave = false } = {}) {
+async function performSaveCurrentModel({
+  rethrow = false,
+  quiet = false,
+  skipBeginSave = false,
+} = {}) {
   if (!isModelingType()) {
     if (!quiet) {
       setStatus(`Switch to ${modelingLevelListLabel()} to save a model.`);
