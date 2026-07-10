@@ -59,6 +59,10 @@ class TransformationServiceTest {
     ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
 
     assertEquals(ModelLevel.PIM, pim.level());
+    assertEquals(
+        pim.id(),
+        services.projects().get(context.user(), context.project().id()).activeModelIds().get("pim"),
+        "Generating PIM must make it the project's active PIM so it is restored after refresh.");
     assertEquals("PIM", pim.modelJson().path("modelLevel").asText());
     assertEquals("PIMModel", pim.modelJson().path("eClass").asText());
     assertFalse(pim.modelJson().path("services").isEmpty());
@@ -208,6 +212,11 @@ class TransformationServiceTest {
     services.models().update(context.user(), ModelLevel.PIM, pim.id(), pim.name(), pim.modelJson());
 
     ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
+
+    assertEquals(
+        psm.id(),
+        services.projects().get(context.user(), context.project().id()).activeModelIds().get("psm"),
+        "Generating PSM must make it the project's active PSM so it is restored after refresh.");
 
     byte[] generatedSourceXmi = services.models().sourceXmi(psm).orElseThrow();
     ModelService.ValidationResult sourceXmiValidation =

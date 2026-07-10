@@ -3,6 +3,7 @@ package io.mehdieidi.modless.platform.project.application;
 import io.mehdieidi.modless.platform.identity.application.AuthService;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.project.domain.ProjectMember;
 import io.mehdieidi.modless.platform.project.domain.ProjectRecord;
 import io.mehdieidi.modless.platform.storage.api.PlatformStore;
@@ -134,6 +135,29 @@ public final class ProjectService {
             Instant.now());
     store.write(projectPath(project.id()), updated);
     return updated;
+  }
+
+  /**
+   * Marks a stored model as the project's active model for its level.
+   *
+   * @param user requesting user
+   * @param projectId project identifier
+   * @param level model level
+   * @param modelId stored model identifier
+   * @return updated project
+   */
+  public ProjectRecord setActiveModel(
+      UserRecord user, String projectId, ModelLevel level, String modelId) {
+    if (level == null || modelId == null || modelId.isBlank()) {
+      throw new PlatformException(400, "Model level and model id are required.");
+    }
+    ProjectRecord project = get(user, projectId);
+    requireEditor(project, user.id());
+    Map<String, String> activeModelIds =
+        new LinkedHashMap<>(
+            project.activeModelIds() == null ? Map.of() : project.activeModelIds());
+    activeModelIds.put(level.apiName(), modelId);
+    return update(user, projectId, project.name(), project.description(), activeModelIds);
   }
 
   /**

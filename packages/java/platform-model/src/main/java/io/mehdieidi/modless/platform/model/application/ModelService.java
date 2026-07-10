@@ -439,6 +439,7 @@ public final class ModelService {
             now,
             now);
     persistModelAndSourceXmi(null, model, sourceXmi);
+    projectService.setActiveModel(user, project.id(), level, model.id());
     return generatedClientRecord(model);
   }
 
