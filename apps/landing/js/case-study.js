@@ -333,7 +333,7 @@ export const models = {
     ],
   },
   psm: {
-    name: "Signal Desk AWS PSM",
+    name: "Signal Desk PSM",
     nodes: [
       {
         id: "http-api",
@@ -693,7 +693,7 @@ export const phases = [
   },
   {
     id: "pim-psm",
-    label: "PIM to AWS PSM",
+    label: "PIM to PSM",
     level: "psm",
     count: "04 / 08",
     start: 0.39,

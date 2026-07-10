@@ -1,30 +1,6 @@
 @media (max-width: 1180px) {
-  .hero-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.82fr);
-    gap: 2rem;
-  }
-
   .hero-title {
     font-size: 4.1rem;
-  }
-
-  .hero-visual {
-    width: min(34rem, 38vw);
-    min-height: 18rem;
-  }
-
-  .hero-prompt-copy strong {
-    font-size: 1.65rem;
-  }
-
-  .workbench-body {
-    grid-template-columns: 10.5rem minmax(0, 1fr);
-  }
-
-  .story-copy {
-    right: 0;
-    left: 0;
-    width: auto;
   }
 
   .model-node {
@@ -53,12 +29,6 @@
     margin-left: 0;
   }
 
-  .hero-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    min-width: 0;
-  }
-
   .hero-title {
     max-width: 40rem;
     font-size: 3.45rem;
@@ -66,10 +36,6 @@
 
   .hero-summary {
     max-width: 38rem;
-  }
-
-  .hero-visual {
-    display: none;
   }
 
   .method-strip {
@@ -86,72 +52,8 @@
     border-right: 0;
   }
 
-  .workbench-header {
-    grid-template-columns: 1fr auto;
-  }
-
   .level-tabs {
-    display: none;
-  }
-
-  .validation-state {
-    display: none;
-  }
-
-  .workbench-body {
-    --assistant-reserve: 17rem;
-    grid-template-columns: 1fr;
-  }
-
-  .palette {
-    display: none;
-  }
-
-  .story-shell {
-    --story-copy-height: 5.35rem;
-  }
-
-  .story-copy {
-    top: 4.35rem;
-    right: 0;
-    bottom: auto;
-    left: 0;
-    height: 5.35rem;
-    width: auto;
-  }
-
-  .story-copy-card {
-    top: 0.5rem;
-    display: grid;
-    grid-template-columns: minmax(6.5rem, 0.48fr) minmax(11rem, 1fr) minmax(6.5rem, 0.48fr);
-    padding: 0.7rem;
-  }
-
-  .story-copy h2 {
-    margin: 0;
-    font-size: 1rem;
-  }
-
-  .story-copy p {
-    display: block;
-    font-size: 0.52rem;
-  }
-
-  .phase-rule {
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
-  }
-
-  .phase-rule strong {
-    text-align: right;
-  }
-
-  .model-canvas {
-    bottom: 7.5rem;
+    gap: 0.15rem;
   }
 
   .model-node {
@@ -250,10 +152,6 @@
     display: none;
   }
 
-  .story-shell {
-    --story-copy-height: 6.9rem;
-  }
-
   .hero {
     min-height: 100svh;
     padding-right: 1rem;
@@ -324,20 +222,13 @@
     display: none;
   }
 
-  .workbench-header {
-    padding: 0 0.65rem;
-  }
-
-  .workbench-actions {
-    display: none;
-  }
-
-  .canvas-tools span:last-child {
-    display: none;
-  }
-
   .model-node {
     width: clamp(5.8rem, 23vw, 7rem);
+  }
+
+  .level-tab {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.58rem;
   }
 
   .model-node-head {
@@ -401,30 +292,6 @@
     right: 0.5rem;
     bottom: 0.5rem;
     width: 10rem;
-  }
-
-  .story-copy {
-    height: 6.9rem;
-  }
-
-  .story-copy-card {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.35rem;
-    padding: 0.65rem 0.75rem;
-  }
-
-  .story-copy h2 {
-    font-size: 0.92rem;
-  }
-
-  .story-copy p {
-    display: block;
-    font-size: 0.48rem;
-  }
-
-  .phase-rule {
-    display: none;
   }
 
   .artifact-tree-panel,

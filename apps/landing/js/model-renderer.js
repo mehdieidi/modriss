@@ -7,8 +7,6 @@ import {
 } from "./case-study.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const EDGE_CONTROL_MIN = 42;
-const EDGE_CONTROL_MAX = 132;
 const renderedModels = [];
 const PORT_VECTORS = {
   bottom: { x: 0, y: 1 },
@@ -31,30 +29,22 @@ function createSvgElement(tagName, attributes = {}) {
   return element;
 }
 
-function edgePath(source, target) {
-  const distance = Math.hypot(target.x - source.x, target.y - source.y);
-  const controlDistance = Math.min(EDGE_CONTROL_MAX, Math.max(EDGE_CONTROL_MIN, distance * 0.34));
-  const sourceControl = {
-    x: source.x + source.vector.x * controlDistance,
-    y: source.y + source.vector.y * controlDistance,
-  };
-  const targetControl = {
-    x: target.x + target.vector.x * controlDistance,
-    y: target.y + target.vector.y * controlDistance,
-  };
+function edgeRoute(source, target) {
+  const isHorizontal = source.vector.x !== 0;
+  const midpoint = isHorizontal
+    ? Math.round((source.x + target.x) / 2)
+    : Math.round((source.y + target.y) / 2);
 
-  return [
-    `M ${source.x.toFixed(2)} ${source.y.toFixed(2)}`,
-    `C ${sourceControl.x.toFixed(2)} ${sourceControl.y.toFixed(2)}`,
-    `${targetControl.x.toFixed(2)} ${targetControl.y.toFixed(2)}`,
-    `${target.x.toFixed(2)} ${target.y.toFixed(2)}`,
-  ].join(" ");
-}
+  if (isHorizontal) {
+    return {
+      label: { x: midpoint, y: Math.round((source.y + target.y) / 2) - 8 },
+      path: `M ${source.x.toFixed(2)} ${source.y.toFixed(2)} H ${midpoint} V ${target.y.toFixed(2)} H ${target.x.toFixed(2)}`,
+    };
+  }
 
-function edgeLabelPosition(source, target) {
   return {
-    x: (source.x + target.x) / 2,
-    y: (source.y + target.y) / 2 - 8,
+    label: { x: Math.round((source.x + target.x) / 2), y: midpoint - 8 },
+    path: `M ${source.x.toFixed(2)} ${source.y.toFixed(2)} V ${midpoint} H ${target.x.toFixed(2)} V ${target.y.toFixed(2)}`,
   };
 }
 
@@ -103,13 +93,13 @@ function updateModelEdges(renderedModel) {
     const source = nodePort(mount, sourceNode, sourceSide);
     const target = nodePort(mount, targetNode, targetSide);
 
+    const route = edgeRoute(source, target);
     const path = edges.querySelector(`path[data-edge-id="${edge.id}"]`);
-    path.setAttribute("d", edgePath(source, target));
+    path.setAttribute("d", route.path);
 
-    const labelPosition = edgeLabelPosition(source, target);
     const label = edges.querySelector(`text[data-edge-id="${edge.id}"]`);
-    label.setAttribute("x", labelPosition.x);
-    label.setAttribute("y", labelPosition.y);
+    label.setAttribute("x", route.label.x);
+    label.setAttribute("y", route.label.y);
   });
 }
 

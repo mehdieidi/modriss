@@ -70,7 +70,6 @@ function createHeroScrollTimeline() {
   })
     .add(".site-nav", { opacity: 0, y: -28 }, 0)
     .add(".hero-copy", { opacity: 0, y: -52, scale: 0.97 }, 0)
-    .add(".hero-visual", { opacity: 0, y: 70, scale: 1.12 }, 0)
     .add(".method-strip", { opacity: 0, y: 45 }, 0);
 }
 
@@ -104,7 +103,6 @@ function updateStoryMetadata(progress) {
   const fill = document.querySelector(".story-progress-fill");
   const label = document.querySelector(".story-progress-phase");
   const count = document.querySelector(".story-progress-count");
-  const canvasTitle = document.querySelector("[data-canvas-title]");
   const modelCanvas = document.querySelector(".model-canvas");
   const workbenchBody = document.querySelector(".workbench-body");
   const engineLabel = document.querySelector(".engine-window strong");
@@ -112,7 +110,6 @@ function updateStoryMetadata(progress) {
   fill.style.transform = `translateX(${progress * 100 - 100}%)`;
   label.textContent = activePhase.label;
   count.textContent = activePhase.count;
-  canvasTitle.textContent = activePhase.label;
   if (engineLabel) {
     engineLabel.textContent = activePhase.id === "generate" ? "EGX" : "ETL";
   }

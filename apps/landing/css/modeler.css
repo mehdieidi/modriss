@@ -1,7 +1,7 @@
 .model-group {
   position: absolute;
   z-index: 5;
-  inset: 4.5rem 0.8rem 0.8rem;
+  inset: 1.25rem 1.5rem;
   transform-origin: 50% 50%;
 }
 
@@ -24,10 +24,10 @@
 
 .model-edge {
   fill: none;
-  stroke: var(--edge-color, rgba(31, 39, 51, 0.42));
+  stroke: var(--edge-color, color-mix(in srgb, var(--accent-light) 58%, transparent));
   stroke-linecap: butt;
-  stroke-linejoin: round;
-  stroke-width: 1.6;
+  stroke-linejoin: miter;
+  stroke-width: 1.45;
   vector-effect: non-scaling-stroke;
   opacity: 0;
 }
@@ -49,12 +49,12 @@
 }
 
 .edge-label {
-  fill: var(--paper-dim);
+  fill: var(--canvas-edge-label);
   font-family: "Space Grotesk", sans-serif;
   font-size: 10px;
   paint-order: stroke;
-  stroke: #f8fbff;
-  stroke-width: 4px;
+  stroke: var(--canvas-edge-label-halo);
+  stroke-width: 5px;
   stroke-linejoin: round;
   opacity: 0;
 }
@@ -70,16 +70,16 @@
 .model-node {
   position: relative;
   width: clamp(8.6rem, 12vw, 11.5rem);
-  border: 1px solid color-mix(in srgb, var(--node-color) 48%, transparent);
-  border-radius: 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--node-color) 62%, var(--line));
+  border-radius: 0.6rem;
   opacity: 0;
-  color: var(--paper);
+  color: var(--canvas-node-ink);
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--node-color) 9%, transparent), transparent 45%),
-    rgba(255, 255, 255, 0.96);
+    linear-gradient(135deg, color-mix(in srgb, var(--node-color) 14%, transparent), transparent 58%),
+    var(--canvas-node-surface);
   box-shadow:
-    0 1rem 2.5rem rgba(0, 0, 0, 0.32),
-    inset 0 1px rgba(255, 255, 255, 0.03);
+    0 0.8rem 2rem var(--shadow-soft),
+    inset 0 1px color-mix(in srgb, #ffffff 9%, transparent);
   transform: translateY(1.5rem);
   transform-origin: 50% 50%;
 }
@@ -96,7 +96,7 @@
   height: 0.42rem;
   border: 1px solid var(--node-color);
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--canvas-node-surface);
   transform: translateY(-50%);
 }
 
@@ -143,7 +143,7 @@
   gap: 0.55rem;
   min-height: 2.15rem;
   padding: 0.45rem 0.55rem;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid color-mix(in srgb, var(--node-color) 20%, var(--line));
 }
 
 .model-node-icon {
@@ -188,7 +188,7 @@
 
 .model-node-menu {
   margin-left: auto;
-  color: var(--paper-dim);
+  color: var(--canvas-node-muted);
   font-size: 0.56rem;
   letter-spacing: 0.05em;
 }
@@ -206,13 +206,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.45rem;
-  color: var(--paper-dim);
+  color: var(--canvas-node-muted);
   font-size: clamp(0.42rem, 0.62vw, 0.52rem);
 }
 
 .node-property strong {
   overflow: hidden;
-  color: var(--paper-muted);
+  color: var(--canvas-node-ink);
   font-weight: 520;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -430,6 +430,10 @@
 }
 
 .engine-window {
+  position: relative;
+  inset: auto;
+  display: grid;
+  place-items: center;
   position: absolute;
   top: 25%;
   right: 22%;
@@ -616,6 +620,792 @@
   letter-spacing: 0.14em;
   text-align: center;
   text-transform: uppercase;
+}
+
+/* Transformation core: a lightweight technical diagram rather than a literal machine. */
+.transformation-engine {
+  width: min(30rem, 34vw);
+  height: min(20rem, 26vw);
+}
+
+.engine-shadow {
+  right: 18%;
+  bottom: 8%;
+  left: 18%;
+  height: 10%;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  filter: blur(1.8rem);
+}
+
+.engine-diagram {
+  position: absolute;
+  inset: 0;
+  color: var(--canvas-node-muted);
+}
+
+.engine-orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 58%;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--accent-light) 48%, transparent);
+  border-radius: 50%;
+  translate: -50% -50%;
+}
+
+.engine-orbit-one {
+  border-style: dashed;
+  opacity: 0.72;
+}
+
+.engine-orbit-two {
+  width: 76%;
+  border-color: color-mix(in srgb, var(--accent) 24%, transparent);
+  opacity: 0.55;
+  transform: rotateX(64deg) rotateZ(-22deg);
+}
+
+.engine-axis {
+  position: absolute;
+  top: 50%;
+  left: 8%;
+  width: 84%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent-light) 38%, transparent) 16%,
+    color-mix(in srgb, var(--accent-light) 38%, transparent) 84%,
+    transparent
+  );
+}
+
+.engine-axis-vertical {
+  width: 1px;
+  height: 76%;
+  left: 50%;
+  top: 12%;
+  background: linear-gradient(
+    transparent,
+    color-mix(in srgb, var(--accent-light) 30%, transparent) 18%,
+    color-mix(in srgb, var(--accent-light) 30%, transparent) 82%,
+    transparent
+  );
+}
+
+.engine-flow {
+  position: absolute;
+  top: 50%;
+  width: 23%;
+  height: 0.4rem;
+  border-top: 1px solid color-mix(in srgb, var(--accent-light) 72%, transparent);
+  translate: 0 -50%;
+}
+
+.engine-flow::after {
+  position: absolute;
+  top: -0.18rem;
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 50%;
+  content: "";
+  background: var(--accent-light);
+  box-shadow: 0 0 0.8rem var(--accent-glow);
+}
+
+.engine-flow-in {
+  left: 0;
+  transform-origin: left center;
+}
+
+.engine-flow-in::after {
+  right: 0;
+}
+
+.engine-flow-out {
+  right: 0;
+  transform-origin: right center;
+}
+
+.engine-flow-out::after {
+  left: 0;
+}
+
+.engine-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 38%;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--accent-light) 54%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 22%, var(--story-surface-strong)) 0 34%,
+    color-mix(in srgb, var(--accent) 7%, transparent) 35% 62%,
+    transparent 63%
+  );
+  box-shadow:
+    0 0 2.5rem color-mix(in srgb, var(--accent-glow) 74%, transparent),
+    inset 0 0 1.5rem color-mix(in srgb, var(--accent) 16%, transparent);
+  translate: -50% -50%;
+}
+
+.engine-core-ring {
+  position: absolute;
+  border: 1px dashed color-mix(in srgb, var(--accent-light) 64%, transparent);
+  border-radius: 50%;
+}
+
+.engine-core-ring-outer {
+  inset: 9%;
+}
+
+.engine-core-ring-inner {
+  inset: 20%;
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--accent) 48%, transparent);
+}
+
+.engine-window {
+  z-index: 2;
+  width: 52%;
+  height: 52%;
+  gap: 0.04rem;
+  border-radius: 0.35rem;
+  color: var(--accent-light);
+  background: color-mix(in srgb, var(--story-surface-strong) 84%, var(--accent) 16%);
+  box-shadow: inset 0 0 1.2rem color-mix(in srgb, var(--accent) 28%, transparent);
+  font-size: clamp(0.55rem, 0.95vw, 0.88rem);
+}
+
+.engine-window::before,
+.engine-window::after {
+  display: none;
+}
+
+.engine-window small {
+  color: var(--canvas-node-muted);
+  font-size: 0.34em;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.engine-pulse {
+  width: 64%;
+  background: var(--accent-light);
+}
+
+.engine-callout {
+  position: absolute;
+  top: calc(50% + 1rem);
+  color: var(--canvas-node-muted);
+  font-family: var(--font-mono);
+  font-size: clamp(0.42rem, 0.52vw, 0.58rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.engine-callout::before {
+  position: absolute;
+  top: -0.72rem;
+  width: 2.1rem;
+  height: 1px;
+  content: "";
+  background: color-mix(in srgb, var(--accent-light) 52%, transparent);
+}
+
+.engine-callout-input {
+  left: 0;
+}
+
+.engine-callout-input::before {
+  left: 0;
+}
+
+.engine-callout-output {
+  right: 0;
+  text-align: right;
+}
+
+.engine-callout-output::before {
+  right: 0;
+}
+
+.engine-label {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  color: var(--canvas-node-muted);
+  font-size: clamp(0.42rem, 0.52vw, 0.58rem);
+}
+
+/* Compact exploded engine assembly. */
+.engine-diagram {
+  perspective: 40rem;
+}
+
+.engine-assembly {
+  position: absolute;
+  top: 18%;
+  right: 4%;
+  bottom: 20%;
+  left: 4%;
+  transform-style: preserve-3d;
+}
+
+.engine-spine {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: 4%;
+  left: 4%;
+  height: 0.35rem;
+  border: 1px solid color-mix(in srgb, var(--accent-light) 42%, transparent);
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--accent-light) 42% 58%, transparent);
+  box-shadow: 0 0 1rem color-mix(in srgb, var(--accent-glow) 62%, transparent);
+  translate: 0 -50%;
+}
+
+.engine-rotor,
+.engine-cog,
+.engine-plate {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--accent-light) 54%, var(--line));
+  border-radius: 50%;
+  translate: 0 -50%;
+  transform: rotateY(44deg);
+}
+
+.engine-rotor {
+  width: 16%;
+  background:
+    radial-gradient(circle, var(--story-surface-strong) 0 25%, transparent 26% 37%, var(--story-surface-strong) 38% 50%, transparent 51%),
+    repeating-conic-gradient(
+      color-mix(in srgb, var(--accent-light) 72%, transparent) 0 4deg,
+      color-mix(in srgb, var(--story-surface-strong) 94%, transparent) 4deg 11deg
+    );
+  box-shadow:
+    inset 0 0 0 0.28rem color-mix(in srgb, var(--accent) 20%, transparent),
+    0 0.65rem 1.4rem var(--shadow-soft);
+}
+
+.engine-rotor::after {
+  position: absolute;
+  inset: 39%;
+  border: 1px solid var(--accent-light);
+  border-radius: 50%;
+  content: "";
+  background: var(--story-surface-strong);
+  box-shadow: 0 0 0.65rem var(--accent-glow);
+}
+
+.engine-rotor-left {
+  left: 0;
+}
+
+.engine-rotor-right {
+  right: 0;
+}
+
+.engine-cog {
+  width: 11%;
+  background: repeating-conic-gradient(
+    color-mix(in srgb, var(--accent-light) 58%, transparent) 0 7deg,
+    var(--story-surface-strong) 7deg 15deg
+  );
+  box-shadow: inset 0 0 0 0.3rem var(--story-surface-strong);
+}
+
+.engine-cog-left {
+  left: 15%;
+}
+
+.engine-cog-right {
+  right: 15%;
+}
+
+.engine-plate {
+  z-index: 2;
+  width: 7%;
+  background: linear-gradient(90deg, var(--story-surface-strong), var(--canvas-node-muted), var(--story-surface-strong));
+  box-shadow: 0 0.5rem 1rem var(--shadow-soft);
+}
+
+.engine-plate-left {
+  left: 26%;
+}
+
+.engine-plate-right {
+  right: 26%;
+}
+
+.engine-module {
+  position: absolute;
+  z-index: 4;
+  top: 24%;
+  display: flex;
+  width: 11%;
+  height: 52%;
+  flex-direction: column;
+  justify-content: space-evenly;
+  padding: 4% 2%;
+  border: 1px solid color-mix(in srgb, var(--accent-light) 42%, var(--line));
+  border-radius: 0.35rem;
+  background: linear-gradient(100deg, var(--story-surface-strong), color-mix(in srgb, var(--accent) 16%, var(--story-surface)), var(--story-surface-strong));
+  box-shadow: 0 0.65rem 1.4rem var(--shadow-soft);
+  transform: rotateY(-18deg);
+}
+
+.engine-module i {
+  display: block;
+  height: 16%;
+  border: 1px solid color-mix(in srgb, var(--accent-light) 45%, transparent);
+  border-radius: 0.12rem;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.engine-module-input {
+  left: 32%;
+}
+
+.engine-module-output {
+  right: 32%;
+  transform: rotateY(18deg);
+}
+
+.engine-core {
+  z-index: 5;
+  top: 8%;
+  left: 42%;
+  display: block;
+  width: 16%;
+  height: 84%;
+  border: 1px solid color-mix(in srgb, var(--accent-light) 62%, var(--line));
+  border-radius: 0.42rem;
+  background: linear-gradient(90deg, var(--story-surface-strong), color-mix(in srgb, var(--accent) 24%, var(--canvas-node-surface)), var(--story-surface-strong));
+  box-shadow:
+    0 0 1.8rem color-mix(in srgb, var(--accent-glow) 66%, transparent),
+    inset 0 0 1.2rem color-mix(in srgb, var(--accent) 26%, transparent);
+  translate: 0;
+}
+
+.engine-core-ring {
+  inset: 8% 16%;
+  border-color: color-mix(in srgb, var(--accent-light) 58%, transparent);
+  transform: rotateX(66deg);
+}
+
+.engine-core-ring-inner {
+  inset: 20% 27%;
+}
+
+.engine-core-cap {
+  position: absolute;
+  top: -7%;
+  right: 12%;
+  left: 12%;
+  height: 9%;
+  border: 1px solid color-mix(in srgb, var(--accent-light) 52%, var(--line));
+  border-radius: 0.18rem;
+  background: linear-gradient(90deg, var(--story-surface-strong), var(--canvas-node-muted), var(--story-surface-strong));
+}
+
+.engine-core-cap-bottom {
+  top: auto;
+  bottom: -7%;
+}
+
+.engine-energy-bar {
+  position: absolute;
+  bottom: -13%;
+  left: 9%;
+  width: 24%;
+  height: 4%;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0.65rem var(--accent-glow);
+  transform-origin: left center;
+}
+
+.engine-energy-bar-bottom {
+  left: 39%;
+}
+
+.engine-energy-bar-right {
+  left: 69%;
+}
+
+.engine-core-rail {
+  position: absolute;
+  top: 13%;
+  bottom: 13%;
+  width: 0.18rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-light) 72%, transparent);
+  box-shadow: 0 0 0.6rem var(--accent-glow);
+}
+
+.engine-core-rail-left {
+  left: 10%;
+}
+
+.engine-core-rail-right {
+  right: 10%;
+}
+
+.engine-window {
+  position: absolute;
+  z-index: 8;
+  top: 36%;
+  left: 45%;
+  width: 10%;
+  height: 28%;
+  font-size: clamp(0.46rem, 0.8vw, 0.75rem);
+}
+
+.engine-callout {
+  top: 72%;
+}
+
+/* A restrained, paper-like exploded engine. */
+.transformation-engine {
+  width: min(34rem, 36vw);
+  height: min(17rem, 22vw);
+}
+
+.engine-shadow {
+  right: 24%;
+  bottom: 13%;
+  left: 24%;
+  height: 8%;
+  background: var(--shadow-soft);
+  filter: blur(1rem);
+}
+
+.engine-assembly {
+  top: 20%;
+  right: 5%;
+  bottom: 24%;
+  left: 5%;
+}
+
+.engine-spine {
+  display: none;
+  height: 1px;
+  border: 0;
+  background: color-mix(in srgb, var(--canvas-node-muted) 55%, transparent);
+  box-shadow: none;
+}
+
+.engine-rotor,
+.engine-cog,
+.engine-plate {
+  border-color: color-mix(in srgb, var(--canvas-node-muted) 72%, transparent);
+  transform: rotateY(24deg);
+}
+
+.engine-rotor {
+  width: 18%;
+  background:
+    radial-gradient(circle, var(--story-surface-strong) 0 27%, transparent 28% 43%, var(--story-surface-strong) 44% 57%, transparent 58%),
+    repeating-conic-gradient(
+      color-mix(in srgb, var(--canvas-node-muted) 65%, transparent) 0 2deg,
+      transparent 2deg 12deg
+    );
+  box-shadow: inset 0 0 0 0.2rem color-mix(in srgb, var(--canvas-node-muted) 20%, transparent);
+}
+
+.engine-rotor::after {
+  border-color: color-mix(in srgb, var(--canvas-node-muted) 74%, transparent);
+  background: var(--story-surface-strong);
+  box-shadow: none;
+}
+
+.engine-cog {
+  width: 9%;
+  background: repeating-conic-gradient(
+    color-mix(in srgb, var(--canvas-node-muted) 65%, transparent) 0 3deg,
+    transparent 3deg 12deg
+  );
+  box-shadow: inset 0 0 0 0.25rem var(--story-surface-strong);
+}
+
+.engine-cog-left {
+  left: 20%;
+}
+
+.engine-cog-right {
+  right: 20%;
+}
+
+.engine-plate,
+.engine-module,
+.engine-energy-bar,
+.engine-core-rail,
+.engine-core-ring,
+.engine-core-cap,
+.engine-callout {
+  display: none;
+}
+
+.engine-rotor,
+.engine-cog {
+  display: none;
+}
+
+.engine-cog {
+  display: block;
+  z-index: 6;
+  top: 50%;
+  width: 12%;
+  border-color: color-mix(in srgb, var(--canvas-node-muted) 76%, transparent);
+  background:
+    radial-gradient(circle, var(--story-surface-strong) 0 24%, transparent 25% 42%, var(--story-surface-strong) 43% 52%, transparent 53%),
+    repeating-conic-gradient(
+      color-mix(in srgb, var(--canvas-node-muted) 72%, transparent) 0 4deg,
+      transparent 4deg 13deg
+    );
+  box-shadow: inset 0 0 0 0.2rem color-mix(in srgb, var(--canvas-node-muted) 15%, transparent);
+}
+
+.engine-cog-left {
+  left: 14%;
+}
+
+.engine-cog-right {
+  right: 14%;
+}
+
+.engine-core {
+  top: 25%;
+  left: 24%;
+  width: 52%;
+  height: 44%;
+  overflow: visible;
+  border-color: color-mix(in srgb, var(--canvas-node-muted) 68%, transparent);
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--story-surface-strong),
+    color-mix(in srgb, var(--canvas-node-surface) 72%, var(--story-surface-strong)),
+    var(--story-surface-strong)
+  );
+  box-shadow:
+    inset 0 0 0 0.18rem color-mix(in srgb, var(--canvas-node-muted) 12%, transparent),
+    0 0.45rem 0.8rem var(--shadow-soft);
+}
+
+.engine-core::before,
+.engine-core::after {
+  position: absolute;
+  top: -13%;
+  bottom: -13%;
+  width: 12%;
+  border: 1px solid color-mix(in srgb, var(--canvas-node-muted) 62%, transparent);
+  border-radius: 50%;
+  content: "";
+  background: var(--story-surface-strong);
+}
+
+.engine-core::before {
+  left: 8%;
+}
+
+.engine-core::after {
+  right: 8%;
+}
+
+.engine-core::before,
+.engine-core::after {
+  display: none;
+}
+
+.engine-fin {
+  position: absolute;
+  z-index: 2;
+  left: 34%;
+  width: 32%;
+  height: 7%;
+  border: 1px solid color-mix(in srgb, var(--canvas-node-muted) 48%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--story-surface-strong) 75%, transparent);
+  box-shadow: inset 0 1px color-mix(in srgb, #ffffff 10%, transparent);
+}
+
+.engine-fin-one {
+  top: 23%;
+}
+
+.engine-fin-two {
+  top: 46.5%;
+}
+
+.engine-fin-three {
+  top: 70%;
+}
+
+.engine-window {
+  display: none;
+}
+
+.engine-window small {
+  color: var(--canvas-node-muted);
+}
+
+.engine-pulse {
+  background: var(--canvas-node-muted);
+  box-shadow: none;
+}
+
+.engine-label {
+  color: var(--canvas-node-muted);
+  bottom: 25%;
+  letter-spacing: 0.12em;
+}
+
+/* Integrated SVG engine: shaded cylinder with three interlocking gears. */
+.engine-illustration {
+  position: absolute;
+  inset: 0 0 1.2rem;
+  width: 100%;
+  height: calc(100% - 1.2rem);
+  overflow: visible;
+}
+
+.engine-illustration {
+  display: none;
+}
+
+.engine-asset {
+  position: absolute;
+  z-index: 2;
+  top: 10%;
+  left: 50%;
+  width: 60%;
+  height: 66%;
+  translate: -50% 0;
+  object-fit: contain;
+  opacity: 0.78;
+  filter: grayscale(0.32) sepia(0.75) hue-rotate(145deg) saturate(1.45) brightness(1.12) contrast(0.7)
+    drop-shadow(0 0.7rem 1.1rem color-mix(in srgb, var(--shadow-soft) 68%, transparent));
+  animation: engine-asset-settle 8s ease-in-out infinite alternate;
+}
+
+@keyframes engine-asset-settle {
+  from {
+    transform: translateY(-0.2rem);
+  }
+
+  to {
+    transform: translateY(0.2rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .engine-asset {
+    animation: none;
+  }
+}
+
+.engine-body-shell,
+.engine-endcap,
+.engine-center-band {
+  stroke: color-mix(in srgb, var(--canvas-node-muted) 72%, transparent);
+  stroke-width: 2;
+}
+
+.engine-body-shell {
+  fill: url(#engine-metal);
+}
+
+.engine-endcap {
+  fill: var(--story-surface-strong);
+}
+
+.engine-center-band {
+  fill: url(#engine-band);
+}
+
+.engine-body-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--canvas-node-muted) 42%, transparent);
+  stroke-width: 1.5;
+}
+
+.engine-vent {
+  fill: none;
+  stroke: color-mix(in srgb, var(--canvas-node-muted) 68%, transparent);
+  stroke-linecap: round;
+  stroke-width: 4;
+}
+
+.engine-gear-teeth,
+.engine-gear-rim,
+.engine-gear-inner,
+.engine-gear-hub {
+  fill: var(--story-surface);
+  stroke: color-mix(in srgb, var(--canvas-node-muted) 80%, transparent);
+  stroke-width: 2.5;
+}
+
+.engine-gear-rim {
+  fill: url(#engine-metal);
+}
+
+.engine-gear-inner {
+  fill: var(--story-surface-strong);
+}
+
+.engine-gear-hub {
+  fill: var(--canvas-node-surface);
+}
+
+.engine-gear-wheel {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.engine-gear-wheel-large {
+  animation: engine-gear-turn 18s linear infinite;
+}
+
+.engine-gear-wheel-medium {
+  animation: engine-gear-turn-reverse 13s linear infinite;
+}
+
+.engine-gear-wheel-small {
+  animation: engine-gear-turn 9s linear infinite;
+}
+
+.engine-label {
+  bottom: 0;
+}
+
+@keyframes engine-gear-turn {
+  to {
+    rotate: 1turn;
+  }
+}
+
+@keyframes engine-gear-turn-reverse {
+  to {
+    rotate: -1turn;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .engine-gear-wheel {
+    animation: none;
+  }
 }
 
 .assistant-demo {

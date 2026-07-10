@@ -108,112 +108,17 @@ function placeArtifactTravelers(sourceNodes) {
   });
 }
 
-function addCopyTransition(timeline, phase, showAt, hideAt) {
-  const target = `.story-copy-card[data-phase="${phase}"]`;
+function addEngineRun(timeline, start, _end) {
   timeline.add(
-    target,
+    TRANSFORM_ENGINE_SELECTOR,
     {
       opacity: 1,
-      y: 0,
-      duration: 360,
-      ease: "out(3)",
+      scale: 1,
+      duration: 420,
+      ease: "out(4)",
     },
-    showAt,
+    start,
   );
-  if (hideAt) {
-    timeline.add(
-      target,
-      {
-        opacity: 0,
-        y: -18,
-        duration: 280,
-        ease: "in(3)",
-      },
-      hideAt,
-    );
-  }
-}
-
-function addEngineRun(timeline, start, end) {
-  const duration = end - start;
-  timeline
-    .add(
-      TRANSFORM_ENGINE_SELECTOR,
-      {
-        opacity: 1,
-        scale: 1,
-        duration: 420,
-        ease: "out(4)",
-      },
-      start,
-    )
-    .add(
-      ".engine-gear.gear-left",
-      {
-        rotate: "3turn",
-        duration,
-        ease: "linear",
-      },
-      start,
-    )
-    .add(
-      ".engine-gear.gear-right",
-      {
-        rotate: "-3turn",
-        duration,
-        ease: "linear",
-      },
-      start,
-    )
-    .add(
-      ".engine-piston.piston-one",
-      {
-        y: [
-          { to: -8, duration: duration * 0.2 },
-          { to: 8, duration: duration * 0.2 },
-          { to: -8, duration: duration * 0.2 },
-          { to: 8, duration: duration * 0.2 },
-          { to: 0, duration: duration * 0.2 },
-        ],
-        ease: "inOut(2)",
-      },
-      start,
-    )
-    .add(
-      ".engine-piston.piston-two",
-      {
-        y: [
-          { to: 8, duration: duration * 0.2 },
-          { to: -8, duration: duration * 0.2 },
-          { to: 8, duration: duration * 0.2 },
-          { to: -8, duration: duration * 0.2 },
-          { to: 0, duration: duration * 0.2 },
-        ],
-        ease: "inOut(2)",
-      },
-      start,
-    )
-    .add(
-      ".engine-pulse",
-      {
-        scaleX: [
-          { to: 0.35, duration: duration * 0.2 },
-          { to: 1.2, duration: duration * 0.2 },
-          { to: 0.45, duration: duration * 0.2 },
-          { to: 1.3, duration: duration * 0.2 },
-          { to: 0.6, duration: duration * 0.2 },
-        ],
-        opacity: [
-          { to: 0.4, duration: duration * 0.2 },
-          { to: 1, duration: duration * 0.2 },
-          { to: 0.5, duration: duration * 0.2 },
-          { to: 1, duration: duration * 0.2 },
-          { to: 0.6, duration: duration * 0.2 },
-        ],
-        ease: "inOut(2)",
-      },
-      start,
-    );
 }
 
 function _addRuleTokens(timeline, batch, start, hideAt) {
@@ -571,15 +476,6 @@ export function createStoryTimeline() {
       ease: "inOut(3)",
     },
   });
-
-  addCopyTransition(timeline, "cim", 0, 1700);
-  addCopyTransition(timeline, "cim-pim", 1760, 4300);
-  addCopyTransition(timeline, "assistant", 4380, 6400);
-  addCopyTransition(timeline, "pim-psm", 6480, 9400);
-  addCopyTransition(timeline, "refine", 9480, 11050);
-  addCopyTransition(timeline, "generate", 11120, 13400);
-  addCopyTransition(timeline, "protected", 13480, 15100);
-  addCopyTransition(timeline, "ready", 15180);
 
   timeline
     .add(

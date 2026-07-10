@@ -58,6 +58,17 @@
         <a href="#artifacts">Artifacts</a>
       </div>
       <div class="nav-actions">
+        <a
+          aria-label="View Modless on GitHub"
+          class="github-link"
+          href="https://github.com/mehdieidi/modless"
+          rel="noreferrer"
+          target="_blank"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.58 2 12.23c0 4.52 2.87 8.35 6.84 9.7.5.1.68-.22.68-.49 0-.24-.01-1.04-.01-1.89-2.78.62-3.37-1.21-3.37-1.21-.45-1.19-1.11-1.5-1.11-1.5-.91-.64.07-.63.07-.63 1 .07 1.54 1.06 1.54 1.06.9 1.57 2.35 1.12 2.92.86.09-.67.35-1.12.64-1.38-2.22-.26-4.55-1.14-4.55-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.28 2.75 1.05A9.3 9.3 0 0 1 12 6.93c.85 0 1.7.12 2.5.35 1.91-1.33 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.56 5.05.36.32.68.93.68 1.88 0 1.36-.01 2.45-.01 2.79 0 .27.18.59.69.49A10.23 10.23 0 0 0 22 12.23C22 6.58 17.52 2 12 2Z"></path>
+          </svg>
+        </a>
         <button aria-label="Switch theme" class="theme-toggle" data-theme-toggle type="button">
           <span aria-hidden="true" class="theme-toggle-track">
             <span class="theme-toggle-thumb"></span>
@@ -100,33 +111,13 @@
             </div>
           </div>
 
-          <div aria-hidden="true" class="hero-visual hero-reveal">
-            <div class="hero-prompt-card">
-              <div class="hero-prompt-copy">
-                <span>Ask Modless to design</span>
-                <strong>Order intake with validation, events, and AWS deployment.</strong>
-              </div>
-              <div class="hero-prompt-tools">
-                <span class="prompt-plus">+</span>
-                <span class="prompt-tool">CIM</span>
-                <span class="prompt-tool active">PIM</span>
-                <span class="prompt-tool">AWS PSM</span>
-                <span class="prompt-action">Generate</span>
-              </div>
-            </div>
-            <div class="hero-visual-caption">
-              <span>Model</span>
-              <span>Transform</span>
-              <span>Refine</span>
-            </div>
-          </div>
         </div>
 
         <div class="method-strip hero-reveal">
           <article>
             <span class="method-index">01</span>
             <strong>Model</strong>
-            <p>Formal CIM, PIM, and AWS PSM languages keep each decision explicit.</p>
+            <p>Formal CIM, PIM, and PSM languages keep each decision explicit.</p>
           </article>
           <article>
             <span class="method-index">02</span>
@@ -145,171 +136,20 @@
         </div>
       </section>
 
-      <section aria-label="Signal Desk case study" class="story" id="story">
+      <section aria-label="Model transformation walkthrough" class="story" id="story">
         <div class="story-sticky">
           <div class="story-shell">
             <header class="workbench-header">
-              <div class="workbench-brand">
-                <span class="workbench-logo">M</span>
-                <div>
-                  <strong>Signal Desk</strong>
-                  <span>Case study / main</span>
-                </div>
-              </div>
               <div aria-label="Model levels" class="level-tabs" role="tablist">
                 <span class="level-tab active" data-level="cim">CIM</span>
                 <span class="level-tab" data-level="pim">PIM</span>
-                <span class="level-tab" data-level="psm">AWS PSM</span>
+                <span class="level-tab" data-level="psm">PSM</span>
                 <span class="level-tab" data-level="artifacts">Artifacts</span>
-              </div>
-              <div class="workbench-actions">
-                <span class="validation-state">
-                  <span class="status-dot"></span>
-                  Valid
-                </span>
-                <span class="generate-button">Generate</span>
               </div>
             </header>
 
-            <aside aria-live="polite" class="story-copy">
-              <article class="story-copy-card" data-phase="cim">
-                <span class="phase-kicker">01 / Computation-independent</span>
-                <h2>Capture business meaning first.</h2>
-                <p>
-                  Signal Desk begins with a customer, a support capability, a ticket aggregate, and
-                  the commands, queries, and events the business actually understands.
-                </p>
-                <div class="phase-rule">
-                  <span>CIM</span>
-                  <strong>No cloud vocabulary</strong>
-                </div>
-              </article>
-
-              <article class="story-copy-card" data-phase="cim-pim">
-                <span class="phase-kicker">02 / ETL transformation</span>
-                <h2>Turn intent into a serverless architecture.</h2>
-                <p>
-                  Formal mappings generate functions, routes, schemas, event contracts, and a
-                  persistent store while preserving trace links back to business intent.
-                </p>
-                <div class="phase-rule">
-                  <span>TR-070</span>
-                  <strong>Command to Function + Route</strong>
-                </div>
-              </article>
-
-              <article class="story-copy-card" data-phase="assistant">
-                <span class="phase-kicker">03 / AI modeling assistant</span>
-                <h2>Ask for the change in plain language.</h2>
-                <p>
-                  The assistant sees the active PIM, understands its metamodel and validation rules,
-                  then applies a valid notification flow directly on the canvas.
-                </p>
-                <div class="phase-rule">
-                  <span>AI</span>
-                  <strong>Model-aware, constraint-aware</strong>
-                </div>
-              </article>
-
-              <article class="story-copy-card" data-phase="pim-psm">
-                <span class="phase-kicker">04 / Platform-specific</span>
-                <h2>Realize the design on AWS.</h2>
-                <p>
-                  Provider-independent elements become Lambda, HTTP API, DynamoDB, SNS, IAM,
-                  logging, and traceable integration resources.
-                </p>
-                <div class="phase-rule">
-                  <span>AWS PSM</span>
-                  <strong>Reviewable infrastructure model</strong>
-                </div>
-              </article>
-
-              <article class="story-copy-card" data-phase="refine">
-                <span class="phase-kicker">05 / Developer refinement</span>
-                <h2>Automation proposes. You decide.</h2>
-                <p>
-                  Refine provider-specific settings manually. Here the submit function receives more
-                  memory and active tracing before generation.
-                </p>
-                <div class="phase-rule">
-                  <span>Manual</span>
-                  <strong>512 MB + tracing enabled</strong>
-                </div>
-              </article>
-
-              <article class="story-copy-card" data-phase="generate">
-                <span class="phase-kicker">06 / EGL generation</span>
-                <h2>Generate the whole deployable project.</h2>
-                <p>
-                  The AWS PSM becomes SAM infrastructure, Go handlers, shared runtime code,
-                  contracts, tests, scripts, documentation, and trace reports.
-                </p>
-                <div class="phase-rule">
-                  <span>PSM to text</span>
-                  <strong>Repeatable artifact generation</strong>
-                </div>
-              </article>
-
-              <article class="story-copy-card" data-phase="protected">
-                <span class="phase-kicker">07 / Protected regions</span>
-                <h2>Keep generated structure. Own business logic.</h2>
-                <p>
-                  Generated handlers reserve explicit developer-owned regions, so regeneration can
-                  update infrastructure and contracts without overwriting hand-written logic.
-                </p>
-                <div class="phase-rule">
-                  <span>Merge-safe</span>
-                  <strong>Business logic preserved</strong>
-                </div>
-              </article>
-
-              <article class="story-copy-card" data-phase="ready">
-                <span class="phase-kicker">08 / Deployment-ready</span>
-                <h2>One traceable path from intent to deployment.</h2>
-                <p>
-                  Every generated artifact remains connected to the models and decisions that
-                  produced it, ready for review, export, and deployment.
-                </p>
-                <div class="phase-rule">
-                  <span>Ready</span>
-                  <strong>sam build &amp;&amp; sam deploy</strong>
-                </div>
-              </article>
-            </aside>
-
             <div class="workbench-body">
-              <aside aria-label="Model palette" class="palette">
-                <div class="palette-title">
-                  <span>Palette</span>
-                  <span>&bull;&bull;&bull;</span>
-                </div>
-                <div class="palette-search">Search elements</div>
-                <div class="palette-items">
-                  <span><i class="palette-icon icon-actor"></i> Actor</span>
-                  <span><i class="palette-icon icon-domain"></i> Domain entity</span>
-                  <span><i class="palette-icon icon-command"></i> Command</span>
-                  <span><i class="palette-icon icon-event"></i> Business event</span>
-                  <span><i class="palette-icon icon-query"></i> Query</span>
-                </div>
-                <div class="palette-footer">
-                  <span>View</span>
-                  <strong>Event storming</strong>
-                </div>
-              </aside>
-
               <div class="canvas-frame">
-                <div class="canvas-toolbar">
-                  <span class="canvas-breadcrumb"
-                    >Signal Desk / <strong data-canvas-title>CIM model</strong></span
-                  >
-                  <div aria-hidden="true" class="canvas-tools">
-                    <span>+</span>
-                    <span>-</span>
-                    <span>Fit</span>
-                    <span>Layers</span>
-                  </div>
-                </div>
-
                 <div class="model-canvas">
                   <div aria-hidden="true" class="canvas-grid"></div>
                   <div aria-hidden="true" class="canvas-vignette"></div>
@@ -328,28 +168,62 @@
 
                   <div aria-hidden="true" class="transformation-engine" id="transform-engine">
                     <div class="engine-shadow"></div>
-                    <div class="engine-machine">
-                      <div class="engine-pipe pipe-left"></div>
-                      <div class="engine-pipe pipe-right"></div>
-                      <div class="engine-cap cap-top"></div>
-                      <div class="engine-body">
-                        <span class="engine-bolt bolt-one"></span>
-                        <span class="engine-bolt bolt-two"></span>
-                        <span class="engine-bolt bolt-three"></span>
-                        <span class="engine-bolt bolt-four"></span>
-                        <div class="engine-window">
-                          <span class="engine-pulse"></span>
-                          <strong>EGX</strong>
-                        </div>
-                        <div class="engine-meter">
-                          <span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                      </div>
-                      <div class="engine-cap cap-bottom"></div>
-                      <div class="engine-gear gear-left"><span></span></div>
-                      <div class="engine-gear gear-right"><span></span></div>
-                      <div class="engine-piston piston-one"></div>
-                      <div class="engine-piston piston-two"></div>
+                    <div class="engine-diagram">
+                      <svg class="engine-illustration" viewBox="0 0 600 270">
+                        <defs>
+                          <linearGradient id="engine-metal" x1="0" x2="0" y1="0" y2="1">
+                            <stop offset="0" stop-color="var(--canvas-node-surface)" />
+                            <stop offset="0.48" stop-color="var(--story-surface)" />
+                            <stop offset="1" stop-color="var(--story-surface-strong)" />
+                          </linearGradient>
+                          <linearGradient id="engine-band" x1="0" x2="1" y1="0" y2="0">
+                            <stop offset="0" stop-color="var(--story-surface-strong)" />
+                            <stop offset="0.5" stop-color="var(--canvas-node-muted)" />
+                            <stop offset="1" stop-color="var(--story-surface-strong)" />
+                          </linearGradient>
+                          <g id="engine-gear-shape">
+                            <g class="engine-gear-teeth">
+                              <rect height="15" rx="2" width="8" x="-4" y="-50" />
+                              <rect height="15" rx="2" transform="rotate(30)" width="8" x="-4" y="-50" />
+                              <rect height="15" rx="2" transform="rotate(60)" width="8" x="-4" y="-50" />
+                              <rect height="15" rx="2" transform="rotate(90)" width="8" x="-4" y="-50" />
+                              <rect height="15" rx="2" transform="rotate(120)" width="8" x="-4" y="-50" />
+                              <rect height="15" rx="2" transform="rotate(150)" width="8" x="-4" y="-50" />
+                              <rect height="15" rx="2" transform="rotate(180)" width="8" x="-4" y="-50" />
+                              <rect height="15" rx="2" transform="rotate(210)" width="8" x="-4" y="-50" />
+                              <rect height="15" rx="2" transform="rotate(240)" width="8" x="-4" y="-50" />
+                              <rect height="15" rx="2" transform="rotate(270)" width="8" x="-4" y="-50" />
+                              <rect height="15" rx="2" transform="rotate(300)" width="8" x="-4" y="-50" />
+                              <rect height="15" rx="2" transform="rotate(330)" width="8" x="-4" y="-50" />
+                            </g>
+                            <circle class="engine-gear-rim" r="41" />
+                            <circle class="engine-gear-inner" r="26" />
+                            <circle class="engine-gear-hub" r="9" />
+                          </g>
+                        </defs>
+                        <g class="engine-cylinder">
+                          <ellipse class="engine-endcap" cx="112" cy="140" rx="25" ry="58" />
+                          <rect class="engine-body-shell" height="116" rx="58" width="370" x="112" y="82" />
+                          <ellipse class="engine-endcap" cx="482" cy="140" rx="25" ry="58" />
+                          <rect class="engine-center-band" height="126" rx="8" width="48" x="276" y="77" />
+                          <path class="engine-body-line" d="M145 111H450M145 140H450M145 169H450" />
+                          <path class="engine-vent" d="M220 117H258M220 135H258M220 153H258M342 117H380M342 135H380M342 153H380" />
+                        </g>
+                        <g class="engine-gear-wheel engine-gear-wheel-large" transform="translate(210 84) scale(.76)">
+                          <use href="#engine-gear-shape" />
+                        </g>
+                        <g class="engine-gear-wheel engine-gear-wheel-medium" transform="translate(363 188) scale(.58)">
+                          <use href="#engine-gear-shape" />
+                        </g>
+                        <g class="engine-gear-wheel engine-gear-wheel-small" transform="translate(426 86) scale(.42)">
+                          <use href="#engine-gear-shape" />
+                        </g>
+                      </svg>
+                      <img
+                        alt=""
+                        class="engine-asset"
+                        src="./assets/images/transformation-engine-geared.png"
+                      />
                       <span class="engine-label">transformation engine</span>
                     </div>
                   </div>
