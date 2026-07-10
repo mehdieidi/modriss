@@ -349,7 +349,7 @@
 }
 
 .validation-issues {
-  max-height: min(45vh, 380px);
+  max-height: none;
   overflow: auto;
 }
 
@@ -392,7 +392,7 @@
   display: grid;
   gap: 4px;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .validation-issue-warning {
@@ -519,6 +519,27 @@
   color: var(--text);
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.validation-issue-detail {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.validation-issue-detail-label {
+  color: var(--muted);
+  font: 700 10px/1.1 var(--font-ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.validation-issue-fix {
+  margin-top: 4px;
+  padding: 8px;
+  border-left: 3px solid color-mix(in srgb, var(--accent) 62%, transparent);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, var(--surface-high) 58%, transparent);
 }
 
 .validation-issue-guide {

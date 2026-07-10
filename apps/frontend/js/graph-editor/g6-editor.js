@@ -2032,6 +2032,9 @@ export function updateG6ImpactState() {
   const upstream = new Set();
   const downstream = new Set();
   const connected = new Set();
+  if (state.issueLocateTargetId) {
+    focal.add(state.issueLocateTargetId);
+  }
   if (state.impactMode && state.impactData) {
     if (state.impactData.focalElement?.elementId) {
       focal.add(state.impactData.focalElement.elementId);
@@ -2284,7 +2287,15 @@ export function focusG6Node(nodeId) {
   if (!editor?.graph || !nodeId) {
     return;
   }
-  editor.graph.focusElement?.(nodeId, { duration: 280 });
+  const targetScale = Math.max(readGraphZoom(), 1.2);
+  state.viewport.scale = targetScale;
+  setCanvasZoomIndicator();
+  try {
+    editor.graph.zoomTo?.(targetScale, false);
+    editor.graph.focusElement?.(nodeId, { duration: 280 });
+  } catch (error) {
+    updateDebugState({ lastViewportError: error.message || String(error) });
+  }
   window.setTimeout(() => {
     runViewportSync();
   }, 320);

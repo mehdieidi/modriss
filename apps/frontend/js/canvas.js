@@ -1075,7 +1075,7 @@ function ensureCanvas() {
       onNodeClick: handleG6NodeClick,
       onNodeDoubleClick: handleG6NodeDoubleClick,
       onNodeHover: setHoveredNode,
-      onEdgeClick: (edgeId) => selectConnection(edgeId, { openPicker: true }),
+      onEdgeClick: handleG6EdgeClick,
       onEdgeHover: setHoveredEdge,
       onCanvasClick: handleG6CanvasClick,
       onEscape: handleG6Escape,
@@ -2508,6 +2508,10 @@ function eventModifierState(event) {
 }
 
 function handleG6NodeClick(nodeId, event = {}) {
+  if (state.issueLocateTargetId === nodeId) {
+    state.issueLocateTargetId = null;
+    updateCanvasImpactState();
+  }
   const modifiers = eventModifierState(event);
   if (modifiers.shiftKey || modifiers.ctrlKey || modifiers.metaKey) {
     toggleNodeInSelection(nodeId);
@@ -2516,6 +2520,14 @@ function handleG6NodeClick(nodeId, event = {}) {
   setNodeMultiSelection([nodeId]);
   activateNode(nodeId);
   updateCanvasSelection();
+}
+
+function handleG6EdgeClick(edgeId) {
+  selectConnection(edgeId, { openPicker: true });
+  if (state.issueLocateTargetId === edgeId) {
+    state.issueLocateTargetId = null;
+    updateCanvasImpactState();
+  }
 }
 
 function handleG6NodeDoubleClick(nodeId, event = {}) {
@@ -3723,16 +3735,8 @@ export function scrollToNodeAndHighlight(elementId) {
     return;
   }
   focusCanvasNode(elementId);
-  const previousImpact = state.impactData;
-  state.impactData = {
-    ...(state.impactData || {}),
-    focalElement: { elementId },
-  };
+  state.issueLocateTargetId = elementId;
   updateCanvasImpactState();
-  setTimeout(() => {
-    state.impactData = previousImpact;
-    updateCanvasImpactState();
-  }, 2500);
 }
 
 export function scrollToConnectionAndHighlight(connectionId) {
@@ -3752,9 +3756,11 @@ export function scrollToConnectionAndHighlight(connectionId) {
   const midY = (source.y + nodeH / 2 + target.y + nodeH / 2) / 2;
   ensureCanvas();
   state.selectedConnectionId = connectionId;
+  state.issueLocateTargetId = connectionId;
+  state.viewport.scale = Math.max(Number(state.viewport.scale) || 1, 1.2);
   focusCanvasPoint(midX, midY);
   updateCanvasSelection();
   updateCanvasEdge(connectionId);
-  setTimeout(() => updateCanvasEdge(connectionId), 1800);
+  updateCanvasImpactState();
   return true;
 }

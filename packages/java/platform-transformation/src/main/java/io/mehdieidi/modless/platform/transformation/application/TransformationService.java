@@ -1140,7 +1140,8 @@ public final class TransformationService {
                         "Review the generated model decision before promotion."),
                     decision.path("blocking").asBoolean(true),
                     "ETL_MANUAL_DECISION",
-                    "OPEN")));
+                    "OPEN",
+                    decision.path("affectedElements"))));
   }
 
   /**
@@ -1155,6 +1156,17 @@ public final class TransformationService {
    */
   private ObjectNode manualTask(
       String title, String rationale, boolean required, String category, String status) {
+    return manualTask(title, rationale, required, category, status, null);
+  }
+
+  /** Builds a manual task and preserves every model element affected by the source decision. */
+  private ObjectNode manualTask(
+      String title,
+      String rationale,
+      boolean required,
+      String category,
+      String status,
+      JsonNode affectedElements) {
     ObjectNode task = store.objectMapper().createObjectNode();
     task.put("id", UUID.randomUUID().toString());
     task.put("name", title);
@@ -1163,6 +1175,9 @@ public final class TransformationService {
     task.put("required", required);
     task.put("category", category);
     task.put("rationale", rationale);
+    if (affectedElements != null && !affectedElements.isMissingNode() && !affectedElements.isNull()) {
+      task.set("affectedElements", affectedElements.deepCopy());
+    }
     return task;
   }
 

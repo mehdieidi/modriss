@@ -240,8 +240,14 @@ final class ModelValidationService {
    */
   private static ModelService.ValidationIssue issue(
       String severity, String constraint, String message) {
+    return issue(severity, constraint, message, null);
+  }
+
+  /** Creates a compact validation issue with separate remediation guidance. */
+  private static ModelService.ValidationIssue issue(
+      String severity, String constraint, String message, String guidance) {
     return new ModelService.ValidationIssue(
-        severity, constraint, "MODEL", message, null, null, null);
+        severity, constraint, "MODEL", message, guidance, null, null);
   }
 
   /**
@@ -304,7 +310,11 @@ final class ModelValidationService {
       addValidationReportTimings(report);
       return validationIssues(report);
     } catch (PlatformException ex) {
-      return List.of(issue("ERROR", "XmiExport", ex.getMessage()));
+      return List.of(
+          issue(
+              "ERROR",
+              "XmiExport",
+              "The model could not be prepared for validation. Review the affected model data and try again."));
     } catch (EvlValidationException ex) {
       addValidationReportTimings(ex.getReport());
       return validationIssues(ex.getReport());
@@ -313,8 +323,7 @@ final class ModelValidationService {
           issue(
               "ERROR",
               "EvlValidationExecution",
-              "EVL validation could not run: "
-                  + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage())));
+              "Validation could not be completed. Correct any rule or model issues shown here, then run validation again."));
     }
   }
 
@@ -336,14 +345,17 @@ final class ModelValidationService {
       addValidationTiming("validation.structuralValidationMs", System.nanoTime() - phaseStarted);
       return issues;
     } catch (PlatformException ex) {
-      return List.of(issue("ERROR", "XmiExport", ex.getMessage()));
+      return List.of(
+          issue(
+              "ERROR",
+              "XmiExport",
+              "The model could not be prepared for structural validation. Review the affected model data and try again."));
     } catch (Exception ex) {
       return List.of(
           issue(
               "ERROR",
               "StructuralValidationExecution",
-              "Structural validation could not run: "
-                  + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage())));
+              "Structural validation could not be completed. Review the affected model data and try again."));
     }
   }
 
@@ -374,7 +386,11 @@ final class ModelValidationService {
       addValidationReportTimings(report);
       return validationIssues(report);
     } catch (PlatformException ex) {
-      return List.of(issue("ERROR", "XmiLoad", ex.getMessage()));
+      return List.of(
+          issue(
+              "ERROR",
+              "XmiLoad",
+              "The saved model could not be read for validation. Re-save the model and try again."));
     } catch (EvlValidationException ex) {
       addValidationReportTimings(ex.getReport());
       return validationIssues(ex.getReport());
@@ -383,8 +399,7 @@ final class ModelValidationService {
           issue(
               "ERROR",
               "EvlValidationExecution",
-              "EVL validation could not run: "
-                  + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage())));
+              "Validation could not be completed. Correct any rule or model issues shown here, then run validation again."));
     }
   }
 
@@ -445,13 +460,16 @@ final class ModelValidationService {
     String elementId = violation.element().attributes().getOrDefault("id", null);
     String elementName =
         violation.element().attributes().getOrDefault("name", violation.element().summary());
+    UserFacingIssueText text = splitUserFacingIssueText(violation.message());
     String guidance =
-        violation.fixes().isEmpty() ? "" : "Suggested fix: " + violation.fixes().get(0).title();
+        violation.fixes().isEmpty()
+            ? text.guidance()
+            : violation.fixes().get(0).title();
     return new ModelService.ValidationIssue(
         severity,
         textOrDefault(violation.constraintName(), "EvlConstraint"),
         violation.contextType(),
-        violation.message(),
+        text.message(),
         guidance,
         elementId,
         elementName);
@@ -466,18 +484,52 @@ final class ModelValidationService {
   private ModelService.ValidationIssue validationIssue(EvlDiagnostic diagnostic) {
     String severity = diagnostic.severity() == ValidationSeverity.ERROR ? "ERROR" : "WARNING";
     String constraint = "EVL_" + diagnostic.phase().name();
+    // whatWentWrong is authored for users. reason can be a raw parser or Java exception message.
     String message =
-        !diagnostic.reason().isBlank() ? diagnostic.reason() : diagnostic.whatWentWrong();
-    String guidance = diagnostic.howToFix();
+        !diagnostic.whatWentWrong().isBlank()
+            ? diagnostic.whatWentWrong()
+            : "The validation rule could not be checked.";
+    UserFacingIssueText text = splitUserFacingIssueText(message);
+    String guidance =
+        !diagnostic.howToFix().isBlank() ? diagnostic.howToFix() : text.guidance();
     return new ModelService.ValidationIssue(
         severity,
         constraint,
         "EVL_DIAGNOSTIC",
-        message,
+        text.message(),
         guidance,
         null,
         diagnostic.file() == null ? null : diagnostic.file().toString());
   }
+
+  /**
+   * Separates legacy EVL message text from its remediation text. EVL rules predate the structured
+   * guidance field, so their messages commonly contain a "Fix:" or "Suggestion:" sentence.
+   */
+  private UserFacingIssueText splitUserFacingIssueText(String value) {
+    String text = textOrDefault(value, "The model does not meet this validation rule.").trim();
+    int splitAt = -1;
+    int markerLength = 0;
+    for (String marker : List.of("Suggested fix:", "Suggestion:", "Fix:")) {
+      int index =
+          text.toLowerCase(java.util.Locale.ROOT)
+              .indexOf(marker.toLowerCase(java.util.Locale.ROOT));
+      if (index >= 0 && (splitAt < 0 || index < splitAt)) {
+        splitAt = index;
+        markerLength = marker.length();
+      }
+    }
+    if (splitAt < 0) {
+      return new UserFacingIssueText(text, "");
+    }
+    String message = text.substring(0, splitAt).trim();
+    String guidance = text.substring(splitAt + markerLength).trim();
+    return new UserFacingIssueText(
+        message.isBlank() ? "The model does not meet this validation rule." : message, guidance);
+  }
+
+  /** Text intentionally formatted for separate issue-board message and remediation regions. */
+  private record UserFacingIssueText(String message, String guidance) {}
 
   /**
    * Performs additional CIM JSON checks using merged modeling metadata.
@@ -511,7 +563,12 @@ final class ModelValidationService {
     List<JsonNode> elements = new java.util.ArrayList<>();
     collectSemanticElements(modelJson, elements);
     if (elements.isEmpty()) {
-      issues.add(issue("WARNING", "CimElementsMissing", "CIM model has no semantic elements."));
+      issues.add(
+          issue(
+              "WARNING",
+              "CimElementsMissing",
+              "The CIM model has no semantic elements.",
+              "Add a business element, such as an actor, capability, command, event, or process."));
       return issues;
     }
     for (JsonNode element : elements) {
@@ -525,8 +582,8 @@ final class ModelValidationService {
                 "ERROR",
                 "UnknownCimElement",
                 type,
-                "Element type is not defined by the CIM metamodel.",
-                null,
+                "The element type '" + type + "' is not available in the CIM metamodel.",
+                "Choose a supported CIM element type, then recreate or change this element.",
                 elementId,
                 elementName));
         continue;
@@ -761,8 +818,14 @@ final class ModelValidationService {
                 "ERROR",
                 constraint,
                 element.path("eClass").asText(),
-                "Required CIM feature is missing: " + name,
-                null,
+                "The required "
+                    + ("RequiredReference".equals(constraint) ? "link" : "property")
+                    + " '"
+                    + name
+                    + "' is missing.",
+                "RequiredReference".equals(constraint)
+                    ? "Select the related element for '" + name + "'."
+                    : "Enter a value for '" + name + "'.",
                 elementId,
                 elementName));
       }

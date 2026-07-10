@@ -94,6 +94,7 @@ export const state = {
   canvasFocusStack: [],
   impactMode: false,
   impactData: null,
+  issueLocateTargetId: null,
   paletteCollapsed: false,
   paletteDragType: "",
   paletteSearch: {},

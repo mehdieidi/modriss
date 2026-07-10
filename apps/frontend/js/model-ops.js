@@ -231,11 +231,12 @@ function manualGuidanceIssuesFromModel(modelJson) {
       elementId,
       elementType: String(task?.elementType || task?.relatedElementType || ""),
       elementName: taskTitle,
-      message: taskTitle,
+      affectedElements: task?.affectedElements || task?.relatedElements || [],
+      message: `Complete the manual task: ${taskTitle}.`,
       guidance: String(
         task?.rationale ||
           task?.description ||
-          "Review and complete this manual methodology step before promotion.",
+          "Review the affected element, record the decision, and mark this task complete.",
       ),
     };
   });
@@ -267,6 +268,9 @@ function manualBacklogIdentity(task, _index) {
 function mergedManualBacklogFromModel(modelJson) {
   const merged = [];
   const seen = new Set();
+  const decisions = Array.isArray(modelJson?.readiness?.manualDecisions)
+    ? modelJson.readiness.manualDecisions
+    : [];
   [
     ...(Array.isArray(modelJson?.manualBacklog) ? modelJson.manualBacklog : []),
     ...(Array.isArray(modelJson?.graph?.manualBacklog) ? modelJson.graph.manualBacklog : []),
@@ -276,6 +280,19 @@ function mergedManualBacklogFromModel(modelJson) {
       return;
     }
     seen.add(key);
+    const matchingDecision = decisions.find(
+      (decision) =>
+        String(decision?.name || "").trim() === String(task?.name || task?.title || "").trim(),
+    );
+    if (
+      matchingDecision?.affectedElements &&
+      !task?.affectedElements &&
+      !task?.elementId &&
+      !task?.relatedElementId
+    ) {
+      merged.push({ ...task, affectedElements: matchingDecision.affectedElements });
+      return;
+    }
     merged.push(task);
   });
   return merged;
@@ -1483,7 +1500,9 @@ async function executeConfiguredTransformation(transformation) {
             severity: "ERROR",
             constraint: "GenerationError",
             issueClass: "SYSTEM_ERROR",
-            message: formatUserError(error) || transformation.errorMessage || "Generation failed.",
+            message:
+              transformation.errorMessage ||
+              "Generation could not be completed. The technical details have been kept out of the issue board.",
             guidance:
               "Automatic generation was interrupted. Review highlighted items and continue with manual refinement.",
           },
@@ -2128,19 +2147,18 @@ function activateViewForIssueTarget(ids) {
 }
 
 function locateIssueTarget(detail) {
-  const id = String(detail.id || "").trim();
+  const ids = Array.isArray(detail.targetIds) ? detail.targetIds : [];
+  const id = String(detail.id || ids[0] || "").trim();
   const issueName = String(detail.elementName || "")
     .trim()
     .toLowerCase();
   const issueType = String(detail.elementType || "")
     .trim()
     .toLowerCase();
-  if (!id) {
-    setStatus("Unable to locate issue target.");
-    return;
+  const candidates = [...new Set(ids.flatMap((candidate) => issueTargetCandidates(candidate)))];
+  if (id && !candidates.length) {
+    candidates.push(...issueTargetCandidates(id));
   }
-
-  const candidates = issueTargetCandidates(id);
   activateViewForIssueTarget(candidates);
 
   for (const candidate of candidates) {
@@ -2173,7 +2191,7 @@ function locateIssueTarget(detail) {
     const nodeType = String(node.type || "")
       .trim()
       .toLowerCase();
-    return (issueName && nodeLabel === issueName) || (issueType && nodeType === issueType);
+    return issueName && nodeLabel === issueName && (!issueType || nodeType === issueType);
   });
   if (byName) {
     scrollToNodeAndHighlight(byName.id);
@@ -2181,7 +2199,7 @@ function locateIssueTarget(detail) {
     return;
   }
 
-  setStatus("Issue target is not present on current canvas.");
+  setStatus("This issue has no model element to locate. Review its details in the issue board.");
 }
 
 let locateIssueTargetBound = false;

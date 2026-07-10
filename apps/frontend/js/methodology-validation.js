@@ -19,14 +19,20 @@ function isManualIssue(issue) {
   return String(issue?.issueClass || "").startsWith("MANUAL_");
 }
 
-function issueTargetId(issue) {
-  return String(
-    issue?.elementId ||
-      issue?.relationshipId ||
-      issue?.targetElementId ||
-      issue?.sourceElementId ||
-      "",
-  ).trim();
+function issueTargetIds(issue) {
+  const values = [
+    issue?.elementId,
+    issue?.relationshipId,
+    issue?.targetElementId,
+    issue?.sourceElementId,
+    issue?.affectedElements,
+    issue?.relatedElements,
+  ];
+  return [...new Set(
+    values.flatMap((value) =>
+      Array.isArray(value) ? value : String(value || "").split(/[\s,]+/),
+    ).map((value) => String(value || "").trim()).filter(Boolean),
+  )];
 }
 
 function manualRequirementLabel(issue) {
@@ -150,9 +156,10 @@ function renderIssues(issues) {
         : "Validation";
     const severity = severityOf(issue);
     const title = issue.constraint || issue.code || "Constraint";
-    const message = issue.message || "Invalid model state.";
-    const guide = issue.guidance || issue.suggestedFix || "Review and fix this element.";
-    const targetId = issueTargetId(issue);
+    const message = issue.message || "This item needs attention.";
+    const guide = issue.guidance || issue.suggestedFix || "Review this item and make the required change.";
+    const targetIds = issueTargetIds(issue);
+    const targetId = targetIds[0] || "";
     const element = issue.elementName || targetId || "";
     const toggle = manual
       ? `<label class="validation-manual-toggle"><input data-manual-task-id="${escapeHtml(
@@ -172,15 +179,22 @@ function renderIssues(issues) {
             .join("")}
         </div>
         ${toggle}
-        <button class="validation-issue-locate" ${targetId ? "" : "disabled"}
+        <button class="validation-issue-locate"
             data-issue-locate="${escapeHtml(targetId)}"
+            data-issue-target-ids="${escapeHtml(JSON.stringify(targetIds))}"
             data-issue-element-name="${escapeHtml(issue.elementName || "")}"
             data-issue-element-type="${escapeHtml(issue.elementType || "")}"
             type="button">Locate</button>
       </div>
       ${element ? `<div class="validation-issue-element">${escapeHtml(element)}</div>` : ""}
-      <div class="validation-issue-message">${escapeHtml(message)}</div>
-      <div class="validation-issue-guide">${escapeHtml(guide)}</div>
+      <div class="validation-issue-detail">
+        <div class="validation-issue-detail-label">${manual ? "Task" : "What needs attention"}</div>
+        <div class="validation-issue-message">${escapeHtml(message)}</div>
+      </div>
+      <div class="validation-issue-detail validation-issue-fix">
+        <div class="validation-issue-detail-label">${manual ? "How to complete it" : "How to fix it"}</div>
+        <div class="validation-issue-guide">${escapeHtml(guide)}</div>
+      </div>
     </li>`;
   };
   const renderSection = (title, sectionIssues, sectionType) => {
@@ -360,13 +374,17 @@ export function bindValidationCenterUi() {
       return;
     }
     const id = button.getAttribute("data-issue-locate") || "";
-    if (!id) {
-      return;
+    let targetIds = [];
+    try {
+      targetIds = JSON.parse(button.getAttribute("data-issue-target-ids") || "[]");
+    } catch {
+      targetIds = id ? [id] : [];
     }
     window.dispatchEvent(
       new CustomEvent("modless:locate-issue-target", {
         detail: {
           id,
+          targetIds,
           elementName: button.getAttribute("data-issue-element-name") || "",
           elementType: button.getAttribute("data-issue-element-type") || "",
         },
