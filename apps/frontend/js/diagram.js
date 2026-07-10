@@ -148,18 +148,19 @@ function sanitizeRootForType(typeKey, root) {
 }
 
 function buildSaveRootFromBase(typeKey, name) {
-  const root = defaultRootModel(typeKey, name);
   const base = state.baseModel;
   if (!base || typeof base !== "object") {
-    return root;
+    return defaultRootModel(typeKey, name);
   }
-  if (base.id) {
-    root.id = base.id;
-  }
-  if (base.eClass) {
-    root.eClass = base.eClass;
-  }
-  return root;
+  // Start with the configured template so newly introduced defaults are present,
+  // then retain all persisted root attributes edited in the model panel.
+  // Previously only id and eClass were copied, so fields such as domainName
+  // disappeared from every save payload.
+  return {
+    ...defaultRootModel(typeKey, name),
+    ...structuredClone(base),
+    name,
+  };
 }
 
 export function defaultRootModel(typeKey, modelName) {
