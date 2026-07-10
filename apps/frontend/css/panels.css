@@ -96,8 +96,10 @@
   border-radius: 7px;
   background: color-mix(in srgb, var(--input-bg) 88%, var(--surface-contrast) 12%);
   color: var(--text);
+  direction: ltr;
   font: 500 12px/1.3 var(--font-ui);
   padding: 6px 8px;
+  text-align: left;
 }
 
 .model-tree-filter-input:focus {

@@ -505,6 +505,8 @@ function renderModelTree() {
     <div class="model-tree-filter-row">
       <input class="model-tree-filter-input"
              data-model-tree-filter
+             dir="ltr"
+             autocomplete="off"
              placeholder="${placeholder}"
              type="search"
              value="${escapeHtml(modelTreeFilter)}">
@@ -726,9 +728,20 @@ function bindTreeEvents() {
     if (!target?.matches("[data-model-tree-filter]")) {
       return;
     }
+    const selectionStart = target.selectionStart;
+    const selectionEnd = target.selectionEnd;
+    const selectionDirection = target.selectionDirection;
     modelTreeFilter = target.value || "";
     renderModelTree();
-    el.modelTreeBody?.querySelector("[data-model-tree-filter]")?.focus();
+    const filterInput = el.modelTreeBody?.querySelector("[data-model-tree-filter]");
+    filterInput?.focus();
+    if (
+      filterInput instanceof HTMLInputElement &&
+      typeof selectionStart === "number" &&
+      typeof selectionEnd === "number"
+    ) {
+      filterInput.setSelectionRange(selectionStart, selectionEnd, selectionDirection || "none");
+    }
   });
 }
 
