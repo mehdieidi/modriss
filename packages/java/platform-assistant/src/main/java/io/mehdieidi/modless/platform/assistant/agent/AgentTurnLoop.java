@@ -53,7 +53,7 @@ public final class AgentTurnLoop {
     AtomicBoolean canceled = new AtomicBoolean();
     if (cancellations.putIfAbsent(sessionId, canceled) != null)
       throw new PlatformException(409, "An assistant turn is already active for this session.");
-    tools.bind(level, workspace);
+    AgentModelTools turnTools = tools.scoped(level, workspace);
     try {
       publish(sessionId, "assistant.trace.started", Map.of("message", "Started agent turn"));
       String system = systemPrompt(level);
@@ -72,7 +72,7 @@ public final class AgentTurnLoop {
         reply =
             provider.streamWithTools(
                 new AssistantPrompt(AssistantModelRole.RESPONDER, system, user, List.of()),
-                tools,
+                turnTools,
                 delta -> {
                   check(canceled, deadline);
                   publish(sessionId, "assistant.text.delta", Map.of("delta", delta));
@@ -82,7 +82,7 @@ public final class AgentTurnLoop {
       if (reply == null)
         throw new PlatformException(502, "The model provider returned no response.");
       check(canceled, deadline);
-      ModelService.ValidationResult validation = tools.validateModel();
+      ModelService.ValidationResult validation = turnTools.validateModel();
       publish(
           sessionId,
           "assistant.delta.validated",
@@ -90,7 +90,7 @@ public final class AgentTurnLoop {
       if (!validation.valid() && !workspace.patch().isEmpty())
         throw new PlatformException(
             422, "The working model failed structural validation: " + validation.issues());
-      publish(sessionId, "assistant.plan", Map.of("items", tools.plan()));
+      publish(sessionId, "assistant.plan", Map.of("items", turnTools.plan()));
       return new TurnResult(
           reply.content(),
           workspace.patch(),
@@ -99,7 +99,6 @@ public final class AgentTurnLoop {
           reply.provider(),
           reply.model());
     } finally {
-      tools.clear();
       cancellations.remove(sessionId, canceled);
     }
   }

@@ -27,11 +27,29 @@ public final class AgentModelTools {
 
   private final TypeContractService contracts;
   private final ModelService models;
+  /**
+   * Context permanently attached to a tool object created for one agent turn. Spring AI may invoke
+   * tools on its streaming worker rather than the request thread, so this must not rely only on a
+   * ThreadLocal.
+   */
+  private final Context scopedContext;
+  private volatile List<PlanItem> scopedPlan = List.of();
   private final ThreadLocal<Context> context = new ThreadLocal<>();
 
   public AgentModelTools(TypeContractService contracts, ModelService models) {
+    this(contracts, models, null);
+  }
+
+  private AgentModelTools(
+      TypeContractService contracts, ModelService models, Context scopedContext) {
     this.contracts = contracts;
     this.models = models;
+    this.scopedContext = scopedContext;
+  }
+
+  /** Returns an isolated, thread-safe tool object for one working-copy agent turn. */
+  public AgentModelTools scoped(ModelLevel level, ModelWorkspace workspace) {
+    return new AgentModelTools(contracts, models, new Context(level, workspace, List.of()));
   }
 
   public void bind(ModelLevel level, ModelWorkspace workspace) {
@@ -233,11 +251,16 @@ public final class AgentModelTools {
   public List<PlanItem> planWork(List<PlanItem> items) {
     Context current = active();
     List<PlanItem> plan = items == null ? List.of() : List.copyOf(items);
+    if (scopedContext != null) {
+      scopedPlan = plan;
+      return plan;
+    }
     context.set(new Context(current.level(), current.workspace(), plan));
     return plan;
   }
 
   public List<PlanItem> plan() {
+    if (scopedContext != null) return scopedPlan;
     return active().plan();
   }
 
@@ -300,6 +323,7 @@ public final class AgentModelTools {
   }
 
   private Context active() {
+    if (scopedContext != null) return scopedContext;
     Context active = context.get();
     if (active == null)
       throw new PlatformException(409, "No model workspace is bound to this tool call.");

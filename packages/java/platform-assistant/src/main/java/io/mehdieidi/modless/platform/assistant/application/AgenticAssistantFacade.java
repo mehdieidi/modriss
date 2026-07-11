@@ -20,6 +20,7 @@ import io.mehdieidi.modless.platform.kernel.PlatformException;
 import io.mehdieidi.modless.platform.model.application.ModelService;
 import io.mehdieidi.modless.platform.model.domain.ModelRecord;
 import io.mehdieidi.modless.platform.project.application.ProjectService;
+import io.mehdieidi.modless.platform.project.domain.ProjectRecord;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -120,6 +121,14 @@ public final class AgenticAssistantFacade {
     String resolved = modelId;
     if (resolved == null || resolved.isBlank())
       resolved = memory.requireThread(sessionId).activeModelId();
+    if (resolved == null || resolved.isBlank()) {
+      ProjectRecord project = projects.get(user, session.projectId());
+      Map<String, String> active = project.activeModelIds();
+      if (active != null) {
+        resolved = active.get(session.level().apiName());
+        if (resolved == null || resolved.isBlank()) resolved = active.get(session.level().name());
+      }
+    }
     if (resolved == null || resolved.isBlank()) {
       ModelRecord created =
           models.create(

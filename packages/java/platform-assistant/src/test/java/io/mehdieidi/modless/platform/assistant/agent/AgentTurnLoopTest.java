@@ -20,6 +20,7 @@ import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 
 class AgentTurnLoopTest {
@@ -30,7 +31,7 @@ class AgentTurnLoopTest {
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     var tools = new AgentModelTools(new TypeContractService(knowledge), models);
-    AssistantModelProvider provider = new FakeProvider();
+    FakeProvider provider = new FakeProvider();
     List<String> events = new ArrayList<>();
     AgentTurnLoop loop =
         new AgentTurnLoop(
@@ -54,9 +55,11 @@ class AgentTurnLoopTest {
     assertEquals("Done", result.message());
     assertTrue(events.contains("assistant.text.delta"));
     assertTrue(events.contains("assistant.delta.validated"));
+    assertEquals("root", provider.toolThreadModelId);
   }
 
   private static final class FakeProvider implements AssistantModelProvider {
+    private String toolThreadModelId;
     public AssistantProviderMetadata metadata() {
       return new AssistantProviderMetadata("fake", "", "");
     }
@@ -71,6 +74,10 @@ class AgentTurnLoopTest {
 
     public AssistantReply streamWithTools(
         AssistantPrompt prompt, Object tools, java.util.function.Consumer<String> consumer) {
+      toolThreadModelId =
+          CompletableFuture.supplyAsync(
+                  () -> ((AgentModelTools) tools).readModel("").path("id").asText())
+              .join();
       consumer.accept("Do");
       consumer.accept("ne");
       return complete(prompt);
