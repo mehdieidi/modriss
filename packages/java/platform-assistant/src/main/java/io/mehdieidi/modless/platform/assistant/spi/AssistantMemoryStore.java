@@ -1,10 +1,8 @@
 package io.mehdieidi.modless.platform.assistant.spi;
 
-import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantProposal;
 import io.mehdieidi.modless.platform.assistant.domain.memory.AssistantMemoryRecords.ConversationSummary;
 import io.mehdieidi.modless.platform.assistant.domain.memory.AssistantMemoryRecords.MessageRecord;
-import io.mehdieidi.modless.platform.assistant.domain.memory.AssistantMemoryRecords.PendingInteractionRecord;
 import io.mehdieidi.modless.platform.assistant.domain.memory.AssistantMemoryRecords.ProposalRecord;
 import io.mehdieidi.modless.platform.assistant.domain.memory.AssistantMemoryRecords.ThreadRecord;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
@@ -53,16 +51,6 @@ public interface AssistantMemoryStore {
   Optional<ThreadRecord> findThread(String threadId, String userId);
 
   void appendMessage(String threadId, String role, String content, Map<String, Object> metadata);
-
-  void savePendingInteraction(
-      String threadId,
-      io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator.AssistantTurnRequest
-          request,
-      List<AssistantChoice> questions);
-
-  Optional<PendingInteractionRecord> pendingInteraction(String threadId);
-
-  void clearPendingInteraction(String threadId);
 
   List<MessageRecord> recentMessages(String threadId, int limit);
 

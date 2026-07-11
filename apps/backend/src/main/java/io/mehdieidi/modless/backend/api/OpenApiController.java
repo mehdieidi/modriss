@@ -72,7 +72,6 @@ public class OpenApiController {
         "/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo",
         "post",
         "Undo applied assistant proposal");
-    add(paths, "/api/chatbot/sessions/{sessionId}/choices", "post", "Submit assistant choice");
     add(paths, "/ws/chatbot/sessions/{sessionId}", "get", "Open assistant WebSocket stream");
     add(paths, "/api/health", "get", "Get backend health");
     return Map.of(

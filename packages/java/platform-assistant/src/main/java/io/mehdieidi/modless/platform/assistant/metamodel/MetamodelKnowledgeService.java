@@ -38,7 +38,7 @@ public class MetamodelKnowledgeService {
                     422, "Unknown metamodel type: " + typeName));
   }
 
-  /** Returns the extracted knowledge index for retrieval-document generation. */
+  /** Returns the deterministic Ecore knowledge index used by the agent guide and tools. */
   public MetamodelKnowledgeIndex index() {
     return index;
   }

@@ -1,7 +1,7 @@
 package io.mehdieidi.modless.platform.assistant.agent;
 
-import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.application.ProviderCallBudget;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelGuideGenerator;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider.AssistantPrompt;
@@ -85,7 +85,10 @@ public final class AgentTurnLoop {
       throw new PlatformException(409, "An assistant turn is already active for this session.");
     AgentModelTools turnTools = tools.scoped(level, workspace);
     try {
-      ProviderCallBudget.bind(sourceDocument == null || sourceDocument.isBlank() ? maxProviderCalls : Math.max(maxProviderCalls, 3));
+      ProviderCallBudget.bind(
+          sourceDocument == null || sourceDocument.isBlank()
+              ? maxProviderCalls
+              : Math.max(maxProviderCalls, 3));
       publish(sessionId, "assistant.trace.started", Map.of("message", "Started agent turn"));
       String system = systemPrompt(level);
       String initialUser =

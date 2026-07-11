@@ -55,12 +55,10 @@ const RISK_LABELS = Object.freeze({
 
 let chatBusyDepth = 0;
 let chatActivityHistory = [];
-let suppressChoiceRealtime = false;
 let activeThinkingEl = null;
 let thinkingSteps = [];
 let thinkingStartTime = 0;
 let thinkingProgress = null;
-let sourceCoverageState = null;
 let activeTurnCanceling = false;
 let streamingAssistantEl = null;
 let streamingAssistantText = "";
@@ -193,7 +191,6 @@ export function resetChatForProjectChange() {
   state.chat.sessions.clear();
   state.chat.attachment = null;
   state.chat.historyOpen = false;
-  suppressChoiceRealtime = false;
   renderedChatScopeKey = null;
   resetChatActivityUi();
   closeChatHistoryPanel();
@@ -253,7 +250,6 @@ function ensureThinkingStream(initialMessage = null, stage = "PLANNING") {
     activeThinkingEl = msg;
     thinkingSteps = [];
     thinkingProgress = null;
-    sourceCoverageState = null;
     thinkingStartTime = Date.now();
   }
   if (initialMessage) {
@@ -265,44 +261,22 @@ function ensureThinkingStream(initialMessage = null, stage = "PLANNING") {
 
 function renderThinkingSteps() {
   const status = activeThinkingEl?.querySelector(".chat-thinking-status");
-  if (!status) {
-    return;
-  }
+  if (!status) return;
   const current = thinkingSteps[thinkingSteps.length - 1] || null;
   const stage = status.querySelector(".chat-thinking-step-stage");
   const detail = status.querySelector(".chat-thinking-step-detail");
   const progress = status.querySelector(".chat-thinking-progress");
-  if (stage) {
-    stage.textContent = THINKING_STAGE_LABELS[current?.stage] || current?.stage || "Creating model";
-  }
-  if (detail) {
-    detail.textContent = current?.message || "Creating the model and updating the canvas.";
-  }
+  if (stage)
+    stage.textContent = THINKING_STAGE_LABELS[current?.stage] || current?.stage || "Working";
+  if (detail) detail.textContent = current?.message || "Working with the model.";
   if (progress) {
     const index = Number(thinkingProgress?.index) || 0;
     const count = Number(thinkingProgress?.count) || 0;
-    if (index && count) {
-      progress.textContent = `${Math.min(index, count)} / ${count}`;
-      progress.classList.remove("hidden");
-      const bar = ensureSourceCoverageBar(status);
-      if (bar) {
-        const pct = Math.min(100, Math.round((Math.min(index, count) / count) * 100));
-        bar.style.width = `${pct}%`;
-        bar.parentElement?.classList.remove("hidden");
-      }
-    } else if (sourceCoverageState?.chunks?.length) {
-      progress.textContent = "";
-      progress.classList.add("hidden");
-      renderSourceCoverageMatrix(status, sourceCoverageState);
-    } else {
-      progress.textContent = "";
-      progress.classList.add("hidden");
-      status.querySelector(".chat-source-coverage")?.remove();
-    }
+    progress.textContent = index && count ? `${index} / ${count}` : "";
+    progress.classList.toggle("hidden", !(index && count));
   }
   scrollChatToBottom();
 }
-
 function pushThinkingStep(message, stage = null) {
   if (!message) {
     return;
@@ -316,105 +290,6 @@ function pushThinkingStep(message, stage = null) {
   thinkingSteps = chatActivityHistory.map((item) => ({ ...item }));
   renderThinkingSteps();
   el.chatTypingIndicator?.classList.add("hidden");
-}
-
-function ensureSourceCoverageBar(status) {
-  let track = status.querySelector(".chat-source-coverage-bar");
-  if (!track) {
-    track = document.createElement("div");
-    track.className = "chat-source-coverage-bar hidden";
-    const fill = document.createElement("div");
-    fill.className = "chat-source-coverage-bar-fill";
-    track.appendChild(fill);
-    status.appendChild(track);
-  }
-  return track.querySelector(".chat-source-coverage-bar-fill");
-}
-
-function coverageStatusClass(status) {
-  const normalized = String(status || "").toUpperCase();
-  if (normalized === "COVERED") {
-    return "is-covered";
-  }
-  if (normalized === "COMPRESSED") {
-    return "is-compressed";
-  }
-  if (normalized === "NEEDS_CLARIFICATION") {
-    return "is-gap";
-  }
-  return "is-pending";
-}
-
-function renderSourceCoverageMatrix(status, coverage) {
-  let matrix = status.querySelector(".chat-source-coverage");
-  if (!matrix) {
-    matrix = document.createElement("div");
-    matrix.className = "chat-source-coverage";
-    status.appendChild(matrix);
-  }
-  matrix.replaceChildren();
-  const heading = document.createElement("div");
-  heading.className = "chat-source-coverage-heading";
-  heading.textContent = `Source chunks ${coverage.covered}/${coverage.total}`;
-  matrix.appendChild(heading);
-  const list = document.createElement("div");
-  list.className = "chat-source-coverage-chunks";
-  for (const chunk of coverage.chunks) {
-    const item = document.createElement("span");
-    item.className = `chat-source-coverage-chunk ${coverageStatusClass(chunk.status)}`;
-    item.title = chunk.message || chunk.status || "";
-    item.textContent = chunk.chunkId || chunk.status || "?";
-    list.appendChild(item);
-  }
-  matrix.appendChild(list);
-}
-
-function trackSourceCoverageEvent(payload) {
-  const total = Number(payload?.totalChunks) || 0;
-  if (!total) {
-    return;
-  }
-  if (!sourceCoverageState) {
-    sourceCoverageState = { total, covered: 0, chunks: [] };
-  }
-  sourceCoverageState.total = total;
-  sourceCoverageState.covered =
-    Number(payload?.processedChunks ?? payload?.coveredChunks) || sourceCoverageState.covered;
-  const chunkId = payload?.chunkId || `chunk-${sourceCoverageState.chunks.length + 1}`;
-  const status = payload?.status || "PENDING";
-  const existing = sourceCoverageState.chunks.find((entry) => entry.chunkId === chunkId);
-  const entry = {
-    chunkId,
-    status,
-    message: payload?.message || "",
-  };
-  if (existing) {
-    Object.assign(existing, entry);
-  } else {
-    sourceCoverageState.chunks.push(entry);
-  }
-}
-
-function appendSourceCoverageSummary(bubble, coverage) {
-  if (!coverage || !coverage.total) {
-    return;
-  }
-  const summary = document.createElement("div");
-  summary.className = "chat-source-coverage-summary";
-  summary.textContent = `Source coverage: ${coverage.covered}/${coverage.total} chunks`;
-  bubble.appendChild(summary);
-  if (coverage.chunks?.length) {
-    const list = document.createElement("div");
-    list.className = "chat-source-coverage-chunks";
-    for (const chunk of coverage.chunks) {
-      const item = document.createElement("span");
-      item.className = `chat-source-coverage-chunk ${coverageStatusClass(chunk.status)}`;
-      item.title = chunk.message || chunk.status || "";
-      item.textContent = chunk.chunkId || chunk.status || "?";
-      list.appendChild(item);
-    }
-    bubble.appendChild(list);
-  }
 }
 
 function updateThinkingStatus(message, stage = null, progress = null) {
@@ -447,15 +322,10 @@ function finalizeThinkingStream() {
   summaryEl.className = "chat-thinking-summary";
   summaryEl.textContent = `Worked for ${durationSec}s`;
   bubble.appendChild(summaryEl);
-  if (sourceCoverageState?.total) {
-    appendSourceCoverageSummary(bubble, sourceCoverageState);
-  }
-
   activeThinkingEl = null;
   thinkingSteps = [];
   chatActivityHistory = [];
   thinkingProgress = null;
-  sourceCoverageState = null;
   activeTurnCanceling = false;
   scrollChatToBottom();
 }
@@ -466,7 +336,6 @@ function clearThinkingStream() {
   thinkingSteps = [];
   chatActivityHistory = [];
   thinkingProgress = null;
-  sourceCoverageState = null;
   activeTurnCanceling = false;
 }
 
@@ -915,14 +784,11 @@ async function hydrateChatThread(typeKey, sessionId) {
   try {
     const thread = await api(`/chatbot/sessions/${sessionId}/thread`);
     const hasMessages = Array.isArray(thread.messages) && thread.messages.length > 0;
-    const hasPending = Array.isArray(thread.pendingChoices) && thread.pendingChoices.length > 0;
     const hasProposal = Boolean(thread.proposal);
-
-    if (!hasMessages && !hasPending && !hasProposal) {
+    if (!hasMessages && !hasProposal) {
       resetChatActivityUi();
       return;
     }
-
     if (hasMessages) {
       el.chatMessages.innerHTML = "";
       for (const message of thread.messages) {
@@ -930,29 +796,15 @@ async function hydrateChatThread(typeKey, sessionId) {
         appendChat(role, message.content || "");
       }
     }
-    if (thread.proposal) {
-      appendProposalCard(typeKey, sessionId, thread.proposal);
-    } else if (hasPending) {
-      appendChoiceButtons(typeKey, sessionId, thread.pendingChoices);
-    }
-
-    const workflowState = hasPending ? "WAITING_FOR_CHOICE" : thread.workflowState;
-    if (workflowState) {
-      applyWorkflowSnapshot(
-        workflowState,
-        workflowState === "WAITING_FOR_CHOICE"
-          ? "Answer the question below to continue"
-          : workflowLabel(workflowState),
-      );
-    } else {
-      resetChatActivityUi();
-    }
+    if (thread.proposal) appendProposalCard(typeKey, sessionId, thread.proposal);
+    if (thread.workflowState)
+      applyWorkflowSnapshot(thread.workflowState, workflowLabel(thread.workflowState));
+    else resetChatActivityUi();
     updateChatProviderLabel(thread.provider);
   } catch {
     resetChatActivityUi();
   }
 }
-
 export async function clearChatConversation() {
   return startNewChatConversation();
 }
@@ -996,10 +848,6 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
     const payload = JSON.parse(event.data)?.payload;
     handleChatRealtimeEvent(typeKey, "model.updated", payload);
   });
-  stream.addEventListener("assistant.choice", (event) => {
-    const payload = JSON.parse(event.data)?.payload;
-    handleChatRealtimeEvent(typeKey, "assistant.choice", payload);
-  });
   stream.addEventListener("assistant.progress", (event) => {
     const payload = JSON.parse(event.data)?.payload;
     handleChatRealtimeEvent(typeKey, "assistant.progress", payload);
@@ -1014,9 +862,6 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
     "assistant.trace.step",
     "assistant.tool.started",
     "assistant.tool.completed",
-    "assistant.delta.drafted",
-    "assistant.delta.validated",
-    "assistant.source.coverage",
     "assistant.turn.completed",
     "assistant.turn.failed",
   ]) {
@@ -1089,36 +934,7 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
     );
     return;
   }
-  if (eventType === "assistant.delta.drafted") {
-    updateThinkingStatus(payload?.message || "Drafted model operations.", "PREVIEWING_PATCH");
-    return;
-  }
-  if (eventType === "assistant.delta.validated") {
-    updateThinkingStatus(payload?.message || "Validated model operations.", "VALIDATING");
-    return;
-  }
-  if (eventType === "assistant.source.coverage") {
-    trackSourceCoverageEvent(payload);
-    const processed = Number(payload?.processedChunks ?? payload?.coveredChunks) || 0;
-    const total = Number(payload?.totalChunks) || 0;
-    const chunkLabel = payload?.chunkId ? ` (${payload.chunkId})` : "";
-    const statusLabel = payload?.status ? ` ${payload.status}` : "";
-    updateThinkingStatus(
-      payload?.message ||
-        `Source coverage${chunkLabel}:${statusLabel} ${processed}/${total || "?"}`,
-      "ANALYZING_SOURCE",
-      total > 0 ? { index: processed, count: total } : null,
-    );
-    return;
-  }
   if (eventType === "assistant.turn.completed" || eventType === "assistant.turn.failed") {
-    if (payload?.coverageSummary) {
-      sourceCoverageState = {
-        total: Number(payload.coverageSummary.totalChunks) || 0,
-        covered: Number(payload.coverageSummary.coveredChunks) || 0,
-        chunks: Array.isArray(payload.coverageSummary.chunks) ? payload.coverageSummary.chunks : [],
-      };
-    }
     if (chatBusyDepth === 0) {
       applyWorkflowSnapshot(
         payload?.workflowState || (eventType.endsWith("failed") ? "FAILED" : "APPLIED"),
@@ -1145,7 +961,6 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
     if (sessionId && chatBusyDepth === 0) {
       appendProposalCard(typeKey, sessionId, payload?.proposal);
       if (!payload?.proposal) {
-        appendChoiceButtons(typeKey, sessionId, payload?.choices);
       }
     }
     if (payload?.workflowState && chatBusyDepth === 0) {
@@ -1156,13 +971,6 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
     }
     if (payload?.workflowState === "FAILED") {
       clearAssistantModelPreview({ restore: true });
-    }
-    return;
-  }
-
-  if (eventType === "assistant.choice") {
-    if (!suppressChoiceRealtime) {
-      appendAssistantDeduped("Choice recorded.");
     }
     return;
   }
@@ -1412,226 +1220,6 @@ function setProposalDecision(card, label) {
   actions.appendChild(status);
 }
 
-function choiceMentionsAttachment(choice) {
-  const text = [
-    choice?.prompt,
-    ...(choice?.options || []).flatMap((option) => [option?.label, option?.description]),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-  return /\b(file|attachment|document|upload|attach|reattach|paste|contents?|\.md|\.txt|\.json)\b/.test(
-    text,
-  );
-}
-
-function buildChoiceAttachmentControl() {
-  const wrap = document.createElement("div");
-  wrap.className = "chat-question-attachment";
-  const status = document.createElement("div");
-  status.className = "chat-question-attachment-status";
-  const button = document.createElement("label");
-  button.className = "chat-question-upload-btn";
-  button.textContent = state.chat.attachment?.name ? "Replace attachment" : "Upload file";
-  const input = document.createElement("input");
-  input.accept = ".txt,.md,.json";
-  input.type = "file";
-  input.addEventListener("change", async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-    if (file.size > CHAT_ATTACHMENT_MAX_BYTES) {
-      event.target.value = "";
-      setError(`File too large (${file.size} bytes). Max ${CHAT_ATTACHMENT_MAX_BYTES} bytes.`);
-      return;
-    }
-    try {
-      status.textContent = `Uploading: ${file.name}`;
-      const attachment = await uploadChatAttachment(file);
-      state.chat.attachment = {
-        id: attachment.id,
-        name: attachment.fileName || file.name,
-        sizeBytes: attachment.sizeBytes || file.size,
-      };
-      status.textContent = `Attached: ${state.chat.attachment.name}`;
-      button.textContent = "Replace attachment";
-      updateChatAttachmentLabel();
-    } catch (error) {
-      event.target.value = "";
-      status.textContent = "";
-      setError(error, { prefix: "Failed to read file." });
-    }
-  });
-  button.appendChild(input);
-  status.textContent = state.chat.attachment?.name
-    ? `Attached: ${state.chat.attachment.name}`
-    : "Attach the requested .md, .txt, or .json file here.";
-  wrap.append(status, button);
-  return wrap;
-}
-
-function appendChoiceButtons(typeKey, sessionId, choices) {
-  if (!Array.isArray(choices) || !choices.length) {
-    return;
-  }
-  const interactionId = choices
-    .map((choice) => choice.id)
-    .filter(Boolean)
-    .join("--");
-  if (
-    interactionId &&
-    el.chatMessages.querySelector(`[data-chat-choice-id="${CSS.escape(interactionId)}"]`)
-  ) {
-    return;
-  }
-  const card = document.createElement("div");
-  card.className = "chat-msg assistant";
-  card.dataset.chatKind = "choice";
-  if (interactionId) {
-    card.dataset.chatChoiceId = interactionId;
-  }
-  const bubble = document.createElement("div");
-  bubble.className = "chat-msg-bubble";
-  const heading = document.createElement("div");
-  heading.className = "chat-question-heading";
-  heading.textContent =
-    choices.length === 1 ? "One decision needed" : `${choices.length} decisions needed`;
-  bubble.appendChild(heading);
-
-  const form = document.createElement("form");
-  form.className = "chat-question-form";
-  const fields = [];
-  for (const [questionIndex, choice] of choices.entries()) {
-    const fieldset = document.createElement("fieldset");
-    fieldset.className = "chat-question";
-    const legend = document.createElement("legend");
-    legend.textContent = choice.prompt || "Choose an option.";
-    fieldset.appendChild(legend);
-    const inputType = choice.selectionMode === "MULTIPLE" ? "checkbox" : "radio";
-    const name = `assistant-question-${interactionId}-${questionIndex}`;
-    for (const option of choice.options || []) {
-      const label = document.createElement("label");
-      label.className = "chat-question-option";
-      const input = document.createElement("input");
-      input.type = inputType;
-      input.name = name;
-      input.value = option.id;
-      const copy = document.createElement("span");
-      const title = document.createElement("strong");
-      title.textContent = option.label || option.id;
-      copy.appendChild(title);
-      if (option.description) {
-        const description = document.createElement("small");
-        description.textContent = option.description;
-        copy.appendChild(description);
-      }
-      label.append(input, copy);
-      fieldset.appendChild(label);
-    }
-    let freeText = null;
-    if (choice.allowFreeText) {
-      freeText = document.createElement("textarea");
-      freeText.className = "chat-question-free-text";
-      freeText.rows = 2;
-      freeText.placeholder = "Add another answer or useful detail";
-      fieldset.appendChild(freeText);
-    }
-    fields.push({ choice, fieldset, name, freeText });
-    form.appendChild(fieldset);
-  }
-  const supportsAttachment =
-    choices.some(choiceMentionsAttachment) || Boolean(state.chat.attachment);
-  if (supportsAttachment) {
-    form.appendChild(buildChoiceAttachmentControl());
-  }
-
-  const actions = document.createElement("div");
-  actions.className = "chat-proposal-actions";
-  const submit = document.createElement("button");
-  submit.type = "submit";
-  submit.textContent = "Continue";
-  actions.appendChild(submit);
-  form.appendChild(actions);
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    let response = null;
-    const answers = fields.map(({ choice, fieldset, name, freeText }) => ({
-      choiceId: choice.id,
-      optionIds: [...fieldset.querySelectorAll(`input[name="${CSS.escape(name)}"]:checked`)].map(
-        (input) => input.value,
-      ),
-      freeText: freeText?.value.trim() || "",
-    }));
-    if (answers.some((answer) => !answer.optionIds.length && !answer.freeText)) {
-      appendChat("assistant", "Please answer each question before continuing.");
-      return;
-    }
-    try {
-      beginChatActivity("Using your answers to continue the model change");
-      setProposalActionsDisabled(actions, true);
-      for (const input of form.querySelectorAll("input, textarea")) {
-        input.disabled = true;
-      }
-      const answerSummary = answers
-        .map((answer) => {
-          const question = fields.find((field) => field.choice.id === answer.choiceId)?.choice;
-          const labels = (question?.options || [])
-            .filter((option) => answer.optionIds.includes(option.id))
-            .map((option) => option.label)
-            .join(", ");
-          return [question?.prompt, labels, answer.freeText].filter(Boolean).join(": ");
-        })
-        .join("\n");
-      if (answerSummary) {
-        const summary = document.createElement("div");
-        summary.className = "chat-question-answers";
-        summary.textContent = answerSummary;
-        bubble.appendChild(summary);
-      }
-      suppressChoiceRealtime = true;
-      response = await api(`/chatbot/sessions/${sessionId}/choices`, {
-        method: "POST",
-        body: JSON.stringify({
-          answers,
-          attachmentIds: state.chat.attachment?.id ? [state.chat.attachment.id] : [],
-        }),
-      });
-      suppressChoiceRealtime = false;
-      applyHttpActivity(response);
-      endChatActivity(null, response?.workflowState || null);
-      setProposalDecision(card, "Answered");
-      appendAssistantDeduped(response.assistantMessage || "Clarification received");
-      appendProposalCard(typeKey, sessionId, response.proposal);
-      if (!response.proposal) {
-        appendChoiceButtons(typeKey, sessionId, response.choices);
-      }
-      await applyAssistantModelResponse(typeKey, response);
-      if (!["WAITING_FOR_CHOICE", "FAILED"].includes(response?.workflowState)) {
-        state.chat.attachment = null;
-        if (el.chatFileInput) {
-          el.chatFileInput.value = "";
-        }
-        updateChatAttachmentLabel();
-      }
-    } catch (error) {
-      suppressChoiceRealtime = false;
-      if (chatBusyDepth > 0) {
-        endChatActivity("Could not continue with your answers.", "FAILED");
-      }
-      setProposalActionsDisabled(actions, false);
-      for (const input of form.querySelectorAll("input, textarea")) {
-        input.disabled = false;
-      }
-      appendChat("assistant", formatUserError(error));
-    }
-  });
-  bubble.appendChild(form);
-  card.appendChild(bubble);
-  el.chatMessages.appendChild(card);
-  el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
-}
-
 async function applyAssistantModelResponse(
   typeKey,
   response,
@@ -1783,7 +1371,6 @@ export async function sendChatMessage() {
     appendAssistantDeduped(response.assistantMessage || "Done");
     appendProposalCard(state.activeType, session.sessionId, response.proposal);
     if (!response.proposal) {
-      appendChoiceButtons(state.activeType, session.sessionId, response.choices);
     }
     await applyAssistantModelResponse(
       state.activeType,

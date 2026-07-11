@@ -39,7 +39,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxProviderCallsSourceTurn maximum provider calls when source analysis runs
  * @param llmContractRerankEnabled whether hybrid retrieval may invoke LLM reranking
  * @param sourceTurnTimeout overall assistant turn timeout when a source attachment is present
- * @param maxModelDeltaElementsPerPass maximum new elements accepted from one ModelDelta response
  * @param maxCimModelingPasses maximum incremental CIM modeling passes per source-backed turn
  * @param preferLlmSourceExtraction whether CIM attachments use LLM evidence extraction
  */
@@ -59,7 +58,6 @@ public record AiProperties(
     int reservedSchemaSnippets,
     String fallbackProvider,
     Hardening hardening,
-    Embeddings embeddings,
     Proxy proxy,
     OpenAiCompatible openaiCompatible,
     Gemini gemini,
@@ -74,7 +72,6 @@ public record AiProperties(
     int maxProviderCallsSourceTurn,
     boolean llmContractRerankEnabled,
     Duration sourceTurnTimeout,
-    int maxModelDeltaElementsPerPass,
     int maxCimModelingPasses,
     boolean preferLlmSourceExtraction)
     implements AssistantSettings {
@@ -106,10 +103,6 @@ public record AiProperties(
             ? new Hardening(
                 30, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 2, Duration.ofMillis(250), 12)
             : hardening;
-    embeddings =
-        embeddings == null
-            ? new Embeddings(null, null, null, null, null, false, -1, true)
-            : embeddings;
     proxy = proxy == null ? new Proxy(false, ProxyType.HTTP, null, null, null) : proxy;
     openaiCompatible =
         openaiCompatible == null ? new OpenAiCompatible(null, null) : openaiCompatible;
@@ -118,19 +111,12 @@ public record AiProperties(
     maxProviderCallsPerTurn = maxProviderCallsPerTurn <= 0 ? 8 : maxProviderCallsPerTurn;
     maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 12 : maxProviderCallsSourceTurn;
     sourceTurnTimeout = sourceTurnTimeout == null ? Duration.ofMinutes(12) : sourceTurnTimeout;
-    maxModelDeltaElementsPerPass =
-        maxModelDeltaElementsPerPass <= 0 ? 40 : maxModelDeltaElementsPerPass;
     maxCimModelingPasses = maxCimModelingPasses <= 0 ? 4 : maxCimModelingPasses;
   }
 
   @Override
   public Duration sourceTurnTimeout() {
     return sourceTurnTimeout;
-  }
-
-  @Override
-  public int maxModelDeltaElementsPerPass() {
-    return maxModelDeltaElementsPerPass;
   }
 
   @Override
@@ -243,46 +229,6 @@ public record AiProperties(
     HTTP,
     /** SOCKS proxy, Nekoray default port 2082. */
     SOCKS
-  }
-
-  /** Local embedding providers. */
-  public enum EmbeddingProvider {
-    /** Spring AI ONNX sentence-transformer embeddings. */
-    ONNX,
-    /** Deterministic local hash embeddings for fallback and tests. */
-    HASH
-  }
-
-  /**
-   * Local embedding settings.
-   *
-   * @param provider embedding implementation
-   * @param modelResource optional ONNX model resource URI/path
-   * @param tokenizerResource optional tokenizer resource URI/path
-   * @param modelOutputName optional ONNX output tensor name
-   * @param cacheDirectory optional Spring AI transformers cache directory
-   * @param disableCaching whether Spring AI transformers caching is disabled
-   * @param gpuDeviceId optional GPU device, negative for CPU/default
-   * @param fallbackToHash whether ONNX initialization failures fall back to hash vectors
-   */
-  public record Embeddings(
-      EmbeddingProvider provider,
-      String modelResource,
-      String tokenizerResource,
-      String modelOutputName,
-      String cacheDirectory,
-      boolean disableCaching,
-      int gpuDeviceId,
-      boolean fallbackToHash) {
-
-    /** Applies local ONNX defaults with safe fallback. */
-    public Embeddings {
-      provider = provider == null ? EmbeddingProvider.ONNX : provider;
-      modelResource = modelResource == null ? "" : modelResource.trim();
-      tokenizerResource = tokenizerResource == null ? "" : tokenizerResource.trim();
-      modelOutputName = modelOutputName == null ? "" : modelOutputName.trim();
-      cacheDirectory = cacheDirectory == null ? "" : cacheDirectory.trim();
-    }
   }
 
   /**

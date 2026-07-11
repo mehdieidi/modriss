@@ -5,7 +5,6 @@ import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
-import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
@@ -22,7 +21,6 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       AiProperties properties,
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
-      AssistantToolService tools,
       AssistantHardeningService hardening,
       RestClient.Builder restClientBuilder) {
     super(
@@ -30,7 +28,6 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
         properties,
         proxyAvailability,
         promptGuard,
-        tools,
         hardening,
         ChatClient.create(chatModel(properties, restClientBuilder)));
   }
@@ -98,10 +95,5 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       case SUMMARIZER -> 800;
       case RESPONDER -> 3000;
     };
-  }
-
-  @Override
-  protected boolean registerTools(AssistantModelRole role) {
-    return role != AssistantModelRole.PLANNER;
   }
 }

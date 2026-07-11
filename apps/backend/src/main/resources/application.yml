@@ -29,6 +29,7 @@ spring:
       validation-timeout: 5000
   flyway:
     enabled: true
+    ignore-migration-patterns: "*:missing"
     locations:
       - classpath:db/migration
       - classpath:db/assistant-migration
@@ -63,25 +64,15 @@ modless:
     provider: ${MODLESS_AI_PROVIDER:openai}
     request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:5m}
     turn-timeout: ${MODLESS_AI_TURN_TIMEOUT:5m}
-    max-tool-calls: ${MODLESS_AI_MAX_TOOL_CALLS:24}
     max-agent-steps: ${MODLESS_AI_MAX_AGENT_STEPS:8}
-    max-tool-calls-per-step: ${MODLESS_AI_MAX_TOOL_CALLS_PER_STEP:4}
     token-budget: ${MODLESS_AI_TOKEN_BUDGET:16000}
     max-prompt-tokens: ${MODLESS_AI_MAX_PROMPT_TOKENS:24000}
-    max-context-snippets: ${MODLESS_AI_MAX_CONTEXT_SNIPPETS:24}
-    reserved-schema-snippets: ${MODLESS_AI_RESERVED_SCHEMA_SNIPPETS:10}
-    max-snippet-chars: ${MODLESS_AI_MAX_SNIPPET_CHARS:2400}
     max-system-chars: ${MODLESS_AI_MAX_SYSTEM_CHARS:14000}
-    max-repair-attempts: ${MODLESS_AI_MAX_REPAIR_ATTEMPTS:1}
     max-source-chunk-tokens: ${MODLESS_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
     max-source-chunks-per-turn: ${MODLESS_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
     max-provider-calls-per-turn: ${MODLESS_AI_MAX_PROVIDER_CALLS_PER_TURN:8}
     max-provider-calls-source-turn: ${MODLESS_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:12}
     source-turn-timeout: ${MODLESS_AI_SOURCE_TURN_TIMEOUT:12m}
-    max-model-delta-elements-per-pass: ${MODLESS_AI_MAX_MODEL_DELTA_ELEMENTS_PER_PASS:40}
-    max-cim-modeling-passes: ${MODLESS_AI_MAX_CIM_MODELING_PASSES:4}
-    prefer-llm-source-extraction: ${MODLESS_AI_PREFER_LLM_SOURCE_EXTRACTION:true}
-    require-idempotency-key: ${MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY:false}
     fallback-provider: ${MODLESS_AI_FALLBACK_PROVIDER:}
     hardening:
       per-user-requests-per-window: ${MODLESS_AI_RATE_LIMIT_REQUESTS:30}

@@ -82,14 +82,11 @@ The modeling frontend uses the AntV G6 canvas renderer.
 | `MODLESS_AI_RECENT_MESSAGE_WINDOW`      | `24`                             |
 | `MODLESS_AI_FALLBACK_PROVIDER`          | empty (used on HTTP 429 only)    |
 
-The assistant exposes one modeling mutation protocol, `ModelDelta`. The backend compiles the delta
-into internal patch operations, structurally validates it, and applies valid turns atomically.
+The assistant uses validated tools over an in-memory model workspace. The backend structurally
+validates the workspace and applies valid turns atomically.
 
 Provider variables include `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`,
 `GEMINI_API_KEY`, and role-specific planner, responder, and summarizer model names.
-
-Embedding variables default to `ONNX` with hash fallback for constrained local environments. Related
-variables cover resources, cache behavior, GPU device, and hash fallback.
 
 Dedicated AI proxy variables configure HTTP or SOCKS proxy behavior for provider calls only.
 

@@ -1,11 +1,8 @@
 package io.mehdieidi.modless.platform.assistant.domain.memory;
 
-import io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator;
-import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantProposal;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 
 /** Durable assistant conversation, proposal, and audit records. */
@@ -53,13 +50,6 @@ public final class AssistantMemoryRecords {
       String role,
       String content,
       Map<String, Object> metadata,
-      Instant createdAt) {}
-
-  /** Durable clarification awaiting user answers. */
-  public record PendingInteractionRecord(
-      String threadId,
-      AssistantOrchestrator.AssistantTurnRequest request,
-      List<AssistantChoice> questions,
       Instant createdAt) {}
 
   /**

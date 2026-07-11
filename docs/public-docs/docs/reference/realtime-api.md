@@ -8,7 +8,7 @@ Assistant commands use REST. Realtime transports publish receive-only progress a
 2. Open SSE or WebSocket for the returned `sessionId`.
 3. Submit messages with `POST /api/chatbot/sessions/{sessionId}/messages`.
 4. Optionally upload text attachments with `POST /api/chatbot/sessions/{sessionId}/attachments`.
-5. Answer structured clarifications with `POST /api/chatbot/sessions/{sessionId}/choices`.
+5. Submit follow-up messages through the normal message endpoint when the agent needs clarification.
 6. Undo an applied change with `POST /api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo`.
 7. Clear the session with `DELETE /api/chatbot/sessions/{sessionId}`.
 
@@ -58,21 +58,22 @@ SSE sets `event: <type>` and sends the full envelope as data. WebSocket sends th
 
 ### Event Types
 
-| Event type                  | Purpose                                      |
-| --------------------------- | -------------------------------------------- |
-| `assistant.ready`           | Stream connected                             |
-| `assistant.trace.started`   | Turn accepted with deadline                  |
-| `assistant.trace.step`      | User-visible planning/validation stage       |
-| `assistant.progress`        | Turn stage updates (legacy alias)            |
-| `assistant.tool.started`    | Agent tool invocation began                  |
-| `assistant.tool.completed`  | Agent tool invocation finished               |
-| `assistant.delta.drafted`   | Draft `ModelDelta` compiled for preview      |
-| `assistant.delta.validated` | Structural validation summary                |
-| `assistant.model.preview`   | Incremental validated preview during compile |
-| `assistant.turn.completed`  | Successful terminal turn                     |
-| `assistant.turn.failed`     | Failed terminal turn                         |
-| `chat.assistant`            | Completed turn payload                       |
-| `model.updated`             | Model revision changed after apply or undo   |
+| Event type                   | Purpose                                    |
+| ---------------------------- | ------------------------------------------ |
+| `assistant.ready`            | Stream connected                           |
+| `assistant.trace.started`    | Turn accepted with deadline                |
+| `assistant.trace.step`       | User-visible planning/validation stage     |
+| `assistant.progress`         | Turn stage updates (legacy alias)          |
+| `assistant.tool.started`     | Agent tool invocation began                |
+| `assistant.tool.completed`   | Agent tool invocation finished             |
+| `assistant.plan`             | Agent-maintained work plan                 |
+| `assistant.worker.started`   | Source-document worker started             |
+| `assistant.worker.completed` | Source-document worker completed           |
+| `model.delta`                | Validated working-copy model delta         |
+| `assistant.turn.completed`   | Successful terminal turn                   |
+| `assistant.turn.failed`      | Failed terminal turn                       |
+| `chat.assistant`             | Completed turn payload                     |
+| `model.updated`              | Model revision changed after apply or undo |
 
 Common `assistant.progress` stages include `READING_MODEL`, `PLANNING`, `QUERYING_METAMODEL`,
 `PREVIEWING_PATCH`, `VALIDATING`, `COMPLETING`, `APPLYING`, and `ANALYZING_SOURCE`.
@@ -84,10 +85,8 @@ Common `assistant.progress` stages include `READING_MODEL`, `PLANNING`, `QUERYIN
 | `GET`  | `/api/chatbot/conversations`                                    |
 | `GET`  | `/api/chatbot/sessions/{sessionId}/thread`                      |
 | `POST` | `/api/chatbot/sessions/{sessionId}/attachments`                 |
-| `POST` | `/api/chatbot/catalogs/reindex`                                 |
 | `GET`  | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`      |
 | `POST` | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo` |
-| `POST` | `/api/chatbot/sessions/{sessionId}/choices`                     |
 
 ## Transport Notes
 

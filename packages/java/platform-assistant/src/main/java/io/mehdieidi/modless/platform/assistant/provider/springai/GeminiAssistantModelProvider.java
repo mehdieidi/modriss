@@ -9,7 +9,6 @@ import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
-import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
@@ -24,14 +23,12 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
       AiProperties properties,
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
-      AssistantToolService tools,
       AssistantHardeningService hardening) {
     super(
         AiProperties.Provider.GEMINI.key(),
         properties,
         proxyAvailability,
         promptGuard,
-        tools,
         hardening,
         ChatClient.create(chatModel(properties)));
   }
@@ -106,10 +103,5 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
       case SUMMARIZER -> 800;
       case RESPONDER -> 3000;
     };
-  }
-
-  @Override
-  protected boolean registerTools(AssistantModelRole role) {
-    return false;
   }
 }

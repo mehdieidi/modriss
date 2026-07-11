@@ -285,7 +285,7 @@ public class AssistantMetamodelSchemaService {
     };
   }
 
-  /** Compact, dynamically generated language index used for retrieval and planning. */
+  /** Compact, dynamically generated language index used by the agent guide and tools. */
   public String languageIndex(ModelLevel level) {
     LevelSchema schema = schema(level);
     String root =
@@ -345,9 +345,8 @@ public class AssistantMetamodelSchemaService {
   }
 
   /**
-   * Returns type contracts from the Ecore-derived metamodel. Relevance is decided by the LLM
-   * retrieval plan before this method is used; this fallback deliberately does not inspect prompt
-   * words.
+   * Returns type contracts from the Ecore-derived metamodel. Relevance is decided by the LLM guide
+   * before this method is used; this fallback deliberately does not inspect prompt words.
    *
    * @param level model level
    * @param request user message

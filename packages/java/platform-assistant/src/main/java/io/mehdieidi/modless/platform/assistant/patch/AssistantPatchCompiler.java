@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.mehdieidi.modless.platform.assistant.delta.PimDeployablePlacement;
 import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import io.mehdieidi.modless.platform.model.application.ModelService;
@@ -14,6 +13,8 @@ import java.util.Optional;
 
 /** Compiles semantic assistant operations into backend model patch operations. */
 public class AssistantPatchCompiler {
+
+  private static final String DEFAULT_SERVICE_LOCAL_ID = "__assistant_default_service__";
 
   private final AssistantMetamodelSchemaService schemas;
 
@@ -29,7 +30,7 @@ public class AssistantPatchCompiler {
    * Compiles semantic operations against a model snapshot.
    *
    * @param modelJson model JSON
-   * @param semantic backend operation IR compiled from ModelDelta
+   * @param semantic backend operation IR produced by validated agent tools
    * @return compiled patch
    */
   public CompiledPatch compile(JsonNode modelJson, SemanticModelPatch semantic) {
@@ -526,9 +527,7 @@ public class AssistantPatchCompiler {
                 operation ->
                     operation != null
                         && operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT
-                        && PimDeployablePlacement.serviceContainmentFeature(
-                                schemas, operation.elementType())
-                            .isPresent()
+                        && serviceContainmentFeature(schemas, operation.elementType()).isPresent()
                         && (operation.sourceElementId() == null
                             || operation.sourceElementId().isBlank()));
     if (!needsService) {
@@ -541,7 +540,7 @@ public class AssistantPatchCompiler {
     ObjectNode service =
         JsonNodeFactory.instance
             .objectNode()
-            .put("id", PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID)
+            .put("id", DEFAULT_SERVICE_LOCAL_ID)
             .put("eClass", "ServerlessService")
             .put("name", "Default Service");
     ArrayNode initial = JsonNodeFactory.instance.arrayNode().add(service);
@@ -559,8 +558,7 @@ public class AssistantPatchCompiler {
     if (level != io.mehdieidi.modless.platform.kernel.ModelLevel.PIM) {
       return Optional.empty();
     }
-    Optional<String> feature =
-        PimDeployablePlacement.serviceContainmentFeature(schemas, operation.elementType());
+    Optional<String> feature = serviceContainmentFeature(schemas, operation.elementType());
     if (feature.isEmpty()) {
       return Optional.empty();
     }
@@ -568,7 +566,7 @@ public class AssistantPatchCompiler {
     if (serviceId.isBlank()) {
       ensureDefaultServerlessService(
           level, root, new SemanticModelPatch(List.of(operation)), patch, inverse);
-      serviceId = PimDeployablePlacement.DEFAULT_SERVICE_LOCAL_ID;
+      serviceId = DEFAULT_SERVICE_LOCAL_ID;
     }
     return Optional.of(new ServicePlacement(serviceId, feature.get()));
   }
@@ -579,6 +577,14 @@ public class AssistantPatchCompiler {
       return "";
     }
     return services.get(0).path("id").asText("");
+  }
+
+  private Optional<String> serviceContainmentFeature(
+      AssistantMetamodelSchemaService schemaService, String childType) {
+    List<AssistantMetamodelSchemaService.ReferenceSchema> candidates =
+        schemaService.containments(
+            io.mehdieidi.modless.platform.kernel.ModelLevel.PIM, "ServerlessService", childType);
+    return candidates.isEmpty() ? Optional.empty() : Optional.of(candidates.get(0).name());
   }
 
   private void addServiceContainedElement(

@@ -7,7 +7,6 @@ import io.mehdieidi.modless.backend.upload.UploadScope;
 import io.mehdieidi.modless.backend.upload.UploadService;
 import io.mehdieidi.modless.backend.upload.UploadedFileRecord;
 import io.mehdieidi.modless.platform.assistant.application.AgenticAssistantFacade;
-import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantProposal;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantReadyPayload;
 import io.mehdieidi.modless.platform.assistant.session.AssistantSessionStore;
@@ -209,7 +208,6 @@ public class ChatbotController {
         response.revision(),
         null,
         null,
-        List.of(),
         io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState.APPLIED,
         new ActivityResponse(
             "COMPLETED",
@@ -275,7 +273,6 @@ public class ChatbotController {
         snapshot.messages().stream()
             .map(message -> new ThreadMessageResponse(message.role(), message.content()))
             .toList(),
-        List.of(),
         snapshot.workflowState(),
         snapshot.proposal(),
         snapshot.provider());
@@ -290,17 +287,6 @@ public class ChatbotController {
         request.attachmentName(),
         request.attachmentContent(),
         true);
-  }
-
-  private ResolvedRequestAttachment resolveChoiceAttachments(
-      UserRecord user, AssistantSessionStore.AssistantSession session, ChoiceRequest request) {
-    return resolveRequestAttachments(
-        user,
-        session,
-        request.attachmentIds(),
-        request.attachmentName(),
-        request.attachmentContent(),
-        false);
   }
 
   private ResolvedRequestAttachment resolveRequestAttachments(
@@ -417,7 +403,6 @@ public class ChatbotController {
         response.revision(),
         null,
         response.proposal(),
-        List.of(),
         io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState.UNDONE,
         new ActivityResponse(
             "COMPLETED",
@@ -520,7 +505,6 @@ public class ChatbotController {
    * @param revision associated revision
    * @param model optional updated model, currently withheld
    * @param proposal optional proposal
-   * @param choices optional choices
    * @param workflowState explicit assistant workflow state
    */
   public record MessageResponse(
@@ -529,7 +513,6 @@ public class ChatbotController {
       Long revision,
       JsonNode model,
       AssistantProposal proposal,
-      List<AssistantChoice> choices,
       io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState workflowState,
       ActivityResponse activity) {}
 
@@ -549,14 +532,12 @@ public class ChatbotController {
    * Durable thread snapshot.
    *
    * @param messages recent messages
-   * @param pendingChoices pending clarification questions
    * @param workflowState current workflow state
    * @param proposal latest proposed patch
    * @param provider active provider metadata
    */
   public record ThreadResponse(
       List<ThreadMessageResponse> messages,
-      List<AssistantChoice> pendingChoices,
       io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState workflowState,
       AssistantProposal proposal,
       io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider
@@ -565,23 +546,6 @@ public class ChatbotController {
 
   /** One durable thread message. */
   public record ThreadMessageResponse(String role, String content) {}
-
-  /**
-   * User choice submission.
-   *
-   * @param choiceId selected choice ID
-   * @param optionId selected option ID
-   */
-  public record ChoiceRequest(
-      String choiceId,
-      String optionId,
-      List<ClarificationAnswer> answers,
-      String attachmentName,
-      String attachmentContent,
-      List<String> attachmentIds) {}
-
-  /** One answer to a structured clarification question. */
-  public record ClarificationAnswer(String choiceId, List<String> optionIds, String freeText) {}
 
   /**
    * Conversation list entry for history browsing.

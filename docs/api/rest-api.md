@@ -147,19 +147,17 @@ Assistant commands use REST. Realtime progress uses SSE or the receive-only assi
 See [websocket-api.md](websocket-api.md) and
 [public realtime reference](../public-docs/docs/reference/realtime-api.md).
 
-| Method   | Path                                                            | Purpose                                |
-| -------- | --------------------------------------------------------------- | -------------------------------------- |
-| `POST`   | `/api/chatbot/sessions`                                         | Create or resume a session             |
-| `GET`    | `/api/chatbot/conversations`                                    | List recent conversations              |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/messages`                    | Submit a user message                  |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/attachments`                 | Upload a text attachment               |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/thread`                      | Load thread history                    |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/events`                      | Open SSE event stream                  |
-| `DELETE` | `/api/chatbot/sessions/{sessionId}`                             | Clear session memory                   |
-| `POST`   | `/api/chatbot/catalogs/reindex`                                 | Reindex metamodel/methodology catalogs |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`      | Get applied proposal details           |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo` | Undo an applied proposal               |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/choices`                     | Answer structured clarifications       |
+| Method   | Path                                                            | Purpose                      |
+| -------- | --------------------------------------------------------------- | ---------------------------- |
+| `POST`   | `/api/chatbot/sessions`                                         | Create or resume a session   |
+| `GET`    | `/api/chatbot/conversations`                                    | List recent conversations    |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/messages`                    | Submit a user message        |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/attachments`                 | Upload a text attachment     |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/thread`                      | Load thread history          |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/events`                      | Open SSE event stream        |
+| `DELETE` | `/api/chatbot/sessions/{sessionId}`                             | Clear session memory         |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`      | Get applied proposal details |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo` | Undo an applied proposal     |
 
 WebSocket stream: `ws://<host>/ws/chatbot/sessions/{sessionId}` (receive-only).
 
@@ -170,8 +168,8 @@ WebSocket stream: `ws://<host>/ws/chatbot/sessions/{sessionId}` (receive-only).
 `attachmentIds`.
 
 `MessageResponse` includes `assistantMessage`, `modelId`, `revision`, `proposal` (when a change was
-auto-applied), `choices`, `workflowState` (`EXPLAINED`, `APPLIED`, `UNDONE`, `WAITING_FOR_CHOICE`,
-`FAILED`), and `activity`. The `model` field is currently always `null`; reload the model through
+auto-applied), `workflowState` (`EXPLAINED`, `APPLIED`, `UNDONE`, `FAILED`), and `activity`. The
+`model` field is currently always `null`; reload the model through
 the model API after apply or undo.
 
 Valid mutations are auto-applied after structural validation. There is no approve or reject REST

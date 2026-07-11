@@ -27,12 +27,14 @@ public final class AgentModelTools {
 
   private final TypeContractService contracts;
   private final ModelService models;
+
   /**
    * Context permanently attached to a tool object created for one agent turn. Spring AI may invoke
    * tools on its streaming worker rather than the request thread, so this must not rely only on a
    * ThreadLocal.
    */
   private final Context scopedContext;
+
   private volatile List<PlanItem> scopedPlan = List.of();
   private final ThreadLocal<Context> context = new ThreadLocal<>();
 

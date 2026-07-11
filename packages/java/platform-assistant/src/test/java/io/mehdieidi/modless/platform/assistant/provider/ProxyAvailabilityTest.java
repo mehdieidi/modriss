@@ -25,7 +25,6 @@ class ProxyAvailabilityTest {
             0,
             null,
             null,
-            null,
             new AiProperties.Proxy(false, AiProperties.ProxyType.DIRECT, null, null, null),
             null,
             null,
@@ -40,7 +39,6 @@ class ProxyAvailabilityTest {
             0,
             false,
             null,
-            0,
             0,
             true);
     ProxyAvailability availability = new ProxyAvailability(properties);

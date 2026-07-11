@@ -86,11 +86,6 @@ public interface AssistantSettings {
     return turnTimeout();
   }
 
-  /** Maximum new elements accepted from one ModelDelta provider response. */
-  default int maxModelDeltaElementsPerPass() {
-    return 40;
-  }
-
   /** Maximum incremental CIM modeling passes for one source-backed turn. */
   default int maxCimModelingPasses() {
     return 4;

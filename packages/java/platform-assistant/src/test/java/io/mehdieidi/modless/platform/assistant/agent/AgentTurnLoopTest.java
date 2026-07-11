@@ -60,6 +60,7 @@ class AgentTurnLoopTest {
 
   private static final class FakeProvider implements AssistantModelProvider {
     private String toolThreadModelId;
+
     public AssistantProviderMetadata metadata() {
       return new AssistantProviderMetadata("fake", "", "");
     }

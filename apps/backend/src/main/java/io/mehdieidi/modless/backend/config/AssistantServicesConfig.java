@@ -3,7 +3,6 @@ package io.mehdieidi.modless.backend.config;
 import io.mehdieidi.modless.backend.observability.ModlessMetrics;
 import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
-import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
 import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelKnowledgeService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
@@ -34,11 +33,6 @@ public class AssistantServicesConfig {
   @Bean
   AssistantPatchCompiler assistantPatchCompiler(AssistantMetamodelSchemaService schemas) {
     return new AssistantPatchCompiler(schemas);
-  }
-
-  @Bean
-  DeltaCompiler deltaCompiler(AssistantMetamodelSchemaService schemas) {
-    return new DeltaCompiler(schemas);
   }
 
   @Bean

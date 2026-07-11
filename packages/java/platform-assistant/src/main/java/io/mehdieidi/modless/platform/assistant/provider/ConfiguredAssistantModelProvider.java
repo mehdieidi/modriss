@@ -5,8 +5,8 @@ import io.mehdieidi.modless.platform.assistant.provider.springai.GeminiAssistant
 import io.mehdieidi.modless.platform.assistant.provider.springai.OpenAiCompatibleAssistantModelProvider;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /** Delegates assistant calls to the provider selected by configuration. */
 public final class ConfiguredAssistantModelProvider implements AssistantModelProvider {
@@ -50,8 +50,7 @@ public final class ConfiguredAssistantModelProvider implements AssistantModelPro
   }
 
   @Override
-  public AssistantReply streamWithTools(
-      AssistantPrompt prompt, Consumer<String> deltaConsumer) {
+  public AssistantReply streamWithTools(AssistantPrompt prompt, Consumer<String> deltaConsumer) {
     return withFallback(provider -> provider.streamWithTools(prompt, deltaConsumer));
   }
 

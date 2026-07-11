@@ -1,17 +1,14 @@
 package io.mehdieidi.modless.backend.assistant;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.assistant.agent.AgentTurnLoop;
 import io.mehdieidi.modless.platform.assistant.application.AgenticAssistantFacade;
 import io.mehdieidi.modless.platform.assistant.application.AgenticTurnService;
 import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
-import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
 import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelGuideGenerator;
 import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelKnowledgeService;
 import io.mehdieidi.modless.platform.assistant.metamodel.TypeContractService;
-import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.assistant.provider.ConfiguredAssistantModelProvider;
@@ -21,7 +18,6 @@ import io.mehdieidi.modless.platform.assistant.provider.springai.OpenAiCompatibl
 import io.mehdieidi.modless.platform.assistant.source.SourceDocumentWorkers;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantSettings;
 import io.mehdieidi.modless.platform.assistant.tools.AgentModelTools;
-import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.net.Proxy;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -73,8 +69,7 @@ public class AiConfig {
   @Bean(destroyMethod = "close")
   SourceDocumentWorkers sourceDocumentWorkers(
       AssistantModelProvider provider, AssistantRealtimeHub realtime) {
-    return new SourceDocumentWorkers(
-        provider, realtime, 2, 12000);
+    return new SourceDocumentWorkers(provider, realtime, 2, 12000);
   }
 
   @Bean
@@ -115,28 +110,14 @@ public class AiConfig {
   }
 
   @Bean
-  @Primary
-  AssistantToolService assistantToolService(
-      io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog catalogs,
-      AssistantPatchCompiler patchCompiler,
-      DeltaCompiler deltaCompiler,
-      AssistantMetamodelSchemaService schemas,
-      ModelService models,
-      ObjectMapper mapper) {
-    return new AssistantToolService(
-        catalogs, patchCompiler, deltaCompiler, schemas, models, mapper);
-  }
-
-  @Bean
   OpenAiCompatibleAssistantModelProvider openAiCompatibleAssistantModelProvider(
       AiProperties properties,
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
-      AssistantToolService tools,
       AssistantHardeningService hardening,
       @Qualifier("aiRestClientBuilder") RestClient.Builder restClientBuilder) {
     return new OpenAiCompatibleAssistantModelProvider(
-        properties, proxyAvailability, promptGuard, tools, hardening, restClientBuilder);
+        properties, proxyAvailability, promptGuard, hardening, restClientBuilder);
   }
 
   @Bean
@@ -144,10 +125,8 @@ public class AiConfig {
       AiProperties properties,
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
-      AssistantToolService tools,
       AssistantHardeningService hardening) {
-    return new GeminiAssistantModelProvider(
-        properties, proxyAvailability, promptGuard, tools, hardening);
+    return new GeminiAssistantModelProvider(properties, proxyAvailability, promptGuard, hardening);
   }
 
   @Bean

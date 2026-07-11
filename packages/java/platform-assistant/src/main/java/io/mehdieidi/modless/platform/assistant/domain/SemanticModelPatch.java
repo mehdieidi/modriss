@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 
 /**
- * Backend-owned operation IR used after ModelDelta compilation.
+ * Backend-owned operation IR used by the validated model workspace.
  *
  * @param operations typed semantic operations against stable model element IDs
  */
