@@ -60,7 +60,13 @@ public class AiConfig {
       AssistantRealtimeHub realtime,
       AiProperties properties) {
     return new AgentTurnLoop(
-        provider, tools, guides, realtime, properties.turnTimeout(), properties.maxAgentSteps());
+        provider,
+        tools,
+        guides,
+        realtime,
+        properties.turnTimeout(),
+        properties.sourceTurnTimeout(),
+        properties.maxAgentSteps());
   }
 
   @Bean(destroyMethod = "close")

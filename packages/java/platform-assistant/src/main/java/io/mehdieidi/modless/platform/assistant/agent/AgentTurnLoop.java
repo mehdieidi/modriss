@@ -25,6 +25,7 @@ public final class AgentTurnLoop {
   private final MetamodelGuideGenerator guides;
   private final AssistantRealtimePublisher realtime;
   private final Duration timeout;
+  private final Duration sourceTimeout;
   private final int maxSteps;
   private final Map<String, AtomicBoolean> cancellations = new ConcurrentHashMap<>();
 
@@ -35,11 +36,23 @@ public final class AgentTurnLoop {
       AssistantRealtimePublisher realtime,
       Duration timeout,
       int maxSteps) {
+    this(provider, tools, guides, realtime, timeout, timeout, maxSteps);
+  }
+
+  public AgentTurnLoop(
+      AssistantModelProvider provider,
+      AgentModelTools tools,
+      MetamodelGuideGenerator guides,
+      AssistantRealtimePublisher realtime,
+      Duration timeout,
+      Duration sourceTimeout,
+      int maxSteps) {
     this.provider = provider;
     this.tools = tools;
     this.guides = guides;
     this.realtime = realtime;
     this.timeout = timeout == null ? Duration.ofMinutes(5) : timeout;
+    this.sourceTimeout = sourceTimeout == null ? this.timeout : sourceTimeout;
     this.maxSteps = maxSteps <= 0 ? 12 : maxSteps;
   }
 
@@ -49,7 +62,9 @@ public final class AgentTurnLoop {
       String userMessage,
       String sourceDocument,
       ModelWorkspace workspace) {
-    Instant deadline = Instant.now().plus(timeout);
+    Instant deadline =
+        Instant.now()
+            .plus(sourceDocument == null || sourceDocument.isBlank() ? timeout : sourceTimeout);
     AtomicBoolean canceled = new AtomicBoolean();
     if (cancellations.putIfAbsent(sessionId, canceled) != null)
       throw new PlatformException(409, "An assistant turn is already active for this session.");

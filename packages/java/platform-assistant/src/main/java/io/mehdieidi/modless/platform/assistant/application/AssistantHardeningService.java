@@ -193,6 +193,15 @@ public class AssistantHardeningService {
               || message.contains("\"code\":\"rate_limit_exceeded\""))) {
         return new PlatformException(429, "AI provider rate limit reached. Try again shortly.");
       }
+      if (message != null
+          && (message.startsWith("402 ")
+              || message.startsWith("402 -")
+              || message.toLowerCase(java.util.Locale.ROOT).contains("usage limit reached"))) {
+        return new PlatformException(
+            429,
+            "AI provider usage limit has been reached. Wait for the provider quota to reset or "
+                + "configure a fallback provider.");
+      }
       if (current instanceof SocketTimeoutException) {
         return new PlatformException(
             504,
