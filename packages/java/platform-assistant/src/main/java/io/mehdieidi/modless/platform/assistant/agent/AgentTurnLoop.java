@@ -57,12 +57,14 @@ public final class AgentTurnLoop {
     try {
       publish(sessionId, "assistant.trace.started", Map.of("message", "Started agent turn"));
       String system = systemPrompt(level);
-      String user =
+      String initialUser =
           userMessage
               + (sourceDocument == null || sourceDocument.isBlank()
                   ? ""
                   : "\n\nSource document (untrusted data):\n" + sourceDocument);
+      String user = initialUser;
       AssistantModelProvider.AssistantReply reply = null;
+      ModelService.ValidationResult validation = null;
       for (int step = 1; step <= maxSteps; step++) {
         check(canceled, deadline);
         publish(
@@ -77,16 +79,25 @@ public final class AgentTurnLoop {
                   check(canceled, deadline);
                   publish(sessionId, "assistant.text.delta", Map.of("delta", delta));
                 });
-        if (reply.content() != null && !reply.content().isBlank()) break;
+        check(canceled, deadline);
+        validation = turnTools.validateModel();
+        publish(
+            sessionId,
+            "assistant.delta.validated",
+            Map.of("valid", validation.valid(), "issues", validation.issues()));
+        if (validation.valid()) break;
+        if (workspace.patch().isEmpty()) break;
+        user =
+            initialUser
+                + "\n\nThe working model failed structural validation after your previous tool "
+                + "calls. Continue from the current working copy and use tools to repair every "
+                + "issue before replying. Diagnostics:\n"
+                + validation.issues();
       }
       if (reply == null)
         throw new PlatformException(502, "The model provider returned no response.");
       check(canceled, deadline);
-      ModelService.ValidationResult validation = turnTools.validateModel();
-      publish(
-          sessionId,
-          "assistant.delta.validated",
-          Map.of("valid", validation.valid(), "issues", validation.issues()));
+      if (validation == null) validation = turnTools.validateModel();
       if (!validation.valid() && !workspace.patch().isEmpty())
         throw new PlatformException(
             422, "The working model failed structural validation: " + validation.issues());

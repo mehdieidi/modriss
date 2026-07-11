@@ -6,6 +6,7 @@ import io.mehdieidi.modless.platform.assistant.provider.springai.OpenAiCompatibl
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Consumer;
 
 /** Delegates assistant calls to the provider selected by configuration. */
 public final class ConfiguredAssistantModelProvider implements AssistantModelProvider {
@@ -36,6 +37,28 @@ public final class ConfiguredAssistantModelProvider implements AssistantModelPro
   @Override
   public AssistantReply complete(AssistantPrompt prompt) {
     return withFallback(provider -> provider.complete(prompt));
+  }
+
+  @Override
+  public AssistantReply completeStructured(AssistantPrompt prompt) {
+    return withFallback(provider -> provider.completeStructured(prompt));
+  }
+
+  @Override
+  public AssistantReply completeWithTools(AssistantPrompt prompt) {
+    return withFallback(provider -> provider.completeWithTools(prompt));
+  }
+
+  @Override
+  public AssistantReply streamWithTools(
+      AssistantPrompt prompt, Consumer<String> deltaConsumer) {
+    return withFallback(provider -> provider.streamWithTools(prompt, deltaConsumer));
+  }
+
+  @Override
+  public AssistantReply streamWithTools(
+      AssistantPrompt prompt, Object scopedTools, Consumer<String> deltaConsumer) {
+    return withFallback(provider -> provider.streamWithTools(prompt, scopedTools, deltaConsumer));
   }
 
   @Override

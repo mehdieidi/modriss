@@ -172,48 +172,76 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     logRequest(prompt, model, providerCallId);
     long providerStarted = System.nanoTime();
     StringBuilder content = new StringBuilder();
-    hardening.providerCall(
-        prompt.role(),
-        providerKey,
-        model,
-        () -> {
-          CompletableFuture<Void> streaming =
-              CompletableFuture.runAsync(
-                  () ->
-                      chatClient
-                          .prompt()
-                          .options(options(model, prompt.role()))
-                          .tools(scopedTools)
-                          .system(SYSTEM_GUARDRAIL + "\n" + prompt.system())
-                          .user(userWithContext(prompt))
-                          .stream()
-                          .content()
-                          .toStream()
-                          .forEach(
-                              delta -> {
-                                if (delta == null || delta.isEmpty()) return;
-                                content.append(delta);
-                                if (deltaConsumer != null) deltaConsumer.accept(delta);
-                              }));
-          try {
-            streaming.get(properties.requestTimeout().toMillis(), TimeUnit.MILLISECONDS);
-          } catch (TimeoutException timeout) {
-            streaming.cancel(true);
-            throw new io.mehdieidi.modless.platform.kernel.PlatformException(
-                504,
-                "AI provider returned no response within "
-                    + properties.requestTimeout().toSeconds()
-                    + " seconds. The provider or model is currently too slow; try again shortly.");
-          } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            throw new io.mehdieidi.modless.platform.kernel.PlatformException(
-                499, "Assistant streaming was interrupted.");
-          } catch (java.util.concurrent.ExecutionException failed) {
-            if (failed.getCause() instanceof RuntimeException runtime) throw runtime;
-            throw new IllegalStateException("AI provider streaming failed.", failed.getCause());
-          }
-          return content;
-        });
+    try {
+      hardening.providerCall(
+          prompt.role(),
+          providerKey,
+          model,
+          () -> {
+            CompletableFuture<Void> streaming =
+                CompletableFuture.runAsync(
+                    () ->
+                        chatClient
+                            .prompt()
+                            .options(options(model, prompt.role()))
+                            .tools(scopedTools)
+                            .system(SYSTEM_GUARDRAIL + "\n" + prompt.system())
+                            .user(userWithContext(prompt))
+                            .stream()
+                            .content()
+                            .toStream()
+                            .forEach(
+                                delta -> {
+                                  if (delta == null || delta.isEmpty()) return;
+                                  content.append(delta);
+                                  if (deltaConsumer != null) deltaConsumer.accept(delta);
+                                }));
+            try {
+              streaming.get(properties.requestTimeout().toMillis(), TimeUnit.MILLISECONDS);
+            } catch (TimeoutException timeout) {
+              streaming.cancel(true);
+              throw new io.mehdieidi.modless.platform.kernel.PlatformException(
+                  504,
+                  "AI provider returned no response within "
+                      + properties.requestTimeout().toSeconds()
+                      + " seconds. The provider or model is currently too slow; try again shortly.");
+            } catch (InterruptedException interrupted) {
+              Thread.currentThread().interrupt();
+              throw new io.mehdieidi.modless.platform.kernel.PlatformException(
+                  499, "Assistant streaming was interrupted.");
+            } catch (java.util.concurrent.ExecutionException failed) {
+              if (failed.getCause() instanceof RuntimeException runtime) throw runtime;
+              throw new IllegalStateException("AI provider streaming failed.", failed.getCause());
+            }
+            return content;
+          });
+    } catch (PlatformException streamingFailure) {
+      if (streamingFailure.status() != 502 || content.length() > 0) throw streamingFailure;
+      log.warn(
+          "AI streaming transport failed; retrying the same scoped tool turn without streaming "
+              + "provider={} model={} providerCallId={}",
+          providerKey,
+          model,
+          providerCallId);
+      String fallback =
+          hardening.providerCall(
+              prompt.role(),
+              providerKey,
+              model,
+              () ->
+                  chatClient
+                      .prompt()
+                      .options(options(model, prompt.role()))
+                      .tools(scopedTools)
+                      .system(SYSTEM_GUARDRAIL + "\n" + prompt.system())
+                      .user(userWithContext(prompt))
+                      .call()
+                      .content());
+      if (fallback != null) {
+        content.append(fallback);
+        if (deltaConsumer != null && !fallback.isEmpty()) deltaConsumer.accept(fallback);
+      }
+    }
     logResponse(prompt.role(), model, content.toString(), providerCallId, providerStarted);
     return new AssistantReply(content.toString(), providerKey, model);
   }
