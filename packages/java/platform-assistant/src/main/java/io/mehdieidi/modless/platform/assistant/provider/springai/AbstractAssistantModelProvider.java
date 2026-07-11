@@ -171,6 +171,29 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     String providerCallId = providerCallId();
     logRequest(prompt, model, providerCallId);
     long providerStarted = System.nanoTime();
+    // The configured OpenAI-compatible proxy terminates SSE tool streams. Starting every turn
+    // with a stream and then retrying doubles cost for long source documents, so tool turns use
+    // one bounded completion until transport streaming is explicitly made reliable.
+    String completed =
+        hardening.providerCall(
+            prompt.role(),
+            providerKey,
+            model,
+            () ->
+                chatClient
+                    .prompt()
+                    .options(options(model, prompt.role()))
+                    .tools(scopedTools)
+                    .system(SYSTEM_GUARDRAIL + "\n" + prompt.system())
+                    .user(userWithContext(prompt))
+                    .call()
+                    .content());
+    if (deltaConsumer != null && completed != null && !completed.isEmpty()) {
+      deltaConsumer.accept(completed);
+    }
+    logResponse(prompt.role(), model, completed, providerCallId, providerStarted);
+    return new AssistantReply(completed == null ? "" : completed, providerKey, model);
+    /*
     StringBuilder content = new StringBuilder();
     try {
       hardening.providerCall(
@@ -244,6 +267,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     }
     logResponse(prompt.role(), model, content.toString(), providerCallId, providerStarted);
     return new AssistantReply(content.toString(), providerKey, model);
+    */
   }
 
   @Override

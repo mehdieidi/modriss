@@ -14,6 +14,8 @@ import java.util.concurrent.Executors;
 /** Parallel section extraction used only for large source documents. */
 public final class SourceDocumentWorkers implements AutoCloseable {
 
+  private static final int MAX_SECTIONS_PER_TURN = 2;
+
   private final AssistantModelProvider provider;
   private final AssistantRealtimePublisher realtime;
   private final Executor executor;
@@ -80,7 +82,12 @@ public final class SourceDocumentWorkers implements AutoCloseable {
       result.add(document.substring(start, end));
       start = end;
     }
-    return result;
+    if (result.size() <= MAX_SECTIONS_PER_TURN) return result;
+    List<String> compact = new ArrayList<>(MAX_SECTIONS_PER_TURN);
+    int midpoint = (result.size() + 1) / 2;
+    compact.add(String.join("\n\n", result.subList(0, midpoint)));
+    compact.add(String.join("\n\n", result.subList(midpoint, result.size())));
+    return compact;
   }
 
   private void publish(String sessionId, String type, Object payload) {

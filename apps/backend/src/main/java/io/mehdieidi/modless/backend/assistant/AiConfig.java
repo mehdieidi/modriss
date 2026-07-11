@@ -66,14 +66,15 @@ public class AiConfig {
         realtime,
         properties.turnTimeout(),
         properties.sourceTurnTimeout(),
-        properties.maxAgentSteps());
+        Math.min(properties.maxAgentSteps(), 3),
+        Math.min(properties.maxProviderCallsPerTurn(), 3));
   }
 
   @Bean(destroyMethod = "close")
   SourceDocumentWorkers sourceDocumentWorkers(
       AssistantModelProvider provider, AssistantRealtimeHub realtime) {
     return new SourceDocumentWorkers(
-        provider, realtime, Math.max(2, Runtime.getRuntime().availableProcessors() / 2), 12000);
+        provider, realtime, 2, 12000);
   }
 
   @Bean

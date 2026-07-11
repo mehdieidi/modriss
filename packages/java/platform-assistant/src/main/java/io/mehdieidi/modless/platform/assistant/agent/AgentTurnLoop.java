@@ -1,6 +1,7 @@
 package io.mehdieidi.modless.platform.assistant.agent;
 
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
+import io.mehdieidi.modless.platform.assistant.application.ProviderCallBudget;
 import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelGuideGenerator;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider.AssistantPrompt;
@@ -27,6 +28,7 @@ public final class AgentTurnLoop {
   private final Duration timeout;
   private final Duration sourceTimeout;
   private final int maxSteps;
+  private final int maxProviderCalls;
   private final Map<String, AtomicBoolean> cancellations = new ConcurrentHashMap<>();
 
   public AgentTurnLoop(
@@ -47,6 +49,18 @@ public final class AgentTurnLoop {
       Duration timeout,
       Duration sourceTimeout,
       int maxSteps) {
+    this(provider, tools, guides, realtime, timeout, sourceTimeout, maxSteps, 3);
+  }
+
+  public AgentTurnLoop(
+      AssistantModelProvider provider,
+      AgentModelTools tools,
+      MetamodelGuideGenerator guides,
+      AssistantRealtimePublisher realtime,
+      Duration timeout,
+      Duration sourceTimeout,
+      int maxSteps,
+      int maxProviderCalls) {
     this.provider = provider;
     this.tools = tools;
     this.guides = guides;
@@ -54,6 +68,7 @@ public final class AgentTurnLoop {
     this.timeout = timeout == null ? Duration.ofMinutes(5) : timeout;
     this.sourceTimeout = sourceTimeout == null ? this.timeout : sourceTimeout;
     this.maxSteps = maxSteps <= 0 ? 12 : maxSteps;
+    this.maxProviderCalls = maxProviderCalls <= 0 ? 3 : maxProviderCalls;
   }
 
   public TurnResult run(
@@ -70,6 +85,7 @@ public final class AgentTurnLoop {
       throw new PlatformException(409, "An assistant turn is already active for this session.");
     AgentModelTools turnTools = tools.scoped(level, workspace);
     try {
+      ProviderCallBudget.bind(sourceDocument == null || sourceDocument.isBlank() ? maxProviderCalls : Math.max(maxProviderCalls, 3));
       publish(sessionId, "assistant.trace.started", Map.of("message", "Started agent turn"));
       String system = systemPrompt(level);
       String initialUser =
@@ -125,6 +141,7 @@ public final class AgentTurnLoop {
           reply.provider(),
           reply.model());
     } finally {
+      ProviderCallBudget.clear();
       cancellations.remove(sessionId, canceled);
     }
   }

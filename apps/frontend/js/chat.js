@@ -64,6 +64,9 @@ let sourceCoverageState = null;
 let activeTurnCanceling = false;
 let streamingAssistantEl = null;
 let streamingAssistantText = "";
+// The chat window is a single DOM surface, while sessions are scoped by project and level.
+// Track which scoped session owns the rendered surface so content cannot leak between levels.
+let renderedChatScopeKey = null;
 
 const CHAT_HISTORY_DAYS = 3;
 
@@ -191,6 +194,7 @@ export function resetChatForProjectChange() {
   state.chat.attachment = null;
   state.chat.historyOpen = false;
   suppressChoiceRealtime = false;
+  renderedChatScopeKey = null;
   resetChatActivityUi();
   closeChatHistoryPanel();
   resetChatMessagesUi();
@@ -684,7 +688,7 @@ async function ensureChatRealtime(scopeKey, typeKey, sessionId) {
 
 // ── Chat session / realtime ───────────────────────────────────────────────────
 
-export async function ensureChatSession(options = {}) {
+export async function ensureChatSession({ hydrate = true, ...options } = {}) {
   if (state.chat.available === false) {
     setStatus("Chat is not available in this backend build.");
     return null;
@@ -703,7 +707,9 @@ export async function ensureChatSession(options = {}) {
     cached.projectId === state.project.id
   ) {
     await ensureChatRealtime(scopeKey, typeKey, cached.sessionId);
-    await hydrateChatThread(typeKey, cached.sessionId);
+    if (hydrate) {
+      await hydrateChatThread(typeKey, cached.sessionId);
+    }
     return cached;
   }
   if (cached) {
@@ -730,20 +736,30 @@ export async function ensureChatSession(options = {}) {
   };
   state.chat.sessions.set(scopeKey, session);
   await connectChatRealtime(scopeKey, typeKey, session.sessionId);
-  await hydrateChatThread(typeKey, session.sessionId);
+  if (hydrate) {
+    await hydrateChatThread(typeKey, session.sessionId);
+  }
 
   return session;
 }
 
 export async function prepareChatWindow() {
-  if (chatBusyDepth === 0) {
+  const scopeKey = chatScopeKey();
+  const isScopeChange = renderedChatScopeKey !== scopeKey;
+  if (isScopeChange) {
+    // An empty thread must render as empty for its own level, never as the last level's thread.
+    resetChatMessagesUi();
     resetChatActivityUi();
   }
   stripLegacyThinkingCancelButtons();
   updateChatComposerActionButton();
   closeChatHistoryPanel();
   updateChatHeaderSubtitle();
-  return ensureChatSession();
+  const session = await ensureChatSession({ hydrate: isScopeChange });
+  if (session) {
+    renderedChatScopeKey = scopeKey;
+  }
+  return session;
 }
 
 function updateChatHeaderSubtitle() {
@@ -1020,6 +1036,11 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
 }
 
 function handleChatRealtimeEvent(typeKey, eventType, payload) {
+  // Realtime channels remain connected when the window is closed or the user changes tabs.
+  // Only the active rendered scope may update this shared UI surface.
+  if (renderedChatScopeKey !== chatScopeKey(typeKey)) {
+    return;
+  }
   if (eventType === "assistant.text.delta") {
     appendAssistantTextDelta(payload?.delta || "");
     return;
