@@ -1233,6 +1233,23 @@
   color: var(--muted-2);
 }
 
+.chat-msg-streaming .chat-msg-bubble::after {
+  content: "";
+  display: inline-block;
+  width: 0.45em;
+  height: 1em;
+  margin-left: 0.2em;
+  vertical-align: -0.15em;
+  background: currentColor;
+  animation: chat-stream-caret 0.9s steps(1) infinite;
+}
+
+@keyframes chat-stream-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
 .chat-composer-footer {
   display: flex;
   align-items: center;

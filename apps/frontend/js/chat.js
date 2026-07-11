@@ -62,6 +62,8 @@ let thinkingStartTime = 0;
 let thinkingProgress = null;
 let sourceCoverageState = null;
 let activeTurnCanceling = false;
+let streamingAssistantEl = null;
+let streamingAssistantText = "";
 
 const CHAT_HISTORY_DAYS = 3;
 
@@ -303,9 +305,9 @@ function pushThinkingStep(message, stage = null) {
   }
   ensureThinkingStream();
   const entry = { stage: stage || "PLANNING", message };
-  const last = chatActivityHistory[0];
+  const last = chatActivityHistory[chatActivityHistory.length - 1];
   if (!(last?.stage === entry.stage && last?.message === entry.message)) {
-    chatActivityHistory = [entry];
+    chatActivityHistory.push(entry);
   }
   thinkingSteps = chatActivityHistory.map((item) => ({ ...item }));
   renderThinkingSteps();
@@ -987,6 +989,11 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
     handleChatRealtimeEvent(typeKey, "assistant.progress", payload);
   });
   for (const eventName of [
+    "assistant.text.delta",
+    "assistant.plan",
+    "model.delta",
+    "assistant.worker.started",
+    "assistant.worker.completed",
     "assistant.trace.started",
     "assistant.trace.step",
     "assistant.tool.started",
@@ -1013,6 +1020,32 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
 }
 
 function handleChatRealtimeEvent(typeKey, eventType, payload) {
+  if (eventType === "assistant.text.delta") {
+    appendAssistantTextDelta(payload?.delta || "");
+    return;
+  }
+  if (eventType === "assistant.plan") {
+    const items = Array.isArray(payload?.items) ? payload.items : [];
+    if (items.length)
+      updateThinkingStatus(
+        `Plan: ${items.map((item) => item.text || item).join(" · ")}`,
+        "PLANNING",
+      );
+    return;
+  }
+  if (eventType === "model.delta") {
+    applyAssistantModelPreview(typeKey, { model: payload?.model });
+    return;
+  }
+  if (eventType === "assistant.worker.started" || eventType === "assistant.worker.completed") {
+    updateThinkingStatus(
+      `Document worker ${payload?.index || "?"}/${payload?.count || "?"} ${
+        eventType.endsWith("completed") ? "completed" : "started"
+      }`,
+      "ANALYZING_SOURCE",
+    );
+    return;
+  }
   if (eventType === "assistant.trace.started") {
     updateThinkingStatus("Started the modeling turn.", "PLANNING");
     return;
@@ -1079,6 +1112,11 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
   }
   if (eventType === "chat.assistant") {
     const message = payload?.assistantMessage || payload?.message;
+    if (streamingAssistantEl) {
+      streamingAssistantEl.classList.remove("chat-msg-streaming");
+      streamingAssistantEl = null;
+      streamingAssistantText = "";
+    }
     if (chatBusyDepth === 0) {
       appendAssistantDeduped(message);
     }
@@ -1171,6 +1209,26 @@ function appendAssistantDeduped(text) {
     return;
   }
   appendChat("assistant", text);
+}
+
+function appendAssistantTextDelta(delta) {
+  if (!delta) return;
+  removeChatWelcome();
+  if (!streamingAssistantEl) {
+    streamingAssistantEl = document.createElement("div");
+    streamingAssistantEl.className = "chat-msg assistant chat-msg-streaming";
+    streamingAssistantEl.dataset.chatKind = "message";
+    const bubble = document.createElement("div");
+    bubble.className = "chat-msg-bubble";
+    streamingAssistantEl.appendChild(bubble);
+    el.chatMessages.appendChild(streamingAssistantEl);
+    streamingAssistantText = "";
+  }
+  streamingAssistantText += delta;
+  streamingAssistantEl.dataset.chatText = streamingAssistantText;
+  const bubble = streamingAssistantEl.querySelector(".chat-msg-bubble");
+  bubble.replaceChildren(renderMarkdown(streamingAssistantText));
+  scrollChatToBottom();
 }
 
 function unwrapAssistantModel(model) {

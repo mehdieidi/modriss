@@ -1175,7 +1175,9 @@ public final class TransformationService {
     task.put("required", required);
     task.put("category", category);
     task.put("rationale", rationale);
-    if (affectedElements != null && !affectedElements.isMissingNode() && !affectedElements.isNull()) {
+    if (affectedElements != null
+        && !affectedElements.isMissingNode()
+        && !affectedElements.isNull()) {
       task.set("affectedElements", affectedElements.deepCopy());
     }
     return task;

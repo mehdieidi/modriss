@@ -75,7 +75,11 @@
   opacity: 0;
   color: var(--canvas-node-ink);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--node-color) 14%, transparent), transparent 58%),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--node-color) 14%, transparent),
+      transparent 58%
+    ),
     var(--canvas-node-surface);
   box-shadow:
     0 0.8rem 2rem var(--shadow-soft),
@@ -888,7 +892,13 @@
 .engine-rotor {
   width: 16%;
   background:
-    radial-gradient(circle, var(--story-surface-strong) 0 25%, transparent 26% 37%, var(--story-surface-strong) 38% 50%, transparent 51%),
+    radial-gradient(
+      circle,
+      var(--story-surface-strong) 0 25%,
+      transparent 26% 37%,
+      var(--story-surface-strong) 38% 50%,
+      transparent 51%
+    ),
     repeating-conic-gradient(
       color-mix(in srgb, var(--accent-light) 72%, transparent) 0 4deg,
       color-mix(in srgb, var(--story-surface-strong) 94%, transparent) 4deg 11deg
@@ -936,7 +946,12 @@
 .engine-plate {
   z-index: 2;
   width: 7%;
-  background: linear-gradient(90deg, var(--story-surface-strong), var(--canvas-node-muted), var(--story-surface-strong));
+  background: linear-gradient(
+    90deg,
+    var(--story-surface-strong),
+    var(--canvas-node-muted),
+    var(--story-surface-strong)
+  );
   box-shadow: 0 0.5rem 1rem var(--shadow-soft);
 }
 
@@ -960,7 +975,12 @@
   padding: 4% 2%;
   border: 1px solid color-mix(in srgb, var(--accent-light) 42%, var(--line));
   border-radius: 0.35rem;
-  background: linear-gradient(100deg, var(--story-surface-strong), color-mix(in srgb, var(--accent) 16%, var(--story-surface)), var(--story-surface-strong));
+  background: linear-gradient(
+    100deg,
+    var(--story-surface-strong),
+    color-mix(in srgb, var(--accent) 16%, var(--story-surface)),
+    var(--story-surface-strong)
+  );
   box-shadow: 0 0.65rem 1.4rem var(--shadow-soft);
   transform: rotateY(-18deg);
 }
@@ -991,7 +1011,12 @@
   height: 84%;
   border: 1px solid color-mix(in srgb, var(--accent-light) 62%, var(--line));
   border-radius: 0.42rem;
-  background: linear-gradient(90deg, var(--story-surface-strong), color-mix(in srgb, var(--accent) 24%, var(--canvas-node-surface)), var(--story-surface-strong));
+  background: linear-gradient(
+    90deg,
+    var(--story-surface-strong),
+    color-mix(in srgb, var(--accent) 24%, var(--canvas-node-surface)),
+    var(--story-surface-strong)
+  );
   box-shadow:
     0 0 1.8rem color-mix(in srgb, var(--accent-glow) 66%, transparent),
     inset 0 0 1.2rem color-mix(in srgb, var(--accent) 26%, transparent);
@@ -1016,7 +1041,12 @@
   height: 9%;
   border: 1px solid color-mix(in srgb, var(--accent-light) 52%, var(--line));
   border-radius: 0.18rem;
-  background: linear-gradient(90deg, var(--story-surface-strong), var(--canvas-node-muted), var(--story-surface-strong));
+  background: linear-gradient(
+    90deg,
+    var(--story-surface-strong),
+    var(--canvas-node-muted),
+    var(--story-surface-strong)
+  );
 }
 
 .engine-core-cap-bottom {
@@ -1116,7 +1146,13 @@
 .engine-rotor {
   width: 18%;
   background:
-    radial-gradient(circle, var(--story-surface-strong) 0 27%, transparent 28% 43%, var(--story-surface-strong) 44% 57%, transparent 58%),
+    radial-gradient(
+      circle,
+      var(--story-surface-strong) 0 27%,
+      transparent 28% 43%,
+      var(--story-surface-strong) 44% 57%,
+      transparent 58%
+    ),
     repeating-conic-gradient(
       color-mix(in srgb, var(--canvas-node-muted) 65%, transparent) 0 2deg,
       transparent 2deg 12deg
@@ -1169,7 +1205,13 @@
   width: 12%;
   border-color: color-mix(in srgb, var(--canvas-node-muted) 76%, transparent);
   background:
-    radial-gradient(circle, var(--story-surface-strong) 0 24%, transparent 25% 42%, var(--story-surface-strong) 43% 52%, transparent 53%),
+    radial-gradient(
+      circle,
+      var(--story-surface-strong) 0 24%,
+      transparent 25% 42%,
+      var(--story-surface-strong) 43% 52%,
+      transparent 53%
+    ),
     repeating-conic-gradient(
       color-mix(in srgb, var(--canvas-node-muted) 72%, transparent) 0 4deg,
       transparent 4deg 13deg
@@ -1295,7 +1337,8 @@
   translate: -50% 0;
   object-fit: contain;
   opacity: 0.78;
-  filter: grayscale(0.32) sepia(0.75) hue-rotate(145deg) saturate(1.45) brightness(1.12) contrast(0.7)
+  filter: grayscale(0.32) sepia(0.75) hue-rotate(145deg) saturate(1.45) brightness(1.12)
+    contrast(0.7)
     drop-shadow(0 0.7rem 1.1rem color-mix(in srgb, var(--shadow-soft) 68%, transparent));
   animation: engine-asset-settle 8s ease-in-out infinite alternate;
 }

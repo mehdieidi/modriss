@@ -57,26 +57,9 @@ modless:
     provider: ${MODLESS_AI_PROVIDER:openai}
     request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:5m}
     turn-timeout: ${MODLESS_AI_TURN_TIMEOUT:5m}
-    source-turn-timeout: ${MODLESS_AI_SOURCE_TURN_TIMEOUT:12m}
-    max-repair-attempts: ${MODLESS_AI_MAX_REPAIR_ATTEMPTS:1}
-    max-provider-calls-per-turn: ${MODLESS_AI_MAX_PROVIDER_CALLS_PER_TURN:8}
-    max-provider-calls-source-turn: ${MODLESS_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:12}
-    max-model-delta-elements-per-pass: ${MODLESS_AI_MAX_MODEL_DELTA_ELEMENTS_PER_PASS:40}
-    max-cim-modeling-passes: ${MODLESS_AI_MAX_CIM_MODELING_PASSES:4}
-    prefer-llm-source-extraction: ${MODLESS_AI_PREFER_LLM_SOURCE_EXTRACTION:true}
-    llm-contract-rerank-enabled: ${MODLESS_AI_LLM_CONTRACT_RERANK_ENABLED:false}
     max-tool-calls: ${MODLESS_AI_MAX_TOOL_CALLS:24}
     max-agent-steps: ${MODLESS_AI_MAX_AGENT_STEPS:8}
-    max-tool-calls-per-step: ${MODLESS_AI_MAX_TOOL_CALLS_PER_STEP:4}
     token-budget: ${MODLESS_AI_TOKEN_BUDGET:16000}
-    max-prompt-tokens: ${MODLESS_AI_MAX_PROMPT_TOKENS:24000}
-    max-source-chunk-tokens: ${MODLESS_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
-    max-source-chunks-per-turn: ${MODLESS_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
-    require-idempotency-key: ${MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY:true}
-    max-context-snippets: ${MODLESS_AI_MAX_CONTEXT_SNIPPETS:24}
-    reserved-schema-snippets: ${MODLESS_AI_RESERVED_SCHEMA_SNIPPETS:10}
-    max-snippet-chars: ${MODLESS_AI_MAX_SNIPPET_CHARS:2400}
-    max-system-chars: ${MODLESS_AI_MAX_SYSTEM_CHARS:14000}
     fallback-provider: ${MODLESS_AI_FALLBACK_PROVIDER:}
     hardening:
       per-user-requests-per-window: ${MODLESS_AI_RATE_LIMIT_REQUESTS:30}
@@ -86,15 +69,6 @@ modless:
       provider-retry-attempts: ${MODLESS_AI_PROVIDER_RETRY_ATTEMPTS:2}
       retry-backoff: ${MODLESS_AI_RETRY_BACKOFF:250ms}
       recent-message-window: ${MODLESS_AI_RECENT_MESSAGE_WINDOW:24}
-    embeddings:
-      provider: ${MODLESS_AI_EMBEDDINGS_PROVIDER:ONNX}
-      model-resource: ${MODLESS_AI_EMBEDDINGS_MODEL_RESOURCE:}
-      tokenizer-resource: ${MODLESS_AI_EMBEDDINGS_TOKENIZER_RESOURCE:}
-      model-output-name: ${MODLESS_AI_EMBEDDINGS_MODEL_OUTPUT_NAME:}
-      cache-directory: ${MODLESS_AI_EMBEDDINGS_CACHE_DIRECTORY:}
-      disable-caching: ${MODLESS_AI_EMBEDDINGS_DISABLE_CACHING:false}
-      gpu-device-id: ${MODLESS_AI_EMBEDDINGS_GPU_DEVICE_ID:-1}
-      fallback-to-hash: ${MODLESS_AI_EMBEDDINGS_FALLBACK_TO_HASH:true}
     proxy:
       enabled: ${MODLESS_AI_PROXY_ENABLED:false}
       type: ${MODLESS_AI_PROXY_TYPE:HTTP}

@@ -6,7 +6,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import io.mehdieidi.modless.backend.assistant.AssistantRealtimeHub;
 import io.mehdieidi.modless.backend.upload.UploadService;
-import io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator;
+import io.mehdieidi.modless.platform.assistant.application.AgenticAssistantFacade;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import io.mehdieidi.modless.platform.project.application.ProjectService;
 import org.junit.jupiter.api.Test;
@@ -17,9 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class ChatbotControllerTest {
 
-  @Mock private AssistantOrchestrator assistant;
-
-  @Mock private io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog catalogs;
+  @Mock private AgenticAssistantFacade assistant;
 
   @Mock private AssistantRealtimeHub realtime;
 
@@ -32,7 +30,7 @@ class ChatbotControllerTest {
   @Test
   void createSessionRejectsMissingProjectIdBeforeProjectLookup() {
     ChatbotController controller =
-        new ChatbotController(assistant, catalogs, realtime, auth, projects, uploads);
+        new ChatbotController(assistant, realtime, auth, projects, uploads);
 
     PlatformException ex =
         assertThrows(

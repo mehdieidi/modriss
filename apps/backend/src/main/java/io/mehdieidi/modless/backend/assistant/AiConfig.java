@@ -1,10 +1,16 @@
 package io.mehdieidi.modless.backend.assistant;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.platform.assistant.agent.AgentTurnLoop;
+import io.mehdieidi.modless.platform.assistant.application.AgenticAssistantFacade;
+import io.mehdieidi.modless.platform.assistant.application.AgenticTurnService;
 import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import io.mehdieidi.modless.platform.assistant.delta.DeltaCompiler;
+import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelGuideGenerator;
+import io.mehdieidi.modless.platform.assistant.metamodel.MetamodelKnowledgeService;
+import io.mehdieidi.modless.platform.assistant.metamodel.TypeContractService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
@@ -12,7 +18,9 @@ import io.mehdieidi.modless.platform.assistant.provider.ConfiguredAssistantModel
 import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.modless.platform.assistant.provider.springai.GeminiAssistantModelProvider;
 import io.mehdieidi.modless.platform.assistant.provider.springai.OpenAiCompatibleAssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.source.SourceDocumentWorkers;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantSettings;
+import io.mehdieidi.modless.platform.assistant.tools.AgentModelTools;
 import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.net.Proxy;
@@ -28,6 +36,65 @@ import org.springframework.web.client.RestClient;
 @Configuration
 @EnableConfigurationProperties(AiProperties.class)
 public class AiConfig {
+
+  @Bean
+  MetamodelGuideGenerator metamodelGuideGenerator(MetamodelKnowledgeService knowledge) {
+    return new MetamodelGuideGenerator(knowledge);
+  }
+
+  @Bean
+  TypeContractService typeContractService(MetamodelKnowledgeService knowledge) {
+    return new TypeContractService(knowledge);
+  }
+
+  @Bean
+  AgentModelTools agentModelTools(TypeContractService contracts, ModelService models) {
+    return new AgentModelTools(contracts, models);
+  }
+
+  @Bean
+  AgentTurnLoop agentTurnLoop(
+      AssistantModelProvider provider,
+      AgentModelTools tools,
+      MetamodelGuideGenerator guides,
+      AssistantRealtimeHub realtime,
+      AiProperties properties) {
+    return new AgentTurnLoop(
+        provider, tools, guides, realtime, properties.turnTimeout(), properties.maxAgentSteps());
+  }
+
+  @Bean(destroyMethod = "close")
+  SourceDocumentWorkers sourceDocumentWorkers(
+      AssistantModelProvider provider, AssistantRealtimeHub realtime) {
+    return new SourceDocumentWorkers(
+        provider, realtime, Math.max(2, Runtime.getRuntime().availableProcessors() / 2), 12000);
+  }
+
+  @Bean
+  AgenticTurnService agenticTurnService(
+      ModelService models,
+      AssistantPatchCompiler patches,
+      AgentTurnLoop loop,
+      SourceDocumentWorkers workers,
+      AssistantRealtimeHub realtime,
+      io.mehdieidi.modless.platform.assistant.spi.AssistantMemoryStore memory) {
+    return new AgenticTurnService(models, patches, loop, workers, realtime, memory);
+  }
+
+  @Bean
+  AgenticAssistantFacade agenticAssistantFacade(
+      io.mehdieidi.modless.platform.assistant.session.AssistantSessionStore sessions,
+      io.mehdieidi.modless.platform.assistant.spi.AssistantMemoryStore memory,
+      io.mehdieidi.modless.platform.assistant.spi.AssistantChatMemory chatMemory,
+      io.mehdieidi.modless.platform.project.application.ProjectService projects,
+      ModelService models,
+      AssistantPatchCompiler patches,
+      AssistantRealtimeHub realtime,
+      AssistantModelProvider provider,
+      AgenticTurnService turns) {
+    return new AgenticAssistantFacade(
+        sessions, memory, chatMemory, projects, models, patches, realtime, provider, turns);
+  }
 
   @Bean
   @Primary

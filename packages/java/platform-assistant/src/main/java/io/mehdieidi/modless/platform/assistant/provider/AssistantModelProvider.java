@@ -2,6 +2,7 @@ package io.mehdieidi.modless.platform.assistant.provider;
 
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import java.util.List;
+import java.util.function.Consumer;
 
 /** Provider-neutral boundary for assistant model calls. */
 public interface AssistantModelProvider {
@@ -47,6 +48,24 @@ public interface AssistantModelProvider {
    */
   default AssistantReply completeWithTools(AssistantPrompt prompt) {
     return complete(prompt);
+  }
+
+  /**
+   * Streams text deltas for one tool-enabled prompt. Providers should override for true transport
+   * streaming.
+   */
+  default AssistantReply streamWithTools(AssistantPrompt prompt, Consumer<String> deltaConsumer) {
+    AssistantReply reply = completeWithTools(prompt);
+    if (deltaConsumer != null && reply.content() != null && !reply.content().isEmpty()) {
+      deltaConsumer.accept(reply.content());
+    }
+    return reply;
+  }
+
+  /** Streams with an explicitly scoped tool object for a single working-copy turn. */
+  default AssistantReply streamWithTools(
+      AssistantPrompt prompt, Object scopedTools, Consumer<String> deltaConsumer) {
+    return streamWithTools(prompt, deltaConsumer);
   }
 
   /**

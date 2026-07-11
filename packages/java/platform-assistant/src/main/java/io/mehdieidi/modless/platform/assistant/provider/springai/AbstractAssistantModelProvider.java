@@ -9,7 +9,10 @@ import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,6 +155,67 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
             });
     logResponse(prompt.role(), model, content, providerCallId, providerStarted);
     return new AssistantReply(content == null ? "" : content, providerKey, model);
+  }
+
+  @Override
+  public AssistantReply streamWithTools(AssistantPrompt rawPrompt, Consumer<String> deltaConsumer) {
+    return streamWithTools(rawPrompt, tools, deltaConsumer);
+  }
+
+  @Override
+  public AssistantReply streamWithTools(
+      AssistantPrompt rawPrompt, Object scopedTools, Consumer<String> deltaConsumer) {
+    requireAvailable();
+    AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
+    String model = modelFor(prompt.role());
+    String providerCallId = providerCallId();
+    logRequest(prompt, model, providerCallId);
+    long providerStarted = System.nanoTime();
+    StringBuilder content = new StringBuilder();
+    hardening.providerCall(
+        prompt.role(),
+        providerKey,
+        model,
+        () -> {
+          CompletableFuture<Void> streaming =
+              CompletableFuture.runAsync(
+                  () ->
+                      chatClient
+                          .prompt()
+                          .options(options(model, prompt.role()))
+                          .tools(scopedTools)
+                          .system(SYSTEM_GUARDRAIL + "\n" + prompt.system())
+                          .user(userWithContext(prompt))
+                          .stream()
+                          .content()
+                          .toStream()
+                          .forEach(
+                              delta -> {
+                                if (delta == null || delta.isEmpty()) return;
+                                content.append(delta);
+                                if (deltaConsumer != null) deltaConsumer.accept(delta);
+                              }));
+          try {
+            streaming.get(properties.requestTimeout().toMillis(), TimeUnit.MILLISECONDS);
+          } catch (TimeoutException timeout) {
+            streaming.cancel(true);
+            throw new io.mehdieidi.modless.platform.kernel.PlatformException(
+                504,
+                "AI provider returned no response within "
+                    + properties.requestTimeout().toSeconds()
+                    + " seconds. The provider or model is currently too slow; try again shortly.");
+          } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new io.mehdieidi.modless.platform.kernel.PlatformException(
+                499, "Assistant streaming was interrupted.");
+          } catch (java.util.concurrent.ExecutionException failed) {
+            if (failed.getCause() instanceof RuntimeException runtime) throw runtime;
+            throw new IllegalStateException("AI provider streaming failed.", failed.getCause());
+          }
+          return content;
+        });
+    logResponse(prompt.role(), model, content.toString(), providerCallId, providerStarted);
+    return new AssistantReply(content.toString(), providerKey, model);
   }
 
   @Override

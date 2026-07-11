@@ -6,12 +6,11 @@ import io.mehdieidi.modless.backend.assistant.AssistantRealtimeHub;
 import io.mehdieidi.modless.backend.upload.UploadScope;
 import io.mehdieidi.modless.backend.upload.UploadService;
 import io.mehdieidi.modless.backend.upload.UploadedFileRecord;
-import io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator;
+import io.mehdieidi.modless.platform.assistant.application.AgenticAssistantFacade;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantProposal;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantReadyPayload;
 import io.mehdieidi.modless.platform.assistant.session.AssistantSessionStore;
-import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
@@ -42,8 +41,7 @@ public class ChatbotController {
 
   private static final Logger log = LoggerFactory.getLogger(ChatbotController.class);
 
-  private final AssistantOrchestrator assistant;
-  private final AssistantCatalog catalogs;
+  private final AgenticAssistantFacade assistant;
   private final AssistantRealtimeHub realtime;
   private final AuthSupport auth;
   private final ProjectService projects;
@@ -57,14 +55,12 @@ public class ChatbotController {
    * @param projects project access service
    */
   public ChatbotController(
-      AssistantOrchestrator assistant,
-      AssistantCatalog catalogs,
+      AgenticAssistantFacade assistant,
       AssistantRealtimeHub realtime,
       AuthSupport auth,
       ProjectService projects,
       UploadService uploads) {
     this.assistant = assistant;
-    this.catalogs = catalogs;
     this.realtime = realtime;
     this.auth = auth;
     this.projects = projects;
@@ -140,7 +136,7 @@ public class ChatbotController {
     UserRecord user = auth.user(token);
     projects.get(user, projectId);
     ModelLevel modelLevel = ModelLevel.fromApiName(level);
-    return assistant.listConversations(user, projectId, modelLevel, days, 30).stream()
+    return assistant.conversations(user, projectId, modelLevel, days, 30).stream()
         .map(
             conversation ->
                 new ConversationResponse(
@@ -189,31 +185,36 @@ public class ChatbotController {
         attachment.content() == null ? 0 : attachment.content().length(),
         elapsedMillis(attachmentStarted));
     long orchestratorStarted = System.nanoTime();
-    AssistantOrchestrator.AssistantTurnResponse response =
-        assistant.handleMessage(
+    var response =
+        assistant.message(
             user,
             sessionId,
-            new AssistantOrchestrator.AssistantTurnRequest(
-                request.message(),
-                request.modelId(),
-                request.revision(),
-                request.activeView(),
-                request.selectedElementIds(),
-                request.unsavedDraftPatch(),
-                attachment.name(),
-                attachment.content(),
-                request.idempotencyKey()));
+            request.modelId(),
+            request.revision(),
+            request.message(),
+            attachment.content());
     log.info(
         "assistant HTTP message completed requestId={} sessionId={} workflowState={} modelId={} "
             + "revision={} orchestratorElapsedMs={} totalElapsedMs={}",
         mdc("requestId"),
         session.id(),
-        response.workflowState(),
+        "APPLIED",
         safeLogValue(response.modelId()),
         response.revision(),
         elapsedMillis(orchestratorStarted),
         elapsedMillis(started));
-    return toMessageResponse(response);
+    return new MessageResponse(
+        response.message(),
+        response.modelId(),
+        response.revision(),
+        null,
+        null,
+        List.of(),
+        io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState.APPLIED,
+        new ActivityResponse(
+            "COMPLETED",
+            "Agent turn completed",
+            io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState.APPLIED));
   }
 
   /**
@@ -269,31 +270,15 @@ public class ChatbotController {
   @GetMapping("/api/chatbot/sessions/{sessionId}/thread")
   ThreadResponse thread(
       @RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
-    AssistantOrchestrator.ThreadSnapshot snapshot = assistant.thread(auth.user(token), sessionId);
+    AgenticAssistantFacade.ThreadSnapshot snapshot = assistant.thread(auth.user(token), sessionId);
     return new ThreadResponse(
         snapshot.messages().stream()
             .map(message -> new ThreadMessageResponse(message.role(), message.content()))
             .toList(),
-        snapshot.pendingChoices(),
+        List.of(),
         snapshot.workflowState(),
         snapshot.proposal(),
         snapshot.provider());
-  }
-
-  private MessageResponse toMessageResponse(AssistantOrchestrator.AssistantTurnResponse response) {
-    AssistantOrchestrator.AssistantActivity activity = response.activity();
-    if (activity == null) {
-      activity = new AssistantOrchestrator.AssistantActivity(null, null, response.workflowState());
-    }
-    return new MessageResponse(
-        response.assistantMessage(),
-        response.modelId(),
-        response.revision(),
-        null,
-        response.proposal(),
-        response.choices(),
-        response.workflowState(),
-        new ActivityResponse(activity.stage(), activity.message(), activity.workflowState()));
   }
 
   private ResolvedRequestAttachment resolveRequestAttachments(
@@ -382,18 +367,8 @@ public class ChatbotController {
   /** Requests cancellation of the currently active assistant turn for a session. */
   @PostMapping("/api/chatbot/sessions/{sessionId}/cancel")
   void cancel(@RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
-    assistant.cancelActiveTurn(auth.user(token), sessionId);
-  }
-
-  /**
-   * Reindexes assistant metamodel and methodology catalogs when {@code mde/} files change.
-   *
-   * @param token auth token
-   */
-  @PostMapping("/api/chatbot/catalogs/reindex")
-  void reindexCatalogs(@RequestHeader("X-Auth-Token") String token) {
     auth.user(token);
-    catalogs.refresh();
+    assistant.cancel(auth.user(token), sessionId);
   }
 
   /**
@@ -424,75 +399,30 @@ public class ChatbotController {
       @PathVariable String sessionId,
       @PathVariable String proposalId) {
     long started = System.nanoTime();
-    AssistantOrchestrator.AssistantTurnResponse response =
-        assistant.undoProposal(auth.user(token), sessionId, proposalId);
+    AgenticAssistantFacade.UndoResult response =
+        assistant.undo(auth.user(token), sessionId, proposalId);
     log.info(
         "assistant undo completed requestId={} sessionId={} proposalId={} workflowState={} "
             + "modelId={} revision={} elapsedMs={}",
         mdc("requestId"),
         sessionId,
         proposalId,
-        response.workflowState(),
+        "UNDONE",
         safeLogValue(response.modelId()),
         response.revision(),
         elapsedMillis(started));
-    return toMessageResponse(response);
-  }
-
-  /**
-   * Reserved endpoint for bounded user-choice submission.
-   *
-   * @param sessionId session ID
-   * @param request choice request
-   */
-  @PostMapping("/api/chatbot/sessions/{sessionId}/choices")
-  MessageResponse choose(
-      @RequestHeader("X-Auth-Token") String token,
-      @PathVariable String sessionId,
-      @RequestBody ChoiceRequest request) {
-    long started = System.nanoTime();
-    UserRecord user = auth.user(token);
-    if (request == null) {
-      throw new PlatformException(400, "Clarification answers are required.");
-    }
-    AssistantSessionStore.AssistantSession session = assistant.session(user, sessionId);
-    long attachmentStarted = System.nanoTime();
-    ResolvedRequestAttachment attachment = resolveChoiceAttachments(user, session, request);
-    log.info(
-        "assistant choice attachment resolved requestId={} sessionId={} attachmentIds={} "
-            + "attachmentName={} attachmentChars={} elapsedMs={}",
-        mdc("requestId"),
-        session.id(),
-        request.attachmentIds() == null ? 0 : request.attachmentIds().size(),
-        safeLogValue(attachment.name()),
-        attachment.content() == null ? 0 : attachment.content().length(),
-        elapsedMillis(attachmentStarted));
-    List<AssistantOrchestrator.ChoiceAnswer> answers =
-        request.answers() == null || request.answers().isEmpty()
-            ? List.of(
-                new AssistantOrchestrator.ChoiceAnswer(
-                    request.choiceId(),
-                    request.optionId() == null ? List.of() : List.of(request.optionId()),
-                    ""))
-            : request.answers().stream()
-                .map(
-                    answer ->
-                        new AssistantOrchestrator.ChoiceAnswer(
-                            answer.choiceId(), answer.optionIds(), answer.freeText()))
-                .toList();
-    AssistantOrchestrator.AssistantTurnResponse response =
-        assistant.submitChoices(user, sessionId, answers, attachment.name(), attachment.content());
-    log.info(
-        "assistant choice completed requestId={} sessionId={} answerCount={} workflowState={} "
-            + "modelId={} revision={} totalElapsedMs={}",
-        mdc("requestId"),
-        session.id(),
-        answers.size(),
-        response.workflowState(),
-        safeLogValue(response.modelId()),
+    return new MessageResponse(
+        response.message(),
+        response.modelId(),
         response.revision(),
-        elapsedMillis(started));
-    return toMessageResponse(response);
+        null,
+        response.proposal(),
+        List.of(),
+        io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState.UNDONE,
+        new ActivityResponse(
+            "COMPLETED",
+            "Proposal undone",
+            io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState.UNDONE));
   }
 
   private long elapsedMillis(long startedNanos) {

@@ -1075,15 +1075,6 @@ paths:
           description: Recent conversations
         "401":
           $ref: "#/components/responses/Unauthorized"
-  /api/chatbot/catalogs/reindex:
-    post:
-      tags: [Assistant]
-      summary: Reindex metamodel and EVL catalogs
-      responses:
-        "200":
-          description: Catalog reindex triggered
-        "401":
-          $ref: "#/components/responses/Unauthorized"
   /api/chatbot/sessions:
     post:
       tags: [Assistant]
@@ -1236,21 +1227,6 @@ paths:
       responses:
         "200":
           description: Proposal undone
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /api/chatbot/sessions/{sessionId}/choices:
-    parameters:
-      - name: sessionId
-        in: path
-        required: true
-        schema:
-          type: string
-    post:
-      tags: [Assistant]
-      summary: Submit assistant choice
-      responses:
-        "200":
-          description: Choice recorded
         "401":
           $ref: "#/components/responses/Unauthorized"
   /ws/chatbot/sessions/{sessionId}:

@@ -314,7 +314,8 @@ final class ModelValidationService {
           issue(
               "ERROR",
               "XmiExport",
-              "The model could not be prepared for validation. Review the affected model data and try again."));
+              "The model could not be prepared for validation. Review the affected model data and"
+                  + " try again."));
     } catch (EvlValidationException ex) {
       addValidationReportTimings(ex.getReport());
       return validationIssues(ex.getReport());
@@ -323,7 +324,8 @@ final class ModelValidationService {
           issue(
               "ERROR",
               "EvlValidationExecution",
-              "Validation could not be completed. Correct any rule or model issues shown here, then run validation again."));
+              "Validation could not be completed. Correct any rule or model issues shown here, then"
+                  + " run validation again."));
     }
   }
 
@@ -349,13 +351,15 @@ final class ModelValidationService {
           issue(
               "ERROR",
               "XmiExport",
-              "The model could not be prepared for structural validation. Review the affected model data and try again."));
+              "The model could not be prepared for structural validation. Review the affected model"
+                  + " data and try again."));
     } catch (Exception ex) {
       return List.of(
           issue(
               "ERROR",
               "StructuralValidationExecution",
-              "Structural validation could not be completed. Review the affected model data and try again."));
+              "Structural validation could not be completed. Review the affected model data and try"
+                  + " again."));
     }
   }
 
@@ -390,7 +394,8 @@ final class ModelValidationService {
           issue(
               "ERROR",
               "XmiLoad",
-              "The saved model could not be read for validation. Re-save the model and try again."));
+              "The saved model could not be read for validation. Re-save the model and try"
+                  + " again."));
     } catch (EvlValidationException ex) {
       addValidationReportTimings(ex.getReport());
       return validationIssues(ex.getReport());
@@ -399,7 +404,8 @@ final class ModelValidationService {
           issue(
               "ERROR",
               "EvlValidationExecution",
-              "Validation could not be completed. Correct any rule or model issues shown here, then run validation again."));
+              "Validation could not be completed. Correct any rule or model issues shown here, then"
+                  + " run validation again."));
     }
   }
 
@@ -462,9 +468,7 @@ final class ModelValidationService {
         violation.element().attributes().getOrDefault("name", violation.element().summary());
     UserFacingIssueText text = splitUserFacingIssueText(violation.message());
     String guidance =
-        violation.fixes().isEmpty()
-            ? text.guidance()
-            : violation.fixes().get(0).title();
+        violation.fixes().isEmpty() ? text.guidance() : violation.fixes().get(0).title();
     return new ModelService.ValidationIssue(
         severity,
         textOrDefault(violation.constraintName(), "EvlConstraint"),
@@ -490,8 +494,7 @@ final class ModelValidationService {
             ? diagnostic.whatWentWrong()
             : "The validation rule could not be checked.";
     UserFacingIssueText text = splitUserFacingIssueText(message);
-    String guidance =
-        !diagnostic.howToFix().isBlank() ? diagnostic.howToFix() : text.guidance();
+    String guidance = !diagnostic.howToFix().isBlank() ? diagnostic.howToFix() : text.guidance();
     return new ModelService.ValidationIssue(
         severity,
         constraint,

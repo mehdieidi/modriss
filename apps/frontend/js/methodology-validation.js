@@ -28,11 +28,14 @@ function issueTargetIds(issue) {
     issue?.affectedElements,
     issue?.relatedElements,
   ];
-  return [...new Set(
-    values.flatMap((value) =>
-      Array.isArray(value) ? value : String(value || "").split(/[\s,]+/),
-    ).map((value) => String(value || "").trim()).filter(Boolean),
-  )];
+  return [
+    ...new Set(
+      values
+        .flatMap((value) => (Array.isArray(value) ? value : String(value || "").split(/[\s,]+/)))
+        .map((value) => String(value || "").trim())
+        .filter(Boolean),
+    ),
+  ];
 }
 
 function manualRequirementLabel(issue) {
@@ -157,7 +160,8 @@ function renderIssues(issues) {
     const severity = severityOf(issue);
     const title = issue.constraint || issue.code || "Constraint";
     const message = issue.message || "This item needs attention.";
-    const guide = issue.guidance || issue.suggestedFix || "Review this item and make the required change.";
+    const guide =
+      issue.guidance || issue.suggestedFix || "Review this item and make the required change.";
     const targetIds = issueTargetIds(issue);
     const targetId = targetIds[0] || "";
     const element = issue.elementName || targetId || "";
