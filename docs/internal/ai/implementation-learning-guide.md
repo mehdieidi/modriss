@@ -1,12 +1,12 @@
-# How the Modless AI Assistant Works
+# How the Varka AI Assistant Works
 
-This guide teaches the concepts behind the Modless AI assistant and connects each concept to the
+This guide teaches the concepts behind the Varka AI assistant and connects each concept to the
 code that implements it. For setup and operator notes see [assistant.md](assistant.md). For the
 public summary see [ai-assistant.md](../../public-docs/docs/guides/ai-assistant.md).
 
 The most important idea:
 
-> The large language model is an adviser and proposal writer. The Modless backend remains the
+> The large language model is an adviser and proposal writer. The Varka backend remains the
 > authority that compiles, structurally validates, auto-applies, audits, and undoes model changes.
 
 The assistant is deliberately **bounded**. It does not receive an entire model, metamodel, or EVL
@@ -16,7 +16,7 @@ control.
 
 ## 1. The Big Picture
 
-Modless combines two kinds of intelligence:
+Varka combines two kinds of intelligence:
 
 1. **Probabilistic AI** — an LLM explains, clarifies, or drafts structured model changes; RAG
    supplies metamodel and methodology snippets; providers are OpenAI-compatible or Gemini.
@@ -64,7 +64,7 @@ mutation may be applied.
 
 Key configuration:
 
-- `apps/backend/src/main/resources/application.yml` — `modless.ai.*` bindings
+- `apps/backend/src/main/resources/application.yml` — `varka.ai.*` bindings
 - `deploy/compose.yaml` — local stack including pgvector Postgres
 
 ## 3. Modeling Protocol
@@ -150,7 +150,7 @@ Example: user asks to add a PIM function connected to the selected API.
 4. Persist user message to durable history and Spring AI JDBC chat memory.
 5. Load authorized model; return **409** if `expectedRevision` is stale.
 6. Build or load compact model context.
-7. Retrieve catalog snippets (up to `MODLESS_AI_MAX_CONTEXT_SNIPPETS`, default 24, with schema
+7. Retrieve catalog snippets (up to `VARKA_AI_MAX_CONTEXT_SNIPPETS`, default 24, with schema
    reservation via `AssistantSnippetBudget`).
 8. Plan: answer, structured clarification (`WAITING_FOR_CHOICE`), or `ModelDelta` mutation.
 9. For CIM with attachments, source text is treated as untrusted evidence and passed through
@@ -197,13 +197,13 @@ SSE and WebSocket endpoints do not require `X-Auth-Token`; treat session IDs as 
 
 ## 8. Resilience
 
-| Control           | Implementation                                                                         |
-| ----------------- | -------------------------------------------------------------------------------------- |
-| Rate limit        | In-memory per user (`MODLESS_AI_RATE_LIMIT_REQUESTS` / `MODLESS_AI_RATE_LIMIT_WINDOW`) |
-| Circuit breaker   | Per provider after consecutive failures                                                |
-| Retries           | `MODLESS_AI_PROVIDER_RETRY_ATTEMPTS` with backoff                                      |
-| Fallback provider | **HTTP 429 only** via `MODLESS_AI_FALLBACK_PROVIDER`                                   |
-| AI proxy          | Optional HTTP/SOCKS for provider traffic only (`MODLESS_AI_PROXY_*`)                   |
+| Control           | Implementation                                                                     |
+| ----------------- | ---------------------------------------------------------------------------------- |
+| Rate limit        | In-memory per user (`VARKA_AI_RATE_LIMIT_REQUESTS` / `VARKA_AI_RATE_LIMIT_WINDOW`) |
+| Circuit breaker   | Per provider after consecutive failures                                            |
+| Retries           | `VARKA_AI_PROVIDER_RETRY_ATTEMPTS` with backoff                                    |
+| Fallback provider | **HTTP 429 only** via `VARKA_AI_FALLBACK_PROVIDER`                                 |
+| AI proxy          | Optional HTTP/SOCKS for provider traffic only (`VARKA_AI_PROXY_*`)                 |
 
 The `assistant_rate_limits` table exists in schema but is not written by current Java code.
 
@@ -252,7 +252,7 @@ EVL remains central to the **platform** modeling pipeline:
 The assistant **apply gate** calls `ModelService.validateStructural()` (Ecore constraints). Do not
 assume EVL mandatory rules block assistant auto-apply unless that behavior is added explicitly.
 
-`MODLESS_AI_SEMANTIC_VALIDATION_ENABLED` appears in `.env.example` but is **not read** by runtime
+`VARKA_AI_SEMANTIC_VALIDATION_ENABLED` is a historical setting and is **not present in `.env.example` or read** by the runtime
 code today.
 
 ## 12. Attachments and Session Resume

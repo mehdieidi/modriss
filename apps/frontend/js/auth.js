@@ -3,7 +3,7 @@ import { el } from "./dom.js";
 import { api } from "./api.js";
 import { formatUserError } from "./errors.js";
 
-const AUTH_TOKEN_KEY = "modless.authToken";
+const AUTH_TOKEN_KEY = "varka.authToken";
 
 export function getAuthToken() {
   return window.localStorage.getItem(AUTH_TOKEN_KEY) || "";
@@ -38,7 +38,7 @@ function setAuthMode(mode) {
     el.authConfirmPasswordInput.classList.toggle("hidden", !registerMode);
   }
   if (el.authTitle) {
-    el.authTitle.textContent = registerMode ? "Create your Modless account" : "Sign in to Modless";
+    el.authTitle.textContent = registerMode ? "Create your Varka account" : "Sign in to Varka";
   }
   if (el.authSubtitle) {
     el.authSubtitle.textContent = registerMode

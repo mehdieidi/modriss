@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/cim/domain-data/1.0", prefix="cimdomain")
+@namespace(uri="https://varka.org/cim/domain-data/1.0", prefix="cimdomain")
 package cimdomain;
 
 import "../shared/kernel.ecore";

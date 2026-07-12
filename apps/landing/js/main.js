@@ -4,7 +4,7 @@ import { renderCaseStudy, updateRenderedModelEdges } from "./model-renderer.js";
 import { createStoryTimeline, STORY_DURATION } from "./story-timeline.js";
 
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
-const THEME_STORAGE_KEY = "modless-theme";
+const THEME_STORAGE_KEY = "varka-theme";
 
 function setupThemeToggle() {
   const toggle = document.querySelector("[data-theme-toggle]");

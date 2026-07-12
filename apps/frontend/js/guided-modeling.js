@@ -19,7 +19,7 @@ import {
   refreshMethodologyProcessMap,
 } from "./methodology-process-map.js";
 
-const STORAGE_KEY = "modless.guidedModeling.progress";
+const STORAGE_KEY = "varka.guidedModeling.progress";
 const PHASE_MENU_ID = "methodologyPhaseMenu";
 
 let phaseMenuOpen = false;
@@ -317,7 +317,7 @@ export function openAssistantForGuidedPhase() {
   if (!phase || !task) return;
   const prompt = buildTaskPrompt(phase, stage, task);
   window.dispatchEvent(
-    new CustomEvent("modless:guided-task-prompt", { detail: { taskId: task?.id, prompt } }),
+    new CustomEvent("varka:guided-task-prompt", { detail: { taskId: task?.id, prompt } }),
   );
   const chatInput = document.getElementById("chatInput");
   if (chatInput) {

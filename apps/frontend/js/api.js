@@ -4,7 +4,7 @@ import { ApiError, buildUserMessage, isServerErrorStatus } from "./errors.js";
 export { ApiError, isPlannedFeatureError } from "./errors.js";
 
 export function apiAuthHeaders(extraHeaders = {}) {
-  const token = window.localStorage.getItem("modless.authToken");
+  const token = window.localStorage.getItem("varka.authToken");
   return {
     ...(token ? { "X-Auth-Token": token } : {}),
     ...extraHeaders,

@@ -1,5 +1,5 @@
 {
-  "processId": "modless.end-to-end.modeling",
+  "processId": "varka.end-to-end.modeling",
   "spemVersion": "2.0",
   "level": "end-to-end",
   "displayName": "CIM → PIM → PSM → Artifacts",
@@ -52,7 +52,7 @@
     }
   ],
   "processEngine": {
-    "id": "modless.end-to-end.engine",
+    "id": "varka.end-to-end.engine",
     "displayName": "End-to-End MDE Engine",
     "description": "One vertical CIM → PIM → PSM → artifacts revolution per capability increment.",
     "incrementUnit": "capability-slice",
@@ -71,7 +71,7 @@
         "id": "e2e.p1.cim-modeling",
         "name": "CIM Engine",
         "type": "child-process",
-        "childProcessId": "modless.cim.modeling"
+        "childProcessId": "varka.cim.modeling"
       },
       {
         "id": "e2e.p2.cim-to-pim",
@@ -84,7 +84,7 @@
         "id": "e2e.p3.pim-refinement",
         "name": "PIM Engine",
         "type": "child-process",
-        "childProcessId": "modless.pim.modeling"
+        "childProcessId": "varka.pim.modeling"
       },
       {
         "id": "e2e.p4.pim-to-psm",
@@ -97,7 +97,7 @@
         "id": "e2e.p5.psm-refinement",
         "name": "PSM Engine",
         "type": "child-process",
-        "childProcessId": "modless.psm.modeling"
+        "childProcessId": "varka.psm.modeling"
       },
       {
         "id": "e2e.p6.m2t-generation",
@@ -204,7 +204,7 @@
               "artifacts": [],
               "artifactIds": [],
               "paletteFocus": [],
-              "childProcessId": "modless.cim.modeling"
+              "childProcessId": "varka.cim.modeling"
             }
           ]
         },
@@ -248,7 +248,7 @@
               "artifacts": [],
               "artifactIds": [],
               "paletteFocus": [],
-              "childProcessId": "modless.pim.modeling"
+              "childProcessId": "varka.pim.modeling"
             }
           ]
         },
@@ -292,7 +292,7 @@
               "artifacts": [],
               "artifactIds": [],
               "paletteFocus": [],
-              "childProcessId": "modless.psm.modeling"
+              "childProcessId": "varka.psm.modeling"
             }
           ]
         },

@@ -1,7 +1,7 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <artifactId>modless</artifactId>
+  <artifactId>varka</artifactId>
 
   <build>
     <pluginManagement>
@@ -247,7 +247,7 @@
     <module>tools/mde-m2t-cli</module>
   </modules>
 
-  <name>Modless</name>
+  <name>Varka</name>
 
   <packaging>pom</packaging>
 

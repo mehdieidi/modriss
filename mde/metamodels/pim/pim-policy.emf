@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/pim/policy/1.0", prefix="policy")
+@namespace(uri="https://varka.org/pim/policy/1.0", prefix="policy")
 package policy;
 
 import "../shared/kernel.ecore";

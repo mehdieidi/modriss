@@ -5,7 +5,7 @@ function normalizeBaseUrl(value) {
   return String(value).trim().replace(/\/+$/, "");
 }
 
-export const backendBaseUrl = normalizeBaseUrl(window.MODLESS_BACKEND_BASE_URL);
+export const backendBaseUrl = normalizeBaseUrl(window.VARKA_BACKEND_BASE_URL);
 export const backendOrigin = backendBaseUrl || window.location.origin;
 export const apiBase = backendBaseUrl ? `${backendBaseUrl}/api` : "/api";
 

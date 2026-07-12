@@ -1,6 +1,6 @@
 # Climate Relief Grants Case Study
 
-This directory is an executable, end-to-end Modless modeling case study.
+This directory is an executable, end-to-end Varka modeling case study.
 
 - [`cim-modeling-guide.md`](./cim-modeling-guide.md) describes the business case and the exact
   workbench sequence for building the CIM model.

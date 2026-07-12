@@ -406,8 +406,8 @@ export function scheduleGraphDraw(graph) {
     const result = graph.draw?.();
     result?.catch?.((error) => {
       console.error("G6 draw failed", error);
-      window.modlessG6State = {
-        ...(window.modlessG6State || {}),
+      window.varkaG6State = {
+        ...(window.varkaG6State || {}),
         lastError: error.message || String(error),
       };
     });
@@ -452,8 +452,8 @@ export function scheduleGraphRender(graph) {
     const result = graph.render?.();
     result?.catch?.((error) => {
       console.error("G6 render failed", error);
-      window.modlessG6State = {
-        ...(window.modlessG6State || {}),
+      window.varkaG6State = {
+        ...(window.varkaG6State || {}),
         lastError: error.message || String(error),
       };
     });

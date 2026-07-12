@@ -1052,13 +1052,13 @@ function moveG6ConnectionDrag(sourceId, targetId) {
 }
 
 function ensureCanvas() {
-  window.modlessEnsureG6Canvas = ensureCanvas;
+  window.varkaEnsureG6Canvas = ensureCanvas;
   const renderer =
     state.modelingConfig.config?.diagramEditor?.renderer ||
-    window.modlessFrontendBoot?.renderer ||
+    window.varkaFrontendBoot?.renderer ||
     "antv-g6";
-  window.modlessG6State = {
-    ...(window.modlessG6State || {}),
+  window.varkaG6State = {
+    ...(window.varkaG6State || {}),
     ensureCalled: true,
     rendererRequested: renderer,
     activeType: state.activeType,
@@ -1128,7 +1128,7 @@ export function getModelingRendererDebug() {
   const canvasGrid = el.canvasGrid;
   return {
     renderer: canvasGrid?.dataset?.renderer || "",
-    ensureCalled: Boolean(window.modlessG6State?.ensureCalled),
+    ensureCalled: Boolean(window.varkaG6State?.ensureCalled),
     g6Available: isCanvasRendererAvailable(),
     mounted: Boolean(editor),
     graphReady: Boolean(editor?.graph),
@@ -1147,8 +1147,8 @@ export function getModelingRendererDebug() {
       : null,
     hostChildren: host?.children?.length || 0,
     hasCanvasDescendant: Boolean(host?.querySelector?.("canvas")),
-    lastError: window.modlessG6State?.lastError || "",
-    g6State: window.modlessG6State || null,
+    lastError: window.varkaG6State?.lastError || "",
+    g6State: window.varkaG6State || null,
   };
 }
 
@@ -2027,10 +2027,10 @@ export function renderPalette() {
         state.paletteDragType = type;
         event.dataTransfer.effectAllowed = "copy";
         event.dataTransfer.setData(
-          "application/x-modless-palette-item",
+          "application/x-varka-palette-item",
           JSON.stringify({ level: state.activeType, type }),
         );
-        event.dataTransfer.setData("application/x-modless-node-type", type);
+        event.dataTransfer.setData("application/x-varka-node-type", type);
         event.dataTransfer.setData("text/node-type", type);
         event.dataTransfer.setData("text/plain", type);
       });
@@ -2841,13 +2841,13 @@ export function setupDnD() {
     e.preventDefault();
     let paletteItem = null;
     try {
-      paletteItem = JSON.parse(e.dataTransfer.getData("application/x-modless-palette-item"));
+      paletteItem = JSON.parse(e.dataTransfer.getData("application/x-varka-palette-item"));
     } catch {
       paletteItem = null;
     }
     const type = String(
       paletteItem?.type ||
-        e.dataTransfer.getData("application/x-modless-node-type") ||
+        e.dataTransfer.getData("application/x-varka-node-type") ||
         e.dataTransfer.getData("text/node-type") ||
         state.paletteDragType ||
         "",

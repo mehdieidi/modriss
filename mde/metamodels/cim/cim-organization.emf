@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/cim/organization/1.0", prefix="cimorg")
+@namespace(uri="https://varka.org/cim/organization/1.0", prefix="cimorg")
 package cimorg;
 
 import "../shared/kernel.ecore";

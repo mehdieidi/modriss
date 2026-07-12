@@ -2,7 +2,7 @@
 
 ## Intended Users
 
-Modless serves several related roles:
+Varka serves several related roles:
 
 - **Domain experts** describe goals, actors, concepts, policies, processes, and constraints at CIM.
 - **Architects** refine the design into provider-independent serverless responsibilities at PIM.

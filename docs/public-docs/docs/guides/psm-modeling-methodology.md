@@ -49,7 +49,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modless.psm.modeling` · 6 phases · 27 atomic tasks · PSM metamodel coverage enforced in CI.
+Process `varka.psm.modeling` · 6 phases · 27 atomic tasks · PSM metamodel coverage enforced in CI.
 
 ### Deployment & Slice Framing (`psm.ph1`)
 

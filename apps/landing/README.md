@@ -1,6 +1,6 @@
-# Modless Landing
+# Varka Landing
 
-Static marketing site for Modless: product overview and an animated case-study demo.
+Static marketing site for Varka: product overview and an animated case-study demo.
 
 ## Run locally
 

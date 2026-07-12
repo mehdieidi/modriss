@@ -385,7 +385,7 @@ export function bindValidationCenterUi() {
       targetIds = id ? [id] : [];
     }
     window.dispatchEvent(
-      new CustomEvent("modless:locate-issue-target", {
+      new CustomEvent("varka:locate-issue-target", {
         detail: {
           id,
           targetIds,
@@ -402,7 +402,7 @@ export function bindValidationCenterUi() {
     }
     const manualTaskId = input.getAttribute("data-manual-task-id") || "";
     window.dispatchEvent(
-      new CustomEvent("modless:manual-task-toggle", {
+      new CustomEvent("varka:manual-task-toggle", {
         detail: { manualTaskId, resolved: input.checked },
       }),
     );

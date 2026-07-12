@@ -10,7 +10,7 @@ ws://127.0.0.1:8080/ws/chatbot/sessions/{sessionId}
 ```
 
 Create a session first with `POST /api/chatbot/sessions`, then open the WebSocket for the returned
-`sessionId`. Allowed browser origins come from `modless.allowed-origins`.
+`sessionId`. Allowed browser origins come from `varka.allowed-origins`.
 
 ## Behavior
 

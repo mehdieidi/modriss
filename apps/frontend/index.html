@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
-    <title>Modless</title>
+    <title>Varka</title>
     <link href="/assets/icons/wolf.png" rel="icon" type="image/png" />
     <link
       rel="preload"
@@ -33,14 +33,14 @@
     <link href="/css/project.css" rel="stylesheet" />
     <link href="/css/mobile.css" rel="stylesheet" />
     <script>
-      window.modlessFrontendBoot = {
+      window.varkaFrontendBoot = {
         build: "g6-wired-2026-05-31-02",
       };
     </script>
     <script src="/vendor/antv/g6.min.js?v=g6wired-20260624a"></script>
     <script>
-      window.modlessFrontendBoot.g6GlobalAfterScript = Boolean(window.G6?.Graph);
-      window.modlessFrontendBoot.g6Version = window.G6?.version || "";
+      window.varkaFrontendBoot.g6GlobalAfterScript = Boolean(window.G6?.Graph);
+      window.varkaFrontendBoot.g6Version = window.G6?.version || "";
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js"></script>
   </head>
@@ -50,8 +50,8 @@
       <header class="topbar">
         <div class="topbar-menu-strip">
           <div class="topbar-left">
-            <a aria-label="Open Modless landing page" class="app-brand" href="/landing/">
-              <img alt="Modless wolf logo" class="app-logo-img" src="/assets/icons/wolf.png" />
+            <a aria-label="Open Varka landing page" class="app-brand" href="/landing/">
+              <img alt="Varka wolf logo" class="app-logo-img" src="/assets/icons/wolf.png" />
               <span class="app-brand-text">
                 <span class="app-brand-name">Varka</span>
                 <!--            <span class="app-brand-subtitle">Model Engineering Studio</span>-->
@@ -352,7 +352,7 @@
           </div>
 
           <div
-            aria-label="Modless help"
+            aria-label="Varka help"
             class="rail-menu-panel help-rail-panel hidden"
             id="helpRailPanel"
             role="region"
@@ -1191,8 +1191,8 @@
       <div class="project-overlay hidden" id="projectOverlay">
         <div class="project-dialog">
           <div class="project-dialog-brand">
-            <img alt="Modless wolf logo" class="app-logo-img" src="/assets/icons/wolf.png" />
-            <span class="app-brand-name">MODLESS</span>
+            <img alt="Varka wolf logo" class="app-logo-img" src="/assets/icons/wolf.png" />
+            <span class="app-brand-name">VARKA</span>
           </div>
           <h2 class="project-dialog-title">Welcome</h2>
           <p class="project-dialog-subtitle">
@@ -1247,7 +1247,7 @@
         role="dialog"
       >
         <div class="modal-dialog auth-dialog">
-          <h3 class="modal-title" id="authTitle">Sign in to MODLESS</h3>
+          <h3 class="modal-title" id="authTitle">Sign in to VARKA</h3>
           <p class="modal-subtitle" id="authSubtitle">Use your account to continue.</p>
           <div aria-label="Authentication mode" class="auth-mode-switch" role="tablist">
             <button
@@ -1479,7 +1479,7 @@
           <div class="not-found-code">404</div>
           <h1 class="not-found-title">This model wandered off the map.</h1>
           <p class="not-found-copy">
-            The route you opened does not match a Modless workspace. The canvas is still here; the
+            The route you opened does not match a Varka workspace. The canvas is still here; the
             address just needs a clean starting point.
           </p>
           <button class="btn btn-primary" id="notFoundGoHomeBtn" type="button">

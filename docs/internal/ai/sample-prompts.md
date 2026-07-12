@@ -1,6 +1,6 @@
 # AI Modeling Assistant Sample Prompts
 
-This prompt library shows the kinds of requests users can give the Modless AI modeling assistant.
+This prompt library shows the kinds of requests users can give the Varka AI modeling assistant.
 Prompts may be used as written or adapted to the current project, model level, and selected model
 elements.
 

@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/pim/api/1.0", prefix="api")
+@namespace(uri="https://varka.org/pim/api/1.0", prefix="api")
 package api;
 
 import "../shared/kernel.ecore";

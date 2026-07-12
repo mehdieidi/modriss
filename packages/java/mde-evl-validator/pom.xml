@@ -61,7 +61,7 @@
   <packaging>jar</packaging>
 
   <parent>
-    <artifactId>modless</artifactId>
+    <artifactId>varka</artifactId>
     <groupId>io.mehdieidi</groupId>
     <relativePath>../../../pom.xml</relativePath>
     <version>0.0.1-SNAPSHOT</version>

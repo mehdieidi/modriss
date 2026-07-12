@@ -1,5 +1,5 @@
 {
-  "processId": "modless.cim.modeling",
+  "processId": "varka.cim.modeling",
   "spemVersion": "2.0",
   "level": "cim",
   "displayName": "CIM",
@@ -162,7 +162,7 @@
     }
   ],
   "processEngine": {
-    "id": "modless.cim.engine",
+    "id": "varka.cim.engine",
     "displayName": "CIM Modeling Engine",
     "description": "Revolves through increment framing → context discovery → domain exploration → synthesis → readiness/review per capability slice.",
     "incrementUnit": "capability-slice",
@@ -290,7 +290,7 @@
       "order": 1,
       "objective": "Frame the current capability slice, establish or refresh the CIM program container, and anchor modeling in measurable intent.",
       "primaryRole": "business-modeler",
-      "entryCriteria": ["Modless project created or prior CIM increment selected for evolution"],
+      "entryCriteria": ["Varka project created or prior CIM increment selected for evolution"],
       "exitCriteria": [
         "CIMModel root exists",
         "Capability-slice objective and definition of done are agreed",

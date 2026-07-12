@@ -11,7 +11,7 @@ server:
 
 spring:
   application:
-    name: modless-backend
+    name: varka-backend
   # Compose injects .env explicitly. These optional imports give the same configuration to a
   # backend started from the repository root or apps/backend in a WSL terminal.
   config:
@@ -19,12 +19,12 @@ spring:
       - optional:file:.env[.properties]
       - optional:file:../../.env[.properties]
   datasource:
-    url: ${MODLESS_DB_URL:jdbc:postgresql://localhost:5432/modless}
-    username: ${MODLESS_DB_USER:modless}
-    password: ${MODLESS_DB_PASSWORD:modless}
+    url: ${VARKA_DB_URL:jdbc:postgresql://localhost:5432/varka}
+    username: ${VARKA_DB_USER:varka}
+    password: ${VARKA_DB_PASSWORD:varka}
     hikari:
-      maximum-pool-size: ${MODLESS_DB_MAX_POOL_SIZE:10}
-      minimum-idle: ${MODLESS_DB_MIN_IDLE:2}
+      maximum-pool-size: ${VARKA_DB_MAX_POOL_SIZE:10}
+      minimum-idle: ${VARKA_DB_MIN_IDLE:2}
       connection-timeout: 30000
       validation-timeout: 5000
   flyway:
@@ -41,64 +41,64 @@ spring:
       max-file-size: 20MB
       max-request-size: 20MB
 
-modless:
+varka:
   session-ttl: 30d
   mde:
-    execution-timeout: ${MODLESS_MDE_EXECUTION_TIMEOUT:5m}
-    job-timeout: ${MODLESS_MDE_JOB_TIMEOUT:10m}
-    max-captured-output-bytes: ${MODLESS_MDE_MAX_CAPTURED_OUTPUT_BYTES:1048576}
-    max-concurrent-jobs: ${MODLESS_MDE_MAX_CONCURRENT_JOBS:2}
-    queue-capacity: ${MODLESS_MDE_QUEUE_CAPACITY:32}
-    max-model-upload-bytes: ${MODLESS_MDE_MAX_MODEL_UPLOAD_BYTES:20971520}
-    max-generated-files: ${MODLESS_MDE_MAX_GENERATED_FILES:2000}
-    max-generated-file-bytes: ${MODLESS_MDE_MAX_GENERATED_FILE_BYTES:5242880}
-    max-generated-artifact-bytes: ${MODLESS_MDE_MAX_GENERATED_ARTIFACT_BYTES:52428800}
-    staged-import-ttl: ${MODLESS_MDE_STAGED_IMPORT_TTL:2h}
-    import-cleanup-interval: ${MODLESS_MDE_IMPORT_CLEANUP_INTERVAL:PT15M}
+    execution-timeout: ${VARKA_MDE_EXECUTION_TIMEOUT:5m}
+    job-timeout: ${VARKA_MDE_JOB_TIMEOUT:10m}
+    max-captured-output-bytes: ${VARKA_MDE_MAX_CAPTURED_OUTPUT_BYTES:1048576}
+    max-concurrent-jobs: ${VARKA_MDE_MAX_CONCURRENT_JOBS:2}
+    queue-capacity: ${VARKA_MDE_QUEUE_CAPACITY:32}
+    max-model-upload-bytes: ${VARKA_MDE_MAX_MODEL_UPLOAD_BYTES:20971520}
+    max-generated-files: ${VARKA_MDE_MAX_GENERATED_FILES:2000}
+    max-generated-file-bytes: ${VARKA_MDE_MAX_GENERATED_FILE_BYTES:5242880}
+    max-generated-artifact-bytes: ${VARKA_MDE_MAX_GENERATED_ARTIFACT_BYTES:52428800}
+    staged-import-ttl: ${VARKA_MDE_STAGED_IMPORT_TTL:2h}
+    import-cleanup-interval: ${VARKA_MDE_IMPORT_CLEANUP_INTERVAL:PT15M}
   upload:
-    root: ${MODLESS_UPLOAD_ROOT:uploads}
-    max-file-bytes: ${MODLESS_UPLOAD_MAX_FILE_BYTES:1048576}
-    max-text-chars: ${MODLESS_UPLOAD_MAX_TEXT_CHARS:120000}
+    root: ${VARKA_UPLOAD_ROOT:uploads}
+    max-file-bytes: ${VARKA_UPLOAD_MAX_FILE_BYTES:1048576}
+    max-text-chars: ${VARKA_UPLOAD_MAX_TEXT_CHARS:120000}
   ai:
-    enabled: ${MODLESS_AI_ENABLED:false}
-    provider: ${MODLESS_AI_PROVIDER:openai}
-    request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:5m}
-    turn-timeout: ${MODLESS_AI_TURN_TIMEOUT:5m}
-    max-agent-steps: ${MODLESS_AI_MAX_AGENT_STEPS:8}
-    token-budget: ${MODLESS_AI_TOKEN_BUDGET:16000}
-    max-prompt-tokens: ${MODLESS_AI_MAX_PROMPT_TOKENS:24000}
-    max-system-chars: ${MODLESS_AI_MAX_SYSTEM_CHARS:14000}
-    max-source-chunk-tokens: ${MODLESS_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
-    max-source-chunks-per-turn: ${MODLESS_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
-    max-provider-calls-per-turn: ${MODLESS_AI_MAX_PROVIDER_CALLS_PER_TURN:8}
-    max-provider-calls-source-turn: ${MODLESS_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:12}
-    source-turn-timeout: ${MODLESS_AI_SOURCE_TURN_TIMEOUT:12m}
-    fallback-provider: ${MODLESS_AI_FALLBACK_PROVIDER:}
+    enabled: ${VARKA_AI_ENABLED:false}
+    provider: ${VARKA_AI_PROVIDER:openai}
+    request-timeout: ${VARKA_AI_REQUEST_TIMEOUT:5m}
+    turn-timeout: ${VARKA_AI_TURN_TIMEOUT:5m}
+    max-agent-steps: ${VARKA_AI_MAX_AGENT_STEPS:8}
+    token-budget: ${VARKA_AI_TOKEN_BUDGET:16000}
+    max-prompt-tokens: ${VARKA_AI_MAX_PROMPT_TOKENS:24000}
+    max-system-chars: ${VARKA_AI_MAX_SYSTEM_CHARS:14000}
+    max-source-chunk-tokens: ${VARKA_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
+    max-source-chunks-per-turn: ${VARKA_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
+    max-provider-calls-per-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN:8}
+    max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:12}
+    source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:12m}
+    fallback-provider: ${VARKA_AI_FALLBACK_PROVIDER:}
     hardening:
-      per-user-requests-per-window: ${MODLESS_AI_RATE_LIMIT_REQUESTS:30}
-      rate-limit-window: ${MODLESS_AI_RATE_LIMIT_WINDOW:1m}
-      circuit-failure-threshold: ${MODLESS_AI_CIRCUIT_FAILURE_THRESHOLD:3}
-      circuit-open-duration: ${MODLESS_AI_CIRCUIT_OPEN_DURATION:1m}
-      provider-retry-attempts: ${MODLESS_AI_PROVIDER_RETRY_ATTEMPTS:2}
-      retry-backoff: ${MODLESS_AI_RETRY_BACKOFF:250ms}
-      recent-message-window: ${MODLESS_AI_RECENT_MESSAGE_WINDOW:24}
+      per-user-requests-per-window: ${VARKA_AI_RATE_LIMIT_REQUESTS:30}
+      rate-limit-window: ${VARKA_AI_RATE_LIMIT_WINDOW:1m}
+      circuit-failure-threshold: ${VARKA_AI_CIRCUIT_FAILURE_THRESHOLD:3}
+      circuit-open-duration: ${VARKA_AI_CIRCUIT_OPEN_DURATION:1m}
+      provider-retry-attempts: ${VARKA_AI_PROVIDER_RETRY_ATTEMPTS:2}
+      retry-backoff: ${VARKA_AI_RETRY_BACKOFF:250ms}
+      recent-message-window: ${VARKA_AI_RECENT_MESSAGE_WINDOW:24}
     proxy:
-      enabled: ${MODLESS_AI_PROXY_ENABLED:false}
-      type: ${MODLESS_AI_PROXY_TYPE:HTTP}
-      host: ${MODLESS_AI_PROXY_HOST:127.0.0.1}
-      port: ${MODLESS_AI_PROXY_PORT:2081}
-      connect-timeout: ${MODLESS_AI_PROXY_CONNECT_TIMEOUT:2s}
+      enabled: ${VARKA_AI_PROXY_ENABLED:false}
+      type: ${VARKA_AI_PROXY_TYPE:HTTP}
+      host: ${VARKA_AI_PROXY_HOST:127.0.0.1}
+      port: ${VARKA_AI_PROXY_PORT:2081}
+      connect-timeout: ${VARKA_AI_PROXY_CONNECT_TIMEOUT:2s}
     openai-compatible:
       base-url: ${OPENAI_COMPATIBLE_BASE_URL:https://api.openai.com}
       api-key: ${OPENAI_COMPATIBLE_API_KEY:}
     gemini:
       api-key: ${GEMINI_API_KEY:}
     models:
-      planner: ${MODLESS_AI_PLANNER_MODEL:}
-      responder: ${MODLESS_AI_RESPONDER_MODEL:}
-      summarizer: ${MODLESS_AI_SUMMARIZER_MODEL:}
+      planner: ${VARKA_AI_PLANNER_MODEL:}
+      responder: ${VARKA_AI_RESPONDER_MODEL:}
+      summarizer: ${VARKA_AI_SUMMARIZER_MODEL:}
   allowed-origins:
-    # Override entirely with comma-separated MODLESS_ALLOWED_ORIGINS (Compose sets this from port vars).
+    # Override entirely with comma-separated VARKA_ALLOWED_ORIGINS (Compose sets this from port vars).
     - http://127.0.0.1:5500
     - http://localhost:5500
     - http://127.0.0.1:8080
@@ -120,7 +120,7 @@ management:
       probes:
         enabled: true
     prometheus:
-      enabled: ${MODLESS_METRICS_ENABLED:true}
+      enabled: ${VARKA_METRICS_ENABLED:true}
   metrics:
     tags:
       application: ${spring.application.name}
@@ -130,11 +130,11 @@ management:
   prometheus:
     metrics:
       export:
-        enabled: ${MODLESS_METRICS_ENABLED:true}
+        enabled: ${VARKA_METRICS_ENABLED:true}
   tracing:
-    enabled: ${MODLESS_TRACING_ENABLED:false}
+    enabled: ${VARKA_TRACING_ENABLED:false}
     sampling:
-      probability: ${MODLESS_TRACING_SAMPLE_RATE:0.1}
+      probability: ${VARKA_TRACING_SAMPLE_RATE:0.1}
   otlp:
     tracing:
       endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
@@ -145,4 +145,4 @@ logging:
     file: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] %logger{36} requestId=%X{requestId:-} %kvp - %msg%n%wEx"
   level:
     root: INFO
-    io.mehdieidi.modless: DEBUG
+    io.mehdieidi.varka: DEBUG

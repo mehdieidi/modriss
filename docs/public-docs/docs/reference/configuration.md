@@ -1,128 +1,93 @@
 # Configuration
 
-Backend configuration is defined in `apps/backend/src/main/resources/application.yml` and overridden
-through environment variables. Copy the repository root `.env.example` file to `.env` for local
-development defaults (never commit `.env`).
+Varka reads configuration from Spring Boot, Docker Compose, the frontend runtime bootstrap, and
+the PostgreSQL/LocalStack helper scripts. The root `.env` and `.env.example` files contain the same
+90 active keys. `.env.example` is safe to copy; keep real credentials only in the untracked `.env`.
 
-See also the contributor reference [environment-variables.md](../../../internal/environment-variables.md)
-for field-by-field explanations of every `.env.example` key.
+For the complete field-by-field reference, including accepted values and behavior, see the
+[internal environment-variable reference](../../../internal/environment-variables.md).
 
-## Database
+## How configuration is applied
 
-| Variable                   | Default                                    |
-| -------------------------- | ------------------------------------------ |
-| `MODLESS_DB_URL`           | `jdbc:postgresql://localhost:5432/modless` |
-| `MODLESS_DB_USER`          | `modless`                                  |
-| `MODLESS_DB_PASSWORD`      | `modless`                                  |
-| `MODLESS_DB_MAX_POOL_SIZE` | `10`                                       |
-| `MODLESS_DB_MIN_IDLE`      | `2`                                        |
+- Spring placeholders in `apps/backend/src/main/resources/application.yml` configure database,
+  MDE, uploads, AI, metrics, tracing, and OTLP.
+- `@ConfigurationProperties` binds the `varka.*` backend and assistant settings. Invalid values
+  can prevent the backend from starting; zero or negative limits may be normalized to safe defaults.
+- Compose substitutes host ports and infrastructure values from `.env`, then passes `.env` through
+  `env_file`. It overrides the backend database connection to use the `postgres` service and the
+  upload directory to use `/app/uploads`.
+- The frontend receives its backend URL from generated `backend-config.js`; changing `BACKEND_PORT`
+  changes that URL in the Compose deployment.
 
-## MDE Limits and Execution
+## Database and runtime
 
-| Variable                                   | Default    | Purpose                      |
-| ------------------------------------------ | ---------- | ---------------------------- |
-| `MODLESS_MDE_EXECUTION_TIMEOUT`            | `5m`       | Runner timeout               |
-| `MODLESS_MDE_JOB_TIMEOUT`                  | `10m`      | Job timeout                  |
-| `MODLESS_MDE_MAX_CAPTURED_OUTPUT_BYTES`    | `1048576`  | Captured stdout/stderr limit |
-| `MODLESS_MDE_MAX_CONCURRENT_JOBS`          | `2`        | Concurrent job limit         |
-| `MODLESS_MDE_QUEUE_CAPACITY`               | `32`       | Job queue capacity           |
-| `MODLESS_MDE_MAX_MODEL_UPLOAD_BYTES`       | `20971520` | Model upload limit           |
-| `MODLESS_MDE_MAX_GENERATED_FILES`          | `2000`     | Generated file-count limit   |
-| `MODLESS_MDE_MAX_GENERATED_FILE_BYTES`     | `5242880`  | Per-file limit               |
-| `MODLESS_MDE_MAX_GENERATED_ARTIFACT_BYTES` | `52428800` | Artifact limit               |
-| `MODLESS_MDE_STAGED_IMPORT_TTL`            | `2h`       | Temporary import lifetime    |
-| `MODLESS_MDE_IMPORT_CLEANUP_INTERVAL`      | `PT15M`    | Import cleanup interval      |
+| Variables                                            | Default                                | Effect                                                                                                            |
+| ---------------------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`  | `varka`, `varka`, `varka`              | Create the PostgreSQL database and credentials. Change all matching backend credentials together.                 |
+| `POSTGRES_HOST`, `POSTGRES_PORT`                     | `localhost`, `5432`                    | Host/port used by database helper scripts and the host-side port published by Compose.                            |
+| `VARKA_DB_URL`, `VARKA_DB_USER`, `VARKA_DB_PASSWORD` | local JDBC URL and `varka` credentials | Backend database connection when running outside Compose; Compose supplies container-specific values.             |
+| `VARKA_DB_MAX_POOL_SIZE`, `VARKA_DB_MIN_IDLE`        | `10`, `2`                              | Connection-pool capacity. Higher values support more concurrent work but consume more database connections.       |
+| `SPRING_PROFILES_ACTIVE`                             | `dev`                                  | Selects Spring profiles such as `dev`, `prod`, or `test`; profiles can change logging and observability behavior. |
+| `VARKA_STORAGE_ROOT`, `VARKA_SESSION_TTL`            | `storage`, `30d`                       | Local backend data location and authenticated-session lifetime.                                                   |
 
-## Upload Limits
+## Ports, origins, and frontend
 
-| Variable                        | Default   | Purpose                             |
-| ------------------------------- | --------- | ----------------------------------- |
-| `MODLESS_UPLOAD_ROOT`           | `uploads` | Backend upload directory            |
-| `MODLESS_UPLOAD_MAX_FILE_BYTES` | `1048576` | Maximum uploaded file size          |
-| `MODLESS_UPLOAD_MAX_TEXT_CHARS` | `120000`  | Maximum text characters for uploads |
+| Variable                      | Default                   | Effect                                                                                                                            |
+| ----------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `BACKEND_PORT`                | `8080`                    | Host port for the API; the container still listens on `8080`.                                                                     |
+| `FRONTEND_PORT`               | `8082`                    | Host port for the modeling frontend.                                                                                              |
+| `LANDING_PORT`                | `8083`                    | Host port for the landing site.                                                                                                   |
+| `VARKA_DIAGRAM_RENDERER`      | `antv-g6`                 | Selects the diagram editor renderer. Unsupported values can make the modeling editor fail to initialize.                          |
+| `VARKA_ALLOWED_ORIGINS`       | derived by Compose        | Comma-separated CORS/WebSocket origins. Setting it replaces the generated origin list; an incorrect list blocks browser requests. |
+| `VARKA_CONTAINER_UPLOAD_ROOT` | `/app/uploads` in Compose | Backend-container upload path. Change it only if the corresponding storage mount/path exists.                                     |
+| `FREELLMAPI_NETWORK`          | `freellmapi_default`      | Optional external Docker network for host-based FreeLLM/API access. A wrong network name affects only that optional attachment.   |
 
-Docker Compose overrides `MODLESS_UPLOAD_ROOT` inside the backend container to
-`/app/uploads` via `MODLESS_CONTAINER_UPLOAD_ROOT`.
+## MDE and uploads
 
-## Diagram Editor
+`VARKA_MDE_EXECUTION_TIMEOUT` and `VARKA_MDE_JOB_TIMEOUT` control command and queued-job
+deadlines. The remaining `VARKA_MDE_*` keys limit output size, concurrency, queue depth, model
+uploads, generated file count/size, artifact size, and staged-import lifetime. Increasing limits
+permits larger or slower jobs but increases memory, disk, and CPU risk; decreasing them causes
+large or long-running jobs to be rejected or terminated.
 
-The modeling frontend uses the AntV G6 canvas renderer.
+`VARKA_UPLOAD_ROOT`, `VARKA_UPLOAD_MAX_FILE_BYTES`, and `VARKA_UPLOAD_MAX_TEXT_CHARS` control
+non-MDE uploads. Smaller limits reduce resource usage; larger limits allow larger inputs and longer
+assistant context, but increase storage and processing costs.
 
-| Variable                   | Default in `.env.example` | Purpose                   |
-| -------------------------- | ------------------------- | ------------------------- |
-| `MODLESS_DIAGRAM_RENDERER` | `antv-g6`                 | Frontend diagram renderer |
+## AI assistant
 
-## AI
+Set `VARKA_AI_ENABLED=true` before selecting a provider. `VARKA_AI_PROVIDER` accepts `openai`,
+`openai-compatible`, `openai_compatible`, or `gemini`. OpenAI-compatible providers use
+`OPENAI_COMPATIBLE_BASE_URL` and `OPENAI_COMPATIBLE_API_KEY`; Gemini uses `GEMINI_API_KEY`.
 
-| Variable                                | Default                          |
-| --------------------------------------- | -------------------------------- |
-| `MODLESS_AI_ENABLED`                    | `false` in backend configuration |
-| `MODLESS_AI_PROVIDER`                   | `openai`                         |
-| `MODLESS_AI_REQUEST_TIMEOUT`            | `5m`                             |
-| `MODLESS_AI_TURN_TIMEOUT`               | `5m`                             |
-| `MODLESS_AI_MAX_REPAIR_ATTEMPTS`        | `1`                              |
-| `MODLESS_AI_MAX_TOOL_CALLS`             | `24`                             |
-| `MODLESS_AI_MAX_AGENT_STEPS`            | `8`                              |
-| `MODLESS_AI_MAX_TOOL_CALLS_PER_STEP`    | `4`                              |
-| `MODLESS_AI_TOKEN_BUDGET`               | `16000`                          |
-| `MODLESS_AI_MAX_PROMPT_TOKENS`          | `24000`                          |
-| `MODLESS_AI_MAX_SOURCE_CHUNK_TOKENS`    | `4000`                           |
-| `MODLESS_AI_MAX_SOURCE_CHUNKS_PER_TURN` | `24`                             |
-| `MODLESS_AI_REQUIRE_IDEMPOTENCY_KEY`    | `true`                           |
-| `MODLESS_AI_MAX_CONTEXT_SNIPPETS`       | `24`                             |
-| `MODLESS_AI_RESERVED_SCHEMA_SNIPPETS`   | `10`                             |
-| `MODLESS_AI_MAX_SNIPPET_CHARS`          | `2400`                           |
-| `MODLESS_AI_MAX_SYSTEM_CHARS`           | `14000`                          |
-| `MODLESS_AI_RATE_LIMIT_REQUESTS`        | `30`                             |
-| `MODLESS_AI_RATE_LIMIT_WINDOW`          | `1m`                             |
-| `MODLESS_AI_CIRCUIT_FAILURE_THRESHOLD`  | `3`                              |
-| `MODLESS_AI_CIRCUIT_OPEN_DURATION`      | `1m`                             |
-| `MODLESS_AI_PROVIDER_RETRY_ATTEMPTS`    | `2`                              |
-| `MODLESS_AI_RETRY_BACKOFF`              | `250ms`                          |
-| `MODLESS_AI_RECENT_MESSAGE_WINDOW`      | `24`                             |
-| `MODLESS_AI_FALLBACK_PROVIDER`          | empty (used on HTTP 429 only)    |
+Timeouts, token budgets, context limits, agent steps, tool-call limits, repair attempts, source
+passes, rate limits, retries, and recent-message windows all trade completeness and resilience
+against latency, memory use, and provider cost. Increasing them allows more complex turns; lowering
+them makes failures faster and cheaper. `VARKA_AI_FALLBACK_PROVIDER` is used only after an HTTP 429
+from the primary provider. `VARKA_AI_REQUIRE_IDEMPOTENCY_KEY=true` protects turn retries from
+duplicate application.
 
-The assistant uses validated tools over an in-memory model workspace. The backend structurally
-validates the workspace and applies valid turns atomically.
-
-Provider variables include `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`,
-`GEMINI_API_KEY`, and role-specific planner, responder, and summarizer model names.
-
-Dedicated AI proxy variables configure HTTP or SOCKS proxy behavior for provider calls only.
-
-`MODLESS_AI_FALLBACK_PROVIDER` is consulted only when the primary provider returns HTTP 429.
+`VARKA_AI_PLANNER_MODEL`, `VARKA_AI_RESPONDER_MODEL`, and `VARKA_AI_SUMMARIZER_MODEL` accept an
+empty value for provider defaults, `auto` for gateways that support that alias, or a provider model
+name. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION` and
+`VARKA_AI_LLM_CONTRACT_RERANK_ENABLED` can improve source/retrieval quality at the cost of extra
+provider calls. The proxy variables accept `DIRECT`, `HTTP`, or `SOCKS`; proxy settings affect AI
+provider traffic only.
 
 ## Observability
 
-| Variable                      | Default                           |
-| ----------------------------- | --------------------------------- |
-| `MODLESS_METRICS_ENABLED`     | `true`                            |
-| `MODLESS_TRACING_ENABLED`     | `false`                           |
-| `MODLESS_TRACING_SAMPLE_RATE` | `0.1`                             |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318/v1/traces` |
-| `OTEL_SERVICE_NAME`           | `modless-backend`                 |
+`VARKA_METRICS_ENABLED` controls Prometheus metrics. `VARKA_TRACING_ENABLED` enables tracing and
+`VARKA_TRACING_SAMPLE_RATE` accepts `0.0` through `1.0`; higher sampling gives more diagnostic data
+but adds overhead. `OTEL_EXPORTER_OTLP_ENDPOINT` selects the OTLP HTTP endpoint and
+`OTEL_SERVICE_NAME` names the service in the telemetry backend.
 
-## Compose Ports and Origins
+## LocalStack
 
-| Variable                  | Default |
-| ------------------------- | ------- |
-| `POSTGRES_PORT`           | `5432`  |
-| `BACKEND_PORT`            | `8080`  |
-| `FRONTEND_PORT`           | `8082`  |
-| `LANDING_PORT`            | `8083`  |
-| `LOCALSTACK_GATEWAY_PORT` | `4566`  |
+`LOCALSTACK_GATEWAY_PORT` publishes LocalStack's AWS-compatible endpoint. `AWS_DEFAULT_REGION`
+sets the default region. `LOCALSTACK_DEBUG` accepts `0`, `1`, `true`, or `false`; persistence accepts
+`0` or `1`; `LOCALSTACK_CFN_IGNORE_UNSUPPORTED_RESOURCE_TYPES=1` makes unsupported CloudFormation
+resources non-fatal. The HTTP/HTTPS proxy and `LOCALSTACK_NO_PROXY` values control outbound network
+routing from the LocalStack container. `LOCALSTACK_AUTH_TOKEN` is optional and secret.
 
-Optional Compose-only overrides:
-
-- `MODLESS_ALLOWED_ORIGINS` — comma-separated CORS and WebSocket origins. When unset, Compose derives
-  origins from `BACKEND_PORT`, `FRONTEND_PORT`, and `LANDING_PORT`.
-- `MODLESS_CONTAINER_UPLOAD_ROOT` — upload directory inside the backend container (default
-  `/app/uploads`).
-- `FREELLMAPI_NETWORK` — external Docker network name joined by the backend for optional host AI
-  proxy access (default `freellmapi_default`).
-
-Dozzle is exposed on host port `9999` in the default Compose stack (not configurable through
-`.env.example`).
-
-Do not publish default database credentials or provider keys in production. Use secret management,
-TLS termination, restricted network access, and environment-specific allowed origins.
+Never publish database passwords, API keys, or LocalStack tokens. Use a secret manager and restrict
+allowed origins and network exposure in production.

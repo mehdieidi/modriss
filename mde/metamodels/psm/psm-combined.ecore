@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore">
-  <ecore:EPackage name="awspsm" nsURI="https://modless.org/awspsm/1.0" nsPrefix="awspsm">
+  <ecore:EPackage name="awspsm" nsURI="https://varka.org/awspsm/1.0" nsPrefix="awspsm">
     <eClassifiers xsi:type="ecore:EClass" name="AwsPsmModel" eSuperTypes="#/14/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="accountStrategy" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="regionStrategy" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -36,7 +36,7 @@
           derived="true"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmapi" nsURI="https://modless.org/awspsm/api/1.0" nsPrefix="awspsmapi">
+  <ecore:EPackage name="awspsmapi" nsURI="https://varka.org/awspsm/api/1.0" nsPrefix="awspsmapi">
     <eClassifiers xsi:type="ecore:EClass" name="ApiGatewayApi" abstract="true" eSuperTypes="#/3/AwsResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="apiName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="descriptionText" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -334,7 +334,7 @@
           eType="#/3/WafAssociableResource"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmcompute" nsURI="https://modless.org/awspsm/compute/1.0"
+  <ecore:EPackage name="awspsmcompute" nsURI="https://varka.org/awspsm/compute/1.0"
       nsPrefix="awspsmcompute">
     <eClassifiers xsi:type="ecore:EClass" name="AwsLambdaFunction" eSuperTypes="#/3/AwsResource #/3/S3NotificationDestination">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="functionName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -591,7 +591,7 @@
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="descriptionText" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmcore" nsURI="https://modless.org/awspsm/core/1.0" nsPrefix="awspsmcore">
+  <ecore:EPackage name="awspsmcore" nsURI="https://varka.org/awspsm/core/1.0" nsPrefix="awspsmcore">
     <eClassifiers xsi:type="ecore:EClass" name="S3NotificationDestination" interface="true"/>
     <eClassifiers xsi:type="ecore:EClass" name="WafAssociableResource" interface="true"/>
     <eClassifiers xsi:type="ecore:EClass" name="AwsResource" abstract="true" eSuperTypes="#/14/TraceableElement">
@@ -822,7 +822,7 @@
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmenums" nsURI="https://modless.org/awspsm/enums/1.0"
+  <ecore:EPackage name="awspsmenums" nsURI="https://varka.org/awspsm/enums/1.0"
       nsPrefix="awspsmenums">
     <eClassifiers xsi:type="ecore:EEnum" name="AwsEnvironmentClass">
       <eLiterals name="DEV"/>
@@ -1099,7 +1099,7 @@
       <eLiterals name="CAPABILITY_AUTO_EXPAND" value="2"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmevents" nsURI="https://modless.org/awspsm/events/1.0"
+  <ecore:EPackage name="awspsmevents" nsURI="https://varka.org/awspsm/events/1.0"
       nsPrefix="awspsmevents">
     <eClassifiers xsi:type="ecore:EClass" name="EventBridgeBus" eSuperTypes="#/3/AwsResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="busName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -1295,7 +1295,7 @@
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EIntegerObject"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmidentity" nsURI="https://modless.org/awspsm/identity/1.0"
+  <ecore:EPackage name="awspsmidentity" nsURI="https://varka.org/awspsm/identity/1.0"
       nsPrefix="awspsmidentity">
     <eClassifiers xsi:type="ecore:EClass" name="CognitoUserPool" eSuperTypes="#/3/AwsResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="userPoolName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -1463,7 +1463,7 @@
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmintegrations" nsURI="https://modless.org/awspsm/integrations/1.0"
+  <ecore:EPackage name="awspsmintegrations" nsURI="https://varka.org/awspsm/integrations/1.0"
       nsPrefix="awspsmintegrations">
     <eClassifiers xsi:type="ecore:EClass" name="AwsRelationshipView" abstract="true"
         eSuperTypes="#/14/TraceableElement">
@@ -1546,7 +1546,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="topicPolicy" eType="#/8/SnsTopicPolicy"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmmessaging" nsURI="https://modless.org/awspsm/messaging/1.0"
+  <ecore:EPackage name="awspsmmessaging" nsURI="https://varka.org/awspsm/messaging/1.0"
       nsPrefix="awspsmmessaging">
     <eClassifiers xsi:type="ecore:EClass" name="SqsQueue" eSuperTypes="#/3/AwsResource #/3/S3NotificationDestination">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="queueName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -1642,7 +1642,7 @@
           upperBound="-1" eType="#/8/SnsTopic" eOpposite="#/8/SnsTopic/topicPolicies"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmnetworking" nsURI="https://modless.org/awspsm/networking/1.0"
+  <ecore:EPackage name="awspsmnetworking" nsURI="https://varka.org/awspsm/networking/1.0"
       nsPrefix="awspsmnetworking">
     <eClassifiers xsi:type="ecore:EClass" name="VpcAttachmentConfig" eSuperTypes="#/14/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="vpcId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -1713,7 +1713,7 @@
           eType="#/9/SecurityGroup"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmobservability" nsURI="https://modless.org/awspsm/observability/1.0"
+  <ecore:EPackage name="awspsmobservability" nsURI="https://varka.org/awspsm/observability/1.0"
       nsPrefix="awspsmobservability">
     <eClassifiers xsi:type="ecore:EClass" name="CloudWatchLogGroup" eSuperTypes="#/3/AwsResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="logGroupName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -1816,7 +1816,7 @@
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmsecurity" nsURI="https://modless.org/awspsm/security/1.0"
+  <ecore:EPackage name="awspsmsecurity" nsURI="https://varka.org/awspsm/security/1.0"
       nsPrefix="awspsmsecurity">
     <eClassifiers xsi:type="ecore:EClass" name="IamRole" eSuperTypes="#/3/AwsResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="roleName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -1987,7 +1987,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="secretRef" eType="#/11/SecretsManagerSecret"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmstorage" nsURI="https://modless.org/awspsm/storage/1.0"
+  <ecore:EPackage name="awspsmstorage" nsURI="https://varka.org/awspsm/storage/1.0"
       nsPrefix="awspsmstorage">
     <eClassifiers xsi:type="ecore:EClass" name="DynamoDbTable" eSuperTypes="#/3/AwsResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="tableName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -2246,7 +2246,7 @@
           eType="#/12/S3Bucket" eOpposite="#/12/S3Bucket/bucketPolicy"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmworkflow" nsURI="https://modless.org/awspsm/workflow/1.0"
+  <ecore:EPackage name="awspsmworkflow" nsURI="https://varka.org/awspsm/workflow/1.0"
       nsPrefix="awspsmworkflow">
     <eClassifiers xsi:type="ecore:EClass" name="StepFunctionStateMachine" eSuperTypes="#/3/AwsResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="stateMachineName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -2361,7 +2361,7 @@
           eType="#/3/NativeProperty" containment="true"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="kernel" nsURI="https://modless.org/kernel/1.0" nsPrefix="kernel">
+  <ecore:EPackage name="kernel" nsURI="https://varka.org/kernel/1.0" nsPrefix="kernel">
     <eClassifiers xsi:type="ecore:EEnum" name="Priority">
       <eLiterals name="LOW"/>
       <eLiterals name="MEDIUM" value="1"/>

@@ -1,6 +1,6 @@
 # End-to-End Modeling Methodology
 
-This guide describes the full **incremental-evolutionary** Modless modeling lifecycle from business
+This guide describes the full **incremental-evolutionary** Varka modeling lifecycle from business
 intent through deployable AWS artifacts. It connects three level-specific methodologies—[CIM](cim-modeling-methodology.md),
 [PIM](pim-modeling-methodology.md), and [PSM](psm-modeling-methodology.md)—with transformation
 milestones, EVL gates, iteration loops, and human-in-the-loop refinement.
@@ -93,7 +93,7 @@ flowchart LR
 
 ## Stage 1 — CIM Modeling (5 phases)
 
-**Child process:** `modless.cim.modeling` · **Guide:** [CIM Modeling Methodology](cim-modeling-methodology.md)
+**Child process:** `varka.cim.modeling` · **Guide:** [CIM Modeling Methodology](cim-modeling-methodology.md)
 
 Model business intent, domain, behavior, governance, and transformation contracts without platform
 detail. Follow all five CIM phases (`cim.ph1`–`cim.ph5`) in SPEM order: phases → stages → tasks.
@@ -157,7 +157,7 @@ concepts, traces, and readiness information—split across concern-specific ETL 
 
 ## Stage 3 — PIM Refinement (6 phases)
 
-**Child process:** `modless.pim.modeling` · **Guide:** [PIM Modeling Methodology](pim-modeling-methodology.md)
+**Child process:** `varka.pim.modeling` · **Guide:** [PIM Modeling Methodology](pim-modeling-methodology.md)
 
 Refine generated PIM through six SPEM phases (`pim.ph1`–`pim.ph6`): phases → stages → atomic tasks.
 
@@ -221,7 +221,7 @@ resolves relationships and validates placement.
 
 ## Stage 5 — PSM Refinement (6 phases)
 
-**Child process:** `modless.psm.modeling` · **Guide:** [PSM Modeling Methodology](psm-modeling-methodology.md)
+**Child process:** `varka.psm.modeling` · **Guide:** [PSM Modeling Methodology](psm-modeling-methodology.md)
 
 Refine generated AWS resources through six SPEM phases (`psm.ph1`–`psm.ph6`).
 

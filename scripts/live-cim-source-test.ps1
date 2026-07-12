@@ -1,7 +1,7 @@
 # Live API smoke: user story attachment -> CIM model (mirrors frontend chat flow)
 $ErrorActionPreference = "Stop"
 $base = "http://127.0.0.1:8080/api"
-$storyPath = "d:\Repositories\My\modless\mde\samples\document-to-cim\community-clinic-user-stories.md"
+$storyPath = "d:\Repositories\My\varka\mde\samples\document-to-cim\community-clinic-user-stories.md"
 $timeoutSec = 600
 
 function Invoke-Api {

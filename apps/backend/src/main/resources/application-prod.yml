@@ -8,4 +8,4 @@ logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
-    io.mehdieidi.modless: INFO
+    io.mehdieidi.varka: INFO

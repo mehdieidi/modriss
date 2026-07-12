@@ -17,45 +17,45 @@ project, the selected model level, and the current model ID/revision.
 Set these environment variables before starting the backend:
 
 ```bash
-MODLESS_AI_ENABLED=true
-MODLESS_AI_PROVIDER=openai
+VARKA_AI_ENABLED=true
+VARKA_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_API_KEY=your_api_key
 ```
 
 Useful optional knobs:
 
 ```bash
-MODLESS_AI_PROVIDER=openai
+VARKA_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_BASE_URL=https://api.openai.com
-MODLESS_AI_PLANNER_MODEL=gpt-4o-mini
-MODLESS_AI_RESPONDER_MODEL=gpt-4o-mini
-MODLESS_AI_SUMMARIZER_MODEL=gpt-4o-mini
-MODLESS_AI_MAX_TOOL_CALLS=24
-MODLESS_AI_TOKEN_BUDGET=16000
-MODLESS_AI_REQUEST_TIMEOUT=5m
-MODLESS_AI_TURN_TIMEOUT=5m
+VARKA_AI_PLANNER_MODEL=gpt-4o-mini
+VARKA_AI_RESPONDER_MODEL=gpt-4o-mini
+VARKA_AI_SUMMARIZER_MODEL=gpt-4o-mini
+VARKA_AI_MAX_TOOL_CALLS=24
+VARKA_AI_TOKEN_BUDGET=16000
+VARKA_AI_REQUEST_TIMEOUT=5m
+VARKA_AI_TURN_TIMEOUT=5m
 ```
 
-`MODLESS_AI_REQUEST_TIMEOUT` and `MODLESS_AI_TURN_TIMEOUT` default to 5 minutes. Connection
+`VARKA_AI_REQUEST_TIMEOUT` and `VARKA_AI_TURN_TIMEOUT` default to 5 minutes. Connection
 establishment still fails after at most 10 seconds. A response timeout is not retried because the
 provider may still be processing the original request.
 
-For another OpenAI-compatible provider, keep `MODLESS_AI_PROVIDER=openai` and set
+For another OpenAI-compatible provider, keep `VARKA_AI_PROVIDER=openai` and set
 `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`, and the role-specific model names to the
 provider values.
 
 For Gemini:
 
 ```bash
-MODLESS_AI_PROVIDER=gemini
+VARKA_AI_PROVIDER=gemini
 GEMINI_API_KEY=your_gemini_api_key
-MODLESS_AI_RESPONDER_MODEL=gemini-2.0-flash
+VARKA_AI_RESPONDER_MODEL=gemini-2.0-flash
 ```
 
 If you do not want provider calls or model proposals, set:
 
 ```bash
-MODLESS_AI_ENABLED=false
+VARKA_AI_ENABLED=false
 ```
 
 The assistant runs as one autonomous modeling agent. The LLM answers, asks structured
@@ -79,26 +79,26 @@ revision. The old selectable modeling-mode switch is removed.
 and Dozzle. The backend ships with assistant code available, but AI calls are disabled by default:
 
 ```bash
-MODLESS_AI_ENABLED=false
+VARKA_AI_ENABLED=false
 ```
 
 To enable AI for a Compose run, set environment variables before starting Compose:
 
 ```bash
-MODLESS_AI_ENABLED=true
-MODLESS_AI_PROVIDER=openai
+VARKA_AI_ENABLED=true
+VARKA_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_API_KEY=your_api_key
 docker compose up --build
 ```
 
 Compose passes `.env` into the backend container. The AI proxy is disabled unless
-`MODLESS_AI_PROXY_ENABLED=true`; when the backend runs in a container, set
-`MODLESS_AI_PROXY_HOST=host.docker.internal` if the proxy is running on the host.
+`VARKA_AI_PROXY_ENABLED=true`; when the backend runs in a container, set
+`VARKA_AI_PROXY_HOST=host.docker.internal` if the proxy is running on the host.
 
 To turn AI off again:
 
 ```bash
-MODLESS_AI_ENABLED=false
+VARKA_AI_ENABLED=false
 docker compose up --build
 ```
 
@@ -109,23 +109,23 @@ The backend uses a dedicated proxy only for AI requests.
 Default local proxy settings:
 
 ```bash
-MODLESS_AI_PROXY_ENABLED=true
-MODLESS_AI_PROXY_TYPE=HTTP
-MODLESS_AI_PROXY_HOST=127.0.0.1
-MODLESS_AI_PROXY_PORT=2081
+VARKA_AI_PROXY_ENABLED=true
+VARKA_AI_PROXY_TYPE=HTTP
+VARKA_AI_PROXY_HOST=127.0.0.1
+VARKA_AI_PROXY_PORT=2081
 ```
 
 For SOCKS:
 
 ```bash
-MODLESS_AI_PROXY_TYPE=SOCKS
-MODLESS_AI_PROXY_PORT=2082
+VARKA_AI_PROXY_TYPE=SOCKS
+VARKA_AI_PROXY_PORT=2082
 ```
 
 If the backend runs in Docker Compose, use:
 
 ```bash
-MODLESS_AI_PROXY_HOST=host.docker.internal
+VARKA_AI_PROXY_HOST=host.docker.internal
 ```
 
 Compose already defaults to that host for the backend container.
@@ -188,92 +188,6 @@ Use `/api/pim` or `/api/psm` for the other levels.
 
 The exact model shape can come from the existing editor or an import. The assistant only needs a
 saved model ID and revision to work against.
-
-## ONNX embeddings
-
-ONNX is a portable format for running machine-learning models outside the training framework.
-In plain language, it is a standard way to ship a model that can be loaded locally by different
-runtime libraries. Here, that means the assistant can turn text into vectors on your machine
-instead of calling another remote API just for embeddings.
-
-The backend configuration defaults to hash embeddings for local and Compose runs. ONNX can be
-enabled explicitly and can fall back to local hash vectors if the native runtime is not present.
-The fallback keeps the app usable even when the heavy native libraries are not installed.
-
-To try the real ONNX embedding path, enable the extra Maven profile:
-
-```bash
-mvn -Ponnx-embeddings -pl apps/backend test
-```
-
-You can also point at custom model/tokenizer resources with:
-
-```bash
-MODLESS_AI_EMBEDDINGS_PROVIDER=ONNX
-MODLESS_AI_EMBEDDINGS_MODEL_RESOURCE=...
-MODLESS_AI_EMBEDDINGS_TOKENIZER_RESOURCE=...
-MODLESS_AI_EMBEDDINGS_CACHE_DIRECTORY=...
-```
-
-What these mean:
-
-- `MODLESS_AI_EMBEDDINGS_PROVIDER=ONNX`: use Spring AI's ONNX embedding path instead of the local
-  hash fallback.
-- `MODLESS_AI_EMBEDDINGS_MODEL_RESOURCE=...`: where the ONNX model file comes from. If you leave it
-  blank, Spring AI uses its built-in default model resource.
-- `MODLESS_AI_EMBEDDINGS_TOKENIZER_RESOURCE=...`: optional tokenizer file for the model. If you
-  leave it blank, Spring AI uses its built-in default tokenizer resource.
-- `MODLESS_AI_EMBEDDINGS_CACHE_DIRECTORY=...`: where downloaded or extracted model files may be
-  cached locally.
-
-There are two more related switches:
-
-```bash
-MODLESS_AI_EMBEDDINGS_DISABLE_CACHING=false
-MODLESS_AI_EMBEDDINGS_GPU_DEVICE_ID=-1
-```
-
-- `disable-caching=false` keeps local caching on.
-- `gpu-device-id=-1` means CPU/default runtime. Set `0` or another number only if you have a GPU
-  runtime configured.
-
-If the ONNX runtime cannot start, the service automatically uses the local hash embedding fallback
-unless you disable that fallback in configuration.
-
-### Common ONNX settings
-
-Most local development does not require you to provide anything.
-
-Use the default safe setup:
-
-```bash
-MODLESS_AI_EMBEDDINGS_PROVIDER=ONNX
-MODLESS_AI_EMBEDDINGS_FALLBACK_TO_HASH=true
-```
-
-This means: try ONNX, and if the native ONNX runtime is not available, keep working with local hash
-embeddings.
-
-Use hash embeddings only:
-
-```bash
-MODLESS_AI_EMBEDDINGS_PROVIDER=HASH
-```
-
-This is useful when you only want the app to run and do not care about high-quality semantic
-retrieval.
-
-Use a custom ONNX model:
-
-```bash
-MODLESS_AI_EMBEDDINGS_PROVIDER=ONNX
-MODLESS_AI_EMBEDDINGS_MODEL_RESOURCE=file:/absolute/path/to/model.onnx
-MODLESS_AI_EMBEDDINGS_TOKENIZER_RESOURCE=file:/absolute/path/to/tokenizer.json
-MODLESS_AI_EMBEDDINGS_CACHE_DIRECTORY=/absolute/path/to/cache
-```
-
-Only use the custom model settings if you already know which ONNX embedding model and tokenizer you
-want. Otherwise leave them blank.
 
 ## Where the AI gets context
 

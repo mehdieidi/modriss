@@ -1,6 +1,6 @@
 # PostgreSQL Storage
 
-Modless persists application-owned runtime data in PostgreSQL. The backend uses Spring JDBC for
+Varka persists application-owned runtime data in PostgreSQL. The backend uses Spring JDBC for
 data access and Flyway for schema migration.
 
 ## What Is Stored
@@ -35,17 +35,17 @@ mvn -pl apps/backend -am spring-boot:run
 Default connection settings:
 
 ```text
-MODLESS_DB_URL=jdbc:postgresql://localhost:5432/modless
-MODLESS_DB_USER=modless
-MODLESS_DB_PASSWORD=modless
+VARKA_DB_URL=jdbc:postgresql://localhost:5432/varka
+VARKA_DB_USER=varka
+VARKA_DB_PASSWORD=varka
 ```
 
 Override them in the shell when needed:
 
 ```powershell
-$env:MODLESS_DB_URL = "jdbc:postgresql://localhost:5432/modless"
-$env:MODLESS_DB_USER = "modless"
-$env:MODLESS_DB_PASSWORD = "modless"
+$env:VARKA_DB_URL = "jdbc:postgresql://localhost:5432/varka"
+$env:VARKA_DB_USER = "varka"
+$env:VARKA_DB_PASSWORD = "varka"
 mvn -pl apps/backend -am spring-boot:run
 ```
 
@@ -122,7 +122,7 @@ docker compose up -d postgres
 Open `psql` in the running container:
 
 ```powershell
-docker exec -it modless-postgres-1 psql -U modless -d modless
+docker exec -it varka-postgres-1 psql -U varka -d varka
 ```
 
 Useful checks:

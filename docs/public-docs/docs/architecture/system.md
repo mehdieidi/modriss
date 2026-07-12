@@ -34,4 +34,4 @@ modeling configuration rather than maintaining a second independent metamodel.
 - Static browser assets can be hosted independently from the backend.
 - The backend requires PostgreSQL and filesystem access to the `mde/` assets.
 - AI provider calls are optional and isolated from normal platform traffic.
-- LocalStack is used to test generated AWS projects, not to run Modless itself.
+- LocalStack is used to test generated AWS projects, not to run Varka itself.

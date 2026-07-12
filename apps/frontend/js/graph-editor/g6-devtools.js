@@ -115,7 +115,7 @@ export function installG6LargeGraphDevHelper({
   renderDiagram = () => {},
   renderWorkbench = () => {},
 } = {}) {
-  window.modlessGenerateLargeGraph = (options = {}) => {
+  window.varkaGenerateLargeGraph = (options = {}) => {
     const typeKey = options.typeKey || state.activeType || defaultModelingLevel();
     const nodeCount = Math.max(1, Number(options.nodes || options.nodeCount) || 1000);
     const edgeCount = Math.max(0, Number(options.edges || options.edgeCount) || 2000);

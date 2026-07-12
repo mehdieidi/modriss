@@ -47,14 +47,14 @@ The assistant is configurable and should remain disabled unless provider credent
 cost, and organizational policy are intentional.
 
 ```bash
-MODLESS_AI_ENABLED=true
-MODLESS_AI_PROVIDER=openai
+VARKA_AI_ENABLED=true
+VARKA_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_API_KEY=your_api_key
 docker compose up --build
 ```
 
 For a compatible gateway, also set `OPENAI_COMPATIBLE_BASE_URL`. For Gemini, set
-`MODLESS_AI_PROVIDER=gemini` and `GEMINI_API_KEY`.
+`VARKA_AI_PROVIDER=gemini` and `GEMINI_API_KEY`.
 
 ## Stop or Reset
 

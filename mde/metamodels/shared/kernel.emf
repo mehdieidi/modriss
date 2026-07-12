@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/kernel/1.0", prefix="kernel")
+@namespace(uri="https://varka.org/kernel/1.0", prefix="kernel")
 package kernel;
 
 enum Priority {

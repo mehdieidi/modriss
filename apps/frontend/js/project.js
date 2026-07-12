@@ -28,7 +28,7 @@ function resolveProjectId(project) {
   return project?.id || project?.projectId || project?.uuid || null;
 }
 const getElementTarget = (event) => (event.target instanceof Element ? event.target : null);
-const LAST_PROJECT_STORAGE_PREFIX = "modless.lastProjectId";
+const LAST_PROJECT_STORAGE_PREFIX = "varka.lastProjectId";
 
 function defaultModelName(typeKey) {
   return state.modelingConfig.config?.levels?.[typeKey]?.modelNameTemplate || `${typeKey}-model`;

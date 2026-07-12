@@ -1,0 +1,49 @@
+groups:
+  - name: varka
+    rules:
+      - alert: VarkaBackendDown
+        expr: up{job="varka-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Varka backend is unreachable
+          description: Prometheus cannot scrape the Varka backend target.
+
+      - alert: VarkaHighErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{application="varka-backend",status=~"5.."}[5m]))
+          /
+          sum(rate(http_server_requests_seconds_count{application="varka-backend"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Varka 5xx error rate above 5%
+
+      - alert: VarkaDatabasePoolExhausted
+        expr: |
+          hikaricp_connections_active{application="varka-backend"}
+          /
+          hikaricp_connections_max{application="varka-backend"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: HikariCP pool above 90% utilization
+
+      - alert: VarkaMdeJobFailures
+        expr: increase(varka_mde_jobs_failed_total[15m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Elevated MDE job failure count
+
+      - alert: VarkaAssistantCircuitOpen
+        expr: increase(varka_assistant_circuit_open_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant circuit breaker rejected provider calls

@@ -1,6 +1,6 @@
 # Change Guide
 
-Modless has several synchronized representations of the same language. Treat a formal language
+Varka has several synchronized representations of the same language. Treat a formal language
 change as a contract change across every affected producer, consumer, representation, and test.
 
 ## Source-of-Truth Map

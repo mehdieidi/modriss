@@ -1,7 +1,7 @@
 # Signal Desk Landing Demo
 
 Signal Desk is a deliberately small support-ticket system used by the landing page to explain the
-complete Modless workflow without hiding it behind a large sample model.
+complete Varka workflow without hiding it behind a large sample model.
 
 ## CIM
 

@@ -7,10 +7,10 @@ import {
 } from "../modeling-config-data.js";
 import { measureIconNodeSize } from "./icon-node-metrics.js";
 
-export const MODLESS_NODE_TYPE = "modless-node";
-export const MODLESS_EDGE_TYPE = "modless-edge";
-export const G6_BASE_NODE_TYPE = MODLESS_NODE_TYPE;
-export const G6_BASE_EDGE_TYPE = MODLESS_EDGE_TYPE;
+export const VARKA_NODE_TYPE = "varka-node";
+export const VARKA_EDGE_TYPE = "varka-edge";
+export const G6_BASE_NODE_TYPE = VARKA_NODE_TYPE;
+export const G6_BASE_EDGE_TYPE = VARKA_EDGE_TYPE;
 
 function defaultNodeSize(typeKey) {
   const node = modelingRoleSize(typeKey, "node");

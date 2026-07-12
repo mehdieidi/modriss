@@ -27,12 +27,12 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <description>User authentication and session management for the Modless platform.</description>
+  <description>User authentication and session management for the Varka platform.</description>
   <modelVersion>4.0.0</modelVersion>
   <name>platform-identity</name>
   <packaging>jar</packaging>
   <parent>
-    <artifactId>modless</artifactId>
+    <artifactId>varka</artifactId>
     <groupId>io.mehdieidi</groupId>
     <relativePath>../../../pom.xml</relativePath>
     <version>0.0.1-SNAPSHOT</version>

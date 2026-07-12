@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/awspsm/messaging/1.0", prefix="awspsmmessaging")
+@namespace(uri="https://varka.org/awspsm/messaging/1.0", prefix="awspsmmessaging")
 package awspsmmessaging;
 
 import "../shared/kernel.ecore";

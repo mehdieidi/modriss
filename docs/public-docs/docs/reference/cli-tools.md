@@ -1,6 +1,6 @@
 # CLI Tools
 
-Modless includes standalone Java command-line tools for formal MDE tasks. Build a tool with Maven
+Varka includes standalone Java command-line tools for formal MDE tasks. Build a tool with Maven
 from the repository root using `-pl <module> -am package`.
 
 ## Metamodel Compiler
@@ -76,7 +76,7 @@ Module: `tools/notation-migrate`
 Migrates legacy `*-ui-metadata.json` files to Concrete Visual Syntax (CVS) v2 JSON:
 
 ```powershell
-npm run migrate:all -w @modless/notation-migrate
+npm run migrate:all -w @varka/notation-migrate
 ```
 
 See [concrete-visual-syntax-v2.md](../../../internal/mde/concrete-visual-syntax-v2.md) for the CVS

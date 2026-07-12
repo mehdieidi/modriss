@@ -1,6 +1,6 @@
 # CIM Modeling Methodology
 
-Guided CIM modeling follows process `modless.cim.modeling` (`mde/methodology/process-definitions/cim.json`). **Five sequential SPEM phases** each contain **stages** (with optional sub-stages) and **atomic tasks** (`cim.ph1`–`cim.ph5`). The **process engine** revolves through in-engine phases per capability slice; **Establishment** runs once before the first cycle.
+Guided CIM modeling follows process `varka.cim.modeling` (`mde/methodology/process-definitions/cim.json`). **Five sequential SPEM phases** each contain **stages** (with optional sub-stages) and **atomic tasks** (`cim.ph1`–`cim.ph5`). The **process engine** revolves through in-engine phases per capability slice; **Establishment** runs once before the first cycle.
 
 ## Phase Flow
 

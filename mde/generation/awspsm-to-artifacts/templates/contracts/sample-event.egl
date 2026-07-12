@@ -1,6 +1,6 @@
 [% /* Generates the sample event artifact. */ %]{
   "id": "[%= eventOwnerObj.stableKey().toSlug() %]-sample",
-  "source": "modless.[%= eventKindText %]",
+  "source": "varka.[%= eventKindText %]",
   "detail-type": "[%= eventOwnerObj.eClass().getName() %]",
   "time": "2026-01-01T00:00:00Z",
   "detail": {

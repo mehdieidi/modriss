@@ -7,7 +7,7 @@ Date: 2026-07-04
 ## Context
 
 The assistant previously exposed two provider-facing mutation protocols (`semantic-patch` and
-`model-subset`) behind `MODLESS_AI_MODELING_STRATEGY`. Reliability, repair logic, tests, and
+`model-subset`) behind `VARKA_AI_MODELING_STRATEGY`. Reliability, repair logic, tests, and
 documentation diverged across those modes.
 
 ## Decision

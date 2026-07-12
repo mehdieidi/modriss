@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a defect in Modless
+description: Report a defect in Varka
 title: "[Bug] "
 labels:
   - bug
@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Report a defect in the Modless platform. Include steps to reproduce when possible.
+        Report a defect in the Varka platform. Include steps to reproduce when possible.
 
   - type: textarea
     id: description
@@ -47,11 +47,11 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: OS, browser, Modless version or commit, deployment mode.
+      description: OS, browser, Varka version or commit, deployment mode.
       placeholder: |
         - OS:
         - Browser (if frontend):
-        - Modless version / commit:
+        - Varka version / commit:
         - Deployment mode: local dev / Docker Compose / other
     validations:
       required: true

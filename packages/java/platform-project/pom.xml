@@ -22,12 +22,12 @@
       <version>${junit.version}</version>
     </dependency>
   </dependencies>
-  <description>Project workspace and membership management for the Modless platform.</description>
+  <description>Project workspace and membership management for the Varka platform.</description>
   <modelVersion>4.0.0</modelVersion>
   <name>platform-project</name>
   <packaging>jar</packaging>
   <parent>
-    <artifactId>modless</artifactId>
+    <artifactId>varka</artifactId>
     <groupId>io.mehdieidi</groupId>
     <relativePath>../../../pom.xml</relativePath>
     <version>0.0.1-SNAPSHOT</version>

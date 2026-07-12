@@ -1,8 +1,8 @@
-# Modless
+# Varka
 
 **Model business intent → refine architecture → generate deployable AWS serverless projects.**
 
-Modless is an AI-assisted, model-driven platform. You work in three formal modeling levels
+Varka is an AI-assisted, model-driven platform. You work in three formal modeling levels
 (CIM, PIM, AWS PSM) in the browser, validate with Eclipse Epsilon, transform between levels, and
 generate a reviewable project (infrastructure, Go handlers, contracts, tests, docs). An optional
 assistant can explain the metamodel, draft structured ModelDelta changes, and apply them only after

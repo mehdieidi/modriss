@@ -1,5 +1,5 @@
 /**
- * JSDoc type definitions for the Modless SPEM process DSL.
+ * JSDoc type definitions for the Varka SPEM process DSL.
  */
 
 /**

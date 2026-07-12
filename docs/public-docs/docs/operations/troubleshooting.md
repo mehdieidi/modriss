@@ -3,7 +3,7 @@
 ## Backend Cannot Connect to PostgreSQL
 
 - Confirm `docker compose ps` reports PostgreSQL healthy.
-- Verify `MODLESS_DB_URL`, user, password, and mapped port.
+- Verify `VARKA_DB_URL`, user, password, and mapped port.
 - From inside Compose, use host `postgres`, not `localhost`.
 - Inspect Flyway errors before retrying; do not casually edit applied migrations.
 
@@ -35,10 +35,10 @@ generator issue.
 
 ## Assistant Is Unavailable
 
-- Confirm `MODLESS_AI_ENABLED=true`.
+- Confirm `VARKA_AI_ENABLED=true`.
 - Check provider base URL, credentials, model names, and request timeout.
 - Check dedicated AI proxy configuration.
-- Set `MODLESS_AI_ENABLED=false` while diagnosing provider or proposal issues.
+- Set `VARKA_AI_ENABLED=false` while diagnosing provider or proposal issues.
 - If ONNX cannot load, enable hash fallback or select `HASH`.
 - Restart the backend after metamodel or EVL changes so retrieval documents are reindexed.
 

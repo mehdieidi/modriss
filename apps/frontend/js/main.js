@@ -82,15 +82,15 @@ const TOPBAR_MENU_BREAKPOINT = 1100;
 const CHAT_INPUT_MAX_HEIGHT = 132;
 const getElementTarget = (event) => (event.target instanceof Element ? event.target : null);
 
-window.modlessFrontendBoot = {
-  ...(window.modlessFrontendBoot || {}),
+window.varkaFrontendBoot = {
+  ...(window.varkaFrontendBoot || {}),
   mainModuleLoaded: true,
   mainBuild: "g6-wired-2026-05-31-02",
 };
-window.modlessG6Debug =
-  window.modlessG6Debug ||
+window.varkaG6Debug =
+  window.varkaG6Debug ||
   (() => ({
-    bootstrap: window.modlessFrontendBoot || null,
+    bootstrap: window.varkaFrontendBoot || null,
     ...getModelingRendererDebug(),
   }));
 
@@ -103,7 +103,7 @@ function showNotFoundPage() {
   if (!el.notFoundOverlay) {
     return false;
   }
-  document.title = "Not Found - Modless";
+  document.title = "Not Found - Varka";
   el.notFoundOverlay.classList.remove("hidden");
   document.body.classList.add("modal-open");
   el.notFoundGoHomeBtn?.addEventListener(
@@ -694,7 +694,7 @@ function bindEvents() {
   if (el.themeRailToggleBtn) {
     el.themeRailToggleBtn.addEventListener("click", toggleTheme);
   }
-  document.documentElement.addEventListener("modless:theme-change", () => {
+  document.documentElement.addEventListener("varka:theme-change", () => {
     renderDiagram();
     renderPalette();
   });

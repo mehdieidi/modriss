@@ -2,7 +2,7 @@
 
 ## Purpose
 
-CVS v2 is the formally specified concrete visual syntax layer for Modless. It separates
+CVS v2 is the formally specified concrete visual syntax layer for Varka. It separates
 abstract syntax (Emfatic / combined Ecore) from diagram notation, viewpoints, and canvas
 interaction policy. The Spring backend validates CVS documents against Ecore and exposes the
 merged result through `GET /api/modeling/config`.
@@ -54,7 +54,7 @@ Completeness is enforced in two places:
 Generate or refresh level CVS files:
 
 ```bash
-npm run migrate:all -w @modless/notation-migrate
+npm run migrate:all -w @varka/notation-migrate
 ```
 
 ## Editor binding

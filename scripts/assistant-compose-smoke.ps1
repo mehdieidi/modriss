@@ -28,12 +28,12 @@ if (-not $ready) {
 }
 
 Write-Host "Running compose smoke test..."
-$env:MODLESS_RUN_COMPOSE_SMOKE = "true"
-$env:MODLESS_BACKEND_URL = "http://127.0.0.1:$backendPort"
+$env:VARKA_RUN_COMPOSE_SMOKE = "true"
+$env:VARKA_BACKEND_URL = "http://127.0.0.1:$backendPort"
 Push-Location packages/java/platform-assistant
 try {
     mvn -q test `
-        "-DMODLESS_RUN_COMPOSE_SMOKE=true" `
+        "-DVARKA_RUN_COMPOSE_SMOKE=true" `
         "-Dtest=AssistantComposeSmokeTest"
 } finally {
     Pop-Location

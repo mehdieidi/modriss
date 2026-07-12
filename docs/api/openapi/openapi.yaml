@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Modless Backend API
+  title: Varka Backend API
   version: 0.0.1
   description: REST API for authentication, projects, CIM/PIM/PSM models, transformations, artifacts, modeling metadata, and diagram layout.
   license:
@@ -1390,7 +1390,7 @@ components:
           example: UP
         service:
           type: string
-          example: modless-backend
+          example: varka-backend
         timestamp:
           type: string
           format: date-time

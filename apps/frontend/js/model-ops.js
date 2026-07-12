@@ -1794,7 +1794,7 @@ async function runAutoLayoutCurrentDiagram({
       state.tabs[state.activeType].diagram = state.diagram;
       saveCurrentTabGraphState(state.activeType);
     }
-    window.modlessLayoutAudit = {
+    window.varkaLayoutAudit = {
       modelId: state.modelId,
       viewId: view.id,
       expectedNodes: response.nodeCount,
@@ -2205,10 +2205,10 @@ function locateIssueTarget(detail) {
 let locateIssueTargetBound = false;
 if (!locateIssueTargetBound) {
   locateIssueTargetBound = true;
-  window.addEventListener("modless:locate-issue-target", (event) => {
+  window.addEventListener("varka:locate-issue-target", (event) => {
     locateIssueTarget(event?.detail || {});
   });
-  window.addEventListener("modless:manual-task-toggle", async (event) => {
+  window.addEventListener("varka:manual-task-toggle", async (event) => {
     const detail = event?.detail || {};
     const manualTaskId = String(detail.manualTaskId || "").trim();
     const resolved = Boolean(detail.resolved);

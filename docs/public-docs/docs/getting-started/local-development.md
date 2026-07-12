@@ -19,9 +19,9 @@ mvn -pl apps/backend -am spring-boot:run
 The backend defaults to:
 
 ```text
-MODLESS_DB_URL=jdbc:postgresql://localhost:5432/modless
-MODLESS_DB_USER=modless
-MODLESS_DB_PASSWORD=modless
+VARKA_DB_URL=jdbc:postgresql://localhost:5432/varka
+VARKA_DB_USER=varka
+VARKA_DB_PASSWORD=varka
 ```
 
 Flyway applies all migrations at startup.

@@ -21,9 +21,9 @@ Generated projects may require Docker, AWS CLI, AWS SAM CLI, Go 1.24, and `make`
 
 ```powershell
 sam validate --lint --template-file .\template-<deployment-unit>.yaml
-docker run --rm -v modless-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
+docker run --rm -v varka-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
   golang:1.24-bookworm bash scripts/test.sh
-docker run --rm -v modless-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
+docker run --rm -v varka-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
   golang:1.24-bookworm bash scripts/build.sh
 ```
 
@@ -31,7 +31,7 @@ Validate every generated Step Functions ASL definition before deployment.
 
 ## Deploy to LocalStack
 
-Start the Modless stack with LocalStack, configure test AWS credentials, create an artifact bucket,
+Start the Varka stack with LocalStack, configure test AWS credentials, create an artifact bucket,
 then run SAM build, package, and deploy for each generated deployment-unit template.
 
 Success criteria include:

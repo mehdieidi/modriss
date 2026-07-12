@@ -1,6 +1,6 @@
-# Modless Diagram Package
+# Varka Diagram Package
 
-This directory is the diagram source of truth for the implemented Modless repository. Every
+This directory is the diagram source of truth for the implemented Varka repository. Every
 diagram is Mermaid embedded in Markdown so it renders in GitHub, compatible IDE previews, and
 Mermaid tooling.
 
@@ -18,7 +18,7 @@ The diagrams were derived from:
 
 | Area          | File                                                                                             | Coverage                                           |
 | ------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
-| C4            | [01-c4-system-context.md](01-c4-system-context.md)                                               | Users, external systems, Modless boundary          |
+| C4            | [01-c4-system-context.md](01-c4-system-context.md)                                               | Users, external systems, Varka boundary            |
 | C4            | [02-c4-containers.md](02-c4-containers.md)                                                       | Runtime containers and protocols                   |
 | C4            | [03-c4-backend-components.md](03-c4-backend-components.md)                                       | Backend components and ports/adapters              |
 | Architecture  | [04-deployment-and-runtime.md](04-deployment-and-runtime.md)                                     | Docker/runtime deployment and traffic              |

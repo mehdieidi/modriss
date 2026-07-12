@@ -1,6 +1,6 @@
 # AI modeling assistant
 
-Modless uses one coding-agent-style modeling runtime. A turn runs through the streaming
+Varka uses one coding-agent-style modeling runtime. A turn runs through the streaming
 `AgentTurnLoop`, which receives deterministic Ecore contracts and invokes validated tools over an
 in-memory `ModelWorkspace`.
 

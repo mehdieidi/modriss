@@ -3,7 +3,7 @@ export const PHASE_NARRATIVES = {
   "cim.ph1": {
     summary:
       "Frame the current capability slice, establish or refresh the CIM program container, and anchor modeling in measurable intent.",
-    why: "Modless project created or prior CIM increment selected for evolution",
+    why: "Varka project created or prior CIM increment selected for evolution",
     relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "cim.ph2": {

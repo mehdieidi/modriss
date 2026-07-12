@@ -12,7 +12,7 @@ export const CIM_PROCESS_PHASES = [
     objective:
       "Frame the current capability slice, establish or refresh the CIM program container, and anchor modeling in measurable intent.",
     primaryRole: "business-modeler",
-    entryCriteria: ["Modless project created or prior CIM increment selected for evolution"],
+    entryCriteria: ["Varka project created or prior CIM increment selected for evolution"],
     exitCriteria: [
       "CIMModel root exists",
       "Capability-slice objective and definition of done are agreed",

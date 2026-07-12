@@ -1,6 +1,6 @@
 # CVS Editor — Concrete Visual Syntax Studio
 
-A standalone graphical editor for Modless CVS v2 notation files (`mde/notation/*.cvs.json`).
+A standalone graphical editor for Varka CVS v2 notation files (`mde/notation/*.cvs.json`).
 
 ## Quick start
 

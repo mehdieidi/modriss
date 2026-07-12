@@ -1,12 +1,12 @@
 # Model-Driven Engineering
 
-Modless treats models as executable engineering assets rather than diagrams that merely describe
+Varka treats models as executable engineering assets rather than diagrams that merely describe
 code. A formal metamodel defines what can exist, constraints define valid meaning, transformations
 derive the next abstraction level, and generators produce deployable project assets.
 
 ## Core Terms
 
-| Term                          | Meaning in Modless                                                                  |
+| Term                          | Meaning in Varka                                                                    |
 | ----------------------------- | ----------------------------------------------------------------------------------- |
 | Metamodel                     | The formal abstract syntax of a modeling level                                      |
 | Model                         | An instance conforming to a metamodel                                               |

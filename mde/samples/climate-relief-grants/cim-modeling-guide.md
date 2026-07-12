@@ -27,7 +27,7 @@ transformation risks, assumptions, hotspots, trace links, and readiness evidence
 
 ## 2. How to use these instructions
 
-Create a CIM model in the Modless workbench and use the element type named in each step from the
+Create a CIM model in the Varka workbench and use the element type named in each step from the
 palette. Set the element's `id` to the backticked value; later connector steps use those IDs.
 All elements inherit `name`, `summary`, `rationale`, and `lifecycleStatus` from the shared kernel.
 For this reviewed case study, use `APPROVED` unless a step explicitly says otherwise.

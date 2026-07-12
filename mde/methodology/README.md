@@ -1,4 +1,4 @@
-# Modless Modeling Methodologies
+# Varka Modeling Methodologies
 
 Canonical, machine-readable **iterative-incremental** modeling process definitions for CIM, PIM,
 AWS PSM, and the end-to-end pipeline. Each process follows **SPEM 2.0**: sequential phases → stages

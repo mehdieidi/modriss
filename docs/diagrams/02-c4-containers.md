@@ -4,7 +4,7 @@
 flowchart TB
     user["Person: Modeler"]
 
-    subgraph modless["Modless System"]
+    subgraph varka["Varka System"]
         landing["Container: Landing Site<br/>Static HTML/CSS/JS<br/>Product story and case study"]
         frontend["Container: Modeling Frontend<br/>Plain HTML/CSS/JavaScript<br/>AntV G6 renderer"]
         backend["Container: Spring Boot Backend<br/>Java 17 + Spring MVC/WebSocket/JDBC/AI<br/>API, orchestration, validation, transformation"]

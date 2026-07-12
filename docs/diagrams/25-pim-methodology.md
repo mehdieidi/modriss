@@ -1,6 +1,6 @@
 # PIM Modeling Methodology
 
-Platform-independent modeling follows `modless.pim.modeling` (`mde/methodology/process-definitions/pim.json`). **Six SPEM phases** (`pim.ph1`–`pim.ph6`) with nested stages and **29 atomic tasks**. **Architecture Establishment** runs once; engine phases repeat per service slice.
+Platform-independent modeling follows `varka.pim.modeling` (`mde/methodology/process-definitions/pim.json`). **Six SPEM phases** (`pim.ph1`–`pim.ph6`) with nested stages and **29 atomic tasks**. **Architecture Establishment** runs once; engine phases repeat per service slice.
 
 ## Phase Flow
 

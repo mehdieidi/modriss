@@ -40,11 +40,11 @@ None.
 
 ## Docker compose smoke
 
-| Check                                            | Result                      | Notes                            |
-| ------------------------------------------------ | --------------------------- | -------------------------------- |
-| Backend readiness (`/actuator/health/readiness`) | PASS                        | `http://127.0.0.1:8080`          |
-| Modeling config (`/api/modeling/config`)         | PASS                        | Contains `levels`                |
-| Test                                             | `AssistantComposeSmokeTest` | `MODLESS_RUN_COMPOSE_SMOKE=true` |
+| Check                                            | Result                      | Notes                          |
+| ------------------------------------------------ | --------------------------- | ------------------------------ |
+| Backend readiness (`/actuator/health/readiness`) | PASS                        | `http://127.0.0.1:8080`        |
+| Modeling config (`/api/modeling/config`)         | PASS                        | Contains `levels`              |
+| Test                                             | `AssistantComposeSmokeTest` | `VARKA_RUN_COMPOSE_SMOKE=true` |
 
 ## Manual exploratory scenarios (UX — not automated)
 
@@ -59,4 +59,4 @@ Run against compose stack + frontend (`http://127.0.0.1:8082`). Check off when v
 - [ ] Cancel a long source-document turn
 - [ ] Manual model edit while provider is still responding
 
-Latency expectation: each turn completes within **5 minutes** (`MODLESS_AI_TURN_TIMEOUT` default).
+Latency expectation: each turn completes within **5 minutes** (`VARKA_AI_TURN_TIMEOUT` default).

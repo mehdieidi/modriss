@@ -4,7 +4,7 @@
   "metamodelRef": {
     "level": "cim",
     "ecore": "mde/metamodels/cim/cim-combined.ecore",
-    "nsUri": "https://modless.org/cim/1.0"
+    "nsUri": "https://varka.org/cim/1.0"
   },
   "primitives": {
     "command-lozenge": {

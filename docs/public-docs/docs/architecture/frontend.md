@@ -55,7 +55,7 @@ and view.
 The static frontend reads its backend base URL from:
 
 ```javascript
-window.MODLESS_BACKEND_BASE_URL = "http://127.0.0.1:8080";
+window.VARKA_BACKEND_BASE_URL = "http://127.0.0.1:8080";
 ```
 
 Configure the deployed frontend and backend origins together, including CORS and WebSocket allowed

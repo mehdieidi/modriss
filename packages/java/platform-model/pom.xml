@@ -44,12 +44,12 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <description>Model workspace lifecycle, validation, and import/export for the Modless platform.</description>
+  <description>Model workspace lifecycle, validation, and import/export for the Varka platform.</description>
   <modelVersion>4.0.0</modelVersion>
   <name>platform-model</name>
   <packaging>jar</packaging>
   <parent>
-    <artifactId>modless</artifactId>
+    <artifactId>varka</artifactId>
     <groupId>io.mehdieidi</groupId>
     <relativePath>../../../pom.xml</relativePath>
     <version>0.0.1-SNAPSHOT</version>

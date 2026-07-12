@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/cim/types/1.0", prefix="cimtypes")
+@namespace(uri="https://varka.org/cim/types/1.0", prefix="cimtypes")
 package cimtypes;
 
 enum RequirementType {

@@ -3,19 +3,19 @@ title End-to-End Modeling — SPEM Engine (8 Stages per Increment)
 start
 partition "e2e.ph1 — Increment Lifecycle" {
   :e2e.p0 — Increment Planning;
-  :e2e.p1 — CIM engine\n(modless.cim.modeling · 5 phases);
+  :e2e.p1 — CIM engine\n(varka.cim.modeling · 5 phases);
   if (cim-semantic-validation?) then (pass)
   else (fail)
     backward :e2e.p1;
   endif
   :e2e.p2 — CIM→PIM ETL;
-  :e2e.p3 — PIM engine\n(modless.pim.modeling · 6 phases);
+  :e2e.p3 — PIM engine\n(varka.pim.modeling · 6 phases);
   if (pim-semantic-validation?) then (pass)
   else (fail)
     backward :e2e.p3;
   endif
   :e2e.p4 — PIM→PSM ETL;
-  :e2e.p5 — PSM engine\n(modless.psm.modeling · 6 phases);
+  :e2e.p5 — PSM engine\n(varka.psm.modeling · 6 phases);
   if (psm-semantic-validation?) then (pass)
   else (fail)
     backward :e2e.p5;

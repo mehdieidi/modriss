@@ -1,5 +1,5 @@
 {
-  "name": "@modless/notation-migrate",
+  "name": "@varka/notation-migrate",
   "private": true,
   "type": "module",
   "scripts": {

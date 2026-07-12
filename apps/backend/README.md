@@ -1,4 +1,4 @@
-# Modless Backend
+# Varka Backend
 
 Spring Boot API for [`apps/frontend`](../frontend/README.md): auth, projects, models, MDE jobs,
 artifacts, layout, and the AI assistant (REST + SSE + WebSocket).
@@ -19,10 +19,10 @@ mvn -pl apps/backend -am spring-boot:run
 Defaults in `src/main/resources/application.yml`; overrides via environment or `.env`.
 Copy [`.env.example`](../../.env.example) at the repo root.
 
-| Concern      | Variables                                                                                                               |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| Database     | `MODLESS_DB_URL`, `MODLESS_DB_USER`, `MODLESS_DB_PASSWORD`                                                              |
-| AI assistant | `MODLESS_AI_ENABLED`, `MODLESS_AI_PROVIDER`, provider keys — see [assistant setup](../../docs/internal/ai/assistant.md) |
+| Concern      | Variables                                                                                                           |
+| ------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Database     | `VARKA_DB_URL`, `VARKA_DB_USER`, `VARKA_DB_PASSWORD`                                                                |
+| AI assistant | `VARKA_AI_ENABLED`, `VARKA_AI_PROVIDER`, provider keys — see [assistant setup](../../docs/internal/ai/assistant.md) |
 
 Start only Postgres: `docker compose up -d postgres`
 

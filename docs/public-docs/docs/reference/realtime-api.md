@@ -41,7 +41,7 @@ ws://127.0.0.1:8080/ws/chatbot/sessions/{sessionId}
 The WebSocket is receive-only. Client text messages are ignored; use REST to submit user actions.
 The connection publishes `assistant.ready` after it is established.
 
-Allowed WebSocket origins come from `modless.allowed-origins`.
+Allowed WebSocket origins come from `varka.allowed-origins`.
 
 ## Event Envelope
 
