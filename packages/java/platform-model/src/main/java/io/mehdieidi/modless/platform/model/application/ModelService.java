@@ -723,8 +723,16 @@ public final class ModelService {
         importExport.attachSourceXmi(model, sourceXmi.bytes());
         validationService.addValidationTiming(
             "validation.sourceXmiAttachMs", System.nanoTime() - phaseStarted);
+        return result;
       }
-      return result;
+      // The semantic JSON already contains the hydrated graph endpoints used by the editor. If a
+      // regenerated sidecar still cannot resolve them, validate that canonical in-memory model
+      // instead of surfacing duplicate stale-XMI endpoint errors to the user.
+      ValidationResult jsonResult = validate(model.level(), model.modelJson());
+      if (validationService.hasOnlyRecoverableStaleSourceErrors(jsonResult)) {
+        return new ValidationResult(true, List.of());
+      }
+      return jsonResult;
     } catch (RuntimeException ex) {
       return validate(model.level(), model.modelJson());
     }

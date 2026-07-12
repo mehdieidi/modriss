@@ -150,6 +150,11 @@ class ClimateReliefSampleXmiImportTest {
     ModelService.ValidationResult validation =
         service.validate(context.user(), ModelLevel.CIM, created.id());
 
+    assertTrue(
+        validation.valid(),
+        () ->
+            "The imported canonical CIM sample should validate without issues: "
+                + validation.issues());
     assertNoTraceLinkEndpointErrors(validation);
   }
 

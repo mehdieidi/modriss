@@ -12,6 +12,7 @@ import io.mehdieidi.modless.mde.validation.EvlValidationReport;
 import io.mehdieidi.modless.mde.validation.EvlValidationRequest;
 import io.mehdieidi.modless.mde.validation.ResourceEvlModelConfiguration;
 import io.mehdieidi.modless.mde.validation.ValidationSeverity;
+import io.mehdieidi.modless.mde.validation.ValidationPhase;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import io.mehdieidi.modless.platform.model.domain.ModelRecord;
@@ -212,6 +213,17 @@ final class ModelValidationService {
    */
   boolean hasRecoverableStaleSourceError(ModelService.ValidationResult result) {
     return hasRelationshipEndpointLoadingError(result) || hasTraceEndpointError(result);
+  }
+
+  /** Returns whether every issue in a result is a known stale source-XMI endpoint diagnostic. */
+  boolean hasOnlyRecoverableStaleSourceErrors(ModelService.ValidationResult result) {
+    return result != null
+        && !result.issues().isEmpty()
+        && result.issues().stream()
+            .allMatch(
+        issue ->
+            hasRelationshipEndpointLoadingError(new ModelService.ValidationResult(false, List.of(issue)))
+                || hasTraceEndpointError(new ModelService.ValidationResult(false, List.of(issue))));
   }
 
   /**
@@ -490,7 +502,10 @@ final class ModelValidationService {
     String constraint = "EVL_" + diagnostic.phase().name();
     // whatWentWrong is authored for users. reason can be a raw parser or Java exception message.
     String message =
-        !diagnostic.whatWentWrong().isBlank()
+        diagnostic.phase() == ValidationPhase.MODEL_LOADING
+            && !diagnostic.reason().isBlank()
+            ? diagnostic.reason()
+            : !diagnostic.whatWentWrong().isBlank()
             ? diagnostic.whatWentWrong()
             : "The validation rule could not be checked.";
     UserFacingIssueText text = splitUserFacingIssueText(message);
