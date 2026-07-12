@@ -1888,6 +1888,8 @@
         "Policy",
         "Risk",
         "Hotspot",
+        "ExceptionScenario",
+        "TemporalConstraint",
         "ProductionReadinessAssessment",
         "TransformationProfile",
         "TraceModel"

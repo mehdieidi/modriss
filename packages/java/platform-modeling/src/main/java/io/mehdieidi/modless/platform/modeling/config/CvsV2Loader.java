@@ -231,6 +231,7 @@ public final class CvsV2Loader {
       }
       Map<String, Object> override = stringKeyMap(raw);
       Map<String, Object> element = new LinkedHashMap<>(override);
+      normalizeLegacyColor(element);
       String primitive = String.valueOf(override.getOrDefault("primitive", ""));
       Map<String, Object> card = optionalMap(override, "card");
       if (!primitive.isBlank() || !card.isEmpty()) {
@@ -250,6 +251,26 @@ public final class CvsV2Loader {
       elements.add(element);
     }
     return elements;
+  }
+
+  /**
+   * Keeps the legacy UI configuration contract scalar while accepting CVS v2 theme colors.
+   *
+   * <p>The CVS document may provide a light/dark color object, but the existing configuration
+   * endpoint exposes {@code color} as the light-theme accent. Preserve the richer value separately
+   * so consumers that understand theme colors can opt into it without breaking existing clients.
+   */
+  private void normalizeLegacyColor(Map<String, Object> element) {
+    Object color = element.get("color");
+    if (!(color instanceof Map<?, ?> rawColor)) {
+      return;
+    }
+    Map<String, Object> themeColor = stringKeyMap(rawColor);
+    Object light = themeColor.get("light");
+    if (light != null && !String.valueOf(light).isBlank()) {
+      element.put("themeColor", themeColor);
+      element.put("color", String.valueOf(light).toUpperCase());
+    }
   }
 
   private List<Map<String, Object>> viewpointsToViewDefinitions(List<?> viewpoints) {

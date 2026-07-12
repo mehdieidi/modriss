@@ -344,7 +344,9 @@ class ModelingConfigServiceTest {
           assertEquals(Boolean.TRUE, element.get("creatable"));
           assertFalse(Boolean.TRUE.equals(element.get("abstract")));
           assertFalse(Boolean.TRUE.equals(element.get("relationshipElement")));
-          assertFalse(Boolean.TRUE.equals(element.get("containedOnly")));
+          assertFalse(
+              Boolean.TRUE.equals(element.get("containedOnly"))
+                  && !stringList(view.get("scopeTypes")).contains(type));
           assertFalse(Boolean.TRUE.equals(element.get("supportOnly")));
         }
       }

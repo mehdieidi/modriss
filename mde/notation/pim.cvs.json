@@ -3063,7 +3063,6 @@
       "palette": [
         "ServerlessService",
         "ExternalEndpoint",
-        "HumanTask",
         "BusinessRule",
         "DecisionModel",
         "Secret"
@@ -3344,6 +3343,9 @@
         "MapStateConfig",
         "CallbackTaskConfig",
         "ErrorHandler",
+        "HumanTask",
+        "ApprovalTask",
+        "EscalationPolicy",
         "Function",
         "ExternalAdapter"
       ],
