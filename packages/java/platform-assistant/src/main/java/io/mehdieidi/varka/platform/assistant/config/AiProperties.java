@@ -101,16 +101,16 @@ public record AiProperties(
     hardening =
         hardening == null
             ? new Hardening(
-                30, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 2, Duration.ofMillis(250), 12)
+                30, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 0, Duration.ofMillis(250), 12)
             : hardening;
     proxy = proxy == null ? new Proxy(false, ProxyType.HTTP, null, null, null) : proxy;
     openaiCompatible =
         openaiCompatible == null ? new OpenAiCompatible(null, null) : openaiCompatible;
     gemini = gemini == null ? new Gemini(null) : gemini;
     models = models == null ? new Models(null, null, null) : models;
-    maxProviderCallsPerTurn = maxProviderCallsPerTurn <= 0 ? 8 : maxProviderCallsPerTurn;
-    maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 12 : maxProviderCallsSourceTurn;
-    sourceTurnTimeout = sourceTurnTimeout == null ? Duration.ofMinutes(12) : sourceTurnTimeout;
+    maxProviderCallsPerTurn = maxProviderCallsPerTurn <= 0 ? 2 : maxProviderCallsPerTurn;
+    maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 3 : maxProviderCallsSourceTurn;
+    sourceTurnTimeout = sourceTurnTimeout == null ? Duration.ofMinutes(5) : sourceTurnTimeout;
     maxCimModelingPasses = maxCimModelingPasses <= 0 ? 4 : maxCimModelingPasses;
   }
 
@@ -272,7 +272,7 @@ public record AiProperties(
    * @param rateLimitWindow rate limit window
    * @param circuitFailureThreshold consecutive provider failures before opening circuit
    * @param circuitOpenDuration open-circuit duration
-   * @param providerRetryAttempts provider retry attempts per call
+   * @param providerRetryAttempts additional provider retries after the initial request
    * @param retryBackoff retry backoff
    * @param recentMessageWindow recent durable messages included in prompt context
    */
@@ -293,7 +293,7 @@ public record AiProperties(
       circuitFailureThreshold = circuitFailureThreshold <= 0 ? 3 : circuitFailureThreshold;
       circuitOpenDuration =
           circuitOpenDuration == null ? Duration.ofMinutes(1) : circuitOpenDuration;
-      providerRetryAttempts = providerRetryAttempts <= 0 ? 2 : providerRetryAttempts;
+      providerRetryAttempts = Math.max(0, providerRetryAttempts);
       retryBackoff = retryBackoff == null ? Duration.ofMillis(250) : retryBackoff;
       recentMessageWindow = recentMessageWindow <= 0 ? 24 : recentMessageWindow;
     }
@@ -362,12 +362,7 @@ public record AiProperties(
      */
     public String forRole(Provider provider, AssistantModelRole role) {
       Provider resolvedProvider = provider == null ? Provider.OPENAI : provider;
-      return switch (role == null ? AssistantModelRole.RESPONDER : role) {
-        case PLANNER -> blankToDefault(planner, defaultModel(resolvedProvider));
-        case SOURCE_ANALYST -> blankToDefault(planner, defaultModel(resolvedProvider));
-        case RESPONDER -> blankToDefault(responder, defaultModel(resolvedProvider));
-        case SUMMARIZER -> blankToDefault(summarizer, defaultModel(resolvedProvider));
-      };
+      return blankToDefault(responder, defaultModel(resolvedProvider));
     }
 
     private static String defaultModel(Provider provider) {

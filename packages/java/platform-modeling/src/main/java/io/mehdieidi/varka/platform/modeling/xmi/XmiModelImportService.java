@@ -1,9 +1,5 @@
 package io.mehdieidi.varka.platform.modeling.xmi;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.modeling.config.ModelingConfigService;
@@ -43,6 +39,10 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Converts between platform model JSON and EMF/XMI resources for each model level. */
 public final class XmiModelImportService {
@@ -549,7 +549,7 @@ public final class XmiModelImportService {
    * @return text or empty string
    */
   private String scalarText(JsonNode value) {
-    if (value == null || value.isNull() || value.isContainerNode()) {
+    if (value == null || value.isNull() || value.isContainer()) {
       return "";
     }
     return value.asText("").trim();
@@ -602,8 +602,8 @@ public final class XmiModelImportService {
       }
       restoreTraceEndpointIds(object, traceRelationshipType);
       object
-          .fields()
-          .forEachRemaining(
+          .properties()
+          .forEach(
               entry ->
                   restoreRelationshipEndpoints(
                       entry.getValue(), relationshipsById, traceRelationshipType));
@@ -685,8 +685,8 @@ public final class XmiModelImportService {
       allResources.add(id);
     }
     resource
-        .fields()
-        .forEachRemaining(
+        .properties()
+        .forEach(
             entry -> {
               JsonNode value = entry.getValue();
               if (value.isArray()) {
@@ -1215,7 +1215,7 @@ public final class XmiModelImportService {
      * @return converted value, or {@code null} when conversion failed
      */
     private Object attributeValue(EObject owner, EAttribute attribute, JsonNode value) {
-      if (value != null && value.isContainerNode()) {
+      if (value != null && value.isContainer()) {
         diagnostics.attributeError(
             owner, attribute, "Expected a scalar value but found " + value.getNodeType() + ".");
         return null;
@@ -1615,8 +1615,8 @@ public final class XmiModelImportService {
     private ObjectNode shallowGraphElement(ObjectNode semanticNode) {
       ObjectNode element = objectMapper.createObjectNode();
       semanticNode
-          .fields()
-          .forEachRemaining(
+          .properties()
+          .forEach(
               entry -> {
                 JsonNode value = entry.getValue();
                 if (value == null || value.isArray() || value.isObject()) {

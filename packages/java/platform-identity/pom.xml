@@ -22,8 +22,8 @@
       <version>${junit.version}</version>
     </dependency>
     <dependency>
-      <artifactId>jackson-datatype-jsr310</artifactId>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <groupId>tools.jackson.core</groupId>
       <scope>test</scope>
     </dependency>
   </dependencies>

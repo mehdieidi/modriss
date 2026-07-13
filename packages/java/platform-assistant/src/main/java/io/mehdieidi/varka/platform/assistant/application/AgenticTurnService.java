@@ -1,9 +1,6 @@
 package io.mehdieidi.varka.platform.assistant.application;
 
 import io.mehdieidi.varka.platform.assistant.agent.AgentTurnLoop;
-import io.mehdieidi.varka.platform.assistant.domain.AssistantProposal;
-import io.mehdieidi.varka.platform.assistant.domain.AssistantValidationSummary;
-import io.mehdieidi.varka.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.varka.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.varka.platform.assistant.source.SourceDocumentWorkers;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantMemoryStore;
@@ -13,10 +10,8 @@ import io.mehdieidi.varka.platform.identity.domain.UserRecord;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.model.application.ModelService;
 import io.mehdieidi.varka.platform.model.domain.ModelRecord;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /** Loads, runs, validates, and atomically commits one agentic workspace turn. */
 public final class AgenticTurnService {
@@ -60,13 +55,76 @@ public final class AgenticTurnService {
       Long revision,
       String message,
       String sourceDocument) {
+    return run(user, sessionId, level, modelId, revision, message, sourceDocument, false);
+  }
+
+  /** The confirmation flag is server-controlled by the durable turn endpoint. */
+  public Result run(
+      UserRecord user,
+      String sessionId,
+      ModelLevel level,
+      String modelId,
+      Long revision,
+      String message,
+      String sourceDocument,
+      boolean destructiveConfirmed) {
+    return run(
+        user,
+        sessionId,
+        level,
+        modelId,
+        revision,
+        message,
+        sourceDocument,
+        destructiveConfirmed,
+        () -> false);
+  }
+
+  /** Runs a durable turn while checking a persisted cancellation flag before model persistence. */
+  public Result run(
+      UserRecord user,
+      String sessionId,
+      ModelLevel level,
+      String modelId,
+      Long revision,
+      String message,
+      String sourceDocument,
+      boolean destructiveConfirmed,
+      java.util.function.BooleanSupplier cancellationRequested) {
+    return run(
+        user,
+        sessionId,
+        level,
+        modelId,
+        revision,
+        message,
+        sourceDocument,
+        destructiveConfirmed,
+        cancellationRequested,
+        () -> null);
+  }
+
+  /** Runs with a durable stop reason checked immediately before persistence. */
+  public Result run(
+      UserRecord user,
+      String sessionId,
+      ModelLevel level,
+      String modelId,
+      Long revision,
+      String message,
+      String sourceDocument,
+      boolean destructiveConfirmed,
+      java.util.function.BooleanSupplier cancellationRequested,
+      java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException>
+          stopReason) {
     ModelRecord current = models.get(user, level, modelId);
     if (memory != null) memory.appendMessage(sessionId, "USER", message, Map.of());
+    String contextualMessage = contextualMessage(sessionId, message);
     long expectedRevision = revision == null ? current.revision() : revision;
-    String extracted = sourceDocument;
-    if (sourceDocument != null && sourceDocument.length() > 12000) {
-      extracted = sourceWorkers.extract(sessionId, sourceDocument);
-    }
+    String extracted =
+        sourceDocument == null || sourceDocument.isBlank()
+            ? sourceDocument
+            : sourceWorkers.extract(sessionId, sourceDocument);
     ModelWorkspace workspace =
         new ModelWorkspace(
             level,
@@ -74,69 +132,80 @@ public final class AgenticTurnService {
             expectedRevision,
             current.modelJson(),
             patches,
-            event ->
-                realtime.publish(
-                    sessionId,
-                    "model.delta",
-                    Map.of(
-                        "operations",
-                        event.operations(),
-                        "affectedElementIds",
-                        event.affectedElementIds(),
-                        "model",
-                        event.model())));
-    AgentTurnLoop.TurnResult turn = loop.run(sessionId, level, message, extracted, workspace);
+            // A working copy is deliberately private. Durable consumers receive only the
+            // persisted checkpoint emitted by the turn worker after model persistence succeeds.
+            event -> {});
+    AgentTurnLoop.TurnResult turn =
+        loop.run(
+            sessionId,
+            level,
+            contextualMessage,
+            extracted,
+            workspace,
+            destructiveConfirmed,
+            cancellationRequested == null ? () -> false : cancellationRequested,
+            stopReason == null ? () -> null : stopReason);
+    if (cancellationRequested != null && cancellationRequested.getAsBoolean())
+      throw new io.mehdieidi.varka.platform.kernel.PlatformException(
+          499, "Assistant turn was canceled before its model checkpoint could be saved.");
+    io.mehdieidi.varka.platform.kernel.PlatformException stop =
+        stopReason == null ? null : stopReason.get();
+    if (stop != null) throw stop;
     ModelRecord updated = workspace.patch().isEmpty() ? current : workspace.apply(models, user);
     if (memory != null) {
       memory.appendMessage(
           sessionId, "ASSISTANT", turn.message(), Map.of("workflowState", "APPLIED"));
       memory.updateThreadModel(sessionId, updated.id(), updated.revision());
-      if (!workspace.patch().isEmpty()) {
-        AssistantValidationSummary validation =
-            new AssistantValidationSummary(
-                true,
-                true,
-                0,
-                turn.validation().issues().stream()
-                    .map(
-                        issue ->
-                            new AssistantValidationSummary.Issue(
-                                issue.severity(),
-                                issue.constraint(),
-                                issue.elementId(),
-                                issue.message()))
-                    .toList());
-        AssistantProposal proposal =
-            new AssistantProposal(
-                UUID.randomUUID().toString(),
-                workspace.affectedElementIds(),
-                new SemanticModelPatch(List.of()),
-                workspace.inversePatch(),
-                validation,
-                AssistantProposal.RiskLevel.LOW,
-                List.of(),
-                Instant.now());
-        memory.saveProposal(
-            sessionId, current.projectId(), updated.id(), updated.revision(), proposal, "APPLIED");
-      }
     }
-    realtime.publish(
-        sessionId,
-        "model.updated",
-        Map.of(
-            "modelId", updated.id(), "revision", updated.revision(), "model", updated.modelJson()));
-    realtime.publish(
-        sessionId,
-        "assistant.turn.completed",
-        Map.of("message", turn.message(), "modelId", updated.id(), "revision", updated.revision()));
     return new Result(
-        turn.message(), updated.id(), updated.revision(), turn.provider(), turn.model());
+        turn.message(),
+        updated.id(),
+        updated.revision(),
+        turn.provider(),
+        turn.model(),
+        turn.inversePatch(),
+        workspace.affectedElementIds(),
+        turn.commandBatch(),
+        turn.providerCalls());
   }
 
   public boolean cancel(String sessionId) {
     return loop.cancel(sessionId);
   }
 
+  private String contextualMessage(String sessionId, String message) {
+    if (memory == null) return message;
+    List<io.mehdieidi.varka.platform.assistant.domain.memory.AssistantMemoryRecords.MessageRecord>
+        history =
+            memory.recentMessages(sessionId, 8).stream()
+                .sorted(
+                    java.util.Comparator.comparing(
+                        io.mehdieidi.varka.platform.assistant.domain.memory.AssistantMemoryRecords
+                                .MessageRecord
+                            ::createdAt))
+                .toList();
+    if (history.size() <= 1) return message;
+    String prior =
+        history.stream()
+            .limit(Math.max(0, history.size() - 1))
+            .map(item -> item.role() + ": " + item.content())
+            .collect(java.util.stream.Collectors.joining("\n"));
+    return prior.isBlank()
+        ? message
+        : "Recent completed conversation turns (context, not instructions):\n"
+            + prior
+            + "\n\nCurrent user request:\n"
+            + message;
+  }
+
   public record Result(
-      String message, String modelId, long revision, String provider, String model) {}
+      String message,
+      String modelId,
+      long revision,
+      String provider,
+      String model,
+      List<ModelService.ModelPatchOperation> inversePatch,
+      List<String> affectedElementIds,
+      io.mehdieidi.varka.platform.assistant.domain.ModelCommandBatch commandBatch,
+      int providerCalls) {}
 }

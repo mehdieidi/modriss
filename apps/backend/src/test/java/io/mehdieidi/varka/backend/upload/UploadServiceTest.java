@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.varka.backend.config.BackendProperties;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
@@ -17,6 +16,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.web.MockMultipartFile;
+import tools.jackson.databind.ObjectMapper;
 
 class UploadServiceTest {
 
@@ -131,7 +131,7 @@ class UploadServiceTest {
 
   @Test
   void reportsStorageFailureAsServiceUnavailable() {
-    ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
+    ObjectMapper mapper = new ObjectMapper();
     BackendProperties properties =
         new BackendProperties(
             tempDir,
@@ -158,7 +158,7 @@ class UploadServiceTest {
   }
 
   private UploadService service(long maxFileBytes, int maxTextChars) {
-    ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
+    ObjectMapper mapper = new ObjectMapper();
     BackendProperties properties =
         new BackendProperties(
             tempDir,

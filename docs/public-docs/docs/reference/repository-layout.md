@@ -8,7 +8,7 @@ apps/
 config/                    Tooling and static-analysis configuration
 deploy/                    Docker Compose stack, Dockerfile, deployment scripts
 docs/
-  api/                     REST and WebSocket API references
+  api/                     REST and SSE API references
   diagrams/                Mermaid architecture diagrams
   internal/                Contributor guides and deep-dive references
   public-docs/             Published MkDocs site

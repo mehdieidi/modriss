@@ -3,7 +3,6 @@ package io.mehdieidi.varka.platform.identity.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.storage.api.PlatformStore;
 import java.nio.file.Path;
@@ -14,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
 
 class ApplicationServicesPortTest {
 

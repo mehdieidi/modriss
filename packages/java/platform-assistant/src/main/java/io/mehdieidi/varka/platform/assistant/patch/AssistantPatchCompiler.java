@@ -1,20 +1,18 @@
 package io.mehdieidi.varka.platform.assistant.patch;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.varka.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.model.application.ModelService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Compiles semantic assistant operations into backend model patch operations. */
 public class AssistantPatchCompiler {
-
-  private static final String DEFAULT_SERVICE_LOCAL_ID = "__assistant_default_service__";
 
   private final AssistantMetamodelSchemaService schemas;
 
@@ -52,9 +50,8 @@ public class AssistantPatchCompiler {
                 .filter(java.util.Objects::nonNull)
                 .findFirst()
                 .orElse(root.path("eClass").asText("")));
-    ensureDefaultServerlessService(level, root, semantic, patch, inverse);
-    ArrayNode elements = root.with(visualContainer).withArray("elements");
-    ArrayNode relationships = root.with(visualContainer).withArray("relationships");
+    ArrayNode elements = root.withObject(visualContainer).withArray("elements");
+    ArrayNode relationships = root.withObject(visualContainer).withArray("relationships");
     for (SemanticModelPatch.Operation operation : semantic.operations()) {
       if (operation == null || operation.type() == null) {
         throw new PlatformException(400, "Assistant semantic operation type is required.");
@@ -117,16 +114,22 @@ public class AssistantPatchCompiler {
             if (rootContainment.isPresent()) {
               addRootContainedElement(root, patch, inverse, rootContainment.get(), element);
             } else {
-              Optional<ServicePlacement> servicePlacement =
-                  resolveServicePlacement(level, root, operation, patch, inverse);
-              if (servicePlacement.isPresent()) {
-                addServiceContainedElement(root, patch, inverse, servicePlacement.get(), element);
-              } else {
-                throw new PlatformException(
-                    422,
-                    "Element type requires a metamodel containment owner: "
-                        + operation.elementType());
-              }
+              GenericPlacement placement =
+                  genericPlacement(level, operation.elementType())
+                      .orElseThrow(
+                          () ->
+                              new PlatformException(
+                                  422,
+                                  "Element type requires an explicit Ecore containment owner: "
+                                      + operation.elementType()));
+              ObjectNode owner =
+                  JsonNodeFactory.instance
+                      .objectNode()
+                      .put("id", "__assistant_owner_" + placement.ownerType())
+                      .put("eClass", placement.ownerType());
+              addRootContainedElement(root, patch, inverse, placement.rootContainment(), owner);
+              LocatedElement locatedOwner = locateElement(root, owner.path("id").asText());
+              addContainedElement(locatedOwner, placement.containment(), element, patch, inverse);
             }
           }
           patch.add(
@@ -290,8 +293,8 @@ public class AssistantPatchCompiler {
             ? JsonNodeFactory.instance.objectNode()
             : (ObjectNode) modelJson.deepCopy();
     String visualContainer = visualContainer(root);
-    root.with(visualContainer).withArray("elements");
-    root.with(visualContainer).withArray("relationships");
+    root.withObject(visualContainer).withArray("elements");
+    root.withObject(visualContainer).withArray("relationships");
     if (compiled != null) {
       compiled.patch().stream()
           .map(ModelService.ModelPatchOperation::path)
@@ -301,8 +304,8 @@ public class AssistantPatchCompiler {
           .distinct()
           .forEach(
               container -> {
-                root.with(container).withArray("elements");
-                root.with(container).withArray("relationships");
+                root.withObject(container).withArray("elements");
+                root.withObject(container).withArray("relationships");
               });
     }
     return root;
@@ -434,7 +437,7 @@ public class AssistantPatchCompiler {
       root.set(visualContainer, container.deepCopy());
       return;
     }
-    ObjectNode container = root.with(visualContainer);
+    ObjectNode container = root.withObject(visualContainer);
     if (!originalContainer.has("elements") || !originalContainer.get("elements").isArray()) {
       patch.add(
           new ModelService.ModelPatchOperation(
@@ -512,116 +515,54 @@ public class AssistantPatchCompiler {
     ((ArrayNode) owned).add(element.deepCopy());
   }
 
-  private void ensureDefaultServerlessService(
-      io.mehdieidi.varka.platform.kernel.ModelLevel level,
-      ObjectNode root,
-      SemanticModelPatch semantic,
+  /** Synthesizes one owner only when Ecore gives a unique concrete root-contained route. */
+  private Optional<GenericPlacement> genericPlacement(
+      io.mehdieidi.varka.platform.kernel.ModelLevel level, String childType) {
+    List<GenericPlacement> candidates = new java.util.ArrayList<>();
+    for (AssistantMetamodelSchemaService.TypeSchema owner : schemas.types(level)) {
+      if (!owner.creatable()) continue;
+      Optional<AssistantMetamodelSchemaService.ReferenceSchema> root =
+          schemas.rootContainment(level, owner.name());
+      if (root.isEmpty()) continue;
+      for (AssistantMetamodelSchemaService.ReferenceSchema containment :
+          schemas.containments(level, owner.name(), childType)) {
+        candidates.add(new GenericPlacement(owner.name(), root.get(), containment));
+      }
+    }
+    return candidates.size() == 1 ? Optional.of(candidates.get(0)) : Optional.empty();
+  }
+
+  private void addContainedElement(
+      LocatedElement owner,
+      AssistantMetamodelSchemaService.ReferenceSchema containment,
+      JsonNode element,
       List<ModelService.ModelPatchOperation> patch,
       List<ModelService.ModelPatchOperation> inverse) {
-    if (level != io.mehdieidi.varka.platform.kernel.ModelLevel.PIM) {
-      return;
-    }
-    boolean needsService =
-        semantic.operations().stream()
-            .anyMatch(
-                operation ->
-                    operation != null
-                        && operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT
-                        && serviceContainmentFeature(schemas, operation.elementType()).isPresent()
-                        && (operation.sourceElementId() == null
-                            || operation.sourceElementId().isBlank()));
-    if (!needsService) {
-      return;
-    }
-    JsonNode services = root.get("services");
-    if (services != null && services.isArray() && !services.isEmpty()) {
-      return;
-    }
-    ObjectNode service =
-        JsonNodeFactory.instance
-            .objectNode()
-            .put("id", DEFAULT_SERVICE_LOCAL_ID)
-            .put("eClass", "ServerlessService")
-            .put("name", "Default Service");
-    ArrayNode initial = JsonNodeFactory.instance.arrayNode().add(service);
-    patch.add(0, new ModelService.ModelPatchOperation("add", "/services", initial));
-    inverse.add(0, new ModelService.ModelPatchOperation("remove", "/services", null));
-    root.set("services", initial.deepCopy());
-  }
-
-  private Optional<ServicePlacement> resolveServicePlacement(
-      io.mehdieidi.varka.platform.kernel.ModelLevel level,
-      ObjectNode root,
-      SemanticModelPatch.Operation operation,
-      List<ModelService.ModelPatchOperation> patch,
-      List<ModelService.ModelPatchOperation> inverse) {
-    if (level != io.mehdieidi.varka.platform.kernel.ModelLevel.PIM) {
-      return Optional.empty();
-    }
-    Optional<String> feature = serviceContainmentFeature(schemas, operation.elementType());
-    if (feature.isEmpty()) {
-      return Optional.empty();
-    }
-    String serviceId = firstServiceId(root);
-    if (serviceId.isBlank()) {
-      ensureDefaultServerlessService(
-          level, root, new SemanticModelPatch(List.of(operation)), patch, inverse);
-      serviceId = DEFAULT_SERVICE_LOCAL_ID;
-    }
-    return Optional.of(new ServicePlacement(serviceId, feature.get()));
-  }
-
-  private String firstServiceId(ObjectNode root) {
-    JsonNode services = root.get("services");
-    if (services == null || !services.isArray() || services.isEmpty()) {
-      return "";
-    }
-    return services.get(0).path("id").asText("");
-  }
-
-  private Optional<String> serviceContainmentFeature(
-      AssistantMetamodelSchemaService schemaService, String childType) {
-    List<AssistantMetamodelSchemaService.ReferenceSchema> candidates =
-        schemaService.containments(
-            io.mehdieidi.varka.platform.kernel.ModelLevel.PIM, "ServerlessService", childType);
-    return candidates.isEmpty() ? Optional.empty() : Optional.of(candidates.get(0).name());
-  }
-
-  private void addServiceContainedElement(
-      ObjectNode root,
-      List<ModelService.ModelPatchOperation> patch,
-      List<ModelService.ModelPatchOperation> inverse,
-      ServicePlacement placement,
-      JsonNode element) {
-    LocatedElement owner = locateElement(root, placement.serviceId());
-    if (owner == null || owner.node() == null) {
-      throw new PlatformException(422, "ServerlessService owner was not found for deployable.");
-    }
-    schemas.requireContainment(
-        io.mehdieidi.varka.platform.kernel.ModelLevel.PIM,
-        owner.node().path("eClass").asText(),
-        placement.featureName(),
-        element.path("eClass").asText("Function"));
-    String collectionPath = owner.path() + "/" + escapePointer(placement.featureName());
-    JsonNode owned = owner.node().get(placement.featureName());
-    if (owned == null || owned.isNull()) {
+    String path = owner.path() + "/" + escapePointer(containment.name());
+    JsonNode owned = owner.node().get(containment.name());
+    if (!containment.many()) {
+      if (owned != null && !owned.isNull())
+        throw new PlatformException(422, "Single-valued containment already has an element.");
+      patch.add(new ModelService.ModelPatchOperation("add", path, element));
+      inverse.add(0, new ModelService.ModelPatchOperation("remove", path, null));
+      owner.node().set(containment.name(), element.deepCopy());
+    } else if (owned == null || owned.isNull()) {
       ArrayNode initial = JsonNodeFactory.instance.arrayNode().add(element.deepCopy());
-      patch.add(new ModelService.ModelPatchOperation("add", collectionPath, initial));
-      inverse.add(0, new ModelService.ModelPatchOperation("remove", collectionPath, null));
-      owner.node().set(placement.featureName(), initial.deepCopy());
-      return;
-    }
-    if (!owned.isArray()) {
-      throw new PlatformException(400, "Assistant containment reference must target a collection.");
-    }
-    int index = owned.size();
-    patch.add(new ModelService.ModelPatchOperation("add", collectionPath + "/-", element));
-    inverse.add(
-        0, new ModelService.ModelPatchOperation("remove", collectionPath + "/" + index, null));
-    ((ArrayNode) owned).add(element.deepCopy());
+      patch.add(new ModelService.ModelPatchOperation("add", path, initial));
+      inverse.add(0, new ModelService.ModelPatchOperation("remove", path, null));
+      owner.node().set(containment.name(), initial.deepCopy());
+    } else if (owned.isArray()) {
+      int index = owned.size();
+      patch.add(new ModelService.ModelPatchOperation("add", path + "/-", element));
+      inverse.add(0, new ModelService.ModelPatchOperation("remove", path + "/" + index, null));
+      ((ArrayNode) owned).add(element.deepCopy());
+    } else throw new PlatformException(422, "Containment feature is not a collection.");
   }
 
-  private record ServicePlacement(String serviceId, String featureName) {}
+  private record GenericPlacement(
+      String ownerType,
+      AssistantMetamodelSchemaService.ReferenceSchema rootContainment,
+      AssistantMetamodelSchemaService.ReferenceSchema containment) {}
 
   private JsonNode parent(ObjectNode root, String[] segments, String op) {
     JsonNode current = root;
@@ -671,8 +612,8 @@ public class AssistantPatchCompiler {
   private JsonNode diagramElementPayload(JsonNode element) {
     ObjectNode node = JsonNodeFactory.instance.objectNode();
     element
-        .fields()
-        .forEachRemaining(
+        .properties()
+        .forEach(
             entry -> {
               JsonNode value = entry.getValue();
               if (value == null || value.isArray() || value.isObject()) {
@@ -734,7 +675,7 @@ public class AssistantPatchCompiler {
         found.add(new LocatedElement(path, object));
         return;
       }
-      var fields = object.fields();
+      var fields = object.properties().iterator();
       while (fields.hasNext()) {
         var entry = fields.next();
         locateDeletedElements(
@@ -794,7 +735,7 @@ public class AssistantPatchCompiler {
       if (id.equals(text(object.get("id")))) {
         return new LocatedElement(path.isBlank() ? "" : path, object);
       }
-      var fields = object.fields();
+      var fields = object.properties().iterator();
       while (fields.hasNext()) {
         var entry = fields.next();
         if (skipVisualContainers

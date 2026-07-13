@@ -72,7 +72,6 @@ public class AssistantHardeningService {
    */
   public <T> T providerCall(
       AssistantModelRole role, String provider, String model, Supplier<T> call) {
-    ProviderCallBudget.consume(role);
     Instant now = clock.instant();
     Circuit snapshot = circuits.getOrDefault(provider, new Circuit(0, Instant.EPOCH));
     if (now.isBefore(snapshot.openUntil())) {
@@ -91,9 +90,13 @@ public class AssistantHardeningService {
     }
     try {
       RuntimeException last = null;
-      for (int attempt = 1; attempt <= properties.hardening().providerRetryAttempts(); attempt++) {
+      int attempts = 1 + properties.hardening().providerRetryAttempts();
+      for (int attempt = 1; attempt <= attempts; attempt++) {
         long attemptStarted = System.nanoTime();
         try {
+          // Reserve at the actual HTTP-provider boundary. A configured retry is another API
+          // request and must not be invisible to the durable turn's call budget.
+          ProviderCallBudget.consume(role);
           T result = call.get();
           log.info(
               "AI provider call succeeded provider={} role={} model={} assistantTurnId={} "
@@ -132,7 +135,7 @@ public class AssistantHardeningService {
             throw providerFailure;
           }
           last = ex;
-          if (attempt < properties.hardening().providerRetryAttempts()) {
+          if (attempt < attempts) {
             sleep();
           }
         }

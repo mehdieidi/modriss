@@ -1,7 +1,5 @@
 package io.mehdieidi.varka.backend.api.contract;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +11,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 
 /** Compares Spring MVC handler mappings with the checked-in OpenAPI specification. */
 final class OpenApiContractSupport {

@@ -3,11 +3,11 @@ package io.mehdieidi.varka.platform.assistant.patch;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.TextNode;
 import io.mehdieidi.varka.platform.assistant.domain.SemanticModelPatch;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.StringNode;
 
 class AssistantPatchCompilerTest {
 
@@ -28,7 +28,7 @@ class AssistantPatchCompilerTest {
                     SemanticModelPatch.OperationType.SET_ATTRIBUTE,
                     "service-1",
                     "Function",
-                    new TextNode("New"),
+                    new StringNode("New"),
                     null,
                     "name")));
 
@@ -97,7 +97,7 @@ class AssistantPatchCompilerTest {
                     SemanticModelPatch.OperationType.SET_ATTRIBUTE,
                     "",
                     null,
-                    new TextNode("HYBRID_SERVERLESS"),
+                    new StringNode("HYBRID_SERVERLESS"),
                     null,
                     "architectureStyle")));
 
@@ -121,7 +121,7 @@ class AssistantPatchCompilerTest {
                     SemanticModelPatch.OperationType.SET_ATTRIBUTE,
                     "service-1",
                     "Function",
-                    new TextNode("bad"),
+                    new StringNode("bad"),
                     null,
                     "../secret")));
 

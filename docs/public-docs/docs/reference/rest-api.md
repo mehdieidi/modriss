@@ -112,8 +112,8 @@ ZIP download. File paths must be relative and cannot escape the artifact root.
 ### Assistant
 
 Assistant REST routes create and clear sessions, list conversations, load thread history, submit
-messages and choices, upload text attachments, open SSE streams, reindex catalogs, get applied
-proposals, undo applied changes, and answer structured clarifications. See
+idempotent durable turns, upload text attachments, replay authenticated SSE events, continue
+partial turns, confirm destructive batches, and undo saved checkpoints. See
 [Realtime Assistant API](realtime-api.md).
 
 ### Planned Routes

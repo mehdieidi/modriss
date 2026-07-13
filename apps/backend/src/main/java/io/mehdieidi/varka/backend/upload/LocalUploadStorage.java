@@ -1,6 +1,5 @@
 package io.mehdieidi.varka.backend.upload;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
+import tools.jackson.databind.ObjectMapper;
 
 /** Local filesystem implementation of {@link UploadStorage}. */
 public class LocalUploadStorage implements UploadStorage {
@@ -143,7 +143,7 @@ public class LocalUploadStorage implements UploadStorage {
         return Optional.empty();
       }
       return Optional.of(record);
-    } catch (IOException ex) {
+    } catch (tools.jackson.core.JacksonException ex) {
       return Optional.empty();
     }
   }

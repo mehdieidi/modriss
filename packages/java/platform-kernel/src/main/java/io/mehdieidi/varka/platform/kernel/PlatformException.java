@@ -11,6 +11,12 @@ public class PlatformException extends RuntimeException {
     this.status = status;
   }
 
+  /** Retains the operational cause for server-side diagnostics without changing the API message. */
+  public PlatformException(int status, String message, Throwable cause) {
+    super(message, cause);
+    this.status = status;
+  }
+
   public int status() {
     return status;
   }

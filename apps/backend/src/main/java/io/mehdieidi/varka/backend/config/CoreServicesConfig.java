@@ -1,6 +1,5 @@
 package io.mehdieidi.varka.backend.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.varka.backend.upload.LocalUploadStorage;
 import io.mehdieidi.varka.backend.upload.UploadService;
 import io.mehdieidi.varka.backend.upload.UploadStorage;
@@ -26,6 +25,7 @@ import java.nio.file.Path;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.ObjectMapper;
 
 /** Composes platform feature services and their storage-backed dependencies for the backend. */
 @Configuration

@@ -1,6 +1,5 @@
 package io.mehdieidi.varka.platform.transformation.application;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.mehdieidi.varka.platform.artifact.domain.ArtifactRecord;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
@@ -33,6 +32,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
 
 /** Submits and tracks asynchronous MDE transformation and generation jobs. */
 public final class MdeJobService implements AutoCloseable {

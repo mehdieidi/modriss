@@ -1,7 +1,5 @@
 package io.mehdieidi.varka.platform.assistant.persistence.jdbc;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.varka.platform.assistant.domain.AssistantProposal;
 import io.mehdieidi.varka.platform.assistant.domain.AssistantValidationSummary;
 import io.mehdieidi.varka.platform.assistant.domain.SemanticModelPatch;
@@ -19,6 +17,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /** Durable assistant conversation, proposal, and audit persistence. */
 public class JdbcAssistantMemoryStore implements AssistantMemoryStore {
@@ -586,11 +586,6 @@ public class JdbcAssistantMemoryStore implements AssistantMemoryStore {
   public void clearThread(String threadId) {
     jdbc.update("DELETE FROM assistant_messages WHERE thread_id = ?", threadId);
     jdbc.update("DELETE FROM assistant_thread_summaries WHERE thread_id = ?", threadId);
-    jdbc.update(
-        "DELETE FROM assistant_action_audits WHERE proposal_id IN (SELECT id FROM"
-            + " assistant_proposals WHERE thread_id = ?)",
-        threadId);
-    jdbc.update("DELETE FROM assistant_proposals WHERE thread_id = ?", threadId);
     jdbc.update("DELETE FROM assistant_threads WHERE id = ?", threadId);
   }
 

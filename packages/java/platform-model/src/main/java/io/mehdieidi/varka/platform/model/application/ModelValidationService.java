@@ -1,6 +1,5 @@
 package io.mehdieidi.varka.platform.model.application;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.mehdieidi.varka.mde.validation.EpsilonEvlValidator;
 import io.mehdieidi.varka.mde.validation.EvlConstraintKind;
 import io.mehdieidi.varka.mde.validation.EvlConstraintViolation;
@@ -31,6 +30,7 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
+import tools.jackson.databind.JsonNode;
 
 /**
  * EVL and JSON validation for platform models, including validation caching and per-thread timing
@@ -688,8 +688,8 @@ final class ModelValidationService {
       if (node.hasNonNull("eClass")) {
         elements.add(node);
       }
-      node.fields()
-          .forEachRemaining(
+      node.properties()
+          .forEach(
               entry -> {
                 if ("graph".equals(entry.getKey()) || "diagram".equals(entry.getKey())) {
                   return;

@@ -25,18 +25,13 @@
     </dependency>
     <dependency>
       <artifactId>jackson-databind</artifactId>
-      <groupId>com.fasterxml.jackson.core</groupId>
+      <groupId>tools.jackson.core</groupId>
     </dependency>
     <dependency>
       <artifactId>junit-jupiter</artifactId>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
       <version>${junit.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>jackson-datatype-jsr310</artifactId>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <artifactId>platform-artifact</artifactId>

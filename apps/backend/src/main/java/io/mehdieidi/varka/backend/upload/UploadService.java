@@ -1,6 +1,5 @@
 package io.mehdieidi.varka.backend.upload;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.varka.backend.config.BackendProperties;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import java.io.ByteArrayOutputStream;
@@ -16,6 +15,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
+import tools.jackson.databind.ObjectMapper;
 
 /** Validates, stores, and resolves user uploaded files. */
 public class UploadService {
@@ -131,9 +131,6 @@ public class UploadService {
               .find(scope, attachmentId)
               .orElseThrow(() -> new PlatformException(404, "Attachment not found."));
       String text = decodeUtf8(storage.read(record)).trim();
-      if (text.length() > maxTextChars) {
-        text = text.substring(0, maxTextChars) + "\n...[attachment truncated by backend]";
-      }
       return new ResolvedAttachment(record.id(), record.originalFileName(), text);
     } catch (PlatformException ex) {
       throw ex;
@@ -170,7 +167,7 @@ public class UploadService {
   private void validateJson(String text) {
     try {
       mapper.readTree(text);
-    } catch (IOException ex) {
+    } catch (tools.jackson.core.JacksonException ex) {
       throw new PlatformException(400, "Attachment must contain valid JSON.");
     }
   }

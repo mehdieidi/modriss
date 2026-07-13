@@ -6,10 +6,12 @@ import io.mehdieidi.varka.platform.assistant.application.AgenticTurnService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
+import io.mehdieidi.varka.platform.assistant.metamodel.LexicalRetrievalIndex;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelGuideGenerator;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService;
 import io.mehdieidi.varka.platform.assistant.metamodel.TypeContractService;
 import io.mehdieidi.varka.platform.assistant.patch.AssistantPatchCompiler;
+import io.mehdieidi.varka.platform.assistant.patch.ModelCommandCompiler;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.varka.platform.assistant.provider.ConfiguredAssistantModelProvider;
 import io.mehdieidi.varka.platform.assistant.provider.ProxyAvailability;
@@ -19,14 +21,10 @@ import io.mehdieidi.varka.platform.assistant.source.SourceDocumentWorkers;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantSettings;
 import io.mehdieidi.varka.platform.assistant.tools.AgentModelTools;
 import io.mehdieidi.varka.platform.model.application.ModelService;
-import java.net.Proxy;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.web.client.RestClient;
 
 /** Wires platform assistant providers and delivery-only HTTP clients for the backend. */
 @Configuration
@@ -44,8 +42,9 @@ public class AiConfig {
   }
 
   @Bean
-  AgentModelTools agentModelTools(TypeContractService contracts, ModelService models) {
-    return new AgentModelTools(contracts, models);
+  AgentModelTools agentModelTools(
+      TypeContractService contracts, ModelService models, ModelCommandCompiler commandCompiler) {
+    return new AgentModelTools(contracts, models, commandCompiler);
   }
 
   @Bean
@@ -53,17 +52,21 @@ public class AiConfig {
       AssistantModelProvider provider,
       AgentModelTools tools,
       MetamodelGuideGenerator guides,
+      LexicalRetrievalIndex retrieval,
       AssistantRealtimeHub realtime,
       AiProperties properties) {
     return new AgentTurnLoop(
         provider,
         tools,
         guides,
+        retrieval,
         realtime,
         properties.turnTimeout(),
         properties.sourceTurnTimeout(),
         Math.min(properties.maxAgentSteps(), 3),
-        Math.min(properties.maxProviderCallsPerTurn(), 3));
+        // The loop raises this to three only for source-document turns. Ordinary turns are
+        // deliberately capped at two actual provider requests.
+        Math.min(properties.maxProviderCallsPerTurn(), 2));
   }
 
   @Bean(destroyMethod = "close")
@@ -93,9 +96,19 @@ public class AiConfig {
       AssistantPatchCompiler patches,
       AssistantRealtimeHub realtime,
       AssistantModelProvider provider,
-      AgenticTurnService turns) {
+      AgenticTurnService turns,
+      io.mehdieidi.varka.platform.modeling.config.ModelingConfigService modelingConfig) {
     return new AgenticAssistantFacade(
-        sessions, memory, chatMemory, projects, models, patches, realtime, provider, turns);
+        sessions,
+        memory,
+        chatMemory,
+        projects,
+        models,
+        patches,
+        realtime,
+        provider,
+        turns,
+        modelingConfig);
   }
 
   @Bean
@@ -114,10 +127,9 @@ public class AiConfig {
       AiProperties properties,
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
-      AssistantHardeningService hardening,
-      @Qualifier("aiRestClientBuilder") RestClient.Builder restClientBuilder) {
+      AssistantHardeningService hardening) {
     return new OpenAiCompatibleAssistantModelProvider(
-        properties, proxyAvailability, promptGuard, hardening, restClientBuilder);
+        properties, proxyAvailability, promptGuard, hardening);
   }
 
   @Bean
@@ -136,22 +148,5 @@ public class AiConfig {
       OpenAiCompatibleAssistantModelProvider openai,
       GeminiAssistantModelProvider gemini) {
     return new ConfiguredAssistantModelProvider(properties, openai, gemini);
-  }
-
-  @Bean("aiRestClientBuilder")
-  RestClient.Builder aiRestClientBuilder(AiProperties properties) {
-    SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-    factory.setConnectTimeout(
-        properties.requestTimeout().compareTo(java.time.Duration.ofSeconds(10)) < 0
-            ? properties.requestTimeout()
-            : java.time.Duration.ofSeconds(10));
-    factory.setReadTimeout(properties.requestTimeout());
-    AiProperties.Proxy proxy = properties.proxy();
-    if (proxy.enabled() && proxy.type() != AiProperties.ProxyType.DIRECT) {
-      Proxy.Type type =
-          proxy.type() == AiProperties.ProxyType.SOCKS ? Proxy.Type.SOCKS : Proxy.Type.HTTP;
-      factory.setProxy(new Proxy(type, proxy.address()));
-    }
-    return RestClient.builder().requestFactory(factory);
   }
 }

@@ -27,7 +27,8 @@ class GlobalExceptionHandlerTest {
 
     var response =
         handler.missingResource(
-            new NoResourceFoundException(HttpMethod.POST, "api/chatbot/sessions/messages"));
+            new NoResourceFoundException(
+                HttpMethod.POST, "api/chatbot/sessions/messages", "No matching resource"));
 
     assertEquals(404, response.getStatusCode().value());
     assertNotNull(response.getBody());

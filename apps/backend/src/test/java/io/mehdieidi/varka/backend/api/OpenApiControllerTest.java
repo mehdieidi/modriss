@@ -16,7 +16,7 @@ class OpenApiControllerTest {
     assertTrue(paths.containsKey("/api/chatbot/sessions"));
     assertTrue(paths.containsKey("/api/chatbot/sessions/{sessionId}/messages"));
     assertTrue(paths.containsKey("/api/chatbot/sessions/{sessionId}/events"));
-    assertTrue(paths.containsKey("/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo"));
-    assertTrue(paths.containsKey("/ws/chatbot/sessions/{sessionId}"));
+    assertTrue(paths.containsKey("/api/chatbot/turns/{turnId}"));
+    assertTrue(paths.containsKey("/api/chatbot/turns/{turnId}/events"));
   }
 }

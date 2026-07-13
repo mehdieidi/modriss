@@ -1,7 +1,5 @@
 package io.mehdieidi.varka.platform.modeling.config;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.modeling.runtime.MdeRuntimeOptions;
 import io.mehdieidi.varka.platform.modeling.runtime.MdeRuntimePaths;
@@ -11,6 +9,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /** Loads and validates Concrete Visual Syntax (CVS) v2 documents from {@code mde/notation/}. */
 public final class CvsV2Loader {

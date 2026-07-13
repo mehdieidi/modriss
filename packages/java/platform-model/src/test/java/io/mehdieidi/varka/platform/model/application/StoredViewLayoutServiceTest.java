@@ -6,9 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.model.domain.ModelRecord;
 import io.mehdieidi.varka.platform.modeling.layout.LayoutService;
@@ -21,6 +18,9 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Tests stored-view auto layout persistence and routed edge pin generation. */
 class StoredViewLayoutServiceTest {
@@ -61,7 +61,7 @@ class StoredViewLayoutServiceTest {
             context.user(), ModelLevel.CIM, created.id(), "view-test", false, "SPACIOUS_LAYERED");
     assertTrue(first.layoutApplied());
     assertTrue(first.view().path("autoLayoutApplied").asBoolean());
-    assertTrue(first.view().path("nodes").findValuesAsText("x").size() >= 2);
+    assertTrue(first.view().path("nodes").findValuesAsString("x").size() >= 2);
     JsonNode edge = first.view().path("edges").path(0);
     assertEquals("right", edge.path("sourceAnchor").path("side").asText());
     assertEquals("left", edge.path("targetAnchor").path("side").asText());

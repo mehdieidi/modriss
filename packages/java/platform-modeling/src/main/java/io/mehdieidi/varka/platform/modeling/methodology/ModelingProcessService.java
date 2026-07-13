@@ -1,7 +1,5 @@
 package io.mehdieidi.varka.platform.modeling.methodology;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.modeling.runtime.MdeRuntimePaths;
 import java.io.IOException;
@@ -14,6 +12,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Loads SPEM-aligned modeling process definitions from {@code

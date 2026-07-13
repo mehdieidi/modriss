@@ -14,6 +14,11 @@ import org.junit.jupiter.api.Test;
 
 class AssistantHardeningServiceTest {
 
+  @org.junit.jupiter.api.AfterEach
+  void clearBudget() {
+    ProviderCallBudget.clear();
+  }
+
   @Test
   void enforcesPerUserRateLimit() {
     AssistantSettings properties =
@@ -34,6 +39,7 @@ class AssistantHardeningServiceTest {
     AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
     AtomicInteger attempts = new AtomicInteger();
 
+    ProviderCallBudget.bind(2);
     String result =
         hardening.providerCall(
             AssistantModelRole.RESPONDER,
@@ -48,6 +54,7 @@ class AssistantHardeningServiceTest {
 
     assertEquals("ok", result);
     assertEquals(2, attempts.get());
+    assertEquals(2, ProviderCallBudget.count());
   }
 
   @Test
@@ -119,7 +126,7 @@ class AssistantHardeningServiceTest {
             PlatformException.class,
             () ->
                 hardening.providerCall(
-                    AssistantModelRole.PLANNER,
+                    AssistantModelRole.RESPONDER,
                     "openai",
                     "model",
                     () -> {

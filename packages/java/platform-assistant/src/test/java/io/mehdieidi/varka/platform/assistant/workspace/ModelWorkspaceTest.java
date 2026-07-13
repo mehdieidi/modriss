@@ -2,14 +2,14 @@ package io.mehdieidi.varka.platform.assistant.workspace;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.TextNode;
 import io.mehdieidi.varka.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.varka.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.StringNode;
 
 class ModelWorkspaceTest {
 
@@ -39,7 +39,7 @@ class ModelWorkspaceTest {
                     SemanticModelPatch.OperationType.SET_ATTRIBUTE,
                     "fn-1",
                     "Function",
-                    new TextNode("New"),
+                    new StringNode("New"),
                     null,
                     "name"))));
 

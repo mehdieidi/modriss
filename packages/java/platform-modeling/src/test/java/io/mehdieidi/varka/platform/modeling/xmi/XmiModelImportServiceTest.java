@@ -2,8 +2,6 @@ package io.mehdieidi.varka.platform.modeling.xmi;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.modeling.config.ModelingConfigService;
 import java.nio.file.Files;
@@ -14,6 +12,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /** Integration coverage for graph extraction from the research-grade XMI fixtures. */
 class XmiModelImportServiceTest {

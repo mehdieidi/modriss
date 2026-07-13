@@ -90,12 +90,12 @@ class ApplicationServicesPortTest {
 
   private static final class InMemoryPlatformStore implements PlatformStore {
 
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper =
-        new com.fasterxml.jackson.databind.ObjectMapper();
+    private final tools.jackson.databind.ObjectMapper objectMapper =
+        new tools.jackson.databind.ObjectMapper();
     private final Map<String, Object> values = new ConcurrentHashMap<>();
 
     @Override
-    public com.fasterxml.jackson.databind.ObjectMapper objectMapper() {
+    public tools.jackson.databind.ObjectMapper objectMapper() {
       return objectMapper;
     }
 

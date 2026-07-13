@@ -1,7 +1,6 @@
 package io.mehdieidi.varka.platform.assistant.tools;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.mehdieidi.varka.platform.assistant.domain.ModelCommandBatch;
 import io.mehdieidi.varka.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.varka.platform.assistant.domain.SemanticModelPatch.Operation;
 import io.mehdieidi.varka.platform.assistant.domain.SemanticModelPatch.OperationType;
@@ -9,49 +8,66 @@ import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.ReferenceContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.TypeContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.TypeContractService;
+import io.mehdieidi.varka.platform.assistant.patch.ModelCommandCompiler;
 import io.mehdieidi.varka.platform.assistant.workspace.ModelWorkspace;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.model.application.ModelService;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Schema-validated editing and inspection tools exposed to the modeling agent. */
 public final class AgentModelTools {
 
   private final TypeContractService contracts;
   private final ModelService models;
+  private final ModelCommandCompiler commandCompiler;
 
-  /**
-   * Context permanently attached to a tool object created for one agent turn. Spring AI may invoke
-   * tools on its streaming worker rather than the request thread, so this must not rely only on a
-   * ThreadLocal.
-   */
+  /** Context permanently attached to a tool object created for one agent turn. */
   private final Context scopedContext;
 
   private volatile List<PlanItem> scopedPlan = List.of();
+  private volatile ModelCommandBatch committedBatch;
   private final ThreadLocal<Context> context = new ThreadLocal<>();
 
   public AgentModelTools(TypeContractService contracts, ModelService models) {
-    this(contracts, models, null);
+    this(contracts, models, null, null);
+  }
+
+  public AgentModelTools(
+      TypeContractService contracts, ModelService models, ModelCommandCompiler commandCompiler) {
+    this(contracts, models, commandCompiler, null);
   }
 
   private AgentModelTools(
       TypeContractService contracts, ModelService models, Context scopedContext) {
+    this(contracts, models, null, scopedContext);
+  }
+
+  private AgentModelTools(
+      TypeContractService contracts,
+      ModelService models,
+      ModelCommandCompiler commandCompiler,
+      Context scopedContext) {
     this.contracts = contracts;
     this.models = models;
+    this.commandCompiler = commandCompiler;
     this.scopedContext = scopedContext;
   }
 
   /** Returns an isolated, thread-safe tool object for one working-copy agent turn. */
   public AgentModelTools scoped(ModelLevel level, ModelWorkspace workspace) {
-    return new AgentModelTools(contracts, models, new Context(level, workspace, List.of()));
+    return new AgentModelTools(
+        contracts, models, commandCompiler, new Context(level, workspace, List.of()));
   }
 
   public void bind(ModelLevel level, ModelWorkspace workspace) {
@@ -62,26 +78,16 @@ public final class AgentModelTools {
     context.remove();
   }
 
-  @Tool(name = "describe_types", description = "Return exact live Ecore contracts for named types.")
-  public List<TypeContract> describeTypes(
-      @ToolParam(description = "Exact type names") List<String> names) {
+  public List<TypeContract> describeTypes(List<String> names) {
     return contracts.describe(active().level(), names);
   }
 
-  @Tool(
-      name = "read_model",
-      description = "Read the current working model or one element by stable id.")
-  public JsonNode readModel(
-      @ToolParam(description = "Element id; blank returns the model") String id) {
+  public JsonNode readModel(String id) {
     JsonNode model = active().workspace().snapshot();
     return id == null || id.isBlank() ? model : find(model, id);
   }
 
-  @Tool(
-      name = "search_model",
-      description = "Deterministically search elements by id, name, label, or EClass.")
-  public List<JsonNode> searchModel(
-      @ToolParam(description = "Case-insensitive query") String query) {
+  public List<JsonNode> searchModel(String query) {
     String needle = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
     if (needle.isBlank()) throw new PlatformException(400, "Search query is required.");
     List<JsonNode> result = new ArrayList<>();
@@ -97,7 +103,6 @@ public final class AgentModelTools {
     return result.stream().limit(50).toList();
   }
 
-  @Tool(name = "create_elements", description = "Create a validated batch of model elements.")
   public ModelWorkspace.MutationResult createElements(List<CreateElement> items) {
     Context active = active();
     if (items == null || items.isEmpty())
@@ -110,7 +115,7 @@ public final class AgentModelTools {
             422, "Type '" + type.eClass() + "' is abstract and cannot be created.");
       ObjectNode attributes =
           item.attributes() == null || !item.attributes().isObject()
-              ? com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode()
+              ? tools.jackson.databind.node.JsonNodeFactory.instance.objectNode()
               : ((ObjectNode) item.attributes()).deepCopy();
       if (item.name() != null && !item.name().isBlank()) attributes.put("name", item.name().trim());
       validateAttributes(type, attributes);
@@ -130,7 +135,104 @@ public final class AgentModelTools {
     return active.workspace().mutate(new SemanticModelPatch(operations));
   }
 
-  @Tool(name = "update_elements", description = "Set validated attributes on existing elements.")
+  /** Returns the terminal batch which produced this workspace checkpoint. */
+  public ModelCommandBatch committedBatch() {
+    return committedBatch;
+  }
+
+  /** Executes the terminal, stable-reference command format used by the explicit agent loop. */
+  public ModelWorkspace.MutationResult commitModelBatch(ModelCommandBatch batch) {
+    return commitModelBatch(batch, false);
+  }
+
+  /** Executes a batch after the durable runtime has explicitly confirmed any deletion. */
+  public ModelWorkspace.MutationResult commitModelBatch(
+      ModelCommandBatch batch, boolean destructiveConfirmed) {
+    if (batch == null) throw new PlatformException(400, "Model command batch is required.");
+    if (!batch.deletions().isEmpty() && !destructiveConfirmed) {
+      throw new PlatformException(409, "Deletion requires turn confirmation.");
+    }
+    Context active = active();
+    List<Operation> operations = new ArrayList<>();
+    Map<String, String> refs = new LinkedHashMap<>();
+    Map<String, String> createdTypes = new LinkedHashMap<>();
+    for (ModelCommandBatch.Create create : batch.creates()) {
+      if (create.clientRef() == null || create.clientRef().isBlank())
+        throw new PlatformException(422, "Create clientRef is required.");
+      if (refs.put(create.clientRef(), create.clientRef()) != null)
+        throw new PlatformException(422, "Duplicate clientRef: " + create.clientRef());
+      TypeContract type = contracts.require(active.level(), create.eClass());
+      createdTypes.put(create.clientRef(), type.eClass());
+      ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+      if (create.attributes() != null) create.attributes().forEach(attributes::set);
+      validateAttributes(type, attributes);
+      operations.add(
+          new Operation(
+              OperationType.ADD_ELEMENT,
+              create.clientRef(),
+              type.eClass(),
+              attributes,
+              resolveRef(create.owner(), refs),
+              blank(create.reference())));
+    }
+    for (ModelCommandBatch.Update update : batch.updates()) {
+      String id = resolveRef(update.elementId(), refs);
+      JsonNode element = find(active.workspace().snapshot(), id);
+      if (update.preconditionHash() != null
+          && !update.preconditionHash().isBlank()
+          && !update.preconditionHash().equals(elementHash(element))) {
+        throw new PlatformException(409, "Update precondition changed for element '" + id + "'.");
+      }
+      TypeContract type = contracts.require(active.level(), element.path("eClass").asText());
+      ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+      if (update.attributes() != null) update.attributes().forEach(attributes::set);
+      validateAttributes(type, attributes);
+      attributes
+          .properties()
+          .forEach(
+              entry ->
+                  operations.add(
+                      new Operation(
+                          OperationType.SET_ATTRIBUTE,
+                          id,
+                          type.eClass(),
+                          entry.getValue(),
+                          null,
+                          entry.getKey())));
+    }
+    for (ModelCommandBatch.Connection connection : batch.connections()) {
+      String source = resolveRef(connection.source(), refs);
+      String target = resolveRef(connection.target(), refs);
+      String targetType = createdTypes.get(target);
+      if (targetType == null)
+        targetType = find(active.workspace().snapshot(), target).path("eClass").asText();
+      operations.add(
+          new Operation(
+              OperationType.CONNECT_ELEMENTS,
+              target,
+              targetType,
+              null,
+              source,
+              connection.reference()));
+    }
+    for (ModelCommandBatch.Deletion deletion : batch.deletions()) {
+      String id = resolveRef(deletion.elementId(), refs);
+      JsonNode element = find(active.workspace().snapshot(), id);
+      operations.add(
+          new Operation(
+              OperationType.DELETE_ELEMENT, id, element.path("eClass").asText(), null, null, null));
+    }
+    SemanticModelPatch semantic = new SemanticModelPatch(operations);
+    ModelWorkspace.MutationResult result =
+        commandCompiler == null
+            ? active.workspace().mutate(semantic)
+            : active
+                .workspace()
+                .mutate(commandCompiler.compile(active.workspace().snapshot(), semantic));
+    committedBatch = batch;
+    return result;
+  }
+
   public ModelWorkspace.MutationResult updateElements(List<UpdateElement> items) {
     Context active = active();
     if (items == null || items.isEmpty())
@@ -147,8 +249,8 @@ public final class AgentModelTools {
         throw new PlatformException(400, "Attributes are required for " + item.id() + ".");
       validateAttributes(type, attrs);
       attrs
-          .fields()
-          .forEachRemaining(
+          .properties()
+          .forEach(
               entry ->
                   operations.add(
                       new Operation(
@@ -162,7 +264,6 @@ public final class AgentModelTools {
     return active.workspace().mutate(new SemanticModelPatch(operations));
   }
 
-  @Tool(name = "connect_elements", description = "Create type-checked EReference connections.")
   public ModelWorkspace.MutationResult connectElements(List<Connection> items) {
     Context active = active();
     if (items == null || items.isEmpty())
@@ -219,9 +320,6 @@ public final class AgentModelTools {
     return active.workspace().mutate(new SemanticModelPatch(operations));
   }
 
-  @Tool(
-      name = "delete_elements",
-      description = "Delete elements by stable id from the working copy.")
   public ModelWorkspace.MutationResult deleteElements(List<String> ids) {
     if (ids == null || ids.isEmpty())
       throw new PlatformException(400, "At least one element id is required.");
@@ -242,14 +340,10 @@ public final class AgentModelTools {
     return active().workspace().mutate(new SemanticModelPatch(operations));
   }
 
-  @Tool(
-      name = "validate_model",
-      description = "Run structural Ecore validation on the working copy.")
   public ModelService.ValidationResult validateModel() {
     return models.validateStructural(active().level(), active().workspace().snapshot());
   }
 
-  @Tool(name = "plan_work", description = "Publish the current ordered todo list for this turn.")
   public List<PlanItem> planWork(List<PlanItem> items) {
     Context current = active();
     List<PlanItem> plan = items == null ? List.of() : List.copyOf(items);
@@ -269,9 +363,9 @@ public final class AgentModelTools {
   private void validateAttributes(TypeContract type, ObjectNode attributes) {
     Map<String, AttributeContract> legal = new LinkedHashMap<>();
     type.attributes().forEach(attribute -> legal.put(attribute.name(), attribute));
-    attributes
-        .fieldNames()
-        .forEachRemaining(
+    attributes.properties().stream()
+        .map(java.util.Map.Entry::getKey)
+        .forEach(
             name -> {
               if ("label".equals(name)) return;
               AttributeContract contract = legal.get(name);
@@ -317,7 +411,7 @@ public final class AgentModelTools {
   private void collect(JsonNode node, java.util.function.Consumer<JsonNode> visitor) {
     if (node == null) return;
     visitor.accept(node);
-    if (node.isContainerNode()) node.elements().forEachRemaining(child -> collect(child, visitor));
+    if (node.isContainer()) node.forEach(child -> collect(child, visitor));
   }
 
   private boolean matches(JsonNode node, String field, String needle) {
@@ -334,6 +428,22 @@ public final class AgentModelTools {
 
   private String blank(String value) {
     return value == null || value.isBlank() ? null : value.trim();
+  }
+
+  private String resolveRef(String value, Map<String, String> refs) {
+    String result = blank(value);
+    return result == null ? null : refs.getOrDefault(result, result);
+  }
+
+  private String elementHash(JsonNode element) {
+    try {
+      return HexFormat.of()
+          .formatHex(
+              MessageDigest.getInstance("SHA-256")
+                  .digest(element.toString().getBytes(StandardCharsets.UTF_8)));
+    } catch (Exception ex) {
+      throw new IllegalStateException("SHA-256 unavailable", ex);
+    }
   }
 
   public record CreateElement(

@@ -12,6 +12,11 @@ server:
 spring:
   application:
     name: varka-backend
+  ai:
+    # The local transformer implementation is packaged, but stays disabled until the deployment
+    # supplies a verified, cached ONNX model/tokenizer. Lexical retrieval is always available.
+    model:
+      embedding: ${VARKA_AI_EMBEDDING_PROVIDER:none}
   # Compose injects .env explicitly. These optional imports give the same configuration to a
   # backend started from the repository root or apps/backend in a WSL terminal.
   config:
@@ -70,16 +75,16 @@ varka:
     max-system-chars: ${VARKA_AI_MAX_SYSTEM_CHARS:14000}
     max-source-chunk-tokens: ${VARKA_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
     max-source-chunks-per-turn: ${VARKA_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
-    max-provider-calls-per-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN:8}
-    max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:12}
-    source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:12m}
+    max-provider-calls-per-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN:2}
+    max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:3}
+    source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:5m}
     fallback-provider: ${VARKA_AI_FALLBACK_PROVIDER:}
     hardening:
       per-user-requests-per-window: ${VARKA_AI_RATE_LIMIT_REQUESTS:30}
       rate-limit-window: ${VARKA_AI_RATE_LIMIT_WINDOW:1m}
       circuit-failure-threshold: ${VARKA_AI_CIRCUIT_FAILURE_THRESHOLD:3}
       circuit-open-duration: ${VARKA_AI_CIRCUIT_OPEN_DURATION:1m}
-      provider-retry-attempts: ${VARKA_AI_PROVIDER_RETRY_ATTEMPTS:2}
+      provider-retry-attempts: ${VARKA_AI_PROVIDER_RETRY_ATTEMPTS:0}
       retry-backoff: ${VARKA_AI_RETRY_BACKOFF:250ms}
       recent-message-window: ${VARKA_AI_RECENT_MESSAGE_WINDOW:24}
     proxy:
@@ -94,9 +99,7 @@ varka:
     gemini:
       api-key: ${GEMINI_API_KEY:}
     models:
-      planner: ${VARKA_AI_PLANNER_MODEL:}
       responder: ${VARKA_AI_RESPONDER_MODEL:}
-      summarizer: ${VARKA_AI_SUMMARIZER_MODEL:}
   allowed-origins:
     # Override entirely with comma-separated VARKA_ALLOWED_ORIGINS (Compose sets this from port vars).
     - http://127.0.0.1:5500

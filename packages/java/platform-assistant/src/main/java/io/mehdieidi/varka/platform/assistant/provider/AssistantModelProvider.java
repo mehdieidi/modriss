@@ -2,7 +2,6 @@ package io.mehdieidi.varka.platform.assistant.provider;
 
 import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import java.util.List;
-import java.util.function.Consumer;
 
 /** Provider-neutral boundary for assistant model calls. */
 public interface AssistantModelProvider {
@@ -48,44 +47,6 @@ public interface AssistantModelProvider {
    */
   default AssistantReply completeWithTools(AssistantPrompt prompt) {
     return complete(prompt);
-  }
-
-  /**
-   * Streams text deltas for one tool-enabled prompt. Providers should override for true transport
-   * streaming.
-   */
-  default AssistantReply streamWithTools(AssistantPrompt prompt, Consumer<String> deltaConsumer) {
-    AssistantReply reply = completeWithTools(prompt);
-    if (deltaConsumer != null && reply.content() != null && !reply.content().isEmpty()) {
-      deltaConsumer.accept(reply.content());
-    }
-    return reply;
-  }
-
-  /** Streams with an explicitly scoped tool object for a single working-copy turn. */
-  default AssistantReply streamWithTools(
-      AssistantPrompt prompt, Object scopedTools, Consumer<String> deltaConsumer) {
-    return streamWithTools(prompt, deltaConsumer);
-  }
-
-  /**
-   * Produces a compact source-material analysis for requirements or event-storming documents.
-   *
-   * @param prompt source-analysis prompt
-   * @param progress progress callback
-   * @return source analysis text
-   */
-  default AssistantReply analyzeSource(AssistantPrompt prompt, AgentProgress progress) {
-    if (progress != null) {
-      progress.onProgress("ANALYZING_SOURCE", "Reading source material for modeling evidence");
-    }
-    return complete(prompt);
-  }
-
-  /** Progress callback for agent loop stages. */
-  @FunctionalInterface
-  interface AgentProgress {
-    void onProgress(String stage, String message);
   }
 
   /**

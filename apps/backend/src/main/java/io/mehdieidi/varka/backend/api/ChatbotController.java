@@ -1,8 +1,9 @@
 package io.mehdieidi.varka.backend.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.mehdieidi.varka.backend.assistant.AssistantRealtimeHub;
+import io.mehdieidi.varka.backend.assistant.DurableAssistantTurnWorker;
+import io.mehdieidi.varka.backend.assistant.DurableTurnUndoService;
 import io.mehdieidi.varka.backend.upload.UploadScope;
 import io.mehdieidi.varka.backend.upload.UploadService;
 import io.mehdieidi.varka.backend.upload.UploadedFileRecord;
@@ -10,19 +11,28 @@ import io.mehdieidi.varka.platform.assistant.application.AgenticAssistantFacade;
 import io.mehdieidi.varka.platform.assistant.domain.AssistantProposal;
 import io.mehdieidi.varka.platform.assistant.domain.AssistantReadyPayload;
 import io.mehdieidi.varka.platform.assistant.session.AssistantSessionStore;
+import io.mehdieidi.varka.platform.assistant.turn.AssistantTurn;
+import io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.project.application.ProjectService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,6 +43,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import tools.jackson.databind.JsonNode;
 
 /** Provides frontend-compatible assistant session, messaging, and event endpoints. */
 @RestController
@@ -45,6 +56,15 @@ public class ChatbotController {
   private final AuthSupport auth;
   private final ProjectService projects;
   private final UploadService uploads;
+  private final AssistantTurnStore turns;
+  private final DurableTurnUndoService durableUndo;
+  private final java.util.concurrent.ScheduledExecutorService turnEventReplay =
+      Executors.newSingleThreadScheduledExecutor(
+          runnable -> {
+            Thread thread = new Thread(runnable, "assistant-turn-sse-replay");
+            thread.setDaemon(true);
+            return thread;
+          });
 
   /**
    * Creates the controller.
@@ -59,11 +79,35 @@ public class ChatbotController {
       AuthSupport auth,
       ProjectService projects,
       UploadService uploads) {
+    this(assistant, realtime, auth, projects, uploads, null, null);
+  }
+
+  public ChatbotController(
+      AgenticAssistantFacade assistant,
+      AssistantRealtimeHub realtime,
+      AuthSupport auth,
+      ProjectService projects,
+      UploadService uploads,
+      AssistantTurnStore turns) {
+    this(assistant, realtime, auth, projects, uploads, turns, null);
+  }
+
+  @Autowired
+  public ChatbotController(
+      AgenticAssistantFacade assistant,
+      AssistantRealtimeHub realtime,
+      AuthSupport auth,
+      ProjectService projects,
+      UploadService uploads,
+      AssistantTurnStore turns,
+      DurableTurnUndoService durableUndo) {
     this.assistant = assistant;
     this.realtime = realtime;
     this.auth = auth;
     this.projects = projects;
     this.uploads = uploads;
+    this.turns = turns;
+    this.durableUndo = durableUndo;
   }
 
   /**
@@ -156,7 +200,7 @@ public class ChatbotController {
    * @return assistant response
    */
   @PostMapping("/api/chatbot/sessions/{sessionId}/messages")
-  MessageResponse message(
+  ResponseEntity<?> message(
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String sessionId,
       @Valid @RequestBody MessageRequest request) {
@@ -183,6 +227,56 @@ public class ChatbotController {
         safeLogValue(attachment.name()),
         attachment.content() == null ? 0 : attachment.content().length(),
         elapsedMillis(attachmentStarted));
+    if (turns != null) {
+      if (request.idempotencyKey() == null || request.idempotencyKey().isBlank()) {
+        throw new PlatformException(400, "idempotencyKey is required.");
+      }
+      var existing = turns.findByIdempotency(sessionId, request.idempotencyKey().trim());
+      if (existing.isPresent()) {
+        return ResponseEntity.accepted().body(accepted(existing.get()));
+      }
+      Instant acceptedAt = Instant.now();
+      var starter = assistant.ensureModel(user, sessionId, request.modelId());
+      AssistantTurn turn =
+          new AssistantTurn(
+              java.util.UUID.randomUUID().toString(),
+              sessionId,
+              user.id(),
+              session.projectId(),
+              session.level(),
+              starter.id(),
+              request.expectedRevision() == null
+                  ? (request.revision() == null ? starter.revision() : request.revision())
+                  : request.expectedRevision(),
+              request.idempotencyKey().trim(),
+              request.message(),
+              attachment.content(),
+              request.selectedElementIds(),
+              AssistantTurn.State.QUEUED,
+              acceptedAt,
+              acceptedAt.plus(Duration.ofMinutes(5)),
+              null,
+              null,
+              false,
+              null,
+              0,
+              0,
+              null,
+              null,
+              null,
+              0,
+              0,
+              0);
+      turns.create(turn);
+      turns.saveCheckpoint(
+          turn.id(), starter.id(), starter.revision(), java.util.Map.of("kind", "starter"));
+      turns.appendEvent(
+          turn.id(),
+          "model.checkpoint",
+          java.util.Map.of(
+              "modelId", starter.id(), "revision", starter.revision(), "kind", "starter"));
+      return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(turn));
+    }
     long orchestratorStarted = System.nanoTime();
     var response =
         assistant.message(
@@ -202,17 +296,194 @@ public class ChatbotController {
         response.revision(),
         elapsedMillis(orchestratorStarted),
         elapsedMillis(started));
-    return new MessageResponse(
-        response.message(),
-        response.modelId(),
-        response.revision(),
-        null,
-        null,
-        io.mehdieidi.varka.platform.assistant.domain.AssistantWorkflowState.APPLIED,
-        new ActivityResponse(
-            "COMPLETED",
-            "Agent turn completed",
-            io.mehdieidi.varka.platform.assistant.domain.AssistantWorkflowState.APPLIED));
+    return ResponseEntity.ok(
+        new MessageResponse(
+            response.message(),
+            response.modelId(),
+            response.revision(),
+            null,
+            null,
+            io.mehdieidi.varka.platform.assistant.domain.AssistantWorkflowState.APPLIED,
+            new ActivityResponse(
+                "COMPLETED",
+                "Agent turn completed",
+                io.mehdieidi.varka.platform.assistant.domain.AssistantWorkflowState.APPLIED)));
+  }
+
+  private TurnAcceptedResponse accepted(AssistantTurn turn) {
+    long cursor =
+        turns == null
+            ? 0L
+            : turns.events(turn.id(), 0).stream()
+                .mapToLong(AssistantTurn.Event::eventId)
+                .max()
+                .orElse(0L);
+    return new TurnAcceptedResponse(
+        turn.id(),
+        turn.state(),
+        turn.modelId(),
+        turn.revision(),
+        turn.acceptedAt().toString(),
+        turn.deadlineAt().toString(),
+        cursor);
+  }
+
+  @GetMapping("/api/chatbot/turns/{turnId}")
+  TurnStatusResponse turn(
+      @RequestHeader("X-Auth-Token") String token, @PathVariable String turnId) {
+    UserRecord user = auth.user(token);
+    AssistantTurn turn =
+        turns
+            .find(turnId)
+            .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
+    if (!turn.userId().equals(user.id()))
+      throw new PlatformException(404, "Assistant turn not found.");
+    return new TurnStatusResponse(
+        turn.id(),
+        turn.state(),
+        turn.modelId(),
+        turn.revision(),
+        turns.checkpoints(turnId).stream()
+            .map(item -> new CheckpointResponse(item.modelId(), item.revision()))
+            .toList(),
+        turn.checkpointCount(),
+        turn.savedElementCount(),
+        turn.coveragePercent(),
+        turn.remainingWork(),
+        turn.finalMessage(),
+        turn.providerCalls(),
+        turn.promptTokens(),
+        turn.completionTokens(),
+        turns.provenance(turnId).stream()
+            .map(
+                item ->
+                    new ProvenanceResponse(
+                        item.elementId(), item.sourceUnitId(), item.kind(), item.assumption()))
+            .toList());
+  }
+
+  @PostMapping("/api/chatbot/turns/{turnId}/cancel")
+  ResponseEntity<Void> cancelTurn(
+      @RequestHeader("X-Auth-Token") String token, @PathVariable String turnId) {
+    UserRecord user = auth.user(token);
+    AssistantTurn turn =
+        turns
+            .find(turnId)
+            .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
+    if (!turn.userId().equals(user.id()))
+      throw new PlatformException(404, "Assistant turn not found.");
+    turns.requestCancellation(turnId);
+    turns.audit(turnId, "CANCELLATION_REQUESTED", java.util.Map.of());
+    return ResponseEntity.accepted().build();
+  }
+
+  @PostMapping("/api/chatbot/turns/{turnId}/continue")
+  ResponseEntity<TurnAcceptedResponse> continueTurn(
+      @RequestHeader("X-Auth-Token") String token, @PathVariable String turnId) {
+    UserRecord user = auth.user(token);
+    AssistantTurn previous =
+        turns
+            .find(turnId)
+            .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
+    if (!previous.userId().equals(user.id()))
+      throw new PlatformException(404, "Assistant turn not found.");
+    if (!previous.terminal())
+      throw new PlatformException(409, "Only a completed turn can be continued.");
+    Instant acceptedAt = Instant.now();
+    AssistantTurn next =
+        new AssistantTurn(
+            java.util.UUID.randomUUID().toString(),
+            previous.threadId(),
+            previous.userId(),
+            previous.projectId(),
+            previous.level(),
+            previous.modelId(),
+            previous.revision(),
+            "continue-" + previous.id() + "-" + java.util.UUID.randomUUID(),
+            "Continue the remaining work from the previous saved checkpoint. " + previous.message(),
+            previous.sourceText(),
+            previous.selectedElementIds(),
+            AssistantTurn.State.QUEUED,
+            acceptedAt,
+            acceptedAt.plus(Duration.ofMinutes(5)),
+            null,
+            null,
+            false,
+            previous.revision(),
+            0,
+            0,
+            previous.coveragePercent(),
+            previous.remainingWork(),
+            null,
+            0,
+            0,
+            0);
+    turns.create(next);
+    return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(next));
+  }
+
+  /** Re-runs a deletion-requesting turn only after an explicit, authenticated confirmation. */
+  @PostMapping("/api/chatbot/turns/{turnId}/confirm")
+  ResponseEntity<TurnAcceptedResponse> confirmTurn(
+      @RequestHeader("X-Auth-Token") String token, @PathVariable String turnId) {
+    UserRecord user = auth.user(token);
+    AssistantTurn previous =
+        turns
+            .find(turnId)
+            .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
+    if (!previous.userId().equals(user.id()))
+      throw new PlatformException(404, "Assistant turn not found.");
+    if (previous.state() != AssistantTurn.State.NEEDS_CONFIRMATION)
+      throw new PlatformException(409, "This turn has no pending destructive action.");
+    Instant acceptedAt = Instant.now();
+    AssistantTurn next =
+        new AssistantTurn(
+            java.util.UUID.randomUUID().toString(),
+            previous.threadId(),
+            previous.userId(),
+            previous.projectId(),
+            previous.level(),
+            previous.modelId(),
+            previous.revision(),
+            "confirm-" + previous.id() + "-" + java.util.UUID.randomUUID(),
+            DurableAssistantTurnWorker.CONFIRMED_DESTRUCTION_PREFIX + previous.message(),
+            previous.sourceText(),
+            previous.selectedElementIds(),
+            AssistantTurn.State.QUEUED,
+            acceptedAt,
+            acceptedAt.plus(Duration.ofMinutes(5)),
+            null,
+            null,
+            false,
+            previous.revision(),
+            0,
+            0,
+            previous.coveragePercent(),
+            previous.remainingWork(),
+            null,
+            0,
+            0,
+            0);
+    turns.create(next);
+    turns.appendEvent(next.id(), "turn.stage", java.util.Map.of("stage", "DESTRUCTION_CONFIRMED"));
+    turns.audit(
+        next.id(), "DESTRUCTION_CONFIRMED", java.util.Map.of("previousTurnId", previous.id()));
+    return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(next));
+  }
+
+  @PostMapping("/api/chatbot/turns/{turnId}/undo")
+  TurnUndoResponse undoTurn(
+      @RequestHeader("X-Auth-Token") String token, @PathVariable String turnId) {
+    UserRecord user = auth.user(token);
+    AssistantTurn turn =
+        turns
+            .find(turnId)
+            .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
+    if (!turn.userId().equals(user.id()))
+      throw new PlatformException(404, "Assistant turn not found.");
+    if (durableUndo == null) throw new PlatformException(503, "Durable turn undo is unavailable.");
+    var result = durableUndo.undo(user, turn);
+    return new TurnUndoResponse(result.modelId(), result.revision());
   }
 
   /**
@@ -274,7 +545,6 @@ public class ChatbotController {
             .map(message -> new ThreadMessageResponse(message.role(), message.content()))
             .toList(),
         snapshot.workflowState(),
-        snapshot.proposal(),
         snapshot.provider());
   }
 
@@ -333,11 +603,76 @@ public class ChatbotController {
   @GetMapping(
       value = "/api/chatbot/sessions/{sessionId}/events",
       produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-  SseEmitter events(@PathVariable String sessionId) {
+  SseEmitter events(@RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
+    assistant.session(auth.user(token), sessionId);
     SseEmitter emitter = new SseEmitter(Duration.ofMinutes(30).toMillis());
     realtime.registerSse(sessionId, emitter);
     realtime.publish(sessionId, "assistant.ready", new AssistantReadyPayload(sessionId));
     return emitter;
+  }
+
+  /** Authenticated durable event replay for a turn. */
+  @GetMapping(
+      value = "/api/chatbot/turns/{turnId}/events",
+      produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  SseEmitter turnEvents(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable String turnId,
+      @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId,
+      @RequestParam(value = "eventCursor", defaultValue = "0") long eventCursor) {
+    UserRecord user = auth.user(token);
+    AssistantTurn turn =
+        turns
+            .find(turnId)
+            .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
+    if (!turn.userId().equals(user.id()))
+      throw new PlatformException(404, "Assistant turn not found.");
+    long cursor = eventCursor;
+    if (lastEventId != null && !lastEventId.isBlank()) {
+      try {
+        cursor = Long.parseLong(lastEventId);
+      } catch (NumberFormatException ignored) {
+      }
+    }
+    SseEmitter emitter = new SseEmitter(Duration.ofMinutes(30).toMillis());
+    final long[] replayCursor = {cursor};
+    final ScheduledFuture<?>[] replay = new ScheduledFuture<?>[1];
+    try {
+      replayTurnEvents(emitter, turnId, replayCursor);
+      if (turn.terminal()) {
+        emitter.complete();
+      } else {
+        replay[0] =
+            turnEventReplay.scheduleWithFixedDelay(
+                () -> {
+                  try {
+                    replayTurnEvents(emitter, turnId, replayCursor);
+                    if (turns.find(turnId).map(AssistantTurn::terminal).orElse(true))
+                      emitter.complete();
+                  } catch (IOException | RuntimeException ex) {
+                    emitter.completeWithError(ex);
+                  }
+                },
+                250,
+                250,
+                TimeUnit.MILLISECONDS);
+        emitter.onCompletion(() -> replay[0].cancel(false));
+        emitter.onTimeout(() -> replay[0].cancel(false));
+        emitter.onError(error -> replay[0].cancel(false));
+      }
+    } catch (IOException ex) {
+      emitter.completeWithError(ex);
+    }
+    return emitter;
+  }
+
+  private void replayTurnEvents(SseEmitter emitter, String turnId, long[] cursor)
+      throws IOException {
+    for (AssistantTurn.Event event : turns.events(turnId, cursor[0])) {
+      emitter.send(
+          SseEmitter.event().id(Long.toString(event.eventId())).name(event.type()).data(event));
+      cursor[0] = event.eventId();
+    }
   }
 
   /**
@@ -350,13 +685,6 @@ public class ChatbotController {
     assistant.clear(auth.user(token), sessionId);
   }
 
-  /** Requests cancellation of the currently active assistant turn for a session. */
-  @PostMapping("/api/chatbot/sessions/{sessionId}/cancel")
-  void cancel(@RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
-    auth.user(token);
-    assistant.cancel(auth.user(token), sessionId);
-  }
-
   /**
    * Reserved endpoint for proposal details.
    *
@@ -364,7 +692,6 @@ public class ChatbotController {
    * @param proposalId proposal ID
    * @return proposal details
    */
-  @GetMapping("/api/chatbot/sessions/{sessionId}/proposals/{proposalId}")
   AssistantProposal proposal(
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String sessionId,
@@ -379,7 +706,6 @@ public class ChatbotController {
    * @param proposalId proposal ID
    * @return assistant response
    */
-  @PostMapping("/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo")
   MessageResponse undo(
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String sessionId,
@@ -460,7 +786,6 @@ public class ChatbotController {
    * @param revision active model revision
    * @param activeView active canvas view
    * @param selectedElementIds selected stable element IDs
-   * @param unsavedDraftPatch optional compact draft patch
    * @param attachmentName optional attachment name
    * @param attachmentContent optional attachment content
    */
@@ -471,11 +796,11 @@ public class ChatbotController {
       Long revision,
       String activeView,
       List<String> selectedElementIds,
-      String unsavedDraftPatch,
       String attachmentName,
       String attachmentContent,
       List<String> attachmentIds,
-      String idempotencyKey) {}
+      String idempotencyKey,
+      Long expectedRevision) {}
 
   /**
    * Upload response.
@@ -516,6 +841,43 @@ public class ChatbotController {
       io.mehdieidi.varka.platform.assistant.domain.AssistantWorkflowState workflowState,
       ActivityResponse activity) {}
 
+  /** Immediate acknowledgement for an asynchronously persisted turn. */
+  public record TurnAcceptedResponse(
+      String turnId,
+      AssistantTurn.State state,
+      String modelId,
+      Long revision,
+      String acceptedAt,
+      String deadlineAt,
+      long eventCursor) {}
+
+  /** Durable turn status suitable for polling after an SSE disconnect. */
+  public record TurnStatusResponse(
+      String turnId,
+      AssistantTurn.State state,
+      String modelId,
+      Long revision,
+      List<CheckpointResponse> checkpoints,
+      int checkpointCount,
+      int savedElementCount,
+      Integer coveragePercent,
+      String remainingWork,
+      String finalMessage,
+      int providerCalls,
+      long promptTokens,
+      long completionTokens,
+      List<ProvenanceResponse> provenance) {}
+
+  /** Source-grounded and inferred labels for the elements committed in this turn. */
+  public record ProvenanceResponse(
+      String elementId, String sourceUnitId, String kind, String assumption) {}
+
+  /** A persisted model checkpoint available for reload and safe inverse application. */
+  public record CheckpointResponse(String modelId, long revision) {}
+
+  /** Revision returned after a safe checkpoint inverse is persisted. */
+  public record TurnUndoResponse(String modelId, long revision) {}
+
   /**
    * HTTP-visible assistant activity snapshot.
    *
@@ -539,7 +901,6 @@ public class ChatbotController {
   public record ThreadResponse(
       List<ThreadMessageResponse> messages,
       io.mehdieidi.varka.platform.assistant.domain.AssistantWorkflowState workflowState,
-      AssistantProposal proposal,
       io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider
               .AssistantProviderMetadata
           provider) {}

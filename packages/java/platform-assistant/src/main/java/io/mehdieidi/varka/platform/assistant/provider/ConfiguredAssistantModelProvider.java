@@ -5,7 +5,6 @@ import io.mehdieidi.varka.platform.assistant.provider.springai.GeminiAssistantMo
 import io.mehdieidi.varka.platform.assistant.provider.springai.OpenAiCompatibleAssistantModelProvider;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /** Delegates assistant calls to the provider selected by configuration. */
@@ -47,22 +46,6 @@ public final class ConfiguredAssistantModelProvider implements AssistantModelPro
   @Override
   public AssistantReply completeWithTools(AssistantPrompt prompt) {
     return withFallback(provider -> provider.completeWithTools(prompt));
-  }
-
-  @Override
-  public AssistantReply streamWithTools(AssistantPrompt prompt, Consumer<String> deltaConsumer) {
-    return withFallback(provider -> provider.streamWithTools(prompt, deltaConsumer));
-  }
-
-  @Override
-  public AssistantReply streamWithTools(
-      AssistantPrompt prompt, Object scopedTools, Consumer<String> deltaConsumer) {
-    return withFallback(provider -> provider.streamWithTools(prompt, scopedTools, deltaConsumer));
-  }
-
-  @Override
-  public AssistantReply analyzeSource(AssistantPrompt prompt, AgentProgress progress) {
-    return withFallback(provider -> provider.analyzeSource(prompt, progress));
   }
 
   private AssistantModelProvider primary() {

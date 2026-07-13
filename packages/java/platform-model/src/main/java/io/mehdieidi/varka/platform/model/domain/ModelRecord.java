@@ -1,8 +1,8 @@
 package io.mehdieidi.varka.platform.model.domain;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import java.time.Instant;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Persisted model JSON plus metadata used for revisioning, migration, and XMI sidecar integrity.

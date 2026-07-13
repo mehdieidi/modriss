@@ -1,8 +1,5 @@
 package io.mehdieidi.varka.platform.transformation.application;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.varka.mde.etl.CimToPimDefaults;
 import io.mehdieidi.varka.mde.etl.EpsilonEtlExecutor;
 import io.mehdieidi.varka.mde.etl.EtlExecutionException;
@@ -41,6 +38,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Coordinates formal MDE transformations and artifact generation between stored platform models.
@@ -630,7 +630,7 @@ public final class TransformationService {
           }
         }
       }
-      node.fields().forEachRemaining(entry -> collectElementAliases(entry.getValue(), aliases));
+      node.properties().forEach(entry -> collectElementAliases(entry.getValue(), aliases));
       return;
     }
     if (node.isArray()) {
@@ -941,9 +941,8 @@ public final class TransformationService {
       }
       hydrateTraceEndpointIds(object);
       object
-          .fields()
-          .forEachRemaining(
-              entry -> hydrateSemanticReferences(entry.getValue(), graphRelationships));
+          .properties()
+          .forEach(entry -> hydrateSemanticReferences(entry.getValue(), graphRelationships));
       return;
     }
     if (node.isArray()) {

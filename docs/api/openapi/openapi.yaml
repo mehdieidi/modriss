@@ -27,7 +27,7 @@ tags:
   - name: Modeling
     description: Modeling UI configuration and layout services.
   - name: Assistant
-    description: AI modeling assistant sessions, messages, proposals, and streaming.
+    description: Durable AI modeling assistant sessions, turns, checkpoints, and SSE replay.
   - name: Future
     description: Planned feature placeholders that currently return 501.
 paths:
@@ -1110,23 +1110,8 @@ paths:
       tags: [Assistant]
       summary: Send assistant message
       responses:
-        "200":
-          description: Assistant response accepted
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /api/chatbot/sessions/{sessionId}/cancel:
-    parameters:
-      - name: sessionId
-        in: path
-        required: true
-        schema:
-          type: string
-    post:
-      tags: [Assistant]
-      summary: Cancel active assistant turn
-      responses:
-        "200":
-          description: Cancellation accepted
+        "202":
+          description: Durable assistant turn accepted
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/chatbot/sessions/{sessionId}/attachments:
@@ -1189,60 +1174,78 @@ paths:
           description: Assistant thread snapshot
         "401":
           $ref: "#/components/responses/Unauthorized"
-  /api/chatbot/sessions/{sessionId}/proposals/{proposalId}:
+  /api/chatbot/turns/{turnId}:
     parameters:
-      - name: sessionId
+      - name: turnId
         in: path
         required: true
-        schema:
-          type: string
-      - name: proposalId
-        in: path
-        required: true
-        schema:
-          type: string
+        schema: { type: string }
     get:
       tags: [Assistant]
-      summary: Get assistant proposal
+      summary: Get durable assistant turn status
       responses:
-        "200":
-          description: Assistant proposal
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo:
+        "200": { description: Durable turn status }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/chatbot/turns/{turnId}/cancel:
     parameters:
-      - name: sessionId
+      - name: turnId
         in: path
         required: true
-        schema:
-          type: string
-      - name: proposalId
-        in: path
-        required: true
-        schema:
-          type: string
+        schema: { type: string }
     post:
       tags: [Assistant]
-      summary: Undo applied assistant proposal
+      summary: Persist cancellation for a durable turn
       responses:
-        "200":
-          description: Proposal undone
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /ws/chatbot/sessions/{sessionId}:
+        "202": { description: Cancellation accepted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/chatbot/turns/{turnId}/continue:
     parameters:
-      - name: sessionId
+      - name: turnId
         in: path
         required: true
-        schema:
-          type: string
+        schema: { type: string }
+    post:
+      tags: [Assistant]
+      summary: Continue remaining work from a saved turn
+      responses:
+        "202": { description: Continuation accepted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/chatbot/turns/{turnId}/undo:
+    parameters:
+      - name: turnId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [Assistant]
+      summary: Apply a safe inverse checkpoint
+      responses:
+        "200": { description: Checkpoint undone }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/chatbot/turns/{turnId}/confirm:
+    parameters:
+      - name: turnId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [Assistant]
+      summary: Confirm a pending destructive assistant batch
+      responses:
+        "202": { description: Confirmed turn accepted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/chatbot/turns/{turnId}/events:
+    parameters:
+      - name: turnId
+        in: path
+        required: true
+        schema: { type: string }
     get:
       tags: [Assistant]
-      summary: Open assistant WebSocket stream
-      security: []
+      summary: Replay authenticated durable assistant events
       responses:
-        "101":
-          description: WebSocket upgrade
+        "200": { description: Server-sent event stream }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 components:
   securitySchemes:
     AuthToken:

@@ -1,7 +1,7 @@
 # Varka Backend
 
 Spring Boot API for [`apps/frontend`](../frontend/README.md): auth, projects, models, MDE jobs,
-artifacts, layout, and the AI assistant (REST + SSE + WebSocket).
+artifacts, layout, and the AI assistant (REST + authenticated SSE).
 
 ## Run
 
@@ -47,5 +47,4 @@ Impact analysis routes are implemented under `/api/impact/**`. Planned admin wor
 ## Docs
 
 - [REST API](../../docs/api/rest-api.md)
-- [WebSocket](../../docs/api/websocket-api.md)
 - [Repository layout](../../docs/public-docs/docs/reference/repository-layout.md)

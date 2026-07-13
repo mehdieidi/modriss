@@ -2,7 +2,6 @@ package io.mehdieidi.varka.platform.assistant.application;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.varka.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.varka.platform.identity.application.AuthService;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
@@ -15,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.ResourceLock;
+import tools.jackson.databind.ObjectMapper;
 
 @ResourceLock("epsilon-runtime")
 class AssistantBootstrapValidationTest {

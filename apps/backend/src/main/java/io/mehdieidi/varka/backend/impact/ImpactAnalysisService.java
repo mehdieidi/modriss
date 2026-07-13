@@ -1,6 +1,5 @@
 package io.mehdieidi.varka.backend.impact;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.mehdieidi.varka.platform.artifact.application.ArtifactService;
 import io.mehdieidi.varka.platform.artifact.domain.ArtifactRecord;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
@@ -17,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
 
 /** Builds impact trees from transformation trace links and artifact generation metadata. */
 @Service
@@ -396,7 +396,7 @@ public class ImpactAnalysisService {
       }
       if (node.isObject()) {
         indexElement(node);
-        node.fields().forEachRemaining(entry -> collectElements(entry.getValue()));
+        node.properties().forEach(entry -> collectElements(entry.getValue()));
       } else if (node.isArray()) {
         node.forEach(this::collectElements);
       }
@@ -431,7 +431,7 @@ public class ImpactAnalysisService {
       }
       if (node.isObject()) {
         TraceLink.from(node).ifPresent(traces::add);
-        node.fields().forEachRemaining(entry -> collectTraces(entry.getValue()));
+        node.properties().forEach(entry -> collectTraces(entry.getValue()));
       } else if (node.isArray()) {
         node.forEach(this::collectTraces);
       }

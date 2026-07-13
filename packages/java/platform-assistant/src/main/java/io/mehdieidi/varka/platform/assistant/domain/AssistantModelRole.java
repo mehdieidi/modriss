@@ -1,13 +1,7 @@
 package io.mehdieidi.varka.platform.assistant.domain;
 
-/** Logical assistant model roles. */
+/** The single configured model role used by the bounded modeling agent. */
 public enum AssistantModelRole {
-  /** Decomposes user intent into bounded workflow steps. */
-  PLANNER,
-  /** Extracts modeling evidence from requirements and event-storming source material. */
-  SOURCE_ANALYST,
   /** Produces user-facing assistant responses. */
-  RESPONDER,
-  /** Compresses conversation history. */
-  SUMMARIZER
+  RESPONDER
 }

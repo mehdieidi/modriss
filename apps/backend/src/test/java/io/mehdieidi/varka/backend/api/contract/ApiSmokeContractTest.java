@@ -6,8 +6,9 @@ import io.mehdieidi.varka.backend.support.BackendPostgresTestContainer;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -21,6 +22,7 @@ import org.springframework.test.context.DynamicPropertySource;
 
 /** Smoke tests for critical REST flows against a real PostgreSQL-backed application context. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 @ActiveProfiles("test")
 class ApiSmokeContractTest {
 
@@ -114,6 +116,60 @@ class ApiSmokeContractTest {
         restTemplate.getForEntity(url("/actuator/prometheus"), String.class);
     assertThat(prometheus.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(prometheus.getBody()).contains("jvm_memory_used_bytes");
+  }
+
+  @Test
+  void assistantMessageCreatesIdempotentDurableTurn() {
+    ResponseEntity<Map> register =
+        restTemplate.postForEntity(
+            url("/api/auth/register"),
+            Map.of(
+                "email",
+                "turn-" + System.nanoTime() + "@example.com",
+                "password",
+                "Contract-Test-123!",
+                "displayName",
+                "Turn Tester"),
+            Map.class);
+    String token = (String) register.getBody().get("token");
+    HttpHeaders headers = authHeaders(token);
+    ResponseEntity<Map> project =
+        restTemplate.exchange(
+            url("/api/projects"),
+            HttpMethod.POST,
+            new HttpEntity<>(
+                Map.of("name", "Turn Project", "description", "durable turn test"), headers),
+            Map.class);
+    String projectId = (String) project.getBody().get("id");
+    ResponseEntity<Map> session =
+        restTemplate.exchange(
+            url("/api/chatbot/sessions"),
+            HttpMethod.POST,
+            new HttpEntity<>(
+                Map.of("projectId", projectId, "modelType", "CIM", "modelName", "Turn Model"),
+                headers),
+            Map.class);
+    String sessionId = (String) session.getBody().get("sessionId");
+    String key = "turn-key-" + System.nanoTime();
+    ResponseEntity<Map> accepted =
+        restTemplate.exchange(
+            url("/api/chatbot/sessions/" + sessionId + "/messages"),
+            HttpMethod.POST,
+            new HttpEntity<>(
+                Map.of("message", "Explain the model", "idempotencyKey", key), headers),
+            Map.class);
+    assertThat(accepted.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+    assertThat(accepted.getBody().get("turnId")).isInstanceOf(String.class);
+    assertThat(((Number) accepted.getBody().get("eventCursor")).longValue()).isPositive();
+    ResponseEntity<Map> replay =
+        restTemplate.exchange(
+            url("/api/chatbot/sessions/" + sessionId + "/messages"),
+            HttpMethod.POST,
+            new HttpEntity<>(
+                Map.of("message", "Explain the model", "idempotencyKey", key), headers),
+            Map.class);
+    assertThat(replay.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+    assertThat(replay.getBody().get("turnId")).isEqualTo(accepted.getBody().get("turnId"));
   }
 
   private HttpHeaders authHeaders(String token) {

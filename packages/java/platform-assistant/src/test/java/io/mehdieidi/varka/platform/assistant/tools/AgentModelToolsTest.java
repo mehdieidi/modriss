@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService;
 import io.mehdieidi.varka.platform.assistant.metamodel.TypeContractService;
 import io.mehdieidi.varka.platform.assistant.patch.AssistantMetamodelSchemaService;
@@ -15,6 +14,7 @@ import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.model.application.ModelService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
 
 class AgentModelToolsTest {
 

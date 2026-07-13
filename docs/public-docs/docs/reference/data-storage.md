@@ -37,17 +37,17 @@ migration policy.
 
 ## Assistant Data
 
-| Area                    | Tables                                                                  |
-| ----------------------- | ----------------------------------------------------------------------- |
-| Conversation            | `assistant_threads`, `assistant_messages`, `assistant_thread_summaries` |
-| Recent Spring AI memory | `SPRING_AI_CHAT_MEMORY`                                                 |
-| Proposals and audit     | `assistant_proposals`, `assistant_action_audits`                        |
-| Retrieval               | `assistant_retrieval_documents`                                         |
-| Model context           | `assistant_model_contexts`                                              |
-| Rate limiting           | `assistant_rate_limits` (schema reserved; runtime limit is in-memory)   |
+| Area                    | Tables                                                                              |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| Conversation            | `assistant_threads`, `assistant_messages`, `assistant_thread_summaries`             |
+| Recent Spring AI memory | `SPRING_AI_CHAT_MEMORY`                                                             |
+| Durable turns           | `assistant_turns`, `assistant_turn_events`, `assistant_checkpoints`                 |
+| Source provenance/audit | `assistant_source_units`, `assistant_element_provenance`, `assistant_action_audits` |
+| Provider usage          | `assistant_provider_calls`                                                          |
+| Rate limiting           | `assistant_rate_limits` (schema reserved; runtime limit is in-memory)               |
 
-Retrieval documents can store 384-dimensional pgvector embeddings. Model contexts are keyed by
-model ID and revision so a changed model receives a new compact context snapshot.
+Turn checkpoints are tied to model revisions, so an inverse is rejected when the model changed
+after that checkpoint.
 
 ## Inspecting a Local Database
 

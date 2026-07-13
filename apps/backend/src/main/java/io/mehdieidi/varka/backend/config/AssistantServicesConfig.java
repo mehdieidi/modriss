@@ -3,9 +3,12 @@ package io.mehdieidi.varka.backend.config;
 import io.mehdieidi.varka.backend.observability.VarkaMetrics;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
+import io.mehdieidi.varka.platform.assistant.metamodel.LexicalRetrievalIndex;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService;
 import io.mehdieidi.varka.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.varka.platform.assistant.patch.AssistantPatchCompiler;
+import io.mehdieidi.varka.platform.assistant.patch.MetamodelContractGraph;
+import io.mehdieidi.varka.platform.assistant.patch.ModelCommandCompiler;
 import io.mehdieidi.varka.platform.assistant.session.AssistantSessionStore;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantMetrics;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantSettings;
@@ -21,8 +24,16 @@ public class AssistantServicesConfig {
   }
 
   @Bean
-  AssistantMetamodelSchemaService assistantMetamodelSchemaService() {
-    return new AssistantMetamodelSchemaService();
+  AssistantMetamodelSchemaService assistantMetamodelSchemaService(
+      io.mehdieidi.varka.platform.modeling.config.ModelingConfigService modelingConfig,
+      io.mehdieidi.varka.platform.modeling.metamodel.MetamodelResolver resolver) {
+    return new AssistantMetamodelSchemaService(modelingConfig, resolver);
+  }
+
+  @Bean
+  MetamodelContractGraph metamodelContractGraph(
+      io.mehdieidi.varka.platform.modeling.metamodel.MetamodelResolver resolver) {
+    return new MetamodelContractGraph(resolver);
   }
 
   @Bean
@@ -33,6 +44,20 @@ public class AssistantServicesConfig {
   @Bean
   AssistantPatchCompiler assistantPatchCompiler(AssistantMetamodelSchemaService schemas) {
     return new AssistantPatchCompiler(schemas);
+  }
+
+  @Bean
+  ModelCommandCompiler modelCommandCompiler(AssistantPatchCompiler compiler) {
+    return new ModelCommandCompiler(compiler);
+  }
+
+  @Bean
+  LexicalRetrievalIndex lexicalRetrievalIndex(
+      AssistantMetamodelSchemaService schemas,
+      org.springframework.beans.factory.ObjectProvider<
+              org.springframework.ai.embedding.EmbeddingModel>
+          embeddings) {
+    return new LexicalRetrievalIndex(schemas, null, embeddings.getIfAvailable());
   }
 
   @Bean

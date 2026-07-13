@@ -8,7 +8,6 @@ import java.util.regex.Pattern;
 /** Redacts secrets and bounds untrusted text before it reaches an AI provider. */
 public class AssistantPromptGuard {
 
-  private static final int MAX_USER_CHARS = 4000;
   private static final Pattern SECRET =
       Pattern.compile(
           "(?i)(api[-_ ]?key|authorization|password|secret|token)\\s*[:=]\\s*" + "([^\\s,;]+)");
@@ -32,7 +31,9 @@ public class AssistantPromptGuard {
    */
   public AssistantModelProvider.AssistantPrompt sanitize(
       AssistantModelProvider.AssistantPrompt prompt) {
-    String user = bound(redact(prompt.user()), MAX_USER_CHARS);
+    // User content and attachments have separate context budgeting upstream. Never silently cut
+    // either here: truncation destroys source accountability and can hide a requirement.
+    String user = redact(prompt.user());
     if (INJECTION.matcher(user).find()) {
       user = "[Potential prompt-injection text treated as untrusted user content]\n" + user;
     }
@@ -76,7 +77,7 @@ public class AssistantPromptGuard {
   private int snippetLimit(AssistantModelProvider.ContextSnippet snippet) {
     String source = snippet.source() == null ? "" : snippet.source();
     if (source.startsWith("user-attachment")) {
-      return Math.max(properties.maxSnippetChars(), 24000);
+      return Integer.MAX_VALUE;
     }
     return properties.maxSnippetChars();
   }

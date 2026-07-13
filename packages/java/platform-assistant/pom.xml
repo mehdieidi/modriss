@@ -21,7 +21,7 @@
     </dependency>
     <dependency>
       <artifactId>jackson-databind</artifactId>
-      <groupId>com.fasterxml.jackson.core</groupId>
+      <groupId>tools.jackson.core</groupId>
     </dependency>
     <dependency>
       <artifactId>slf4j-api</artifactId>
@@ -49,6 +49,11 @@
       <artifactId>spring-ai-openai</artifactId>
       <groupId>org.springframework.ai</groupId>
       <optional>true</optional>
+    </dependency>
+    <dependency>
+      <artifactId>openai-java</artifactId>
+      <groupId>com.openai</groupId>
+      <version>4.39.1</version>
     </dependency>
     <dependency>
       <artifactId>spring-ai-google-genai</artifactId>

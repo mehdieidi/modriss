@@ -1,7 +1,7 @@
 package io.mehdieidi.varka.platform.assistant.domain;
 
 /**
- * Shared realtime event envelope for websocket and SSE delivery.
+ * Shared realtime event envelope for authenticated SSE delivery.
  *
  * @param type event type
  * @param payload event payload

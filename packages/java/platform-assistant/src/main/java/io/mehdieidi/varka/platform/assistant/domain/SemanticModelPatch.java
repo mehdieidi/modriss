@@ -1,7 +1,7 @@
 package io.mehdieidi.varka.platform.assistant.domain;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Backend-owned operation IR used by the validated model workspace.

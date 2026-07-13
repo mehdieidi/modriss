@@ -1,13 +1,13 @@
 import { state } from "./state.js";
 import { el } from "./dom.js";
-import { api, isPlannedFeatureError } from "./api.js";
+import { api, apiAuthHeaders, isPlannedFeatureError } from "./api.js";
 import { formatUserError } from "./errors.js";
 import { setError, setStatus } from "./status.js";
-import { apiUrl, CHAT_ATTACHMENT_MAX_BYTES, MODEL_TYPES, websocketUrl } from "./config.js";
+import { apiUrl, CHAT_ATTACHMENT_MAX_BYTES, MODEL_TYPES } from "./config.js";
 import { toDiagram } from "./diagram.js";
 import { renderDiagram } from "./canvas.js";
 import { renderMarkdown } from "./markdown.js";
-import { loadModelById } from "./model-ops.js";
+import { loadModelById, saveCurrentModel } from "./model-ops.js";
 import { syncMobileDockState } from "./mobile-ui.js";
 import { hasUnsavedModelChanges } from "./model-save-ui.js";
 
@@ -60,6 +60,7 @@ let thinkingSteps = [];
 let thinkingStartTime = 0;
 let thinkingProgress = null;
 let activeTurnCanceling = false;
+let activeTurnId = null;
 let streamingAssistantEl = null;
 let streamingAssistantText = "";
 // The chat window is a single DOM surface, while sessions are scoped by project and level.
@@ -73,6 +74,7 @@ function disconnectChatChannel(scopeKey) {
   if (channel?.handle) {
     try {
       channel.handle.close?.();
+      channel.handle.abort?.();
     } catch {
       // ignore cleanup errors
     }
@@ -183,6 +185,7 @@ export function resetChatForProjectChange() {
   for (const channel of state.chat.channels.values()) {
     try {
       channel.handle?.close?.();
+      channel.handle?.abort?.();
     } catch {
       // ignore cleanup errors
     }
@@ -343,8 +346,7 @@ async function cancelActiveChatTurn() {
   if (activeTurnCanceling) {
     return;
   }
-  const sessionId = state.chat.sessions.get(chatScopeKey())?.sessionId;
-  if (!sessionId) {
+  if (!activeTurnId) {
     return;
   }
   activeTurnCanceling = true;
@@ -352,12 +354,187 @@ async function cancelActiveChatTurn() {
   updateThinkingStatus("Cancel requested. Waiting for the backend to stop safely.", "CANCELING");
   clearAssistantModelPreview({ restore: true });
   try {
-    await api(`/chatbot/sessions/${sessionId}/cancel`, { method: "POST" });
+    await api(`/chatbot/turns/${activeTurnId}/cancel`, { method: "POST" });
   } catch (error) {
     activeTurnCanceling = false;
     updateChatComposerActionButton();
     throw error;
   }
+}
+
+const DURABLE_TERMINAL_STATES = new Set([
+  "SUCCEEDED",
+  "PARTIAL",
+  "NEEDS_INPUT",
+  "NEEDS_CONFIRMATION",
+  "CONFLICTED",
+  "CANCELLED",
+  "TIMED_OUT",
+  "FAILED",
+]);
+
+function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
+  const controller = new AbortController();
+  void fetch(
+    apiUrl(`/chatbot/turns/${turnId}/events?eventCursor=${encodeURIComponent(eventCursor)}`),
+    {
+      headers: apiAuthHeaders({ Accept: "text/event-stream" }),
+      signal: controller.signal,
+    },
+  )
+    .then(async (response) => {
+      if (!response.ok || !response.body) throw new Error("Durable SSE connection failed");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop() || "";
+        for (const frame of frames) {
+          const eventName = frame.match(/^event:\s*(.+)$/m)?.[1];
+          const raw = frame.match(/^data:\s*(.+)$/m)?.[1];
+          if (!eventName || !raw) continue;
+          try {
+            const event = JSON.parse(raw);
+            if (eventName === "turn.stage") {
+              updateThinkingStatus(event?.payload?.stage || "Assistant is working.", "PLANNING");
+            } else if (eventName === "model.checkpoint") {
+              updateThinkingStatus("Model checkpoint saved.", "APPLYING");
+              if (event?.payload?.modelId) {
+                void loadModelById(typeKey, event.payload.modelId).catch(() => {
+                  setStatus("Checkpoint saved; model refresh will retry with turn polling.");
+                });
+              }
+            } else if (eventName === "turn.completed") {
+              updateThinkingStatus(
+                event?.payload?.message || "Assistant turn completed.",
+                "COMPLETED",
+              );
+            }
+          } catch {
+            // A malformed event never prevents polling the durable status endpoint.
+          }
+        }
+      }
+    })
+    .catch(() => {
+      if (!controller.signal.aborted) setStatus("Turn event stream disconnected; polling status.");
+    });
+  return controller;
+}
+
+async function waitForDurableTurn(turnId, typeKey, eventCursor = 0) {
+  const events = streamDurableTurnEvents(turnId, typeKey, eventCursor);
+  let latest = null;
+  try {
+    for (;;) {
+      latest = await api(`/chatbot/turns/${turnId}`);
+      const stateName = String(latest?.state || "");
+      updateThinkingStatus(
+        latest?.finalMessage || `Assistant turn ${stateName.toLowerCase() || "is running"}.`,
+        stateName === "RUNNING" ? "PLANNING" : stateName,
+      );
+      if (DURABLE_TERMINAL_STATES.has(stateName)) {
+        if (latest?.modelId) {
+          await applyAssistantModelResponse(typeKey, latest);
+        }
+        return latest;
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 1000));
+    }
+  } finally {
+    events.abort();
+  }
+}
+
+function appendDurableTurnActions(turn, typeKey) {
+  const stateName = String(turn?.state || "");
+  if (
+    !turn?.turnId ||
+    !["PARTIAL", "NEEDS_CONFIRMATION", "SUCCEEDED", "CANCELLED", "TIMED_OUT", "FAILED"].includes(
+      stateName,
+    )
+  ) {
+    return;
+  }
+  const actions = document.createElement("div");
+  actions.className = "chat-proposal-actions";
+  const runFollowUp = async (path) => {
+    const accepted = await api(path, { method: "POST" });
+    if (accepted?.turnId) {
+      activeTurnId = accepted.turnId;
+      beginChatActivity("Continuing assistant turn", "PLANNING");
+      const completed = await waitForDurableTurn(
+        accepted.turnId,
+        typeKey,
+        accepted.eventCursor || 0,
+      );
+      activeTurnId = null;
+      endChatActivity(null, completed?.state || null);
+      appendAssistantDeduped(completed?.finalMessage || "Assistant turn finished.");
+      appendDurableProvenance(completed);
+      appendDurableTurnActions(completed, typeKey);
+    }
+  };
+  if (stateName === "PARTIAL") {
+    const continueButton = document.createElement("button");
+    continueButton.type = "button";
+    continueButton.className = "chat-proposal-btn";
+    continueButton.textContent = "Continue";
+    continueButton.addEventListener("click", () =>
+      runFollowUp(`/chatbot/turns/${turn.turnId}/continue`).catch((error) => setError(error)),
+    );
+    actions.appendChild(continueButton);
+  }
+  if (stateName === "NEEDS_CONFIRMATION") {
+    const confirmButton = document.createElement("button");
+    confirmButton.type = "button";
+    confirmButton.className = "chat-proposal-btn";
+    confirmButton.textContent = "Confirm deletion";
+    confirmButton.addEventListener("click", () =>
+      runFollowUp(`/chatbot/turns/${turn.turnId}/confirm`).catch((error) => setError(error)),
+    );
+    actions.appendChild(confirmButton);
+  }
+  if (turn?.checkpointCount > 0) {
+    const undoButton = document.createElement("button");
+    undoButton.type = "button";
+    undoButton.className = "chat-proposal-btn";
+    undoButton.textContent = "Undo turn";
+    undoButton.addEventListener("click", async () => {
+      try {
+        const undone = await api(`/chatbot/turns/${turn.turnId}/undo`, { method: "POST" });
+        if (undone?.modelId) await loadModelById(typeKey, undone.modelId);
+        appendAssistantDeduped("The last saved checkpoint was undone.");
+      } catch (error) {
+        setError(error);
+      }
+    });
+    actions.appendChild(undoButton);
+  }
+  if (actions.childElementCount) el.chatMessages.appendChild(actions);
+}
+
+function appendDurableProvenance(turn) {
+  const entries = Array.isArray(turn?.provenance) ? turn.provenance : [];
+  if (!entries.length) return;
+  const container = document.createElement("div");
+  container.className = "chat-proposal-actions";
+  for (const entry of entries) {
+    const badge = document.createElement("span");
+    const inferred = String(entry?.kind || "").toUpperCase() === "INFERRED";
+    badge.className = "chat-proposal-btn";
+    badge.textContent = inferred ? "Inferred" : "Source-grounded";
+    const detail = inferred
+      ? entry?.assumption || "Conservative modeling assumption."
+      : `Evidence: ${entry?.sourceUnitId || "source unit"}`;
+    badge.title = `${entry?.elementId || "Element"}. ${detail}`;
+    container.appendChild(badge);
+  }
+  el.chatMessages.appendChild(container);
 }
 
 function updateChatComposerActionButton() {
@@ -541,7 +718,7 @@ function updateChatProviderLabel(provider) {
 
 async function ensureChatRealtime(scopeKey, typeKey, sessionId) {
   const channel = state.chat.channels.get(scopeKey);
-  if (channel?.kind === "websocket" && channel.handle?.readyState === WebSocket.OPEN) {
+  if (channel?.kind === "fetch-sse" && !channel.handle?.signal?.aborted) {
     return;
   }
   if (channel?.handle) {
@@ -784,8 +961,7 @@ async function hydrateChatThread(typeKey, sessionId) {
   try {
     const thread = await api(`/chatbot/sessions/${sessionId}/thread`);
     const hasMessages = Array.isArray(thread.messages) && thread.messages.length > 0;
-    const hasProposal = Boolean(thread.proposal);
-    if (!hasMessages && !hasProposal) {
+    if (!hasMessages) {
       resetChatActivityUi();
       return;
     }
@@ -796,7 +972,6 @@ async function hydrateChatThread(typeKey, sessionId) {
         appendChat(role, message.content || "");
       }
     }
-    if (thread.proposal) appendProposalCard(typeKey, sessionId, thread.proposal);
     if (thread.workflowState)
       applyWorkflowSnapshot(thread.workflowState, workflowLabel(thread.workflowState));
     else resetChatActivityUi();
@@ -810,74 +985,38 @@ export async function clearChatConversation() {
 }
 
 async function connectChatRealtime(scopeKey, typeKey, sessionId) {
-  const wsUrl = websocketUrl(`/ws/chatbot/sessions/${sessionId}`);
-
-  try {
-    const socket = new WebSocket(wsUrl);
-    await new Promise((resolve, reject) => {
-      socket.onopen = () => resolve();
-      socket.onerror = () => reject(new Error("websocket connection failed"));
-    });
-
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        handleChatRealtimeEvent(typeKey, data?.type, data?.payload);
-      } catch {
-        // ignore malformed events
+  const controller = new AbortController();
+  state.chat.channels.set(scopeKey, { kind: "fetch-sse", handle: controller });
+  void fetch(apiUrl(`/chatbot/sessions/${sessionId}/events`), {
+    headers: apiAuthHeaders({ Accept: "text/event-stream" }),
+    signal: controller.signal,
+  })
+    .then(async (response) => {
+      if (!response.ok || !response.body) throw new Error("SSE connection failed");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop() || "";
+        for (const frame of frames) {
+          const eventName = frame.match(/^event:\s*(.+)$/m)?.[1];
+          const raw = frame.match(/^data:\s*(.+)$/m)?.[1];
+          if (!eventName || !raw) continue;
+          try {
+            const data = JSON.parse(raw);
+            handleChatRealtimeEvent(typeKey, eventName, data?.payload);
+          } catch {}
+        }
       }
-    };
-    socket.onclose = () => {
-      if (state.chat.channels.get(scopeKey)?.kind === "websocket") {
-        setStatus("Chat websocket disconnected");
-      }
-    };
-    state.chat.channels.set(scopeKey, { kind: "websocket", handle: socket });
-    return;
-  } catch {
-    // fallback to SSE
-  }
-
-  const stream = new EventSource(apiUrl(`/chatbot/sessions/${sessionId}/events`));
-  stream.onmessage = () => {};
-  stream.addEventListener("chat.assistant", (event) => {
-    const payload = JSON.parse(event.data)?.payload;
-    handleChatRealtimeEvent(typeKey, "chat.assistant", payload);
-  });
-  stream.addEventListener("model.updated", (event) => {
-    const payload = JSON.parse(event.data)?.payload;
-    handleChatRealtimeEvent(typeKey, "model.updated", payload);
-  });
-  stream.addEventListener("assistant.progress", (event) => {
-    const payload = JSON.parse(event.data)?.payload;
-    handleChatRealtimeEvent(typeKey, "assistant.progress", payload);
-  });
-  for (const eventName of [
-    "assistant.text.delta",
-    "assistant.plan",
-    "model.delta",
-    "assistant.worker.started",
-    "assistant.worker.completed",
-    "assistant.trace.started",
-    "assistant.trace.step",
-    "assistant.tool.started",
-    "assistant.tool.completed",
-    "assistant.turn.completed",
-    "assistant.turn.failed",
-  ]) {
-    stream.addEventListener(eventName, (event) => {
-      const payload = JSON.parse(event.data)?.payload;
-      handleChatRealtimeEvent(typeKey, eventName, payload);
+    })
+    .catch(() => {
+      if (!controller.signal.aborted)
+        setStatus("Chat realtime stream disconnected; polling turn status.");
     });
-  }
-  stream.addEventListener("assistant.model.preview", (event) => {
-    const payload = JSON.parse(event.data)?.payload;
-    handleChatRealtimeEvent(typeKey, "assistant.model.preview", payload);
-  });
-  stream.onerror = () => {
-    setStatus("Chat realtime stream disconnected");
-  };
-  state.chat.channels.set(scopeKey, { kind: "sse", handle: stream });
 }
 
 function handleChatRealtimeEvent(typeKey, eventType, payload) {
@@ -956,12 +1095,6 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
     }
     if (chatBusyDepth === 0) {
       appendAssistantDeduped(message);
-    }
-    const sessionId = state.chat.sessions.get(chatScopeKey(typeKey))?.sessionId;
-    if (sessionId && chatBusyDepth === 0) {
-      appendProposalCard(typeKey, sessionId, payload?.proposal);
-      if (!payload?.proposal) {
-      }
     }
     if (payload?.workflowState && chatBusyDepth === 0) {
       applyWorkflowSnapshot(
@@ -1337,6 +1470,15 @@ export async function sendChatMessage() {
     }
     const requestedModelId = state.modelId;
     const requestDiagramFingerprint = JSON.stringify(state.diagram || {});
+    // A durable agent turn always works from a persisted revision. Sending an ad-hoc draft patch
+    // would bypass structural validation and make checkpoint/conflict semantics ambiguous.
+    if (hasUnsavedModelChanges()) {
+      updateThinkingStatus(
+        "Saving your current model before starting the assistant.",
+        "VALIDATING",
+      );
+      await saveCurrentModel({ quiet: true, rethrow: true });
+    }
     appendChat("user", text);
     el.chatInput.value = "";
 
@@ -1349,7 +1491,7 @@ export async function sendChatMessage() {
           crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         message: text,
         modelId: state.modelId,
-        revision: state.modelRevision || null,
+        expectedRevision: state.modelRevision || null,
         activeView: state.activeType,
         selectedElementIds: [
           ...new Set(
@@ -1361,24 +1503,41 @@ export async function sendChatMessage() {
           ),
         ],
         attachmentIds: attachment?.id ? [attachment.id] : [],
-        unsavedDraftPatch:
-          hasUnsavedModelChanges() && state.baseModel ? JSON.stringify(state.baseModel) : null,
       }),
     });
 
-    applyHttpActivity(response);
-    endChatActivity(null, response?.workflowState || null);
-    appendAssistantDeduped(response.assistantMessage || "Done");
-    appendProposalCard(state.activeType, session.sessionId, response.proposal);
-    if (!response.proposal) {
+    if (response?.turnId) {
+      activeTurnId = response.turnId;
+      updateThinkingStatus(
+        "Turn accepted. The assistant is working in the background.",
+        "PLANNING",
+      );
+      response = await waitForDurableTurn(
+        response.turnId,
+        state.activeType,
+        response.eventCursor || 0,
+      );
+      activeTurnId = null;
+      endChatActivity(null, response?.state || null);
+      appendAssistantDeduped(response?.finalMessage || "Assistant turn finished.");
+      appendDurableProvenance(response);
+      appendDurableTurnActions(response, state.activeType);
+    } else {
+      applyHttpActivity(response);
+      endChatActivity(null, response?.workflowState || null);
+      appendAssistantDeduped(response.assistantMessage || "Done");
+      await applyAssistantModelResponse(
+        state.activeType,
+        response,
+        requestedModelId,
+        requestDiagramFingerprint,
+      );
     }
-    await applyAssistantModelResponse(
-      state.activeType,
-      response,
-      requestedModelId,
-      requestDiagramFingerprint,
-    );
-    if (!["WAITING_FOR_CHOICE", "FAILED"].includes(response?.workflowState)) {
+    if (
+      !["WAITING_FOR_CHOICE", "FAILED", "PARTIAL", "CANCELLED"].includes(
+        response?.workflowState || response?.state,
+      )
+    ) {
       state.chat.attachment = null;
       if (el.chatFileInput) {
         el.chatFileInput.value = "";

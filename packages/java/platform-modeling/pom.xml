@@ -37,7 +37,7 @@
     </dependency>
     <dependency>
       <artifactId>jackson-databind</artifactId>
-      <groupId>com.fasterxml.jackson.core</groupId>
+      <groupId>tools.jackson.core</groupId>
     </dependency>
     <dependency>
       <artifactId>org.eclipse.emf.common</artifactId>

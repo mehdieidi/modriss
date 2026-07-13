@@ -15,9 +15,11 @@ class AssistantMetamodelSchemaServiceTest {
   private final AssistantMetamodelSchemaService schemas = new AssistantMetamodelSchemaService();
 
   @Test
-  void canonicalizesSpacedAndUnderscoredTypeNames() {
-    assertEquals("ServerlessService", schemas.canonicalType(ModelLevel.PIM, "Serverless Service"));
-    assertEquals("FunctionContract", schemas.canonicalType(ModelLevel.PIM, "Function_Contract"));
+  void rejectsSpacedAndUnderscoredTypeGuesses() {
+    assertThrows(
+        PlatformException.class, () -> schemas.canonicalType(ModelLevel.PIM, "Serverless Service"));
+    assertThrows(
+        PlatformException.class, () -> schemas.canonicalType(ModelLevel.PIM, "Function_Contract"));
   }
 
   @Test
@@ -29,20 +31,18 @@ class AssistantMetamodelSchemaServiceTest {
   }
 
   @Test
-  void canonicalizesAttributeNamesWithCaseAndCommonAliases() {
+  void canonicalizesOnlyExactOrUniqueCaseInsensitiveAttributes() {
     assertEquals(
         "summary",
         schemas.canonicalAttribute(ModelLevel.CIM, "Actor", "Summary").orElseThrow().name());
-    assertEquals(
-        "description",
-        schemas.canonicalAttribute(ModelLevel.CIM, "Actor", "details").orElseThrow().name());
-    assertEquals(
-        "name", schemas.canonicalAttribute(ModelLevel.CIM, "Actor", "label").orElseThrow().name());
+    assertTrue(schemas.canonicalAttribute(ModelLevel.CIM, "Actor", "details").isEmpty());
+    assertTrue(schemas.canonicalAttribute(ModelLevel.CIM, "Actor", "label").isEmpty());
   }
 
   @Test
-  void canonicalizesOnlyUniqueMetamodelTypePrefixes() {
-    assertEquals("ObservabilityConfig", schemas.canonicalType(ModelLevel.PIM, "ObservabilityConf"));
+  void rejectsMetamodelTypePrefixes() {
+    assertThrows(
+        PlatformException.class, () -> schemas.canonicalType(ModelLevel.PIM, "ObservabilityConf"));
     assertThrows(PlatformException.class, () -> schemas.canonicalType(ModelLevel.PIM, "Event"));
   }
 
@@ -74,5 +74,11 @@ class AssistantMetamodelSchemaServiceTest {
     assertTrue(types.contains("Function"));
     assertTrue(types.contains("Api"));
     assertEquals(6, schemas.planningContracts(ModelLevel.PIM, "anything", 6, true).size());
+  }
+
+  @Test
+  void exposesCombinedEcoreShaAsTheDriftKey() {
+    String sha = schemas.metamodelSha(ModelLevel.CIM);
+    assertTrue(sha.matches("[0-9a-f]{64}"));
   }
 }

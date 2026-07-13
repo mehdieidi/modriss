@@ -4,6 +4,21 @@
   <artifactId>backend</artifactId>
 
   <build>
+    <!-- Flyway scans the application's locations at runtime. Package the platform schema here
+         as well as the assistant schema supplied by its module so executable backend builds do
+         not depend on class-loader resource enumeration across reactor modules. -->
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>../../packages/java/platform-storage-postgres/src/main/resources/db/migration</directory>
+        <targetPath>db/migration</targetPath>
+        <includes>
+          <include>*.sql</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <artifactId>spring-boot-maven-plugin</artifactId>
@@ -85,10 +100,6 @@
       <groupId>org.springframework.boot</groupId>
     </dependency>
     <dependency>
-      <artifactId>spring-boot-starter-websocket</artifactId>
-      <groupId>org.springframework.boot</groupId>
-    </dependency>
-    <dependency>
       <artifactId>spring-ai-client-chat</artifactId>
       <groupId>org.springframework.ai</groupId>
     </dependency>
@@ -101,8 +112,16 @@
       <groupId>org.springframework.ai</groupId>
     </dependency>
     <dependency>
+      <artifactId>spring-ai-starter-model-transformers</artifactId>
+      <groupId>org.springframework.ai</groupId>
+    </dependency>
+    <dependency>
       <artifactId>spring-ai-model-chat-memory-repository-jdbc</artifactId>
       <groupId>org.springframework.ai</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-boot-starter-flyway</artifactId>
+      <groupId>org.springframework.boot</groupId>
     </dependency>
     <dependency>
       <artifactId>flyway-core</artifactId>
@@ -123,6 +142,16 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <artifactId>spring-boot-resttestclient</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <artifactId>spring-boot-restclient</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-registry-prometheus</artifactId>
     </dependency>
@@ -135,18 +164,18 @@
       <artifactId>opentelemetry-exporter-otlp</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <groupId>tools.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
+      <artifactId>testcontainers-postgresql</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

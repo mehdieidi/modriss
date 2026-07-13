@@ -7,8 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.varka.platform.identity.application.AuthService;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
@@ -22,6 +20,8 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.ResourceLock;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Regression tests for model import, export, validation, patching, and source-XMI preservation
@@ -59,14 +59,19 @@ class ModelServiceXmiImportTest {
 
     assertFalse(result.modelJson().path("graph").path("elements").isEmpty());
     assertTrue(
-        result.modelJson().path("graph").path("elements").findValuesAsText("id").contains("cap-1"));
+        result
+            .modelJson()
+            .path("graph")
+            .path("elements")
+            .findValuesAsString("id")
+            .contains("cap-1"));
     assertFalse(result.modelJson().path("graph").path("relationships").isEmpty());
     assertTrue(
         result
             .modelJson()
             .path("graph")
             .path("relationships")
-            .findValuesAsText("semanticFeature")
+            .findValuesAsString("semanticFeature")
             .contains("supports"));
     JsonNode supports =
         relationship(

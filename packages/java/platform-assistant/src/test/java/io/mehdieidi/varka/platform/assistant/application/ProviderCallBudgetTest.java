@@ -19,20 +19,19 @@ class ProviderCallBudgetTest {
   void tracksConsumedCallsUntilBudgetIsExceeded() {
     ProviderCallBudget.bind(2);
 
-    ProviderCallBudget.consume(AssistantModelRole.PLANNER);
+    ProviderCallBudget.consume(AssistantModelRole.RESPONDER);
     ProviderCallBudget.consume(AssistantModelRole.RESPONDER);
 
     assertEquals(2, ProviderCallBudget.count());
     assertThrows(
-        PlatformException.class, () -> ProviderCallBudget.consume(AssistantModelRole.PLANNER));
+        PlatformException.class, () -> ProviderCallBudget.consume(AssistantModelRole.RESPONDER));
   }
 
   @Test
-  void ignoresSummarizerCalls() {
+  void countsEveryConfiguredAgentCall() {
     ProviderCallBudget.bind(1);
 
-    ProviderCallBudget.consume(AssistantModelRole.SUMMARIZER);
-    ProviderCallBudget.consume(AssistantModelRole.PLANNER);
+    ProviderCallBudget.consume(AssistantModelRole.RESPONDER);
 
     assertEquals(1, ProviderCallBudget.count());
     assertThrows(

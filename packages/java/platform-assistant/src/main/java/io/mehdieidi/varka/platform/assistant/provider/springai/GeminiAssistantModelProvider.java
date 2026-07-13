@@ -30,7 +30,11 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
         proxyAvailability,
         promptGuard,
         hardening,
-        ChatClient.create(chatModel(properties)));
+        configured(properties) ? ChatClient.create(chatModel(properties)) : null);
+  }
+
+  private static boolean configured(AiProperties properties) {
+    return properties.enabled() && !properties.gemini().apiKey().isBlank();
   }
 
   private static GoogleGenAiChatModel chatModel(AiProperties properties) {
@@ -44,7 +48,7 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
             .build();
     return GoogleGenAiChatModel.builder()
         .genAiClient(client)
-        .defaultOptions(
+        .options(
             GoogleGenAiChatOptions.builder()
                 .model(
                     properties
@@ -88,20 +92,14 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
   }
 
   @Override
-  protected GoogleGenAiChatOptions options(String model, AssistantModelRole role) {
+  protected GoogleGenAiChatOptions.Builder options(String model, AssistantModelRole role) {
     return GoogleGenAiChatOptions.builder()
         .model(model)
         .temperature(0.2)
-        .maxOutputTokens(Math.min(properties.tokenBudget(), completionLimit(role)))
-        .build();
+        .maxOutputTokens(Math.min(properties.tokenBudget(), completionLimit(role)));
   }
 
   private int completionLimit(AssistantModelRole role) {
-    return switch (role) {
-      case PLANNER -> 6000;
-      case SOURCE_ANALYST -> 12000;
-      case SUMMARIZER -> 800;
-      case RESPONDER -> 3000;
-    };
+    return 3000;
   }
 }

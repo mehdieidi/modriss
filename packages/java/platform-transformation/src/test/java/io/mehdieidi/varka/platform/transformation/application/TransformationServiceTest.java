@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.mehdieidi.varka.platform.artifact.domain.ArtifactRecord;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.model.application.ModelService;
@@ -19,6 +18,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.api.parallel.ResourceLock;
+import tools.jackson.databind.JsonNode;
 
 /** End-to-end regression tests for platform transformations backed by the MDE runners. */
 @Execution(ExecutionMode.SAME_THREAD)
@@ -84,7 +84,7 @@ class TransformationServiceTest {
         pim.modelJson()
             .path("graph")
             .path("elements")
-            .findValuesAsText("eClass")
+            .findValuesAsString("eClass")
             .contains("Workflow"),
         "Generated PIM graph should include workflow containers for the workflow view.");
     assertEquals("GENERATED_BY_ETL", pim.modelJson().path("transformationStatus").asText());
@@ -102,7 +102,7 @@ class TransformationServiceTest {
         pim.modelJson()
             .path("graph")
             .path("elements")
-            .findValuesAsText("eClass")
+            .findValuesAsString("eClass")
             .contains("Function"));
   }
 
@@ -141,7 +141,7 @@ class TransformationServiceTest {
         .path("manualDecisions")
         .forEach(decision -> manualDecisionIds.add(decision.path("id").asText()));
     long graphManualDecisions =
-        pim.modelJson().path("graph").path("elements").findValuesAsText("eClass").stream()
+        pim.modelJson().path("graph").path("elements").findValuesAsString("eClass").stream()
             .filter("ManualDecision"::equals)
             .count();
 
@@ -252,7 +252,7 @@ class TransformationServiceTest {
         psm.modelJson()
             .path("graph")
             .path("elements")
-            .findValuesAsText("eClass")
+            .findValuesAsString("eClass")
             .contains("AwsLambdaFunction"));
     assertTrue(
         psm.modelJson().path("graph").path("elements").size() > 10,
@@ -261,7 +261,7 @@ class TransformationServiceTest {
         psm.modelJson().path("graph").path("relationships").isEmpty(),
         "Imported AWS PSM graph should include reference and relationship edges.");
     var relationshipKinds =
-        psm.modelJson().path("graph").path("relationships").findValuesAsText("kind");
+        psm.modelJson().path("graph").path("relationships").findValuesAsString("kind");
     assertFalse(
         relationshipKinds.stream().anyMatch(kind -> kind.endsWith("_VIEW")),
         "Generated PSM relationship views should be rendered as canonical edge kinds.");
@@ -441,9 +441,8 @@ class TransformationServiceTest {
   }
 
   private boolean hasTraceabilityPath(JsonNode traceability, Set<String> files) {
-    var fields = traceability.fields();
-    while (fields.hasNext()) {
-      JsonNode paths = fields.next().getValue();
+    for (var field : traceability.properties()) {
+      JsonNode paths = field.getValue();
       if (!paths.isArray()) {
         continue;
       }

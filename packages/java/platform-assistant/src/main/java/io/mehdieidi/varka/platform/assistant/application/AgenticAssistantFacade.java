@@ -1,12 +1,9 @@
 package io.mehdieidi.varka.platform.assistant.application;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.varka.platform.assistant.domain.AssistantProposal;
 import io.mehdieidi.varka.platform.assistant.domain.AssistantWorkflowState;
 import io.mehdieidi.varka.platform.assistant.domain.memory.AssistantMemoryRecords.ConversationSummary;
 import io.mehdieidi.varka.platform.assistant.domain.memory.AssistantMemoryRecords.MessageRecord;
-import io.mehdieidi.varka.platform.assistant.domain.memory.AssistantMemoryRecords.ProposalRecord;
 import io.mehdieidi.varka.platform.assistant.domain.memory.AssistantMemoryRecords.ThreadRecord;
 import io.mehdieidi.varka.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider;
@@ -19,12 +16,14 @@ import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.model.application.ModelService;
 import io.mehdieidi.varka.platform.model.domain.ModelRecord;
+import io.mehdieidi.varka.platform.modeling.config.ModelingConfigService;
 import io.mehdieidi.varka.platform.project.application.ProjectService;
 import io.mehdieidi.varka.platform.project.domain.ProjectRecord;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Session, history, proposal, and undo facade for the agentic runtime. */
 public final class AgenticAssistantFacade {
@@ -37,6 +36,7 @@ public final class AgenticAssistantFacade {
   private final AssistantRealtimePublisher realtime;
   private final AssistantModelProvider provider;
   private final AgenticTurnService turns;
+  private final ModelingConfigService modelingConfig;
 
   public AgenticAssistantFacade(
       AssistantSessionStore sessions,
@@ -47,7 +47,8 @@ public final class AgenticAssistantFacade {
       AssistantPatchCompiler patches,
       AssistantRealtimePublisher realtime,
       AssistantModelProvider provider,
-      AgenticTurnService turns) {
+      AgenticTurnService turns,
+      ModelingConfigService modelingConfig) {
     this.sessions = sessions;
     this.memory = memory;
     this.chatMemory = chatMemory;
@@ -57,6 +58,7 @@ public final class AgenticAssistantFacade {
     this.realtime = realtime;
     this.provider = provider;
     this.turns = turns;
+    this.modelingConfig = modelingConfig;
   }
 
   public AssistantSessionStore.AssistantSession startSession(
@@ -117,6 +119,73 @@ public final class AgenticAssistantFacade {
       Long revision,
       String message,
       String source) {
+    return message(user, sessionId, modelId, revision, message, source, false);
+  }
+
+  /** Executes a confirmed durable deletion turn; callers must not derive this from user text. */
+  public AgenticTurnService.Result message(
+      UserRecord user,
+      String sessionId,
+      String modelId,
+      Long revision,
+      String message,
+      String source,
+      boolean destructiveConfirmed) {
+    return message(
+        user, sessionId, modelId, revision, message, source, destructiveConfirmed, () -> false);
+  }
+
+  /** Durable worker variant with persisted cancellation checked before model persistence. */
+  public AgenticTurnService.Result message(
+      UserRecord user,
+      String sessionId,
+      String modelId,
+      Long revision,
+      String message,
+      String source,
+      boolean destructiveConfirmed,
+      java.util.function.BooleanSupplier cancellationRequested) {
+    return message(
+        user,
+        sessionId,
+        modelId,
+        revision,
+        message,
+        source,
+        destructiveConfirmed,
+        cancellationRequested,
+        () -> null);
+  }
+
+  /** Durable worker variant which can reject a late provider response before persistence. */
+  public AgenticTurnService.Result message(
+      UserRecord user,
+      String sessionId,
+      String modelId,
+      Long revision,
+      String message,
+      String source,
+      boolean destructiveConfirmed,
+      java.util.function.BooleanSupplier cancellationRequested,
+      java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException>
+          stopReason) {
+    var session = session(user, sessionId);
+    ModelRecord model = ensureModel(user, sessionId, modelId);
+    return turns.run(
+        user,
+        sessionId,
+        session.level(),
+        model.id(),
+        revision,
+        message,
+        source,
+        destructiveConfirmed,
+        cancellationRequested,
+        stopReason);
+  }
+
+  /** Ensures a persisted, structurally valid starter model before any provider work starts. */
+  public ModelRecord ensureModel(UserRecord user, String sessionId, String modelId) {
     var session = session(user, sessionId);
     String resolved = modelId;
     if (resolved == null || resolved.isBlank())
@@ -136,7 +205,7 @@ public final class AgenticAssistantFacade {
       resolved = created.id();
       memory.updateThreadModel(sessionId, created.id(), created.revision());
     }
-    return turns.run(user, sessionId, session.level(), resolved, revision, message, source);
+    return models.get(user, session.level(), resolved);
   }
 
   public ThreadSnapshot thread(UserRecord user, String sessionId) {
@@ -146,64 +215,19 @@ public final class AgenticAssistantFacade {
             .sorted(java.util.Comparator.comparing(MessageRecord::createdAt))
             .map(item -> new ThreadMessage(item.role(), item.content()))
             .toList();
-    AssistantProposal proposal =
-        memory.findLatestProposal(sessionId, "APPLIED").map(ProposalRecord::proposal).orElse(null);
     return new ThreadSnapshot(
         messages,
         messages.isEmpty() ? AssistantWorkflowState.EXPLAINED : AssistantWorkflowState.APPLIED,
-        proposal,
         provider.metadata());
   }
 
   public AssistantProposal proposal(UserRecord user, String sessionId, String proposalId) {
-    session(user, sessionId);
-    ProposalRecord record =
-        memory
-            .findProposal(proposalId)
-            .orElseThrow(() -> new PlatformException(404, "Assistant proposal not found."));
-    if (!record.threadId().equals(sessionId))
-      throw new PlatformException(404, "Assistant proposal not found.");
-    return record.proposal();
+    throw new PlatformException(
+        410, "Assistant proposals were replaced by durable turns and checkpoints.");
   }
 
   public UndoResult undo(UserRecord user, String sessionId, String proposalId) {
-    var session = session(user, sessionId);
-    ProposalRecord record =
-        memory
-            .findProposal(proposalId)
-            .orElseThrow(() -> new PlatformException(404, "Assistant proposal not found."));
-    if (!record.threadId().equals(sessionId)
-        || !"APPLIED".equals(record.status())
-        || record.proposal().inversePatch().isEmpty())
-      throw new PlatformException(409, "Only an applied proposal with an inverse can be undone.");
-    ModelRecord model = models.get(user, session.level(), record.modelId());
-    var compiled =
-        patches.adaptToSnapshot(
-            model.modelJson(),
-            new AssistantPatchCompiler.CompiledPatch(
-                record.proposal().inversePatch(), List.of(), record.proposal().affectedElements()));
-    var preview = patches.apply(model.modelJson(), compiled);
-    var validation = models.validateStructural(session.level(), preview);
-    if (!validation.valid())
-      throw new PlatformException(422, "Undo would make the model structurally invalid.");
-    ModelRecord updated =
-        models.patch(
-            user, session.level(), model.id(), model.name(), compiled.patch(), model.revision());
-    memory.updateProposalStatus(proposalId, "UNDONE");
-    memory.updateThreadModel(sessionId, updated.id(), updated.revision());
-    memory.appendAudit(
-        proposalId,
-        session.projectId(),
-        user.id(),
-        "UNDONE",
-        Map.of("modelId", updated.id(), "revision", updated.revision()));
-    realtime.publish(
-        sessionId,
-        "model.updated",
-        Map.of(
-            "modelId", updated.id(), "revision", updated.revision(), "model", updated.modelJson()));
-    return new UndoResult(
-        "The proposal was undone.", updated.id(), updated.revision(), record.proposal());
+    throw new PlatformException(410, "Use the durable turn checkpoint undo endpoint instead.");
   }
 
   public void clear(UserRecord user, String sessionId) {
@@ -219,21 +243,7 @@ public final class AgenticAssistantFacade {
   }
 
   private ObjectNode emptyModel(AssistantSessionStore.AssistantSession session) {
-    ObjectNode model = JsonNodeFactory.instance.objectNode();
-    model.put("id", "assistant-root");
-    model.put("modelLevel", session.level().name());
-    model.put(
-        "eClass",
-        switch (session.level()) {
-          case CIM -> "CIMModel";
-          case PIM -> "PIMModel";
-          case PSM -> "AwsPsmModel";
-        });
-    model.put("name", session.title());
-    ObjectNode diagram = model.putObject("diagram");
-    diagram.putArray("elements");
-    diagram.putArray("relationships");
-    return model;
+    return modelingConfig.starterModel(session.level(), session.title());
   }
 
   public record ThreadMessage(String role, String content) {}
@@ -241,7 +251,6 @@ public final class AgenticAssistantFacade {
   public record ThreadSnapshot(
       List<ThreadMessage> messages,
       AssistantWorkflowState workflowState,
-      AssistantProposal proposal,
       AssistantModelProvider.AssistantProviderMetadata provider) {}
 
   public record UndoResult(

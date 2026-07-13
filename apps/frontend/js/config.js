@@ -14,13 +14,6 @@ export function apiUrl(path) {
   return `${apiBase}${normalizedPath}`;
 }
 
-export function websocketUrl(path) {
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const backend = new URL(backendOrigin);
-  const protocol = backend.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${backend.host}${normalizedPath}`;
-}
-
 export const CHAT_ATTACHMENT_MAX_BYTES = 1048576;
 export const LOG_HINT = "See backend logs (default path: logs/backend.log)";
 export const MOBILE_BREAKPOINT = 920;

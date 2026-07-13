@@ -1,10 +1,5 @@
 package io.mehdieidi.varka.platform.modeling.config;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.modeling.runtime.MdeRuntimeOptions;
@@ -25,6 +20,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Builds the modeling UI configuration by merging JSON-owned visual metadata with structure derived
@@ -1631,8 +1631,8 @@ public final class ModelingConfigService {
     }
     if (node.isObject()) {
       ObjectNode object = objectMapper.getNodeFactory().objectNode();
-      node.fields()
-          .forEachRemaining(
+      node.properties()
+          .forEach(
               entry ->
                   object.set(entry.getKey(), interpolateTemplate(entry.getValue(), modelName)));
       return object;

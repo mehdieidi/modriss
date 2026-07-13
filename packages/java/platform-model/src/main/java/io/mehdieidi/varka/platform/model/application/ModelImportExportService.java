@@ -1,8 +1,5 @@
 package io.mehdieidi.varka.platform.model.application;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
@@ -25,6 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Model import/export, JSON normalization, semantic reference hydration, source XMI sidecars, and
@@ -717,8 +717,8 @@ final class ModelImportExportService {
         mergeLayoutAnnotations(objectNode, layout);
       }
       objectNode
-          .fields()
-          .forEachRemaining(entry -> applyLayoutAnnotations(entry.getValue(), layoutById));
+          .properties()
+          .forEach(entry -> applyLayoutAnnotations(entry.getValue(), layoutById));
       return;
     }
     if (node.isArray()) {
@@ -797,9 +797,8 @@ final class ModelImportExportService {
       }
       hydrateTraceEndpointIds(object);
       object
-          .fields()
-          .forEachRemaining(
-              entry -> hydrateSemanticReferences(entry.getValue(), graphRelationships));
+          .properties()
+          .forEach(entry -> hydrateSemanticReferences(entry.getValue(), graphRelationships));
       return;
     }
     if (node.isArray()) {

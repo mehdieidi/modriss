@@ -1,10 +1,5 @@
 package io.mehdieidi.varka.platform.model.application;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
@@ -30,6 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Manages stored platform models, validation, import/export, XMI sidecars, and
@@ -1288,7 +1288,7 @@ public final class ModelService {
    * @return model summary, or {@code null} when the file cannot be summarized
    */
   private ModelSummary readSummary(Path path, ModelLevel fallbackLevel) {
-    try (JsonParser parser = store.objectMapper().getFactory().createParser(path.toFile())) {
+    try (JsonParser parser = store.objectMapper().createParser(path.toFile())) {
       String id = null;
       String projectId = null;
       ModelLevel level = fallbackLevel;

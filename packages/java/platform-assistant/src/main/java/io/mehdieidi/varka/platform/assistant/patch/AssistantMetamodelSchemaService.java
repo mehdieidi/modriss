@@ -1,10 +1,13 @@
 package io.mehdieidi.varka.platform.assistant.patch;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.modeling.config.ModelingConfigService;
+import io.mehdieidi.varka.platform.modeling.metamodel.FileMetamodelResolver;
+import io.mehdieidi.varka.platform.modeling.metamodel.MetamodelResolver;
+import io.mehdieidi.varka.platform.modeling.runtime.MdeRuntimeOptions;
+import io.mehdieidi.varka.platform.modeling.runtime.MdeRuntimePaths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,18 +15,35 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import tools.jackson.databind.JsonNode;
 
 /** Runtime metamodel view derived from the same Ecore-backed configuration used by the editor. */
 public class AssistantMetamodelSchemaService {
 
   private final Map<ModelLevel, LevelSchema> levels;
+  private final MetamodelResolver resolver;
 
   public AssistantMetamodelSchemaService() {
-    this(new ModelingConfigService());
+    this(
+        new ModelingConfigService(),
+        new FileMetamodelResolver(new MdeRuntimePaths(MdeRuntimeOptions.defaults())));
   }
 
   AssistantMetamodelSchemaService(ModelingConfigService modelingConfig) {
+    this(
+        modelingConfig,
+        new FileMetamodelResolver(new MdeRuntimePaths(MdeRuntimeOptions.defaults())));
+  }
+
+  public AssistantMetamodelSchemaService(
+      ModelingConfigService modelingConfig, MetamodelResolver resolver) {
     this.levels = load(modelingConfig.config());
+    this.resolver = resolver;
+  }
+
+  /** SHA-256 of the active combined Ecore bytes; use as the metamodel drift/cache key. */
+  public String metamodelSha(ModelLevel level) {
+    return resolver.resolve(level).sha256();
   }
 
   /** Resolves the level represented by a model root or element type. */
@@ -94,39 +114,6 @@ public class AssistantMetamodelSchemaService {
     if (caseInsensitiveMatches.size() == 1) {
       return caseInsensitiveMatches.get(0);
     }
-    String compact = compactTypeName(candidate);
-    if (!compact.isBlank() && !compact.equals(candidate)) {
-      List<String> compactMatches =
-          schema.types().values().stream()
-              .map(TypeSchema::name)
-              .filter(name -> name.equalsIgnoreCase(compact))
-              .toList();
-      if (compactMatches.size() == 1) {
-        return compactMatches.get(0);
-      }
-    }
-    String normalized = candidate.toLowerCase(Locale.ROOT);
-    List<String> suffixMatches =
-        schema.types().values().stream()
-            .map(TypeSchema::name)
-            .filter(
-                name ->
-                    normalized.length() > name.length()
-                        && normalized.endsWith(name.toLowerCase(Locale.ROOT)))
-            .toList();
-    if (suffixMatches.size() == 1) {
-      return suffixMatches.get(0);
-    }
-    List<String> prefixMatches =
-        normalized.length() < 5
-            ? List.of()
-            : schema.types().values().stream()
-                .map(TypeSchema::name)
-                .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(normalized))
-                .toList();
-    if (prefixMatches.size() == 1) {
-      return prefixMatches.get(0);
-    }
     throw new PlatformException(422, "Unknown metamodel element type: " + type);
   }
 
@@ -181,7 +168,7 @@ public class AssistantMetamodelSchemaService {
     return canonicalAttribute(level, type, feature);
   }
 
-  /** Resolves a writable attribute using exact, case-insensitive, and common alias matching. */
+  /** Resolves a writable attribute only by exact or uniquely case-insensitive Ecore name. */
   public Optional<AttributeSchema> canonicalAttribute(
       ModelLevel level, String type, String feature) {
     if (feature == null || feature.isBlank()) {
@@ -207,17 +194,7 @@ public class AssistantMetamodelSchemaService {
     if (caseInsensitive.size() == 1) {
       return Optional.of(caseInsensitive.get(0));
     }
-    String compact = compactTypeName(feature);
-    if (!compact.isBlank()) {
-      List<AttributeSchema> compactMatches =
-          typeSchema.attributes().stream()
-              .filter(attribute -> compactTypeName(attribute.name()).equalsIgnoreCase(compact))
-              .toList();
-      if (compactMatches.size() == 1) {
-        return Optional.of(compactMatches.get(0));
-      }
-    }
-    return attributeAlias(typeSchema, feature).flatMap(typeSchema::attribute);
+    return Optional.empty();
   }
 
   /** Returns a reference inherited by the supplied type. */
@@ -246,6 +223,13 @@ public class AssistantMetamodelSchemaService {
         .flatMap(type -> type.references().stream())
         .filter(ReferenceSchema::containment)
         .filter(reference -> schema.assignable(canonicalChild, reference.targetType()))
+        .toList();
+  }
+
+  /** All Ecore-derived type contracts for generic containment-route resolution. */
+  public List<TypeSchema> types(ModelLevel level) {
+    return schema(level).types().values().stream()
+        .sorted(java.util.Comparator.comparing(TypeSchema::name))
         .toList();
   }
 
@@ -556,30 +540,6 @@ public class AssistantMetamodelSchemaService {
       result.put(level, new LevelSchema(text(starter, "eClass"), types));
     }
     return Map.copyOf(result);
-  }
-
-  private String compactTypeName(String candidate) {
-    if (candidate == null || candidate.isBlank()) {
-      return "";
-    }
-    return candidate.replaceAll("[\\s_-]+", "");
-  }
-
-  private Optional<String> attributeAlias(TypeSchema typeSchema, String feature) {
-    String normalized = feature.trim().toLowerCase(Locale.ROOT);
-    List<String> priorities =
-        switch (normalized) {
-          case "title", "label" -> List.of("displayName", "name");
-          case "text", "notes" -> List.of("summary", "description");
-          case "details", "desc" -> List.of("description", "summary");
-          default -> List.of();
-        };
-    for (String candidate : priorities) {
-      if (typeSchema.attribute(candidate).isPresent()) {
-        return Optional.of(candidate);
-      }
-    }
-    return Optional.empty();
   }
 
   private String text(Map<String, Object> map, String key) {

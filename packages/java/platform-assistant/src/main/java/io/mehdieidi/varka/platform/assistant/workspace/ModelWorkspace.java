@@ -1,7 +1,5 @@
 package io.mehdieidi.varka.platform.assistant.workspace;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.varka.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.varka.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
@@ -12,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Isolated per-turn model working copy with reversible, Ecore-aware mutations. */
 public final class ModelWorkspace {
@@ -45,6 +45,11 @@ public final class ModelWorkspace {
 
   public synchronized MutationResult mutate(SemanticModelPatch operations) {
     AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, operations);
+    return mutate(compiled);
+  }
+
+  /** Applies a complete precompiled structural batch to this isolated workspace. */
+  public synchronized MutationResult mutate(AssistantPatchCompiler.CompiledPatch compiled) {
     model = compiler.apply(model, compiled);
     patch.addAll(compiled.patch());
     inversePatch.addAll(0, compiled.inversePatch());

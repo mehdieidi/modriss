@@ -38,9 +38,6 @@ public final class ProviderCallBudget {
    * @throws PlatformException when the turn budget is exhausted
    */
   public static void consume(AssistantModelRole role) {
-    if (role == AssistantModelRole.SUMMARIZER) {
-      return;
-    }
     State state = CURRENT.get();
     if (state == null) {
       return;

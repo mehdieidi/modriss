@@ -55,24 +55,22 @@ public class OpenApiController {
     add(paths, "/api/layout", "post", "Auto-layout diagram nodes");
     add(paths, "/api/chatbot/sessions", "post", "Create assistant session");
     add(paths, "/api/chatbot/sessions/{sessionId}", "delete", "Clear assistant session memory");
-    add(paths, "/api/chatbot/sessions/{sessionId}/cancel", "post", "Cancel active assistant turn");
     add(paths, "/api/chatbot/sessions/{sessionId}/messages", "post", "Send assistant message");
     add(
         paths,
         "/api/chatbot/sessions/{sessionId}/events",
         "get",
         "Open assistant SSE event stream");
+    add(paths, "/api/chatbot/turns/{turnId}", "get", "Get durable assistant turn status");
+    add(paths, "/api/chatbot/turns/{turnId}/cancel", "post", "Cancel durable assistant turn");
+    add(paths, "/api/chatbot/turns/{turnId}/continue", "post", "Continue partial assistant turn");
     add(
         paths,
-        "/api/chatbot/sessions/{sessionId}/proposals/{proposalId}",
-        "get",
-        "Get assistant proposal");
-    add(
-        paths,
-        "/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo",
+        "/api/chatbot/turns/{turnId}/confirm",
         "post",
-        "Undo applied assistant proposal");
-    add(paths, "/ws/chatbot/sessions/{sessionId}", "get", "Open assistant WebSocket stream");
+        "Confirm destructive assistant batch");
+    add(paths, "/api/chatbot/turns/{turnId}/undo", "post", "Undo durable model checkpoint");
+    add(paths, "/api/chatbot/turns/{turnId}/events", "get", "Replay durable assistant events");
     add(paths, "/api/health", "get", "Get backend health");
     return Map.of(
         "openapi",

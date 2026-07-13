@@ -1,5 +1,7 @@
 package io.mehdieidi.varka.platform.assistant.provider.springai;
 
+import com.openai.client.okhttp.OpenAIOkHttpClient;
+import com.openai.credential.BearerTokenCredential;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
@@ -8,10 +10,6 @@ import io.mehdieidi.varka.platform.assistant.provider.ProxyAvailability;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.api.OpenAiApi;
-import org.springframework.ai.openai.api.ResponseFormat;
-import org.springframework.retry.support.RetryTemplate;
-import org.springframework.web.client.RestClient;
 
 /** OpenAI-compatible provider implemented through Spring AI's OpenAI chat model. */
 public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantModelProvider {
@@ -21,43 +19,52 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       AiProperties properties,
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
-      AssistantHardeningService hardening,
-      RestClient.Builder restClientBuilder) {
+      AssistantHardeningService hardening) {
     super(
         AiProperties.Provider.OPENAI.key(),
         properties,
         proxyAvailability,
         promptGuard,
         hardening,
-        ChatClient.create(chatModel(properties, restClientBuilder)));
+        configured(properties) ? ChatClient.create(chatModel(properties)) : null);
   }
 
-  private static OpenAiChatModel chatModel(
-      AiProperties properties, RestClient.Builder restClientBuilder) {
-    OpenAiApi api =
-        OpenAiApi.builder()
+  private static boolean configured(AiProperties properties) {
+    return properties.enabled() && !properties.openaiCompatible().apiKey().isBlank();
+  }
+
+  private static OpenAiChatModel chatModel(AiProperties properties) {
+    String apiKey =
+        properties.openaiCompatible().apiKey().isBlank()
+            ? "sk-not-configured"
+            : properties.openaiCompatible().apiKey();
+    OpenAIOkHttpClient.Builder client =
+        OpenAIOkHttpClient.builder()
             .baseUrl(properties.openaiCompatible().baseUrl())
-            .apiKey(
-                properties.openaiCompatible().apiKey().isBlank()
-                    ? "not-configured"
-                    : properties.openaiCompatible().apiKey())
-            .restClientBuilder(restClientBuilder)
-            .build();
-    OpenAiChatModel model =
-        OpenAiChatModel.builder()
-            .openAiApi(api)
-            .defaultOptions(
-                OpenAiChatOptions.builder()
-                    .model(
-                        properties
-                            .models()
-                            .forRole(AiProperties.Provider.OPENAI, AssistantModelRole.RESPONDER))
-                    .temperature(0.2)
-                    .build())
-            // The assistant hardening layer owns retries and circuit breaking.
-            .retryTemplate(RetryTemplate.builder().maxAttempts(1).noBackoff().build())
-            .build();
-    return model;
+            .apiKey(apiKey)
+            .credential(BearerTokenCredential.create(apiKey))
+            .timeout(properties.requestTimeout())
+            .maxRetries(0);
+    AiProperties.Proxy proxy = properties.proxy();
+    if (proxy.enabled() && proxy.type() != AiProperties.ProxyType.DIRECT) {
+      client.proxy(
+          new java.net.Proxy(
+              proxy.type() == AiProperties.ProxyType.SOCKS
+                  ? java.net.Proxy.Type.SOCKS
+                  : java.net.Proxy.Type.HTTP,
+              proxy.address()));
+    }
+    return OpenAiChatModel.builder()
+        .openAiClient(client.build())
+        .options(
+            OpenAiChatOptions.builder()
+                .model(
+                    properties
+                        .models()
+                        .forRole(AiProperties.Provider.OPENAI, AssistantModelRole.RESPONDER))
+                .temperature(0.2)
+                .build())
+        .build();
   }
 
   @Override
@@ -76,24 +83,20 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   }
 
   @Override
-  protected OpenAiChatOptions options(String model, AssistantModelRole role) {
+  protected OpenAiChatOptions.Builder options(String model, AssistantModelRole role) {
     OpenAiChatOptions.Builder builder =
         OpenAiChatOptions.builder()
             .model(model)
             .temperature(0.2)
             .maxCompletionTokens(Math.min(properties.tokenBudget(), completionLimit(role)));
-    if (role == AssistantModelRole.PLANNER) {
-      builder.responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null));
-    }
-    return builder.build();
+    builder.responseFormat(
+        OpenAiChatModel.ResponseFormat.builder()
+            .type(OpenAiChatModel.ResponseFormat.Type.JSON_OBJECT)
+            .build());
+    return builder;
   }
 
   private int completionLimit(AssistantModelRole role) {
-    return switch (role) {
-      case PLANNER -> Math.max(6000, properties.tokenBudget());
-      case SOURCE_ANALYST -> Math.min(Math.max(8000, properties.tokenBudget()), 24000);
-      case SUMMARIZER -> 800;
-      case RESPONDER -> 3000;
-    };
+    return 3000;
   }
 }

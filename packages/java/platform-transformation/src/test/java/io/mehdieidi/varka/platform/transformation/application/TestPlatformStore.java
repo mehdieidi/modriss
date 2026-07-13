@@ -1,10 +1,5 @@
 package io.mehdieidi.varka.platform.transformation.application;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.StreamReadConstraints;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.mehdieidi.varka.platform.artifact.domain.ArtifactIndexRecord;
 import io.mehdieidi.varka.platform.artifact.domain.ArtifactRecord;
 import io.mehdieidi.varka.platform.identity.domain.AuthSession;
@@ -23,6 +18,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import tools.jackson.core.StreamReadConstraints;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.databind.ObjectMapper;
 
 /** Fast in-memory persistence-port implementation used by platform feature tests. */
 final class TestPlatformStore implements PlatformStore {
@@ -36,10 +34,7 @@ final class TestPlatformStore implements PlatformStore {
             .streamReadConstraints(
                 StreamReadConstraints.builder().maxStringLength(128 * 1024 * 1024).build())
             .build();
-    mapper =
-        new ObjectMapper(factory)
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    mapper = new ObjectMapper(factory);
   }
 
   public void initialize() {

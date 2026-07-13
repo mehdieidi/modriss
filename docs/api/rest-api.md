@@ -143,37 +143,36 @@ returns node positions, routed edge sections, bend points, and warnings.
 
 ## Assistant
 
-Assistant commands use REST. Realtime progress uses SSE or the receive-only assistant WebSocket.
-See [websocket-api.md](websocket-api.md) and
+Assistant commands use REST. Realtime progress uses authenticated SSE with durable event replay.
+See
 [public realtime reference](../public-docs/docs/reference/realtime-api.md).
 
-| Method   | Path                                                            | Purpose                      |
-| -------- | --------------------------------------------------------------- | ---------------------------- |
-| `POST`   | `/api/chatbot/sessions`                                         | Create or resume a session   |
-| `GET`    | `/api/chatbot/conversations`                                    | List recent conversations    |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/messages`                    | Submit a user message        |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/attachments`                 | Upload a text attachment     |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/thread`                      | Load thread history          |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/events`                      | Open SSE event stream        |
-| `DELETE` | `/api/chatbot/sessions/{sessionId}`                             | Clear session memory         |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`      | Get applied proposal details |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo` | Undo an applied proposal     |
-
-WebSocket stream: `ws://<host>/ws/chatbot/sessions/{sessionId}` (receive-only).
+| Method   | Path                                            | Purpose                     |
+| -------- | ----------------------------------------------- | --------------------------- |
+| `POST`   | `/api/chatbot/sessions`                         | Create or resume a session  |
+| `GET`    | `/api/chatbot/conversations`                    | List recent conversations   |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/messages`    | Submit a user message       |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/attachments` | Upload a text attachment    |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/thread`      | Load thread history         |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/events`      | Open SSE event stream       |
+| `DELETE` | `/api/chatbot/sessions/{sessionId}`             | Clear session memory        |
+| `GET`    | `/api/chatbot/turns/{turnId}`                   | Get durable turn status     |
+| `POST`   | `/api/chatbot/turns/{turnId}/cancel`            | Persist cancellation        |
+| `POST`   | `/api/chatbot/turns/{turnId}/continue`          | Continue partial work       |
+| `POST`   | `/api/chatbot/turns/{turnId}/confirm`           | Confirm a destructive batch |
+| `POST`   | `/api/chatbot/turns/{turnId}/undo`              | Undo a saved checkpoint     |
+| `GET`    | `/api/chatbot/turns/{turnId}/events`            | Replay durable SSE events   |
 
 ### Message request and response
 
-`POST /api/chatbot/sessions/{sessionId}/messages` accepts `message`, `modelId`, `revision`,
-`activeView`, `selectedElementIds`, `unsavedDraftPatch`, inline attachment fields, and
-`attachmentIds`.
+`POST /api/chatbot/sessions/{sessionId}/messages` requires `idempotencyKey` and accepts `message`,
+optional `modelId`, `expectedRevision`, `selectedElementIds`, and `attachmentIds`. It returns `202` with
+`turnId`, state, model/revision, acceptance/deadline timestamps, and an event cursor.
 
-`MessageResponse` includes `assistantMessage`, `modelId`, `revision`, `proposal` (when a change was
-auto-applied), `workflowState` (`EXPLAINED`, `APPLIED`, `UNDONE`, `FAILED`), and `activity`. The
-`model` field is currently always `null`; reload the model through
-the model API after apply or undo.
-
-Valid mutations are auto-applied after structural validation. There is no approve or reject REST
-endpoint.
+`GET /api/chatbot/turns/{turnId}` is the polling fallback and returns checkpoint counts, saved
+elements, source coverage, remaining work, provider-call/token usage, and source-grounded or
+inferred provenance labels. Reload the model after a `model.checkpoint` event; no uncommitted model
+preview or proposal approval protocol is exposed.
 
 ## Impact Analysis
 

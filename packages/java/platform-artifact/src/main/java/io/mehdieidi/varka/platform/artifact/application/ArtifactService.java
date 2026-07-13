@@ -1,9 +1,5 @@
 package io.mehdieidi.varka.platform.artifact.application;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.varka.platform.artifact.domain.ArtifactIndexRecord;
 import io.mehdieidi.varka.platform.artifact.domain.ArtifactRecord;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
@@ -23,6 +19,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Manages generated artifact bundles and their editable file contents. */
 public final class ArtifactService {
@@ -291,7 +291,7 @@ public final class ArtifactService {
    * @return summary record, or {@code null} when the file cannot be summarized
    */
   private ArtifactRecord readSummary(Path path) {
-    try (JsonParser parser = store.objectMapper().getFactory().createParser(path.toFile())) {
+    try (JsonParser parser = store.objectMapper().createParser(path.toFile())) {
       String id = null;
       String projectId = null;
       String name = null;

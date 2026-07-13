@@ -1,8 +1,8 @@
 package io.mehdieidi.varka.platform.artifact.domain;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Instant;
 import java.util.Map;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Persisted generated artifact bundle and its in-repository file contents.
