@@ -1,27 +1,23 @@
-# ADR 0001: Unified ModelDelta Modeling Agent
+# ADR 0001: Superseded Unified Delta Agent
 
-Status: accepted
+Status: superseded by durable tool-loop runtime
 
 Date: 2026-07-04
 
 ## Context
 
-The assistant previously exposed two provider-facing mutation protocols (`semantic-patch` and
-`model-subset`) behind `VARKA_AI_MODELING_STRATEGY`. Reliability, repair logic, tests, and
-documentation diverged across those modes.
+The assistant previously used a provider-facing delta contract after an earlier cleanup of multiple
+mutation strategies. That design is no longer current.
 
 ## Decision
 
-- Replace both legacy mutation protocols with one provider-facing contract: `ModelDelta`.
-- Lower `ModelDelta` to an internal executable patch IR (`SemanticModelPatch` / JSON Pointer patch)
-  inside the backend only.
-- Route all mutation turns through `ModelingAgent`, `DeltaCompiler`, `DeltaNormalizer`, and
-  `StructuralValidationGate`.
-- Use `IntentPlanner` structured output for turn intent; do not route modeling behavior with
-  English keywords or regex intent classifiers.
+The current implementation uses `AgentTurnLoop` plus backend-validated `AgentModelTools` over
+`ModelWorkspace`. Durable turns, checkpoints, provenance, and authenticated SSE event replay
+replace the old delta/proposal pipeline.
 
 ## Consequences
 
 - Configuration and docs expose one modeling mode only.
-- Evals and live tests assert the `ModelDelta` path exclusively.
-- Legacy materializer and heading-parser source shortcuts are removed from the turn pipeline.
+- Provider output is constrained to tool actions that the backend validates against Ecore-derived
+  contracts.
+- Turn execution is persisted in durable assistant tables rather than proposal-specific state.

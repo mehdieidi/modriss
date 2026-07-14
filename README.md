@@ -5,8 +5,8 @@
 Varka is an AI-assisted, model-driven platform. You work in three formal modeling levels
 (CIM, PIM, AWS PSM) in the browser, validate with Eclipse Epsilon, transform between levels, and
 generate a reviewable project (infrastructure, Go handlers, contracts, tests, docs). An optional
-assistant can explain the metamodel, draft structured ModelDelta changes, and apply them only after
-validation.
+assistant can explain the metamodel, drive checked model tools, and commit changes only after
+backend validation.
 
 ```text
 CIM  ──validate/transform──▶  PIM  ──validate/transform──▶  AWS PSM  ──generate──▶  deployable project
@@ -84,7 +84,7 @@ deploy/         Docker Compose stack and Dockerfile
 | Start here             |                                                                                                                                           |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | User guides & concepts | [docs/public-docs/](docs/public-docs/) (MkDocs)                                                                                           |
-| REST & WebSocket API   | [rest-api](docs/api/rest-api.md) · [realtime](docs/public-docs/docs/reference/realtime-api.md) · [OpenAPI](docs/api/openapi/openapi.yaml) |
+| REST & realtime API    | [rest-api](docs/api/rest-api.md) · [realtime](docs/public-docs/docs/reference/realtime-api.md) · [OpenAPI](docs/api/openapi/openapi.yaml) |
 | Architecture diagrams  | [docs/diagrams/](docs/diagrams/)                                                                                                          |
 | Assistant setup        | [docs/internal/ai/assistant.md](docs/internal/ai/assistant.md)                                                                            |
 | Generated AWS projects | [docs/internal/artifacts/deployment-and-testing.md](docs/internal/artifacts/deployment-and-testing.md)                                    |
@@ -93,7 +93,7 @@ deploy/         Docker Compose stack and Dockerfile
 ## Contributing
 
 Copy [`.env.example`](.env.example) to `.env`, run `python scripts/verify.py` before opening a PR.
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## License
 

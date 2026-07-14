@@ -4,90 +4,93 @@
 
 ```mermaid
 flowchart TB
-    ui["Frontend chat.js<br/>chat panel, proposal cards, choices"]
-    api["ChatbotController<br/>REST session/message/proposal endpoints"]
-    ws["ChatbotWebSocketHandler"]
-    sse["SSE EventSource endpoint"]
-    hub["AssistantRealtimeHub"]
-
-    subgraph orchestrated["Assistant Orchestration"]
-        orch["AssistantOrchestrator"]
-        sessions["AssistantSessionStore"]
-        hard["AssistantHardeningService<br/>rate limit, retry, circuit breaker"]
-        guard["AssistantPromptGuard<br/>redaction and injection markers"]
-        context["AssistantModelContextIndexService<br/>compact model context"]
-        catalog["JdbcAssistantCatalog<br/>metamodel and methodology RAG index"]
-        compiler["AssistantPatchCompiler<br/>ModelDelta IR to JSON patch"]
-        memory["AssistantMemoryRepository<br/>durable history, proposal, audit"]
-        chatMemory["SpringAiChatMemoryService<br/>recent chat window"]
-    end
-
-    subgraph provider["Provider Layer"]
-        configured["ConfiguredAssistantModelProvider"]
-        openai["OpenAiCompatibleAssistantModelProvider"]
-        gemini["GeminiAssistantModelProvider"]
-        embedding["LocalAssistantEmbeddingService<br/>ONNX or hash vectors"]
-    end
-
+    ui["Frontend chat UI<br/>sessions, durable turns, SSE replay, controls"]
+    api["ChatbotController<br/>REST and authenticated SSE"]
+    worker["DurableAssistantTurnWorker"]
+    facade["AgenticAssistantFacade"]
+    loop["AgentTurnLoop"]
+    codec["AgentActionCodec"]
+    tools["AgentModelTools"]
+    workspace["ModelWorkspace"]
+    schema["AssistantMetamodelSchemaService<br/>Ecore contracts"]
+    hard["AssistantHardeningService<br/>rate limit, retry, circuit breaker"]
+    prompts["AssistantPromptGuard"]
+    provider["ConfiguredAssistantModelProvider"]
+    openai["OpenAiCompatibleAssistantModelProvider"]
+    gemini["GeminiAssistantModelProvider"]
     models["ModelService + ProjectService"]
-    db[("PostgreSQL + pgvector")]
+    turns["AssistantTurnStore"]
+    sessions["AssistantSessionStore"]
+    memory["AssistantChatMemory"]
+    uploads["UploadService"]
+    undo["DurableTurnUndoService"]
+    db[("PostgreSQL")]
     ai["OpenAI-compatible API or Gemini"]
 
-    ui --> api --> orch
-    ui <--> ws --> hub
-    ui <-->|SSE fallback| sse --> hub
-    orch --> hub
-    orch --> sessions
-    orch --> hard
-    orch --> context --> db
-    orch --> catalog --> embedding
-    catalog --> db
-    orch --> compiler
-    orch --> memory --> db
-    orch --> chatMemory --> db
-    orch --> models
-    orch --> configured
-    configured --> openai --> guard --> hard --> ai
-    configured --> gemini --> guard --> hard --> ai
+    ui --> api
+    api --> facade
+    api --> turns
+    api --> uploads
+    api --> undo
+    worker --> turns
+    worker --> facade
+    facade --> sessions
+    facade --> memory
+    facade --> loop
+    loop --> codec
+    loop --> tools --> workspace
+    tools --> schema
+    tools --> models
+    loop --> provider
+    provider --> prompts --> hard --> openai --> ai
+    provider --> prompts --> hard --> gemini --> ai
+    turns --> db
+    sessions --> db
+    memory --> db
+    uploads --> db
+    undo --> models
 ```
 
 ## Assistant Workflow
 
 ```mermaid
 stateDiagram-v2
-    [*] --> PLAN
-    PLAN --> ANSWER: explanation or analysis
-    PLAN --> CLARIFY: consequential ambiguity
-    CLARIFY --> PLAN: durable user answers
-    PLAN --> VALIDATE: compiled ModelDelta operations
-    VALIDATE --> REPAIR: invalid
-    REPAIR --> VALIDATE: repair attempts
-    VALIDATE --> APPLIED: structurally valid
-    APPLIED --> UNDONE: user requests undo
+    [*] --> QUEUED: POST message accepted
+    QUEUED --> RUNNING: worker claims turn
+    RUNNING --> SUCCEEDED: validated changes or answer committed
+    RUNNING --> PARTIAL: some valid work committed and remaining work recorded
+    RUNNING --> NEEDS_INPUT: user input required
+    RUNNING --> NEEDS_CONFIRMATION: destructive batch requires confirmation
+    RUNNING --> CONFLICTED: expected revision is stale
+    RUNNING --> CANCELLED: cancellation requested
+    RUNNING --> TIMED_OUT: deadline exceeded
+    RUNNING --> FAILED: provider/tool/validation failure
+    SUCCEEDED --> QUEUED: continue turn
+    PARTIAL --> QUEUED: continue turn
+    NEEDS_CONFIRMATION --> QUEUED: confirm turn
 ```
 
 ## Safety Boundary
 
 ```mermaid
 flowchart LR
-    fullModel["Full model JSON/XMI"]
-    evlFiles["Full EVL/metamodel files"]
-    compact["Compact IDs, names, types, paths, neighborhoods, issues"]
-    snippets["Retrieved snippets<br/>class, feature, constraint summaries"]
-    llm["LLM"]
-    semantic["SemanticModelPatch<br/>ADD_ELEMENT, CONNECT_ELEMENTS, SET_ATTRIBUTE, DELETE_ELEMENT"]
-    compiler["Backend compiler and validator"]
-    jsonPatch["ModelService JSON patch"]
-    storage["Persisted model"]
+    user["User request + selected elements + attachments"]
+    contracts["Ecore-derived contracts<br/>types, features, enums, containments"]
+    workspace["In-memory ModelWorkspace"]
+    agent["AgentTurnLoop"]
+    tools["Validated model tools"]
+    validate["Model validation"]
+    commit["Revision-checked commit"]
+    checkpoint["Checkpoint + inverse patch"]
+    storage["Persisted model revision"]
 
-    fullModel --> compact
-    evlFiles --> snippets
-    compact --> llm
-    snippets --> llm
-    llm --> semantic
-    semantic --> compiler
-    compiler --> jsonPatch
-    jsonPatch --> storage
-    fullModel -. "not sent wholesale" .- llm
-    evlFiles -. "not sent wholesale" .- llm
+    user --> agent
+    contracts --> tools
+    workspace --> tools
+    agent --> tools
+    tools --> workspace
+    workspace --> validate
+    validate --> commit --> storage
+    commit --> checkpoint
+    contracts -. "not raw EVL files" .- agent
 ```

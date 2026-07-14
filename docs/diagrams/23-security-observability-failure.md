@@ -96,14 +96,14 @@ flowchart TD
     rate["Rate limit by user"]
     proxy["Validate optional AI proxy"]
     provider["Provider call with retry/circuit"]
-    semantic["Semantic patch returned"]
-    ground["Ground patch to known IDs and allowed operations"]
-    preview["Preview patch and validate"]
+    action["Agent tool action returned"]
+    ground["Check type, feature, containment, and target IDs"]
+    preview["Update workspace and validate"]
     decision{"Mandatory validation passes?"}
-    save["Save proposal or apply"]
+    save["Commit checkpointed model revision"]
     block["Reject with 422/409 and audit"]
 
-    prompt --> redact --> inject --> rate --> proxy --> provider --> semantic --> ground --> preview --> decision
+    prompt --> redact --> inject --> rate --> proxy --> provider --> action --> ground --> preview --> decision
     decision -- yes --> save
     decision -- no --> block
 ```

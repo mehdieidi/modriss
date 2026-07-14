@@ -12,7 +12,8 @@ data access and Flyway for schema migration.
 - Temporary imported XMI: `staged_imports`, `staged_import_payloads`
 - Generated artifact bundles: `artifacts`, `artifact_files`
 - MDE job state and diagnostics: `mde_jobs`, `mde_job_diagnostics`
-- Assistant conversation, retrieval, proposals, and rate limits (see
+- Assistant threads, durable turns/events, checkpoints, provenance, provider-call audits, chat
+  memory, and rate limits (see
   `docs/public-docs/docs/reference/data-storage.md`)
 
 Static product/configuration assets, such as metamodels, EVL/ETL/EGX scripts, and UI metadata JSON
@@ -90,8 +91,9 @@ V1__create_platform_schema.sql
 ```
 
 MDE job metadata extensions are in `V5__mde_job_async_metadata.sql` under
-`platform-storage-postgres`. Assistant tables are introduced in `platform-assistant` migrations
-V2–V4 and V6–V8.
+`platform-storage-postgres`; project-member custom roles are in
+`V9__project_member_custom_roles.sql`. Assistant durable-turn tables are introduced by
+`V14__assistant_baseline.sql` and refined by the later assistant migrations.
 
 For future schema edits, do not modify an already-applied migration in a shared or production
 database. Add a new migration instead:

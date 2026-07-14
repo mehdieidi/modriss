@@ -101,13 +101,13 @@ MDE means model-driven engineering: validation, transformation, and artifact gen
 
 These apply to non-MDE upload storage handled by the backend.
 
-| Variable                      | Possible values                                          | What it means                                                                                                                                              |
-| ----------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VARKA_UPLOAD_ROOT`           | Filesystem path, for example `uploads` or `/app/uploads` | Directory where uploaded files are stored. Docker Compose overrides this inside the backend container to `/app/uploads` via `VARKA_CONTAINER_UPLOAD_ROOT`. |
-| `VARKA_CONTAINER_UPLOAD_ROOT` | Absolute path, usually `/app/uploads`                    | Optional Compose override for the backend upload directory inside the container. Leave empty to use the Compose default.                                   |
-| `VARKA_ALLOWED_ORIGINS`       | Comma-separated browser origins                          | Optional CORS and WebSocket origin list. When empty in Docker Compose, origins are derived from `BACKEND_PORT`, `FRONTEND_PORT`, and `LANDING_PORT`.       |
-| `VARKA_UPLOAD_MAX_FILE_BYTES` | Positive byte count                                      | Maximum size of an uploaded file.                                                                                                                          |
-| `VARKA_UPLOAD_MAX_TEXT_CHARS` | Positive integer                                         | Maximum number of text characters accepted for text-based upload/input flows. This is characters, not bytes.                                               |
+| Variable                      | Possible values                                          | What it means                                                                                                                                                        |
+| ----------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VARKA_UPLOAD_ROOT`           | Filesystem path, for example `uploads` or `/app/uploads` | Directory where uploaded files are stored. Docker Compose overrides this inside the backend container to `/app/uploads` via `VARKA_CONTAINER_UPLOAD_ROOT`.           |
+| `VARKA_CONTAINER_UPLOAD_ROOT` | Absolute path, usually `/app/uploads`                    | Optional Compose override for the backend upload directory inside the container. Leave empty to use the Compose default.                                             |
+| `VARKA_ALLOWED_ORIGINS`       | Comma-separated browser origins                          | Optional CORS origin list for browser REST/SSE requests. When empty in Docker Compose, origins are derived from `BACKEND_PORT`, `FRONTEND_PORT`, and `LANDING_PORT`. |
+| `VARKA_UPLOAD_MAX_FILE_BYTES` | Positive byte count                                      | Maximum size of an uploaded file.                                                                                                                                    |
+| `VARKA_UPLOAD_MAX_TEXT_CHARS` | Positive integer                                         | Maximum number of text characters accepted for text-based upload/input flows. This is characters, not bytes.                                                         |
 
 ## AI Assistant
 
@@ -117,7 +117,7 @@ allowed to do.
 | Variable                                     | Possible values                                              | What it means                                                                                                                                         |
 | -------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `VARKA_AI_ENABLED`                           | `true`, `false`                                              | Master switch for outbound AI calls. `false` means the backend should not call an AI provider.                                                        |
-| `VARKA_AI_PROVIDER`                          | `openai`, `openai-compatible`, `openai_compatible`, `gemini` | Which provider family to use. OpenAI-compatible providers use the OpenAI-style API shape.                                                             |
+| `VARKA_AI_PROVIDER`                          | `openai`, `openai-compatible`, `openai_compatible`, `gemini` | Which provider family to use. The OpenAI-compatible aliases normalize to the `openai` provider path.                                                  |
 | `VARKA_AI_REQUEST_TIMEOUT`                   | Duration like `5m`, `10m`                                    | Maximum time to wait for one provider request before giving up.                                                                                       |
 | `VARKA_AI_TURN_TIMEOUT`                      | Duration like `5m`                                           | Overall assistant turn ceiling. Timed-out turns must not apply later.                                                                                 |
 | `VARKA_AI_MAX_MODEL_DELTA_ELEMENTS_PER_PASS` | Non-negative integer                                         | Maximum model elements changed in one source-analysis pass. Lower values reduce mutation size; higher values allow larger automatic changes.          |
@@ -134,7 +134,7 @@ allowed to do.
 | `VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN`       | Positive integer                                             | Maximum provider calls for a standard assistant turn. Higher values allow more retries/planning but increase latency and cost.                        |
 | `VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN`    | Positive integer                                             | Maximum provider calls when source analysis runs. Higher values allow deeper extraction but increase latency and cost.                                |
 | `VARKA_AI_SOURCE_TURN_TIMEOUT`               | Duration like `12m`                                          | Overall timeout for source-backed turns. It should be at least as large as the normal turn timeout when source analysis is enabled.                   |
-| `VARKA_AI_REQUIRE_IDEMPOTENCY_KEY`           | `true`, `false`                                              | Whether clients must provide idempotency keys for turn execution.                                                                                     |
+| `VARKA_AI_REQUIRE_IDEMPOTENCY_KEY`           | `true`, `false`                                              | Compatibility setting. Durable message submission currently requires request-body `idempotencyKey` whenever durable turn storage is active.           |
 | `VARKA_AI_MAX_CONTEXT_SNIPPETS`              | Positive integer                                             | Maximum retrieved context snippets sent to the model.                                                                                                 |
 | `VARKA_AI_RESERVED_SCHEMA_SNIPPETS`          | Positive integer                                             | Minimum context slots reserved for schema/metamodel information.                                                                                      |
 | `VARKA_AI_MAX_SNIPPET_CHARS`                 | Positive integer                                             | Maximum characters per retrieved context snippet.                                                                                                     |
@@ -154,14 +154,14 @@ allowed to do.
 
 These are secrets or provider-specific names. Keep real keys in `.env`, not `.env.example`.
 
-| Variable                     | Possible values                                                            | What it means                                                                                                                         |
-| ---------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `OPENAI_COMPATIBLE_BASE_URL` | URL like `https://api.openai.com/v1` or another OpenAI-compatible base URL | Base URL for OpenAI-style providers. Use the provider's API root expected by the OpenAI SDK, usually including `/v1`.                 |
-| `OPENAI_COMPATIBLE_API_KEY`  | Provider API key or empty                                                  | API key for OpenAI-compatible providers.                                                                                              |
-| `GEMINI_API_KEY`             | Gemini API key or empty                                                    | API key for Google Gemini.                                                                                                            |
-| `VARKA_AI_PLANNER_MODEL`     | Empty, `auto`, or a provider model name                                    | Model used for planning changes. Empty uses provider defaults; `auto` is only useful if your gateway understands it as a model alias. |
-| `VARKA_AI_RESPONDER_MODEL`   | Empty, `auto`, or a provider model name                                    | Model used for user-facing assistant responses.                                                                                       |
-| `VARKA_AI_SUMMARIZER_MODEL`  | Empty, `auto`, or a provider model name                                    | Model used for conversation/context summaries.                                                                                        |
+| Variable                     | Possible values                                                            | What it means                                                                                                         |
+| ---------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `OPENAI_COMPATIBLE_BASE_URL` | URL like `https://api.openai.com/v1` or another OpenAI-compatible base URL | Base URL for OpenAI-style providers. Use the provider's API root expected by the OpenAI SDK, usually including `/v1`. |
+| `OPENAI_COMPATIBLE_API_KEY`  | Provider API key or empty                                                  | API key for OpenAI-compatible providers.                                                                              |
+| `GEMINI_API_KEY`             | Gemini API key or empty                                                    | API key for Google Gemini.                                                                                            |
+| `VARKA_AI_PLANNER_MODEL`     | Empty, `auto`, or a provider model name                                    | Accepted for compatibility. The current resolver uses `VARKA_AI_RESPONDER_MODEL` for assistant roles.                 |
+| `VARKA_AI_RESPONDER_MODEL`   | Empty, `auto`, or a provider model name                                    | Active model selector. Empty uses `gpt-4o-mini` for OpenAI-compatible providers or `gemini-2.0-flash` for Gemini.     |
+| `VARKA_AI_SUMMARIZER_MODEL`  | Empty, `auto`, or a provider model name                                    | Accepted for compatibility. The current resolver uses `VARKA_AI_RESPONDER_MODEL` for assistant roles.                 |
 
 ## AI Proxy
 

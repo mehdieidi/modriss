@@ -7,7 +7,7 @@ flowchart LR
     subgraph api["API and Transport"]
         controllers["REST Controllers<br/>Auth, Project, Model, Transformation, Artifact, Modeling, Chatbot"]
         authSupport["AuthSupport"]
-        realtime["AssistantRealtimeHub<br/>SSE + WebSocket fan-out"]
+        realtime["AssistantRealtimeHub<br/>SSE fan-out"]
         errors["GlobalExceptionHandler"]
         logging["RequestLoggingFilter"]
     end
@@ -25,13 +25,14 @@ flowchart LR
     end
 
     subgraph assistant["AI Assistant Components"]
-        orchestrator["AssistantOrchestrator"]
+        facade["AgenticAssistantFacade"]
+        worker["DurableAssistantTurnWorker"]
+        turnStore["AssistantTurnStore"]
         provider["ConfiguredAssistantModelProvider"]
         guard["PromptGuard + Hardening"]
-        catalog["JdbcAssistantCatalog"]
-        context["AssistantModelContextIndexService"]
-        patch["AssistantPatchCompiler"]
-        memory["AssistantMemoryRepository + SpringAiChatMemoryService"]
+        tools["AgentTurnLoop + AgentModelTools"]
+        schema["AssistantMetamodelSchemaService"]
+        memory["AssistantSessionStore + AssistantChatMemory"]
     end
 
     subgraph mde["Formal MDE Runtime"]
@@ -43,7 +44,7 @@ flowchart LR
 
     store["Port: PlatformStore"]
     postgres["Adapter: PostgresPlatformStore"]
-    db[("PostgreSQL + pgvector")]
+    db[("PostgreSQL")]
     ai["OpenAI-compatible or Gemini"]
 
     client --> controllers
@@ -56,7 +57,8 @@ flowchart LR
     controllers --> artifacts
     controllers --> layouts
     controllers --> config
-    controllers --> orchestrator
+    controllers --> facade
+    controllers --> turnStore
     errors -.-> controllers
     logging -.-> controllers
 
@@ -71,15 +73,17 @@ flowchart LR
     transformations --> etl
     transformations --> egx
 
-    orchestrator --> provider --> ai
-    orchestrator --> guard
-    orchestrator --> catalog
-    orchestrator --> context
-    orchestrator --> patch
-    orchestrator --> memory
-    orchestrator --> models
-    orchestrator --> projects
-    orchestrator --> realtime
+    worker --> turnStore
+    worker --> facade
+    facade --> provider --> ai
+    facade --> guard
+    facade --> tools
+    tools --> schema
+    tools --> models
+    facade --> memory
+    facade --> models
+    facade --> projects
+    facade --> realtime
 
     auth --> store
     projects --> store
@@ -88,7 +92,6 @@ flowchart LR
     jobs --> store
     artifacts --> store
     store --> postgres --> db
-    catalog --> db
-    context --> db
+    turnStore --> db
     memory --> db
 ```

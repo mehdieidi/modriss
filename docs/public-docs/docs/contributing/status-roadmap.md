@@ -14,8 +14,8 @@
 - Artifact browsing, editing, project ZIP download, and artifact ZIP download
 - Change impact analysis across CIM, PIM, PSM models and generated artifacts
 - PostgreSQL persistence and Flyway migrations
-- Assistant sessions, retrieval, memory, auto-applied proposals, structural validation, undo, SSE,
-  and WebSocket events
+- Assistant sessions, durable turns, memory, metamodel-checked tools, structural validation,
+  checkpoints, undo, and authenticated SSE event replay
 - Reusable MDE Java runners and CLI tools
 - Architecture diagrams, samples, and generated-project deployment guidance
 

@@ -98,32 +98,27 @@ flowchart TD
     existing -- no --> compute --> merge --> patch --> return
 ```
 
-## `JdbcAssistantCatalog.refresh`
+## Assistant Durable Turn Processing
 
 ```mermaid
 flowchart TD
-    start([Backend startup or refresh])
-    purge["Delete legacy EVL constraint scope rows"]
-    walk["Walk mde/ and methodology guides"]
-    filter["Keep .emf, .ecore, methodology JSON/MD"]
-    hash["Compute source hash"]
-    changed{"Hash changed?"}
-    skip["Skip unchanged file"]
-    delete["Delete old documents for source"]
-    parse{"File type"}
-    emf["Parse Emfatic classes and features"]
-    ecore["Parse Ecore classifiers and structural features"]
-    guide["Chunk methodology guide content"]
-    embed["Generate vector literal with ONNX or hash fallback"]
-    upsert["Upsert assistant_retrieval_documents"]
+    start([Queued turn])
+    claim["DurableAssistantTurnWorker claims lease"]
+    load["Load thread, model, expected revision, attachments"]
+    split["Split source text into source units when present"]
+    contracts["Load Ecore-derived metamodel contracts"]
+    loop["Run AgentTurnLoop"]
+    tools["Execute checked AgentModelTools against ModelWorkspace"]
+    validate["Validate resulting workspace/model"]
+    outcome{"Outcome"}
+    commit["Commit valid model revision and checkpoint"]
+    provenance["Persist source provenance and provider-call usage"]
+    events["Append durable turn events"]
+    terminal["Mark turn terminal"]
 
-    start --> purge --> walk --> filter --> hash --> changed
-    changed -- no --> skip
-    changed -- yes --> delete --> parse
-    parse -- emf --> emf --> embed
-    parse -- ecore --> ecore --> embed
-    parse -- guide --> guide --> embed
-    embed --> upsert
+    start --> claim --> load --> split --> contracts --> loop --> tools --> validate --> outcome
+    outcome -- valid work --> commit --> provenance --> events --> terminal
+    outcome -- needs input/confirmation/partial/failure --> events --> terminal
 ```
 
 ## `AssistantHardeningService.providerCall`

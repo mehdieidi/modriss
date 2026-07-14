@@ -69,12 +69,13 @@ python scripts/format.py --check
 4. Save, reload, export, import, and validate the model.
 5. Run CIM-to-PIM, PIM-to-PSM, and PSM-to-artifact.
 6. Inspect transformed models and generated files.
-7. Exercise assistant explanation and proposal flows.
+7. Exercise assistant explanation, durable turn events, checkpoint, confirmation, continue, cancel,
+   and undo flows.
 8. Download the artifact ZIP and run its generated validation and tests.
 9. Deploy the generated project to LocalStack and verify runtime effects.
 
 ## What to Test After Language Changes
 
 Verify formal structure, UI metadata coverage, JSON/XMI round trips, EVL results, incoming and
-outgoing transformations, generated artifacts, assistant retrieval and patches, existing stored
-model compatibility, and public documentation.
+outgoing transformations, generated artifacts, assistant metamodel contracts and durable turn
+patches, existing stored model compatibility, and public documentation.

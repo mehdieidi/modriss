@@ -230,12 +230,12 @@ These prompts are especially useful after selecting one or more canvas elements.
 
 ## Multi-Turn Conversation Examples
 
-### Create, Review, and Approve
+### Create, Review, and Continue
 
 1. `Create a complete serverless architecture for library management.`
 2. `Make it more complete and ensure all major elements are connected.`
 3. `Add security, observability, backups, and failure handling.`
-4. `Apply the proposal.`
+4. `Continue from the latest checkpoint if anything remains.`
 
 ### Explain, Improve, and Apply
 
@@ -282,7 +282,7 @@ These prompts are especially useful after selecting one or more canvas elements.
 - Fix the remaining validation issues.
 - Keep the current structure but improve production readiness.
 - Preserve the existing elements and add the missing capabilities.
-- Undo the last applied proposal.
+- Undo the last committed assistant turn.
 
 ## Prompt-Writing Tips
 
@@ -291,8 +291,7 @@ These prompts are especially useful after selecting one or more canvas elements.
 - Name important domain capabilities, actors, workflows, and external integrations.
 - Mention security, observability, resilience, data ownership, and failure handling.
 - Select relevant canvas elements before asking for a narrowly scoped change.
-- Review applied changes in the proposal card and use **Undo changes** if the mutation should be
-  reversed.
+- Review committed checkpoints and use the turn undo control if the mutation should be reversed.
 
 ## Guided Modeling Task Prompts
 

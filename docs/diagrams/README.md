@@ -11,7 +11,7 @@ The diagrams were derived from:
 - Maven module POMs, `deploy/compose.yaml`, and backend configuration.
 - `PlatformStore`, `PostgresPlatformStore`, and Flyway migrations under
   `platform-storage-postgres` (V1 platform schema, V5 MDE job metadata) and `platform-assistant`
-  (V2–V4 and V6–V8 assistant schema).
+  (V14 durable-turn baseline and later assistant migrations).
 - Emfatic/Ecore metamodels, EVL entry modules, ETL entry modules, and EGX/EGL generation assets.
 
 ## Diagram Index
@@ -30,10 +30,10 @@ The diagrams were derived from:
 | APIs          | [10-api-model-sequences.md](10-api-model-sequences.md)                                           | Every model endpoint sequence                      |
 | APIs          | [11-api-transformation-artifact-sequences.md](11-api-transformation-artifact-sequences.md)       | Transformation, job, artifact sequences            |
 | APIs          | [12-api-modeling-system-sequences.md](12-api-modeling-system-sequences.md)                       | Layout, config, health, docs, future routes        |
-| APIs          | [13-api-assistant-sequences.md](13-api-assistant-sequences.md)                                   | Every chatbot, SSE, and WebSocket sequence         |
+| APIs          | [13-api-assistant-sequences.md](13-api-assistant-sequences.md)                                   | Chatbot, durable turn, and authenticated SSE flows |
 | AI assistant  | [14-ai-assistant-architecture.md](14-ai-assistant-architecture.md)                               | Assistant components, providers, context, controls |
-| AI assistant  | [15-ai-assistant-turn-and-proposal.md](15-ai-assistant-turn-and-proposal.md)                     | Turn orchestration and proposal lifecycle          |
-| AI assistant  | [16-ai-assistant-rag-and-memory.md](16-ai-assistant-rag-and-memory.md)                           | Catalog indexing, retrieval, context, memory       |
+| AI assistant  | [15-ai-assistant-turn-and-proposal.md](15-ai-assistant-turn-and-proposal.md)                     | Durable turn and checkpoint lifecycle              |
+| AI assistant  | [16-ai-assistant-rag-and-memory.md](16-ai-assistant-rag-and-memory.md)                           | Contracts, source units, provenance, memory        |
 | MDE           | [17-mde-architecture.md](17-mde-architecture.md)                                                 | MDE assets, runners, services, and tools           |
 | MDE           | [18-mde-end-to-end-pipeline.md](18-mde-end-to-end-pipeline.md)                                   | CIM to PIM to AWS PSM to artifacts                 |
 | MDE           | [19-mde-validation-transformation-generation.md](19-mde-validation-transformation-generation.md) | EVL, ETL, and EGX execution internals              |
@@ -56,9 +56,8 @@ The API sequence diagrams cover the primary controller route templates and inter
 - Transformations and MDE jobs: 5 routes.
 - Artifacts: 5 routes.
 - Modeling configuration, layout, and process definitions: 7 routes.
-- Assistant REST/SSE: core session, message, attachment, streaming, proposal, undo, and choice
-  flows.
-- Assistant WebSocket: 1 route.
+- Assistant REST/SSE: session, message submission, durable turn status, event replay, attachment,
+  thread, cancel, continue, confirm, undo, and clear flows.
 - Health, OpenAPI, Swagger UI, future-feature wildcard routes, and Actuator endpoints.
 
 `{level}` means one of `cim`, `pim`, or `psm`; the same sequence applies to each concrete level.

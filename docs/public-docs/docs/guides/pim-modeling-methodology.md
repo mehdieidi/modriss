@@ -402,11 +402,11 @@ Expose functions through APIs with routes, contracts, and error mappings.
 **Viewpoint:** api
 **Duration:** 1h
 **Artifacts:** API Catalog
-**Palette focus:** `Api`, `ApiRoute`
+**Palette focus:** `ServerlessService`
 
 **Steps:**
 
-1. Create Api elements with routes and HTTP methods.
+1. Open a ServerlessService focus view and create Api elements with routes and HTTP methods.
 2. Connect routes to function handlers.
 
 **Entry criteria:**
@@ -527,12 +527,12 @@ Model workflows from CIM business processes with human tasks and compensation.
 **Viewpoint:** workflow
 **Duration:** 1-2h
 **Artifacts:** Workflow Model
-**Palette focus:** `Workflow`, `StartStep`, `TaskStep`, `ChoiceStep`, `WaitStep`, `WorkflowTransition`
+**Palette focus:** `Workflow`, `StartStep`, `TaskStep`, `WorkflowTransition`
 
 **Steps:**
 
 1. Create Workflow elements from CIM business processes.
-2. Define typed workflow steps, transitions, and workflow kind.
+2. Define steps, transitions, and workflow kind.
 
 **Entry criteria:**
 

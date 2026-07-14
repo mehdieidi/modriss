@@ -1,7 +1,7 @@
 # Frontend Architecture
 
 The frontend is a static ES-module application under `apps/frontend`. It uses AntV G6 for diagram
-editing and communicates with the backend through REST, SSE, and WebSocket.
+editing and communicates with the backend through REST and authenticated fetch-based SSE.
 
 ## Diagram editor
 
@@ -24,7 +24,7 @@ At startup the frontend loads `GET /api/modeling/config`, including `diagramEdit
 - Metadata-driven palette and attribute panels
 - Graph editing, relationship creation, layout, views, and focus
 - Validation and generation progress
-- Assistant chat and proposal controls
+- Assistant chat, durable turn status, checkpoint, confirmation, continue, cancel, and undo controls
 - Artifact explorer and file editor
 - Change impact analysis
 - Planned admin workspace surfaces
@@ -58,5 +58,5 @@ The static frontend reads its backend base URL from:
 window.VARKA_BACKEND_BASE_URL = "http://127.0.0.1:8080";
 ```
 
-Configure the deployed frontend and backend origins together, including CORS and WebSocket allowed
-origins.
+Configure the deployed frontend and backend origins together, including the CORS origins needed for
+REST and SSE requests.

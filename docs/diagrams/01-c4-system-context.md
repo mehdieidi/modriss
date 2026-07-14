@@ -17,7 +17,7 @@ flowchart LR
     developer -->|"Uses browser modeler, assistant, artifact explorer"| system
     owner -->|"Owns projects and manages membership"| system
     operator -->|"Configures, observes, and operates"| system
-    system -->|"Chat completion and structured ModelDelta requests"| proxy
+    system -->|"Assistant provider requests"| proxy
     proxy -->|"Proxied provider calls"| llm
     system -.->|"Generates deployable project artifacts for"| aws
 ```
@@ -31,7 +31,7 @@ flowchart TB
     pim["Platform-independent serverless model"]
     psm["AWS platform-specific model"]
     artifacts["Deployable source, contracts, IaC, tests, docs, scripts"]
-    assistant["Bounded AI assistant<br/>Explains or proposes validated semantic changes"]
+    assistant["Bounded AI assistant<br/>Explains or commits validated tool changes"]
     formal["Formal MDE engine<br/>Ecore + EVL + ETL + EGX/EGL"]
 
     intent --> cim --> pim --> psm --> artifacts

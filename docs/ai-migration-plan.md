@@ -1,5 +1,9 @@
 # Agentic Modeling Chatbot Redesign
 
+Status: historical redesign plan. The durable assistant-turn runtime described here has been
+implemented; current operational details live in `docs/internal/ai/assistant.md`,
+`docs/internal/ai/implementation-learning-guide.md`, and diagrams 13-16 under `docs/diagrams/`.
+
 ## Summary
 
 Replace the current assistant with a durable, correct-by-construction modeling agent built on Spring Boot 4.1.0, Spring AI 2.0.0, Jackson 3, Java 17, PostgreSQL, and the existing EMF/Ecore runtime.

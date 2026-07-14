@@ -1,8 +1,11 @@
 # ADR 0002: Modeling Agent Non-Negotiables
 
-Status: accepted
+Status: updated
 
 Date: 2026-07-04
+
+Current implementation note: rule 2 is implemented as backend-validated agent tool calls. Turn
+state is persisted in `assistant_turns` and related checkpoint/event/provenance tables.
 
 ## Context
 
@@ -15,7 +18,8 @@ The assistant must obey these rules:
 
 1. **Ecore is canonical.** Metamodel contracts come from combined Ecore resources; UI metadata and
    examples may enrich prompts but cannot override structural contracts.
-2. **`ModelDelta` is the only mutation protocol** exposed to providers.
+2. **Backend tools are the only mutation path** exposed to providers; direct JSON/database mutation
+   is not allowed.
 3. **Structural EMF validation only** gates AI apply. EVL is not executed on the assistant apply
    path.
 4. **Atomic, revision-guarded turns.** Model-changing turns acquire a short apply lock, recheck
@@ -32,6 +36,8 @@ The assistant must obey these rules:
 
 ## Consequences
 
-- Turn execution is persisted in `assistant_turn_executions` with diagnostics and terminal outcomes.
-- Frontend cancel, trace events, and draft previews are first-class UX requirements.
-- Repair is bounded (deterministic normalization once, limited LLM structural repair).
+- Turn execution is persisted in `assistant_turns` with durable events, checkpoints, provenance,
+  provider-call records, diagnostics, and terminal outcomes.
+- Frontend cancel, event replay, checkpoint, confirmation, continue, and undo controls are
+  first-class UX requirements.
+- Repair and follow-up work are bounded by provider-call, step, timeout, and durable-turn limits.

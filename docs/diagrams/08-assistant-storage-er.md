@@ -1,6 +1,7 @@
 # Assistant Storage ER Diagram
 
-This is the complete assistant schema from Flyway migration V2.
+This is the durable assistant schema from `V14__assistant_baseline.sql` plus the later assistant
+migrations through V18.
 
 ```mermaid
 erDiagram
@@ -20,6 +21,72 @@ erDiagram
         text title
         timestamptz created_at
         timestamptz updated_at
+    }
+    ASSISTANT_TURNS {
+        text id PK
+        text thread_id FK
+        text user_id FK
+        text project_id FK
+        text level
+        text model_id
+        bigint expected_revision
+        text idempotency_key
+        text state
+        timestamptz accepted_at
+        timestamptz deadline_at
+        boolean cancellation_requested
+        bigint revision
+        integer checkpoint_count
+        integer saved_element_count
+        integer coverage_percent
+        text remaining_work
+        text final_message
+    }
+    ASSISTANT_TURN_EVENTS {
+        bigserial id PK
+        text turn_id FK
+        bigint sequence
+        text type
+        timestamptz occurred_at
+        jsonb payload
+    }
+    ASSISTANT_CHECKPOINTS {
+        bigserial id PK
+        text turn_id FK
+        text model_id
+        bigint revision
+        jsonb inverse_patch
+        timestamptz created_at
+    }
+    ASSISTANT_SOURCE_UNITS {
+        text id PK
+        text turn_id FK
+        integer ordinal
+        integer start_offset
+        integer end_offset
+        text content
+        text status
+        text reason
+    }
+    ASSISTANT_ELEMENT_PROVENANCE {
+        bigserial id PK
+        text turn_id FK
+        text element_id
+        text source_unit_id FK
+        text kind
+        text assumption
+    }
+    ASSISTANT_PROVIDER_CALLS {
+        bigserial id PK
+        text turn_id FK
+        text provider
+        text model
+        timestamptz started_at
+        bigint latency_ms
+        bigint prompt_tokens
+        bigint completion_tokens
+        text finish_reason
+        text error
     }
     ASSISTANT_MESSAGES {
         text id PK
@@ -41,50 +108,14 @@ erDiagram
         text message_id FK
         timestamptz updated_at
     }
-    ASSISTANT_PROPOSALS {
-        text id PK
-        text thread_id FK
-        text project_id FK
-        text model_id
-        bigint model_revision
-        text risk_level
-        jsonb semantic_patch
-        jsonb inverse_patch
-        jsonb validation_summary
-        jsonb citations
-        text status
-        timestamptz created_at
-        timestamptz decided_at
-    }
     ASSISTANT_ACTION_AUDITS {
         text id PK
-        text proposal_id FK
+        text turn_id FK
         text project_id FK
         text actor_id FK
         text action
         jsonb details
         timestamptz created_at
-    }
-    ASSISTANT_RETRIEVAL_DOCUMENTS {
-        text id PK
-        text scope
-        text source
-        text source_hash
-        text title
-        text content
-        jsonb metadata
-        vector_384 embedding
-        timestamptz updated_at
-    }
-    ASSISTANT_MODEL_CONTEXTS {
-        text model_id PK
-        bigint revision PK
-        text project_id FK
-        text level
-        jsonb context_json
-        text model_hash
-        jsonb latest_issues_json
-        timestamptz updated_at
     }
     ASSISTANT_RATE_LIMITS {
         text key PK
@@ -95,15 +126,19 @@ erDiagram
     USERS ||--o{ ASSISTANT_THREADS : owns
     PROJECTS ||--o{ ASSISTANT_THREADS : scopes
     ASSISTANT_THREADS ||--o{ ASSISTANT_MESSAGES : records
+    ASSISTANT_THREADS ||--o{ ASSISTANT_TURNS : accepts
     ASSISTANT_THREADS ||--o| ASSISTANT_THREAD_SUMMARIES : summarizes
     ASSISTANT_MESSAGES o|--o| ASSISTANT_THREAD_SUMMARIES : summary_through
-    ASSISTANT_THREADS ||--o{ ASSISTANT_PROPOSALS : proposes
-    PROJECTS ||--o{ ASSISTANT_PROPOSALS : scopes
-    ASSISTANT_PROPOSALS o|--o{ ASSISTANT_ACTION_AUDITS : audits
+    ASSISTANT_TURNS ||--o{ ASSISTANT_TURN_EVENTS : emits
+    ASSISTANT_TURNS ||--o{ ASSISTANT_CHECKPOINTS : checkpoints
+    ASSISTANT_TURNS ||--o{ ASSISTANT_SOURCE_UNITS : splits
+    ASSISTANT_TURNS ||--o{ ASSISTANT_ELEMENT_PROVENANCE : records
+    ASSISTANT_SOURCE_UNITS o|--o{ ASSISTANT_ELEMENT_PROVENANCE : grounds
+    ASSISTANT_TURNS ||--o{ ASSISTANT_PROVIDER_CALLS : calls
+    ASSISTANT_TURNS ||--o{ ASSISTANT_ACTION_AUDITS : audits
     PROJECTS ||--o{ ASSISTANT_ACTION_AUDITS : scopes
     USERS ||--o{ ASSISTANT_ACTION_AUDITS : acts
-    PROJECTS ||--o{ ASSISTANT_MODEL_CONTEXTS : caches
 ```
 
-`SPRING_AI_CHAT_MEMORY`, `ASSISTANT_RETRIEVAL_DOCUMENTS`, and `ASSISTANT_RATE_LIMITS` have logical
-keys but intentionally no foreign keys to the application tables.
+`SPRING_AI_CHAT_MEMORY` and `ASSISTANT_RATE_LIMITS` have logical keys but intentionally no foreign
+keys to the application tables.

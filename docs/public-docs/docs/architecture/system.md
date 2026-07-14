@@ -6,14 +6,14 @@ flowchart TB
     Landing["Landing site"]
     Frontend["Modeling frontend<br/>HTML, CSS, JavaScript<br/>AntV G6"]
     Backend["Spring Boot backend<br/>API, services, MDE orchestration, assistant"]
-    DB[("PostgreSQL + pgvector")]
+    DB[("PostgreSQL")]
     MDE["MDE assets<br/>Emfatic, Ecore, EVL, ETL, EGX/EGL"]
     AI["External AI provider"]
     CLIs["MDE CLI tools"]
 
     User --> Landing
     User --> Frontend
-    Frontend -->|"REST, downloads, SSE, WebSocket"| Backend
+    Frontend -->|"REST, downloads, authenticated SSE"| Backend
     Backend --> DB
     Backend --> MDE
     Backend --> AI

@@ -111,8 +111,9 @@ the defined metamodels and EVL constraints.
 Instead of manually creating every element, the user can describe the intended model changes in
 natural language, and the assistant can generate or update the model accordingly.
 
-The assistant’s changes are reflected visually on the frontend canvas in real time using
-WebSocket-based communication. The chat interaction itself is also designed to operate in real time.
+The assistant’s changes are reflected visually on the frontend canvas through REST model reloads
+and authenticated server-sent events for durable turn progress. The chat interaction is designed to
+feel real time without exposing provider token streams or private reasoning.
 
 The AI assistant is implemented using Spring AI.
 

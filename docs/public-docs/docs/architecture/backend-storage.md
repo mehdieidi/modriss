@@ -2,14 +2,14 @@
 
 ## Backend Layers
 
-| Layer                | Main responsibilities                                             |
-| -------------------- | ----------------------------------------------------------------- |
-| Controllers          | HTTP validation, authentication extraction, response shapes       |
-| Application services | Auth, projects, models, transformations, artifacts, layouts, jobs |
-| Modeling services    | Metamodel resolution, UI config, layout, JSON/XMI conversion      |
-| MDE runners          | EVL validation, ETL transformation, EGX/EGL generation            |
-| Assistant services   | Retrieval, context, orchestration, patch compilation, proposals   |
-| Persistence adapter  | PostgreSQL reads and writes behind `PlatformStore`                |
+| Layer                | Main responsibilities                                                                              |
+| -------------------- | -------------------------------------------------------------------------------------------------- |
+| Controllers          | HTTP validation, authentication extraction, response shapes                                        |
+| Application services | Auth, projects, models, transformations, artifacts, layouts, jobs                                  |
+| Modeling services    | Metamodel resolution, UI config, layout, JSON/XMI conversion                                       |
+| MDE runners          | EVL validation, ETL transformation, EGX/EGL generation                                             |
+| Assistant services   | Durable turn orchestration, metamodel-checked tools, checkpoints, provenance, provider-call audits |
+| Persistence adapter  | PostgreSQL reads and writes behind `PlatformStore`                                                 |
 
 ## Core Persistence
 
@@ -28,11 +28,11 @@ artifact files are stored by relative path and text content.
 
 The assistant adds:
 
-- Threads, durable messages, and rolling summaries
+- Threads, durable turns, replayable events, durable messages, and rolling summaries
 - Spring AI recent chat memory
-- Proposals and action audits
-- Retrieval documents with pgvector embeddings
-- Compact model-context snapshots
+- Checkpoints with inverse patches for undo
+- Source units and per-element provenance
+- Provider-call records and action audits
 - Persisted rate-limit windows
 
 ## Concurrency and Integrity

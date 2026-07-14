@@ -1,16 +1,17 @@
 # AI Assistant Setup
 
-This project has a bounded backend assistant for model help, retrieval, and proposal drafting.
-It does not receive whole models or raw EVL files. It works from compact context, the active
-project, the selected model level, and the current model ID/revision.
+This project has a bounded backend assistant for model help, source-backed modeling, and validated
+model mutation. It works from the active project, selected model level, current model ID/revision,
+selected elements, optional text attachments, deterministic metamodel contracts, and bounded recent
+conversation context.
 
 ## What the assistant uses
 
-- OpenAI-compatible or Gemini providers via Spring AI for chat and structured proposal drafting.
+- OpenAI-compatible or Gemini providers via Spring AI for assistant turns.
 - Spring AI JDBC chat memory for recent conversation window.
-- PostgreSQL + pgvector for retrieval storage.
-- Local ONNX embeddings when enabled, with a hash fallback for constrained local runs.
-- Backend validation before any proposal can be applied.
+- PostgreSQL for durable threads, turns, events, checkpoints, provenance, provider-call audits, and
+  chat memory.
+- Backend metamodel contracts and validation before any model mutation is committed.
 
 ## How to enable it
 
@@ -27,10 +28,10 @@ Useful optional knobs:
 ```bash
 VARKA_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_BASE_URL=https://api.openai.com
-VARKA_AI_PLANNER_MODEL=gpt-4o-mini
 VARKA_AI_RESPONDER_MODEL=gpt-4o-mini
-VARKA_AI_SUMMARIZER_MODEL=gpt-4o-mini
 VARKA_AI_MAX_TOOL_CALLS=24
+VARKA_AI_MAX_AGENT_STEPS=8
+VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=8
 VARKA_AI_TOKEN_BUDGET=16000
 VARKA_AI_REQUEST_TIMEOUT=5m
 VARKA_AI_TURN_TIMEOUT=5m
@@ -40,9 +41,11 @@ VARKA_AI_TURN_TIMEOUT=5m
 establishment still fails after at most 10 seconds. A response timeout is not retried because the
 provider may still be processing the original request.
 
-For another OpenAI-compatible provider, keep `VARKA_AI_PROVIDER=openai` and set
-`OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`, and the role-specific model names to the
-provider values.
+For another OpenAI-compatible provider, keep `VARKA_AI_PROVIDER=openai` or use the accepted aliases
+`openai-compatible` / `openai_compatible`, then set `OPENAI_COMPATIBLE_BASE_URL`,
+`OPENAI_COMPATIBLE_API_KEY`, and `VARKA_AI_RESPONDER_MODEL` to provider-specific values. The
+current model resolver uses the responder model for assistant roles; planner and summarizer model
+keys are accepted for compatibility but are not separate runtime selectors.
 
 For Gemini:
 
@@ -52,26 +55,25 @@ GEMINI_API_KEY=your_gemini_api_key
 VARKA_AI_RESPONDER_MODEL=gemini-2.0-flash
 ```
 
-If you do not want provider calls or model proposals, set:
+If you do not want provider calls or assistant model changes, set:
 
 ```bash
 VARKA_AI_ENABLED=false
 ```
 
-The assistant runs as one autonomous modeling agent. The LLM answers, asks structured
-clarification questions when needed, or drafts `ModelDelta` from retrieved context. The backend
-compiles and validates model-changing work before applying it, then exposes undo through the API
-and UI.
+The assistant runs as one autonomous modeling agent. The LLM can answer, ask for needed input, or
+drive validated model tools. The backend validates model-changing work before committing it and
+stores checkpoints so committed changes can be undone through the API and UI.
 
 Do not put API keys directly in `application.yml`. Use environment variables or a local `.env` file
 that is not committed.
 
 ## Modeling protocol
 
-There is one assistant modeling mode. Model-changing turns go through `ModelingAgent`, whose
-provider-facing output contract is `ModelDelta`. The backend lowers that delta into internal patch
-operations, structurally validates the preview, and applies atomically against the expected model
-revision. The old selectable modeling-mode switch is removed.
+There is one assistant modeling mode. Model-changing turns run through `AgentTurnLoop` with
+tool-based access to an in-memory `ModelWorkspace`. Tool calls are checked against live Ecore
+contracts before they mutate the workspace. The final workspace is structurally validated and then
+committed atomically against the expected model revision.
 
 ## Docker Compose
 
@@ -155,10 +157,11 @@ from the frontend, so create or open a real model first.
 The chat request includes:
 
 - `modelId`
-- `revision`
+- `revision` or `expectedRevision`
 - `activeView`
 - selected element IDs
-- optional draft patch
+- optional uploaded attachment IDs or inline attachment content
+- an `idempotencyKey`
 
 That is the compact context the backend needs.
 
@@ -191,34 +194,30 @@ saved model ID and revision to work against.
 
 ## Where the AI gets context
 
-The assistant gets its knowledge from three backend-owned sources:
+The assistant gets its working context from three backend-owned sources:
 
 1. **Metamodel and methodology catalogs**
 
-   - The backend scans `mde/**/*.emf` and `mde/**/*.ecore` plus methodology JSON/Markdown under
-     `mde/` and `docs/public-docs/docs/guides/`.
-   - Catalog entries include level, classifier names, attributes, references, multiplicities, and
-     source locations.
-   - Raw `.evl` constraint files are **not** indexed into retrieval documents; EVL scope rows are
-     removed on every refresh.
-   - Exact title/source matches are tried first; hybrid full-text and vector retrieval is used
-     second.
+   - The backend extracts deterministic contracts from the current Ecore metamodels.
+   - Contracts include classifier names, attributes, references, containments, multiplicities,
+     enum values, and level ownership.
+   - Raw `.evl` files are not sent to the provider.
 
 2. **Current model context**
 
-   - When you open a session, the frontend sends the current `modelId`, `revision`, active view,
-     selected element IDs, and optional draft patch.
-   - The backend loads the model record and builds a compact index of stable IDs, names, types,
-     JSON paths, relationships, and the latest validation issues.
-   - That compact index is what the assistant sees, not the full model dump.
+   - The backend loads the saved model by `modelId` and revision, then presents it through
+     validated workspace tools.
+   - Selected element IDs help focus reads and edits, but the backend still enforces model access
+     and revision checks.
 
-3. **Recent conversation memory**
+3. **Recent conversation and source attachments**
    - Spring AI JDBC chat memory keeps the recent message window.
-   - The backend also keeps durable history, summary, proposals, and audits in its own tables.
+   - Durable assistant messages and turns preserve history and audit details.
+   - Uploaded `.md`, `.txt`, and `.json` attachments can be split into bounded source units with
+     per-element provenance.
 
-So the assistant learns formal structure from indexed metamodel and methodology catalogs, and the
-current model state from the model-context snapshot built from the saved model record. It does not
-get the whole model or whole EVL files.
+So the assistant learns formal structure from Ecore-derived contracts and current state from
+workspace reads. It does not get raw EVL files or unchecked direct database access.
 
 ## What is stored in PostgreSQL
 
@@ -228,44 +227,32 @@ The AI feature adds these tables:
 - `assistant_threads`: one assistant thread per user/project/modeling level.
 - `assistant_messages`: durable user/assistant/system/tool message audit history.
 - `assistant_thread_summaries`: rolling summaries of long conversations.
-- `assistant_proposals`: applied ModelDelta operation previews, risk level, validation preview, citations, and
-  inverse patch for undo.
-- `assistant_action_audits`: apply, undo, and choice audit records.
-- `assistant_retrieval_documents`: indexed metamodel and methodology snippets with embeddings for
-  RAG.
-- `assistant_model_contexts`: compact model snapshots by model ID and revision.
-- `assistant_rate_limits`: schema reserved for future persisted rate limiting (runtime limiting is
-  in-memory today).
+- `assistant_turns`: durable accepted/running/terminal assistant turns with idempotency keys,
+  deadlines, model/revision state, counters, final messages, and cancellation flags.
+- `assistant_turn_events`: replayable turn events with cursor IDs and per-turn sequences.
+- `assistant_checkpoints`: committed model checkpoints and inverse patches used for undo.
+- `assistant_source_units`: bounded source-document chunks used by source-backed turns.
+- `assistant_element_provenance`: source-grounded or inferred labels for committed elements.
+- `assistant_provider_calls`: provider/model/timing/token/error audit records.
+- `assistant_action_audits`: cancellation, confirmation, undo, and other turn action records.
+- `assistant_rate_limits`: schema reserved for persisted rate limiting; runtime limiting is
+  in-memory today.
 
 How they get filled:
 
 - Flyway creates the tables when the backend starts against PostgreSQL.
-- `assistant_retrieval_documents` is filled on backend startup by scanning the local `mde/` folder.
-- `assistant_model_contexts` is filled when the assistant handles a request for a saved model.
 - chat memory and durable messages are filled when users send messages in the chatbot.
-- proposals and audits are filled when the assistant auto-applies or undoes changes.
+- turns, events, checkpoints, source units, provenance, provider calls, and audits are filled as
+  durable assistant work is accepted and processed.
 - rate limiting is enforced in memory; the `assistant_rate_limits` table is not written today.
 
 ## If metamodels or methodology files change
 
-The catalog indexer runs at backend startup. It scans `.emf` and `.ecore` files under `mde/`, plus
-methodology guides, computes a hash for each source file, and compares it to the stored
-`source_hash`.
-
-If a file changed:
-
-- old catalog rows for that source are deleted
-- new catalog rows are inserted
-- embeddings are regenerated
-
-If a file did not change, it is skipped.
-
 What you should do after changing metamodel or methodology files:
 
-1. Restart the backend.
-2. Let startup reindex the changed files.
-3. If model validation rules changed, revalidate affected models in the UI or via the validation
-   endpoints before testing assistant proposals.
+1. Rebuild/restart the backend so packaged `mde/` resources and Ecore-derived contracts are fresh.
+2. If model validation rules changed, revalidate affected models in the UI or via the validation
+   endpoints before testing assistant turns.
 
 If you are running with Docker Compose:
 
@@ -279,8 +266,8 @@ If you changed only files mounted into an already-running container, restart the
 docker compose restart backend
 ```
 
-Model context snapshots are stored by model ID and revision. When a model changes and gets a new
-revision, the assistant builds a new compact context for that revision.
+Assistant turns use model ID and expected revision. When a model changes and gets a new revision,
+new turns must use the updated revision or they will conflict.
 
 ## Frontend test flow
 
@@ -291,22 +278,24 @@ revision, the assistant builds a new compact context for that revision.
 5. Create a model in CIM, PIM, or PSM.
 6. Open the chat panel and ask for an explanation or a bounded change.
 
-The assistant may explain, ask structured questions, or auto-apply a validated change. The backend
-never applies an invalid mutation. Applied changes can be undone when an inverse patch is available.
+The assistant may explain, ask for needed input, apply a validated change, finish partially, or ask
+for explicit confirmation before destructive work. The backend never commits an invalid mutation.
+Applied changes can be undone when a checkpoint inverse is available.
 
-## Does the frontend offer choices or undo?
+## Does the frontend offer turn controls or undo?
 
 Yes.
 
-- When a change was auto-applied, the UI renders a proposal card with validation summary,
-  citations, affected elements, and an **Undo changes** button.
-- If the backend returns an explicit choice request, the UI renders the choice prompt and option
-  buttons. Submit answers with `POST /api/chatbot/sessions/{sessionId}/choices`.
+- The UI follows durable turn status and replayable SSE events.
+- A completed/partial turn can be continued with `POST /api/chatbot/turns/{turnId}/continue`.
+- A turn that needs destructive confirmation can be confirmed with
+  `POST /api/chatbot/turns/{turnId}/confirm`.
+- A committed checkpoint can be undone with `POST /api/chatbot/turns/{turnId}/undo`.
 
 There is no Approve/Reject step in the current UI or API.
 
 ## Notes
 
 - Chat memory is cleared when you clear a conversation.
-- The assistant never receives the full model or full EVL files.
+- The assistant does not receive raw EVL files.
 - Provider changes are configuration only, not code changes.

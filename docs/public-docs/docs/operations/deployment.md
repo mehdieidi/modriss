@@ -30,7 +30,7 @@ production deployment. A production design should add:
 - Backups, restoration tests, and migration procedures
 - Persistent volumes and retention policies
 - Centralized logs, metrics, alerts, and traces
-- Explicit CORS and WebSocket origin policy
+- Explicit CORS origin policy for REST and SSE
 - Provider rate limits and cost controls for AI
 - Resource limits and horizontal/vertical scaling decisions
 - Security review of generated-artifact download and editing workflows

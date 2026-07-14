@@ -1,96 +1,77 @@
-# AI Assistant Turn and Autonomous Apply Lifecycle
+# AI Assistant Durable Turn and Checkpoint Lifecycle
 
 ## Turn Flow
 
 ```mermaid
 flowchart TD
     start([User sends message])
-    rate["Check rate limit and circuit state"]
-    session["Resolve runtime or durable assistant session"]
-    saveUser["Persist USER message in durable and Spring AI memory"]
-    enabled{"AI enabled and provider available?"}
-    disabled["Return deterministic disabled/explain response"]
-    load["Resolve active model and revision"]
-    conflict{"Requested revision stale?"}
-    validate["Validate current model"]
-    snapshot["Build or load compact model context"]
-    retrieve["Retrieve metamodel/EVL snippets and validation issues"]
-    plan["Run autonomous planner with retrieved context/tools"]
-    compile["Ground, compile, preview, validate"]
-    valid{"Valid model change?"}
-    apply["Patch model immediately"]
-    final["Persist ASSISTANT message, summary, audits"]
-    publish["Publish chat.assistant and optional model.updated"]
-    done([MessageResponse])
+    auth["Authenticate and resolve session"]
+    attach["Resolve uploaded/inline attachments"]
+    idem{"Existing idempotency key?"}
+    existing["Return existing turn acceptance"]
+    ensure["Ensure active model and starter revision"]
+    create["Create QUEUED assistant_turn"]
+    checkpoint["Save starter checkpoint and model.checkpoint event"]
+    accepted["Return 202 TurnAcceptedResponse"]
+    claim["Worker claims turn"]
+    run["Run AgentTurnLoop with metamodel-checked tools"]
+    state{"Outcome"}
+    commit["Commit validated model revision"]
+    saveCheckpoint["Save checkpoint, provenance, provider calls, events"]
+    terminal["Persist terminal state and final message"]
+    controls["Client polls status or replays SSE events"]
 
-    start --> rate --> session --> saveUser --> enabled
-    enabled -- no --> disabled --> final
-    enabled -- yes --> load --> conflict
-    conflict -- yes --> stale["409 Refresh required"] --> done
-    conflict -- no --> validate --> snapshot --> retrieve --> plan --> compile --> valid
-    valid -- yes --> apply --> final
-    valid -- no --> final
-    final --> publish --> done
+    start --> auth --> attach --> idem
+    idem -- yes --> existing --> controls
+    idem -- no --> ensure --> create --> checkpoint --> accepted --> controls
+    create --> claim --> run --> state
+    state -- committed work --> commit --> saveCheckpoint --> terminal
+    state -- needs input/confirmation/partial/failure --> terminal
+    terminal --> controls
 ```
 
-## Applied Change State Machine
+## Durable Turn States
 
 ```mermaid
 stateDiagram-v2
-    [*] --> APPLIED: Valid autonomous change applied
-    [*] --> FAILED: Validation or patch fails
-    APPLIED --> UNDONE: User requests inverse patch and validation passes
-    APPLIED --> FAILED: Undo validation fails
-    UNDONE --> [*]
+    [*] --> QUEUED
+    QUEUED --> RUNNING
+    RUNNING --> SUCCEEDED
+    RUNNING --> PARTIAL
+    RUNNING --> NEEDS_INPUT
+    RUNNING --> NEEDS_CONFIRMATION
+    RUNNING --> CONFLICTED
+    RUNNING --> CANCELLED
+    RUNNING --> TIMED_OUT
+    RUNNING --> FAILED
+    SUCCEEDED --> [*]
+    PARTIAL --> [*]
+    NEEDS_INPUT --> [*]
+    NEEDS_CONFIRMATION --> [*]
+    CONFLICTED --> [*]
+    CANCELLED --> [*]
+    TIMED_OUT --> [*]
     FAILED --> [*]
 ```
 
-## Semantic Patch Compilation
-
-```mermaid
-flowchart LR
-    sem["SemanticModelPatch operations"]
-    add["ADD_ELEMENT<br/>targetElementId, elementType, attributes"]
-    connect["CONNECT_ELEMENTS<br/>sourceElementId, targetElementId, referenceName"]
-    set["SET_ATTRIBUTE<br/>targetElementId, referenceName, attributes"]
-    delete["DELETE_ELEMENT<br/>targetElementId"]
-    compiler["AssistantPatchCompiler"]
-    patch["Executable JSON patch"]
-    inverse["Inverse JSON patch for undo"]
-    affected["Affected element IDs"]
-
-    sem --> add --> compiler
-    sem --> connect --> compiler
-    sem --> set --> compiler
-    sem --> delete --> compiler
-    compiler --> patch
-    compiler --> inverse
-    compiler --> affected
-```
-
-## Apply Sequence
+## Checkpoint Undo
 
 ```mermaid
 sequenceDiagram
     actor User
     participant UI as Chat panel
     participant API as ChatbotController
-    participant O as AssistantOrchestrator
+    participant Undo as DurableTurnUndoService
     participant M as ModelService
     participant DB as PostgreSQL
-    participant RT as RealtimeHub
 
-    User->>UI: Send modeling request
-    UI->>API: POST message
-    API->>O: handleMessage
-    O->>M: Load model
-    O->>O: Retrieve context, plan, compile, preview, validate
-    O->>M: Patch model
-    M->>DB: Persist new revision
-    O->>DB: Store applied proposal and audits
-    O->>RT: model.updated
-    O-->>API: MessageResponse
-    API-->>UI: Applied response
-    UI->>API: GET updated model when model payload absent
-    UI->>UI: Refresh canvas if no newer local edits
+    User->>UI: Undo completed turn checkpoint
+    UI->>API: POST /api/chatbot/turns/{turnId}/undo
+    API->>Undo: undo(user, turn)
+    Undo->>DB: Load turn checkpoints and inverse patch
+    Undo->>M: Apply inverse against current model revision
+    M->>DB: Persist new model revision
+    Undo-->>API: modelId, revision
+    API-->>UI: TurnUndoResponse
+    UI->>API: reload model if needed
 ```

@@ -16,25 +16,25 @@ to determine what is required.
 
 ## Repository Contract Map
 
-| Concern                            | Primary source of truth                                                                              | Important consumers and derived assets                                                                                 |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Shared abstract syntax             | `mde/metamodels/shared/kernel.emf`                                                                   | `kernel.ecore`, all three combined Ecore files, EVL, ETL, EGX/EGL, UI metadata, JSON/XMI bridge, AI catalog, samples   |
-| CIM abstract syntax                | `mde/metamodels/cim/*.emf`                                                                           | `cim-combined.ecore`, CIM EVL, CIM-to-PIM ETL, CIM UI metadata, model import/export, assistant, samples/tests          |
-| PIM abstract syntax                | `mde/metamodels/pim/*.emf`                                                                           | `pim-combined.ecore`, PIM EVL, both ETL profiles, PIM UI metadata, model import/export, assistant, samples/tests       |
-| AWS PSM abstract syntax            | `mde/metamodels/psm/*.emf`                                                                           | `psm-combined.ecore`, PSM EVL, PIM-to-PSM ETL, EGX/EGL, PSM UI metadata, model import/export, assistant, samples/tests |
-| Runtime metamodel                  | `mde/metamodels/{cim,pim,psm}/*-combined.ecore`                                                      | Java EMF loading, validation, transformation, generation, UI structural metadata, metamodel hash/version               |
-| Semantic validation                | `mde/validation/{cim,pim,psm}/`                                                                      | `ModelService`, EVL CLI, assistant constraint catalog, tests                                                           |
-| CIM-to-PIM semantics               | `mde/transformations/cim-to-pim/`                                                                    | ETL runner/CLI, `TransformationService`, generated PIM, tests/docs                                                     |
-| PIM-to-AWS-PSM semantics           | `mde/transformations/pim-to-awspsm/`                                                                 | ETL runner/CLI, `TransformationService`, generated PSM, tests/docs                                                     |
-| PSM-to-artifact semantics          | `mde/generation/awspsm-to-artifacts/`                                                                | M2T runner/CLI, artifact service, generated projects, tests/docs                                                       |
-| Editor structure and visual syntax | `packages/java/platform-modeling/src/main/resources/modeling/*-ui-metadata.json` plus combined Ecore | `ModelingConfigService`, `/api/modeling/config`, frontend canvas, palette, views, relationship presentation            |
-| JSON/XMI semantic bridge           | `packages/java/platform-modeling/.../XmiModelImportService.java`                                     | Model create/update/import/export, transformation handoff, graph reconstruction                                        |
-| Frontend modeling behavior         | `apps/frontend/js/` and `apps/frontend/css/`                                                         | Canvas, graph editor, workbenches, attribute editor, views, layout, methodology checks                                 |
-| Persistence                        | PostgreSQL migrations and platform storage/application records                                       | Stored JSON/XMI, metamodel hash/version, jobs, assistant retrieval/model context                                       |
-| AI modeling behavior               | `apps/backend/.../assistant/`                                                                        | Catalog indexing, starter models, deterministic patches, ModelDelta compilation, model context                         |
-| Public API contract                | controllers plus `docs/api/openapi/openapi.yaml`                                                     | Frontend, external clients, API docs                                                                                   |
-| Regression fixtures                | `mde/samples/*.xmi`, Java tests, case-study samples                                                  | All MDE pipeline regression tests                                                                                      |
-| Architecture documentation         | `README.md`, `docs/internal/project-description.md`, `docs/`, especially `docs/diagrams/`            | Developers, thesis material, operations                                                                                |
+| Concern                            | Primary source of truth                                                                              | Important consumers and derived assets                                                                                        |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Shared abstract syntax             | `mde/metamodels/shared/kernel.emf`                                                                   | `kernel.ecore`, all three combined Ecore files, EVL, ETL, EGX/EGL, UI metadata, JSON/XMI bridge, assistant contracts, samples |
+| CIM abstract syntax                | `mde/metamodels/cim/*.emf`                                                                           | `cim-combined.ecore`, CIM EVL, CIM-to-PIM ETL, CIM UI metadata, model import/export, assistant, samples/tests                 |
+| PIM abstract syntax                | `mde/metamodels/pim/*.emf`                                                                           | `pim-combined.ecore`, PIM EVL, both ETL profiles, PIM UI metadata, model import/export, assistant, samples/tests              |
+| AWS PSM abstract syntax            | `mde/metamodels/psm/*.emf`                                                                           | `psm-combined.ecore`, PSM EVL, PIM-to-PSM ETL, EGX/EGL, PSM UI metadata, model import/export, assistant, samples/tests        |
+| Runtime metamodel                  | `mde/metamodels/{cim,pim,psm}/*-combined.ecore`                                                      | Java EMF loading, validation, transformation, generation, UI structural metadata, metamodel hash/version                      |
+| Semantic validation                | `mde/validation/{cim,pim,psm}/`                                                                      | `ModelService`, EVL CLI, assistant constraint catalog, tests                                                                  |
+| CIM-to-PIM semantics               | `mde/transformations/cim-to-pim/`                                                                    | ETL runner/CLI, `TransformationService`, generated PIM, tests/docs                                                            |
+| PIM-to-AWS-PSM semantics           | `mde/transformations/pim-to-awspsm/`                                                                 | ETL runner/CLI, `TransformationService`, generated PSM, tests/docs                                                            |
+| PSM-to-artifact semantics          | `mde/generation/awspsm-to-artifacts/`                                                                | M2T runner/CLI, artifact service, generated projects, tests/docs                                                              |
+| Editor structure and visual syntax | `packages/java/platform-modeling/src/main/resources/modeling/*-ui-metadata.json` plus combined Ecore | `ModelingConfigService`, `/api/modeling/config`, frontend canvas, palette, views, relationship presentation                   |
+| JSON/XMI semantic bridge           | `packages/java/platform-modeling/.../XmiModelImportService.java`                                     | Model create/update/import/export, transformation handoff, graph reconstruction                                               |
+| Frontend modeling behavior         | `apps/frontend/js/` and `apps/frontend/css/`                                                         | Canvas, graph editor, workbenches, attribute editor, views, layout, methodology checks                                        |
+| Persistence                        | PostgreSQL migrations and platform storage/application records                                       | Stored JSON/XMI, metamodel hash/version, jobs, assistant turns/events/checkpoints/provenance                                  |
+| AI modeling behavior               | `apps/backend/.../assistant/` and `packages/java/platform-assistant/...`                             | Ecore-derived contracts, agent tools, durable turns, checkpoints, source provenance                                           |
+| Public API contract                | controllers plus `docs/api/openapi/openapi.yaml`                                                     | Frontend, external clients, API docs                                                                                          |
+| Regression fixtures                | `mde/samples/*.xmi`, Java tests, case-study samples                                                  | All MDE pipeline regression tests                                                                                             |
+| Architecture documentation         | `README.md`, `docs/internal/project-description.md`, `docs/`, especially `docs/diagrams/`            | Developers, thesis material, operations                                                                                       |
 
 ## How Runtime Metadata Is Built
 
@@ -235,7 +235,7 @@ This is a platform-contract change. In addition to the full metamodel review, up
 - Controllers and route regexes.
 - Transformation service operation routing.
 - Database `CHECK` constraints through a new Flyway migration.
-- OpenAPI and REST/WebSocket docs.
+- OpenAPI and REST/SSE docs.
 - Assistant thread/model-level storage and starter models.
 
 ## Validation Change Impact
@@ -255,13 +255,13 @@ When changing validation logic:
 3. Keep context model aliases compatible with `ModelService.validationModelName`,
    `ModelService.validationModelAliases`, and the EVL CLI profile commands.
 4. Update transformations when generated target models must satisfy the changed rule.
-5. Update root templates, AI starter models, and samples when the new rule affects minimum-valid
-   models.
+5. Update root templates, assistant default/starter behavior, and samples when the new rule affects
+   minimum-valid models.
 6. Update generation preconditions if PSM generation relies on the same invariant.
 7. Add positive and negative validation tests.
-8. Restart the backend if metamodel or methodology sources changed (assistant RAG reindex). EVL-only
-   changes do not update retrieval documents; they still affect model validation issues surfaced in
-   model context and workbench validation.
+8. Restart the backend if metamodel sources changed so Ecore-derived assistant contracts are fresh.
+   EVL-only changes affect workbench validation and assistant tool validation outcomes, but raw EVL
+   rule text is not sent to the provider.
 
 Use stable rule identifiers in messages. If a rule identifier or message meaning changes, update
 tests, docs, frontend issue handling, and assistant expectations that refer to it.
@@ -558,35 +558,30 @@ Verify both a fresh database and an existing database containing pre-change mode
 
 ## AI Change Impact
 
-### Automatically refreshed knowledge
-
-`JdbcAssistantCatalog` (via `AssistantCatalog.refresh()`) indexes `mde/**/*.emf`,
-`mde/**/*.ecore`, and methodology JSON/Markdown under `mde/` and `docs/public-docs/docs/guides/`.
-It removes legacy EVL `constraint` scope rows on every refresh. Raw `.evl` files are **not**
-indexed into `assistant_retrieval_documents`.
+### Ecore-derived contracts
 
 After metamodel or methodology changes:
 
 - Regenerate Ecore before restart so both Emfatic and runtime structure are current.
-- Restart the backend or call `POST /api/chatbot/catalogs/reindex`.
-- Verify retrieval for new/renamed classes and features.
+- Restart or rebuild the backend so packaged `mde/` resources and Ecore-derived contracts are
+  current.
+- Verify assistant tools accept new classes/features and reject removed or renamed ones.
 
-ETL, EOL, EGX, EGL, EVL, and UI metadata are not indexed by the catalog service. EVL changes still
-matter for workbench validation and for validation issues attached to model context snapshots.
+ETL, EOL, EGX, EGL, EVL, and UI metadata are not provider-facing retrieval documents. EVL changes
+still matter for workbench validation and for assistant `validate_model` outcomes.
 
 ### Manually encoded AI behavior
 
 Review these for structural or semantic changes:
 
-- `AssistantOrchestrator.starterModel` for minimum-valid CIM/PIM/PSM models.
-- Deterministic attribute and architecture patch builders in `AssistantOrchestrator`.
-- `AssistantPatchCompiler` for semantic operations to JSON Patch conversion.
-- `AssistantModelContextIndexService` for model context extraction.
-- `SemanticModelPatch` if the assistant operation contract changes.
+- `AgentModelTools` for model read/mutation behavior.
+- `AssistantMetamodelSchemaService`, `MetamodelContractGraph`, and `EcoreContractExtractor` for
+  type/feature contract extraction.
+- `AgentTurnLoop` and `AgentActionCodec` when the provider action protocol changes.
+- `ModelWorkspace` when workspace mutation semantics change.
 - Assistant prompts/examples/docs and assistant tests.
 
-Always validate assistant-created starter models and representative proposed patches against the
-current metamodel and EVL profiles.
+Always validate representative assistant turns against the current metamodel and EVL profiles.
 
 ## API, JSON, Schema, and Documentation Impact
 
@@ -602,13 +597,13 @@ Update API contracts when changing:
 - Model level names or routes.
 - Modeling config response shape.
 - Validation, transformation, artifact, or assistant payloads.
-- WebSocket event payloads.
+- Durable assistant REST/SSE payloads.
 
 Relevant docs:
 
 - `docs/api/openapi/openapi.yaml`
 - `docs/api/rest-api.md`
-- `docs/api/websocket-api.md`
+- `docs/public-docs/docs/reference/realtime-api.md`
 - `docs/internal/ai/assistant.md`
 
 ### Generated JSON Schema
@@ -721,11 +716,11 @@ change.
 2. Edit the relevant rule file and helper operations.
 3. Import new rule files from the level entry EVL.
 4. Add a failing fixture/test and a passing fixture/test.
-5. Update transformations, root templates, samples, and AI starters so generated/default models
+5. Update transformations, root templates, samples, and assistant defaults so generated/default models
    meet the new rule.
 6. Run EVL through both the reusable Java path and repository CLI profile.
-7. Restart the backend when metamodel or methodology sources changed; verify assistant retrieval for
-   renamed types. EVL rule text is not indexed into the RAG catalog.
+7. Restart the backend when metamodel sources changed; verify assistant tools honor renamed types.
+   Raw EVL rule text is not sent to the provider.
 8. Update rule documentation and messages.
 
 ## Step-by-Step: Change Visual Syntax, Palette, or Views
@@ -746,13 +741,14 @@ change.
 
 1. First change the formal source: metamodel and/or EVL.
 2. Regenerate Ecore and restart the backend when metamodel or methodology sources changed.
-3. Update starter models and deterministic patches when they encode affected fields/types.
-4. Update patch compilation/context indexing only if the ModelDelta or model JSON protocol
-   changed.
-5. Validate assistant starters for CIM, PIM, and PSM.
-6. Test representative add, update, relationship, delete, auto-apply, and undo flows.
-7. Verify citations retrieve current metamodel/methodology content and that model context reflects
-   latest validation issues.
+3. Update assistant defaults, tool behavior, and prompts when they encode affected fields/types.
+4. Update `AgentActionCodec`, `AgentModelTools`, `ModelWorkspace`, or metamodel contract extraction
+   only if the action protocol, workspace semantics, or Ecore contract shape changed.
+5. Validate representative assistant turns for CIM, PIM, and PSM.
+6. Test representative add, update, relationship, delete, confirmation, checkpoint, continue,
+   cancel, and undo flows.
+7. Verify assistant events, provenance, and validation summaries reflect the current metamodel and
+   validation issues.
 8. Verify assistant-created models can save, validate, transform, and generate downstream outputs.
 
 ## Verification Ladder
@@ -825,9 +821,9 @@ Copy this checklist into changes that affect the modeling languages.
 [ ] PSM-to-artifact generation reviewed
 [ ] UI metadata, palette, relationships, notation, and views updated
 [ ] JSON/XMI bridge and specialized frontend behavior reviewed
-[ ] AI catalog refresh and hard-coded assistant behavior reviewed
+[ ] Assistant Ecore contracts, tool behavior, and durable turn flows reviewed
 [ ] PostgreSQL migration added only if persistence schema/constraints changed
-[ ] API/OpenAPI/WebSocket contracts updated if payloads/routes changed
+[ ] API/OpenAPI/REST/SSE contracts updated if payloads/routes changed
 [ ] Samples and positive/negative regression tests updated
 [ ] Relevant docs and diagrams updated
 [ ] End-to-end create/save/reload/XMI/validate/transform/generate/assistant smoke test passed

@@ -113,47 +113,48 @@ classDiagram
 
 ```mermaid
 classDiagram
-    class AssistantOrchestrator
+    class AgenticAssistantFacade
+    class DurableAssistantTurnWorker
+    class AssistantTurnStore
+    class AssistantTurn
+    class AssistantSessionStore
+    class AssistantChatMemory
     class AssistantModelProvider {
         <<interface>>
-        +complete(prompt)
-        +completeStructured(prompt)
+        +complete(messages)
     }
-    class ModelingAgent
-    class ModelDeltaProviderClient
-    class ModelDelta
+    class AgentTurnLoop
+    class AgentActionCodec
+    class AgentModelTools
+    class ModelWorkspace
+    class AssistantMetamodelSchemaService
     class ConfiguredAssistantModelProvider
     class OpenAiCompatibleAssistantModelProvider
     class GeminiAssistantModelProvider
-    class JdbcAssistantCatalog
-    class AssistantModelContextIndexService
-    class AssistantPatchCompiler
-    class AssistantMemoryRepository
-    class SpringAiChatMemoryService
     class AssistantRealtimeHub
     class AssistantHardeningService
     class AssistantPromptGuard
-    class SemanticModelPatch
-    class AssistantProposal
+    class DurableTurnUndoService
 
     AssistantModelProvider <|.. ConfiguredAssistantModelProvider
     AssistantModelProvider <|.. OpenAiCompatibleAssistantModelProvider
     AssistantModelProvider <|.. GeminiAssistantModelProvider
     ConfiguredAssistantModelProvider --> OpenAiCompatibleAssistantModelProvider
     ConfiguredAssistantModelProvider --> GeminiAssistantModelProvider
-    AssistantOrchestrator --> ModelingAgent
-    ModelingAgent --> ModelDeltaProviderClient
-    ModelDeltaProviderClient --> AssistantModelProvider
-    ModelDeltaProviderClient --> ModelDelta
-    AssistantOrchestrator --> JdbcAssistantCatalog
-    AssistantOrchestrator --> AssistantModelContextIndexService
-    AssistantOrchestrator --> AssistantPatchCompiler
-    AssistantOrchestrator --> AssistantMemoryRepository
-    AssistantOrchestrator --> SpringAiChatMemoryService
-    AssistantOrchestrator --> AssistantRealtimeHub
-    AssistantOrchestrator --> AssistantHardeningService
+    DurableAssistantTurnWorker --> AssistantTurnStore
+    DurableAssistantTurnWorker --> AgenticAssistantFacade
+    AssistantTurnStore --> AssistantTurn
+    AgenticAssistantFacade --> AssistantSessionStore
+    AgenticAssistantFacade --> AssistantChatMemory
+    AgenticAssistantFacade --> AgentTurnLoop
+    AgentTurnLoop --> AgentActionCodec
+    AgentTurnLoop --> AgentModelTools
+    AgentModelTools --> ModelWorkspace
+    AgentModelTools --> AssistantMetamodelSchemaService
+    AgenticAssistantFacade --> AssistantRealtimeHub
+    AgenticAssistantFacade --> AssistantHardeningService
+    AgenticAssistantFacade --> AssistantModelProvider
     AssistantModelProvider --> AssistantPromptGuard
     AssistantModelProvider --> AssistantHardeningService
-    AssistantPatchCompiler --> SemanticModelPatch
-    AssistantOrchestrator --> AssistantProposal
+    DurableTurnUndoService --> AssistantTurnStore
 ```

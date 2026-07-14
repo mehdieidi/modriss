@@ -1,97 +1,69 @@
-# AI Assistant RAG and Memory
+# AI Assistant Contracts, Source Units, and Durable Memory
 
-## Catalog Indexing
-
-```mermaid
-sequenceDiagram
-    participant Boot as Spring Boot startup
-    participant Cat as JdbcAssistantCatalog
-    participant FS as mde/ and guide files
-    participant Emb as LocalAssistantEmbeddingService
-    participant DB as assistant_retrieval_documents
-
-    Boot->>Cat: @PostConstruct initialize()
-    Cat->>DB: Delete legacy EVL constraint scope rows
-    Cat->>FS: Walk .emf, .ecore, methodology JSON/MD
-    loop Each source file
-        Cat->>Cat: Compute SHA-256
-        Cat->>DB: Check existing source_hash
-        alt unchanged
-            Cat-->>Boot: Skip file
-        else changed or new
-            Cat->>DB: Delete old rows for source
-            alt Emfatic file
-                Cat->>Cat: Extract classes, attributes, references, containments
-            else Ecore file
-                Cat->>Cat: Parse classifiers and structural features
-            else Methodology guide
-                Cat->>Cat: Chunk guide content
-            end
-            Cat->>Emb: vectorLiteral(title + content)
-            Cat->>DB: Upsert document with metadata and vector(384)
-        end
-    end
-```
-
-## Retrieval Query
+## Metamodel Contract Use
 
 ```mermaid
 flowchart TD
-    query["User prompt"]
-    exact["Exact lookup<br/>lower(title)=query or lower(source)=query"]
-    exactHit{"Any exact hits?"}
-    fuzzy["Build tsquery from up to 8 query terms"]
-    embed["Embed query with ONNX or hash fallback"]
-    rank["Rank by full-text ts_rank, vector distance, and updated_at"]
-    snippets["ContextSnippet list"]
+    ecore["CIM/PIM/PSM combined Ecore"]
+    extractor["EcoreContractExtractor"]
+    index["MetamodelKnowledgeIndex"]
+    schema["AssistantMetamodelSchemaService"]
+    tools["AgentModelTools"]
+    workspace["ModelWorkspace"]
 
-    query --> exact --> exactHit
-    exactHit -- yes --> snippets
-    exactHit -- no --> fuzzy --> embed --> rank --> snippets
+    ecore --> extractor --> index --> schema --> tools
+    tools --> workspace
+    schema -->|"types, attributes, references, containments, enum values"| tools
 ```
 
-## Model Context Snapshot
+## Source-Backed Turn Provenance
 
 ```mermaid
-flowchart TB
-    model["ModelRecord modelJson + level + revision"]
-    cache{"assistant_model_contexts has same model_id, revision, model_hash?"}
-    collect["Traverse JSON tree"]
-    elements["ContextElement<br/>id, type/eClass, name/label, JSON path"]
-    rels["ContextRelationship<br/>id, source, target, kind, path"]
-    neighborhoods["Neighborhood map from relationship endpoints"]
-    issues["Latest validation issues"]
-    persist["Persist context_json and latest_issues_json"]
-    prompt["Compact prompt summary"]
+sequenceDiagram
+    actor Client
+    participant C as ChatbotController
+    participant U as UploadService
+    participant W as DurableAssistantTurnWorker
+    participant S as SourceUnitSplitter
+    participant T as AssistantTurnStore
+    participant A as AgentTurnLoop
 
-    model --> cache
-    cache -- hit --> prompt
-    cache -- miss --> collect
-    collect --> elements
-    collect --> rels
-    rels --> neighborhoods
-    issues --> persist
-    elements --> persist
-    neighborhoods --> persist
-    persist --> prompt
+    Client->>C: Upload .md/.txt/.json attachment
+    C->>U: store assistant attachment
+    Client->>C: Submit message with attachmentIds
+    C->>T: create durable turn with source text
+    W->>S: split source text into bounded units
+    W->>T: persist assistant_source_units
+    W->>A: run turn with source units and model tools
+    A-->>W: committed elements with source-grounded/inferred labels
+    W->>T: persist assistant_element_provenance
 ```
 
 ## Durable Memory Layout
 
 ```mermaid
 flowchart LR
-    turn["Assistant turn"]
-    thread["assistant_threads<br/>one per user/project/level"]
+    thread["assistant_threads<br/>user/project/level scope"]
     messages["assistant_messages<br/>durable audit history"]
     spring["SPRING_AI_CHAT_MEMORY<br/>recent chat window"]
-    summaries["assistant_thread_summaries<br/>rolling compact summary"]
-    proposals["assistant_proposals<br/>applied patch, inverse, validation, citations"]
-    audits["assistant_action_audits<br/>apply, undo, choice"]
+    summaries["assistant_thread_summaries<br/>rolling summary"]
+    turns["assistant_turns<br/>state, idempotency, deadlines, counters"]
+    events["assistant_turn_events<br/>replay cursor and payload"]
+    checkpoints["assistant_checkpoints<br/>model revision and inverse patch"]
+    sources["assistant_source_units"]
+    provenance["assistant_element_provenance"]
+    calls["assistant_provider_calls"]
+    audits["assistant_action_audits"]
+    limits["assistant_rate_limits<br/>schema reserved"]
 
-    turn --> thread
-    turn --> messages
-    turn --> spring
-    turn --> summaries
-    turn --> proposals
-    proposals --> audits
+    thread --> messages
+    thread --> spring
+    thread --> summaries
+    thread --> turns
+    turns --> events
+    turns --> checkpoints
+    turns --> sources --> provenance
+    turns --> calls
+    turns --> audits
+    limits
 ```

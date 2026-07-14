@@ -23,7 +23,7 @@ flowchart TB
     host -->|"docker compose up --build"| compose
     browser -->|"HTTP :8082"| frontend
     browser -->|"HTTP :8083"| landing
-    browser -->|"REST, SSE, WebSocket :8080"| backend
+    browser -->|"REST and SSE :8080"| backend
     backend -->|"JDBC; starts after DB healthcheck"| postgres
     postgres --> volume
     backend -->|"Optional proxied AI traffic"| proxy --> provider
@@ -38,16 +38,15 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant Core as CoreServicesConfig
     participant Meta as FileMetamodelResolver
-    participant Catalog as JdbcAssistantCatalog
+    participant Contracts as AssistantMetamodelSchemaService
     participant Health as Actuator
 
     Boot->>Flyway: Apply classpath db/migration
-    Flyway->>DB: V1 platform schema
-    Flyway->>DB: V2 pgvector and assistant schema
+    Flyway->>DB: Platform migrations V1, V5, V9
+    Flyway->>DB: Assistant migrations V14-V18
     Boot->>Core: Construct service graph
     Core->>Meta: Resolve CIM, PIM, PSM metamodel descriptors
     Meta-->>Core: EPackages, versions, SHA-256 hashes
-    Boot->>Catalog: @PostConstruct initialize()
-    Catalog->>DB: Reindex changed .emf/.ecore/.evl files
+    Boot->>Contracts: Build Ecore-derived assistant contracts on demand
     Boot->>Health: Expose readiness and liveness
 ```

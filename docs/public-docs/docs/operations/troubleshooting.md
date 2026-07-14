@@ -38,9 +38,10 @@ generator issue.
 - Confirm `VARKA_AI_ENABLED=true`.
 - Check provider base URL, credentials, model names, and request timeout.
 - Check dedicated AI proxy configuration.
-- Set `VARKA_AI_ENABLED=false` while diagnosing provider or proposal issues.
-- If ONNX cannot load, enable hash fallback or select `HASH`.
-- Restart the backend after metamodel or EVL changes so retrieval documents are reindexed.
+- Set `VARKA_AI_ENABLED=false` while diagnosing provider or durable turn issues.
+- Make sure message requests include an `idempotencyKey`.
+- Restart or rebuild the backend after metamodel or EVL changes so packaged MDE resources and
+  Ecore-derived assistant contracts are fresh.
 
 ## Diagram Canvas Does Not Render
 
@@ -48,12 +49,12 @@ generator issue.
 - Check `/api/modeling/config` returns `diagramEditor.renderer` as `antv-g6`.
 - Inspect the browser console for renderer mount errors.
 
-## WebSocket Does Not Connect
+## Assistant Events Do Not Arrive
 
-- Use `/ws/chatbot/sessions/{sessionId}`.
+- Use authenticated SSE: `GET /api/chatbot/turns/{turnId}/events`.
+- Send `X-Auth-Token` and optionally `Last-Event-ID` or `eventCursor` to replay missed events.
 - Confirm the browser origin is allowed.
-- Remember that the WebSocket is receive-only; submit messages with REST.
-- Fall back to the SSE event endpoint when appropriate.
+- Poll `GET /api/chatbot/turns/{turnId}` if the SSE connection is interrupted.
 
 ## LocalStack Deployment Fails
 

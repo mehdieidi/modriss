@@ -32,15 +32,15 @@ For the complete field-by-field reference, including accepted values and behavio
 
 ## Ports, origins, and frontend
 
-| Variable                      | Default                   | Effect                                                                                                                            |
-| ----------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `BACKEND_PORT`                | `8080`                    | Host port for the API; the container still listens on `8080`.                                                                     |
-| `FRONTEND_PORT`               | `8082`                    | Host port for the modeling frontend.                                                                                              |
-| `LANDING_PORT`                | `8083`                    | Host port for the landing site.                                                                                                   |
-| `VARKA_DIAGRAM_RENDERER`      | `antv-g6`                 | Selects the diagram editor renderer. Unsupported values can make the modeling editor fail to initialize.                          |
-| `VARKA_ALLOWED_ORIGINS`       | derived by Compose        | Comma-separated CORS/WebSocket origins. Setting it replaces the generated origin list; an incorrect list blocks browser requests. |
-| `VARKA_CONTAINER_UPLOAD_ROOT` | `/app/uploads` in Compose | Backend-container upload path. Change it only if the corresponding storage mount/path exists.                                     |
-| `FREELLMAPI_NETWORK`          | `freellmapi_default`      | Optional external Docker network for host-based FreeLLM/API access. A wrong network name affects only that optional attachment.   |
+| Variable                      | Default                   | Effect                                                                                                                                                |
+| ----------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BACKEND_PORT`                | `8080`                    | Host port for the API; the container still listens on `8080`.                                                                                         |
+| `FRONTEND_PORT`               | `8082`                    | Host port for the modeling frontend.                                                                                                                  |
+| `LANDING_PORT`                | `8083`                    | Host port for the landing site.                                                                                                                       |
+| `VARKA_DIAGRAM_RENDERER`      | `antv-g6`                 | Selects the diagram editor renderer. Unsupported values can make the modeling editor fail to initialize.                                              |
+| `VARKA_ALLOWED_ORIGINS`       | derived by Compose        | Comma-separated CORS origins for browser REST/SSE requests. Setting it replaces the generated origin list; an incorrect list blocks browser requests. |
+| `VARKA_CONTAINER_UPLOAD_ROOT` | `/app/uploads` in Compose | Backend-container upload path. Change it only if the corresponding storage mount/path exists.                                                         |
+| `FREELLMAPI_NETWORK`          | `freellmapi_default`      | Optional external Docker network for host-based FreeLLM/API access. A wrong network name affects only that optional attachment.                       |
 
 ## MDE and uploads
 
@@ -57,22 +57,24 @@ assistant context, but increase storage and processing costs.
 ## AI assistant
 
 Set `VARKA_AI_ENABLED=true` before selecting a provider. `VARKA_AI_PROVIDER` accepts `openai`,
-`openai-compatible`, `openai_compatible`, or `gemini`. OpenAI-compatible providers use
-`OPENAI_COMPATIBLE_BASE_URL` and `OPENAI_COMPATIBLE_API_KEY`; Gemini uses `GEMINI_API_KEY`.
+`openai-compatible`, `openai_compatible`, or `gemini`. The two OpenAI-compatible aliases normalize
+to the `openai` provider path and use `OPENAI_COMPATIBLE_BASE_URL` plus
+`OPENAI_COMPATIBLE_API_KEY`; Gemini uses `GEMINI_API_KEY`.
 
 Timeouts, token budgets, context limits, agent steps, tool-call limits, repair attempts, source
 passes, rate limits, retries, and recent-message windows all trade completeness and resilience
 against latency, memory use, and provider cost. Increasing them allows more complex turns; lowering
 them makes failures faster and cheaper. `VARKA_AI_FALLBACK_PROVIDER` is used only after an HTTP 429
-from the primary provider. `VARKA_AI_REQUIRE_IDEMPOTENCY_KEY=true` protects turn retries from
-duplicate application.
+from the primary provider. Durable assistant message submission currently requires an
+`idempotencyKey` in the request body so retries cannot apply duplicate work.
 
-`VARKA_AI_PLANNER_MODEL`, `VARKA_AI_RESPONDER_MODEL`, and `VARKA_AI_SUMMARIZER_MODEL` accept an
-empty value for provider defaults, `auto` for gateways that support that alias, or a provider model
-name. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION` and
-`VARKA_AI_LLM_CONTRACT_RERANK_ENABLED` can improve source/retrieval quality at the cost of extra
-provider calls. The proxy variables accept `DIRECT`, `HTTP`, or `SOCKS`; proxy settings affect AI
-provider traffic only.
+`VARKA_AI_RESPONDER_MODEL` is the active model-selection knob. Empty values use provider defaults:
+`gpt-4o-mini` for OpenAI-compatible providers and `gemini-2.0-flash` for Gemini. The
+`VARKA_AI_PLANNER_MODEL` and `VARKA_AI_SUMMARIZER_MODEL` keys are still accepted for compatibility,
+but the current resolver uses the responder model for assistant roles. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION`
+and `VARKA_AI_LLM_CONTRACT_RERANK_ENABLED` can improve source/retrieval quality at the cost of
+extra provider calls. The proxy variables accept `DIRECT`, `HTTP`, or `SOCKS`; proxy settings
+affect AI provider traffic only.
 
 ## Observability
 

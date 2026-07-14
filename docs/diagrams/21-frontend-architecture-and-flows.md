@@ -110,21 +110,18 @@ sequenceDiagram
     actor User
     participant UI as chat.js
     participant API as ChatbotController
-    participant WS as WebSocket
-    participant SSE as EventSource
+    participant SSE as Authenticated SSE
     participant Canvas as canvas/model state
 
     User->>UI: Open chat and send message
     UI->>API: POST /chatbot/sessions if no session
     API-->>UI: sessionId
-    UI->>WS: Connect /ws/chatbot/sessions/{id}
-    alt websocket fails
-        UI->>SSE: Open /api/chatbot/sessions/{id}/events
-    end
-    UI->>API: POST /chatbot/sessions/{id}/messages with modelId, revision, selected IDs
-    API-->>UI: MessageResponse
-    UI->>UI: Render assistant message, proposal cards, choices
-    opt response references updated model
+    UI->>API: POST /chatbot/sessions/{id}/messages with modelId, revision, selected IDs, idempotencyKey
+    API-->>UI: 202 TurnAcceptedResponse
+    UI->>SSE: GET /api/chatbot/turns/{turnId}/events
+    SSE-->>UI: stage/tool/checkpoint/completion events
+    UI->>UI: Render turn status, checkpoints, confirmation/continue/undo controls
+    opt checkpoint or completed turn references updated model
         UI->>API: GET /api/{level}/{modelId}
         UI->>Canvas: Apply model only if no newer local edits
     end

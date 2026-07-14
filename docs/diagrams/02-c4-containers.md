@@ -7,8 +7,8 @@ flowchart TB
     subgraph varka["Varka System"]
         landing["Container: Landing Site<br/>Static HTML/CSS/JS<br/>Product story and case study"]
         frontend["Container: Modeling Frontend<br/>Plain HTML/CSS/JavaScript<br/>AntV G6 renderer"]
-        backend["Container: Spring Boot Backend<br/>Java 17 + Spring MVC/WebSocket/JDBC/AI<br/>API, orchestration, validation, transformation"]
-        postgres[("Container: PostgreSQL + pgvector<br/>Application records, assistant memory, embeddings")]
+        backend["Container: Spring Boot Backend<br/>Java 17 + Spring MVC/JDBC/AI<br/>API, orchestration, validation, transformation"]
+        postgres[("Container: PostgreSQL<br/>Application records, assistant memory, durable turns")]
         mde["Container: MDE Repository Assets<br/>Emfatic/Ecore, EVL, ETL, EGX/EGL<br/>Formal languages and executable rules"]
         cli["Container: MDE CLI Tools<br/>Picocli shaded JARs<br/>Metamodel compile, validate, transform, generate"]
     end
@@ -19,7 +19,7 @@ flowchart TB
     user -->|"HTTPS/static content"| landing
     user -->|"Browser interaction"| frontend
     frontend -->|"REST JSON, multipart, downloads"| backend
-    frontend <-->|"WebSocket or SSE assistant events"| backend
+    frontend <-->|"Authenticated SSE assistant events"| backend
     backend -->|"Spring JDBC"| postgres
     backend -->|"Reads executable MDE assets"| mde
     cli -->|"Reads executable MDE assets"| mde
@@ -33,19 +33,16 @@ flowchart TB
 flowchart LR
     browser["Browser frontend"]
     mvc["Spring MVC controllers"]
-    ws["WebSocket handler"]
     sse["SSE emitter hub"]
     services["Application and assistant services"]
     jdbc["JDBC / PlatformStore adapter"]
-    db[("PostgreSQL / pgvector")]
+    db[("PostgreSQL")]
     files["MDE files and temporary workspaces"]
     epsilon["Epsilon and EMF runtimes"]
 
     browser -->|"REST: JSON, multipart, ZIP/text downloads"| mvc
-    browser <-->|"WS /ws/chatbot/sessions/{id}"| ws
-    browser <--|"SSE /api/chatbot/sessions/{id}/events"| sse
+    browser <--|"SSE /api/chatbot/turns/{turnId}/events"| sse
     mvc --> services
-    ws --> sse
     services --> jdbc --> db
     services --> epsilon
     epsilon --> files

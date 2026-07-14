@@ -70,7 +70,7 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    backend["Backend"] --> spring["Spring Boot MVC, JDBC, WebSocket, Validation, Actuator"]
+    backend["Backend"] --> spring["Spring Boot MVC, JDBC, Validation, Actuator"]
     backend --> springai["Spring AI chat, OpenAI, Google GenAI, JDBC chat memory, transformers"]
     backend --> flyway["Flyway"]
     backend --> pg["PostgreSQL driver"]

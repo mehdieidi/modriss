@@ -19,10 +19,12 @@ artifacts. Security controls therefore span the platform runtime and the project
 - AI is disabled unless explicitly enabled.
 - The assistant runs as one autonomous modeling agent. Model-changing work is compiled, validated,
   applied, audited, and exposed with undo.
-- The assistant receives compact context rather than unrestricted full model and rule dumps.
-- Proposed changes are compiled, validated, risk-classified, and audited.
-- Risky proposals are blocked until structural validation passes; valid mutations auto-apply and
-  may include an inverse patch for undo.
+- The assistant uses backend-owned metamodel contracts, selected model state, optional attachments,
+  and durable recent conversation context rather than raw EVL files or unchecked database access.
+- Tool-driven changes are checked against live Ecore contracts, structurally validated, committed
+  against the expected model revision, and audited through durable turns.
+- Destructive batches require explicit confirmation; committed checkpoints may include inverse
+  patches for undo.
 - Provider calls have timeouts, retries, rate limits, a circuit breaker, and an optional dedicated
   proxy.
 - Provider credentials belong in environment variables or a secret manager, never committed files.
@@ -33,7 +35,7 @@ The development Compose stack uses convenient local defaults. Before public depl
 
 - Terminate TLS and restrict all exposed ports.
 - Replace default database credentials and rotate secrets.
-- Restrict CORS and WebSocket origins to deployed frontend origins.
+- Restrict CORS origins to deployed frontend origins.
 - Restrict Actuator and database access.
 - Configure backups, restoration tests, log retention, monitoring, and alerting.
 - Define AI provider cost, privacy, retention, and acceptable-use policy.

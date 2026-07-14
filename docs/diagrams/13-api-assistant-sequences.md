@@ -1,4 +1,4 @@
-# Assistant API, SSE, and WebSocket Sequences
+# Assistant API and Durable SSE Sequences
 
 ## POST `/api/chatbot/sessions`
 
@@ -7,19 +7,14 @@ sequenceDiagram
     actor Client
     participant C as ChatbotController
     participant P as ProjectService
-    participant O as AssistantOrchestrator
-    participant MR as AssistantMemoryRepository
+    participant A as AgenticAssistantFacade
     participant S as AssistantSessionStore
-    Client->>C: token + projectId + modelType + modelName
+    Client->>C: X-Auth-Token + projectId + modelType + modelName + optional resumeSessionId/forceNew
     C->>P: Verify project access
-    C->>O: startSession(user, projectId, level, title)
-    O->>P: Load project and active model id
-    opt active model exists
-        O->>O: Load current model revision
-    end
-    O->>MR: ensureThread(user, project, level, title, modelId, revision)
-    O->>S: create runtime session
-    O-->>C: AssistantSession
+    C->>A: startSession(user, projectId, level, modelName, resumeSessionId, forceNew)
+    A->>S: create or resume durable thread/session
+    S-->>A: AssistantSession
+    A-->>C: AssistantSession
     C-->>Client: sessionId, modelId null
 ```
 
@@ -29,187 +24,101 @@ sequenceDiagram
 sequenceDiagram
     actor Client
     participant C as ChatbotController
-    participant O as AssistantOrchestrator
-    participant Hard as AssistantHardeningService
-    participant Mem as AssistantMemoryRepository
-    participant ChatMem as SpringAiChatMemoryService
-    participant Models as ModelService
-    participant Ctx as AssistantModelContextIndexService
-    participant Cat as JdbcAssistantCatalog
-    participant Provider as AssistantModelProvider
-    participant Patch as AssistantPatchCompiler
-    participant RT as AssistantRealtimeHub
+    participant A as AgenticAssistantFacade
+    participant U as UploadService
+    participant T as AssistantTurnStore
+    participant W as DurableAssistantTurnWorker
 
-    Client->>C: message, modelId, revision, activeView, selections, draftPatch
-    C->>O: handleMessage(user, sessionId, turnRequest)
-    O->>Hard: checkRateLimit(userId)
-    O->>Mem: append USER message
-    O->>ChatMem: appendUser(threadId, content)
-    alt AI disabled or provider unavailable
-        O->>Mem: append disabled ASSISTANT message
-        O->>RT: publish chat.assistant
-        O-->>C: Explained response
-    else AI enabled
-        O->>Models: Resolve and load active model
-        O->>Models: Validate stored model
-        O->>Ctx: Snapshot compact context and cache by revision
-        O->>Cat: Retrieve metamodel and methodology snippets
-        O->>Provider: completeStructured(intent prompt)
-        Provider-->>O: Intent decision
-        alt information turn
-            O->>Provider: completeStructured(read-only prompt)
-            Provider-->>O: Assistant explanation
-        else mutation turn
-            O->>Provider: completeStructured(ModelDelta prompt)
-            Provider-->>O: ModelDelta
-            O->>O: Parse, normalize, and compile ModelDelta
-            O->>Patch: compile patch to JSON patch + inverse
-            O->>Patch: apply patch to preview model
-            O->>Models: Validate preview structurally
-            O->>Models: patch stored model with expected revision
-            O->>Mem: save applied proposal audit record
-            O->>RT: publish model.updated
-        end
-        O->>Mem: append ASSISTANT message and audit records
-        O->>ChatMem: appendAssistant(threadId, content)
-        O->>Mem: update rolling summary
-        O->>RT: publish chat.assistant
-        O-->>C: AssistantTurnResponse
+    Client->>C: message, modelId, expectedRevision/revision, selectedElementIds, attachmentIds, idempotencyKey
+    C->>A: session(user, sessionId)
+    C->>U: resolve uploaded or inline attachments
+    alt duplicate idempotencyKey
+        C->>T: findByIdempotency(sessionId, key)
+        T-->>C: existing turn
+        C-->>Client: 202 TurnAcceptedResponse(existing)
+    else new durable turn
+        C->>A: ensureModel(user, sessionId, modelId)
+        A-->>C: starter model id/revision
+        C->>T: create QUEUED AssistantTurn
+        C->>T: save starter checkpoint and model.checkpoint event
+        C-->>Client: 202 TurnAcceptedResponse(turnId, state, modelId, revision, cursor)
+        W-->>T: asynchronously claim and process queued turn
     end
-    C-->>Client: MessageResponse
 ```
 
-## GET `/api/chatbot/sessions/{sessionId}/events`
+## GET `/api/chatbot/turns/{turnId}/events`
 
 ```mermaid
 sequenceDiagram
     actor Client
     participant C as ChatbotController
-    participant RT as AssistantRealtimeHub
+    participant T as AssistantTurnStore
     participant E as SseEmitter
-    Client->>C: Open EventSource stream
-    C->>RT: registerSse(sessionId, emitter)
-    RT->>E: Track completion, timeout, error cleanup
-    C->>RT: publish assistant.ready
-    RT-->>Client: named SSE event assistant.ready
-    loop Later assistant events
-        RT-->>Client: chat.assistant, model.updated, assistant.choice
+    Client->>C: X-Auth-Token + Last-Event-ID or eventCursor
+    C->>T: find(turnId) and verify owner
+    C->>E: open 30 minute text/event-stream
+    loop replay every 250 ms until terminal
+        C->>T: events(turnId, cursor)
+        T-->>C: events after cursor
+        C-->>Client: id, event name, AssistantTurn.Event payload
     end
+    C-->>Client: complete stream when turn is terminal
 ```
 
-## POST `/api/chatbot/sessions/{sessionId}/attachments`
+## Turn Control Endpoints
 
 ```mermaid
 sequenceDiagram
     actor Client
     participant C as ChatbotController
-    participant O as AssistantOrchestrator
+    participant T as AssistantTurnStore
+    participant Undo as DurableTurnUndoService
+
+    Client->>C: GET /api/chatbot/turns/{turnId}
+    C->>T: find, checkpoints, provenance
+    C-->>Client: TurnStatusResponse
+
+    Client->>C: POST /api/chatbot/turns/{turnId}/cancel
+    C->>T: requestCancellation + audit
+    C-->>Client: 202 Accepted
+
+    Client->>C: POST /api/chatbot/turns/{turnId}/continue
+    C->>T: create follow-up QUEUED turn from terminal turn
+    C-->>Client: 202 TurnAcceptedResponse
+
+    Client->>C: POST /api/chatbot/turns/{turnId}/confirm
+    C->>T: create confirmed destructive follow-up turn
+    C-->>Client: 202 TurnAcceptedResponse
+
+    Client->>C: POST /api/chatbot/turns/{turnId}/undo
+    C->>Undo: apply checkpoint inverse
+    Undo-->>C: modelId, revision
+    C-->>Client: TurnUndoResponse
+```
+
+## Attachments, Thread, and Clear
+
+```mermaid
+sequenceDiagram
+    actor Client
+    participant C as ChatbotController
+    participant A as AgenticAssistantFacade
     participant P as ProjectService
     participant U as UploadService
-    Client->>C: token + sessionId + multipart file
-    C->>O: session(user, sessionId)
-    O-->>C: AssistantSession(project, level)
-    C->>P: Verify project access
+
+    Client->>C: POST /api/chatbot/sessions/{sessionId}/attachments multipart file
+    C->>A: session(user, sessionId)
+    C->>P: verify project access
     C->>U: uploadAssistantAttachment(scope, file)
     U-->>C: UploadedFileRecord
     C-->>Client: AttachmentResponse
-```
 
-## WebSocket `/ws/chatbot/sessions/{sessionId}`
+    Client->>C: GET /api/chatbot/sessions/{sessionId}/thread
+    C->>A: thread(user, sessionId)
+    A-->>C: messages, workflowState, provider metadata
+    C-->>Client: ThreadResponse
 
-```mermaid
-sequenceDiagram
-    actor Client
-    participant Config as ChatbotWebSocketConfig
-    participant H as ChatbotWebSocketHandler
-    participant RT as AssistantRealtimeHub
-    Client->>Config: Upgrade request /ws/chatbot/sessions/{id}
-    Config->>H: Route accepted origin
-    H->>RT: registerWebSocket(sessionId, WebSocketSession)
-    H->>RT: publish assistant.ready
-    RT-->>Client: JSON AssistantRealtimeEvent
-    Client->>H: Optional text message
-    H-->>Client: ignored; receive-only transport
-    Client-->>H: Close
-    H->>RT: unregisterWebSocket(sessionId)
-```
-
-## DELETE `/api/chatbot/sessions/{sessionId}`
-
-```mermaid
-sequenceDiagram
-    actor Client
-    participant C as ChatbotController
-    participant O as AssistantOrchestrator
-    participant Mem as AssistantMemoryRepository
-    participant ChatMem as SpringAiChatMemoryService
-    participant S as AssistantSessionStore
-    Client->>C: token + sessionId
-    C->>O: clear(user, sessionId)
-    O->>S: require runtime or durable session
-    O->>Mem: clearThread(threadId)
-    O->>ChatMem: clear(threadId)
-    O->>S: clear runtime session
-    C-->>Client: Empty response
-```
-
-## GET `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`
-
-```mermaid
-sequenceDiagram
-    actor Client
-    participant C as ChatbotController
-    participant O as AssistantOrchestrator
-    participant Mem as AssistantMemoryRepository
-    Client->>C: token + sessionId + proposalId
-    C->>O: proposal(user, sessionId, proposalId)
-    O->>Mem: findProposal(proposalId)
-    O->>O: Verify proposal belongs to user/project/level thread
-    O-->>C: AssistantProposal
-    C-->>Client: AssistantProposal
-```
-
-## POST `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo`
-
-```mermaid
-sequenceDiagram
-    actor Client
-    participant C as ChatbotController
-    participant O as AssistantOrchestrator
-    participant Mem as AssistantMemoryRepository
-    participant Models as ModelService
-    participant Patch as AssistantPatchCompiler
-    participant RT as AssistantRealtimeHub
-    Client->>C: token + applied proposal id
-    C->>O: undoProposal(...)
-    O->>Mem: Load APPLIED proposal with inverse patch
-    O->>Models: Load current model
-    O->>Patch: Apply inverse patch to preview
-    O->>Models: Validate preview
-    alt mandatory validation passes
-        O->>Models: patch current model with inverse patch
-        O->>Mem: status UNDONE and audit UNDONE
-        O->>RT: publish model.updated undo=true
-        O-->>C: Proposal undone response
-    else validation fails
-        O->>Mem: audit UNDO_FAILED
-        O-->>C: 422 error
-    end
-    C-->>Client: MessageResponse or ApiErrorResponse
-```
-
-## POST `/api/chatbot/sessions/{sessionId}/choices`
-
-```mermaid
-sequenceDiagram
-    actor Client
-    participant C as ChatbotController
-    participant O as AssistantOrchestrator
-    participant Mem as AssistantMemoryRepository
-    participant RT as AssistantRealtimeHub
-    Client->>C: token + choiceId + optionId
-    C->>O: submitChoice(user, sessionId, choiceId, optionId)
-    O->>Mem: append CHOICE audit
-    O->>RT: publish assistant.choice
-    C-->>Client: MessageResponse
+    Client->>C: DELETE /api/chatbot/sessions/{sessionId}
+    C->>A: clear(user, sessionId)
+    C-->>Client: empty response
 ```
