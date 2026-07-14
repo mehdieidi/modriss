@@ -14,3 +14,8 @@ repos:
         entry: python scripts/format.py --check
         language: system
         pass_filenames: false
+      - id: flyway-migration-version-check
+        name: flyway migration version check
+        entry: python scripts/check-flyway-migration-versions.py --changed-only
+        language: system
+        pass_filenames: false

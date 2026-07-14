@@ -48,6 +48,10 @@ spring:
 
 varka:
   session-ttl: 30d
+  admin:
+    bootstrap-enabled: ${VARKA_ADMIN_BOOTSTRAP_ENABLED:false}
+    bootstrap-emails: ${VARKA_ADMIN_BOOTSTRAP_EMAILS:}
+    bootstrap-token: ${VARKA_ADMIN_BOOTSTRAP_TOKEN:}
   mde:
     execution-timeout: ${VARKA_MDE_EXECUTION_TIMEOUT:5m}
     job-timeout: ${VARKA_MDE_JOB_TIMEOUT:10m}

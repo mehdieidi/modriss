@@ -95,17 +95,27 @@ MDE job metadata extensions are in `V5__mde_job_async_metadata.sql` under
 `V9__project_member_custom_roles.sql`. Assistant durable-turn tables are introduced by
 `V14__assistant_baseline.sql` and refined by the later assistant migrations.
 
-For future schema edits, do not modify an already-applied migration in a shared or production
-database. Add a new migration instead:
+Flyway versions are global across both migration locations because the backend loads both locations
+into the same Flyway instance. Do not choose a version by looking at only one folder. For future
+schema edits, do not modify an already-applied migration in a shared or production database. Add a
+new migration with the helper script instead:
 
-```text
-V2__add_example_column.sql
-V3__create_example_table.sql
+```powershell
+python scripts/flyway-next-migration.py "add example table" --location platform
+python scripts/flyway-next-migration.py "assistant example table" --location assistant
+```
+
+The script scans both platform and assistant migrations and creates the next global version. To
+check newly added migration files:
+
+```powershell
+python scripts/check-flyway-migration-versions.py --changed-only
 ```
 
 Good migration rules:
 
 - Use forward-only migrations.
+- Never guess migration numbers manually.
 - Make constraints explicit with `NOT NULL`, `CHECK`, primary keys, foreign keys, and indexes.
 - Add backfill steps before adding new `NOT NULL` constraints to existing populated tables.
 - Keep application code compatible with the migration order.

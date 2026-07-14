@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.backend.api;
 
+import io.mehdieidi.varka.backend.admin.AdminAccessService;
 import io.mehdieidi.varka.platform.identity.application.AuthService;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
 import jakarta.validation.Valid;
@@ -20,14 +21,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
   private final AuthService authService;
+  private final AdminAccessService adminAccess;
 
   /**
    * Creates the authentication controller.
    *
    * @param authService authentication service
    */
-  public AuthController(AuthService authService) {
+  public AuthController(AuthService authService, AdminAccessService adminAccess) {
     this.authService = authService;
+    this.adminAccess = adminAccess;
   }
 
   /**
@@ -52,6 +55,7 @@ public class AuthController {
   @PostMapping("/login")
   AuthResponse login(@Valid @RequestBody LoginRequest request) {
     AuthService.AuthResult result = authService.login(request.email(), request.password());
+    adminAccess.requireEnabled(result.user());
     return new AuthResponse(result.token(), UserDto.from(result.user()));
   }
 
@@ -63,7 +67,9 @@ public class AuthController {
    */
   @GetMapping("/me")
   UserDto me(@RequestHeader("X-Auth-Token") String token) {
-    return UserDto.from(authService.requireUser(token));
+    UserRecord user = authService.requireUser(token);
+    adminAccess.requireEnabled(user);
+    return UserDto.from(user);
   }
 
   /**
@@ -76,7 +82,9 @@ public class AuthController {
   @PutMapping("/me")
   UserDto updateMe(
       @RequestHeader("X-Auth-Token") String token, @Valid @RequestBody UpdateMeRequest request) {
-    return UserDto.from(authService.updateDisplayName(token, request.displayName()));
+    UserRecord user = authService.updateDisplayName(token, request.displayName());
+    adminAccess.requireEnabled(user);
+    return UserDto.from(user);
   }
 
   /**

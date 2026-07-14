@@ -37,7 +37,9 @@ before opening a PR.
 - Keep PRs focused; link related issues when applicable.
 - Use the [pull request template](.github/pull_request_template.md).
 - Update OpenAPI (`docs/api/openapi/openapi.yaml`) when REST endpoints change.
-- Add a Flyway migration when the PostgreSQL schema changes.
+- Add a Flyway migration when the PostgreSQL schema changes. Use
+  `python scripts/flyway-next-migration.py "<description>"` instead of choosing the version
+  manually, because Flyway versions are global across all backend migration locations.
 - Update sample models under `mde/samples/` when validation rules affect them.
 - Run `python scripts/verify.py` before opening a PR.
 

@@ -1,0 +1,42 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/rules/varka-alerts.yml
+
+scrape_configs:
+  - job_name: varka-backend
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - backend:8080
+
+  - job_name: varka-caddy
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - caddy:2019
+
+  - job_name: varka-postgres
+    static_configs:
+      - targets:
+          - postgres-exporter:9187
+
+  - job_name: varka-containers
+    static_configs:
+      - targets:
+          - cadvisor:8080
+
+  - job_name: varka-host
+    static_configs:
+      - targets:
+          - node-exporter:9100
+
+  - job_name: varka-observability
+    static_configs:
+      - targets:
+          - prometheus:9090
+          - loki:3100
+          - promtail:9080
+          - grafana:3000

@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.backend.api;
 
+import io.mehdieidi.varka.backend.admin.AdminAccessService;
 import io.mehdieidi.varka.platform.identity.application.AuthService;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
 import org.springframework.stereotype.Component;
@@ -9,14 +10,16 @@ import org.springframework.stereotype.Component;
 public class AuthSupport {
 
   private final AuthService authService;
+  private final AdminAccessService adminAccess;
 
   /**
    * Creates controller authentication support.
    *
    * @param authService authentication service
    */
-  public AuthSupport(AuthService authService) {
+  public AuthSupport(AuthService authService, AdminAccessService adminAccess) {
     this.authService = authService;
+    this.adminAccess = adminAccess;
   }
 
   /**
@@ -26,6 +29,8 @@ public class AuthSupport {
    * @return authenticated user
    */
   public UserRecord user(String token) {
-    return authService.requireUser(token);
+    UserRecord user = authService.requireUser(token);
+    adminAccess.requireEnabled(user);
+    return user;
   }
 }

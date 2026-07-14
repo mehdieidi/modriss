@@ -1,0 +1,91 @@
+{
+	auto_https off
+	admin 0.0.0.0:2019
+	servers {
+		metrics
+	}
+}
+
+(security_headers) {
+	header {
+		?X-Content-Type-Options nosniff
+		?X-Frame-Options DENY
+		?Referrer-Policy no-referrer
+		?Permissions-Policy "geolocation=(), microphone=(), camera=()"
+	}
+}
+
+(backend_routes) {
+	@backend path /api/* /actuator/* /v3/api-docs* /swagger-ui* /swagger-ui.html
+	reverse_proxy @backend backend:8080
+}
+
+(access_logs) {
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 10MiB
+			roll_keep 5
+			roll_keep_for 168h
+		}
+		format json
+	}
+}
+
+http://:8088 {
+	import security_headers
+	import access_logs
+	import backend_routes
+
+	reverse_proxy frontend:8082
+}
+
+http://api.localhost:8088 {
+	import security_headers
+	import access_logs
+	reverse_proxy backend:8080
+}
+
+http://admin.localhost:8088 {
+	import security_headers
+	import access_logs
+	import backend_routes
+
+	reverse_proxy admin:8084
+}
+
+http://landing.localhost:8088 {
+	import security_headers
+	import access_logs
+	import backend_routes
+	reverse_proxy landing:8083
+}
+
+http://grafana.localhost:8088 {
+	import security_headers
+	import access_logs
+	reverse_proxy grafana:3000
+}
+
+http://prometheus.localhost:8088 {
+	import security_headers
+	import access_logs
+	reverse_proxy prometheus:9090
+}
+
+http://logs.localhost:8088 {
+	import security_headers
+	import access_logs
+	reverse_proxy dozzle:8080
+}
+
+http://loki.localhost:8088 {
+	import security_headers
+	import access_logs
+	reverse_proxy loki:3100
+}
+
+http://localstack.localhost:8088 {
+	import security_headers
+	import access_logs
+	reverse_proxy localstack:4566
+}

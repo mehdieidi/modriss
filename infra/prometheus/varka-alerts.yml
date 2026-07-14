@@ -87,3 +87,64 @@ groups:
           severity: warning
         annotations:
           summary: Assistant turns are completing without full progress
+
+      - alert: VarkaEdgeDown
+        expr: up{job="varka-caddy"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Caddy edge proxy metrics are unreachable
+
+      - alert: VarkaPostgresExporterDown
+        expr: up{job="varka-postgres"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: PostgreSQL exporter is unreachable
+
+      - alert: VarkaContainerTelemetryDown
+        expr: up{job="varka-containers"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Container metrics exporter is unreachable
+
+      - alert: VarkaHostTelemetryDown
+        expr: up{job="varka-host"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host metrics exporter is unreachable
+
+      - alert: VarkaHostDiskFilling
+        expr: |
+          (
+            node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"}
+            /
+            node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"}
+          ) < 0.15
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host filesystem has less than 15% free space
+
+      - alert: VarkaFrontendErrors
+        expr: increase(varka_frontend_telemetry_events_total{kind=~"js_error|unhandled_rejection"}[15m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Browser-side frontend errors have been reported
+
+      - alert: VarkaObservabilityTargetDown
+        expr: up{job="varka-observability"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: One or more observability services are unreachable

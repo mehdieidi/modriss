@@ -60,6 +60,7 @@ nav:
       - Backend and Storage: architecture/backend-storage.md
       - Frontend: architecture/frontend.md
   - Operations:
+      - DevOps and SRE: operations/devops-sre.md
       - Deployment: operations/deployment.md
       - Security: operations/security.md
       - Testing: operations/testing.md

@@ -51,6 +51,8 @@ def main() -> int:
             lint_cmd.extend(["--scope", *args.lint_scope.split(",")])
         run(lint_cmd)
 
+    run([python_executable(), "scripts/check-flyway-migration-versions.py", "--changed-only"])
+
     run(["node", "mde/methodology/tools/validate-coverage.mjs"])
 
     if not args.skip_tests:

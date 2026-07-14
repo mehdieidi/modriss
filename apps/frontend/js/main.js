@@ -1,5 +1,6 @@
 import { el } from "./dom.js";
 import { state } from "./state.js";
+import { initFrontendTelemetry } from "./telemetry.js";
 import { initTheme, toggleTheme } from "./theme.js";
 import {
   applyViewport,
@@ -1201,3 +1202,4 @@ init().catch((error) => {
   console.error("Application initialization failed", error);
   setError(error, { prefix: "Application initialization failed." });
 });
+initFrontendTelemetry();

@@ -2,6 +2,9 @@ import { animate, createTimeline, stagger } from "https://cdn.jsdelivr.net/npm/a
 import { phases } from "./case-study.js";
 import { renderCaseStudy, updateRenderedModelEdges } from "./model-renderer.js";
 import { createStoryTimeline, STORY_DURATION } from "./story-timeline.js";
+import { initLandingTelemetry } from "./telemetry.js";
+
+initLandingTelemetry();
 
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
 const THEME_STORAGE_KEY = "varka-theme";

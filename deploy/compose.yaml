@@ -16,6 +16,34 @@ name: varka
 #   docker compose up --build --force-recreate backend
 
 services:
+  caddy:
+    image: caddy:2.8-alpine
+    ports:
+      - "${CADDY_HTTP_PORT:-8088}:8088"
+    volumes:
+      - ../infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - varka-caddy-logs:/var/log/caddy
+      - varka-caddy-data:/data
+      - varka-caddy-config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+      admin:
+        condition: service_started
+      landing:
+        condition: service_started
+      grafana:
+        condition: service_started
+      prometheus:
+        condition: service_started
+      dozzle:
+        condition: service_started
+      loki:
+        condition: service_started
+    restart: unless-stopped
+
   postgres:
     image: pgvector/pgvector:pg16
     environment:
@@ -48,7 +76,8 @@ services:
       VARKA_DB_USER: ${POSTGRES_USER:-varka}
       VARKA_DB_PASSWORD: ${POSTGRES_PASSWORD:-varka}
       VARKA_UPLOAD_ROOT: ${VARKA_CONTAINER_UPLOAD_ROOT:-/app/uploads}
-      VARKA_ALLOWED_ORIGINS: ${VARKA_ALLOWED_ORIGINS:-http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:${BACKEND_PORT:-8080},http://localhost:${BACKEND_PORT:-8080},http://127.0.0.1:${FRONTEND_PORT:-8082},http://localhost:${FRONTEND_PORT:-8082},http://127.0.0.1:${LANDING_PORT:-8083},http://localhost:${LANDING_PORT:-8083}}
+      VARKA_ALLOWED_ORIGINS: ${VARKA_ALLOWED_ORIGINS:-http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:${BACKEND_PORT:-8080},http://localhost:${BACKEND_PORT:-8080},http://127.0.0.1:${FRONTEND_PORT:-8082},http://localhost:${FRONTEND_PORT:-8082},http://127.0.0.1:${LANDING_PORT:-8083},http://localhost:${LANDING_PORT:-8083},http://127.0.0.1:${ADMIN_PORT:-8084},http://localhost:${ADMIN_PORT:-8084},http://localhost:${CADDY_HTTP_PORT:-8088},http://127.0.0.1:${CADDY_HTTP_PORT:-8088},http://admin.localhost:${CADDY_HTTP_PORT:-8088},http://api.localhost:${CADDY_HTTP_PORT:-8088}}
+      LOGGING_FILE_NAME: /app/logs/backend.log
       # The OpenAI Java SDK also checks OPENAI_API_KEY internally. Keep the app-level
       # OpenAI-compatible key as the source of truth while satisfying that SDK path.
       OPENAI_API_KEY: ${OPENAI_API_KEY:-${OPENAI_COMPATIBLE_API_KEY:-}}
@@ -87,6 +116,23 @@ services:
       - "${FRONTEND_PORT:-8082}:8082"
     volumes:
       - ../apps/frontend:/app:ro
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ../apps/admin
+      dockerfile: Dockerfile
+    command:
+      - sh
+      - -c
+      - |
+        printf '%s\n' "window.VARKA_ADMIN_BACKEND_BASE_URL = \"http://admin.localhost:${CADDY_HTTP_PORT:-8088}\";" > /usr/share/nginx/html/admin-config.js
+        exec nginx -g 'daemon off;'
+    ports:
+      - "${ADMIN_PORT:-8084}:8084"
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   localstack:
@@ -141,10 +187,112 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ../infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../infra/prometheus/varka-alerts.yml:/etc/prometheus/rules/varka-alerts.yml:ro
+      - varka-prometheus-data:/prometheus
+    depends_on:
+      backend:
+        condition: service_healthy
+      postgres-exporter:
+        condition: service_started
+      node-exporter:
+        condition: service_started
+      cadvisor:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER:-varka}:${POSTGRES_PASSWORD:-varka}@postgres:5432/${POSTGRES_DB:-varka}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    command:
+      - --path.rootfs=/host
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.2
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.3.2
+    command: ["-config.file=/etc/loki/loki.yml"]
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    volumes:
+      - ../infra/loki/loki.yml:/etc/loki/loki.yml:ro
+      - varka-loki-data:/loki
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.3.2
+    command: ["-config.file=/etc/promtail/promtail.yml"]
+    volumes:
+      - ../infra/loki/promtail.yml:/etc/promtail/promtail.yml:ro
+      - varka-backend-logs:/var/log/varka:ro
+      - varka-caddy-logs:/var/log/caddy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      - loki
+      - backend
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_METRICS_ENABLED: "true"
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ../infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../infra/grafana:/var/lib/grafana/dashboards:ro
+      - varka-grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+
 volumes:
+  varka-caddy-config:
+  varka-caddy-data:
+  varka-caddy-logs:
   varka-backend-logs:
   varka-backend-uploads:
+  varka-grafana-data:
+  varka-loki-data:
   varka-localstack-data:
+  varka-prometheus-data:
   varka-postgres-data:
 
 networks:
