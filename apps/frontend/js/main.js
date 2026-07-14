@@ -73,7 +73,6 @@ import { initViewWorkbench, renderViewWorkbench } from "./view-explorer.js";
 import { installG6LargeGraphDevHelper } from "./graph-editor/g6-devtools.js";
 import {
   initGuidedModeling,
-  onGuidedModelingContextChanged,
   showPalettePane,
   showMethodologyPane,
   syncMethodologyRailState,

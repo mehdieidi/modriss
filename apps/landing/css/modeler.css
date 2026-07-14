@@ -434,10 +434,6 @@
 }
 
 .engine-window {
-  position: relative;
-  inset: auto;
-  display: grid;
-  place-items: center;
   position: absolute;
   top: 25%;
   right: 22%;
@@ -1367,7 +1363,7 @@
 }
 
 .engine-body-shell {
-  fill: url(#engine-metal);
+  fill: url("#engine-metal");
 }
 
 .engine-endcap {
@@ -1375,7 +1371,7 @@
 }
 
 .engine-center-band {
-  fill: url(#engine-band);
+  fill: url("#engine-band");
 }
 
 .engine-body-line {
@@ -1401,7 +1397,7 @@
 }
 
 .engine-gear-rim {
-  fill: url(#engine-metal);
+  fill: url("#engine-metal");
 }
 
 .engine-gear-inner {

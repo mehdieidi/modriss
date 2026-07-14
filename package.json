@@ -17,7 +17,7 @@
     "lint": "python scripts/lint.py",
     "lint:fast": "python scripts/lint.py --fast",
     "lint:eslint": "eslint --config config/eslint.config.js \"apps/**/*.js\"",
-    "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\" \"!**/target/**\" \"!**/vendor/**\" \"!mde/samples/**/generated-project/**\"",
+    "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!.idea/**\" \"!**/node_modules/**\" \"!**/target/**\" \"!**/vendor/**\" \"!mde/samples/**/generated-project/**\"",
     "lint:stylelint": "stylelint --config config/stylelintrc.json \"apps/**/*.css\"",
     "test:frontend": "node --test tests/frontend/*.test.mjs",
     "docker:up": "docker compose up --build",

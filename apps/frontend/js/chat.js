@@ -3,7 +3,7 @@ import { el } from "./dom.js";
 import { api, apiAuthHeaders, isPlannedFeatureError } from "./api.js";
 import { formatUserError } from "./errors.js";
 import { setError, setStatus } from "./status.js";
-import { apiUrl, CHAT_ATTACHMENT_MAX_BYTES, MODEL_TYPES } from "./config.js";
+import { apiUrl, MODEL_TYPES } from "./config.js";
 import { toDiagram } from "./diagram.js";
 import { renderDiagram } from "./canvas.js";
 import { renderMarkdown } from "./markdown.js";
@@ -1009,7 +1009,9 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
           try {
             const data = JSON.parse(raw);
             handleChatRealtimeEvent(typeKey, eventName, data?.payload);
-          } catch {}
+          } catch (_error) {
+            continue;
+          }
         }
       }
     })
@@ -1205,7 +1207,7 @@ function unwrapAssistantModel(model) {
   return model;
 }
 
-function appendProposalCard(typeKey, sessionId, proposal) {
+function _appendProposalCard(typeKey, sessionId, proposal) {
   if (!proposal) {
     return;
   }

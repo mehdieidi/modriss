@@ -170,7 +170,7 @@ class UploadServiceTest {
         new LocalUploadStorage(tempDir.resolve("uploads"), mapper), properties, mapper);
   }
 
-  private static class FailingUploadStorage implements UploadStorage {
+  private static final class FailingUploadStorage implements UploadStorage {
 
     @Override
     public UploadedFileRecord store(

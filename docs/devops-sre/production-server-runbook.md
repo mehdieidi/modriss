@@ -155,15 +155,15 @@ Example shape:
 
 ```caddyfile
 app.example.com {
-	reverse_proxy frontend:8082
+  reverse_proxy frontend:8082
 }
 
 api.example.com {
-	reverse_proxy backend:8080
+  reverse_proxy backend:8080
 }
 
 admin.example.com {
-	reverse_proxy admin:8084
+  reverse_proxy admin:8084
 }
 ```
 

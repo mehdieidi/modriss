@@ -632,6 +632,7 @@ public class ChatbotController {
       try {
         cursor = Long.parseLong(lastEventId);
       } catch (NumberFormatException ignored) {
+        // Keep the query cursor when the browser sends a malformed Last-Event-ID value.
       }
     }
     SseEmitter emitter = new SseEmitter(Duration.ofMinutes(30).toMillis());

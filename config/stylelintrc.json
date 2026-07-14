@@ -4,7 +4,8 @@
     "../**/node_modules/**",
     "../**/target/**",
     "../**/storage/**",
-    "../**/vendor/**"
+    "../**/vendor/**",
+    "../**/dist/**"
   ],
   "rules": {
     "alpha-value-notation": null,

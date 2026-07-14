@@ -7,9 +7,6 @@
 
   <rule ref="category/java/bestpractices.xml">
     <exclude name="GuardLogStatement"/>
-    <exclude name="JUnitTestContainsTooManyAsserts"/>
-    <exclude name="JUnitAssertionsShouldIncludeMessage"/>
-    <exclude name="MissingSerialVersionUID"/>
     <exclude name="SystemPrintln"/>
   </rule>
   <rule ref="category/java/codestyle.xml">
@@ -20,16 +17,12 @@
     <exclude name="OnlyOneReturn"/>
     <exclude name="ShortVariable"/>
     <exclude name="TooManyStaticImports"/>
-    <exclude name="UnusedAssignment"/>
   </rule>
   <rule ref="category/java/design.xml">
-    <exclude name="AvoidFieldNameMatchingMethodName"/>
     <exclude name="LoosePackageCoupling"/>
     <exclude name="TooManyMethods"/>
   </rule>
   <rule ref="category/java/errorprone.xml">
-    <exclude name="AvoidCatchingGenericException"/>
-    <exclude name="PreserveStackTrace"/>
     <exclude name="ReturnEmptyCollectionRatherThanNull"/>
   </rule>
   <rule ref="category/java/multithreading.xml">

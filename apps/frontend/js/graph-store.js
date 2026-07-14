@@ -1973,7 +1973,7 @@ function sanitizeWorkbenchViews(views, typeKey) {
   return safeArray(views).filter((view) => !isNamedInstanceView(typeKey, view));
 }
 
-function generateViews(typeKey, graph, modelName) {
+function _generateViews(typeKey, graph, modelName) {
   const views = [defaultMainView(typeKey, graph, modelName)];
   const definitions = viewDefinitions(typeKey);
   definitions.forEach((definition) => {
@@ -2056,7 +2056,7 @@ function generateLazyGlobalViews(typeKey, graph, modelName) {
   ];
 }
 
-function generateGlobalViews(typeKey, graph, modelName) {
+function _generateGlobalViews(typeKey, graph, modelName) {
   return [
     defaultMainView(typeKey, graph, modelName),
     ...viewDefinitions(typeKey).map((definition) =>

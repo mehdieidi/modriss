@@ -110,7 +110,8 @@ def main() -> int:
         for error in errors:
             print(f"flyway-version-check: {error}", file=sys.stderr)
         print(
-            "flyway-version-check: use scripts/flyway-next-migration.py to allocate the next version",
+            "flyway-version-check: use scripts/flyway-next-migration.py "
+            "to allocate the next version",
             file=sys.stderr,
         )
         return 1

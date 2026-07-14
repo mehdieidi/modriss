@@ -19,7 +19,6 @@ import {
   toDiagram,
 } from "./diagram.js";
 import { confirmAction } from "./confirm-action.js";
-import { escapeHtml } from "./utils.js";
 import {
   modelingContainmentsForType,
   modelingElementDefinition,
@@ -1156,7 +1155,7 @@ function connectionDrawActiveForNode(nodeId) {
   );
 }
 
-function buildLegalRelationshipDrawBanner(node) {
+function buildLegalRelationshipDrawBanner(_node) {
   const kind = state.preferredConnectionKind;
   const label = modelingRelationshipKindLabel(state.activeType, kind);
   const banner = document.createElement("div");

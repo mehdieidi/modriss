@@ -126,7 +126,8 @@ services:
       - sh
       - -c
       - |
-        printf '%s\n' "window.VARKA_ADMIN_BACKEND_BASE_URL = \"http://admin.localhost:${CADDY_HTTP_PORT:-8088}\";" > /usr/share/nginx/html/admin-config.js
+        printf '%s\n' "window.VARKA_ADMIN_BACKEND_BASE_URL = \"http://admin.localhost:${CADDY_HTTP_PORT:-8088}\";" \
+          > /usr/share/nginx/html/admin-config.js
         exec nginx -g 'daemon off;'
     ports:
       - "${ADMIN_PORT:-8084}:8084"

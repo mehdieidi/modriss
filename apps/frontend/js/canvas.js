@@ -10,7 +10,6 @@ import {
   addNodeToGraphAndActiveView,
   persistNodePositionInActiveView,
   prepareViewNodeIndex,
-  removeElementFromGraph,
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
 import { isContainerElement, materializeActiveView } from "./view-materializer.js";

@@ -274,7 +274,7 @@ function graphNodeTopLeft(graph, nodeId, editor = null) {
   return { x: x - width / 2, y: y - height / 2, width, height };
 }
 
-function openControlBounds(graph, nodeId, editor = null) {
+function _openControlBounds(graph, nodeId, editor = null) {
   const topLeft = graphNodeTopLeft(graph, nodeId, editor);
   const data = safeGraphNodeData(graph, nodeId, editor);
   const semanticNode = state.nodesById.get(nodeId);

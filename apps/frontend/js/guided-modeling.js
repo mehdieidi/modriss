@@ -8,7 +8,6 @@ import {
   modelingElementDefinition,
   modelingKernelTypes,
   modelingLevelKeys,
-  modelingRelationshipKindLabel,
 } from "./modeling-config-data.js";
 import { applyDefinitionAccent, renderPalette, syncPaletteCollapsedUi } from "./canvas.js";
 import { levelIntro, phaseNarrative, stageNarrative } from "./methodology-narratives.mjs";

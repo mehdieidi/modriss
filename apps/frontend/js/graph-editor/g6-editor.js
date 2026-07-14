@@ -152,12 +152,12 @@ function lineBreak(text, maxLine = 23, maxLines = 2) {
     .join("\n");
 }
 
-function lineCount(text) {
+function _lineCount(text) {
   const value = String(text || "");
   return value ? value.split("\n").length : 0;
 }
 
-function boundedText(text, maxLine, maxLines) {
+function _boundedText(text, maxLine, maxLines) {
   return lineBreak(text, maxLine, maxLines).toUpperCase();
 }
 
@@ -214,7 +214,7 @@ function badgeTextFill(_diagramType) {
   return "rgba(226, 232, 240, 0.82)";
 }
 
-function renderNodeIcon(shape, container, { left, top, low = false, iconSrc = "" } = {}) {
+function _renderNodeIcon(shape, container, { left, top, low = false, iconSrc = "" } = {}) {
   const size = low ? 18 : 20;
   shape.upsert(
     "placeholderIcon",
@@ -235,14 +235,14 @@ function renderNodeIcon(shape, container, { left, top, low = false, iconSrc = ""
   shape.upsert("iconMark", "path", false, container);
 }
 
-function clearPlaceholderIcon(shape, container) {
+function _clearPlaceholderIcon(shape, container) {
   shape.upsert("placeholderIcon", "image", false, container);
   shape.upsert("iconTile", "rect", false, container);
   shape.upsert("iconSky", "circle", false, container);
   shape.upsert("iconMark", "path", false, container);
 }
 
-function renderOpenControl(
+function _renderOpenControl(
   shape,
   container,
   {
@@ -320,7 +320,7 @@ function clearPortGlyphs(shape, container) {
   });
 }
 
-function renderNodeTags(
+function _renderNodeTags(
   shape,
   container,
   { badges = [], diagramType, left, top, width, height, low = false },
@@ -387,7 +387,7 @@ function states(attributes) {
   return new Set(Array.isArray(attributes?.states) ? attributes.states : []);
 }
 
-function notationGlyphPath(geometry, left, top, width, height) {
+function _notationGlyphPath(geometry, left, top, width, height) {
   const name = String(geometry || "rectangle").toLowerCase();
   const right = left + width;
   const bottom = top + height;

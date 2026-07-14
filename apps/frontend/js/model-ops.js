@@ -9,9 +9,7 @@ import { emptyDiagram, genId, scheduleIdleTask, stringifyJsonAsync, yieldToMain 
 import { serializeModel } from "./diagram.js";
 import {
   activeView,
-  ensureViewContent,
   ensureViewContentAsync,
-  installGraphAndViews,
   installGraphAndViewsAsync,
   restoreTabGraphState,
   saveCurrentTabGraphState,
@@ -70,7 +68,6 @@ import {
 import {
   isModelingLevel,
   modelingDefaultLayoutStrategy,
-  modelingLevelConfig,
   modelingLevelListLabel,
   transformationForLevel,
 } from "./modeling-config-data.js";
@@ -1127,7 +1124,7 @@ function rememberModelSummary(typeKey, record) {
   ];
 }
 
-function nodeRect(node, nodeSize) {
+function _nodeRect(node, nodeSize) {
   return {
     minX: node.x,
     minY: node.y,
@@ -1136,7 +1133,7 @@ function nodeRect(node, nodeSize) {
   };
 }
 
-function groupRect(nodes, nodeSize, { padX = 0, padY = 0 } = {}) {
+function _groupRect(nodes, nodeSize, { padX = 0, padY = 0 } = {}) {
   return {
     minX: Math.min(...nodes.map((node) => node.x)) - padX,
     minY: Math.min(...nodes.map((node) => node.y)) - padY,
@@ -1145,11 +1142,11 @@ function groupRect(nodes, nodeSize, { padX = 0, padY = 0 } = {}) {
   };
 }
 
-function rectsOverlap(a, b) {
+function _rectsOverlap(a, b) {
   return a.minX < b.maxX && a.maxX > b.minX && a.minY < b.maxY && a.maxY > b.minY;
 }
 
-function moveLayoutNodes(nodes, dx, dy, movedNodeIds) {
+function _moveLayoutNodes(nodes, dx, dy, movedNodeIds) {
   nodes.forEach((node) => {
     node.x = Math.round(node.x + dx);
     node.y = Math.round(node.y + dy);

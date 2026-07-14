@@ -1050,22 +1050,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-  /api/admin/{path}:
-    parameters:
-      - $ref: "#/components/parameters/WildcardPath"
-    get:
-      tags: [Future]
-      summary: Planned admin endpoint
-      description: Represents the Spring `/api/admin/**` placeholder. Other HTTP methods return the same 501 response.
-      responses:
-        "501":
-          $ref: "#/components/responses/NotImplemented"
-    post:
-      tags: [Future]
-      summary: Planned admin endpoint
-      responses:
-        "501":
-          $ref: "#/components/responses/NotImplemented"
   /api/chatbot/conversations:
     get:
       tags: [Assistant]
@@ -1179,73 +1163,309 @@ paths:
       - name: turnId
         in: path
         required: true
-        schema: { type: string }
+        schema:
+          type: string
     get:
       tags: [Assistant]
       summary: Get durable assistant turn status
       responses:
-        "200": { description: Durable turn status }
-        "401": { $ref: "#/components/responses/Unauthorized" }
+        "200":
+          description: Durable turn status
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/chatbot/turns/{turnId}/cancel:
     parameters:
       - name: turnId
         in: path
         required: true
-        schema: { type: string }
+        schema:
+          type: string
     post:
       tags: [Assistant]
       summary: Persist cancellation for a durable turn
       responses:
-        "202": { description: Cancellation accepted }
-        "401": { $ref: "#/components/responses/Unauthorized" }
+        "202":
+          description: Cancellation accepted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/chatbot/turns/{turnId}/continue:
     parameters:
       - name: turnId
         in: path
         required: true
-        schema: { type: string }
+        schema:
+          type: string
     post:
       tags: [Assistant]
       summary: Continue remaining work from a saved turn
       responses:
-        "202": { description: Continuation accepted }
-        "401": { $ref: "#/components/responses/Unauthorized" }
+        "202":
+          description: Continuation accepted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/chatbot/turns/{turnId}/undo:
     parameters:
       - name: turnId
         in: path
         required: true
-        schema: { type: string }
+        schema:
+          type: string
     post:
       tags: [Assistant]
       summary: Apply a safe inverse checkpoint
       responses:
-        "200": { description: Checkpoint undone }
-        "401": { $ref: "#/components/responses/Unauthorized" }
+        "200":
+          description: Checkpoint undone
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/chatbot/turns/{turnId}/confirm:
     parameters:
       - name: turnId
         in: path
         required: true
-        schema: { type: string }
+        schema:
+          type: string
     post:
       tags: [Assistant]
       summary: Confirm a pending destructive assistant batch
       responses:
-        "202": { description: Confirmed turn accepted }
-        "401": { $ref: "#/components/responses/Unauthorized" }
+        "202":
+          description: Confirmed turn accepted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/chatbot/turns/{turnId}/events:
     parameters:
       - name: turnId
         in: path
         required: true
-        schema: { type: string }
+        schema:
+          type: string
     get:
       tags: [Assistant]
       summary: Replay authenticated durable assistant events
       responses:
-        "200": { description: Server-sent event stream }
-        "401": { $ref: "#/components/responses/Unauthorized" }
+        "200":
+          description: Server-sent event stream
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/me:
+    get:
+      tags: [Admin]
+      summary: Get current admin identity
+      responses:
+        "200":
+          description: Current admin identity
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/bootstrap:
+    post:
+      tags: [Admin]
+      summary: Bootstrap the first admin user
+      responses:
+        "200":
+          description: Bootstrap result
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/overview:
+    get:
+      tags: [Admin]
+      summary: Get admin overview
+      responses:
+        "200":
+          description: Admin overview
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: List users
+      responses:
+        "200":
+          description: Users
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Admin]
+      summary: Get user detail
+      responses:
+        "200":
+          description: User detail
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/users/{id}/roles:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Admin]
+      summary: Grant a user role
+      responses:
+        "200":
+          description: Role granted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/users/{id}/roles/revoke:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Admin]
+      summary: Revoke a user role
+      responses:
+        "200":
+          description: Role revoked
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/users/{id}/disable:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Admin]
+      summary: Disable a user
+      responses:
+        "200":
+          description: User disabled
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/users/{id}/enable:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Admin]
+      summary: Enable a user
+      responses:
+        "200":
+          description: User enabled
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/users/{id}/sessions/revoke:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Admin]
+      summary: Revoke user sessions
+      responses:
+        "200":
+          description: Sessions revoked
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/projects:
+    get:
+      tags: [Admin]
+      summary: List projects
+      responses:
+        "200":
+          description: Projects
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/models:
+    get:
+      tags: [Admin]
+      summary: List models
+      responses:
+        "200":
+          description: Models
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/jobs:
+    get:
+      tags: [Admin]
+      summary: List jobs
+      responses:
+        "200":
+          description: Jobs
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/jobs/{id}/cancel:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Admin]
+      summary: Cancel a job
+      responses:
+        "202":
+          description: Job cancellation accepted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/assistant/turns:
+    get:
+      tags: [Admin]
+      summary: List assistant turns
+      responses:
+        "200":
+          description: Assistant turns
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/assistant/turns/{id}/cancel:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Admin]
+      summary: Cancel an assistant turn
+      responses:
+        "202":
+          description: Assistant turn cancellation accepted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/audit-events:
+    get:
+      tags: [Admin]
+      summary: List audit events
+      responses:
+        "200":
+          description: Audit events
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/admin/metrics-summary:
+    get:
+      tags: [Admin]
+      summary: Get metrics summary
+      responses:
+        "200":
+          description: Metrics summary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/telemetry/frontend:
+    post:
+      tags: [Telemetry]
+      summary: Record frontend telemetry
+      security: []
+      responses:
+        "202":
+          description: Telemetry accepted
 components:
   securitySchemes:
     AuthToken:

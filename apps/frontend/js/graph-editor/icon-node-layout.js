@@ -3,7 +3,6 @@ import { getTintedIconUrlSync } from "./icon-tint.js";
 import {
   computeIconNodeLayout,
   iconAnchorBoundsLocal,
-  measureIconNodeSize,
   nodeHitPathLocal,
   placeholderIcon,
   resolveIconSource,
@@ -110,7 +109,6 @@ export function renderIconCentricNodeG6(shape, container, options = {}) {
   const kindFill = warm ? "rgba(35, 28, 18, 0.72)" : accent;
   const nameFill = warm ? "rgba(24, 20, 14, 0.92)" : cssVar("--text", "#e3e8f2");
 
-  const measured = measureIconNodeSize(labelText, { width, low });
   const hitPath = nodeHitPathLocal(width, height, low, labelText, isContainer, kindText);
 
   shape.upsert(
