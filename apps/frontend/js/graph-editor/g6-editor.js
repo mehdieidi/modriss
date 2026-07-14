@@ -649,17 +649,26 @@ function registerVarkaG6Extensions() {
       const stateSet = states(attributes);
       const selected = attributes.selected || stateSet.has("selected");
       const hovered = attributes.hovered || attributes.hover || stateSet.has("hover");
+      const impactFocal = attributes.impactFocal || stateSet.has("impact-focal");
       const focused = attributes.focused || stateSet.has("focus");
       const dimmed = !focused && (attributes.dimmed || stateSet.has("dimmed"));
       return {
         ...super.getKeyStyle(attributes),
         stroke: attributes.stroke || cssVar("--accent", "#00a6e0"),
-        lineWidth: selected ? 2.6 : hovered ? 2.45 : Number(attributes.lineWidth) || 1.7,
+        lineWidth: impactFocal
+          ? 3.4
+          : selected
+            ? 2.6
+            : hovered
+              ? 2.45
+              : Number(attributes.lineWidth) || 1.7,
         lineDash: attributes.lineDash,
         opacity: dimmed ? 0.3 : Number(attributes.opacity) || 0.9,
         shadowColor:
-          selected || hovered ? cssVar("--accent-glow", "rgba(0,166,224,0.28)") : undefined,
-        shadowBlur: selected || hovered ? 6 : 0,
+          impactFocal || selected || hovered
+            ? cssVar("--accent-glow", "rgba(0,166,224,0.28)")
+            : undefined,
+        shadowBlur: impactFocal ? 12 : selected || hovered ? 6 : 0,
         cursor: "pointer",
         endArrow: attributes.endArrow === false ? false : true,
         startArrow: attributes.startArrow ? true : false,
@@ -668,6 +677,8 @@ function registerVarkaG6Extensions() {
 
     render(attributes = this.parsedAttributes, container) {
       super.render(attributes, container);
+      const stateSet = states(attributes);
+      const impactFocal = attributes.impactFocal || stateSet.has("impact-focal");
       const labelText = String(attributes.labelText || "");
       const pinPoints = Array.isArray(attributes.pinPoints) ? attributes.pinPoints : [];
       const showPins = Boolean(attributes.showPins && pinPoints.length);
@@ -677,11 +688,14 @@ function registerVarkaG6Extensions() {
         "path",
         {
           d: path,
-          stroke: attributes.selected
+          stroke: impactFocal
             ? cssVar("--accent-glow", "rgba(0,166,224,0.28)")
             : "rgba(15, 23, 42, 0.22)",
-          lineWidth: attributes.selected ? 8 : 6,
-          opacity: attributes.selected || attributes.hovered || attributes.hover ? 0.42 : 0.24,
+          lineWidth: impactFocal ? 11 : attributes.selected ? 8 : 6,
+          opacity:
+            impactFocal || attributes.selected || attributes.hovered || attributes.hover
+              ? 0.48
+              : 0.24,
           fill: "none",
           pointerEvents: "none",
         },
@@ -1424,11 +1438,13 @@ export function mountG6Editor(container, { callbacks = {}, mapper = {} } = {}) {
           hovered: false,
           focused: false,
           dimmed: false,
+          impactFocal: false,
         },
         selected: { selected: true },
         hover: { hovered: true },
         focus: { focused: true },
         dimmed: { dimmed: true },
+        "impact-focal": { impactFocal: true },
       },
     },
   });
@@ -2029,11 +2045,17 @@ export function updateG6ImpactState() {
     return;
   }
   const focal = new Set();
+  const focalEdges = new Set();
   const upstream = new Set();
   const downstream = new Set();
   const connected = new Set();
   if (state.issueLocateTargetId) {
-    focal.add(state.issueLocateTargetId);
+    const targetId = state.issueLocateTargetId;
+    if (state.diagram?.connections?.some?.((edge) => edge.id === targetId)) {
+      focalEdges.add(targetId);
+    } else {
+      focal.add(targetId);
+    }
   }
   if (state.impactMode && state.impactData) {
     if (state.impactData.focalElement?.elementId) {
@@ -2065,6 +2087,11 @@ export function updateG6ImpactState() {
     replaceFlagSet(editor.nodeStateFlags, flag, ids).forEach((id) => changed.add(id));
   });
   flushElementStates(changed, editor.nodeStateFlags);
+  const changedEdges = replaceFlagSet(editor.edgeStateFlags, "impact-focal", focalEdges);
+  flushElementStates(changedEdges, editor.edgeStateFlags);
+  if (changedEdges.size) {
+    refreshG6Edges([...changedEdges]);
+  }
 }
 
 export function updateG6Viewport() {

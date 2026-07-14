@@ -20,12 +20,15 @@ import {
   modelingLevelConfig,
 } from "./modeling-config-data.js";
 import { syncMobileDockState } from "./mobile-ui.js";
+import { openAttributePanel, openConnectionPanel } from "./attr-panel.js";
 import {
   activeCanvasFocus,
   canvasFocusLabel,
   closeCanvasFocus,
   fitViewportToDiagram,
   renderDiagramAsync,
+  scrollToConnectionAndHighlight,
+  scrollToNodeAndHighlight,
 } from "./canvas.js";
 
 let renderDiagramCallback = null;
@@ -429,7 +432,10 @@ function relationshipRowsMarkup(view) {
     ${filtered
       .map(
         (row) => `
-      <label class="model-tree-relationship${row.checked ? "" : " is-hidden"}">
+      <div class="model-tree-relationship${row.checked ? "" : " is-hidden"}"
+           data-tree-select-relationship-id="${escapeHtml(row.id)}"
+           role="button"
+           tabindex="0">
         <input class="model-tree-node-toggle"
                data-tree-relationship-id="${escapeHtml(row.id)}"
                type="checkbox"
@@ -441,7 +447,10 @@ function relationshipRowsMarkup(view) {
           <span class="model-tree-relationship-name">${escapeHtml(row.label)}</span>
         </div>
         <span class="model-tree-relationship-kind">${escapeHtml(row.kind)}</span>
-      </label>`,
+        <button class="model-tree-locate-btn"
+                data-tree-locate-relationship-id="${escapeHtml(row.id)}"
+                type="button">locate</button>
+      </div>`,
       )
       .join("")}
     </div>`;
@@ -461,13 +470,19 @@ function elementRowsMarkup(view) {
     ${filtered
       .map(
         ({ id, element, checked }) => `
-      <label class="model-tree-node${checked ? "" : " is-hidden"}">
+      <div class="model-tree-node${checked ? "" : " is-hidden"}"
+           data-tree-select-element-id="${escapeHtml(id)}"
+           role="button"
+           tabindex="0">
         <input class="model-tree-node-toggle" data-tree-element-id="${escapeHtml(
           id,
         )}" type="checkbox" ${checked ? "checked" : ""}>
         <span class="model-tree-node-label">${escapeHtml(elementLabel(element))}</span>
         <span class="model-tree-node-type">${escapeHtml(elementType(element))}</span>
-      </label>`,
+        <button class="model-tree-locate-btn"
+                data-tree-locate-element-id="${escapeHtml(id)}"
+                type="button">locate</button>
+      </div>`,
       )
       .join("")}
     </div>`;
@@ -702,6 +717,91 @@ async function toggleTreeRelationship(relationshipId, checked) {
   setStatus(checked ? "Relationship shown in this view." : "Relationship hidden from this view.");
 }
 
+async function ensureTreeElementVisible(elementId) {
+  const view = activeView();
+  if (!view || !elementId) {
+    return false;
+  }
+  view.hidden ??= { elementIds: [], relationshipIds: [] };
+  const hidden = new Set(safeArray(view.hidden.elementIds));
+  if (!hidden.has(elementId)) {
+    return true;
+  }
+  syncActiveViewFromVisibleGraph();
+  hidden.delete(elementId);
+  view.hidden.elementIds = [...hidden];
+  materializeActiveView();
+  renderViewWorkbench();
+  saveCurrentTabGraphState();
+  await renderDiagramAsync({ full: true });
+  return true;
+}
+
+async function ensureTreeRelationshipVisible(relationshipId) {
+  const view = activeView();
+  if (!view || !relationshipId) {
+    return false;
+  }
+  view.hidden ??= { elementIds: [], relationshipIds: [] };
+  const hidden = new Set(safeArray(view.hidden.relationshipIds));
+  if (!hidden.has(relationshipId)) {
+    return true;
+  }
+  syncActiveViewFromVisibleGraph();
+  hidden.delete(relationshipId);
+  view.hidden.relationshipIds = [...hidden];
+  materializeActiveView();
+  renderViewWorkbench();
+  saveCurrentTabGraphState();
+  await renderDiagramAsync({ full: true });
+  return true;
+}
+
+async function locateTreeElement(elementId) {
+  if (!elementId || !state.graph?.elementsById?.has(elementId)) {
+    setStatus("Element is no longer available.");
+    return;
+  }
+  await ensureTreeElementVisible(elementId);
+  scrollToNodeAndHighlight(elementId);
+  setStatus("Located element on canvas.");
+}
+
+async function locateTreeRelationship(relationshipId) {
+  if (!relationshipId || !state.graph?.relationshipsById?.has(relationshipId)) {
+    setStatus("Relationship is no longer available.");
+    return;
+  }
+  await ensureTreeRelationshipVisible(relationshipId);
+  if (scrollToConnectionAndHighlight(relationshipId)) {
+    setStatus("Located relationship on canvas.");
+  } else {
+    setStatus("Relationship is not visible in the current canvas.");
+  }
+}
+
+async function selectTreeElement(elementId) {
+  if (!elementId || !state.graph?.elementsById?.has(elementId)) {
+    setStatus("Element is no longer available.");
+    return;
+  }
+  await ensureTreeElementVisible(elementId);
+  openAttributePanel(elementId);
+  renderViewWorkbench();
+  setStatus("Element selected.");
+}
+
+async function selectTreeRelationship(relationshipId) {
+  if (!relationshipId || !state.graph?.relationshipsById?.has(relationshipId)) {
+    setStatus("Relationship is no longer available.");
+    return;
+  }
+  await ensureTreeRelationshipVisible(relationshipId);
+  openConnectionPanel(relationshipId);
+  renderViewWorkbench();
+  setStatus("Relationship selected.");
+}
+
 function bindTreeEvents() {
   if (treeBound) {
     return;
@@ -721,6 +821,60 @@ function bindTreeEvents() {
     const relationshipId = target?.dataset?.treeRelationshipId;
     if (relationshipId) {
       toggleTreeRelationship(relationshipId, Boolean(target.checked));
+    }
+  });
+  el.modelTreeBody?.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest(".model-tree-node-toggle")) {
+      return;
+    }
+    const elementId = target?.closest("[data-tree-locate-element-id]")?.dataset
+      ?.treeLocateElementId;
+    if (elementId) {
+      event.preventDefault();
+      event.stopPropagation();
+      void locateTreeElement(elementId);
+      return;
+    }
+    const relationshipId = target?.closest("[data-tree-locate-relationship-id]")?.dataset
+      ?.treeLocateRelationshipId;
+    if (relationshipId) {
+      event.preventDefault();
+      event.stopPropagation();
+      void locateTreeRelationship(relationshipId);
+      return;
+    }
+    const elementRowId = target?.closest("[data-tree-select-element-id]")?.dataset
+      ?.treeSelectElementId;
+    if (elementRowId) {
+      event.preventDefault();
+      void selectTreeElement(elementRowId);
+      return;
+    }
+    const relationshipRowId = target?.closest("[data-tree-select-relationship-id]")?.dataset
+      ?.treeSelectRelationshipId;
+    if (relationshipRowId) {
+      event.preventDefault();
+      void selectTreeRelationship(relationshipRowId);
+    }
+  });
+  el.modelTreeBody?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target?.matches("[data-tree-select-element-id], [data-tree-select-relationship-id]")) {
+      return;
+    }
+    event.preventDefault();
+    const elementId = target.dataset?.treeSelectElementId;
+    if (elementId) {
+      void selectTreeElement(elementId);
+      return;
+    }
+    const relationshipId = target.dataset?.treeSelectRelationshipId;
+    if (relationshipId) {
+      void selectTreeRelationship(relationshipId);
     }
   });
   el.modelTreeBody?.addEventListener("input", (event) => {

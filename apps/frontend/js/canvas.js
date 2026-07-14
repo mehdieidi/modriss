@@ -2561,6 +2561,10 @@ function handleG6CanvasClick() {
     setStatus("Draw mode canceled");
     return;
   }
+  if (state.issueLocateTargetId) {
+    state.issueLocateTargetId = null;
+    updateCanvasImpactState();
+  }
   closeAttributePanel();
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
