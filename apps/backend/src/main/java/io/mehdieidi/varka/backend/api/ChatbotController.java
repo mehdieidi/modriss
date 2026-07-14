@@ -118,7 +118,7 @@ public class ChatbotController {
    * @return session response
    */
   @PostMapping("/api/chatbot/sessions")
-  CreateSessionResponse createSession(
+  public CreateSessionResponse createSession(
       @RequestHeader("X-Auth-Token") String token,
       @Valid @RequestBody CreateSessionRequest request) {
     long started = System.nanoTime();
@@ -165,7 +165,7 @@ public class ChatbotController {
    * @return recent conversations
    */
   @GetMapping("/api/chatbot/conversations")
-  List<ConversationResponse> conversations(
+  public List<ConversationResponse> conversations(
       @RequestHeader("X-Auth-Token") String token,
       @RequestParam String projectId,
       @RequestParam String level,
@@ -200,7 +200,7 @@ public class ChatbotController {
    * @return assistant response
    */
   @PostMapping("/api/chatbot/sessions/{sessionId}/messages")
-  ResponseEntity<?> message(
+  public ResponseEntity<?> message(
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String sessionId,
       @Valid @RequestBody MessageRequest request) {
@@ -237,6 +237,8 @@ public class ChatbotController {
       }
       Instant acceptedAt = Instant.now();
       var starter = assistant.ensureModel(user, sessionId, request.modelId());
+      Long requestedRevision =
+          request.expectedRevision() == null ? request.revision() : request.expectedRevision();
       AssistantTurn turn =
           new AssistantTurn(
               java.util.UUID.randomUUID().toString(),
@@ -245,9 +247,7 @@ public class ChatbotController {
               session.projectId(),
               session.level(),
               starter.id(),
-              request.expectedRevision() == null
-                  ? (request.revision() == null ? starter.revision() : request.revision())
-                  : request.expectedRevision(),
+              requestedRevision == null ? starter.revision() : requestedRevision,
               request.idempotencyKey().trim(),
               request.message(),
               attachment.content(),
@@ -329,7 +329,7 @@ public class ChatbotController {
   }
 
   @GetMapping("/api/chatbot/turns/{turnId}")
-  TurnStatusResponse turn(
+  public TurnStatusResponse turn(
       @RequestHeader("X-Auth-Token") String token, @PathVariable String turnId) {
     UserRecord user = auth.user(token);
     AssistantTurn turn =
@@ -363,7 +363,7 @@ public class ChatbotController {
   }
 
   @PostMapping("/api/chatbot/turns/{turnId}/cancel")
-  ResponseEntity<Void> cancelTurn(
+  public ResponseEntity<Void> cancelTurn(
       @RequestHeader("X-Auth-Token") String token, @PathVariable String turnId) {
     UserRecord user = auth.user(token);
     AssistantTurn turn =
@@ -378,7 +378,7 @@ public class ChatbotController {
   }
 
   @PostMapping("/api/chatbot/turns/{turnId}/continue")
-  ResponseEntity<TurnAcceptedResponse> continueTurn(
+  public ResponseEntity<TurnAcceptedResponse> continueTurn(
       @RequestHeader("X-Auth-Token") String token, @PathVariable String turnId) {
     UserRecord user = auth.user(token);
     AssistantTurn previous =
@@ -424,7 +424,7 @@ public class ChatbotController {
 
   /** Re-runs a deletion-requesting turn only after an explicit, authenticated confirmation. */
   @PostMapping("/api/chatbot/turns/{turnId}/confirm")
-  ResponseEntity<TurnAcceptedResponse> confirmTurn(
+  public ResponseEntity<TurnAcceptedResponse> confirmTurn(
       @RequestHeader("X-Auth-Token") String token, @PathVariable String turnId) {
     UserRecord user = auth.user(token);
     AssistantTurn previous =
@@ -472,7 +472,7 @@ public class ChatbotController {
   }
 
   @PostMapping("/api/chatbot/turns/{turnId}/undo")
-  TurnUndoResponse undoTurn(
+  public TurnUndoResponse undoTurn(
       @RequestHeader("X-Auth-Token") String token, @PathVariable String turnId) {
     UserRecord user = auth.user(token);
     AssistantTurn turn =
@@ -497,7 +497,7 @@ public class ChatbotController {
   @PostMapping(
       value = "/api/chatbot/sessions/{sessionId}/attachments",
       consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  AttachmentResponse uploadAttachment(
+  public AttachmentResponse uploadAttachment(
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String sessionId,
       @RequestParam("file") MultipartFile file) {
@@ -537,7 +537,7 @@ public class ChatbotController {
    * @return thread snapshot
    */
   @GetMapping("/api/chatbot/sessions/{sessionId}/thread")
-  ThreadResponse thread(
+  public ThreadResponse thread(
       @RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
     AgenticAssistantFacade.ThreadSnapshot snapshot = assistant.thread(auth.user(token), sessionId);
     return new ThreadResponse(
@@ -603,7 +603,8 @@ public class ChatbotController {
   @GetMapping(
       value = "/api/chatbot/sessions/{sessionId}/events",
       produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-  SseEmitter events(@RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
+  public SseEmitter events(
+      @RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
     assistant.session(auth.user(token), sessionId);
     SseEmitter emitter = new SseEmitter(Duration.ofMinutes(30).toMillis());
     realtime.registerSse(sessionId, emitter);
@@ -615,7 +616,7 @@ public class ChatbotController {
   @GetMapping(
       value = "/api/chatbot/turns/{turnId}/events",
       produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-  SseEmitter turnEvents(
+  public SseEmitter turnEvents(
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String turnId,
       @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId,
@@ -682,7 +683,7 @@ public class ChatbotController {
    * @param sessionId session ID
    */
   @DeleteMapping("/api/chatbot/sessions/{sessionId}")
-  void clear(@RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
+  public void clear(@RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
     assistant.clear(auth.user(token), sessionId);
   }
 
@@ -693,7 +694,8 @@ public class ChatbotController {
    * @param proposalId proposal ID
    * @return proposal details
    */
-  AssistantProposal proposal(
+  @GetMapping("/api/chatbot/sessions/{sessionId}/proposals/{proposalId}")
+  public AssistantProposal proposal(
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String sessionId,
       @PathVariable String proposalId) {
@@ -707,7 +709,8 @@ public class ChatbotController {
    * @param proposalId proposal ID
    * @return assistant response
    */
-  MessageResponse undo(
+  @PostMapping("/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo")
+  public MessageResponse undo(
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String sessionId,
       @PathVariable String proposalId) {

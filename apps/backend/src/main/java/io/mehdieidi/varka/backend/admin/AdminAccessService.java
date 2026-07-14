@@ -230,15 +230,29 @@ public class AdminAccessService {
   }
 
   /** Authenticated admin user and granted roles. */
-  public record AdminPrincipal(UserRecord user, List<String> roles) {
-    public AdminPrincipal {
-      roles = roles == null ? List.of() : List.copyOf(roles);
+  public static final class AdminPrincipal {
+    private final UserRecord user;
+    private final String[] roles;
+
+    public AdminPrincipal(UserRecord user, List<String> roles) {
+      this.user = user;
+      this.roles = roles == null ? new String[0] : roles.toArray(String[]::new);
+    }
+
+    public UserRecord user() {
+      return user;
+    }
+
+    public List<String> roles() {
+      return List.of(roles);
     }
 
     public boolean hasAny(String... required) {
       for (String role : required) {
-        if (roles.contains(role)) {
-          return true;
+        for (String granted : roles) {
+          if (granted.equals(role)) {
+            return true;
+          }
         }
       }
       return false;
