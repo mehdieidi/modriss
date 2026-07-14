@@ -2129,7 +2129,7 @@ function viewContainingIssueTarget(ids) {
   return null;
 }
 
-function activateViewForIssueTarget(ids) {
+async function activateViewForIssueTarget(ids) {
   const view = viewContainingIssueTarget(ids);
   if (!view || view.id === state.views.activeViewId) {
     return false;
@@ -2138,12 +2138,13 @@ function activateViewForIssueTarget(ids) {
     return false;
   }
   state.diagram = materializeActiveView();
-  renderDiagram();
+  await renderDiagramAsync({ full: true });
   renderViewWorkbench();
+  await fitViewportToDiagram({ fit: true, frames: 3 });
   return true;
 }
 
-function locateIssueTarget(detail) {
+async function locateIssueTarget(detail) {
   const ids = Array.isArray(detail.targetIds) ? detail.targetIds : [];
   const id = String(detail.id || ids[0] || "").trim();
   const issueName = String(detail.elementName || "")
@@ -2156,7 +2157,7 @@ function locateIssueTarget(detail) {
   if (id && !candidates.length) {
     candidates.push(...issueTargetCandidates(id));
   }
-  activateViewForIssueTarget(candidates);
+  await activateViewForIssueTarget(candidates);
 
   for (const candidate of candidates) {
     if (state.diagram.nodes.some((node) => node.id === candidate)) {
@@ -2203,7 +2204,9 @@ let locateIssueTargetBound = false;
 if (!locateIssueTargetBound) {
   locateIssueTargetBound = true;
   window.addEventListener("varka:locate-issue-target", (event) => {
-    locateIssueTarget(event?.detail || {});
+    void locateIssueTarget(event?.detail || {}).catch((error) => {
+      setError(error, { prefix: "Failed to locate issue target." });
+    });
   });
   window.addEventListener("varka:manual-task-toggle", async (event) => {
     const detail = event?.detail || {};

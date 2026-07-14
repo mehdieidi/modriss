@@ -97,6 +97,10 @@ stacks, integrations, IAM, operations, and generated infrastructure relationship
 | Integration shortcuts | Common AWS integrations are displayed as concise semantic edges while preserving their underlying deployable resource objects.                                                                                                        |
 | Complexity views      | Overview, stage/stack, API Gateway, Lambda, event/messaging, Step Functions, storage, IAM/secrets, Cognito, networking, observability, CloudFormation/SAM, trace/readiness, and integration shortcuts.                                |
 
+The PSM workbench opens on the Step Functions / ASL view by default. The stage/stack topology view
+is a compact topology surface: its global canvas is limited to the same standalone types exposed in
+that view palette, `SamStack` and `AwsStage`.
+
 PSM deliberately keeps deeply nested CloudFormation-style configuration out of the main topology.
 Such objects remain fully editable through contained tables, trees, and structured panels.
 
@@ -135,7 +139,11 @@ In the frontend, the palette intentionally contains only standalone `node` and `
 Containers carry an **Open** badge. Relationship objects are created from legal connection handles,
 and `detail` concepts are created and edited in their owner's containment inspector. Cross-boundary
 container connections use the same legal relationship matrix: only contained elements with a legal
-relationship kind from the source are offered in the picker.
+relationship kind from the source are offered in the picker. For global configured views that define
+a non-empty palette, canvas node materialization uses that palette as the visible surface contract;
+non-palette support and detail types stay in containment inspectors, relationship edges, or
+dashboard/inspector projections. Palette-less overview/main views continue to use their configured
+element filters.
 
 ## Gap Analysis Updates
 

@@ -1,7 +1,7 @@
 import { state } from "../state.js";
 import { el } from "../dom.js";
 import { modelingPlaceholderIcon } from "../modeling-config-data.js";
-import { getCanvasFitArea, getCanvasFitPadding } from "../canvas-viewport-fit.js";
+import { getCanvasFitArea } from "../canvas-viewport-fit.js";
 import { mapDiagramToG6, mapEdgeToG6, mapNodeToG6 } from "./g6-mapper.js";
 import {
   canvasBackgroundColor,
@@ -59,6 +59,7 @@ const CONNECT_ILLEGAL_STATE_NODE_LIMIT = 800;
 const HOVER_FOCUS_EDGE_LIMIT = 64;
 const LOD_UPDATE_IDLE_DELAY_MS = 220;
 const VIEWPORT_TRANSFORM_IDLE_MS = 180;
+const FIT_VIEW_PADDING = 72;
 let viewportTransformEndTimer = 0;
 let viewportTransforming = false;
 
@@ -1096,6 +1097,113 @@ function afterGraphViewport(result) {
   );
   if (!result?.then) {
     window.requestAnimationFrame(settleNativeViewport);
+  }
+}
+
+function numberFromPath(value, path) {
+  let current = value;
+  for (const key of path) {
+    current = current?.[key];
+  }
+  const number = Number(current);
+  return Number.isFinite(number) ? number : null;
+}
+
+function normalizeRenderBounds(raw) {
+  if (!raw) {
+    return null;
+  }
+  const minX =
+    numberFromPath(raw, ["min", 0]) ??
+    numberFromPath(raw, ["min", "x"]) ??
+    numberFromPath(raw, ["minX"]) ??
+    numberFromPath(raw, ["left"]) ??
+    numberFromPath(raw, ["x"]);
+  const minY =
+    numberFromPath(raw, ["min", 1]) ??
+    numberFromPath(raw, ["min", "y"]) ??
+    numberFromPath(raw, ["minY"]) ??
+    numberFromPath(raw, ["top"]) ??
+    numberFromPath(raw, ["y"]);
+  const maxX =
+    numberFromPath(raw, ["max", 0]) ??
+    numberFromPath(raw, ["max", "x"]) ??
+    numberFromPath(raw, ["maxX"]) ??
+    numberFromPath(raw, ["right"]);
+  const maxY =
+    numberFromPath(raw, ["max", 1]) ??
+    numberFromPath(raw, ["max", "y"]) ??
+    numberFromPath(raw, ["maxY"]) ??
+    numberFromPath(raw, ["bottom"]);
+  const width = numberFromPath(raw, ["width"]);
+  const height = numberFromPath(raw, ["height"]);
+  const resolvedMaxX = maxX ?? (minX !== null && width !== null ? minX + width : null);
+  const resolvedMaxY = maxY ?? (minY !== null && height !== null ? minY + height : null);
+  if (
+    minX === null ||
+    minY === null ||
+    resolvedMaxX === null ||
+    resolvedMaxY === null ||
+    resolvedMaxX <= minX ||
+    resolvedMaxY <= minY
+  ) {
+    return null;
+  }
+  return { minX, minY, maxX: resolvedMaxX, maxY: resolvedMaxY };
+}
+
+function renderedNodeBounds(nodeIds) {
+  if (!editor?.graph || !Array.isArray(nodeIds) || !nodeIds.length) {
+    return null;
+  }
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  let count = 0;
+  nodeIds.forEach((nodeId) => {
+    let raw = null;
+    try {
+      raw = editor.graph.getElementRenderBounds?.(nodeId);
+    } catch {
+      raw = null;
+    }
+    const bounds = normalizeRenderBounds(raw);
+    if (!bounds) {
+      return;
+    }
+    minX = Math.min(minX, bounds.minX);
+    minY = Math.min(minY, bounds.minY);
+    maxX = Math.max(maxX, bounds.maxX);
+    maxY = Math.max(maxY, bounds.maxY);
+    count += 1;
+  });
+  if (!count) {
+    return null;
+  }
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    width: Math.max(1, maxX - minX),
+    height: Math.max(1, maxY - minY),
+  };
+}
+
+async function panGraphBy(dx, dy) {
+  if (!editor?.graph) {
+    return;
+  }
+  if (typeof editor.graph.translateBy === "function") {
+    await editor.graph.translateBy([dx, dy], false);
+    return;
+  }
+  const position = readGraphPosition();
+  const x = Array.isArray(position) ? position[0] : position?.x;
+  const y = Array.isArray(position) ? position[1] : position?.y;
+  if (Number.isFinite(x) && Number.isFinite(y)) {
+    await editor.graph.translateTo?.([x + dx, y + dy], false);
   }
 }
 
@@ -2185,78 +2293,69 @@ export function fitG6CanvasToDiagram(bounds = null, { fit = false, fitArea = nul
     ? graphNodes
     : diagramNodes.map((node) => node.id).filter(Boolean);
   const rect = el.canvasViewport?.getBoundingClientRect?.();
-  const padding = getCanvasFitPadding(
-    rect,
-    fitArea?.padding ? { margin: fitArea.padding } : undefined,
-  );
 
   try {
-    if (fit && typeof editor.graph.fitView === "function") {
-      const previousPadding = editor.graph.getOptions?.()?.padding;
-      editor.graph.setOptions?.({ padding });
-      const fitResult = editor.graph.fitView({ when: "always", direction: "both" }, false);
-      const restorePadding = () => {
-        if (previousPadding !== undefined) {
-          editor.graph.setOptions?.({ padding: previousPadding });
-        }
-      };
-      if (fitResult?.then) {
-        fitResult
-          .then(() => {
-            restorePadding();
-            settleNativeViewport();
-          })
-          .catch((error) => {
-            restorePadding();
-            updateDebugState({ lastViewportError: error.message || String(error) });
-          });
-      } else {
-        window.requestAnimationFrame(() => {
-          restorePadding();
-          settleNativeViewport();
-        });
-      }
-      return true;
-    }
-
     const area =
-      fitArea ||
-      getCanvasFitArea(rect) ||
-      (rect?.width && rect?.height
+      rect?.width && rect?.height
         ? {
-            width: Math.max(1, rect.width - 96),
-            height: Math.max(1, rect.height - 96),
+            width: Math.max(1, rect.width - FIT_VIEW_PADDING * 2),
+            height: Math.max(1, rect.height - FIT_VIEW_PADDING * 2),
             centerX: rect.width / 2,
             centerY: rect.height / 2,
           }
-        : null);
+        : fitArea || getCanvasFitArea(rect);
+    const fitBounds = (fit ? renderedNodeBounds(nodes) : null) || bounds;
     const scale =
-      fit && bounds && area
+      fit && fitBounds && area
         ? Math.max(
             0.01,
-            Math.min(1, Math.min(area.width / bounds.width, area.height / bounds.height) || 1),
+            Math.min(
+              1,
+              Math.min(area.width / fitBounds.width, area.height / fitBounds.height) || 1,
+            ),
           )
         : state.viewport.scale || readGraphZoom() || 1;
-    if (fit && bounds) {
+    if (fit && fitBounds) {
       state.viewport.scale = scale;
       setCanvasZoomIndicator();
     }
-    if (bounds && area?.width && area?.height) {
-      const centerX = bounds.minX + bounds.width / 2;
-      const centerY = bounds.minY + bounds.height / 2;
-      state.viewport.x = Math.round(area.centerX - centerX * scale);
-      state.viewport.y = Math.round(area.centerY - centerY * scale);
-      const zoomResult = fit ? editor.graph.zoomTo?.(scale, false) : null;
-      const translateResult = editor.graph.translateTo?.(
-        [state.viewport.x, state.viewport.y],
-        false,
-      );
-      const results = [zoomResult, translateResult].filter(Boolean);
-      afterGraphViewport(
-        results.some((result) => result?.then)
-          ? Promise.all(results)
-          : translateResult || zoomResult,
-      );
+    if (fitBounds && area?.width && area?.height) {
+      const centerX = fitBounds.minX + fitBounds.width / 2;
+      const centerY = fitBounds.minY + fitBounds.height / 2;
+      editor.viewportFitToken = (editor.viewportFitToken || 0) + 1;
+      const fitToken = editor.viewportFitToken;
+      const applyFit = async () => {
+        if (fit) {
+          await editor.graph.zoomTo?.(scale, false, [area.centerX, area.centerY]);
+        }
+        if (fitToken !== editor.viewportFitToken) {
+          return;
+        }
+        for (let index = 0; index < 2; index += 1) {
+          const renderedCenter = toClientCoordinates(centerX, centerY);
+          if (!renderedCenter) {
+            break;
+          }
+          const targetX = (rect?.left || 0) + area.centerX;
+          const targetY = (rect?.top || 0) + area.centerY;
+          const dx = Math.round(targetX - renderedCenter.x);
+          const dy = Math.round(targetY - renderedCenter.y);
+          if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
+            break;
+          }
+          await panGraphBy(dx, dy);
+          if (fitToken !== editor.viewportFitToken) {
+            return;
+          }
+        }
+        if (fitToken !== editor.viewportFitToken) {
+          return;
+        }
+        settleNativeViewport();
+      };
+      void applyFit().catch((error) => {
+        updateDebugState({ lastViewportError: error.message || String(error) });
+      });
     } else {
       const focusResult = editor.graph.focusElement?.(nodes[0], { duration: 0 });
       afterGraphViewport(focusResult);

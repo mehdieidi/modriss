@@ -28,7 +28,7 @@ Each CVS document declares:
 - `elementVisualRules` / `elementOverrides` — type and package visual rules
 - `referenceMappings` — EReference to semantic edge kind
 - `relationshipMappings` — relationship-object EClasses
-- `viewpoints` — workbench views (palette, layout hints, legal edge kinds)
+- `viewpoints` — workbench views (palette, visible element filters, layout hints, legal edge kinds)
 - `canvasPolicy` — palette roles, container focus, semantic zoom thresholds
 - `semanticDashboardColumns` — optional viewpoint-owned dashboard layout columns
 
@@ -61,6 +61,11 @@ npm run migrate:all -w @varka/notation-migrate
 
 - The AntV G6 canvas consumes merged `elements`, `notation`, `relationshipRules`, and
   `elementMappings`.
+- Global configured views with a non-empty `palette` use that palette as their visible canvas
+  surface. Wider `elementTypes` remain available for metadata, dashboards, inspectors, and
+  relationship semantics; they do not by themselves add non-palette node types to the canvas.
+- The PSM CVS sets `workbench.defaultViewDefinitionId` to `psm-workflow-asl`, so the PSM tab opens
+  on the Step Functions / ASL view.
 - Container focus uses backend-derived containment palettes and relationship rules. When users draw
   to a container, the editor offers only legal contained targets, opens the container focus canvas
   for the selected internal target, and records an outer visual-only summary edge for zoomed-out

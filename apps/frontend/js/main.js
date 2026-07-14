@@ -24,7 +24,7 @@ import {
   undoLastEdit,
   validateCurrentModel,
 } from "./model-ops.js";
-import { initArtifactEditor, saveCurrentFile, toggleArtifactTreeCollapsed } from "./artifact.js";
+import { saveCurrentFile, toggleArtifactTreeCollapsed } from "./artifact.js";
 import {
   applyAttributePanel,
   bindConnectionDrawStateListener,
@@ -1185,7 +1185,6 @@ async function init() {
   renderViewWorkbench();
   updateModelSaveUi();
   applyViewport();
-  await initArtifactEditor();
   updateChatAttachmentLabel();
   if (authState?.promptedLogin) {
     await showProjectDialog();

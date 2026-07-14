@@ -451,8 +451,11 @@ function attachMonacoListeners() {
 }
 
 export async function initArtifactEditor() {
-  if (monacoEditor || !el.artifactEditorContent) {
-    return;
+  if (monacoEditor) {
+    return true;
+  }
+  if (!el.artifactEditorContent) {
+    return false;
   }
   try {
     const monaco = await ensureMonacoLoaded();
@@ -481,8 +484,11 @@ export async function initArtifactEditor() {
 
     attachMonacoListeners();
     resetArtifactEditor();
+    return true;
   } catch (error) {
+    console.error("Artifact editor setup failed", error);
     setStatus(error, { prefix: "Editor setup failed.", error: true });
+    return false;
   }
 }
 
@@ -517,7 +523,6 @@ export function toggleArtifactTreeCollapsed() {
 }
 
 export async function loadArtifactRecord(record, { collapseTree = true } = {}) {
-  await initArtifactEditor();
   state.artifact.id = record.id;
   state.artifact.name = record.name || "artifact";
   setArtifactDirty(false);
@@ -616,7 +621,10 @@ export async function openArtifactFile(filePath) {
     return;
   }
   try {
-    await initArtifactEditor();
+    const editorReady = await initArtifactEditor();
+    if (!editorReady) {
+      return;
+    }
     const url = apiUrl(`/artifact/${state.artifact.id}/file?path=${encodeURIComponent(filePath)}`);
     const response = await fetch(url, {
       headers: {

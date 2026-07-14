@@ -1277,6 +1277,16 @@ function edgeIdsForElementIds(graph, elementIds, relationshipKinds = []) {
   return relationshipIdsBetweenElements(graph, elementIds, relationshipKinds);
 }
 
+function surfaceElementTypesForView(view) {
+  if (!isContainerScopeView(view)) {
+    const paletteTypes = safeArray(view?.palette).map(String).filter(Boolean);
+    if (paletteTypes.length) {
+      return new Set(paletteTypes);
+    }
+  }
+  return new Set(safeArray(view?.filters?.elementTypes).map(String).filter(Boolean));
+}
+
 function shouldIncludeRelationshipEndpointOnView(
   graph,
   view,
@@ -1310,7 +1320,7 @@ function withRelationshipEndpoints(
   { view = null, typeKey = null, filterTypes = null, pinned = null, hidden = null } = {},
 ) {
   const expanded = new Set(elementIds);
-  const types = filterTypes ?? new Set(safeArray(view?.filters?.elementTypes));
+  const types = filterTypes ?? surfaceElementTypesForView(view);
   const pinnedSet = pinned ?? new Set(safeArray(view?.pinnedElementIds).map(String));
   const hiddenSet = hidden ?? new Set(safeArray(view?.hidden?.elementIds));
   const applyEndpointFilter = Boolean(view && typeKey) || types.size > 0;
@@ -1520,7 +1530,7 @@ function shouldExcludeContainedElementFromView(graph, view, elementId, element, 
 export function selectElementIdsForView(graph, view, typeKey) {
   const hidden = new Set(safeArray(view?.hidden?.elementIds));
   const pinned = new Set(safeArray(view?.pinnedElementIds).map(String));
-  const filterTypes = new Set(safeArray(view?.filters?.elementTypes));
+  const filterTypes = surfaceElementTypesForView(view);
   const metadataBacked = Boolean(matchingViewDefinition(typeKey, view));
   let candidates;
   const explicitNodeIds = safeArray(view?.nodes)
@@ -2308,7 +2318,7 @@ function defaultViewDefinitionId(typeKey) {
   const fallbacks = {
     cim: "business-process",
     pim: "pim-workflow-designer",
-    psm: "psm-resource-topology",
+    psm: "psm-workflow-asl",
   };
   try {
     const configured = String(

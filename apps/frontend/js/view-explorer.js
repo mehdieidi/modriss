@@ -9,6 +9,8 @@ import {
   isNamedInstanceView,
   refreshViewContent,
   saveCurrentTabGraphState,
+  selectElementIdsForView,
+  selectRelationshipIdsForView,
   setActiveViewId,
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
@@ -306,16 +308,41 @@ function elementType(element) {
   return String(element?.eClass || element?.type || "Element");
 }
 
+function inspectionView(view, hiddenOverrides = {}) {
+  return {
+    ...view,
+    hidden: {
+      elementIds: safeArray(hiddenOverrides.elementIds ?? view?.hidden?.elementIds),
+      relationshipIds: safeArray(
+        hiddenOverrides.relationshipIds ?? view?.hidden?.relationshipIds,
+      ),
+    },
+  };
+}
+
+function inspectableElementIdsForView(view) {
+  if (!view || !state.graph?.elementsById) {
+    return [];
+  }
+  return selectElementIdsForView(
+    state.graph,
+    inspectionView(view, { elementIds: [] }),
+    state.activeType,
+  );
+}
+
 function activeViewElementRows(view) {
   const hiddenIds = new Set(safeArray(view?.hidden?.elementIds));
-  const visibleIds = new Set(safeArray(view?.nodes).map((node) => node.elementId));
-  return safeArray(view?.nodes)
-    .map((viewNode) => {
-      const element = state.graph.elementsById.get(viewNode.elementId);
+  const visibleIds =
+    state.views?.visibleNodeIds instanceof Set
+      ? state.views.visibleNodeIds
+      : new Set(safeArray(view?.nodes).map((node) => node.elementId));
+  return inspectableElementIdsForView(view)
+    .map((id) => {
+      const element = state.graph.elementsById.get(id);
       if (!element) {
         return null;
       }
-      const id = viewNode.elementId;
       return {
         id,
         element,
@@ -353,21 +380,20 @@ function relationshipEndpointId(relationship, key) {
 }
 
 function relationshipsForActiveView(view) {
-  const fromVisibleState =
-    state.views?.visibleRelationshipIds instanceof Set
-      ? [...state.views.visibleRelationshipIds]
-      : [];
-  const hiddenRelationshipIds = new Set(safeArray(view?.hidden?.relationshipIds));
-  const fromViewEdges = safeArray(view?.edges)
-    .filter((edge) => edge?.visible !== false)
-    .map((edge) => edge.relationshipId || edge.id)
-    .filter(Boolean);
-  const relationshipIds = [
-    ...new Set([...fromVisibleState, ...fromViewEdges, ...hiddenRelationshipIds]),
-  ];
   const relationshipMap = state.graph.relationshipsById;
-  const visibleElementIds = new Set(safeArray(view?.nodes).map((node) => node.elementId));
-  const rows = relationshipIds
+  const inspectableView = inspectionView(view, {
+    elementIds: [],
+    relationshipIds: [],
+  });
+  const elementIds = inspectableElementIdsForView(view);
+  const visibleElementIds = new Set(elementIds);
+  const relationshipIds = selectRelationshipIdsForView(
+    state.graph,
+    inspectableView,
+    elementIds,
+    state.activeType,
+  );
+  return relationshipIds
     .map((id) => relationshipMap.get(id))
     .filter((relationship) => {
       if (!relationship) {
@@ -378,21 +404,6 @@ function relationshipsForActiveView(view) {
         visibleElementIds.has(relationshipEndpointId(relationship, "target"))
       );
     });
-  if (rows.length) {
-    return rows;
-  }
-  if (!visibleElementIds.size) {
-    return [];
-  }
-  return [...relationshipMap.values()].filter((relationship) => {
-    const sourceId = relationshipEndpointId(relationship, "source");
-    const targetId = relationshipEndpointId(relationship, "target");
-    return (
-      !hiddenRelationshipIds.has(relationship.id) &&
-      visibleElementIds.has(sourceId) &&
-      visibleElementIds.has(targetId)
-    );
-  });
 }
 
 function relationshipRowsMarkup(view) {
@@ -670,7 +681,7 @@ export async function openWorkbenchView(viewId) {
     await renderDiagramAsync({ full: true });
     renderViewWorkbench();
     saveCurrentTabGraphState();
-    await fitViewportToDiagram({ fit: true });
+    await fitViewportToDiagram({ fit: true, frames: 3 });
     setStatus("View selected.");
   }
 }
