@@ -1,10 +1,10 @@
-package io.mehdieidi.varka.platform.identity.application;
+package io.mehdieidi.varka.platform.artifact.application;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import io.mehdieidi.varka.platform.identity.application.AuthService;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
+import io.mehdieidi.varka.platform.project.application.ProjectService;
 import io.mehdieidi.varka.platform.storage.api.PlatformStore;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -16,24 +16,37 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 
-class ApplicationServicesPortTest {
+class ArtifactServiceTest {
 
   @Test
-  void authServiceUsesPlatformStorePortForUsersAndSessions() {
+  void rejectsTraversalPathWhenCreatingArtifact() {
     InMemoryPlatformStore store = new InMemoryPlatformStore();
     AuthService auth = new AuthService(store, Duration.ofHours(1));
+    ProjectService projects = new ProjectService(store, auth);
+    ArtifactService artifacts = new ArtifactService(store, projects);
 
-    AuthService.AuthResult registered =
-        auth.register("USER@example.com", "correct horse", "User One");
-    AuthService.AuthResult loggedIn = auth.login("user@example.com", "correct horse");
+    var user = auth.register("user@example.com", "correct horse", "User One").user();
+    var project = projects.create(user, "Project", "");
 
-    assertEquals("user@example.com", registered.user().email());
-    assertEquals(registered.user().id(), auth.requireUser(loggedIn.token()).id());
-    assertFalse(store.contains("sessions/" + loggedIn.token() + ".json"));
+    assertThrows(
+        PlatformException.class,
+        () -> artifacts.create(user, project.id(), "bad", Map.of("src/../secret.txt", "x")));
+  }
 
-    auth.logout(loggedIn.token());
+  @Test
+  void rejectsTraversalPathWhenUpdatingArtifact() {
+    InMemoryPlatformStore store = new InMemoryPlatformStore();
+    AuthService auth = new AuthService(store, Duration.ofHours(1));
+    ProjectService projects = new ProjectService(store, auth);
+    ArtifactService artifacts = new ArtifactService(store, projects);
 
-    assertThrows(PlatformException.class, () -> auth.requireUser(loggedIn.token()));
+    var user = auth.register("user@example.com", "correct horse", "User One").user();
+    var project = projects.create(user, "Project", "");
+    var artifact = artifacts.create(user, project.id(), "artifact", Map.of("src/main.go", "ok"));
+
+    assertThrows(
+        PlatformException.class,
+        () -> artifacts.updateFile(user, artifact.id(), "/absolute.txt", "x"));
   }
 
   private static final class InMemoryPlatformStore implements PlatformStore {
@@ -49,10 +62,7 @@ class ApplicationServicesPortTest {
     @Override
     public <T> Optional<T> read(Path path, Class<T> type) {
       Object value = values.get(key(path));
-      if (value == null) {
-        return Optional.empty();
-      }
-      return Optional.of(type.cast(value));
+      return value == null ? Optional.empty() : Optional.of(type.cast(value));
     }
 
     @Override
@@ -99,10 +109,6 @@ class ApplicationServicesPortTest {
     private String prefix(Path path) {
       String key = key(path);
       return key.endsWith("/") ? key : key + "/";
-    }
-
-    private boolean contains(String key) {
-      return values.containsKey(key);
     }
   }
 }

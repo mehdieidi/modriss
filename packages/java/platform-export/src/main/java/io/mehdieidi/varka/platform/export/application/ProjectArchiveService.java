@@ -99,7 +99,7 @@ public final class ProjectArchiveService {
   }
 
   private void addFileEntry(ZipOutputStream zip, String name, byte[] bytes) throws IOException {
-    String normalized = name.replace('\\', '/').replaceAll("/+", "/");
+    String normalized = normalizeZipEntryName(name);
     zip.putNextEntry(new ZipEntry(normalized));
     zip.write(bytes == null ? new byte[0] : bytes);
     zip.closeEntry();
@@ -117,13 +117,23 @@ public final class ProjectArchiveService {
   }
 
   private String normalizeArtifactPath(String path) {
-    String normalized =
-        String.valueOf(path == null ? "" : path).replace('\\', '/').replaceAll("/+", "/");
-    if (normalized.startsWith("/")
-        || normalized.contains("../")
-        || normalized.equals("..")
-        || normalized.isBlank()) {
+    String normalized = normalizeZipEntryName(String.valueOf(path == null ? "" : path));
+    if (normalized.isBlank()) {
       throw new PlatformException(400, "Invalid artifact file path.");
+    }
+    return normalized;
+  }
+
+  private String normalizeZipEntryName(String path) {
+    String normalized = String.valueOf(path == null ? "" : path).replace('\\', '/');
+    normalized = normalized.replaceAll("/+", "/");
+    if (normalized.isBlank() || normalized.startsWith("/") || normalized.matches("^[A-Za-z]:.*")) {
+      throw new PlatformException(400, "Invalid archive file path.");
+    }
+    for (String segment : normalized.split("/")) {
+      if (segment.isBlank() || segment.equals(".") || segment.equals("..")) {
+        throw new PlatformException(400, "Invalid archive file path.");
+      }
     }
     return normalized;
   }

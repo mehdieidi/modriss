@@ -108,9 +108,10 @@ public final class AuthService {
     if (token == null || token.isBlank()) {
       throw new PlatformException(401, "Authentication token is required.");
     }
+    String tokenHash = sessionTokenHash(token);
     AuthSession session =
         store
-            .read(Path.of("sessions", token + ".json"), AuthSession.class)
+            .read(Path.of("sessions", tokenHash + ".json"), AuthSession.class)
             .orElseThrow(() -> new PlatformException(401, "Session is invalid or expired."));
     if (session.expiresAt().isBefore(Instant.now())) {
       logout(token);
@@ -149,7 +150,7 @@ public final class AuthService {
    */
   public void logout(String token) {
     try {
-      store.deleteIfExists(Path.of("sessions", token + ".json"));
+      store.deleteIfExists(Path.of("sessions", sessionTokenHash(token) + ".json"));
     } catch (Exception ex) {
       log.warn("Could not remove session {}", shortToken(token), ex);
     }
@@ -187,9 +188,23 @@ public final class AuthService {
   private AuthResult issueSession(UserRecord user) {
     Instant now = Instant.now();
     String token = randomToken(32);
-    AuthSession session = new AuthSession(token, user.id(), now, now.plus(sessionTtl));
-    store.write(Path.of("sessions", token + ".json"), session);
+    String tokenHash = sessionTokenHash(token);
+    AuthSession session = new AuthSession(tokenHash, user.id(), now, now.plus(sessionTtl));
+    store.write(Path.of("sessions", tokenHash + ".json"), session);
     return new AuthResult(token, user);
+  }
+
+  private String sessionTokenHash(String token) {
+    if (token == null || token.isBlank()) {
+      throw new PlatformException(401, "Authentication token is required.");
+    }
+    try {
+      return HexFormat.of()
+          .formatHex(
+              MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));
+    } catch (Exception ex) {
+      throw new PlatformException(500, "Could not process session token.");
+    }
   }
 
   /**

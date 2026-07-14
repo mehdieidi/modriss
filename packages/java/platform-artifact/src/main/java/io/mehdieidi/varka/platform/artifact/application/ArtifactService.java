@@ -108,7 +108,7 @@ public final class ArtifactService {
     projectService.requireEditor(project, user.id());
     Instant now = Instant.now();
     String id = UUID.randomUUID().toString();
-    Map<String, String> normalizedFiles = new LinkedHashMap<>(files);
+    Map<String, String> normalizedFiles = normalizeFiles(files);
     ObjectNode modelJson =
         metadata == null ? store.objectMapper().createObjectNode() : metadata.deepCopy();
     modelJson.put("name", name);
@@ -382,9 +382,23 @@ public final class ArtifactService {
    */
   private String normalizePath(String path) {
     String normalized = String.valueOf(path == null ? "" : path).replace('\\', '/');
-    if (normalized.isBlank() || normalized.startsWith("/") || normalized.contains("..")) {
+    normalized = normalized.replaceAll("/+", "/");
+    if (normalized.isBlank() || normalized.startsWith("/") || normalized.matches("^[A-Za-z]:.*")) {
       throw new PlatformException(400, "Invalid artifact file path.");
     }
+    for (String segment : normalized.split("/")) {
+      if (segment.isBlank() || segment.equals(".") || segment.equals("..")) {
+        throw new PlatformException(400, "Invalid artifact file path.");
+      }
+    }
+    return normalized;
+  }
+
+  private Map<String, String> normalizeFiles(Map<String, String> files) {
+    Map<String, String> normalized = new LinkedHashMap<>();
+    (files == null ? Map.<String, String>of() : files)
+        .forEach(
+            (path, content) -> normalized.put(normalizePath(path), content == null ? "" : content));
     return normalized;
   }
 }

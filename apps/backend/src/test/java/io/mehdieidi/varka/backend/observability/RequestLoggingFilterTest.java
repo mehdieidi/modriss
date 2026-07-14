@@ -44,6 +44,16 @@ class RequestLoggingFilterTest {
     filter.doFilter(request, response, chain);
 
     assertEquals("req-123", response.getHeader("X-Request-Id"));
+    assertEquals("nosniff", response.getHeader("X-Content-Type-Options"));
+    assertEquals("DENY", response.getHeader("X-Frame-Options"));
+    assertEquals("no-referrer", response.getHeader("Referrer-Policy"));
+    assertEquals(
+        "geolocation=(), microphone=(), camera=()", response.getHeader("Permissions-Policy"));
+    assertEquals(
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+            + "img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; "
+            + "frame-ancestors 'none'; object-src 'none'",
+        response.getHeader("Content-Security-Policy"));
     assertEquals("req-123", requestIdSeenInChain.get());
     assertNull(MDC.get("requestId"));
   }

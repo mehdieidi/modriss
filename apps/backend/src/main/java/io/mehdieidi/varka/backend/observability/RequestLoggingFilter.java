@@ -42,6 +42,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
     String requestId = requestId(request);
     response.setHeader(REQUEST_ID_HEADER, requestId);
+    applySecurityHeaders(response);
     MDC.put(REQUEST_ID_MDC_KEY, requestId);
 
     long started = System.nanoTime();
@@ -83,6 +84,24 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
   private String requestId(HttpServletRequest request) {
     String requestId = request.getHeader(REQUEST_ID_HEADER);
     return StringUtils.hasText(requestId) ? requestId : UUID.randomUUID().toString();
+  }
+
+  private void applySecurityHeaders(HttpServletResponse response) {
+    response.setHeader("X-Content-Type-Options", "nosniff");
+    response.setHeader("X-Frame-Options", "DENY");
+    response.setHeader("Referrer-Policy", "no-referrer");
+    response.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+    response.setHeader(
+        "Content-Security-Policy",
+        "default-src 'self'; "
+            + "script-src 'self'; "
+            + "style-src 'self' 'unsafe-inline'; "
+            + "img-src 'self' data:; "
+            + "font-src 'self'; "
+            + "connect-src 'self'; "
+            + "base-uri 'self'; "
+            + "frame-ancestors 'none'; "
+            + "object-src 'none'");
   }
 
   private String sanitize(String value) {
