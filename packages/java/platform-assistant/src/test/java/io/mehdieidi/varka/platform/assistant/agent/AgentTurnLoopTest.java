@@ -99,6 +99,71 @@ class AgentTurnLoopTest {
     assertEquals(0, provider.calls);
   }
 
+  @Test
+  void failedProviderCallsRetainBudgetAccounting() throws Exception {
+    ModelService models = mock(ModelService.class);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    FailingProvider provider = new FailingProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            2);
+    var json =
+        new ObjectMapper()
+            .readTree(
+                """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","diagram":{"elements":[],"relationships":[]}}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+
+    AgentTurnLoop.TurnExecutionException failure =
+        assertThrows(
+            AgentTurnLoop.TurnExecutionException.class,
+            () -> loop.run("s", ModelLevel.CIM, "Explain", null, workspace));
+
+    assertEquals(502, failure.status());
+    assertEquals(1, failure.providerCalls());
+    assertEquals(1, provider.calls);
+  }
+
+  @Test
+  void repairsInvalidToolPayloadWithinBudget() throws Exception {
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(any(), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    RepairingProvider provider = new RepairingProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            3,
+            2);
+    var json =
+        new ObjectMapper()
+            .readTree(
+                """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","diagram":{"elements":[],"relationships":[]}}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+
+    var result = loop.run("s", ModelLevel.CIM, "Explain", null, workspace);
+
+    assertEquals("Recovered", result.message());
+    assertEquals(2, result.providerCalls());
+    assertEquals(2, provider.calls);
+  }
+
   private static final class FakeProvider implements AssistantModelProvider {
     int calls;
 
@@ -115,6 +180,49 @@ class AgentTurnLoopTest {
       ProviderCallBudget.consume(prompt.role());
       return new AssistantReply(
           "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"Done\"}}", "fake", "fake");
+    }
+  }
+
+  private static final class FailingProvider implements AssistantModelProvider {
+    int calls;
+
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    public boolean available() {
+      return true;
+    }
+
+    public AssistantReply complete(AssistantPrompt prompt) {
+      calls++;
+      ProviderCallBudget.consume(prompt.role());
+      throw new PlatformException(502, "Provider failed");
+    }
+  }
+
+  private static final class RepairingProvider implements AssistantModelProvider {
+    int calls;
+
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    public boolean available() {
+      return true;
+    }
+
+    public AssistantReply complete(AssistantPrompt prompt) {
+      calls++;
+      ProviderCallBudget.consume(prompt.role());
+      if (calls == 1) {
+        return new AssistantReply(
+            "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"eClass\":\"Goal\"}]}}",
+            "fake",
+            "fake");
+      }
+      return new AssistantReply(
+          "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"Recovered\"}}", "fake", "fake");
     }
   }
 }

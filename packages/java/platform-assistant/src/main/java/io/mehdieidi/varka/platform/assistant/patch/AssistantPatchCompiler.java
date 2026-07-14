@@ -637,6 +637,9 @@ public class AssistantPatchCompiler {
   }
 
   private LocatedElement locateElement(JsonNode node, String id) {
+    if (isRootAlias(node, id)) {
+      return new LocatedElement("", (ObjectNode) node);
+    }
     LocatedElement found = locateElement(node, id, "", true);
     if (found == null) {
       found = locateElement(node, id, "", false);
@@ -645,6 +648,23 @@ public class AssistantPatchCompiler {
       throw new PlatformException(404, "Assistant could not locate element: " + id);
     }
     return found;
+  }
+
+  private boolean isRootAlias(JsonNode node, String id) {
+    if (node == null || !node.isObject() || id == null || id.isBlank()) {
+      return false;
+    }
+    String normalized = id.trim().toLowerCase(java.util.Locale.ROOT);
+    String rootId = node.path("id").asText("").trim().toLowerCase(java.util.Locale.ROOT);
+    String rootType = node.path("eClass").asText("").trim().toLowerCase(java.util.Locale.ROOT);
+    String level = node.path("modelLevel").asText("").trim().toLowerCase(java.util.Locale.ROOT);
+    return normalized.equals(rootId)
+        || normalized.equals(rootType)
+        || normalized.equals(level + "model")
+        || normalized.equals("root")
+        || normalized.equals("model")
+        || normalized.equals("m1")
+        || normalized.endsWith("-model");
   }
 
   private List<LocatedElement> locateDeletedElements(JsonNode node, String id) {

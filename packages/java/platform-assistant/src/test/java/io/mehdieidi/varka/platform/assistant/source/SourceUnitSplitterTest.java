@@ -20,4 +20,12 @@ class SourceUnitSplitterTest {
         second.stream().map(unit -> unit.id()).toList());
     assertTrue(first.stream().allMatch(unit -> unit.endOffset() > unit.startOffset()));
   }
+
+  @Test
+  void sourceWorkerDoesNotResplitAlreadyAnnotatedUnits() {
+    String annotated = "<source-unit id=\"src-1\" ordinal=\"1\">\nkeep me\n</source-unit>\n";
+    SourceDocumentWorkers workers = new SourceDocumentWorkers(null, null, 2, 16);
+
+    assertEquals(annotated, workers.extract("session-1", annotated));
+  }
 }

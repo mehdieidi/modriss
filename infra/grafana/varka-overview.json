@@ -99,8 +99,34 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "fieldConfig": { "defaults": { "unit": "bytes" } },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 8,
+      "targets": [
+        {
+          "expr": "sum by (outcome) (increase(varka_assistant_turn_outcome_total[1h]))",
+          "legendFormat": "{{outcome}}"
+        }
+      ],
+      "title": "Assistant turn outcomes (1h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 9,
+      "targets": [
+        {
+          "expr": "sum by (provider, result) (increase(varka_assistant_provider_calls_total[1h]))",
+          "legendFormat": "{{provider}} {{result}}"
+        }
+      ],
+      "title": "Assistant provider calls (1h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
       "id": 6,
       "targets": [
         {
@@ -113,7 +139,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
       "id": 7,
       "targets": [
         {

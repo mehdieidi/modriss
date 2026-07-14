@@ -1,6 +1,7 @@
 package io.mehdieidi.varka.backend.assistant;
 
 import io.mehdieidi.varka.backend.observability.VarkaMetrics;
+import io.mehdieidi.varka.platform.assistant.agent.AgentTurnLoop;
 import io.mehdieidi.varka.platform.assistant.application.AgenticAssistantFacade;
 import io.mehdieidi.varka.platform.assistant.source.SourceUnitSplitter;
 import io.mehdieidi.varka.platform.assistant.turn.AssistantTurn;
@@ -68,11 +69,13 @@ public final class DurableAssistantTurnWorker {
             java.util.concurrent.TimeUnit.SECONDS);
     try {
       String remainingWork = null;
+      String sourceForAgent = turn.sourceText();
       java.util.List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.SourceUnit>
           units = java.util.List.of();
       if (turn.sourceText() != null && !turn.sourceText().isBlank()) {
         units = sourceUnits.split(turn.sourceText());
         turns.saveSourceUnits(turn.id(), units);
+        sourceForAgent = annotatedSourceUnits(units);
         turns.appendEvent(turn.id(), "turn.stage", java.util.Map.of("stage", "SOURCE_UNITS_READY"));
       }
       if (turns.cancellationRequested(turn.id())) {
@@ -94,7 +97,7 @@ public final class DurableAssistantTurnWorker {
               turn.modelId(),
               turn.expectedRevision(),
               message,
-              turn.sourceText(),
+              sourceForAgent,
               destructiveConfirmed,
               () -> turns.cancellationRequested(turn.id()),
               () ->
@@ -173,6 +176,9 @@ public final class DurableAssistantTurnWorker {
           result.revision(),
           remainingWork);
     } catch (io.mehdieidi.varka.platform.kernel.PlatformException ex) {
+      if (ex instanceof AgentTurnLoop.TurnExecutionException turnFailure) {
+        turns.setProviderCallCount(turn.id(), turnFailure.providerCalls());
+      }
       AssistantTurn.State state =
           switch (ex.status()) {
             case 499 -> AssistantTurn.State.CANCELLED;
@@ -206,6 +212,23 @@ public final class DurableAssistantTurnWorker {
     metrics.recordAssistantPhaseDuration(
         "durable_turn",
         Math.max(0L, java.time.Duration.between(turn.acceptedAt(), Instant.now()).toMillis()));
+  }
+
+  private String annotatedSourceUnits(
+      java.util.List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.SourceUnit>
+          units) {
+    StringBuilder result = new StringBuilder();
+    for (var unit : units) {
+      result
+          .append("<source-unit id=\"")
+          .append(unit.id())
+          .append("\" ordinal=\"")
+          .append(unit.ordinal())
+          .append("\">\n")
+          .append(unit.content())
+          .append("\n</source-unit>\n");
+    }
+    return result.toString();
   }
 
   @PreDestroy

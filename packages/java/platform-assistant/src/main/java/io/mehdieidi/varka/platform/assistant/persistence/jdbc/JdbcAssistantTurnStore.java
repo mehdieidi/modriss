@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
@@ -171,6 +172,19 @@ FROM candidate WHERE t.id = candidate.id RETURNING t.*
 
   @Override
   public AssistantTurn.Event appendEvent(String turnId, String type, Map<String, Object> payload) {
+    DuplicateKeyException duplicate = null;
+    for (int attempt = 0; attempt < 3; attempt++) {
+      try {
+        return appendEventOnce(turnId, type, payload);
+      } catch (DuplicateKeyException ex) {
+        duplicate = ex;
+      }
+    }
+    throw duplicate;
+  }
+
+  private AssistantTurn.Event appendEventOnce(
+      String turnId, String type, Map<String, Object> payload) {
     return jdbc
         .query(
             """

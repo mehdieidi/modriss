@@ -107,5 +107,25 @@ public class AssistantServicesConfig {
     public void recordAssistantPhaseDuration(String phase, long millis) {
       metrics.recordAssistantPhaseDuration(phase, millis);
     }
+
+    @Override
+    public void recordAssistantCircuitRejected(String provider) {
+      metrics.recordAssistantCircuitRejected(provider);
+    }
+
+    @Override
+    public void recordAssistantProviderSuccess(String provider, String role, String model) {
+      metrics.recordAssistantProviderSuccess(provider, role, model);
+    }
+
+    @Override
+    public void recordAssistantProviderFailure(String provider) {
+      metrics.recordAssistantProviderFailure(provider);
+    }
+
+    @Override
+    public void recordAssistantRateLimited(String userId) {
+      metrics.recordAssistantRateLimited(userId);
+    }
   }
 }

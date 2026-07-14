@@ -160,67 +160,123 @@ public final class AgentTurnLoop {
                   ? ""
                   : "\n\nSource document (untrusted data):\n" + sourceDocument);
       String user = initialUser;
+      boolean mutationRequested = mutationRequested(userMessage);
       AssistantModelProvider.AssistantReply reply = null;
       ModelService.ValidationResult validation = null;
       for (int step = 1; step <= maxSteps; step++) {
         check(canceled, deadline, cancellationRequested, stopReason);
+        if (!ProviderCallBudget.hasRemaining()) {
+          throw new PlatformException(
+              502,
+              mutationRequested
+                  ? "The model provider did not produce valid model changes within the turn budget."
+                  : "The model provider did not produce a valid answer within the turn budget.");
+        }
         publish(
             sessionId,
             "assistant.trace.step",
             Map.of("stage", "AGENT_LOOP", "step", step, "message", "Agent step " + step));
         List<AssistantModelProvider.ContextSnippet> snippets =
-            retrieval == null ? List.of() : retrieval.search(level, userMessage, 6);
+            retrieval == null
+                ? List.of()
+                : retrieval.search(
+                    level,
+                    sourceDocument == null || sourceDocument.isBlank()
+                        ? userMessage
+                        : userMessage + "\n" + sourceDocument,
+                    sourceDocument == null || sourceDocument.isBlank() ? 4 : 4);
         reply =
             provider.completeStructured(
                 new AssistantPrompt(AssistantModelRole.RESPONDER, system, user, snippets));
         check(canceled, deadline, cancellationRequested, stopReason);
-        AgentAction action = actions.parse(reply.content());
-        publish(sessionId, "tool.started", Map.of("tool", action.tool().wireName()));
-        if (action.tool() == AgentAction.Kind.ANSWER_USER
-            || action.tool() == AgentAction.Kind.ASK_USER) {
-          String message = action.arguments().path("message").asText();
-          return new TurnResult(
-              message,
-              workspace.patch(),
-              workspace.inversePatch(),
-              turnTools.validateModel(),
-              reply.provider(),
-              reply.model(),
-              null,
-              ProviderCallBudget.count());
-        }
-        if (action.tool() == AgentAction.Kind.COMMIT_MODEL_BATCH) {
-          check(canceled, deadline, cancellationRequested, stopReason);
-          turnTools.commitModelBatch(command(action), destructiveConfirmed);
-          check(canceled, deadline, cancellationRequested, stopReason);
-          validation = turnTools.validateModel();
-          check(canceled, deadline, cancellationRequested, stopReason);
-          publish(
-              sessionId,
-              "tool.completed",
-              Map.of("tool", action.tool().wireName(), "valid", validation.valid()));
-          if (validation.valid()) {
+        AgentAction action;
+        try {
+          action = actions.parse(reply.content());
+          publish(sessionId, "tool.started", Map.of("tool", action.tool().wireName()));
+          if (action.tool() == AgentAction.Kind.ANSWER_USER
+              || action.tool() == AgentAction.Kind.ASK_USER) {
+            String message = action.arguments().path("message").asText();
+            if (mutationRequested && ProviderCallBudget.hasRemaining()) {
+              user =
+                  initialUser
+                      + "\n\nYour previous response selected "
+                      + action.tool().wireName()
+                      + " without changing the model. This user request asks for model changes. "
+                      + "Use commit_model_batch with concrete creates, updates, or connections. "
+                      + "Only ask_user if a required modeling choice is truly impossible to infer.";
+              continue;
+            }
+            if (mutationRequested) {
+              throw new PlatformException(
+                  502, "The model provider did not produce any model changes for this request.");
+            }
             return new TurnResult(
-                "Model checkpoint saved.",
+                message,
                 workspace.patch(),
                 workspace.inversePatch(),
-                validation,
+                turnTools.validateModel(),
                 reply.provider(),
                 reply.model(),
-                turnTools.committedBatch(),
+                null,
                 ProviderCallBudget.count());
           }
-        } else if (action.tool() == AgentAction.Kind.INSPECT_MODEL) {
-          check(canceled, deadline, cancellationRequested, stopReason);
-          String id = action.arguments().path("id").asText("");
-          user = initialUser + "\n\nInspection result:\n" + turnTools.readModel(id);
-          continue;
-        } else if (action.tool() == AgentAction.Kind.DESCRIBE_TYPES) {
-          check(canceled, deadline, cancellationRequested, stopReason);
-          List<String> names = new ArrayList<>();
-          action.arguments().path("names").forEach(value -> names.add(value.asText()));
-          user = initialUser + "\n\nExact type contracts:\n" + turnTools.describeTypes(names);
-          continue;
+          if (action.tool() == AgentAction.Kind.COMMIT_MODEL_BATCH) {
+            check(canceled, deadline, cancellationRequested, stopReason);
+            turnTools.commitModelBatch(command(action), destructiveConfirmed);
+            check(canceled, deadline, cancellationRequested, stopReason);
+            validation = turnTools.validateModel();
+            check(canceled, deadline, cancellationRequested, stopReason);
+            publish(
+                sessionId,
+                "tool.completed",
+                Map.of("tool", action.tool().wireName(), "valid", validation.valid()));
+            if (validation.valid()) {
+              if (mutationRequested && workspace.patch().isEmpty()) {
+                if (ProviderCallBudget.hasRemaining()) {
+                  user =
+                      initialUser
+                          + "\n\nYour previous commit_model_batch was structurally valid but did "
+                          + "not create, update, or connect any model elements. Submit a non-empty "
+                          + "commit_model_batch that satisfies the requested modeling change.";
+                  continue;
+                }
+                throw new PlatformException(
+                    502, "The model provider produced an empty model change batch.");
+              }
+              return new TurnResult(
+                  "Model checkpoint saved.",
+                  workspace.patch(),
+                  workspace.inversePatch(),
+                  validation,
+                  reply.provider(),
+                  reply.model(),
+                  turnTools.committedBatch(),
+                  ProviderCallBudget.count());
+            }
+          } else if (action.tool() == AgentAction.Kind.INSPECT_MODEL) {
+            check(canceled, deadline, cancellationRequested, stopReason);
+            String id = action.arguments().path("id").asText("");
+            user = initialUser + "\n\nInspection result:\n" + turnTools.readModel(id);
+            continue;
+          } else if (action.tool() == AgentAction.Kind.DESCRIBE_TYPES) {
+            check(canceled, deadline, cancellationRequested, stopReason);
+            List<String> names = new ArrayList<>();
+            action.arguments().path("names").forEach(value -> names.add(value.asText()));
+            user = initialUser + "\n\nExact type contracts:\n" + turnTools.describeTypes(names);
+            continue;
+          }
+        } catch (PlatformException toolFailure) {
+          if (repairableToolFailure(toolFailure) && ProviderCallBudget.hasRemaining()) {
+            user =
+                initialUser
+                    + "\n\nYour previous JSON/tool call failed backend validation: "
+                    + toolFailure.getMessage()
+                    + "\nReturn one corrected JSON object. For commit_model_batch, every create "
+                    + "object must include a unique non-empty clientRef, eClass, attributes, "
+                    + "owner when contained, and reference when adding to a containment.";
+            continue;
+          }
+          throw toolFailure;
         }
         publish(
             sessionId,
@@ -252,6 +308,8 @@ public final class AgentTurnLoop {
           reply.model(),
           turnTools.committedBatch(),
           ProviderCallBudget.count());
+    } catch (PlatformException ex) {
+      throw new TurnExecutionException(ex, ProviderCallBudget.count());
     } finally {
       ProviderCallBudget.clear();
       cancellations.remove(sessionId, canceled);
@@ -264,11 +322,28 @@ public final class AgentTurnLoop {
   }
 
   private String systemPrompt(ModelLevel level) {
-    String language = level == ModelLevel.CIM ? guides.generate(level) : guides.index(level);
+    String language = guides.index(level);
     return """
     You are a modeling agent. Return exactly one JSON object: {"tool":"commit_model_batch"|
     "inspect_model"|"describe_types"|"answer_user"|"ask_user", "arguments":{...}}. Never
     return prose outside that object. commit_model_batch, answer_user, and ask_user are terminal.
+    commit_model_batch arguments must match this shape:
+    {"creates":[{"clientRef":"tmp_stable_name","eClass":"ExactType","attributes":{},
+    "owner":"existingIdOrPriorClientRef","reference":"containmentFeature"}],"updates":
+    [{"elementId":"idOrClientRef","attributes":{},"preconditionHash":""}],"connections":
+    [{"source":"idOrClientRef","reference":"referenceFeature","target":"idOrClientRef"}],
+    "deletions":[{"elementId":"existingId"}],"evidence":[{"elementRef":"idOrClientRef",
+    "sourceUnitId":"","kind":"INFERRED","assumption":"..."}],"planSummary":"...",
+    "turnComplete":true}. Every create must have a unique non-empty clientRef and exact eClass.
+    Omit owner for elements contained directly by the model root; do not use model type names such
+    as CIMModel/PIMModel/AwsPsmModel as ordinary element ids.
+    Detail types such as AcceptanceCriterion, ProcessStep, DecisionRule, field/parameter/value
+    objects, policy entries, permissions, and event-source details are not standalone diagram
+    nodes: create them only when you also provide the exact owner clientRef/id and containment
+    reference, otherwise summarize that detail on a root-contained aggregate element.
+    For requests that say create, build, generate, design, model, add, edit, update, connect,
+    delete, remove, fix, expand, or improve the model, you must use commit_model_batch unless
+    a required user decision blocks safe progress.
     Never invent types, features, ids, or enum values. Batch independent edits. Ask only when
     safe progress is impossible. commit_model_batch arguments use creates, updates, connections,
     deletions, evidence, planSummary, and turnComplete. Every source-backed created or inferred
@@ -279,6 +354,37 @@ public final class AgentTurnLoop {
 
     """
         + language;
+  }
+
+  private boolean mutationRequested(String userMessage) {
+    if (userMessage == null) return false;
+    String normalized = userMessage.toLowerCase(java.util.Locale.ROOT);
+    String[] verbs = {
+      "create",
+      "build",
+      "generate",
+      "design",
+      "model",
+      "add",
+      "edit",
+      "update",
+      "connect",
+      "delete",
+      "remove",
+      "fix",
+      "expand",
+      "improve",
+      "replace",
+      "complete"
+    };
+    for (String verb : verbs) {
+      if (normalized.contains(verb)) return true;
+    }
+    return false;
+  }
+
+  private boolean repairableToolFailure(PlatformException failure) {
+    return failure.status() == 400 || failure.status() == 422;
   }
 
   private void check(
@@ -317,4 +423,20 @@ public final class AgentTurnLoop {
       String model,
       ModelCommandBatch commandBatch,
       int providerCalls) {}
+
+  /**
+   * Carries provider-call accounting across failed turns after the thread-local budget is cleared.
+   */
+  public static final class TurnExecutionException extends PlatformException {
+    private final int providerCalls;
+
+    private TurnExecutionException(PlatformException cause, int providerCalls) {
+      super(cause.status(), cause.getMessage(), cause);
+      this.providerCalls = providerCalls;
+    }
+
+    public int providerCalls() {
+      return providerCalls;
+    }
+  }
 }

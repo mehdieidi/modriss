@@ -23,6 +23,7 @@ public final class SourceDocumentWorkers implements AutoCloseable {
   /** Normalizes and delimitates local source units without discarding any text. */
   public String extract(String sessionId, String document) {
     if (document == null || document.isBlank()) return "";
+    if (document.contains("<source-unit id=\"")) return document;
     var units = splitter.split(document);
     StringBuilder result = new StringBuilder(document.length() + units.size() * 32);
     for (var unit : units) {

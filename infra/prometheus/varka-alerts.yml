@@ -47,3 +47,43 @@ groups:
           severity: warning
         annotations:
           summary: Assistant circuit breaker rejected provider calls
+
+      - alert: VarkaAssistantProviderErrors
+        expr: increase(varka_assistant_provider_calls_total{result="failure"}[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant provider calls are failing
+
+      - alert: VarkaAssistantDeadlineBreaches
+        expr: increase(varka_assistant_turn_outcome_total{outcome="TIMED_OUT"}[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant turns are exceeding the durable deadline
+
+      - alert: VarkaAssistantPartialTurnRate
+        expr: increase(varka_assistant_turn_outcome_total{outcome="PARTIAL"}[30m]) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant partial-turn rate is elevated
+
+      - alert: VarkaAssistantStructuralFailures
+        expr: increase(varka_assistant_turn_outcome_total{outcome=~"FAILED|CONFLICTED"}[15m]) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant durable turns are failing or conflicting
+
+      - alert: VarkaAssistantZeroProgressTurns
+        expr: increase(varka_assistant_turn_outcome_total{outcome="PARTIAL"}[15m]) > 0 and increase(varka_assistant_phase_seconds_count{phase="durable_turn"}[15m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant turns are completing without full progress

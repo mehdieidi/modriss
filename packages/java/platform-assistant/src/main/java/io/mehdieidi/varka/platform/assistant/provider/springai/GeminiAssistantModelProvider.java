@@ -30,11 +30,7 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
         proxyAvailability,
         promptGuard,
         hardening,
-        configured(properties) ? ChatClient.create(chatModel(properties)) : null);
-  }
-
-  private static boolean configured(AiProperties properties) {
-    return properties.enabled() && !properties.gemini().apiKey().isBlank();
+        () -> ChatClient.create(chatModel(properties)));
   }
 
   private static GoogleGenAiChatModel chatModel(AiProperties properties) {

@@ -1,7 +1,6 @@
 package io.mehdieidi.varka.platform.assistant.provider.springai;
 
 import com.openai.client.okhttp.OpenAIOkHttpClient;
-import com.openai.credential.BearerTokenCredential;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
@@ -26,11 +25,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
         proxyAvailability,
         promptGuard,
         hardening,
-        configured(properties) ? ChatClient.create(chatModel(properties)) : null);
-  }
-
-  private static boolean configured(AiProperties properties) {
-    return properties.enabled() && !properties.openaiCompatible().apiKey().isBlank();
+        () -> ChatClient.create(chatModel(properties)));
   }
 
   private static OpenAiChatModel chatModel(AiProperties properties) {
@@ -40,9 +35,9 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
             : properties.openaiCompatible().apiKey();
     OpenAIOkHttpClient.Builder client =
         OpenAIOkHttpClient.builder()
+            .fromEnv()
             .baseUrl(properties.openaiCompatible().baseUrl())
             .apiKey(apiKey)
-            .credential(BearerTokenCredential.create(apiKey))
             .timeout(properties.requestTimeout())
             .maxRetries(0);
     AiProperties.Proxy proxy = properties.proxy();

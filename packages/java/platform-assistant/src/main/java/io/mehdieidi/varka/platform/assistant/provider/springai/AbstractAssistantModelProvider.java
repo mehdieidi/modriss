@@ -9,6 +9,7 @@ import io.mehdieidi.varka.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,8 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
   private final ProxyAvailability proxyAvailability;
   private final AssistantPromptGuard promptGuard;
   private final AssistantHardeningService hardening;
-  protected final ChatClient chatClient;
+  private final Supplier<ChatClient> chatClientSupplier;
+  private volatile ChatClient chatClient;
 
   AbstractAssistantModelProvider(
       String providerKey,
@@ -42,13 +44,13 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
       AssistantHardeningService hardening,
-      ChatClient chatClient) {
+      Supplier<ChatClient> chatClientSupplier) {
     this.providerKey = providerKey;
     this.properties = properties;
     this.proxyAvailability = proxyAvailability;
     this.promptGuard = promptGuard;
     this.hardening = hardening;
-    this.chatClient = chatClient;
+    this.chatClientSupplier = chatClientSupplier;
   }
 
   @Override
@@ -75,7 +77,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
             providerKey,
             model,
             () -> {
-              var request = chatClient.prompt().options(options(model, prompt.role()));
+              var request = chatClient().prompt().options(options(model, prompt.role()));
               return request
                   .system(SYSTEM_GUARDRAIL + "\n" + prompt.system())
                   .user(userWithContext(prompt))
@@ -100,7 +102,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
             providerKey,
             model,
             () -> {
-              var request = chatClient.prompt().options(options(model, prompt.role()));
+              var request = chatClient().prompt().options(options(model, prompt.role()));
               return request
                   .system(SYSTEM_GUARDRAIL + "\n" + prompt.system())
                   .user(userWithContext(prompt))
@@ -125,7 +127,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
             providerKey,
             model,
             () ->
-                chatClient
+                chatClient()
                     .prompt()
                     .options(options(model, prompt.role()))
                     .system(SYSTEM_GUARDRAIL + "\n" + prompt.system())
@@ -143,6 +145,19 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
   protected abstract String modelFor(AssistantModelRole role);
 
   protected abstract ChatOptions.Builder<?> options(String model, AssistantModelRole role);
+
+  private ChatClient chatClient() {
+    ChatClient current = chatClient;
+    if (current != null) {
+      return current;
+    }
+    synchronized (this) {
+      if (chatClient == null) {
+        chatClient = chatClientSupplier.get();
+      }
+      return chatClient;
+    }
+  }
 
   private String proxyDescription() {
     AiProperties.Proxy proxy = properties.proxy();

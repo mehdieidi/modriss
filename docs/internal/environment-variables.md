@@ -154,14 +154,14 @@ allowed to do.
 
 These are secrets or provider-specific names. Keep real keys in `.env`, not `.env.example`.
 
-| Variable                     | Possible values                                                         | What it means                                                                                                                                                  |
-| ---------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `OPENAI_COMPATIBLE_BASE_URL` | URL like `https://api.openai.com` or another OpenAI-compatible base URL | Base URL for OpenAI-style providers. The backend normalizes a trailing `/v1`, so both `https://api.openai.com` and `https://api.openai.com/v1` are acceptable. |
-| `OPENAI_COMPATIBLE_API_KEY`  | Provider API key or empty                                               | API key for OpenAI-compatible providers.                                                                                                                       |
-| `GEMINI_API_KEY`             | Gemini API key or empty                                                 | API key for Google Gemini.                                                                                                                                     |
-| `VARKA_AI_PLANNER_MODEL`     | Empty, `auto`, or a provider model name                                 | Model used for planning changes. Empty uses provider defaults; `auto` is only useful if your gateway understands it as a model alias.                          |
-| `VARKA_AI_RESPONDER_MODEL`   | Empty, `auto`, or a provider model name                                 | Model used for user-facing assistant responses.                                                                                                                |
-| `VARKA_AI_SUMMARIZER_MODEL`  | Empty, `auto`, or a provider model name                                 | Model used for conversation/context summaries.                                                                                                                 |
+| Variable                     | Possible values                                                            | What it means                                                                                                                         |
+| ---------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `OPENAI_COMPATIBLE_BASE_URL` | URL like `https://api.openai.com/v1` or another OpenAI-compatible base URL | Base URL for OpenAI-style providers. Use the provider's API root expected by the OpenAI SDK, usually including `/v1`.                 |
+| `OPENAI_COMPATIBLE_API_KEY`  | Provider API key or empty                                                  | API key for OpenAI-compatible providers.                                                                                              |
+| `GEMINI_API_KEY`             | Gemini API key or empty                                                    | API key for Google Gemini.                                                                                                            |
+| `VARKA_AI_PLANNER_MODEL`     | Empty, `auto`, or a provider model name                                    | Model used for planning changes. Empty uses provider defaults; `auto` is only useful if your gateway understands it as a model alias. |
+| `VARKA_AI_RESPONDER_MODEL`   | Empty, `auto`, or a provider model name                                    | Model used for user-facing assistant responses.                                                                                       |
+| `VARKA_AI_SUMMARIZER_MODEL`  | Empty, `auto`, or a provider model name                                    | Model used for conversation/context summaries.                                                                                        |
 
 ## AI Proxy
 

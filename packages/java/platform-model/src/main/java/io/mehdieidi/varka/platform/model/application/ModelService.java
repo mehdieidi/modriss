@@ -550,6 +550,40 @@ public final class ModelService {
       String name,
       List<ModelPatchOperation> operations,
       Long expectedRevision) {
+    return patchInternal(user, level, id, name, operations, expectedRevision, false);
+  }
+
+  /**
+   * Applies patch operations only when the normalized result is structurally valid for the active
+   * Ecore metamodel. This path is intended for assistant checkpoints and deliberately does not run
+   * EVL semantic validation.
+   *
+   * @param user requesting user
+   * @param level model level
+   * @param id model identifier
+   * @param name replacement model name, or {@code null}
+   * @param operations patch operations
+   * @param expectedRevision expected revision, or {@code null}
+   * @return updated model
+   */
+  public ModelRecord patchStructurallyValid(
+      UserRecord user,
+      ModelLevel level,
+      String id,
+      String name,
+      List<ModelPatchOperation> operations,
+      Long expectedRevision) {
+    return patchInternal(user, level, id, name, operations, expectedRevision, true);
+  }
+
+  private ModelRecord patchInternal(
+      UserRecord user,
+      ModelLevel level,
+      String id,
+      String name,
+      List<ModelPatchOperation> operations,
+      Long expectedRevision,
+      boolean requireStructuralValidity) {
     return modelLocks.withModelLock(
         id,
         Duration.ofSeconds(30),
@@ -571,6 +605,13 @@ public final class ModelService {
           JsonNode normalizedModel =
               importExport.normalizeModel(
                   name == null ? existing.name() : name, level, patchedModel);
+          if (requireStructuralValidity) {
+            ValidationResult structural = validateStructural(level, normalizedModel);
+            if (!structural.valid()) {
+              throw new PlatformException(
+                  422, "Assistant patch is not structurally valid: " + structural.issues());
+            }
+          }
           ModelImportExportService.SourceXmiUpdate sourceXmi =
               importExport.resolveSourceXmiUpdate(
                   user, existing.projectId(), level, normalizedModel, true);

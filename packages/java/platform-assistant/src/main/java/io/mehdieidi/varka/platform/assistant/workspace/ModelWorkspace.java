@@ -81,7 +81,7 @@ public final class ModelWorkspace {
 
   /** Atomically commits all workspace mutations under ModelService's revision lock. */
   public synchronized ModelRecord apply(ModelService models, UserRecord user) {
-    return models.patch(user, level, modelId, null, patch(), baseRevision);
+    return models.patchStructurallyValid(user, level, modelId, null, patch(), baseRevision);
   }
 
   public record MutationResult(

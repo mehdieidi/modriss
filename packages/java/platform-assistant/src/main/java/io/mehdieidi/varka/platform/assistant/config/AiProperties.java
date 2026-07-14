@@ -179,9 +179,6 @@ public record AiProperties(
     while (normalized.endsWith("/")) {
       normalized = normalized.substring(0, normalized.length() - 1);
     }
-    if (normalized.endsWith("/v1")) {
-      return normalized.substring(0, normalized.length() - 3);
-    }
     return normalized;
   }
 

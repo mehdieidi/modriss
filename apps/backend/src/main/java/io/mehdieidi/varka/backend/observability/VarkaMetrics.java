@@ -71,6 +71,51 @@ public class VarkaMetrics {
     assistantCircuitOpen.increment();
   }
 
+  /** Records a provider call rejected because the assistant circuit breaker is open. */
+  public void recordAssistantCircuitRejected(String provider) {
+    assistantCircuitOpen.increment();
+    registry
+        .counter("varka.assistant.provider.circuit.rejected", "provider", safeTag(provider))
+        .increment();
+  }
+
+  /** Records a successful assistant provider call. */
+  public void recordAssistantProviderSuccess(String provider, String role, String model) {
+    registry
+        .counter(
+            "varka.assistant.provider.calls",
+            "provider",
+            safeTag(provider),
+            "role",
+            safeTag(role),
+            "model",
+            safeTag(model),
+            "result",
+            "success")
+        .increment();
+  }
+
+  /** Records a failed assistant provider call. */
+  public void recordAssistantProviderFailure(String provider) {
+    registry
+        .counter(
+            "varka.assistant.provider.calls",
+            "provider",
+            safeTag(provider),
+            "role",
+            "unknown",
+            "model",
+            "unknown",
+            "result",
+            "failure")
+        .increment();
+  }
+
+  /** Records an assistant request rejected by the user-facing rate limit. */
+  public void recordAssistantRateLimited(String userId) {
+    registry.counter("varka.assistant.rate.limited", "user", safeTag(userId)).increment();
+  }
+
   /**
    * Records one assistant turn outcome.
    *

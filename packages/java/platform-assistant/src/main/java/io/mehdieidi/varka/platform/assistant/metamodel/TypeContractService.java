@@ -30,6 +30,20 @@ public final class TypeContractService {
     return names.stream().distinct().map(name -> require(level, name)).toList();
   }
 
+  public List<TypeContract> all(ModelLevel level) {
+    return knowledge.typeContracts(level);
+  }
+
+  public boolean assignable(ModelLevel level, String actualType, String expectedType) {
+    if (actualType == null || expectedType == null) return false;
+    if (actualType.equals(expectedType)) return true;
+    return knowledge
+        .index()
+        .typeContract(level, actualType)
+        .map(type -> type.supertypes().contains(expectedType))
+        .orElse(false);
+  }
+
   public List<String> suggestions(ModelLevel level, String requestedName) {
     String requested = requestedName == null ? "" : requestedName.toLowerCase();
     return knowledge.typeContracts(level).stream()
