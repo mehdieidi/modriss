@@ -122,7 +122,6 @@
           <skip>true</skip>
         </configuration>
         <groupId>org.springframework.boot</groupId>
-        <version>${spring.boot.version}</version>
       </plugin>
     </plugins>
   </build>

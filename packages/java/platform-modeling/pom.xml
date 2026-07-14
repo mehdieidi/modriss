@@ -93,7 +93,6 @@
       <artifactId>junit-jupiter</artifactId>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
-      <version>${junit.version}</version>
     </dependency>
   </dependencies>
   <description>Platform modeling, metamodel resolution, XMI import/export, and layout services.
@@ -110,7 +109,6 @@
   <properties>
     <elk.version>0.11.0</elk.version>
     <emf.version>2.40.0</emf.version>
-    <junit.version>5.13.1</junit.version>
     <xtext.version>2.40.0</xtext.version>
   </properties>
 </project>

@@ -64,7 +64,6 @@
       <artifactId>junit-jupiter</artifactId>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
-      <version>${junit.version}</version>
     </dependency>
   </dependencies>
   <description>CLI utility for executing Eclipse Epsilon EVL validations.</description>
@@ -81,7 +80,6 @@
   </parent>
 
   <properties>
-    <junit.version>5.13.1</junit.version>
     <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
     <maven.compiler.release>${java.version}</maven.compiler.release>
     <maven.shade.version>3.6.1</maven.shade.version>

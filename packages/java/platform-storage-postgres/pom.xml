@@ -57,7 +57,6 @@
       <artifactId>junit-jupiter</artifactId>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
-      <version>${junit.version}</version>
     </dependency>
     <dependency>
       <artifactId>postgresql</artifactId>
@@ -84,7 +83,4 @@
     <relativePath>../../../pom.xml</relativePath>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <properties>
-    <junit.version>5.13.1</junit.version>
-  </properties>
 </project>
