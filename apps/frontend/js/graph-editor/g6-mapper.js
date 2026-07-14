@@ -371,7 +371,10 @@ export function mapEdgeToG6(
       pinPoints: Array.isArray(edge.pinPoints) ? edge.pinPoints : [],
       routeStart,
       routeEnd,
-      showPins: showLabels || selected || hovered,
+      // Pin handles are editing affordances. Rendering them for every labeled
+      // edge multiplies canvas objects in dense regions, despite only being
+      // actionable on the selected or hovered relationship.
+      showPins: selected || hovered,
       labelText: showLabels || selected || hovered ? label : "",
       labelPlacement: "center",
       labelOffsetY: -14,

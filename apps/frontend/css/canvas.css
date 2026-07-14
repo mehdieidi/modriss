@@ -1269,6 +1269,10 @@
   display: block;
 }
 
+.g6-editor-host.g6-pointer-captured canvas {
+  pointer-events: none;
+}
+
 .canvas-grid.g6-renderer-unavailable::after {
   content: "AntV G6 renderer unavailable";
   position: absolute;

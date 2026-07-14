@@ -679,6 +679,9 @@ function registerVarkaG6Extensions() {
       super.render(attributes, container);
       const stateSet = states(attributes);
       const impactFocal = attributes.impactFocal || stateSet.has("impact-focal");
+      const selected = attributes.selected || stateSet.has("selected");
+      const hovered = attributes.hovered || attributes.hover || stateSet.has("hover");
+      const emphasized = impactFocal || selected || hovered;
       const labelText = String(attributes.labelText || "");
       const pinPoints = Array.isArray(attributes.pinPoints) ? attributes.pinPoints : [];
       const showPins = Boolean(attributes.showPins && pinPoints.length);
@@ -686,19 +689,18 @@ function registerVarkaG6Extensions() {
       this.upsert(
         "edgeHalo",
         "path",
-        {
-          d: path,
-          stroke: impactFocal
-            ? cssVar("--accent-glow", "rgba(0,166,224,0.28)")
-            : "rgba(15, 23, 42, 0.22)",
-          lineWidth: impactFocal ? 11 : attributes.selected ? 8 : 6,
-          opacity:
-            impactFocal || attributes.selected || attributes.hovered || attributes.hover
-              ? 0.48
-              : 0.24,
-          fill: "none",
-          pointerEvents: "none",
-        },
+        emphasized
+          ? {
+              d: path,
+              stroke: impactFocal
+                ? cssVar("--accent-glow", "rgba(0,166,224,0.28)")
+                : "rgba(15, 23, 42, 0.22)",
+              lineWidth: impactFocal ? 11 : selected ? 8 : 6,
+              opacity: 0.48,
+              fill: "none",
+              pointerEvents: "none",
+            }
+          : false,
         container,
       );
       const routeStart = attributes.routeStart;
@@ -712,15 +714,15 @@ function registerVarkaG6Extensions() {
         this.upsert(
           name,
           "circle",
-          Number.isFinite(x) && Number.isFinite(y)
+          emphasized && Number.isFinite(x) && Number.isFinite(y)
             ? {
                 cx: x,
                 cy: y,
-                r: attributes.selected ? 3.8 : 3,
+                r: selected ? 3.8 : 3,
                 fill: canvasBackgroundColor(),
                 stroke,
-                lineWidth: attributes.selected ? 1.8 : 1.2,
-                opacity: attributes.selected || attributes.hovered || attributes.hover ? 1 : 0.72,
+                lineWidth: selected ? 1.8 : 1.2,
+                opacity: 1,
                 pointerEvents: "none",
               }
             : false,
@@ -738,12 +740,12 @@ function registerVarkaG6Extensions() {
             ? {
                 cx: x,
                 cy: y,
-                r: attributes.selected ? 5.5 : 4.5,
+                r: selected ? 5.5 : 4.5,
                 fill: canvasBackgroundColor(),
-                stroke: attributes.selected
+                stroke: selected
                   ? cssVar("--accent-select", "#5ecbff")
                   : cssVar("--accent", "#00a6e0"),
-                lineWidth: attributes.selected ? 2 : 1.5,
+                lineWidth: selected ? 2 : 1.5,
                 pointerEvents: "none",
               }
             : false,
@@ -1400,6 +1402,11 @@ export function mountG6Editor(container, { callbacks = {}, mapper = {} } = {}) {
     theme: "dark",
     zoomRange: [0.01, 2.5],
     cursor: "grab",
+    // At close zoom levels, only a small part of a large model is visible.
+    // Culling prevents offscreen nodes and edges from being repainted on pan.
+    canvas: {
+      enableCulling: true,
+    },
     data: { nodes: [], edges: [] },
     behaviors: ["zoom-canvas"],
     node: {

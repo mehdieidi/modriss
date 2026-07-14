@@ -74,7 +74,6 @@ import {
   updateCanvasEdge,
   updateCanvasImpactState,
   updateCanvasNode,
-  updateCanvasNodeIcons,
   updateCanvasSelection,
   updateCanvasViewport,
   zoomCanvasBy as adapterZoomCanvasBy,
@@ -2616,7 +2615,6 @@ function moveG6NodeDrag(nodeId, position) {
   node.meta.y = node.y;
   state.dragNode = state.dragNode || { id: nodeId };
   state.dragNode.moved = true;
-  updateCanvasNodeIcons();
 }
 
 function endG6NodeDrag(nodeId, position, { moved = false } = {}) {

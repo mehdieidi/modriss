@@ -153,7 +153,7 @@ function nodeBoundsForIndex(node, fallbackSize = {}) {
 
 export function createSpatialIndex(
   nodes = [],
-  { cellSize = spatialCellSize() || 1, fallbackSize = {} } = {},
+  { cellSize = spatialCellSize() || 256, fallbackSize = {} } = {},
 ) {
   const cells = new Map();
   const entries = new Map();
