@@ -323,13 +323,14 @@
 
 .traveler-node {
   position: absolute;
-  display: grid;
-  place-items: center;
-  min-width: 4.4rem;
-  height: 1.8rem;
-  padding: 0 0.62rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.9rem;
+  min-height: 1.75rem;
+  padding: 0.24rem 0.45rem;
   border: 1px solid color-mix(in srgb, var(--traveler-color) 58%, transparent);
-  border-radius: 0.38rem;
+  border-radius: 0.42rem;
   opacity: 0;
   color: var(--traveler-color);
   background:
@@ -342,11 +343,33 @@
   box-shadow:
     0 0.65rem 1.3rem rgba(0, 0, 0, 0.28),
     0 0 1rem color-mix(in srgb, var(--traveler-color) 24%, transparent);
-  font-size: 0.48rem;
+  font-size: 0.43rem;
   font-weight: 760;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
+  letter-spacing: 0;
+  line-height: 1.12;
+  text-align: center;
   translate: -50% -50%;
+}
+
+.traveler-model-node {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+}
+
+.traveler-model-node-card {
+  opacity: 1 !important;
+  transform: none !important;
+  transform-origin: top left;
+}
+
+.traveler-model-node-card .node-badge {
+  display: none;
 }
 
 .transformation-engine {
@@ -1427,6 +1450,85 @@
 
 .engine-label {
   bottom: 0;
+}
+
+/* Two-sided funnel used as the scroll-driven transformation point. */
+.transformation-engine {
+  width: min(23rem, 27vw);
+  height: min(8.8rem, 10.8vw);
+}
+
+.engine-shadow {
+  right: 14%;
+  bottom: 12%;
+  left: 14%;
+  height: 14%;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  filter: blur(1.2rem);
+}
+
+.engine-diagram {
+  --funnel-edge: color-mix(in srgb, var(--accent) 34%, var(--canvas-node-muted));
+  --funnel-mid: color-mix(in srgb, var(--accent) 18%, var(--canvas-node-muted));
+  --funnel-throat: color-mix(in srgb, var(--canvas-node-surface) 82%, var(--accent) 18%);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-items: start;
+  perspective: none;
+}
+
+.engine-funnel {
+  position: absolute;
+  inset: 0 0 0.9rem;
+  width: 100%;
+  height: calc(100% - 0.9rem);
+  overflow: visible;
+  filter: drop-shadow(0 0.45rem 0.85rem color-mix(in srgb, var(--shadow-soft) 68%, transparent));
+}
+
+.funnel-shell {
+  stroke: color-mix(in srgb, var(--canvas-node-muted) 60%, transparent);
+  stroke-width: 2;
+}
+
+.funnel-shell-left {
+  fill: url("#funnel-left");
+}
+
+.funnel-shell-right {
+  fill: url("#funnel-right");
+}
+
+.funnel-seams path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--story-surface-strong) 72%, var(--canvas-node-muted));
+  stroke-linecap: round;
+  stroke-width: 3;
+  opacity: 0.7;
+}
+
+.funnel-rims ellipse {
+  fill: var(--story-surface-strong);
+  stroke: color-mix(in srgb, var(--canvas-node-muted) 70%, transparent);
+  stroke-width: 2;
+}
+
+.funnel-rims ellipse:first-child {
+  fill: color-mix(in srgb, var(--canvas-node-surface) 68%, var(--story-surface-strong));
+}
+
+.engine-label {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  color: var(--canvas-node-muted);
+  font-size: clamp(0.46rem, 0.56vw, 0.64rem);
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 @keyframes engine-gear-turn {

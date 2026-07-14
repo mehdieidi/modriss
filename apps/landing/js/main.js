@@ -108,13 +108,13 @@ function updateStoryMetadata(progress) {
   const count = document.querySelector(".story-progress-count");
   const modelCanvas = document.querySelector(".model-canvas");
   const workbenchBody = document.querySelector(".workbench-body");
-  const engineLabel = document.querySelector(".engine-window strong");
+  const engineLabel = document.querySelector(".engine-label");
 
   fill.style.transform = `translateX(${progress * 100 - 100}%)`;
   label.textContent = activePhase.label;
   count.textContent = activePhase.count;
   if (engineLabel) {
-    engineLabel.textContent = activePhase.id === "generate" ? "EGX" : "ETL";
+    engineLabel.textContent = "transformation engine";
   }
 
   document.querySelectorAll(".level-tab").forEach((tab) => {

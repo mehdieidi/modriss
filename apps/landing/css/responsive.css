@@ -65,8 +65,8 @@
   }
 
   .transformation-engine {
-    width: min(13.5rem, 31vw);
-    height: min(13.5rem, 31vw);
+    width: min(19rem, 34vw);
+    height: min(7.5rem, 14vw);
   }
 
   .mapping-rules {
@@ -251,8 +251,8 @@
   }
 
   .transformation-engine {
-    width: min(9rem, 36vw);
-    height: min(7.5rem, 30vw);
+    width: min(11rem, 40vw);
+    height: min(4.8rem, 18vw);
   }
 
   .mapping-rules {

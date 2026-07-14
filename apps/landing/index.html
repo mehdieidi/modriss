@@ -166,164 +166,38 @@
                   <div aria-hidden="true" class="transformation-engine" id="transform-engine">
                     <div class="engine-shadow"></div>
                     <div class="engine-diagram">
-                      <svg class="engine-illustration" viewBox="0 0 600 270">
+                      <svg class="engine-funnel" viewBox="0 0 640 260">
                         <defs>
-                          <linearGradient id="engine-metal" x1="0" x2="0" y1="0" y2="1">
-                            <stop offset="0" stop-color="var(--canvas-node-surface)" />
-                            <stop offset="0.48" stop-color="var(--story-surface)" />
-                            <stop offset="1" stop-color="var(--story-surface-strong)" />
+                          <linearGradient id="funnel-left" x1="0" x2="1" y1="0" y2="0">
+                            <stop offset="0" stop-color="var(--funnel-edge)" />
+                            <stop offset="0.48" stop-color="var(--funnel-mid)" />
+                            <stop offset="1" stop-color="var(--funnel-throat)" />
                           </linearGradient>
-                          <linearGradient id="engine-band" x1="0" x2="1" y1="0" y2="0">
-                            <stop offset="0" stop-color="var(--story-surface-strong)" />
-                            <stop offset="0.5" stop-color="var(--canvas-node-muted)" />
-                            <stop offset="1" stop-color="var(--story-surface-strong)" />
+                          <linearGradient id="funnel-right" x1="1" x2="0" y1="0" y2="0">
+                            <stop offset="0" stop-color="var(--funnel-edge)" />
+                            <stop offset="0.48" stop-color="var(--funnel-mid)" />
+                            <stop offset="1" stop-color="var(--funnel-throat)" />
                           </linearGradient>
-                          <g id="engine-gear-shape">
-                            <g class="engine-gear-teeth">
-                              <rect height="15" rx="2" width="8" x="-4" y="-50" />
-                              <rect
-                                height="15"
-                                rx="2"
-                                transform="rotate(30)"
-                                width="8"
-                                x="-4"
-                                y="-50"
-                              />
-                              <rect
-                                height="15"
-                                rx="2"
-                                transform="rotate(60)"
-                                width="8"
-                                x="-4"
-                                y="-50"
-                              />
-                              <rect
-                                height="15"
-                                rx="2"
-                                transform="rotate(90)"
-                                width="8"
-                                x="-4"
-                                y="-50"
-                              />
-                              <rect
-                                height="15"
-                                rx="2"
-                                transform="rotate(120)"
-                                width="8"
-                                x="-4"
-                                y="-50"
-                              />
-                              <rect
-                                height="15"
-                                rx="2"
-                                transform="rotate(150)"
-                                width="8"
-                                x="-4"
-                                y="-50"
-                              />
-                              <rect
-                                height="15"
-                                rx="2"
-                                transform="rotate(180)"
-                                width="8"
-                                x="-4"
-                                y="-50"
-                              />
-                              <rect
-                                height="15"
-                                rx="2"
-                                transform="rotate(210)"
-                                width="8"
-                                x="-4"
-                                y="-50"
-                              />
-                              <rect
-                                height="15"
-                                rx="2"
-                                transform="rotate(240)"
-                                width="8"
-                                x="-4"
-                                y="-50"
-                              />
-                              <rect
-                                height="15"
-                                rx="2"
-                                transform="rotate(270)"
-                                width="8"
-                                x="-4"
-                                y="-50"
-                              />
-                              <rect
-                                height="15"
-                                rx="2"
-                                transform="rotate(300)"
-                                width="8"
-                                x="-4"
-                                y="-50"
-                              />
-                              <rect
-                                height="15"
-                                rx="2"
-                                transform="rotate(330)"
-                                width="8"
-                                x="-4"
-                                y="-50"
-                              />
-                            </g>
-                            <circle class="engine-gear-rim" r="41" />
-                            <circle class="engine-gear-inner" r="26" />
-                            <circle class="engine-gear-hub" r="9" />
-                          </g>
                         </defs>
-                        <g class="engine-cylinder">
-                          <ellipse class="engine-endcap" cx="112" cy="140" rx="25" ry="58" />
-                          <rect
-                            class="engine-body-shell"
-                            height="116"
-                            rx="58"
-                            width="370"
-                            x="112"
-                            y="82"
-                          />
-                          <ellipse class="engine-endcap" cx="482" cy="140" rx="25" ry="58" />
-                          <rect
-                            class="engine-center-band"
-                            height="126"
-                            rx="8"
-                            width="48"
-                            x="276"
-                            y="77"
-                          />
-                          <path class="engine-body-line" d="M145 111H450M145 140H450M145 169H450" />
-                          <path
-                            class="engine-vent"
-                            d="M220 117H258M220 135H258M220 153H258M342 117H380M342 135H380M342 153H380"
-                          />
+                        <path
+                          class="funnel-shell funnel-shell-left"
+                          d="M56 48 C148 78 224 101 326 104 L326 156 C224 159 148 182 56 212 C36 212 28 184 28 130 C28 76 36 48 56 48Z"
+                        />
+                        <path
+                          class="funnel-shell funnel-shell-right"
+                          d="M584 48 C492 78 416 101 314 104 L314 156 C416 159 492 182 584 212 C604 212 612 184 612 130 C612 76 604 48 584 48Z"
+                        />
+                        <g class="funnel-seams">
+                          <path d="M152 78 C190 95 232 105 276 108" />
+                          <path d="M488 78 C450 95 408 105 364 108" />
+                          <path d="M152 182 C190 165 232 155 276 152" />
+                          <path d="M488 182 C450 165 408 155 364 152" />
                         </g>
-                        <g
-                          class="engine-gear-wheel engine-gear-wheel-large"
-                          transform="translate(210 84) scale(.76)"
-                        >
-                          <use href="#engine-gear-shape" />
-                        </g>
-                        <g
-                          class="engine-gear-wheel engine-gear-wheel-medium"
-                          transform="translate(363 188) scale(.58)"
-                        >
-                          <use href="#engine-gear-shape" />
-                        </g>
-                        <g
-                          class="engine-gear-wheel engine-gear-wheel-small"
-                          transform="translate(426 86) scale(.42)"
-                        >
-                          <use href="#engine-gear-shape" />
+                        <g class="funnel-rims">
+                          <ellipse cx="56" cy="130" rx="28" ry="82" />
+                          <ellipse cx="584" cy="130" rx="28" ry="82" />
                         </g>
                       </svg>
-                      <img
-                        alt=""
-                        class="engine-asset"
-                        src="./assets/images/transformation-engine-geared.png"
-                      />
                       <span class="engine-label">transformation engine</span>
                     </div>
                   </div>
