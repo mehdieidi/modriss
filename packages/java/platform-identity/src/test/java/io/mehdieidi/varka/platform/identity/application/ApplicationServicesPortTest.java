@@ -33,7 +33,9 @@ class ApplicationServicesPortTest {
 
     auth.logout(loggedIn.token());
 
-    assertThrows(PlatformException.class, () -> auth.requireUser(loggedIn.token()));
+    PlatformException failure =
+        assertThrows(PlatformException.class, () -> auth.requireUser(loggedIn.token()));
+    assertEquals(401, failure.status());
   }
 
   private static final class InMemoryPlatformStore implements PlatformStore {

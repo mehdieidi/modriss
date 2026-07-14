@@ -55,7 +55,7 @@ LEFT JOIN (
 ) ar ON ar.user_id = u.id
 ORDER BY u.created_at DESC
 """,
-        this::userSummary);
+        (rs, row) -> userSummary(rs));
   }
 
   public UserDetail user(String id) {
@@ -242,7 +242,7 @@ ORDER BY p.updated_at DESC
     return value == null ? 0L : value;
   }
 
-  private UserSummary userSummary(ResultSet rs, int row) throws SQLException {
+  private UserSummary userSummary(ResultSet rs) throws SQLException {
     String roles = rs.getString("roles");
     return new UserSummary(
         rs.getString("id"),

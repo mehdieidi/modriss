@@ -46,15 +46,15 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     MDC.put(REQUEST_ID_MDC_KEY, requestId);
 
     long started = System.nanoTime();
-    Exception failure = null;
+    boolean failed = false;
     try {
       filterChain.doFilter(request, response);
-    } catch (Exception ex) {
-      failure = ex;
+    } catch (ServletException | IOException | RuntimeException ex) {
+      failed = true;
       throw ex;
     } finally {
       long durationMs = (System.nanoTime() - started) / 1_000_000;
-      int status = failure == null ? response.getStatus() : 500;
+      int status = failed ? 500 : response.getStatus();
       String userAgent = sanitize(request.getHeader("User-Agent"));
       try {
         requestLog(status)

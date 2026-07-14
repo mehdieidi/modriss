@@ -7,7 +7,9 @@ import io.mehdieidi.varka.platform.storage.api.PlatformStore;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
@@ -202,7 +204,7 @@ public final class AuthService {
       return HexFormat.of()
           .formatHex(
               MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));
-    } catch (Exception ex) {
+    } catch (NoSuchAlgorithmException ex) {
       throw new PlatformException(500, "Could not process session token.");
     }
   }
@@ -224,7 +226,7 @@ public final class AuthService {
               SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
                   .generateSecret(spec)
                   .getEncoded());
-    } catch (Exception ex) {
+    } catch (IllegalArgumentException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
       throw new PlatformException(500, "Could not process credentials.");
     }
   }

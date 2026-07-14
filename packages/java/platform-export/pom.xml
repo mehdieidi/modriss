@@ -28,6 +28,10 @@
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>
+      <artifactId>jackson-databind</artifactId>
+      <groupId>tools.jackson.core</groupId>
+    </dependency>
+    <dependency>
       <artifactId>junit-jupiter</artifactId>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>

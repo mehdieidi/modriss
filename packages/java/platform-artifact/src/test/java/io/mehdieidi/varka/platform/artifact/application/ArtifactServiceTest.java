@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.platform.artifact.application;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.mehdieidi.varka.platform.identity.application.AuthService;
@@ -28,9 +29,12 @@ class ArtifactServiceTest {
     var user = auth.register("user@example.com", "correct horse", "User One").user();
     var project = projects.create(user, "Project", "");
 
-    assertThrows(
-        PlatformException.class,
-        () -> artifacts.create(user, project.id(), "bad", Map.of("src/../secret.txt", "x")));
+    PlatformException failure =
+        assertThrows(
+            PlatformException.class,
+            () -> artifacts.create(user, project.id(), "bad", Map.of("src/../secret.txt", "x")));
+
+    assertEquals(400, failure.status());
   }
 
   @Test
@@ -44,9 +48,12 @@ class ArtifactServiceTest {
     var project = projects.create(user, "Project", "");
     var artifact = artifacts.create(user, project.id(), "artifact", Map.of("src/main.go", "ok"));
 
-    assertThrows(
-        PlatformException.class,
-        () -> artifacts.updateFile(user, artifact.id(), "/absolute.txt", "x"));
+    PlatformException failure =
+        assertThrows(
+            PlatformException.class,
+            () -> artifacts.updateFile(user, artifact.id(), "/absolute.txt", "x"));
+
+    assertEquals(400, failure.status());
   }
 
   private static final class InMemoryPlatformStore implements PlatformStore {

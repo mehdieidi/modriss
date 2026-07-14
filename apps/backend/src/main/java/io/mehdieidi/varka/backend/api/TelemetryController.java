@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Accepts low-volume browser telemetry for frontend/admin/landing observability. */
+@SuppressWarnings("unused")
 @RestController
 @RequestMapping("/api/telemetry")
 public class TelemetryController {

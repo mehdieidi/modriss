@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Protected administration and observability API. */
+@SuppressWarnings("unused")
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {

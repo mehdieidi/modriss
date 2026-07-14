@@ -13,6 +13,7 @@ import java.util.UUID;
 import org.slf4j.MDC;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
 
 /** Authorizes and audits administrative access. */
 @Service
@@ -223,13 +224,17 @@ public class AdminAccessService {
     try {
       return new tools.jackson.databind.ObjectMapper()
           .writeValueAsString(value == null ? Map.of() : value);
-    } catch (Exception ex) {
+    } catch (JacksonException ex) {
       throw new PlatformException(500, "Could not serialize audit event details.");
     }
   }
 
   /** Authenticated admin user and granted roles. */
   public record AdminPrincipal(UserRecord user, List<String> roles) {
+    public AdminPrincipal {
+      roles = roles == null ? List.of() : List.copyOf(roles);
+    }
+
     public boolean hasAny(String... required) {
       for (String role : required) {
         if (roles.contains(role)) {

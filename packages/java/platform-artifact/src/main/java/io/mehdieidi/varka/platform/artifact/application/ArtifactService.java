@@ -9,7 +9,6 @@ import io.mehdieidi.varka.platform.project.domain.ProjectRecord;
 import io.mehdieidi.varka.platform.storage.api.PlatformStore;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
@@ -19,8 +18,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import tools.jackson.core.JsonParser;
-import tools.jackson.core.JsonToken;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
 
@@ -281,68 +278,6 @@ public final class ArtifactService {
       throw ex;
     } catch (Exception ex) {
       throw new PlatformException(500, "Could not read artifact store.");
-    }
-  }
-
-  /**
-   * Reads only summary fields from an artifact JSON file without materializing the full file map.
-   *
-   * @param path resolved artifact JSON path
-   * @return summary record, or {@code null} when the file cannot be summarized
-   */
-  private ArtifactRecord readSummary(Path path) {
-    try (JsonParser parser = store.objectMapper().createParser(path.toFile())) {
-      String id = null;
-      String projectId = null;
-      String name = null;
-      Instant updatedAt = Files.getLastModifiedTime(path).toInstant();
-      Instant createdAt = updatedAt;
-      if (parser.nextToken() != JsonToken.START_OBJECT) {
-        return null;
-      }
-      while (parser.nextToken() != JsonToken.END_OBJECT) {
-        String field = parser.currentName();
-        parser.nextToken();
-        if ("id".equals(field)) {
-          id = parser.getValueAsString();
-        } else if ("projectId".equals(field)) {
-          projectId = parser.getValueAsString();
-        } else if ("name".equals(field)) {
-          name = parser.getValueAsString();
-        } else if ("createdAt".equals(field)) {
-          createdAt = parseInstant(parser.getValueAsString(), createdAt);
-        } else if ("updatedAt".equals(field)) {
-          updatedAt = parseInstant(parser.getValueAsString(), updatedAt);
-        } else if ("modelJson".equals(field) || "files".equals(field)) {
-          break;
-        } else {
-          parser.skipChildren();
-        }
-      }
-      if (id == null || projectId == null) {
-        return null;
-      }
-      ObjectNode modelJson = store.objectMapper().createObjectNode();
-      modelJson.put("name", name == null ? id : name);
-      return new ArtifactRecord(
-          id, projectId, name == null ? id : name, modelJson, Map.of(), createdAt, updatedAt);
-    } catch (Exception ex) {
-      return null;
-    }
-  }
-
-  /**
-   * Parses an instant with a fallback for absent or legacy values.
-   *
-   * @param value raw instant text
-   * @param fallback fallback timestamp
-   * @return parsed or fallback timestamp
-   */
-  private Instant parseInstant(String value, Instant fallback) {
-    try {
-      return value == null || value.isBlank() ? fallback : Instant.parse(value);
-    } catch (Exception ex) {
-      return fallback;
     }
   }
 

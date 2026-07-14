@@ -18,6 +18,7 @@ import org.slf4j.MDC;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+@SuppressWarnings("unused")
 class RequestLoggingFilterTest {
 
   private final RequestLoggingFilter filter = new RequestLoggingFilter();
@@ -126,16 +127,18 @@ class RequestLoggingFilterTest {
       request.addHeader("X-Request-Id", "req-failure");
       MockHttpServletResponse response = new MockHttpServletResponse();
 
-      assertThrows(
-          ServletException.class,
-          () ->
-              filter.doFilter(
-                  request,
-                  response,
-                  (req, res) -> {
-                    throw new ServletException("failed");
-                  }));
+      ServletException failure =
+          assertThrows(
+              ServletException.class,
+              () ->
+                  filter.doFilter(
+                      request,
+                      response,
+                      (req, res) -> {
+                        throw new ServletException("failed");
+                      }));
 
+      assertEquals("failed", failure.getMessage());
       assertEquals("req-failure", response.getHeader("X-Request-Id"));
       assertNull(MDC.get("requestId"));
       assertEquals(1, appender.list.size());
