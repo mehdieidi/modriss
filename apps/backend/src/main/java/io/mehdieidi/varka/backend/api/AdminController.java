@@ -2,7 +2,11 @@ package io.mehdieidi.varka.backend.api;
 
 import io.mehdieidi.varka.backend.admin.AdminAccessService;
 import io.mehdieidi.varka.backend.admin.AdminAccessService.AdminPrincipal;
+import io.mehdieidi.varka.backend.admin.AdminNotationService;
 import io.mehdieidi.varka.backend.admin.AdminQueryService;
+import io.mehdieidi.varka.backend.admin.AdminThemeService;
+import io.mehdieidi.varka.backend.admin.AdminThemeService.ThemeProfileRequest;
+import io.mehdieidi.varka.backend.admin.AdminThemeService.ThemeState;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
@@ -15,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Protected administration and observability API. */
@@ -25,14 +30,23 @@ public class AdminController {
 
   private final AuthSupport auth;
   private final AdminAccessService access;
+  private final AdminNotationService notation;
   private final AdminQueryService queries;
+  private final AdminThemeService themes;
   private final JdbcTemplate jdbc;
 
   public AdminController(
-      AuthSupport auth, AdminAccessService access, AdminQueryService queries, JdbcTemplate jdbc) {
+      AuthSupport auth,
+      AdminAccessService access,
+      AdminNotationService notation,
+      AdminQueryService queries,
+      AdminThemeService themes,
+      JdbcTemplate jdbc) {
     this.auth = auth;
     this.access = access;
+    this.notation = notation;
     this.queries = queries;
+    this.themes = themes;
     this.jdbc = jdbc;
   }
 
@@ -132,6 +146,94 @@ public class AdminController {
     return queries.models();
   }
 
+  @GetMapping("/notation/{level}")
+  Map<String, Object> notation(
+      @RequestHeader("X-Auth-Token") String token, @PathVariable String level) {
+    access.requireAdmin(auth.user(token));
+    return notation.load(level);
+  }
+
+  @PostMapping("/notation/{level}")
+  ResponseEntity<Void> saveNotation(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable String level,
+      @Valid @RequestBody NotationSaveRequest request) {
+    AdminPrincipal principal = access.requireOwner(auth.user(token));
+    notation.save(level, request.document());
+    access.audit(
+        principal,
+        "CVS_NOTATION_UPDATED",
+        "CVS_NOTATION",
+        level,
+        request.reason(),
+        Map.of("level", level));
+    return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/theme-profiles")
+  List<ThemeState> themeProfiles(@RequestHeader("X-Auth-Token") String token) {
+    access.requireAdmin(auth.user(token));
+    return themes.profiles();
+  }
+
+  @PostMapping("/theme-profiles")
+  ThemeState createThemeProfile(
+      @RequestHeader("X-Auth-Token") String token, @RequestBody ThemeProfileRequest request) {
+    AdminPrincipal principal = access.requireOwner(auth.user(token));
+    ThemeState profile = themes.create(request);
+    access.audit(
+        principal,
+        "THEME_PROFILE_CREATED",
+        "THEME_PROFILE",
+        profile.id(),
+        "",
+        Map.of("name", profile.name()));
+    return profile;
+  }
+
+  @PostMapping("/theme-profiles/{id}")
+  ThemeState updateThemeProfile(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable String id,
+      @RequestBody ThemeProfileRequest request) {
+    AdminPrincipal principal = access.requireOwner(auth.user(token));
+    ThemeState profile = themes.update(id, request);
+    access.audit(
+        principal,
+        "THEME_PROFILE_UPDATED",
+        "THEME_PROFILE",
+        profile.id(),
+        "",
+        Map.of("name", profile.name()));
+    return profile;
+  }
+
+  @PostMapping("/theme-profiles/{id}/delete")
+  ResponseEntity<Void> deleteThemeProfile(
+      @RequestHeader("X-Auth-Token") String token, @PathVariable String id) {
+    AdminPrincipal principal = access.requireOwner(auth.user(token));
+    themes.delete(id);
+    access.audit(principal, "THEME_PROFILE_DELETED", "THEME_PROFILE", id, "", Map.of());
+    return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("/theme-profiles/{id}/activate")
+  ThemeState activateThemeProfile(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable String id,
+      @RequestParam(defaultValue = "dark") String scheme) {
+    AdminPrincipal principal = access.requireOwner(auth.user(token));
+    ThemeState profile = themes.activate(id, scheme);
+    access.audit(
+        principal,
+        "THEME_PROFILE_ACTIVATED",
+        "THEME_PROFILE",
+        profile.id(),
+        "",
+        Map.of("name", profile.name(), "scheme", scheme));
+    return profile;
+  }
+
   @GetMapping("/jobs")
   List<AdminQueryService.JobSummary> jobs(@RequestHeader("X-Auth-Token") String token) {
     access.requireAdmin(auth.user(token));
@@ -208,4 +310,6 @@ public class AdminController {
   public record RoleRequest(@NotBlank String role, String reason) {}
 
   public record ReasonRequest(String reason) {}
+
+  public record NotationSaveRequest(Map<String, Object> document, String reason) {}
 }

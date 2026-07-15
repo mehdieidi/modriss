@@ -7,15 +7,20 @@ import {
   KeyRound,
   Layers3,
   LogOut,
+  Palette,
+  Plus,
   RefreshCw,
   Search,
   Shield,
   ShieldAlert,
+  SlidersHorizontal,
   TerminalSquare,
+  Trash2,
   Users,
 } from "lucide-react";
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { api, ApiError, bootstrapAdmin, login } from "./api";
+import { CvsEditorView } from "./CvsEditor";
 import {
   AdminMe,
   AssistantTurnSummary,
@@ -24,10 +29,20 @@ import {
   ModelSummary,
   Overview,
   ProjectSummary,
+  ThemeProfile,
   UserSummary,
 } from "./types";
 
-type View = "overview" | "users" | "projects" | "models" | "jobs" | "assistant" | "audit";
+type View =
+  | "overview"
+  | "users"
+  | "projects"
+  | "models"
+  | "jobs"
+  | "assistant"
+  | "visual-syntax"
+  | "theme-control"
+  | "audit";
 
 type DataState = {
   me: AdminMe | null;
@@ -37,6 +52,7 @@ type DataState = {
   models: ModelSummary[];
   jobs: JobSummary[];
   assistantTurns: AssistantTurnSummary[];
+  themeProfiles: ThemeProfile[];
   auditEvents: AuditEvent[];
 };
 
@@ -48,6 +64,7 @@ const emptyData: DataState = {
   models: [],
   jobs: [],
   assistantTurns: [],
+  themeProfiles: [],
   auditEvents: [],
 };
 
@@ -58,6 +75,8 @@ const navItems: Array<{ view: View; label: string; icon: ReactNode }> = [
   { view: "models", label: "Models", icon: <Database size={18} /> },
   { view: "jobs", label: "Jobs", icon: <TerminalSquare size={18} /> },
   { view: "assistant", label: "Assistant", icon: <Bot size={18} /> },
+  { view: "visual-syntax", label: "Visual Syntax", icon: <Palette size={18} /> },
+  { view: "theme-control", label: "Theme Control", icon: <SlidersHorizontal size={18} /> },
   { view: "audit", label: "Audit", icon: <Shield size={18} /> },
 ];
 
@@ -76,7 +95,7 @@ export function App() {
     setLoading(true);
     setError("");
     try {
-      const [me, overview, users, projects, models, jobs, assistantTurns, auditEvents] =
+      const [me, overview, users, projects, models, jobs, assistantTurns, themeProfiles, auditEvents] =
         await Promise.all([
           api<AdminMe>("/api/admin/me", token),
           api<Overview>("/api/admin/overview", token),
@@ -85,9 +104,20 @@ export function App() {
           api<ModelSummary[]>("/api/admin/models", token),
           api<JobSummary[]>("/api/admin/jobs", token),
           api<AssistantTurnSummary[]>("/api/admin/assistant/turns", token),
+          api<ThemeProfile[]>("/api/admin/theme-profiles", token),
           api<AuditEvent[]>("/api/admin/audit-events", token),
         ]);
-      setData({ me, overview, users, projects, models, jobs, assistantTurns, auditEvents });
+      setData({
+        me,
+        overview,
+        users,
+        projects,
+        models,
+        jobs,
+        assistantTurns,
+        themeProfiles,
+        auditEvents,
+      });
     } catch (err) {
       handleError(err);
       if (err instanceof ApiError && [401, 403].includes(err.status)) {
@@ -217,6 +247,19 @@ export function App() {
             rows={filterRows(data.assistantTurns, query)}
             token={token}
             canOperate={canOperate}
+            refresh={refresh}
+            onError={handleError}
+          />
+        )}
+        {view === "visual-syntax" && (
+          <CvsEditorView token={token} canAdmin={canAdmin} query={query} onError={handleError} />
+        )}
+        {view === "theme-control" && (
+          <ThemeControlView
+            profiles={filterRows(data.themeProfiles, query)}
+            allProfiles={data.themeProfiles}
+            token={token}
+            canAdmin={canAdmin}
             refresh={refresh}
             onError={handleError}
           />
@@ -515,6 +558,335 @@ function AssistantView(props: {
   );
 }
 
+const themeTokenGroups: Array<{ title: string; tokens: Array<[string, string]> }> = [
+  {
+    title: "Surfaces",
+    tokens: [
+      ["--bg", "App background"],
+      ["--surface", "Base surface"],
+      ["--surface-2", "Panel surface"],
+      ["--surface-3", "Raised surface"],
+      ["--canvas-bg", "Canvas"],
+      ["--node-bg", "Node fill"],
+      ["--border", "Border"],
+      ["--border-subtle", "Subtle border"],
+    ],
+  },
+  {
+    title: "Text",
+    tokens: [
+      ["--text", "Text"],
+      ["--text-strong", "Strong text"],
+      ["--muted", "Muted text"],
+      ["--muted-2", "Secondary muted"],
+      ["--text-soft", "Soft text"],
+      ["--node-title", "Node title"],
+    ],
+  },
+  {
+    title: "Accents",
+    tokens: [
+      ["--accent", "Accent"],
+      ["--accent-dark", "Accent dark"],
+      ["--accent-light", "Accent light"],
+      ["--accent-glow", "Accent glow"],
+      ["--accent-select", "Selection"],
+      ["--accent-2", "Secondary accent"],
+      ["--success", "Success"],
+      ["--warning", "Warning"],
+      ["--danger", "Danger"],
+    ],
+  },
+  {
+    title: "Chat And Grid",
+    tokens: [
+      ["--chat-user-bg", "User message"],
+      ["--chat-user-text", "User text"],
+      ["--chat-assistant-bg", "Assistant message"],
+      ["--chat-assistant-border", "Assistant border"],
+      ["--grid-line-major", "Major grid"],
+      ["--grid-line-minor", "Minor grid"],
+      ["--canvas-dot", "Canvas dot"],
+    ],
+  },
+];
+
+function ThemeControlView(props: {
+  profiles: ThemeProfile[];
+  allProfiles: ThemeProfile[];
+  token: string;
+  canAdmin: boolean;
+  refresh: () => Promise<void>;
+  onError: (err: unknown) => void;
+}) {
+  const firstProfile = props.profiles[0] || props.allProfiles[0] || null;
+  const [selectedId, setSelectedId] = useState(firstProfile?.id || "");
+  const selected =
+    props.allProfiles.find((profile) => profile.id === selectedId) ||
+    props.profiles[0] ||
+    props.allProfiles[0] ||
+    null;
+  const [draft, setDraft] = useState<ThemeProfile | null>(selected);
+  const [rawTokens, setRawTokens] = useState(() => JSON.stringify(selected?.tokens || {}, null, 2));
+
+  useEffect(() => {
+    if (selectedId.startsWith("new:")) {
+      return;
+    }
+    const next =
+      props.allProfiles.find((profile) => profile.id === selectedId) ||
+      props.allProfiles[0] ||
+      null;
+    if (!next) {
+      setDraft(null);
+      setRawTokens("{}");
+      return;
+    }
+    setSelectedId(next.id);
+    setDraft(next);
+    setRawTokens(JSON.stringify(next.tokens, null, 2));
+  }, [props.allProfiles, selectedId]);
+
+  function setToken(name: string, value: string) {
+    setDraft((current) => {
+      if (!current) {
+        return current;
+      }
+      const tokens = { ...current.tokens, [name]: value };
+      setRawTokens(JSON.stringify(tokens, null, 2));
+      return { ...current, tokens };
+    });
+  }
+
+  function applyRawTokens(value: string) {
+    setRawTokens(value);
+    try {
+      const parsed = JSON.parse(value) as Record<string, string>;
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return;
+      }
+      setDraft((current) => (current ? { ...current, tokens: parsed } : current));
+    } catch {
+      // Keep the user's in-progress JSON until it becomes valid.
+    }
+  }
+
+  function createProfile() {
+    const source = selected || props.allProfiles[0];
+    if (!source) {
+      return;
+    }
+    const next = {
+      ...source,
+      id: `new:${crypto.randomUUID()}`,
+      name: `${source.name} Copy`,
+      description: source.description,
+      builtIn: false,
+      active: false,
+      activeLight: false,
+      activeDark: false,
+      tokens: { ...source.tokens },
+    };
+    setSelectedId(next.id);
+    setDraft(next);
+    setRawTokens(JSON.stringify(next.tokens, null, 2));
+  }
+
+  async function saveDraft() {
+    if (!draft) {
+      return;
+    }
+    try {
+      const body = JSON.stringify({
+        name: draft.name,
+        description: draft.description,
+        tokens: draft.tokens,
+      });
+      if (draft.id.startsWith("new:")) {
+        const saved = await api<ThemeProfile>("/api/admin/theme-profiles", props.token, {
+          method: "POST",
+          body,
+        });
+        setSelectedId(saved.id);
+      } else {
+        await api<ThemeProfile>(`/api/admin/theme-profiles/${draft.id}`, props.token, {
+          method: "POST",
+          body,
+        });
+      }
+      await props.refresh();
+    } catch (err) {
+      props.onError(err);
+    }
+  }
+
+  async function activateProfile(id: string, scheme: "light" | "dark") {
+    try {
+      await api<ThemeProfile>(`/api/admin/theme-profiles/${id}/activate?scheme=${scheme}`, props.token, {
+        method: "POST",
+      });
+      await props.refresh();
+    } catch (err) {
+      props.onError(err);
+    }
+  }
+
+  async function deleteProfile(id: string) {
+    try {
+      await api<void>(`/api/admin/theme-profiles/${id}/delete`, props.token, { method: "POST" });
+      setSelectedId("");
+      await props.refresh();
+    } catch (err) {
+      props.onError(err);
+    }
+  }
+
+  if (!draft) {
+    return (
+      <section className="panel empty-cvs">
+        <h2>No theme profiles</h2>
+        <p>Create a profile after the backend migration has run.</p>
+      </section>
+    );
+  }
+
+  const editable = props.canAdmin && !draft.builtIn;
+  const canSave = props.canAdmin && !draft.builtIn;
+  const canActivateLight = props.canAdmin && !draft.activeLight && !draft.id.startsWith("new:");
+  const canActivateDark = props.canAdmin && !draft.activeDark && !draft.id.startsWith("new:");
+
+  return (
+    <div className="theme-admin">
+      <section className="panel theme-profile-list">
+        <div className="theme-profile-list-head">
+          <h2>Profiles</h2>
+          {props.canAdmin && (
+            <button className="ghost-action" onClick={createProfile}>
+              <Plus size={16} />
+              <span>New</span>
+            </button>
+          )}
+        </div>
+        <div className="theme-profile-cards">
+          {props.profiles.map((profile) => (
+            <button
+              className={profile.id === draft.id ? "theme-profile-card active" : "theme-profile-card"}
+              key={profile.id}
+              onClick={() => setSelectedId(profile.id)}
+              type="button"
+            >
+              <span className="theme-swatch-row">
+                <i style={{ background: profile.tokens["--bg"] }} />
+                <i style={{ background: profile.tokens["--surface"] }} />
+                <i style={{ background: profile.tokens["--accent"] }} />
+                <i style={{ background: profile.tokens["--danger"] }} />
+              </span>
+              <strong>{profile.name}</strong>
+              <small>{themeProfileState(profile)}</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel theme-editor">
+        <div className="theme-editor-head">
+          <div>
+            <h2>{draft.name}</h2>
+            <p>
+              {draft.active
+                ? `Active for ${[draft.activeLight ? "light" : "", draft.activeDark ? "dark" : ""]
+                    .filter(Boolean)
+                    .join(" and ")}.`
+                : "Edit or activate this profile."}
+            </p>
+          </div>
+          <div className="theme-editor-actions">
+            {canActivateLight && (
+              <button className="primary-action" onClick={() => activateProfile(draft.id, "light")}>
+                <span>Set Light</span>
+              </button>
+            )}
+            {canActivateDark && (
+              <button className="primary-action" onClick={() => activateProfile(draft.id, "dark")}>
+                <span>Set Dark</span>
+              </button>
+            )}
+            {props.canAdmin && draft.builtIn && (
+              <button className="ghost-action" onClick={createProfile}>
+                <Plus size={16} />
+                <span>Duplicate</span>
+              </button>
+            )}
+            {canSave && (
+              <button className="primary-action" onClick={saveDraft}>
+                <span>Save</span>
+              </button>
+            )}
+            {props.canAdmin && !draft.builtIn && !draft.active && !draft.id.startsWith("new:") && (
+              <button className="danger-action" onClick={() => deleteProfile(draft.id)}>
+                <Trash2 size={16} />
+                <span>Delete</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="theme-meta-grid">
+          <label className="admin-field">
+            <span>Name</span>
+            <input
+              disabled={!editable}
+              value={draft.name}
+              onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+            />
+          </label>
+          <label className="admin-field">
+            <span>Description</span>
+            <input
+              disabled={!editable}
+              value={draft.description}
+              onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+            />
+          </label>
+        </div>
+
+        <div className="theme-token-groups">
+          {themeTokenGroups.map((group) => (
+            <section className="theme-token-group" key={group.title}>
+              <h3>{group.title}</h3>
+              <div className="theme-token-grid">
+                {group.tokens.map(([tokenName, label]) => (
+                  <label className="theme-token-field" key={tokenName}>
+                    <span>{label}</span>
+                    <div>
+                      <i style={{ background: draft.tokens[tokenName] }} />
+                      <input
+                        disabled={!editable}
+                        value={draft.tokens[tokenName] || ""}
+                        onChange={(event) => setToken(tokenName, event.target.value)}
+                      />
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+
+        <label className="admin-field">
+          <span>All Tokens JSON</span>
+          <textarea
+            className="raw-json theme-json"
+            disabled={!editable}
+            value={rawTokens}
+            onChange={(event) => applyRawTokens(event.target.value)}
+          />
+        </label>
+      </section>
+    </div>
+  );
+}
+
 function AuditView({ rows }: { rows: AuditEvent[] }) {
   return (
     <Table
@@ -529,6 +901,19 @@ function AuditView({ rows }: { rows: AuditEvent[] }) {
       ])}
     />
   );
+}
+
+function themeProfileState(profile: ThemeProfile) {
+  if (profile.activeLight && profile.activeDark) {
+    return "Light / Dark";
+  }
+  if (profile.activeLight) {
+    return "Light active";
+  }
+  if (profile.activeDark) {
+    return "Dark active";
+  }
+  return profile.builtIn ? "Built-in" : "Custom";
 }
 
 function Table({ headers, rows }: { headers: string[]; rows: Array<Array<ReactNode>> }) {
@@ -637,6 +1022,10 @@ function subtitle(view: View) {
       return "Transformation and generation execution state.";
     case "assistant":
       return "Durable assistant turns, provider usage, and cancellation control.";
+    case "visual-syntax":
+      return "Concrete visual syntax documents for CIM, PIM, and PSM.";
+    case "theme-control":
+      return "Frontend color profiles, active theme selection, and modular CSS tokens.";
     case "audit":
       return "Administrative actions with actor, target, reason, and request IDs.";
   }

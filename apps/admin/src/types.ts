@@ -102,3 +102,16 @@ export type AuditEvent = {
   requestId: string | null;
   createdAt: string;
 };
+
+export type ThemeProfile = {
+  id: string;
+  name: string;
+  description: string;
+  tokens: Record<string, string>;
+  builtIn: boolean;
+  active: boolean;
+  activeLight: boolean;
+  activeDark: boolean;
+  createdAt: string;
+  updatedAt: string;
+};

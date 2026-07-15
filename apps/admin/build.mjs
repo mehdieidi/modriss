@@ -1,5 +1,5 @@
 import esbuild from "esbuild";
-import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const outdir = "dist";
@@ -22,7 +22,7 @@ await esbuild.build({
   },
 });
 
-await copyFile("public/admin-config.js", join(outdir, "admin-config.js"));
+await cp("public", outdir, { recursive: true });
 await writeFile(
   join(outdir, "index.html"),
   `<!doctype html>
