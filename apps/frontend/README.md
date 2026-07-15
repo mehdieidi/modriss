@@ -1,7 +1,7 @@
 # Varka Frontend
 
 Static browser modeling application: CIM/PIM/PSM workbenches, artifact explorer, impact analysis,
-and assistant UI. No bundler — ES modules, AntV G6 for the graph canvas, Monaco Editor from CDN.
+and assistant UI. No bundler — ES modules with vendored browser libraries.
 
 ## Run locally
 
@@ -17,10 +17,11 @@ Open <http://127.0.0.1:8082>. Backend origin:
 ## Layout
 
 ```text
-js/           application modules (auth, canvas, chat, model-ops, …)
-css/          stylesheets
-vendor/antv/  vendored G6 build
-index.html    shell page
+js/              application modules (auth, canvas, chat, model-ops, ...)
+css/             stylesheets
+vendor/antv/     vendored G6 build
+vendor/monaco/   vendored Monaco Editor build
+index.html       shell page
 ```
 
 Modeling palettes and notation come from `GET /api/modeling/config` (backend merges Ecore structure

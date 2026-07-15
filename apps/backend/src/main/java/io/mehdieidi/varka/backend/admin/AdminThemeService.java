@@ -36,15 +36,15 @@ public class AdminThemeService {
     try {
       return jdbc.queryForObject(
           """
-          SELECT p.id, p.name, p.description, p.tokens::text, p.built_in, p.created_at, p.updated_at,
-            p.id = s.active_light_profile_id AS active_light,
-            p.id = s.active_dark_profile_id AS active_dark,
-            true AS active
-          FROM theme_settings s
-          JOIN theme_profiles p ON p.id =
-            CASE WHEN ? = 'light' THEN s.active_light_profile_id ELSE s.active_dark_profile_id END
-          WHERE s.id = true
-          """,
+SELECT p.id, p.name, p.description, p.tokens::text, p.built_in, p.created_at, p.updated_at,
+  p.id = s.active_light_profile_id AS active_light,
+  p.id = s.active_dark_profile_id AS active_dark,
+  true AS active
+FROM theme_settings s
+JOIN theme_profiles p ON p.id =
+  CASE WHEN ? = 'light' THEN s.active_light_profile_id ELSE s.active_dark_profile_id END
+WHERE s.id = true
+""",
           this::profileRow,
           normalizeScheme(scheme));
     } catch (EmptyResultDataAccessException ex) {

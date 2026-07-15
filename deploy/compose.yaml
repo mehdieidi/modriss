@@ -173,7 +173,7 @@ services:
 
   landing:
     build:
-      context: ../apps/landing-v2
+      context: ../apps/landing
     ports:
       - "${LANDING_PORT:-8083}:8083"
     restart: unless-stopped

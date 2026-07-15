@@ -4,8 +4,7 @@ import { api, apiAuthHeaders } from "./api.js";
 import { apiUrl } from "./config.js";
 import { setStatus } from "./status.js";
 
-const MONACO_CDN_VERSION = "0.52.2";
-const MONACO_VS_PATH = `https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${MONACO_CDN_VERSION}/min/vs`;
+const MONACO_VS_PATH = "/vendor/monaco/vs";
 const DEFAULT_LANGUAGE = "plaintext";
 const FALLBACK_LANGUAGE_LABEL = "Plain Text";
 const DEFAULT_TAB_SIZE = 2;

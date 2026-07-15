@@ -31,8 +31,7 @@ public class AdminNotationService {
       throw new PlatformException(404, "CVS notation file was not found: " + file.getFileName());
     }
     try {
-      Map<String, Object> doc =
-          mapper.readValue(Files.readString(file), new TypeReference<>() {});
+      Map<String, Object> doc = mapper.readValue(Files.readString(file), new TypeReference<>() {});
       validate(level, doc);
       return doc;
     } catch (PlatformException ex) {
@@ -47,7 +46,8 @@ public class AdminNotationService {
     Path file = notationFile(level);
     try {
       Files.createDirectories(file.getParent());
-      Files.writeString(file, mapper.writerWithDefaultPrettyPrinter().writeValueAsString(doc) + "\n");
+      Files.writeString(
+          file, mapper.writerWithDefaultPrettyPrinter().writeValueAsString(doc) + "\n");
     } catch (Exception ex) {
       throw new PlatformException(500, "Could not save CVS notation file.");
     }
@@ -73,10 +73,7 @@ public class AdminNotationService {
     if (!normalized.equals(configuredLevel)) {
       throw new PlatformException(
           400,
-          "CVS metamodelRef.level mismatch: expected "
-              + normalized
-              + ", found "
-              + configuredLevel);
+          "CVS metamodelRef.level mismatch: expected " + normalized + ", found " + configuredLevel);
     }
     if (!(doc.get("viewpoints") instanceof List<?> viewpoints) || viewpoints.isEmpty()) {
       throw new PlatformException(400, "CVS document must define at least one viewpoint.");
