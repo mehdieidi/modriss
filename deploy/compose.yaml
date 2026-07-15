@@ -172,12 +172,10 @@ services:
     restart: unless-stopped
 
   landing:
-    image: python:3.13-alpine
-    command: ["python3", "-m", "http.server", "--bind", "0.0.0.0", "8083", "--directory", "/app"]
+    build:
+      context: ../apps/landing-v2
     ports:
       - "${LANDING_PORT:-8083}:8083"
-    volumes:
-      - ../apps/landing:/app:ro
     restart: unless-stopped
 
   dozzle:
