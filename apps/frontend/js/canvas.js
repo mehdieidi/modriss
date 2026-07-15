@@ -1289,7 +1289,7 @@ function diagramBounds({ forFit = false } = {}) {
     return null;
   }
   if (forFit) {
-    // Fit uses node geometry only.
+    // Fit is anchored to visible nodes; stale edge bend points can be far outside the active view.
   }
   const nodeW = getNodeWidth();
   const nodeH = getNodeHeight();
@@ -1304,7 +1304,7 @@ function diagramBounds({ forFit = false } = {}) {
     maxX = Math.max(maxX, extent.maxX);
     maxY = Math.max(maxY, extent.maxY);
   });
-  return {
+  const bounds = {
     minX,
     minY,
     maxX,
@@ -1312,6 +1312,19 @@ function diagramBounds({ forFit = false } = {}) {
     width: Math.max(1, maxX - minX),
     height: Math.max(1, maxY - minY),
   };
+  window.varkaLastDiagramFitBounds = {
+    activeType: state.activeType,
+    nodeCount: state.diagram.nodes.length,
+    edgeCount: state.diagram.connections.length,
+    bounds,
+    nodes: state.diagram.nodes.map((node) => ({
+      id: node.id,
+      type: node.type,
+      x: Number(node?.x) || 0,
+      y: Number(node?.y) || 0,
+    })),
+  };
+  return bounds;
 }
 
 function applyViewportFit({ fit = false } = {}) {

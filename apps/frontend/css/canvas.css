@@ -1204,6 +1204,94 @@
   letter-spacing: 0.06em;
 }
 
+.canvas-minimap {
+  position: absolute;
+  top: calc(var(--modeling-bar-h, 40px) + 76px);
+  right: 14px;
+  z-index: 69;
+  width: 126px;
+  height: 76px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 6px;
+  background:
+    linear-gradient(color-mix(in srgb, var(--surface-3) 72%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--surface-3) 72%, transparent) 1px,
+      transparent 1px
+    ),
+    color-mix(in srgb, var(--canvas-bg) 78%, var(--surface-1) 22%);
+  background-size: 16px 16px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.canvas-minimap.is-dragging {
+  cursor: grabbing;
+}
+
+.canvas-minimap:focus,
+.canvas-minimap:focus-visible {
+  outline: none;
+}
+
+.canvas-minimap-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.canvas-minimap-edge {
+  stroke: color-mix(in srgb, var(--muted) 72%, transparent);
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.canvas-minimap-node {
+  fill: color-mix(in srgb, var(--accent) 82%, var(--text-strong) 18%);
+  stroke: color-mix(in srgb, var(--canvas-bg) 82%, transparent);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.canvas-minimap-window {
+  position: absolute;
+  min-width: 8px;
+  min-height: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent-light) 72%, transparent);
+  border-radius: 3px;
+  background: transparent;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--canvas-bg) 72%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+  pointer-events: none;
+}
+
+.canvas-minimap-window::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 3px;
+  width: 14px;
+  height: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-light) 58%, transparent);
+  transform: translateX(-50%);
+}
+
+.canvas-minimap.is-dragging .canvas-minimap-window {
+  border-color: color-mix(in srgb, var(--accent-light) 88%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--canvas-bg) 76%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
 @media (max-width: 920px) {
   .canvas-zoom-control {
     left: 10px;
@@ -1213,6 +1301,10 @@
   }
 
   .canvas-zoom-fit {
+    display: none;
+  }
+
+  .canvas-minimap {
     display: none;
   }
 }
@@ -1226,6 +1318,10 @@
   }
 
   .canvas-zoom-fit {
+    display: none;
+  }
+
+  .canvas-minimap {
     display: none;
   }
 }

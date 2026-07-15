@@ -1,5 +1,6 @@
 import { state } from "./state.js";
 import { emptyDiagram } from "./utils.js";
+import { ensureReadableLayout, nodeSizeForType } from "./layout-engine.js";
 import {
   activeView,
   reconcileGraphRelationshipsIfDirty,
@@ -163,6 +164,7 @@ function materializeViewGraph(view, elementIds, relationshipIds) {
       }
       return nodeIds.has(connection.sourceId) && nodeIds.has(connection.targetId);
     });
+  ensureReadableLayout(nodes, connections, nodeSizeForType(state.activeType));
   return { nodes, connections };
 }
 

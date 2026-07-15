@@ -371,6 +371,37 @@ export function layoutLooksStacked(nodes, nodeSize, options = {}) {
   return allZero || coarsePositions.size <= Math.ceil(nodes.length * 0.6);
 }
 
+function layoutHasDistantOutlier(nodes, nodeSize, options = {}) {
+  if (!Array.isArray(nodes) || nodes.length < 4) {
+    return false;
+  }
+  const spacing = spacingFor(nodeSize, options);
+  const nearestDistances = nodes
+    .map((node) => {
+      let nearest = Infinity;
+      nodes.forEach((other) => {
+        if (other === node) {
+          return;
+        }
+        const dx = numeric(node.x) - numeric(other.x);
+        const dy = numeric(node.y) - numeric(other.y);
+        nearest = Math.min(nearest, Math.hypot(dx, dy));
+      });
+      return nearest;
+    })
+    .filter(Number.isFinite)
+    .sort((left, right) => left - right);
+  if (nearestDistances.length < 4) {
+    return false;
+  }
+  const medianNearest = nearestDistances[Math.floor(nearestDistances.length / 2)] || 0;
+  const maxNearest = nearestDistances[nearestDistances.length - 1] || 0;
+  const outlierThreshold = Math.max(spacing.stepX * 5, spacing.stepY * 5, 1200);
+  return (
+    maxNearest > outlierThreshold && maxNearest > Math.max(medianNearest * 4, outlierThreshold)
+  );
+}
+
 function createRectIndex(cellWidth, cellHeight) {
   const cells = new Map();
   const keysFor = (rect) => {
@@ -512,7 +543,10 @@ export function applyDeterministicLayout(nodes, edges = [], nodeSize, options = 
 }
 
 export function ensureReadableLayout(nodes, edges = [], nodeSize, options = {}) {
-  if (layoutLooksStacked(nodes, nodeSize, options)) {
+  if (
+    layoutLooksStacked(nodes, nodeSize, options) ||
+    layoutHasDistantOutlier(nodes, nodeSize, options)
+  ) {
     return applyDeterministicLayout(nodes, edges, nodeSize, options);
   }
   return resolveNodeOverlaps(nodes, nodeSize, options);

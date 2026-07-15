@@ -60,6 +60,14 @@ const HOVER_FOCUS_EDGE_LIMIT = 64;
 const LOD_UPDATE_IDLE_DELAY_MS = 220;
 const VIEWPORT_TRANSFORM_IDLE_MS = 180;
 const FIT_VIEW_PADDING = 72;
+const FIT_VIEW_MIN_SCALE = 0.01;
+const FIT_VIEW_MAX_SCALE = 2.5;
+const FIT_VIEW_SINGLE_NODE_SCALE = 1.25;
+const FIT_VIEW_SPARSE_NODE_MAX_SCALE = 1.35;
+const FIT_VIEW_SPARSE_NODE_MIN_SCALE = 0.5;
+const MINIMAP_PADDING = 10;
+const MINIMAP_MIN_SPAN = 240;
+const MINIMAP_NODE_RADIUS = 3.5;
 let viewportTransformEndTimer = 0;
 let viewportTransforming = false;
 
@@ -1058,6 +1066,7 @@ function runViewportSync({ syncSelection = false, lightweight = false } = {}) {
   syncViewportStateFromGraph();
   setCanvasZoomIndicator();
   updateViewportChrome();
+  scheduleMinimapRender();
   if (lightweight || viewportTransforming) {
     if (syncSelection) {
       updateG6Selection();
@@ -1191,6 +1200,259 @@ function renderedNodeBounds(nodeIds) {
   };
 }
 
+function minimapNodeCenter(node) {
+  const style = node?.style || {};
+  const x = Number(style.x);
+  const y = Number(style.y);
+  if (Number.isFinite(x) && Number.isFinite(y)) {
+    return { x, y };
+  }
+  const source = node?.data?.source || {};
+  const size = nodeSizeForDiagram(state.activeType, source);
+  return {
+    x: Number(source.x || 0) + size.width / 2,
+    y: Number(source.y || 0) + size.height / 2,
+  };
+}
+
+function minimapNodeSize(node) {
+  const size = node?.style?.size;
+  if (Array.isArray(size)) {
+    return {
+      width: Math.max(1, Number(size[0]) || 1),
+      height: Math.max(1, Number(size[1]) || 1),
+    };
+  }
+  return {
+    width: Math.max(1, Number(node?.style?.width) || 1),
+    height: Math.max(1, Number(node?.style?.height) || 1),
+  };
+}
+
+function createMinimapPointMapper(bounds, rect) {
+  const width = Math.max(1, rect?.width || 1);
+  const height = Math.max(1, rect?.height || 1);
+  const availableWidth = Math.max(1, width - MINIMAP_PADDING * 2);
+  const availableHeight = Math.max(1, height - MINIMAP_PADDING * 2);
+  const scale = Math.min(availableWidth / bounds.width, availableHeight / bounds.height);
+  const contentWidth = bounds.width * scale;
+  const contentHeight = bounds.height * scale;
+  const offsetX = (width - contentWidth) / 2;
+  const offsetY = (height - contentHeight) / 2;
+  return {
+    toMinimap(point) {
+      return {
+        x: offsetX + (point.x - bounds.minX) * scale,
+        y: offsetY + (point.y - bounds.minY) * scale,
+      };
+    },
+    toGraph(point) {
+      return {
+        x: bounds.minX + (point.x - offsetX) / scale,
+        y: bounds.minY + (point.y - offsetY) / scale,
+      };
+    },
+  };
+}
+
+function minimapGraphBounds(nodes) {
+  if (!nodes.length) {
+    return null;
+  }
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  nodes.forEach((node) => {
+    const center = minimapNodeCenter(node);
+    const size = minimapNodeSize(node);
+    minX = Math.min(minX, center.x - size.width / 2);
+    minY = Math.min(minY, center.y - size.height / 2);
+    maxX = Math.max(maxX, center.x + size.width / 2);
+    maxY = Math.max(maxY, center.y + size.height / 2);
+  });
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const width = Math.max(MINIMAP_MIN_SPAN, maxX - minX);
+  const height = Math.max(MINIMAP_MIN_SPAN, maxY - minY);
+  return {
+    minX: centerX - width / 2,
+    minY: centerY - height / 2,
+    maxX: centerX + width / 2,
+    maxY: centerY + height / 2,
+    width,
+    height,
+  };
+}
+
+function setMinimapVisible(visible) {
+  el.canvasMinimap?.classList.toggle("hidden", !visible);
+}
+
+function renderMinimapWindow(mapper, minimapRect) {
+  const viewportRect = el.canvasViewport?.getBoundingClientRect?.();
+  const windowEl = el.canvasMinimapWindow;
+  if (!viewportRect || !windowEl) {
+    return;
+  }
+  const topLeft = toGraphCoordinates(viewportRect.left, viewportRect.top);
+  const bottomRight = toGraphCoordinates(viewportRect.right, viewportRect.bottom);
+  const miniA = mapper.toMinimap(topLeft);
+  const miniB = mapper.toMinimap(bottomRight);
+  const left = Math.max(0, Math.min(minimapRect.width, Math.min(miniA.x, miniB.x)));
+  const top = Math.max(0, Math.min(minimapRect.height, Math.min(miniA.y, miniB.y)));
+  const right = Math.max(0, Math.min(minimapRect.width, Math.max(miniA.x, miniB.x)));
+  const bottom = Math.max(0, Math.min(minimapRect.height, Math.max(miniA.y, miniB.y)));
+  windowEl.style.left = `${Math.round(left)}px`;
+  windowEl.style.top = `${Math.round(top)}px`;
+  windowEl.style.width = `${Math.max(8, Math.round(right - left))}px`;
+  windowEl.style.height = `${Math.max(8, Math.round(bottom - top))}px`;
+}
+
+function renderCanvasMinimap() {
+  const minimap = el.canvasMinimap;
+  const svg = el.canvasMinimapSvg;
+  if (!minimap || !svg || !editor?.dataSnapshot?.nodesById) {
+    return;
+  }
+  const nodes = [...editor.dataSnapshot.nodesById.values()];
+  const edges = [...(editor.dataSnapshot.edgesById?.values?.() || [])];
+  if (!nodes.length) {
+    setMinimapVisible(false);
+    svg.replaceChildren();
+    return;
+  }
+  setMinimapVisible(true);
+  const rect = minimap.getBoundingClientRect();
+  const width = Math.max(1, Math.round(rect.width || 1));
+  const height = Math.max(1, Math.round(rect.height || 1));
+  const bounds = minimapGraphBounds(nodes);
+  const mapper = createMinimapPointMapper(bounds, { width, height });
+  editor.minimapMapper = mapper;
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  const fragment = document.createDocumentFragment();
+  const nodeCenters = new Map(nodes.map((node) => [node.id, minimapNodeCenter(node)]));
+  edges.forEach((edge) => {
+    const source = nodeCenters.get(edge.source);
+    const target = nodeCenters.get(edge.target);
+    if (!source || !target) {
+      return;
+    }
+    const a = mapper.toMinimap(source);
+    const b = mapper.toMinimap(target);
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("class", "canvas-minimap-edge");
+    line.setAttribute("x1", String(a.x));
+    line.setAttribute("y1", String(a.y));
+    line.setAttribute("x2", String(b.x));
+    line.setAttribute("y2", String(b.y));
+    fragment.appendChild(line);
+  });
+  nodes.forEach((node) => {
+    const point = mapper.toMinimap(minimapNodeCenter(node));
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("class", "canvas-minimap-node");
+    circle.setAttribute("cx", String(point.x));
+    circle.setAttribute("cy", String(point.y));
+    circle.setAttribute("r", String(MINIMAP_NODE_RADIUS));
+    fragment.appendChild(circle);
+  });
+  svg.replaceChildren(fragment);
+  renderMinimapWindow(mapper, { width, height });
+}
+
+function scheduleMinimapRender() {
+  if (!editor || editor.minimapFrame) {
+    return;
+  }
+  editor.minimapFrame = window.requestAnimationFrame(() => {
+    if (!editor) {
+      return;
+    }
+    editor.minimapFrame = 0;
+    renderCanvasMinimap();
+  });
+}
+
+function panFromMinimapPointer(event) {
+  if (!editor?.minimapMapper || !el.canvasMinimap) {
+    return;
+  }
+  const rect = el.canvasMinimap.getBoundingClientRect();
+  const point = editor.minimapMapper.toGraph({
+    x: Math.max(0, Math.min(rect.width, event.clientX - rect.left)),
+    y: Math.max(0, Math.min(rect.height, event.clientY - rect.top)),
+  });
+  focusG6CanvasPoint(point.x, point.y);
+  scheduleMinimapRender();
+}
+
+function bindCanvasMinimap() {
+  const minimap = el.canvasMinimap;
+  if (!editor || !minimap || editor.minimapCleanup) {
+    return;
+  }
+  const stopMinimapPointer = (event) => {
+    event.stopPropagation();
+  };
+  const onPointerDown = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    editor.minimapDragging = true;
+    minimap.classList.add("is-dragging");
+    minimap.setPointerCapture?.(event.pointerId);
+    panFromMinimapPointer(event);
+  };
+  const onPointerMove = (event) => {
+    event.stopPropagation();
+    if (!editor?.minimapDragging) {
+      return;
+    }
+    event.preventDefault();
+    panFromMinimapPointer(event);
+  };
+  const finishDrag = (event) => {
+    if (!editor) {
+      return;
+    }
+    editor.minimapDragging = false;
+    minimap.classList.remove("is-dragging");
+    if (event?.pointerId !== undefined) {
+      minimap.releasePointerCapture?.(event.pointerId);
+    }
+  };
+  minimap.addEventListener("pointerdown", onPointerDown);
+  minimap.addEventListener("pointerover", stopMinimapPointer);
+  minimap.addEventListener("pointerenter", stopMinimapPointer);
+  minimap.addEventListener("pointermove", onPointerMove);
+  minimap.addEventListener("pointerleave", stopMinimapPointer);
+  minimap.addEventListener("pointerup", finishDrag);
+  minimap.addEventListener("pointercancel", finishDrag);
+  minimap.addEventListener("lostpointercapture", finishDrag);
+  editor.minimapCleanup = () => {
+    minimap.removeEventListener("pointerdown", onPointerDown);
+    minimap.removeEventListener("pointerover", stopMinimapPointer);
+    minimap.removeEventListener("pointerenter", stopMinimapPointer);
+    minimap.removeEventListener("pointermove", onPointerMove);
+    minimap.removeEventListener("pointerleave", stopMinimapPointer);
+    minimap.removeEventListener("pointerup", finishDrag);
+    minimap.removeEventListener("pointercancel", finishDrag);
+    minimap.removeEventListener("lostpointercapture", finishDrag);
+  };
+}
+
+function defaultCanvasFitArea(rect) {
+  if (!rect?.width || !rect?.height) {
+    return null;
+  }
+  return {
+    width: Math.max(1, rect.width - FIT_VIEW_PADDING * 2),
+    height: Math.max(1, rect.height - FIT_VIEW_PADDING * 2),
+    centerX: rect.width / 2,
+    centerY: rect.height / 2,
+  };
+}
+
 async function panGraphBy(dx, dy) {
   if (!editor?.graph) {
     return;
@@ -1204,6 +1466,76 @@ async function panGraphBy(dx, dy) {
   const y = Array.isArray(position) ? position[1] : position?.y;
   if (Number.isFinite(x) && Number.isFinite(y)) {
     await editor.graph.translateTo?.([x + dx, y + dy], false);
+  }
+}
+
+function waitForViewportFrame() {
+  if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => window.requestAnimationFrame(resolve));
+}
+
+function canvasPointToViewport(x, y) {
+  if (!editor?.graph) {
+    return null;
+  }
+  let converted = null;
+  try {
+    converted = editor.graph.getViewportByCanvas?.([x, y]);
+  } catch {
+    try {
+      converted = editor.graph.getViewportByCanvas?.({ x, y });
+    } catch {
+      converted = null;
+    }
+  }
+  if (Array.isArray(converted)) {
+    return { x: converted[0], y: converted[1] };
+  }
+  if (converted && Number.isFinite(Number(converted.x)) && Number.isFinite(Number(converted.y))) {
+    return { x: Number(converted.x), y: Number(converted.y) };
+  }
+  const rect = el.canvasViewport?.getBoundingClientRect?.();
+  const client = toClientCoordinates(x, y);
+  if (!rect || !client) {
+    return null;
+  }
+  return {
+    x: client.x - rect.left,
+    y: client.y - rect.top,
+  };
+}
+
+async function panCanvasPointToViewportTarget(canvasX, canvasY, targetX, targetY, fitToken) {
+  for (let index = 0; index < 6; index += 1) {
+    if (fitToken !== editor?.viewportFitToken) {
+      return;
+    }
+    const current = canvasPointToViewport(canvasX, canvasY);
+    if (!current) {
+      return;
+    }
+    const dx = Math.round(targetX - current.x);
+    const dy = Math.round(targetY - current.y);
+    if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
+      return;
+    }
+    const beforeDistance = Math.hypot(dx, dy);
+    await panGraphBy(dx, dy);
+    await waitForViewportFrame();
+    if (fitToken !== editor?.viewportFitToken) {
+      return;
+    }
+    const after = canvasPointToViewport(canvasX, canvasY);
+    if (!after) {
+      return;
+    }
+    const afterDistance = Math.hypot(targetX - after.x, targetY - after.y);
+    if (afterDistance > beforeDistance + 1) {
+      await panGraphBy(-2 * dx, -2 * dy);
+      await waitForViewportFrame();
+    }
   }
 }
 
@@ -1591,6 +1923,10 @@ export function mountG6Editor(container, { callbacks = {}, mapper = {} } = {}) {
     lastShowLabels: true,
     viewportReady: false,
     viewportRetryCount: 0,
+    minimapFrame: 0,
+    minimapMapper: null,
+    minimapDragging: false,
+    minimapCleanup: null,
   };
   editor.setOpenControlHover = (nodeId) => {
     const previous = editor.openControlHoverNodeId || null;
@@ -1612,8 +1948,10 @@ export function mountG6Editor(container, { callbacks = {}, mapper = {} } = {}) {
     }
   };
   bindG6Interactions(editor, callbacks);
+  bindCanvasMinimap();
   ensureIconTintListener();
   resizeGraphToHost();
+  scheduleMinimapRender();
   updateDebugState({ lastError: "", lastMount: "mounted", hostSize: { width, height } });
   return editor;
 }
@@ -1635,6 +1973,10 @@ export function destroyG6Editor() {
   viewportTransforming = false;
   cancelPendingLodUpdate();
   clearG6Overlays();
+  if (editor?.minimapFrame) {
+    window.cancelAnimationFrame(editor.minimapFrame);
+  }
+  editor?.minimapCleanup?.();
   editor?.disposeInteractions?.();
   editor?.graph?.destroy?.();
   editor?.host?.classList.remove("is-mounted");
@@ -1673,6 +2015,7 @@ export function setG6Data(nodes, edges) {
     rebuildSpatialIndex(data.nodes);
     editor.contextBoxesDirty = true;
     scheduleGraphRender(editor.graph);
+    scheduleMinimapRender();
     updateG6NodeIcons();
   })();
 }
@@ -1708,6 +2051,7 @@ export function syncG6FromState({ full = false } = {}) {
     updateG6ImpactState();
     updateG6NodeIcons();
     updateG6ContextBoxes();
+    scheduleMinimapRender();
   });
 }
 
@@ -2255,7 +2599,7 @@ export function zoomG6CanvasBy(multiplier = 1) {
     return false;
   }
   const prev = readGraphZoom();
-  const next = Math.max(0.01, Math.min(2.5, prev * multiplier));
+  const next = Math.max(FIT_VIEW_MIN_SCALE, Math.min(FIT_VIEW_MAX_SCALE, prev * multiplier));
   state.viewport.scale = next;
   setCanvasZoomIndicator();
   try {
@@ -2295,26 +2639,45 @@ export function fitG6CanvasToDiagram(bounds = null, { fit = false, fitArea = nul
   const rect = el.canvasViewport?.getBoundingClientRect?.();
 
   try {
-    const area =
-      rect?.width && rect?.height
-        ? {
-            width: Math.max(1, rect.width - FIT_VIEW_PADDING * 2),
-            height: Math.max(1, rect.height - FIT_VIEW_PADDING * 2),
-            centerX: rect.width / 2,
-            centerY: rect.height / 2,
-          }
-        : fitArea || getCanvasFitArea(rect);
-    const fitBounds = (fit ? renderedNodeBounds(nodes) : null) || bounds;
-    const scale =
-      fit && fitBounds && area
-        ? Math.max(
-            0.01,
-            Math.min(
-              1,
-              Math.min(area.width / fitBounds.width, area.height / fitBounds.height) || 1,
-            ),
-          )
+    const area = defaultCanvasFitArea(rect) || fitArea || getCanvasFitArea(rect);
+    const fitBounds = bounds || (fit ? renderedNodeBounds(nodes) : null);
+    const finiteBounds =
+      fitBounds &&
+      Number.isFinite(Number(fitBounds.minX)) &&
+      Number.isFinite(Number(fitBounds.minY)) &&
+      Number.isFinite(Number(fitBounds.width)) &&
+      Number.isFinite(Number(fitBounds.height));
+    if (!finiteBounds) {
+      return false;
+    }
+    const rawScale =
+      fit && area
+        ? Math.min(area.width / fitBounds.width, area.height / fitBounds.height) || 1
         : state.viewport.scale || readGraphZoom() || 1;
+    const nodeCount = diagramNodes.length || graphNodes.length;
+    const maxScale =
+      nodeCount <= 1
+        ? FIT_VIEW_SINGLE_NODE_SCALE
+        : nodeCount <= 8
+          ? FIT_VIEW_SPARSE_NODE_MAX_SCALE
+          : FIT_VIEW_MAX_SCALE;
+    const minScale =
+      nodeCount > 0 && nodeCount <= 8 ? FIT_VIEW_SPARSE_NODE_MIN_SCALE : FIT_VIEW_MIN_SCALE;
+    const scale =
+      fit && area
+        ? Math.max(minScale, Math.min(maxScale, rawScale))
+        : state.viewport.scale || readGraphZoom() || 1;
+    window.varkaLastFitAudit = {
+      activeType: state.activeType,
+      nodeCount,
+      graphNodeCount: graphNodes.length,
+      diagramNodeCount: diagramNodes.length,
+      fit,
+      area,
+      bounds: fitBounds,
+      rawScale,
+      scale,
+    };
     if (fit && fitBounds) {
       state.viewport.scale = scale;
       setCanvasZoomIndicator();
@@ -2325,28 +2688,42 @@ export function fitG6CanvasToDiagram(bounds = null, { fit = false, fitArea = nul
       editor.viewportFitToken = (editor.viewportFitToken || 0) + 1;
       const fitToken = editor.viewportFitToken;
       const applyFit = async () => {
-        if (fit) {
-          await editor.graph.zoomTo?.(scale, false, [area.centerX, area.centerY]);
-        }
-        if (fitToken !== editor.viewportFitToken) {
-          return;
-        }
-        for (let index = 0; index < 2; index += 1) {
-          const renderedCenter = toClientCoordinates(centerX, centerY);
-          if (!renderedCenter) {
-            break;
+        if (fit && typeof editor.graph.fitView === "function") {
+          const previousZoomRange = editor.graph.getZoomRange?.();
+          try {
+            editor.graph.setZoomRange?.([minScale, maxScale]);
+            await editor.graph.fitView({ when: "always", direction: "both" }, false);
+            if (
+              fitToken === editor.viewportFitToken &&
+              typeof editor.graph.fitCenter === "function"
+            ) {
+              await editor.graph.fitCenter(false);
+            }
+          } finally {
+            const restoreRange = Array.isArray(previousZoomRange)
+              ? previousZoomRange
+              : [FIT_VIEW_MIN_SCALE, FIT_VIEW_MAX_SCALE];
+            editor.graph.setZoomRange?.(restoreRange);
           }
-          const targetX = (rect?.left || 0) + area.centerX;
-          const targetY = (rect?.top || 0) + area.centerY;
-          const dx = Math.round(targetX - renderedCenter.x);
-          const dy = Math.round(targetY - renderedCenter.y);
-          if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
-            break;
-          }
-          await panGraphBy(dx, dy);
           if (fitToken !== editor.viewportFitToken) {
             return;
           }
+        } else {
+          if (fit) {
+            await editor.graph.zoomTo?.(scale, false);
+          }
+          if (fitToken !== editor.viewportFitToken) {
+            return;
+          }
+          state.viewport.scale = scale;
+          await waitForViewportFrame();
+          await panCanvasPointToViewportTarget(
+            centerX,
+            centerY,
+            area.centerX,
+            area.centerY,
+            fitToken,
+          );
         }
         if (fitToken !== editor.viewportFitToken) {
           return;

@@ -1739,17 +1739,6 @@ function layoutNodesForElements(graph, elementIds, existingNodes = [], typeKey =
       height: existing?.height,
     };
   });
-  const allNodesAlreadyPositioned =
-    nodes.length > 0 &&
-    nodes.every(
-      (node) =>
-        Number.isFinite(Number(node.x)) &&
-        Number.isFinite(Number(node.y)) &&
-        existingByElement.has(node.elementId),
-    );
-  if (allNodesAlreadyPositioned) {
-    return nodes;
-  }
   const fakeNodes = nodes.map((node) => ({
     id: node.elementId,
     x: node.x,
@@ -1768,11 +1757,22 @@ function layoutNodesForElements(graph, elementIds, existingNodes = [], typeKey =
       sourceId: relationship.sourceElementId,
       targetId: relationship.targetElementId,
     }));
-  ensureReadableLayout(fakeNodes, fakeEdges, nodeSizeForType(typeKey));
+  const movedNodeIds = ensureReadableLayout(fakeNodes, fakeEdges, nodeSizeForType(typeKey));
   fakeNodes.forEach((node, index) => {
     nodes[index].x = node.x;
     nodes[index].y = node.y;
   });
+  const allNodesAlreadyPositioned =
+    nodes.length > 0 &&
+    nodes.every(
+      (node) =>
+        Number.isFinite(Number(node.x)) &&
+        Number.isFinite(Number(node.y)) &&
+        existingByElement.has(node.elementId),
+    );
+  if (allNodesAlreadyPositioned && !movedNodeIds.size) {
+    return nodes;
+  }
   return nodes;
 }
 

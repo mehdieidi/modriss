@@ -454,7 +454,9 @@ function addModelTransformation({
       const inputMouthPoint = engineInputMouthPoint;
       const outputPoint = engineOutputPoint;
       const outputMouthPoint = engineOutputMouthPoint;
-      const targetPoint = targetNode ? () => targetLandingPoint(targetNode) : engineOutputMouthPoint;
+      const targetPoint = targetNode
+        ? () => targetLandingPoint(targetNode)
+        : engineOutputMouthPoint;
       timeline.add(
         {},
         {

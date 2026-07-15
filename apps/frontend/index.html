@@ -584,6 +584,21 @@
                   </button>
                 </div>
                 <div
+                  aria-label="Canvas minimap"
+                  class="canvas-minimap"
+                  id="canvasMinimap"
+                  role="application"
+                  title="Drag to move around the canvas"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="canvas-minimap-svg"
+                    id="canvasMinimapSvg"
+                    preserveAspectRatio="none"
+                  ></svg>
+                  <div class="canvas-minimap-window" id="canvasMinimapWindow"></div>
+                </div>
+                <div
                   class="edge-kind-picker hidden"
                   id="edgeKindPicker"
                   role="dialog"

@@ -313,9 +313,7 @@ function inspectionView(view, hiddenOverrides = {}) {
     ...view,
     hidden: {
       elementIds: safeArray(hiddenOverrides.elementIds ?? view?.hidden?.elementIds),
-      relationshipIds: safeArray(
-        hiddenOverrides.relationshipIds ?? view?.hidden?.relationshipIds,
-      ),
+      relationshipIds: safeArray(hiddenOverrides.relationshipIds ?? view?.hidden?.relationshipIds),
     },
   };
 }
