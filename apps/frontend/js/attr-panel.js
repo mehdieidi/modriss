@@ -6,6 +6,8 @@ import { setStatus } from "./status.js";
 import {
   startConnectionFromNode,
   cancelConnectionDraw,
+  removeConnectionFromCanvas,
+  removeNodeFromCanvas,
   syncDiagramRenderer,
   syncRendererSelection,
 } from "./canvas.js";
@@ -16,7 +18,6 @@ import {
   defaultRootModel,
   getDefaultNode,
   relationshipIdsFromModel,
-  toDiagram,
 } from "./diagram.js";
 import { confirmAction } from "./confirm-action.js";
 import {
@@ -45,7 +46,12 @@ import {
   nestedContainmentsForType,
   refIds,
 } from "./model-utils.js";
-import { captureDiagramUndoSnapshot, pushDiagramUndoSnapshot } from "./undo.js";
+import {
+  captureConnectionUndoSnapshot,
+  captureDeleteElementUndoSnapshot,
+  captureDiagramUndoSnapshot,
+  pushDiagramUndoSnapshot,
+} from "./undo.js";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -2418,15 +2424,26 @@ export async function deleteSelection() {
     return;
   }
 
-  pushDiagramUndoSnapshot();
+  const removedConnectionIds = [
+    ...new Set([
+      ...(state.graph.relationshipsBySource.get(nodeId) || []),
+      ...(state.graph.relationshipsByTarget.get(nodeId) || []),
+    ]),
+  ];
+  const removedConnections = removedConnectionIds
+    .map((connectionId) => state.connectionsById.get(connectionId))
+    .filter(Boolean);
+  pushDiagramUndoSnapshot(captureDeleteElementUndoSnapshot(node, removedConnections));
+  closeAttributePanel();
+  removeNodeFromCanvas(nodeId, removedConnectionIds);
+  // Let the incremental G6 removal paint before touching model-wide arrays.
+  await new Promise((resolve) => window.setTimeout(resolve, 0));
   state.diagram.nodes = state.diagram.nodes.filter((n) => n.id !== nodeId);
   state.diagram.connections = state.diagram.connections.filter(
     (c) => c.sourceId !== nodeId && c.targetId !== nodeId,
   );
   removeElementFromGraph(nodeId);
 
-  closeAttributePanel();
-  syncDiagramRenderer({});
   markModelDirty();
   setStatus(`Deleted ${node.type}: ${nodeId}`);
 }
@@ -2452,37 +2469,32 @@ export async function deleteSelectedConnection() {
     return;
   }
 
-  const undoSnapshot = captureDiagramUndoSnapshot();
+  const undoSnapshot = captureConnectionUndoSnapshot(connection);
+  pushDiagramUndoSnapshot(undoSnapshot);
+  closeAttributePanel();
+  removeConnectionFromCanvas(connectionId);
+  // Yield so G6 can render the removal before model serialization/persistence work.
+  await new Promise((resolve) => window.setTimeout(resolve, 0));
+  state.diagram.connections = state.diagram.connections.filter((edge) => edge.id !== connectionId);
+  removeRelationshipFromGraph(connectionId);
+  markModelDirty();
+  setStatus(`Deleted connection: ${connection.kind}`);
+
   const persistedConnectionIds = new Set(
     relationshipIdsFromModel(state.activeType, state.baseModel || {}),
   );
   const shouldDeletePersistedRelationship = Boolean(
     state.modelId && persistedConnectionIds.has(connectionId),
   );
-
   if (shouldDeletePersistedRelationship) {
     const updated = await api(
       `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}/relationships/${encodeURIComponent(
         connectionId,
       )}`,
-      {
-        method: "DELETE",
-      },
+      { method: "DELETE" },
     );
     state.baseModel = structuredClone(updated.modelJson);
-    state.diagram = toDiagram(state.activeType, updated.modelJson, updated.name);
-  } else {
-    state.diagram.connections = state.diagram.connections.filter(
-      (edge) => edge.id !== connectionId,
-    );
   }
-  removeRelationshipFromGraph(connectionId);
-  pushDiagramUndoSnapshot(undoSnapshot);
-
-  closeAttributePanel();
-  syncDiagramRenderer({});
-  markModelDirty();
-  setStatus(`Deleted connection: ${connection.kind}`);
 }
 
 export function bindConnectionDrawStateListener() {

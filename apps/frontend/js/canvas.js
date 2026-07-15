@@ -45,6 +45,7 @@ import { fetchImpact } from "./impact.js";
 import {
   captureAddConnectionUndoSnapshot,
   captureAddElementUndoSnapshot,
+  captureConnectionUndoSnapshot,
   captureDiagramUndoSnapshot,
   captureNodePositionUndoSnapshot,
   pushDiagramUndoSnapshot,
@@ -62,6 +63,8 @@ import {
   isCanvasRendererAvailable,
   onCanvasViewportChanged,
   refreshCanvasEdges,
+  removeCanvasEdge,
+  removeCanvasNode,
   renderCanvasDiagram,
   resetCanvasView as adapterResetCanvasView,
   setCanvasHoverEdge,
@@ -144,6 +147,32 @@ function syncCanvasIndexesFromState() {
       edgeIdsByNodeId.get(nodeId).add(edge.id);
     });
   });
+}
+
+// Single-element mutations must not rebuild indexes for the whole model.
+export function removeConnectionFromCanvas(connectionId) {
+  const id = String(connectionId || "");
+  const edge = connectionsById.get(id);
+  // Graph-store indexes can include relationships that are not rendered in the
+  // current view. Passing one of those ids to G6 causes it to reject a removal.
+  if (!id || !edge) return;
+  connectionsById.delete(id);
+  [edge?.sourceId, edge?.targetId].forEach((nodeId) => {
+    const edgeIds = edgeIdsByNodeId.get(nodeId);
+    edgeIds?.delete(id);
+    if (edgeIds && !edgeIds.size) edgeIdsByNodeId.delete(nodeId);
+  });
+  removeCanvasEdge(id);
+}
+
+export function removeNodeFromCanvas(nodeId, connectionIds = []) {
+  const id = String(nodeId || "");
+  if (!id) return;
+  const connected = new Set(connectionIds.length ? connectionIds : edgeIdsByNodeId.get(id));
+  connected.forEach((connectionId) => removeConnectionFromCanvas(connectionId));
+  edgeIdsByNodeId.delete(id);
+  state.nodesById.delete(id);
+  removeCanvasNode(id);
 }
 
 function refLabel(value) {
@@ -2224,7 +2253,7 @@ function updateEdgeKind(edgeId, kind, preferredSourceId, preferredTargetId) {
   ) {
     return;
   }
-  const undoSnapshot = captureDiagramUndoSnapshot();
+  const undoSnapshot = captureConnectionUndoSnapshot(edge);
   edge.sourceId = resolved.sourceId;
   edge.targetId = resolved.targetId;
   edge.kind = resolved.kind;

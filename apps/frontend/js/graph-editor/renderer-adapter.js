@@ -76,6 +76,8 @@ export const updateCanvasNode = (...args) => g6.updateCanvasNode(...args);
 export const updateCanvasEdge = (...args) => g6.updateCanvasEdge(...args);
 export const updateCanvasNodeIcons = (...args) => g6.updateCanvasNodeIcons(...args);
 export const refreshCanvasEdges = (...args) => g6.refreshCanvasEdges(...args);
+export const removeCanvasEdge = (...args) => g6.removeCanvasEdge(...args);
+export const removeCanvasNode = (...args) => g6.removeCanvasNode(...args);
 export const resetCanvasView = (...args) => g6.resetCanvasView(...args);
 export const zoomCanvasBy = (...args) => g6.zoomCanvasBy(...args);
 export const fitCanvasToDiagram = (...args) => g6.fitCanvasToDiagram(...args);

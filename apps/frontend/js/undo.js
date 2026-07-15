@@ -7,6 +7,8 @@ import {
   serializeRuntimeGraph,
   serializeRuntimeViews,
   syncActiveViewFromVisibleGraph,
+  addConnectionToGraphAndActiveView,
+  addNodeToGraphAndActiveView,
   removeElementFromGraph,
   removeRelationshipFromGraph,
 } from "./graph-store.js";
@@ -125,6 +127,38 @@ export function captureAddConnectionUndoSnapshot(connectionId, typeKey = state.a
   };
 }
 
+// Relationship-kind changes are frequent and must not clone the complete model.
+export function captureConnectionUndoSnapshot(connection, typeKey = state.activeType) {
+  if (!isModelingType(typeKey) || !connection?.id) {
+    return null;
+  }
+  return {
+    kind: "connection-mutation",
+    typeKey,
+    connection: structuredClone(connection),
+    modelId: state.modelId,
+    modelRevision: state.modelRevision || 0,
+    modelName: state.tabs[typeKey]?.modelName || defaultModelName(typeKey),
+    activeViewId: state.views?.activeViewId || null,
+    signature: `connection-mutation:${connection.id}:${JSON.stringify(connection)}`,
+  };
+}
+
+export function captureDeleteElementUndoSnapshot(node, connections = [], typeKey = state.activeType) {
+  if (!isModelingType(typeKey) || !node?.id) return null;
+  return {
+    kind: "delete-element",
+    typeKey,
+    node: structuredClone(node),
+    connections: structuredClone(connections),
+    modelId: state.modelId,
+    modelRevision: state.modelRevision || 0,
+    modelName: state.tabs[typeKey]?.modelName || defaultModelName(typeKey),
+    activeViewId: state.views?.activeViewId || null,
+    signature: `delete-element:${node.id}:${Date.now()}`,
+  };
+}
+
 export function pushDiagramUndoSnapshot(snapshot = captureDiagramUndoSnapshot()) {
   if (!snapshot || !isModelingType(snapshot.typeKey)) {
     return false;
@@ -233,6 +267,38 @@ function applyAddConnectionUndoSnapshot(snapshot) {
   return true;
 }
 
+function applyConnectionMutationUndoSnapshot(snapshot) {
+  const previous = snapshot.connection;
+  if (!previous?.id) return false;
+  let current = state.diagram.connections.find((edge) => edge.id === previous.id);
+  if (current) {
+    Object.assign(current, structuredClone(previous));
+  } else {
+    current = structuredClone(previous);
+    state.diagram.connections.push(current);
+  }
+  removeRelationshipFromGraph(previous.id);
+  addConnectionToGraphAndActiveView(current);
+  state.connectionsById?.set?.(previous.id, current);
+  if (state.tabs[snapshot.typeKey]) state.tabs[snapshot.typeKey].diagram = state.diagram;
+  return true;
+}
+
+function applyDeleteElementUndoSnapshot(snapshot) {
+  const node = snapshot.node;
+  if (!node?.id || state.diagram.nodes.some((candidate) => candidate.id === node.id)) return false;
+  state.diagram.nodes.push(structuredClone(node));
+  addNodeToGraphAndActiveView(node);
+  snapshot.connections.forEach((connection) => {
+    if (!state.diagram.connections.some((edge) => edge.id === connection.id)) {
+      state.diagram.connections.push(structuredClone(connection));
+      addConnectionToGraphAndActiveView(connection);
+    }
+  });
+  if (state.tabs[snapshot.typeKey]) state.tabs[snapshot.typeKey].diagram = state.diagram;
+  return true;
+}
+
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -249,6 +315,12 @@ export function applyDiagramUndoSnapshot(snapshot) {
   }
   if (snapshot.kind === "add-connection") {
     return applyAddConnectionUndoSnapshot(snapshot);
+  }
+  if (snapshot.kind === "connection-mutation") {
+    return applyConnectionMutationUndoSnapshot(snapshot);
+  }
+  if (snapshot.kind === "delete-element") {
+    return applyDeleteElementUndoSnapshot(snapshot);
   }
   state.modelId = snapshot.modelId;
   state.modelRevision = snapshot.modelRevision || 0;

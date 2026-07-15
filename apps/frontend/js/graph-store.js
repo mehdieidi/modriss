@@ -3131,29 +3131,41 @@ export function removeElementFromGraph(elementId) {
   if (!id) {
     return;
   }
-  state.graph.elementsById.delete(id);
-  const relationshipIds = [];
-  state.graph.relationshipsById.forEach((relationship, relationshipId) => {
-    if (relationship.sourceElementId === id || relationship.targetElementId === id) {
-      relationshipIds.push(relationshipId);
+  const relationshipIds = [
+    ...new Set([
+      ...(state.graph.relationshipsBySource.get(id) || []),
+      ...(state.graph.relationshipsByTarget.get(id) || []),
+    ]),
+  ];
+  const relationshipIdSet = new Set(relationshipIds);
+  relationshipIds.forEach((relationshipId) => {
+    const relationship = state.graph.relationshipsById.get(relationshipId);
+    if (relationship?.semanticFeature) {
+      removePreviousSemanticReference(relationship, {
+        sourceElementId: relationship.semanticSourceElementId || relationship.sourceElementId,
+        targetElementId: relationship.semanticTargetElementId || relationship.targetElementId,
+        feature: relationship.semanticFeature,
+      });
     }
+    removeRelationshipFromGraphIndexes(state.graph, relationship);
+    state.graph.relationshipsById.delete(relationshipId);
   });
-  relationshipIds.forEach((relationshipId) => state.graph.relationshipsById.delete(relationshipId));
+  state.graph.elementsById.delete(id);
   markGraphRelationshipsDirty(state.graph);
   state.views.byId.forEach((view) => {
     view.nodes = safeArray(view.nodes).filter((node) => node.elementId !== id);
     viewNodeIndexes.delete(view);
     view.edges = safeArray(view.edges).filter(
-      (edge) => !relationshipIds.includes(edge.relationshipId),
+      (edge) => !relationshipIdSet.has(edge.relationshipId),
     );
     view.hidden = view.hidden || { elementIds: [], relationshipIds: [] };
     view.hidden.elementIds = safeArray(view.hidden.elementIds).filter((item) => item !== id);
     view.hidden.relationshipIds = safeArray(view.hidden.relationshipIds).filter(
-      (item) => !relationshipIds.includes(item),
+      (item) => !relationshipIdSet.has(item),
     );
     view.pinnedElementIds = safeArray(view.pinnedElementIds).filter((item) => item !== id);
   });
-  rebuildGraphIndexes(state.graph);
+  // Indexes were updated above as relationships were removed.
 }
 
 function normalizeOppositeName(value) {
@@ -3394,6 +3406,9 @@ export function addConnectionToGraphAndActiveView(edge) {
     return;
   }
   const existing = state.graph.relationshipsById.get(edge.id);
+  if (existing) {
+    removeRelationshipFromGraphIndexes(state.graph, existing);
+  }
   const previousSemanticReference = existing?.semanticFeature
     ? {
         sourceElementId: existing.semanticSourceElementId || existing.sourceElementId,
@@ -3469,7 +3484,7 @@ export function removeRelationshipFromGraph(relationshipId) {
       );
     }
   });
-  rebuildGraphIndexes(state.graph);
+  removeRelationshipFromGraphIndexes(state.graph, relationship);
 }
 
 export function persistEdgeLayoutInActiveView(edgeId, layout) {

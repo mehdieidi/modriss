@@ -2150,7 +2150,7 @@ function setG6NodeHandleVisibility(nodeId, visible) {
 }
 
 export function removeG6Node(nodeId) {
-  if (!editor?.graph || !nodeId) {
+  if (!editor?.graph || !nodeId || !hasKnownNode(nodeId)) {
     return;
   }
   editor.graph.removeNodeData?.([nodeId]);
@@ -2211,7 +2211,7 @@ export function updateG6Edge(edgeId, patch = {}) {
 }
 
 export function removeG6Edge(edgeId) {
-  if (!editor?.graph || !edgeId) {
+  if (!editor?.graph || !edgeId || !hasKnownEdge(edgeId)) {
     return;
   }
   editor.graph.removeEdgeData?.([edgeId]);

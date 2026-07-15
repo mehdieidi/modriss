@@ -10,6 +10,8 @@ export {
   mountG6Editor as mountCanvasEditor,
   onG6ViewportChanged as onCanvasViewportChanged,
   refreshG6Edges as refreshCanvasEdges,
+  removeG6Edge as removeCanvasEdge,
+  removeG6Node as removeCanvasNode,
   renderG6Diagram as renderCanvasDiagram,
   resetG6CanvasView as resetCanvasView,
   setG6HoverEdge as setCanvasHoverEdge,
