@@ -8,24 +8,57 @@ flowchart TB
     browser["Browser"]
 
     subgraph compose["Docker Compose project: varka"]
+        caddy["caddy<br/>edge proxy<br/>port 8088"]
         frontend["frontend<br/>python:3.13-alpine static server<br/>port 8082"]
-        landing["landing<br/>python:3.13-alpine static server<br/>port 8083"]
+        admin["admin<br/>nginx static React app<br/>port 8084"]
+        landing["landing<br/>nginx static Vite app<br/>port 8083"]
         backend["backend<br/>Spring Boot image<br/>port 8080"]
         postgres["postgres<br/>pgvector/pgvector:pg16<br/>port 5432"]
         localstack["localstack<br/>AWS simulator<br/>port 4566"]
         dozzle["dozzle<br/>container logs<br/>port 9999"]
-        volume[("varka-postgres-data")]
+        prometheus["prometheus<br/>metrics and alerts<br/>port 9090"]
+        grafana["grafana<br/>dashboards<br/>port 3000"]
+        loki["loki<br/>log store<br/>port 3100"]
+        promtail["promtail<br/>log shipper"]
+        pgexp["postgres-exporter"]
+        nodeexp["node-exporter"]
+        cadvisor["cAdvisor"]
+        dbvolume[("varka-postgres-data")]
+        uploadvolume[("varka-backend-uploads")]
+        logvolume[("varka-backend-logs / varka-caddy-logs")]
     end
 
     proxy["Host AI proxy<br/>host.docker.internal:2081 by default"]
     provider["OpenAI-compatible / Gemini"]
 
     host -->|"docker compose up --build"| compose
+    browser -->|"HTTP :8088 / *.localhost:8088"| caddy
+    caddy -->|"default app route"| frontend
+    caddy -->|"admin.localhost"| admin
+    caddy -->|"landing.localhost"| landing
+    caddy -->|"api routes"| backend
+    caddy -->|"grafana.localhost / logs.localhost"| grafana
+    caddy --> dozzle
     browser -->|"HTTP :8082"| frontend
     browser -->|"HTTP :8083"| landing
+    browser -->|"HTTP :8084"| admin
     browser -->|"REST and SSE :8080"| backend
+    admin -->|"Admin REST"| backend
     backend -->|"JDBC; starts after DB healthcheck"| postgres
-    postgres --> volume
+    postgres --> dbvolume
+    backend --> uploadvolume
+    backend --> logvolume
+    caddy --> logvolume
+    backend -->|"Generated AWS project tests"| localstack
+    prometheus -->|"scrape"| backend
+    prometheus -->|"scrape"| caddy
+    prometheus --> pgexp --> postgres
+    prometheus --> nodeexp
+    prometheus --> cadvisor
+    promtail -->|"ship logs"| loki
+    promtail --> logvolume
+    grafana --> prometheus
+    grafana --> loki
     backend -->|"Optional proxied AI traffic"| proxy --> provider
 ```
 

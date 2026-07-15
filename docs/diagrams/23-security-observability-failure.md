@@ -143,3 +143,39 @@ flowchart LR
     readiness --> ai --> proxy
     readiness --> result
 ```
+
+## Observability Pipeline
+
+```mermaid
+flowchart TB
+    browser["Frontend, admin, and landing browser telemetry"]
+    backend["Spring Boot backend<br/>Actuator, request logs, app events"]
+    caddy["Caddy edge<br/>access logs and metrics"]
+    postgres["PostgreSQL"]
+    docker["Docker containers and host"]
+
+    prometheus["Prometheus<br/>scrape and alert rules"]
+    loki["Loki<br/>log storage"]
+    promtail["Promtail<br/>file and Docker log collector"]
+    grafana["Grafana<br/>dashboards and exploration"]
+    dozzle["Dozzle<br/>local live logs"]
+    pgexp["postgres-exporter"]
+    nodeexp["node-exporter"]
+    cadvisor["cAdvisor"]
+
+    browser -->|"POST /api/telemetry/frontend"| backend
+    backend -->|"metrics /actuator/prometheus"| prometheus
+    caddy -->|"metrics :2019/metrics"| prometheus
+    postgres --> pgexp --> prometheus
+    docker --> nodeexp --> prometheus
+    docker --> cadvisor --> prometheus
+
+    backend -->|"backend.log volume"| promtail
+    caddy -->|"access.log volume"| promtail
+    docker -->|"container JSON logs"| promtail
+    promtail --> loki
+    docker --> dozzle
+
+    grafana --> prometheus
+    grafana --> loki
+```

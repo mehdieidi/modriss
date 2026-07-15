@@ -18,6 +18,25 @@ The root `compose.yaml` includes `deploy/compose.yaml`, which is the canonical s
 The preferred browser entrypoint is the Caddy edge proxy at `http://localhost:8088`; direct service
 ports remain available for debugging.
 
+Local Caddy routes:
+
+| Route                              | Target service |
+| ---------------------------------- | -------------- |
+| `http://localhost:8088`            | `frontend`     |
+| `http://api.localhost:8088`        | `backend`      |
+| `http://admin.localhost:8088`      | `admin`        |
+| `http://landing.localhost:8088`    | `landing`      |
+| `http://grafana.localhost:8088`    | `grafana`      |
+| `http://prometheus.localhost:8088` | `prometheus`   |
+| `http://logs.localhost:8088`       | `dozzle`       |
+| `http://loki.localhost:8088`       | `loki`         |
+| `http://localstack.localhost:8088` | `localstack`   |
+
+The current Compose stack includes application workloads (`backend`, `frontend`, `admin`,
+`landing`), stateful/runtime support (`postgres`, `localstack`), edge/log access (`caddy`,
+`dozzle`), and the observability stack (`prometheus`, `grafana`, `loki`, `promtail`,
+`postgres-exporter`, `node-exporter`, `cadvisor`).
+
 ## Configuration
 
 Use `.env` for local overrides. Use a secret manager or orchestrator-managed secrets in production.
@@ -86,3 +105,7 @@ also include:
 - Log and metric retention policies.
 - Resource limits and health checks in the orchestrator.
 - CI/CD gates for tests, image scanning, migrations, and deployment approval.
+
+For an internet-facing single-server deployment, publish only Caddy ports `80` and `443`. Remove
+direct public port mappings for the backend, admin app, frontend, PostgreSQL, Grafana, Prometheus,
+Loki, Dozzle, LocalStack, and exporters unless there is a documented restricted-access reason.

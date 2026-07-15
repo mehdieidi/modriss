@@ -45,6 +45,7 @@ The diagrams were derived from:
 | Methodology   | [25-pim-methodology.md](25-pim-methodology.md)                                                   | PIM phase flow and ETL alignment                   |
 | Methodology   | [26-psm-methodology.md](26-psm-methodology.md)                                                   | PSM phase flow and SamStack hub                    |
 | Methodology   | [27-end-to-end-methodology.md](27-end-to-end-methodology.md)                                     | CIM→PIM→PSM pipeline with EVL/ETL gates            |
+| DevOps/SRE    | [28-devops-sre-runtime.md](28-devops-sre-runtime.md)                                             | Edge routing, workloads, observability, triage     |
 
 ## API Coverage
 
