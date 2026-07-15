@@ -6,10 +6,62 @@ import './styles.css'
 import './overrides.css'
 
 const appUrl = import.meta.env.VITE_APP_URL ?? 'http://127.0.0.1:8082'
+const backendUrl = (import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://127.0.0.1:8080').replace(/\/$/, '')
+const publicIpLookupUrl = import.meta.env.VITE_PUBLIC_IP_LOOKUP_URL ?? 'https://api.ipify.org?format=json'
 const docsUrl = import.meta.env.VITE_DOCS_URL ?? 'https://github.com/mehdieidi/varka/tree/main/docs/public-docs'
 const githubUrl = import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/mehdieidi/varka'
 
 type IconName = 'arrow' | 'book' | 'check' | 'code' | 'github' | 'layers' | 'shield' | 'spark' | 'terminal' | 'workflow'
+
+async function lookupPublicIp() {
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), 1500)
+  try {
+    const response = await fetch(publicIpLookupUrl, { signal: controller.signal, cache: 'no-store' })
+    if (!response.ok) {
+      return ''
+    }
+    const contentType = response.headers.get('Content-Type') || ''
+    if (contentType.includes('application/json')) {
+      const body = await response.json() as { ip?: unknown }
+      return typeof body.ip === 'string' ? body.ip : ''
+    }
+    return (await response.text()).trim()
+  } catch {
+    return ''
+  } finally {
+    window.clearTimeout(timeout)
+  }
+}
+
+async function sendLandingVisit() {
+  const publicIp = await lookupPublicIp()
+  const body = JSON.stringify({
+    app: 'landing',
+    kind: 'page_view',
+    url: window.location.pathname + window.location.search,
+    attributes: { referrer: document.referrer, publicIp },
+    occurredAt: new Date().toISOString(),
+  })
+  const endpoint = `${backendUrl}/api/telemetry/frontend`
+  if (navigator.sendBeacon) {
+    const sent = navigator.sendBeacon(endpoint, new Blob([body], { type: 'application/json' }))
+    if (sent) {
+      return
+    }
+  }
+  void fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Request-Id': crypto.randomUUID(),
+    },
+    body,
+    keepalive: true,
+  }).catch(() => undefined)
+}
+
+void sendLandingVisit()
 
 function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true }

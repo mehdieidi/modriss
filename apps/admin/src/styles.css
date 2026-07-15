@@ -304,6 +304,23 @@ h2 {
   overflow: hidden;
 }
 
+.visitor-admin {
+  display: grid;
+  gap: 18px;
+}
+
+.section-heading-row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.section-heading-row span {
+  color: #65726c;
+  font-size: 13px;
+}
+
 .table-scroll {
   overflow-x: auto;
 }

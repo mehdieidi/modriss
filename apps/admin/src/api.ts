@@ -1,11 +1,47 @@
 declare global {
   interface Window {
     VARKA_ADMIN_BACKEND_BASE_URL?: string;
+    VARKA_PUBLIC_IP_LOOKUP_URL?: string;
   }
 }
 
 const baseUrl = () =>
   (window.VARKA_ADMIN_BACKEND_BASE_URL || "http://127.0.0.1:8080").replace(/\/$/, "");
+const publicIpLookupUrl = () =>
+  window.VARKA_PUBLIC_IP_LOOKUP_URL || "https://api.ipify.org?format=json";
+
+let publicIpPromise: Promise<string> | null = null;
+
+async function publicIp() {
+  if (!publicIpPromise) {
+    publicIpPromise = lookupPublicIp();
+  }
+  return publicIpPromise;
+}
+
+async function lookupPublicIp() {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 1500);
+  try {
+    const response = await fetch(publicIpLookupUrl(), {
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return "";
+    }
+    const contentType = response.headers.get("Content-Type") || "";
+    if (contentType.includes("application/json")) {
+      const body = (await response.json()) as { ip?: unknown };
+      return typeof body.ip === "string" ? body.ip : "";
+    }
+    return (await response.text()).trim();
+  } catch {
+    return "";
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
 
 export class ApiError extends Error {
   status: number;
@@ -47,13 +83,14 @@ export async function api<T>(
 }
 
 export async function login(email: string, password: string) {
+  const detectedPublicIp = await publicIp();
   const response = await fetch(`${baseUrl()}/api/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "X-Request-Id": crypto.randomUUID(),
     },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, publicIp: detectedPublicIp }),
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));

@@ -1,8 +1,10 @@
 package io.mehdieidi.varka.backend.api;
 
 import io.mehdieidi.varka.backend.admin.AdminAccessService;
+import io.mehdieidi.varka.backend.analytics.VisitorAnalyticsService;
 import io.mehdieidi.varka.platform.identity.application.AuthService;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -23,15 +25,18 @@ public class AuthController {
 
   private final AuthService authService;
   private final AdminAccessService adminAccess;
+  private final VisitorAnalyticsService analytics;
 
   /**
    * Creates the authentication controller.
    *
    * @param authService authentication service
    */
-  public AuthController(AuthService authService, AdminAccessService adminAccess) {
+  public AuthController(
+      AuthService authService, AdminAccessService adminAccess, VisitorAnalyticsService analytics) {
     this.authService = authService;
     this.adminAccess = adminAccess;
+    this.analytics = analytics;
   }
 
   /**
@@ -54,9 +59,10 @@ public class AuthController {
    * @return session token and authenticated user
    */
   @PostMapping("/login")
-  AuthResponse login(@Valid @RequestBody LoginRequest request) {
+  AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
     AuthService.AuthResult result = authService.login(request.email(), request.password());
     adminAccess.requireEnabled(result.user());
+    analytics.recordLogin(result.user(), httpRequest, request.publicIp());
     return new AuthResponse(result.token(), UserDto.from(result.user()));
   }
 
@@ -116,7 +122,10 @@ public class AuthController {
    * @param email registered user email
    * @param password account password
    */
-  public record LoginRequest(@Email @NotBlank String email, @Size(min = 8) String password) {}
+  public record LoginRequest(
+      @Email @NotBlank String email,
+      @Size(min = 8) String password,
+      @Size(max = 45) String publicIp) {}
 
   /**
    * Current-user profile update payload.

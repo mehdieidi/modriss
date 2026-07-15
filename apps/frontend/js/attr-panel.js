@@ -14,11 +14,7 @@ import {
 import { markModelDirty } from "./model-save-ui.js";
 import { isMobileViewport } from "./responsive.js";
 import { syncMobileDockState } from "./mobile-ui.js";
-import {
-  defaultRootModel,
-  getDefaultNode,
-  relationshipIdsFromModel,
-} from "./diagram.js";
+import { defaultRootModel, getDefaultNode, relationshipIdsFromModel } from "./diagram.js";
 import { confirmAction } from "./confirm-action.js";
 import {
   modelingContainmentsForType,

@@ -297,6 +297,20 @@ public class AdminController {
     return queries.auditEvents();
   }
 
+  @GetMapping("/user-login-events")
+  List<AdminQueryService.UserLoginEvent> userLoginEvents(
+      @RequestHeader("X-Auth-Token") String token) {
+    access.requireAdmin(auth.user(token));
+    return queries.userLoginEvents();
+  }
+
+  @GetMapping("/landing-page-visits")
+  List<AdminQueryService.LandingPageVisit> landingPageVisits(
+      @RequestHeader("X-Auth-Token") String token) {
+    access.requireAdmin(auth.user(token));
+    return queries.landingPageVisits();
+  }
+
   @GetMapping("/metrics-summary")
   Map<String, ?> metricsSummary(@RequestHeader("X-Auth-Token") String token) {
     access.requireAdmin(auth.user(token));

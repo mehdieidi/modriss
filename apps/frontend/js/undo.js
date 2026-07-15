@@ -144,7 +144,11 @@ export function captureConnectionUndoSnapshot(connection, typeKey = state.active
   };
 }
 
-export function captureDeleteElementUndoSnapshot(node, connections = [], typeKey = state.activeType) {
+export function captureDeleteElementUndoSnapshot(
+  node,
+  connections = [],
+  typeKey = state.activeType,
+) {
   if (!isModelingType(typeKey) || !node?.id) return null;
   return {
     kind: "delete-element",

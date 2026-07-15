@@ -3,6 +3,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+ARG VITE_BACKEND_BASE_URL=http://127.0.0.1:8080
+ENV VITE_BACKEND_BASE_URL=$VITE_BACKEND_BASE_URL
 RUN npm run build
 
 FROM nginx:1.27-alpine

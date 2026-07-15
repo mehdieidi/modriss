@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.backend.api;
 
+import io.mehdieidi.varka.backend.analytics.VisitorAnalyticsService;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -24,9 +25,11 @@ public class TelemetryController {
   private static final Logger log = LoggerFactory.getLogger(TelemetryController.class);
 
   private final MeterRegistry meters;
+  private final VisitorAnalyticsService analytics;
 
-  public TelemetryController(MeterRegistry meters) {
+  public TelemetryController(MeterRegistry meters, VisitorAnalyticsService analytics) {
     this.meters = meters;
+    this.analytics = analytics;
   }
 
   @PostMapping("/frontend")
@@ -43,6 +46,14 @@ public class TelemetryController {
         event.url(),
         event.durationMs(),
         truncate(request.getHeader("User-Agent"), 180));
+    if ("landing".equals(app) && "page_view".equals(kind)) {
+      Map<String, String> attributes = event.attributes();
+      analytics.recordLandingVisit(
+          request,
+          event.url(),
+          attributes == null ? "" : attributes.getOrDefault("referrer", ""),
+          attributes == null ? "" : attributes.getOrDefault("publicIp", ""));
+    }
     return ResponseEntity.accepted().build();
   }
 

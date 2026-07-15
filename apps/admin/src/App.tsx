@@ -4,6 +4,7 @@ import {
   Box,
   Database,
   Gauge,
+  Globe2,
   KeyRound,
   Layers3,
   LogOut,
@@ -26,10 +27,12 @@ import {
   AssistantTurnSummary,
   AuditEvent,
   JobSummary,
+  LandingPageVisit,
   ModelSummary,
   Overview,
   ProjectSummary,
   ThemeProfile,
+  UserLoginEvent,
   UserSummary,
 } from "./types";
 
@@ -40,6 +43,7 @@ type View =
   | "models"
   | "jobs"
   | "assistant"
+  | "visitors"
   | "visual-syntax"
   | "theme-control"
   | "audit";
@@ -52,6 +56,8 @@ type DataState = {
   models: ModelSummary[];
   jobs: JobSummary[];
   assistantTurns: AssistantTurnSummary[];
+  userLoginEvents: UserLoginEvent[];
+  landingPageVisits: LandingPageVisit[];
   themeProfiles: ThemeProfile[];
   auditEvents: AuditEvent[];
 };
@@ -64,6 +70,8 @@ const emptyData: DataState = {
   models: [],
   jobs: [],
   assistantTurns: [],
+  userLoginEvents: [],
+  landingPageVisits: [],
   themeProfiles: [],
   auditEvents: [],
 };
@@ -75,6 +83,7 @@ const navItems: Array<{ view: View; label: string; icon: ReactNode }> = [
   { view: "models", label: "Models", icon: <Database size={18} /> },
   { view: "jobs", label: "Jobs", icon: <TerminalSquare size={18} /> },
   { view: "assistant", label: "Assistant", icon: <Bot size={18} /> },
+  { view: "visitors", label: "Visitors", icon: <Globe2 size={18} /> },
   { view: "visual-syntax", label: "Visual Syntax", icon: <Palette size={18} /> },
   { view: "theme-control", label: "Theme Control", icon: <SlidersHorizontal size={18} /> },
   { view: "audit", label: "Audit", icon: <Shield size={18} /> },
@@ -95,7 +104,19 @@ export function App() {
     setLoading(true);
     setError("");
     try {
-      const [me, overview, users, projects, models, jobs, assistantTurns, themeProfiles, auditEvents] =
+      const [
+        me,
+        overview,
+        users,
+        projects,
+        models,
+        jobs,
+        assistantTurns,
+        userLoginEvents,
+        landingPageVisits,
+        themeProfiles,
+        auditEvents,
+      ] =
         await Promise.all([
           api<AdminMe>("/api/admin/me", token),
           api<Overview>("/api/admin/overview", token),
@@ -104,6 +125,8 @@ export function App() {
           api<ModelSummary[]>("/api/admin/models", token),
           api<JobSummary[]>("/api/admin/jobs", token),
           api<AssistantTurnSummary[]>("/api/admin/assistant/turns", token),
+          api<UserLoginEvent[]>("/api/admin/user-login-events", token),
+          api<LandingPageVisit[]>("/api/admin/landing-page-visits", token),
           api<ThemeProfile[]>("/api/admin/theme-profiles", token),
           api<AuditEvent[]>("/api/admin/audit-events", token),
         ]);
@@ -115,6 +138,8 @@ export function App() {
         models,
         jobs,
         assistantTurns,
+        userLoginEvents,
+        landingPageVisits,
         themeProfiles,
         auditEvents,
       });
@@ -249,6 +274,12 @@ export function App() {
             canOperate={canOperate}
             refresh={refresh}
             onError={handleError}
+          />
+        )}
+        {view === "visitors" && (
+          <VisitorsView
+            loginRows={filterRows(data.userLoginEvents, query)}
+            landingRows={filterRows(data.landingPageVisits, query)}
           />
         )}
         {view === "visual-syntax" && (
@@ -555,6 +586,55 @@ function AssistantView(props: {
         ),
       ])}
     />
+  );
+}
+
+function VisitorsView({
+  loginRows,
+  landingRows,
+}: {
+  loginRows: UserLoginEvent[];
+  landingRows: LandingPageVisit[];
+}) {
+  return (
+    <div className="visitor-admin">
+      <section>
+        <h2>User Login Events</h2>
+        <Table
+          headers={["User", "IP", "Country", "OS", "Browser", "Device", "Request", "Occurred"]}
+          rows={loginRows.map((event) => [
+            <RecordTitle title={event.displayName || event.email} subtitle={event.email} key="user" />,
+            event.ipAddress || "-",
+            event.country || "-",
+            event.os || "-",
+            event.browser || "-",
+            event.device || "-",
+            event.requestId || "-",
+            formatDate(event.occurredAt),
+          ])}
+        />
+      </section>
+
+      <section>
+        <div className="section-heading-row">
+          <h2>Landing Page Visits</h2>
+          <span>Retained for 3 days</span>
+        </div>
+        <Table
+          headers={["Visit", "IP", "Country", "OS", "Browser", "Device", "Referrer", "Occurred"]}
+          rows={landingRows.map((visit) => [
+            <RecordTitle title={visit.path || "/"} subtitle={visit.id} key="visit" />,
+            visit.ipAddress || "-",
+            visit.country || "-",
+            visit.os || "-",
+            visit.browser || "-",
+            visit.device || "-",
+            visit.referrer || "-",
+            formatDate(visit.occurredAt),
+          ])}
+        />
+      </section>
+    </div>
   );
 }
 
@@ -1022,6 +1102,8 @@ function subtitle(view: View) {
       return "Transformation and generation execution state.";
     case "assistant":
       return "Durable assistant turns, provider usage, and cancellation control.";
+    case "visitors":
+      return "Successful user logins and short-retention landing page visits.";
     case "visual-syntax":
       return "Concrete visual syntax documents for CIM, PIM, and PSM.";
     case "theme-control":

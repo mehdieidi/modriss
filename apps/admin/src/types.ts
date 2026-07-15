@@ -103,6 +103,35 @@ export type AuditEvent = {
   createdAt: string;
 };
 
+export type UserLoginEvent = {
+  id: string;
+  userId: string;
+  email: string;
+  displayName: string | null;
+  ipAddress: string;
+  country: string;
+  os: string;
+  browser: string;
+  device: string;
+  userAgent: string;
+  requestId: string | null;
+  occurredAt: string;
+};
+
+export type LandingPageVisit = {
+  id: string;
+  ipAddress: string;
+  country: string;
+  os: string;
+  browser: string;
+  device: string;
+  userAgent: string;
+  path: string;
+  referrer: string;
+  requestId: string | null;
+  occurredAt: string;
+};
+
 export type ThemeProfile = {
   id: string;
   name: string;

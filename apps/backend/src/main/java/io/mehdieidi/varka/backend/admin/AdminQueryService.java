@@ -228,6 +228,55 @@ ORDER BY p.updated_at DESC
                 instant(rs, "created_at")));
   }
 
+  public List<UserLoginEvent> userLoginEvents() {
+    return jdbc.query(
+        """
+        SELECT e.id, e.user_id, e.email_snapshot, u.display_name, e.ip_address, e.country, e.os,
+          e.browser, e.device, e.user_agent, e.request_id, e.occurred_at
+        FROM user_login_events e
+        LEFT JOIN users u ON u.id = e.user_id
+        ORDER BY e.occurred_at DESC LIMIT 500
+        """,
+        (rs, row) ->
+            new UserLoginEvent(
+                rs.getString("id"),
+                rs.getString("user_id"),
+                rs.getString("email_snapshot"),
+                rs.getString("display_name"),
+                rs.getString("ip_address"),
+                rs.getString("country"),
+                rs.getString("os"),
+                rs.getString("browser"),
+                rs.getString("device"),
+                rs.getString("user_agent"),
+                rs.getString("request_id"),
+                instant(rs, "occurred_at")));
+  }
+
+  public List<LandingPageVisit> landingPageVisits() {
+    return jdbc.query(
+        """
+        SELECT id, ip_address, country, os, browser, device, user_agent, path, referrer,
+          request_id, occurred_at
+        FROM landing_page_visits
+        WHERE occurred_at >= now() - interval '3 days'
+        ORDER BY occurred_at DESC LIMIT 500
+        """,
+        (rs, row) ->
+            new LandingPageVisit(
+                rs.getString("id"),
+                rs.getString("ip_address"),
+                rs.getString("country"),
+                rs.getString("os"),
+                rs.getString("browser"),
+                rs.getString("device"),
+                rs.getString("user_agent"),
+                rs.getString("path"),
+                rs.getString("referrer"),
+                rs.getString("request_id"),
+                instant(rs, "occurred_at")));
+  }
+
   public Map<String, Long> jobStatusCounts() {
     return jdbc
         .query(
@@ -365,4 +414,31 @@ ORDER BY p.updated_at DESC
       String details,
       String requestId,
       Instant createdAt) {}
+
+  public record UserLoginEvent(
+      String id,
+      String userId,
+      String email,
+      String displayName,
+      String ipAddress,
+      String country,
+      String os,
+      String browser,
+      String device,
+      String userAgent,
+      String requestId,
+      Instant occurredAt) {}
+
+  public record LandingPageVisit(
+      String id,
+      String ipAddress,
+      String country,
+      String os,
+      String browser,
+      String device,
+      String userAgent,
+      String path,
+      String referrer,
+      String requestId,
+      Instant occurredAt) {}
 }
