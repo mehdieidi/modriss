@@ -1,7 +1,7 @@
 [% /* Generates the sample event artifact. */ %]{
-  "id": "[%= eventOwnerObj.stableKey().toSlug() %]-sample",
-  "source": "varka.[%= eventKindText %]",
-  "detail-type": "[%= eventOwnerObj.eClass().getName() %]",
+  "id": "[%= (eventOwnerObj.stableKey().toSlug() + "-sample").jsonEscape() %]",
+  "source": "[%= ("varka." + eventKindText).jsonEscape() %]",
+  "detail-type": "[%= eventOwnerObj.eClass().getName().jsonEscape() %]",
   "time": "2026-01-01T00:00:00Z",
   "detail": {
     "sourceStableId": "[%= eventOwnerObj.stableKey().jsonEscape() %]",

@@ -120,6 +120,12 @@ final class EpsilonEgxGeneratorTest {
     assertTrue(
         Files.readString(outputDirectory.resolve("Makefile"))
             .contains("$(ARTIFACTS_DIR)/bootstrap"));
+    Path aslFile = outputDirectory.resolve("asl/representative-workflow.asl.json");
+    assertTrue(Files.isRegularFile(aslFile), "Expected generated ASL definition.");
+    String aslText = Files.readString(aslFile);
+    assertTrue(aslText.contains("\"QueryLanguage\": \"JSONPath\""));
+    assertTrue(aslText.contains("\"StartAt\": \"Start\""));
+    assertFalse(aslText.contains("\"Type\": \"Succeed\",\n      \"InputPath\""));
     assertRequiredProjectTreeWasGenerated(outputDirectory);
     assertGoOnlyArtifactsWereGenerated(outputDirectory);
     assertTraceFilesAreFinalized(outputDirectory);
@@ -778,6 +784,42 @@ final class EpsilonEgxGeneratorTest {
     set(lambdaFunction, "role", lambdaRole);
     set(lambdaFunction, "logGroup", logGroup);
 
+    EObject completedState = create(metamodelResource, "AslState");
+    set(completedState, "id", "state_workflow_completed");
+    set(completedState, "name", "Workflow Completed");
+    set(completedState, "stateName", "Completed");
+    set(completedState, "type", enumValue(metamodelResource, "AslStateType", "SUCCEED"));
+
+    EObject startState = create(metamodelResource, "AslState");
+    set(startState, "id", "state_workflow_start");
+    set(startState, "name", "Workflow Start");
+    set(startState, "stateName", "Start");
+    set(startState, "type", enumValue(metamodelResource, "AslStateType", "PASS"));
+    set(startState, "inputPath", "$");
+    set(startState, "outputPath", "$");
+    set(startState, "nextState", completedState);
+
+    EObject aslDocument = create(metamodelResource, "AslDocument");
+    set(aslDocument, "id", "document_representative_workflow");
+    set(aslDocument, "name", "Representative Workflow ASL");
+    set(aslDocument, "comment", "Representative workflow definition.");
+    set(aslDocument, "queryLanguage", "JSONPath");
+    set(aslDocument, "startAt", "Start");
+    add(aslDocument, "states", startState);
+    add(aslDocument, "states", completedState);
+
+    EObject stateMachine = create(metamodelResource, "StepFunctionStateMachine");
+    set(stateMachine, "id", "state_machine_representative_workflow");
+    set(stateMachine, "name", "Representative Workflow");
+    set(stateMachine, "logicalId", "RepresentativeWorkflow");
+    set(stateMachine, "stateMachineName", "representative-workflow");
+    set(
+        stateMachine,
+        "stateMachineType",
+        enumValue(metamodelResource, "StepFunctionType", "STANDARD"));
+    set(stateMachine, "role", lambdaRole);
+    set(stateMachine, "aslDocument", aslDocument);
+
     EObject stack = create(metamodelResource, "SamStack");
     set(stack, "id", "stack_main");
     set(stack, "name", "Main Stack");
@@ -792,6 +834,7 @@ final class EpsilonEgxGeneratorTest {
     add(stack, "resources", lambdaRole);
     add(stack, "resources", logGroup);
     add(stack, "resources", lambdaFunction);
+    add(stack, "resources", stateMachine);
     add(stack, "resources", bucket);
 
     EObject stage = create(metamodelResource, "AwsStage");
@@ -821,6 +864,7 @@ final class EpsilonEgxGeneratorTest {
     add(model, "allResources", lambdaRole);
     add(model, "allResources", logGroup);
     add(model, "allResources", lambdaFunction);
+    add(model, "allResources", stateMachine);
     add(model, "allResources", bucket);
 
     Resource modelResource = resourceSet.createResource(URI.createFileURI(modelFile.toString()));

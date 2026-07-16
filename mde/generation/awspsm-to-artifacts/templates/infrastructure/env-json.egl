@@ -1,8 +1,8 @@
 [% /* Generates the env json artifact. */ %]{
-  "stage": "[%= stageObj.stageName %]",
-  "environmentClass": "[%= stageObj.environmentClass.asString() %]",
-  "accountId": "[%= stageObj.accountId.orElseText("") %]",
-  "region": "[%= stageObj.region.orElseText("") %]",
+  "stage": "[%= stageObj.stageName.jsonEscape() %]",
+  "environmentClass": "[%= stageObj.environmentClass.asString().jsonEscape() %]",
+  "accountId": "[%= stageObj.accountId.orElseText("").jsonEscape() %]",
+  "region": "[%= stageObj.region.orElseText("").jsonEscape() %]",
   "parameters": {
 [% var paramSeq = stageObj.parameterOverrides.sortBy(kvObj | kvObj.key); %]
 [% for (kvObj in paramSeq) { %]

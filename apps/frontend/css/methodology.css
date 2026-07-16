@@ -507,7 +507,10 @@
   background: color-mix(in srgb, var(--surface-2) 88%, var(--panel) 12%);
   color: var(--text-strong);
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition), color var(--transition);
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition);
 }
 
 .methodology-btn:hover {

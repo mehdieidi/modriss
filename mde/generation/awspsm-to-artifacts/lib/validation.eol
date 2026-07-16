@@ -106,6 +106,20 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
     if (stateMachineObj.aslDocument.isDefined() and stateMachineObj.aslDocument.states.none(stateObj | stateObj.stateName = stateMachineObj.aslDocument.startAt)) {
       issueSeq.add(self.issueTuple("STATE_MACHINE_START_AT_INVALID", "BLOCKER", "ASL StartAt does not reference a modeled state: " + stateMachineObj.stableKey(), stateMachineObj, true));
     }
+    if (stateMachineObj.aslDocument.isDefined()) {
+      for (stateObj in stateMachineObj.aslDocument.states) {
+        var stateTypeText = stateObj.type.asString();
+        if (stateTypeText = "CHOICE" and stateObj.choices.isEmpty()) {
+          issueSeq.add(self.issueTuple("ASL_CHOICE_RULES_MISSING", "BLOCKER", "Choice state has no modeled choices: " + stateObj.stableKey(), stateObj, true));
+        }
+        if (stateTypeText = "PARALLEL" and stateObj.branches.isEmpty()) {
+          issueSeq.add(self.issueTuple("ASL_PARALLEL_BRANCHES_MISSING", "BLOCKER", "Parallel state has no modeled branches: " + stateObj.stableKey(), stateObj, true));
+        }
+        if (stateTypeText = "MAP" and (stateObj.mapConfig.isUndefined() or stateObj.mapConfig.itemProcessor.isUndefined())) {
+          issueSeq.add(self.issueTuple("ASL_MAP_PROCESSOR_MISSING", "BLOCKER", "Map state has no modeled item processor: " + stateObj.stableKey(), stateObj, true));
+        }
+      }
+    }
   }
 
   for (tableObj in AWSPSMSTORAGE!DynamoDbTable.all.sortBy(tableObj | tableObj.cfnLogicalId())) {

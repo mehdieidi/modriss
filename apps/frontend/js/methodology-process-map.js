@@ -5,7 +5,11 @@ import { state } from "./state.js";
 import { el } from "./dom.js";
 import { escapeHtml } from "./utils.js";
 import { phaseNarrative } from "./methodology-narratives.mjs";
-import { isModelingLevel, modelingElementDefinition, modelingKernelTypes } from "./modeling-config-data.js";
+import {
+  isModelingLevel,
+  modelingElementDefinition,
+  modelingKernelTypes,
+} from "./modeling-config-data.js";
 
 const ICON_BASE = "/assets/icons/process-map";
 const NODE_W = 148;
@@ -566,7 +570,8 @@ function renderDetail(host, node, process, level) {
     if (workProducts.length) {
       parts.push(renderChipSection("Metamodel work products", workProducts.slice(0, 18)));
     }
-    if (paletteFocus.length) parts.push(renderChipSection("Related palette elements", paletteFocus));
+    if (paletteFocus.length)
+      parts.push(renderChipSection("Related palette elements", paletteFocus));
     if (guidelines.length) parts.push(renderGuidelines(guidelines));
   } else if (node.stage) {
     parts.push(`<span class="map-detail-kind">Stage</span>`);
@@ -574,7 +579,8 @@ function renderDetail(host, node, process, level) {
     parts.push(`<p>${escapeHtml(node.stage.objective || "")}</p>`);
     if (role) parts.push(renderRole(role));
     if (artifacts.length) parts.push(renderArtifacts(artifacts));
-    if (paletteFocus.length) parts.push(renderChipSection("Related palette elements", paletteFocus));
+    if (paletteFocus.length)
+      parts.push(renderChipSection("Related palette elements", paletteFocus));
     if (guidelines.length) parts.push(renderGuidelines(guidelines));
     if (node.stage.tasks?.length) {
       parts.push(renderSectionTitle("Tasks"));
@@ -589,7 +595,8 @@ function renderDetail(host, node, process, level) {
     parts.push(`<p>${escapeHtml(phase.objective || narrative.summary)}</p>`);
     if (role) parts.push(renderRole(role));
     if (artifacts.length) parts.push(renderArtifacts(artifacts));
-    if (paletteFocus.length) parts.push(renderChipSection("Related palette elements", paletteFocus));
+    if (paletteFocus.length)
+      parts.push(renderChipSection("Related palette elements", paletteFocus));
     if (guidelines.length) parts.push(renderGuidelines(guidelines));
     if (phase.entryCriteria?.length) parts.push(renderListSection("Entry", phase.entryCriteria));
     if (phase.exitCriteria?.length) parts.push(renderListSection("Exit", phase.exitCriteria));
@@ -721,9 +728,9 @@ function paletteFocusForNode(phase, stage, task) {
   const stages = stage ? [stage] : phase?.stages || [];
   return [
     ...new Set(
-      stages.flatMap(leafStages).flatMap((leaf) =>
-        (leaf.tasks || []).flatMap((item) => item.paletteFocus || []),
-      ),
+      stages
+        .flatMap(leafStages)
+        .flatMap((leaf) => (leaf.tasks || []).flatMap((item) => item.paletteFocus || [])),
     ),
   ];
 }
@@ -825,7 +832,8 @@ function renderProcessMap() {
   canvasHost.appendChild(scaler);
 
   const selectedNode =
-    layout.nodes.find((n) => n.id === selectedId) || mapContextDetailNode(process, stack, selectedId);
+    layout.nodes.find((n) => n.id === selectedId) ||
+    mapContextDetailNode(process, stack, selectedId);
   renderDetail(detailHost, selectedNode, process, state.activeType);
   if (legendHost) renderLegend(legendHost, stack);
 }

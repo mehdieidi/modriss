@@ -467,7 +467,6 @@ function renderStageTrack(host, phase, progress) {
     track.appendChild(chip);
   });
   host.appendChild(track);
-
 }
 
 function renderTaskCard(task, progress) {
@@ -1035,7 +1034,6 @@ export function initGuidedModeling() {
 
   loadGuidedModelingDefinitions();
   initMethodologyProcessMap();
-
 }
 
 export function onGuidedModelingContextChanged() {

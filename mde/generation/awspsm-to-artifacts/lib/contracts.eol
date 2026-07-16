@@ -232,32 +232,53 @@ operation AWSPSMAPI!ApiGatewayResponseModel openapiModelName() : String {
   return self.openapiSchemaName();
 }
 
-/** Renders emit asl state json. */
+/** Renders a complete ASL document. Keeping the document assembly here prevents EGL
+ * control-block whitespace from corrupting JSON object member boundaries. */
+operation AWSPSMWORKFLOW!AslDocument emitAslDocumentJson(stateMachineObj : AWSPSMWORKFLOW!StepFunctionStateMachine) : String {
+  var outText = "{\n";
+  outText = outText + "  \"Comment\": " + self.comment.orElseText(stateMachineObj.stateMachineName.orElseText("Generated workflow")).jsonString() + ",\n";
+  if (self.queryLanguage.isPresent()) {
+    outText = outText + "  \"QueryLanguage\": " + self.queryLanguage.jsonString() + ",\n";
+  }
+  outText = outText + "  \"StartAt\": " + self.startAt.jsonString() + ",\n  \"States\": {\n";
+  var stateSeq = self.states.sortBy(stateObj | stateObj.stateName);
+  for (stateObj in stateSeq) {
+    outText = outText + stateObj.emitAslStateJson(4);
+    if (stateObj <> stateSeq.last()) {
+      outText = outText + ",";
+    }
+    outText = outText + "\n";
+  }
+  return outText + "  }\n}\n";
+}
+
+/** Renders a modeled ASL state as a valid, indented JSON member. */
 operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : String {
+  var stateTypeText = self.type.asString();
   var outText = spaces(indentCount) + self.stateName.jsonString() + ": {\n";
-  outText = outText + spaces(indentCount + 2) + "\"Type\": " + self.modelFeatureValue("type").asString().firstToUpperCase().toLowerCase().firstToUpperCase().jsonString();
+  outText = outText + spaces(indentCount + 2) + "\"Type\": " + stateTypeText.toLowerCase().firstToUpperCase().jsonString();
   if (self.modelFeatureValue("type").asString() = "TASK" and self.invokedResource.isDefined()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Resource\": " + ("${" + self.invokedResource.cfnLogicalId() + "Arn}").jsonString();
   }
   else if (self.resource.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Resource\": " + self.resource.jsonString();
   }
-  if (self.inputPath.isPresent()) {
+  if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL" and self.inputPath.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"InputPath\": " + self.inputPath.jsonString();
   }
-  if (self.outputPath.isPresent()) {
+  if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL" and self.outputPath.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"OutputPath\": " + self.outputPath.jsonString();
   }
-  if (self.resultPath.isPresent()) {
+  if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL" and self.resultPath.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"ResultPath\": " + self.resultPath.jsonString();
   }
-  if (self.parametersJson.isPresent()) {
+  if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL" and self.parametersJson.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Parameters\": " + self.parametersJson;
   }
-  if (self.argumentsJson.isPresent()) {
+  if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL" and self.argumentsJson.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Arguments\": " + self.argumentsJson;
   }
-  if (self.assignJson.isPresent()) {
+  if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL" and self.assignJson.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Assign\": " + self.assignJson;
   }
   if (self.modelFeatureValue("type").asString() = "TASK" and self.timeoutSeconds.isDefined() and self.timeoutSeconds > 0) {
@@ -266,7 +287,7 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
   if (self.modelFeatureValue("type").asString() = "TASK" and self.heartbeatSeconds.isDefined() and self.heartbeatSeconds > 0) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"HeartbeatSeconds\": " + self.heartbeatSeconds.asString();
   }
-  if (self.modelFeatureValue("type").asString() = "TASK" and self.retry.notEmpty()) {
+  if ((stateTypeText = "TASK" or stateTypeText = "PARALLEL" or stateTypeText = "MAP") and self.retry.notEmpty()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Retry\": [\n";
     for (retryObj in self.retry) {
       outText = outText + retryObj.emitAslRetryJson(indentCount + 4);
@@ -277,7 +298,7 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
     }
     outText = outText + spaces(indentCount + 2) + "]";
   }
-  if (self.modelFeatureValue("type").asString() = "TASK" and self.`catch`.notEmpty()) {
+  if ((stateTypeText = "TASK" or stateTypeText = "PARALLEL" or stateTypeText = "MAP") and self.`catch`.notEmpty()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Catch\": [\n";
     for (catchObj in self.`catch`) {
       outText = outText + catchObj.emitAslCatchJson(indentCount + 4);
@@ -288,7 +309,7 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
     }
     outText = outText + spaces(indentCount + 2) + "]";
   }
-  if (self.choices.notEmpty()) {
+  if (stateTypeText = "CHOICE" and self.choices.notEmpty()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Choices\": [\n";
     for (choiceObj in self.choices) {
       outText = outText + choiceObj.emitAslChoiceJson(indentCount + 4);
@@ -302,17 +323,55 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
   if (self.modelFeatureValue("type").asString() = "WAIT") {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Seconds\": 0";
   }
-  if (self.nextState.isDefined()) {
+  if (stateTypeText = "PARALLEL" and self.branches.notEmpty()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Branches\": [\n";
+    for (branchObj in self.branches) {
+      outText = outText + branchObj.emitAslBranchJson(indentCount + 4);
+      if (branchObj <> self.branches.last()) {
+        outText = outText + ",";
+      }
+      outText = outText + "\n";
+    }
+    outText = outText + spaces(indentCount + 2) + "]";
+  }
+  if (stateTypeText = "MAP" and self.mapConfig.isDefined() and self.mapConfig.itemProcessor.isDefined()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"ItemsPath\": " + self.mapConfig.itemsPath.orElseText("$").jsonString();
+    if (self.mapConfig.maxConcurrency.isDefined() and self.mapConfig.maxConcurrency > 0) {
+      outText = outText + ",\n" + spaces(indentCount + 2) + "\"MaxConcurrency\": " + self.mapConfig.maxConcurrency.asString();
+    }
+    if (self.mapConfig.itemSelectorJson.isPresent()) {
+      outText = outText + ",\n" + spaces(indentCount + 2) + "\"ItemSelector\": " + self.mapConfig.itemSelectorJson;
+    }
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"ItemProcessor\": " + self.mapConfig.itemProcessor.emitAslBranchJson(indentCount + 2);
+  }
+  if (stateTypeText = "CHOICE" and self.nextState.isDefined()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Default\": " + self.nextState.stateName.jsonString();
+  }
+  else if (stateTypeText <> "CHOICE" and self.nextState.isDefined()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Next\": " + self.nextState.stateName.jsonString();
   }
-  else if (self.nextStateName.isPresent()) {
+  else if (stateTypeText <> "CHOICE" and self.nextStateName.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Next\": " + self.nextStateName.jsonString();
   }
-  else if (self.end = true and self.modelFeatureValue("type").asString() <> "SUCCEED" and self.modelFeatureValue("type").asString() <> "FAIL") {
+  else if (self.end = true and stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL" and stateTypeText <> "CHOICE") {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"End\": true";
   }
   outText = outText + "\n" + spaces(indentCount) + "}";
   return outText;
+}
+
+/** Renders an ASL branch or a Map item processor. */
+operation AWSPSMWORKFLOW!AslBranch emitAslBranchJson(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "{\n" + spaces(indentCount + 2) + "\"StartAt\": " + self.startAt.jsonString() + ",\n" + spaces(indentCount + 2) + "\"States\": {\n";
+  var stateSeq = self.states.sortBy(stateObj | stateObj.stateName);
+  for (stateObj in stateSeq) {
+    outText = outText + stateObj.emitAslStateJson(indentCount + 4);
+    if (stateObj <> stateSeq.last()) {
+      outText = outText + ",";
+    }
+    outText = outText + "\n";
+  }
+  return outText + spaces(indentCount + 2) + "}\n" + spaces(indentCount) + "}";
 }
 
 /** Renders emit asl retry json. */

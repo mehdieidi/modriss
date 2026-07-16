@@ -60,8 +60,7 @@ public final class ModelingProcessService {
   public Map<String, Object> coverageMatrix(String level) {
     String normalized = normalizeLevel(level);
     if ("end-to-end".equals(normalized) || "artifact".equals(normalized)) {
-      throw new PlatformException(
-          400, "Coverage matrix is not defined for " + normalized + ".");
+      throw new PlatformException(400, "Coverage matrix is not defined for " + normalized + ".");
     }
     Path file = methodologyRoot().resolve("coverage-matrix").resolve(normalized + "-coverage.json");
     return readJsonFile(file, "coverage matrix for " + normalized);
@@ -78,8 +77,7 @@ public final class ModelingProcessService {
   public Map<String, Object> coverageStatus(String level, Map<String, Object> model) {
     String normalized = normalizeLevel(level);
     if ("end-to-end".equals(normalized) || "artifact".equals(normalized)) {
-      throw new PlatformException(
-          400, "Coverage status is not defined for " + normalized + ".");
+      throw new PlatformException(400, "Coverage status is not defined for " + normalized + ".");
     }
     Map<String, Object> matrix = coverageMatrix(normalized);
     List<Map<String, Object>> entries = listOfMaps(matrix.get("entries"));

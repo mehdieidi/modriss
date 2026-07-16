@@ -1,9 +1,1 @@
-[% /* Generates the asl artifact. */ %]{
-  "Comment": "[%= aslDocObj.comment.orElseText(stateMachineObj.stateMachineName.orElseText("Generated workflow")).jsonEscape() %]",
-  "StartAt": "[%= aslDocObj.startAt.jsonEscape() %]",
-  "States": {
-[% for (stateObj in aslDocObj.states.sortBy(stateObj | stateObj.stateName)) { %]
-[%= stateObj.emitAslStateJson(4) %][% if (stateObj <> aslDocObj.states.sortBy(stateObj | stateObj.stateName).last()) { %],[% } %]
-[% } %]
-  }
-}
+[% /* Generates the ASL artifact as a single formatted JSON document. */ %][%= aslDocObj.emitAslDocumentJson(stateMachineObj) %]
