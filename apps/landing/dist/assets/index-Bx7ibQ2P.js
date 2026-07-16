@@ -11607,7 +11607,8 @@ function C() {
             children: [
               (0, m.jsx)(`a`, { href: `#how-it-works`, onClick: n, children: `How it works` }),
               (0, m.jsx)(`a`, { href: `#capabilities`, onClick: n, children: `Capabilities` }),
-              (0, m.jsx)(`a`, { href: `#trust`, onClick: n, children: `Built with intent` }),
+              (0, m.jsx)(`a`, { href: `#outputs`, onClick: n, children: `Outputs` }),
+              (0, m.jsx)(`a`, { href: `#trust`, onClick: n, children: `Trust & control` }),
               (0, m.jsxs)(`a`, {
                 className: `nav-resource`,
                 href: v,
@@ -11639,20 +11640,20 @@ function C() {
                 className: `eyebrow`,
                 children: [
                   (0, m.jsx)(`span`, { className: `pulse` }),
-                  ` Model-driven engineering for AWS serverless`,
+                  ` AI-assisted model-driven engineering for AWS serverless`,
                 ],
               }),
               (0, m.jsxs)(`h1`, {
                 children: [
-                  `Make the system`,
+                  `From domain intent`,
                   (0, m.jsx)(`br`, {}),
-                  (0, m.jsx)(`em`, { children: `make sense` }),
-                  ` first.`,
+                  `to `,
+                  (0, m.jsx)(`em`, { children: `defensible systems.` }),
                 ],
               }),
               (0, m.jsx)(`p`, {
                 className: `hero-lede`,
-                children: `Varka turns business intent into a reviewable AWS serverless project—through formal models, validation, and an AI assistant that works inside clear guardrails.`,
+                children: `Varka connects business intent, software architecture, and AWS deployment design in one traceable modeling pipeline—then generates a project your team can inspect, test, and own.`,
               }),
               (0, m.jsxs)(`div`, {
                 className: `hero-actions`,
@@ -11704,11 +11705,11 @@ function C() {
           }),
           (0, m.jsx)(`i`, {}),
           (0, m.jsxs)(`span`, {
-            children: [(0, m.jsx)(`b`, { children: `AWS PSM` }), ` deployable design`],
+            children: [(0, m.jsx)(`b`, { children: `AWS PSM` }), ` deployment design`],
           }),
           (0, m.jsx)(`i`, {}),
           (0, m.jsxs)(`span`, {
-            children: [(0, m.jsx)(`b`, { children: `Artifacts` }), ` code & infrastructure`],
+            children: [(0, m.jsx)(`b`, { children: `EVL · ETL · EGX/EGL` }), ` checked pipeline`],
           }),
         ],
       }),
@@ -11724,13 +11725,17 @@ function C() {
                 children: `A connected path, not a handoff`,
               }),
               (0, m.jsxs)(`h2`, {
-                children: [`Keep the reason`, (0, m.jsx)(`br`, {}), `connected to the result.`],
+                children: [
+                  `Keep intent`,
+                  (0, m.jsx)(`br`, {}),
+                  (0, m.jsx)(`em`, { children: `connected to implementation.` }),
+                ],
               }),
             ],
           }),
           (0, m.jsx)(`p`, {
             className: `section-copy`,
-            children: `Varka lets teams move deliberately from the problem they are solving to an implementation they can inspect, refine, and take ownership of.`,
+            children: `Varka applies a model-driven engineering pipeline: validate each model, transform it with explicit rules, then generate artifacts from the AWS-specific design. Traceability remains available across the chain.`,
           }),
           (0, m.jsxs)(`div`, {
             className: `journey`,
@@ -11743,13 +11748,13 @@ function C() {
                     className: `journey-icon`,
                     children: (0, m.jsx)(S, { name: `layers` }),
                   }),
-                  (0, m.jsx)(`h3`, { children: `Model intent` }),
+                  (0, m.jsx)(`h3`, { children: `Specify the domain` }),
                   (0, m.jsx)(`p`, {
-                    children: `Capture goals, actors, policies, domain concepts, events, and processes without committing to technology.`,
+                    children: `Use a computation-independent model to express capabilities, actors, policies, concepts, events, and processes without premature technology choices.`,
                   }),
                   (0, m.jsx)(`span`, {
                     className: `model-label`,
-                    children: `CIM · Computation-independent`,
+                    children: `CIM · validate · ETL`,
                   }),
                 ],
               }),
@@ -11761,13 +11766,13 @@ function C() {
                     className: `journey-icon`,
                     children: (0, m.jsx)(S, { name: `workflow` }),
                   }),
-                  (0, m.jsx)(`h3`, { children: `Refine architecture` }),
+                  (0, m.jsx)(`h3`, { children: `Engineer the architecture` }),
                   (0, m.jsx)(`p`, {
-                    children: `Shape services, APIs, workflows, events, data stores, identities, and integrations in a provider-independent model.`,
+                    children: `Refine intent into services, contracts, workflows, data, security, identities, and integrations in a platform-independent model.`,
                   }),
                   (0, m.jsx)(`span`, {
                     className: `model-label`,
-                    children: `PIM · Platform-independent`,
+                    children: `PIM · validate · ETL`,
                   }),
                 ],
               }),
@@ -11779,11 +11784,14 @@ function C() {
                     className: `journey-icon`,
                     children: (0, m.jsx)(S, { name: `code` }),
                   }),
-                  (0, m.jsx)(`h3`, { children: `Generate, then own` }),
+                  (0, m.jsx)(`h3`, { children: `Generate a reviewable baseline` }),
                   (0, m.jsx)(`p`, {
-                    children: `Refine to AWS resources and generate a project with infrastructure, Go handlers, contracts, tests, and docs for review.`,
+                    children: `Map the architecture to AWS and generate infrastructure, Go handlers, contracts, tests, automation, and documentation for human review.`,
                   }),
-                  (0, m.jsx)(`span`, { className: `model-label`, children: `AWS PSM · Artifacts` }),
+                  (0, m.jsx)(`span`, {
+                    className: `model-label`,
+                    children: `AWS PSM · validate · EGX/EGL`,
+                  }),
                 ],
               }),
             ],
@@ -11805,8 +11813,8 @@ function C() {
                     (0, m.jsxs)(`div`, {
                       className: `panel-head`,
                       children: [
-                        (0, m.jsx)(`span`, { children: `Validation` }),
-                        (0, m.jsx)(`b`, { children: `0 errors` }),
+                        (0, m.jsx)(`span`, { children: `Model assurance` }),
+                        (0, m.jsx)(`b`, { children: `validation gate` }),
                       ],
                     }),
                     (0, m.jsxs)(`div`, {
@@ -11815,8 +11823,10 @@ function C() {
                         (0, m.jsx)(`span`, { className: `success-dot`, children: `✓` }),
                         (0, m.jsxs)(`div`, {
                           children: [
-                            (0, m.jsx)(`strong`, { children: `Architecture is consistent` }),
-                            (0, m.jsx)(`small`, { children: `42 constraints evaluated` }),
+                            (0, m.jsx)(`strong`, { children: `Structure is checked` }),
+                            (0, m.jsx)(`small`, {
+                              children: `Ecore conformance, references & multiplicities`,
+                            }),
                           ],
                         }),
                       ],
@@ -11827,8 +11837,10 @@ function C() {
                         (0, m.jsx)(`span`, { className: `success-dot`, children: `✓` }),
                         (0, m.jsxs)(`div`, {
                           children: [
-                            (0, m.jsx)(`strong`, { children: `Relationships are valid` }),
-                            (0, m.jsx)(`small`, { children: `Metamodel rules satisfied` }),
+                            (0, m.jsx)(`strong`, { children: `Semantics are checked` }),
+                            (0, m.jsx)(`small`, {
+                              children: `Domain constraints and critiques in EVL`,
+                            }),
                           ],
                         }),
                       ],
@@ -11839,8 +11851,8 @@ function C() {
                         (0, m.jsx)(`span`, { className: `success-dot`, children: `✓` }),
                         (0, m.jsxs)(`div`, {
                           children: [
-                            (0, m.jsx)(`strong`, { children: `Ready for transformation` }),
-                            (0, m.jsx)(`small`, { children: `CIM → PIM` }),
+                            (0, m.jsx)(`strong`, { children: `Transformation is explicit` }),
+                            (0, m.jsx)(`small`, { children: `Rule-based CIM → PIM → AWS PSM` }),
                           ],
                         }),
                       ],
@@ -11853,17 +11865,17 @@ function C() {
                 children: [
                   (0, m.jsx)(`div`, {
                     className: `eyebrow`,
-                    children: `Built for decisions you can defend`,
+                    children: `Formal models, practical workbenches`,
                   }),
                   (0, m.jsxs)(`h2`, {
                     children: [
-                      `Visual clarity.`,
+                      `Visual modeling.`,
                       (0, m.jsx)(`br`, {}),
-                      (0, m.jsx)(`em`, { children: `Formal confidence.` }),
+                      (0, m.jsx)(`em`, { children: `Explicit semantics.` }),
                     ],
                   }),
                   (0, m.jsx)(`p`, {
-                    children: `Drag-and-drop modeling does not have to mean loose thinking. Varka’s visual workbenches are driven by formal Ecore metamodels; semantic rules are checked with Eclipse Epsilon validation before each transformation.`,
+                    children: `Varka’s editors implement domain-specific modeling languages (DSMLs) defined by Ecore metamodels. Structural conformance and domain-specific EVL constraints are evaluated before transformation—so diagramming is connected to a machine-checkable model.`,
                   }),
                   (0, m.jsxs)(`a`, {
                     className: `inline-link`,
@@ -11883,31 +11895,254 @@ function C() {
               (0, m.jsxs)(`article`, {
                 children: [
                   (0, m.jsx)(S, { name: `layers` }),
-                  (0, m.jsx)(`h3`, { children: `Three focused workbenches` }),
+                  (0, m.jsx)(`h3`, { children: `Three modeling levels` }),
                   (0, m.jsx)(`p`, {
-                    children: `Purpose-built visual editors for business, architecture, and AWS-specific modeling levels.`,
+                    children: `Focused workbenches for business intent, platform-independent architecture, and AWS-specific deployment design.`,
                   }),
                 ],
               }),
               (0, m.jsxs)(`article`, {
                 children: [
                   (0, m.jsx)(S, { name: `terminal` }),
-                  (0, m.jsx)(`h3`, { children: `Reviewable output` }),
+                  (0, m.jsx)(`h3`, { children: `Traceable, reviewable delivery` }),
                   (0, m.jsx)(`p`, {
-                    children: `Generated projects include infrastructure, source code, contracts, tests, and documentation—not a black box.`,
+                    children: `Rule-based transformations and model-to-text generation produce inspectable artifacts rather than opaque output.`,
                   }),
                 ],
               }),
               (0, m.jsxs)(`article`, {
                 children: [
                   (0, m.jsx)(S, { name: `shield` }),
-                  (0, m.jsx)(`h3`, { children: `Guardrails for AI work` }),
+                  (0, m.jsx)(`h3`, { children: `Human-governed AI assistance` }),
                   (0, m.jsx)(`p`, {
-                    children: `The optional assistant acts through validated tools, audits changes, supports checkpoints, and requires confirmation for destructive batches.`,
+                    children: `A model-grounded agent uses metamodel-checked tools; destructive batches require confirmation, and checkpoints support undo.`,
                   }),
                 ],
               }),
             ],
+          }),
+        ],
+      }),
+      (0, m.jsxs)(`section`, {
+        className: `section outputs`,
+        id: `outputs`,
+        children: [
+          (0, m.jsxs)(`div`, {
+            className: `outputs-intro`,
+            children: [
+              (0, m.jsx)(`div`, { className: `eyebrow`, children: `What Varka produces` }),
+              (0, m.jsxs)(`h2`, {
+                children: [
+                  `A project baseline,`,
+                  (0, m.jsx)(`br`, {}),
+                  (0, m.jsx)(`em`, { children: `not a black box.` }),
+                ],
+              }),
+              (0, m.jsx)(`p`, {
+                children: `Generation begins from the validated AWS PSM and emits an inspectable serverless project. The exact contents depend on the model; generated code remains a starting point for normal engineering review and completion.`,
+              }),
+            ],
+          }),
+          (0, m.jsxs)(`div`, {
+            className: `output-grid`,
+            children: [
+              (0, m.jsxs)(`article`, {
+                children: [
+                  (0, m.jsx)(`span`, { className: `output-index`, children: `01` }),
+                  (0, m.jsx)(S, { name: `code` }),
+                  (0, m.jsx)(`h3`, { children: `Infrastructure` }),
+                  (0, m.jsx)(`p`, {
+                    children: `SAM or CloudFormation resources, stages, configuration, IAM, APIs, storage, messaging, and workflows.`,
+                  }),
+                ],
+              }),
+              (0, m.jsxs)(`article`, {
+                children: [
+                  (0, m.jsx)(`span`, { className: `output-index`, children: `02` }),
+                  (0, m.jsx)(S, { name: `terminal` }),
+                  (0, m.jsx)(`h3`, { children: `Application runtime` }),
+                  (0, m.jsx)(`p`, {
+                    children: `Go Lambda handlers and shared runtime packages shaped by the modeled services, flows, and contracts.`,
+                  }),
+                ],
+              }),
+              (0, m.jsxs)(`article`, {
+                children: [
+                  (0, m.jsx)(`span`, { className: `output-index`, children: `03` }),
+                  (0, m.jsx)(S, { name: `workflow` }),
+                  (0, m.jsx)(`h3`, { children: `Contracts & verification` }),
+                  (0, m.jsx)(`p`, {
+                    children: `OpenAPI, JSON Schema, ASL, sample events, and unit, integration, contract, workflow, event, and security tests.`,
+                  }),
+                ],
+              }),
+              (0, m.jsxs)(`article`, {
+                children: [
+                  (0, m.jsx)(`span`, { className: `output-index`, children: `04` }),
+                  (0, m.jsx)(S, { name: `book` }),
+                  (0, m.jsx)(`h3`, { children: `Operational evidence` }),
+                  (0, m.jsx)(`p`, {
+                    children: `Build and deployment scripts, GitHub Actions workflows, documentation, trace reports, and manual-action reports.`,
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+      (0, m.jsxs)(`section`, {
+        className: `section use-cases`,
+        children: [
+          (0, m.jsxs)(`div`, {
+            className: `section-intro`,
+            children: [
+              (0, m.jsx)(`div`, { className: `eyebrow`, children: `Where Varka fits` }),
+              (0, m.jsxs)(`h2`, {
+                children: [
+                  `For systems where`,
+                  (0, m.jsx)(`br`, {}),
+                  (0, m.jsx)(`em`, { children: `reasoning must survive delivery.` }),
+                ],
+              }),
+            ],
+          }),
+          (0, m.jsxs)(`div`, {
+            className: `use-case-grid`,
+            children: [
+              (0, m.jsxs)(`article`, {
+                children: [
+                  (0, m.jsx)(`h3`, { children: `New serverless products` }),
+                  (0, m.jsx)(`p`, {
+                    children: `Turn an early domain model into a documented AWS baseline without losing the decisions that shaped it.`,
+                  }),
+                ],
+              }),
+              (0, m.jsxs)(`article`, {
+                children: [
+                  (0, m.jsx)(`h3`, { children: `Complex event-driven systems` }),
+                  (0, m.jsx)(`p`, {
+                    children: `Make service boundaries, events, workflows, data ownership, and operational concerns explicit before implementation.`,
+                  }),
+                ],
+              }),
+              (0, m.jsxs)(`article`, {
+                children: [
+                  (0, m.jsx)(`h3`, { children: `Architecture review & research` }),
+                  (0, m.jsx)(`p`, {
+                    children: `Use an inspectable chain of models, constraints, transformations, traces, and generated artifacts as evidence for design decisions.`,
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+      (0, m.jsxs)(`section`, {
+        className: `section feature-matrix`,
+        "aria-labelledby": `feature-matrix-title`,
+        children: [
+          (0, m.jsxs)(`div`, {
+            className: `matrix-heading`,
+            children: [
+              (0, m.jsx)(`div`, { className: `eyebrow`, children: `Platform capabilities` }),
+              (0, m.jsxs)(`h2`, {
+                id: `feature-matrix-title`,
+                children: [
+                  `What is carried`,
+                  (0, m.jsx)(`br`, {}),
+                  (0, m.jsx)(`em`, { children: `through the pipeline.` }),
+                ],
+              }),
+              (0, m.jsx)(`p`, {
+                children: `Each capability belongs to a defined stage of the engineering workflow, making both the result and its provenance available for review.`,
+              }),
+            ],
+          }),
+          (0, m.jsx)(`div`, {
+            className: `matrix-wrap`,
+            children: (0, m.jsxs)(`table`, {
+              children: [
+                (0, m.jsx)(`thead`, {
+                  children: (0, m.jsxs)(`tr`, {
+                    children: [
+                      (0, m.jsx)(`th`, { scope: `col`, children: `Capability` }),
+                      (0, m.jsx)(`th`, { scope: `col`, children: `How Varka implements it` }),
+                      (0, m.jsx)(`th`, { scope: `col`, children: `Engineering value` }),
+                    ],
+                  }),
+                }),
+                (0, m.jsxs)(`tbody`, {
+                  children: [
+                    (0, m.jsxs)(`tr`, {
+                      children: [
+                        (0, m.jsx)(`th`, { scope: `row`, children: `Domain-specific models` }),
+                        (0, m.jsx)(`td`, {
+                          children: `Browser workbenches for CIM, PIM, and AWS PSM, defined by Ecore metamodels.`,
+                        }),
+                        (0, m.jsx)(`td`, {
+                          children: `Captures intent, architecture, and deployment concerns at appropriate abstraction levels.`,
+                        }),
+                      ],
+                    }),
+                    (0, m.jsxs)(`tr`, {
+                      children: [
+                        (0, m.jsx)(`th`, { scope: `row`, children: `Validation gates` }),
+                        (0, m.jsx)(`td`, {
+                          children: `Structural Ecore checks plus EVL constraints and critiques before transformation.`,
+                        }),
+                        (0, m.jsx)(`td`, {
+                          children: `Finds model conformance and domain-rule issues before they reach generated artifacts.`,
+                        }),
+                      ],
+                    }),
+                    (0, m.jsxs)(`tr`, {
+                      children: [
+                        (0, m.jsx)(`th`, { scope: `row`, children: `Explicit transformations` }),
+                        (0, m.jsx)(`td`, {
+                          children: `Rule-based ETL transformations from CIM to PIM and PIM to AWS PSM.`,
+                        }),
+                        (0, m.jsx)(`td`, {
+                          children: `Makes refinement logic inspectable instead of hiding design decisions in a generator.`,
+                        }),
+                      ],
+                    }),
+                    (0, m.jsxs)(`tr`, {
+                      children: [
+                        (0, m.jsx)(`th`, { scope: `row`, children: `Reviewable generation` }),
+                        (0, m.jsx)(`td`, {
+                          children: `EGX/EGL generation of AWS infrastructure, Go code, contracts, tests, automation, and documentation.`,
+                        }),
+                        (0, m.jsx)(`td`, {
+                          children: `Provides a maintainable project baseline with protected regions and manual-action reports.`,
+                        }),
+                      ],
+                    }),
+                    (0, m.jsxs)(`tr`, {
+                      children: [
+                        (0, m.jsx)(`th`, { scope: `row`, children: `Traceability` }),
+                        (0, m.jsx)(`td`, {
+                          children: `Trace links and reports connect source concepts, refined elements, and generated artifacts.`,
+                        }),
+                        (0, m.jsx)(`td`, {
+                          children: `Supports impact analysis, architecture review, and defensible design rationale.`,
+                        }),
+                      ],
+                    }),
+                    (0, m.jsxs)(`tr`, {
+                      children: [
+                        (0, m.jsx)(`th`, { scope: `row`, children: `Bounded AI assistance` }),
+                        (0, m.jsx)(`td`, {
+                          children: `A durable agent loop uses metamodel-checked model tools, validation, checkpoints, confirmations, and undo.`,
+                        }),
+                        (0, m.jsx)(`td`, {
+                          children: `Accelerates multi-step modeling while preserving human control and an observable change history.`,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
           }),
         ],
       }),
@@ -11918,12 +12153,16 @@ function C() {
           (0, m.jsxs)(`div`, {
             className: `trust-heading`,
             children: [
-              (0, m.jsx)(`div`, { className: `eyebrow`, children: `AI, with a boundary` }),
+              (0, m.jsx)(`div`, { className: `eyebrow`, children: `Bounded AI agency` }),
               (0, m.jsxs)(`h2`, {
-                children: [`Assistance that`, (0, m.jsx)(`br`, {}), `doesn’t outrun you.`],
+                children: [
+                  `An agent that`,
+                  (0, m.jsx)(`br`, {}),
+                  (0, m.jsx)(`em`, { children: `works on the model.` }),
+                ],
               }),
               (0, m.jsx)(`p`, {
-                children: `Use AI to understand the metamodel and work with the model—not to bypass engineering judgment.`,
+                children: `Varka uses a tool-using AI agent for multi-step modeling work. Its authority is intentionally bounded by the live metamodel, backend validation, and user controls; it does not replace architectural judgment.`,
               }),
             ],
           }),
@@ -11935,9 +12174,9 @@ function C() {
                   (0, m.jsx)(`span`, { children: `01` }),
                   (0, m.jsxs)(`div`, {
                     children: [
-                      (0, m.jsx)(`h3`, { children: `Grounded in your live model` }),
+                      (0, m.jsx)(`h3`, { children: `Model-grounded tool use` }),
                       (0, m.jsx)(`p`, {
-                        children: `The assistant works through the platform’s model contract and selected model state.`,
+                        children: `The agent reads and changes the working model through explicit tools, including inspection, planning, validation, and model-edit operations.`,
                       }),
                     ],
                   }),
@@ -11948,9 +12187,9 @@ function C() {
                   (0, m.jsx)(`span`, { children: `02` }),
                   (0, m.jsxs)(`div`, {
                     children: [
-                      (0, m.jsx)(`h3`, { children: `Changes are checked before commit` }),
+                      (0, m.jsx)(`h3`, { children: `Contract-checked mutations` }),
                       (0, m.jsx)(`p`, {
-                        children: `Invalid structures and values are rejected before a model mutation is persisted.`,
+                        children: `The backend rejects invalid types, attributes, references, containments, and enumeration values before a mutation is committed.`,
                       }),
                     ],
                   }),
@@ -11961,9 +12200,9 @@ function C() {
                   (0, m.jsx)(`span`, { children: `03` }),
                   (0, m.jsxs)(`div`, {
                     children: [
-                      (0, m.jsx)(`h3`, { children: `Work stays inspectable` }),
+                      (0, m.jsx)(`h3`, { children: `Observable, reversible work` }),
                       (0, m.jsx)(`p`, {
-                        children: `Durable turns, checkpoints, confirmations, and undo make the change process visible.`,
+                        children: `Durable turns, tool events, checkpoints, confirmation for destructive batches, cancellation, and undo keep the process inspectable and controlled.`,
                       }),
                     ],
                   }),
@@ -11983,13 +12222,13 @@ function C() {
             children: [
               (0, m.jsx)(`div`, {
                 className: `eyebrow light`,
-                children: `The first system design is a conversation`,
+                children: `A model is a shared engineering argument`,
               }),
               (0, m.jsxs)(`h2`, {
-                children: [`Start with what`, (0, m.jsx)(`br`, {}), `matters.`],
+                children: [`Design systems`, (0, m.jsx)(`br`, {}), `you can explain.`],
               }),
               (0, m.jsx)(`p`, {
-                children: `Turn your domain knowledge into an architecture your team can reason about—and a project you can build on.`,
+                children: `Make the path from domain knowledge to deployable AWS software explicit, checked, traceable, and open to review.`,
               }),
               (0, m.jsxs)(`a`, {
                 className: `button light-button`,
@@ -12008,7 +12247,7 @@ function C() {
             children: [(0, m.jsx)(`img`, { className: `brand-wolf`, src: f, alt: `` }), `varka`],
           }),
           (0, m.jsx)(`p`, {
-            children: `Model business intent. Refine architecture. Generate with confidence.`,
+            children: `Model intent. Validate semantics. Transform explicitly. Generate reviewable systems.`,
           }),
           (0, m.jsxs)(`div`, {
             children: [

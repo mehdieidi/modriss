@@ -285,7 +285,10 @@ export function syncMethodologyRailState() {
   if (el.paletteRailToggleBtn) {
     const isArtifact = state.activeType === "artifact";
     el.paletteRailToggleBtn.title = isArtifact ? "File explorer" : "Toggle Palette";
-    el.paletteRailToggleBtn.setAttribute("aria-label", isArtifact ? "File explorer" : "Toggle Palette");
+    el.paletteRailToggleBtn.setAttribute(
+      "aria-label",
+      isArtifact ? "File explorer" : "Toggle Palette",
+    );
   }
 }
 

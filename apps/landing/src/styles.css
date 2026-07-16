@@ -655,6 +655,161 @@ a {
 .capability-grid > article > svg {
   color: #318b6b;
 }
+.outputs {
+  border-top: 1px solid var(--line);
+}
+.outputs-intro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 80px;
+  margin-bottom: 64px;
+}
+.outputs-intro .eyebrow,
+.outputs-intro h2 {
+  grid-column: 1;
+}
+.outputs-intro p {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: end;
+  max-width: 480px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.8;
+}
+.output-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid #d6e0e1;
+  border-radius: 9px;
+  overflow: hidden;
+}
+.output-grid article {
+  position: relative;
+  min-height: 250px;
+  padding: 25px;
+  border-right: 1px solid #d6e0e1;
+  background: #fbfdfd;
+}
+.output-grid article:last-child {
+  border-right: 0;
+}
+.output-index {
+  display: block;
+  margin-bottom: 34px;
+  color: #72919a;
+  font:
+    10px "DM Mono",
+    monospace;
+}
+.output-grid svg {
+  color: #008bc4;
+}
+.output-grid h3 {
+  margin: 17px 0 9px;
+  font-size: 17px;
+  letter-spacing: -0.04em;
+}
+.output-grid p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.use-cases {
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 80px;
+  align-items: start;
+}
+.use-case-grid {
+  display: grid;
+  border-top: 1px solid var(--line);
+}
+.use-case-grid article {
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line);
+}
+.use-case-grid h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  letter-spacing: -0.04em;
+}
+.use-case-grid p {
+  margin: 0;
+  max-width: 490px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.75;
+}
+.feature-matrix {
+  border-top: 1px solid var(--line);
+}
+.matrix-heading {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 80px;
+  margin-bottom: 58px;
+}
+.matrix-heading .eyebrow {
+  grid-column: 1;
+}
+.matrix-heading h2 {
+  grid-column: 1;
+}
+.matrix-heading p {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: end;
+  margin: 0;
+  max-width: 480px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.8;
+}
+.matrix-wrap {
+  overflow-x: auto;
+  border: 1px solid #d6e0e1;
+  border-radius: 9px;
+}
+.feature-matrix table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  text-align: left;
+}
+.feature-matrix th,
+.feature-matrix td {
+  padding: 18px 20px;
+  vertical-align: top;
+  border-bottom: 1px solid #dfe7e7;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.feature-matrix thead th {
+  background: #0a2b3f;
+  color: #dceeed;
+  font:
+    10px "DM Mono",
+    monospace;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.feature-matrix tbody tr:last-child th,
+.feature-matrix tbody tr:last-child td {
+  border-bottom: 0;
+}
+.feature-matrix tbody th {
+  width: 23%;
+  color: var(--ink);
+  font-weight: 700;
+}
+.feature-matrix tbody td {
+  width: 38.5%;
+  color: var(--muted);
+}
 .trust {
   background: #e7f3ed;
   max-width: none;
@@ -866,6 +1021,46 @@ footer div {
   }
   .story {
     display: block;
+  }
+  .use-cases {
+    display: block;
+  }
+  .outputs-intro {
+    display: block;
+    margin-bottom: 36px;
+  }
+  .outputs-intro p {
+    margin-top: 19px;
+    font-size: 14px;
+  }
+  .output-grid {
+    grid-template-columns: 1fr;
+  }
+  .output-grid article {
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid #d6e0e1;
+  }
+  .output-grid article:last-child {
+    border-bottom: 0;
+  }
+  .output-index {
+    margin-bottom: 18px;
+  }
+  .use-case-grid {
+    margin-top: 36px;
+  }
+  .matrix-heading {
+    display: block;
+    margin-bottom: 36px;
+  }
+  .matrix-heading p {
+    margin-top: 19px;
+    font-size: 14px;
+  }
+  .feature-matrix th,
+  .feature-matrix td {
+    padding: 15px;
   }
   .section-copy {
     font-size: 14px;
