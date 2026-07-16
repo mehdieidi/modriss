@@ -13,7 +13,8 @@ Recommended public surfaces:
 
 | Surface                | Example hostname              | Public?                                 | Notes                                                                |
 | ---------------------- | ----------------------------- | --------------------------------------- | -------------------------------------------------------------------- |
-| User app               | `https://app.example.com`     | Yes                                     | Primary customer-facing application.                                 |
+| Landing                | `https://example.com`         | Yes                                     | Primary customer-facing website.                                     |
+| Editor                 | `https://editor.example.com`  | Yes                                     | Modeling application.                                                |
 | Backend API            | `https://api.example.com`     | Yes, restricted by auth and rate limits | Used by browser apps and integrations.                               |
 | Admin app              | `https://admin.example.com`   | Limited                                 | Protect with admin auth and preferably VPN, SSO, or IP allowlisting. |
 | Public docs or landing | `https://example.com`         | Yes                                     | Optional marketing/docs surface.                                     |
@@ -89,7 +90,8 @@ Example records:
 | Type | Name                  | Target                                     |
 | ---- | --------------------- | ------------------------------------------ |
 | `A`  | `example.com`         | Server IPv4                                |
-| `A`  | `app.example.com`     | Server IPv4                                |
+| `A`  | `example.com`         | Server IPv4                                |
+| `A`  | `editor.example.com`  | Server IPv4                                |
 | `A`  | `api.example.com`     | Server IPv4                                |
 | `A`  | `admin.example.com`   | Server IPv4                                |
 | `A`  | `grafana.example.com` | Server IPv4, only if intentionally exposed |
@@ -100,7 +102,8 @@ desired.
 Verify DNS from outside the server:
 
 ```bash
-dig app.example.com
+dig example.com
+dig editor.example.com
 dig api.example.com
 dig admin.example.com
 ```
@@ -126,7 +129,7 @@ Required production changes:
 Example origin shape:
 
 ```env
-VARKA_ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com,https://api.example.com
+VARKA_ALLOWED_ORIGINS=https://example.com,https://editor.example.com,https://admin.example.com,https://api.example.com
 ```
 
 Secrets policy:
@@ -154,7 +157,11 @@ Production Caddy expectations:
 Example shape:
 
 ```caddyfile
-app.example.com {
+example.com {
+  reverse_proxy landing:8083
+}
+
+editor.example.com {
   reverse_proxy frontend:8082
 }
 
@@ -232,7 +239,8 @@ docker compose config -q
 docker compose up -d
 docker compose ps
 docker compose logs -f caddy backend
-curl -I https://app.example.com
+curl -I https://example.com
+curl -I https://editor.example.com
 curl https://api.example.com/actuator/health/readiness
 ```
 

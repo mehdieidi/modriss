@@ -33,9 +33,9 @@ flowchart TB
 
     host -->|"docker compose up --build"| compose
     browser -->|"HTTP :8088 / *.localhost:8088"| caddy
-    caddy -->|"default app route"| frontend
+    caddy -->|"editor.localhost"| frontend
     caddy -->|"admin.localhost"| admin
-    caddy -->|"landing.localhost"| landing
+    caddy -->|"localhost"| landing
     caddy -->|"api routes"| backend
     caddy -->|"grafana.localhost / logs.localhost"| grafana
     caddy --> dozzle

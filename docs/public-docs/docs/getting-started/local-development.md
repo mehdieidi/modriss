@@ -48,10 +48,10 @@ Useful local entrypoints:
 
 | Surface     | Direct URL              | Caddy URL                          |
 | ----------- | ----------------------- | ---------------------------------- |
-| User app    | `http://127.0.0.1:8082` | `http://localhost:8088`            |
+| Landing     | `http://127.0.0.1:8083` | `http://localhost:8088`            |
+| Editor      | `http://127.0.0.1:8082` | `http://editor.localhost:8088`     |
 | Backend API | `http://127.0.0.1:8080` | `http://api.localhost:8088`        |
 | Admin app   | `http://127.0.0.1:8084` | `http://admin.localhost:8088`      |
-| Landing     | `http://127.0.0.1:8083` | `http://landing.localhost:8088`    |
 | Grafana     | `http://127.0.0.1:3000` | `http://grafana.localhost:8088`    |
 | Prometheus  | `http://127.0.0.1:9090` | `http://prometheus.localhost:8088` |
 | Loki        | `http://127.0.0.1:3100` | `http://loki.localhost:8088`       |

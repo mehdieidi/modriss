@@ -15,10 +15,10 @@ The Caddy listener defaults to `CADDY_HTTP_PORT=8088`.
 
 | Surface     | URL                                | Upstream service                    |
 | ----------- | ---------------------------------- | ----------------------------------- |
-| User app    | `http://localhost:8088`            | `frontend:8082` with backend routes |
+| Landing     | `http://localhost:8088`            | `landing:8083` with backend routes  |
+| Editor      | `http://editor.localhost:8088`     | `frontend:8082` with backend routes |
 | Backend API | `http://api.localhost:8088`        | `backend:8080`                      |
 | Admin app   | `http://admin.localhost:8088`      | `admin:8084` with backend routes    |
-| Landing     | `http://landing.localhost:8088`    | `landing:8083`                      |
 | Grafana     | `http://grafana.localhost:8088`    | `grafana:3000`                      |
 | Prometheus  | `http://prometheus.localhost:8088` | `prometheus:9090`                   |
 | Logs        | `http://logs.localhost:8088`       | `dozzle:8080`                       |
@@ -30,7 +30,7 @@ support that behavior, use the direct service ports or add local hosts-file alia
 
 ## Backend Routing
 
-The main user app and admin app both proxy backend paths through Caddy:
+The landing page, editor, and admin app all proxy backend paths through Caddy:
 
 - `/api/*`
 - `/actuator/*`

@@ -22,10 +22,10 @@ Local Caddy routes:
 
 | Route                              | Target service |
 | ---------------------------------- | -------------- |
-| `http://localhost:8088`            | `frontend`     |
+| `http://localhost:8088`            | `landing`      |
+| `http://editor.localhost:8088`     | `frontend`     |
 | `http://api.localhost:8088`        | `backend`      |
 | `http://admin.localhost:8088`      | `admin`        |
-| `http://landing.localhost:8088`    | `landing`      |
 | `http://grafana.localhost:8088`    | `grafana`      |
 | `http://prometheus.localhost:8088` | `prometheus`   |
 | `http://logs.localhost:8088`       | `dozzle`       |

@@ -31,12 +31,12 @@
 	}
 }
 
-http://:8088 {
+http://localhost:8088 {
 	import security_headers
 	import access_logs
 	import backend_routes
 
-	reverse_proxy frontend:8082
+	reverse_proxy landing:8083
 }
 
 http://api.localhost:8088 {
@@ -53,11 +53,11 @@ http://admin.localhost:8088 {
 	reverse_proxy admin:8084
 }
 
-http://landing.localhost:8088 {
+http://editor.localhost:8088 {
 	import security_headers
 	import access_logs
 	import backend_routes
-	reverse_proxy landing:8083
+	reverse_proxy frontend:8082
 }
 
 http://grafana.localhost:8088 {

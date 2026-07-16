@@ -17,10 +17,10 @@ The preferred local entrypoint is Caddy:
 
 | Surface     | URL                                |
 | ----------- | ---------------------------------- |
-| User app    | `http://localhost:8088`            |
+| Landing     | `http://localhost:8088`            |
+| Editor      | `http://editor.localhost:8088`     |
 | Backend API | `http://api.localhost:8088`        |
 | Admin app   | `http://admin.localhost:8088`      |
-| Landing     | `http://landing.localhost:8088`    |
 | Grafana     | `http://grafana.localhost:8088`    |
 | Logs        | `http://logs.localhost:8088`       |
 | Prometheus  | `http://prometheus.localhost:8088` |
@@ -39,7 +39,7 @@ Recommended public hostnames:
 
 | Surface  | Example hostname              | Exposure                                  |
 | -------- | ----------------------------- | ----------------------------------------- |
-| User app | `https://app.example.com`     | Public                                    |
+| Editor   | `https://editor.example.com`  | Public                                    |
 | API      | `https://api.example.com`     | Public, authenticated and rate-limited    |
 | Admin    | `https://admin.example.com`   | Restricted by admin auth and network rule |
 | Landing  | `https://example.com`         | Public                                    |
@@ -54,7 +54,8 @@ Recommended public hostnames:
 5. Confirm records from outside the server.
 
 ```bash
-dig app.example.com
+dig example.com
+dig editor.example.com
 dig api.example.com
 dig admin.example.com
 ```
@@ -100,7 +101,7 @@ Required changes from local defaults:
 Example:
 
 ```env
-VARKA_ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com,https://api.example.com
+VARKA_ALLOWED_ORIGINS=https://example.com,https://editor.example.com,https://admin.example.com,https://api.example.com
 VARKA_ADMIN_BOOTSTRAP_ENABLED=true
 VARKA_ADMIN_BOOTSTRAP_EMAILS=owner@example.com
 VARKA_ADMIN_BOOTSTRAP_TOKEN=replace-with-long-random-token
@@ -118,7 +119,7 @@ example.com {
   reverse_proxy landing:8083
 }
 
-app.example.com {
+editor.example.com {
   reverse_proxy frontend:8082
 }
 
@@ -158,7 +159,8 @@ docker compose config -q
 docker compose up -d
 docker compose ps
 docker compose logs -f caddy backend
-curl -I https://app.example.com
+curl -I https://example.com
+curl -I https://editor.example.com
 curl https://api.example.com/actuator/health/readiness
 ```
 
