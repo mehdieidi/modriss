@@ -17,7 +17,6 @@
 }
 
 .workspace.methodology-map-open .methodology-map-overlay {
-  pointer-events: auto;
   opacity: 1;
   visibility: visible;
 }
@@ -35,6 +34,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .methodology-map-header {
@@ -444,8 +444,8 @@
 
 .methodology-map-detail-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
   margin-top: 14px;
 }
 
@@ -515,15 +515,17 @@
 .methodology-map-open-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   margin-top: 8px;
-  padding: 6px 10px;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
-  color: var(--text-strong);
-  font-size: 0.72rem;
-  font-weight: 600;
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  background: var(--accent);
+  color: #fff;
+  font: 600 0.74rem/1.2 var(--font-ui);
   cursor: pointer;
   transition:
     background 0.2s ease,
@@ -531,8 +533,8 @@
 }
 
 .methodology-map-open-btn:hover {
-  background: color-mix(in srgb, var(--accent) 18%, var(--panel));
-  border-color: var(--accent);
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
 }
 
 .methodology-map-open-btn .icon-mask {
@@ -541,33 +543,30 @@
   --icon-src: url("/assets/icons/process-map/milestone.svg");
 }
 
+.methodology-map-detail-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.methodology-map-detail-link {
+  align-self: flex-start;
+  padding: 2px 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: 600 0.7rem/1.3 var(--font-ui);
+  cursor: pointer;
+}
+
+.methodology-map-detail-link:hover {
+  color: var(--accent);
+}
+
 #methodologyPane .sidebar-section-header {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.methodology-map-header-btn {
-  margin-left: auto;
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 7px;
-  background: var(--panel);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-}
-
-.methodology-map-header-btn:hover {
-  border-color: var(--accent);
-}
-
-.methodology-map-header-btn .icon-mask {
-  width: 16px;
-  height: 16px;
-  --icon-src: url("/assets/icons/process-map/milestone.svg");
 }
 
 @media (max-width: 900px) {

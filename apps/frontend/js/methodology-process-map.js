@@ -5,7 +5,7 @@ import { state } from "./state.js";
 import { el } from "./dom.js";
 import { escapeHtml } from "./utils.js";
 import { phaseNarrative } from "./methodology-narratives.mjs";
-import { isModelingLevel, modelingKernelTypes } from "./modeling-config-data.js";
+import { isModelingLevel, modelingElementDefinition, modelingKernelTypes } from "./modeling-config-data.js";
 
 const ICON_BASE = "/assets/icons/process-map";
 const NODE_W = 148;
@@ -542,6 +542,7 @@ function renderDetail(host, node, process, level) {
   const role = process?.roles?.find((r) => r.id === roleId);
   const artifacts = artifactsForNode(process, phase, stage, task);
   const guidelines = guidelinesForNode(process, phase, stage, task);
+  const paletteFocus = paletteFocusForNode(phase, stage, task);
 
   if (node.task) {
     parts.push(`<span class="map-detail-kind">Atomic task</span>`);
@@ -565,8 +566,7 @@ function renderDetail(host, node, process, level) {
     if (workProducts.length) {
       parts.push(renderChipSection("Metamodel work products", workProducts.slice(0, 18)));
     }
-    if (task.paletteFocus?.length)
-      parts.push(renderChipSection("Palette focus", task.paletteFocus));
+    if (paletteFocus.length) parts.push(renderChipSection("Related palette elements", paletteFocus));
     if (guidelines.length) parts.push(renderGuidelines(guidelines));
   } else if (node.stage) {
     parts.push(`<span class="map-detail-kind">Stage</span>`);
@@ -574,6 +574,7 @@ function renderDetail(host, node, process, level) {
     parts.push(`<p>${escapeHtml(node.stage.objective || "")}</p>`);
     if (role) parts.push(renderRole(role));
     if (artifacts.length) parts.push(renderArtifacts(artifacts));
+    if (paletteFocus.length) parts.push(renderChipSection("Related palette elements", paletteFocus));
     if (guidelines.length) parts.push(renderGuidelines(guidelines));
     if (node.stage.tasks?.length) {
       parts.push(renderSectionTitle("Tasks"));
@@ -588,6 +589,7 @@ function renderDetail(host, node, process, level) {
     parts.push(`<p>${escapeHtml(phase.objective || narrative.summary)}</p>`);
     if (role) parts.push(renderRole(role));
     if (artifacts.length) parts.push(renderArtifacts(artifacts));
+    if (paletteFocus.length) parts.push(renderChipSection("Related palette elements", paletteFocus));
     if (guidelines.length) parts.push(renderGuidelines(guidelines));
     if (phase.entryCriteria?.length) parts.push(renderListSection("Entry", phase.entryCriteria));
     if (phase.exitCriteria?.length) parts.push(renderListSection("Exit", phase.exitCriteria));
@@ -595,8 +597,22 @@ function renderDetail(host, node, process, level) {
 
   const canGuide = node.phase || node.stage || node.task;
   if (canGuide) {
+    const taskActions = node.task
+      ? `<button type="button" class="btn btn-primary btn-full" data-action="toggle-task">${
+          state.guidedModeling?.progress?.completedTaskIds?.includes(task.id)
+            ? "Mark incomplete"
+            : "Mark task complete"
+        }</button>
+         <div class="methodology-map-detail-action-row">
+           <button type="button" class="btn btn-secondary btn-sm" data-action="palette">Palette elements</button>
+           <button type="button" class="btn btn-secondary btn-sm" data-action="ask-ai">Ask AI</button>
+         </div>`
+      : node.stage && paletteFocus.length
+        ? `<button type="button" class="btn btn-secondary btn-full" data-action="palette">Show related palette elements</button>`
+        : "";
     parts.push(`<div class="methodology-map-detail-actions">
-      <button type="button" class="methodology-btn methodology-btn-primary" data-action="goto-guide">Open in methodology guide</button>
+      ${taskActions}
+      <button type="button" class="methodology-map-detail-link" data-action="goto-guide">Show in navigator</button>
     </div>`);
   }
 
@@ -610,6 +626,20 @@ function renderDetail(host, node, process, level) {
       node.stage || (node.task && phase ? findStageForTask(phase, node.task.id) : null);
     if (targetStage) selectGuidedStage(targetStage.id);
     closeMethodologyMap();
+  });
+  host.querySelector('[data-action="toggle-task"]')?.addEventListener("click", async () => {
+    const { toggleGuidedTaskComplete } = await import("./guided-modeling.js");
+    toggleGuidedTaskComplete(task.id);
+  });
+  host.querySelector('[data-action="palette"]')?.addEventListener("click", async () => {
+    const { openPaletteForCurrentPhase } = await import("./guided-modeling.js");
+    closeMethodologyMap();
+    await openPaletteForCurrentPhase();
+  });
+  host.querySelector('[data-action="ask-ai"]')?.addEventListener("click", async () => {
+    const { openAssistantForGuidedPhase } = await import("./guided-modeling.js");
+    closeMethodologyMap();
+    openAssistantForGuidedPhase();
   });
 }
 
@@ -625,7 +655,10 @@ function renderListSection(title, items) {
 
 function renderChipSection(title, items) {
   return `${renderSectionTitle(title)}<div class="map-detail-chip-list">${items
-    .map((item) => `<span class="map-detail-chip">${escapeHtml(item)}</span>`)
+    .map((item) => {
+      const label = modelingElementDefinition(state.activeType, item)?.displayName || item;
+      return `<span class="map-detail-chip">${escapeHtml(label)}</span>`;
+    })
     .join("")}</div>`;
 }
 
@@ -679,6 +712,18 @@ function workProductLabels(workProducts) {
       workProducts
         .map((wp) => wp.eClass || wp.eEnum)
         .filter((name) => name && !name.endsWith("Type")),
+    ),
+  ];
+}
+
+function paletteFocusForNode(phase, stage, task) {
+  if (task) return task.paletteFocus || [];
+  const stages = stage ? [stage] : phase?.stages || [];
+  return [
+    ...new Set(
+      stages.flatMap(leafStages).flatMap((leaf) =>
+        (leaf.tasks || []).flatMap((item) => item.paletteFocus || []),
+      ),
     ),
   ];
 }
@@ -779,9 +824,28 @@ function renderProcessMap() {
   scaler.appendChild(svg);
   canvasHost.appendChild(scaler);
 
-  const selectedNode = layout.nodes.find((n) => n.id === selectedId) || null;
+  const selectedNode =
+    layout.nodes.find((n) => n.id === selectedId) || mapContextDetailNode(process, stack, selectedId);
   renderDetail(detailHost, selectedNode, process, state.activeType);
   if (legendHost) renderLegend(legendHost, stack);
+}
+
+function mapContextDetailNode(process, stack, selectedId) {
+  const ctx = stack[stack.length - 1];
+  if (ctx?.type === "stage") {
+    const phase = process.phases?.find((p) => p.id === ctx.phaseId);
+    const stage = findStageById(phase?.stages, ctx.stageId);
+    if (stage && (!selectedId || selectedId === stage.id)) {
+      return { id: stage.id, phase, stage };
+    }
+  }
+  if (ctx?.type === "phase") {
+    const phase = process.phases?.find((p) => p.id === ctx.phaseId);
+    if (phase && (!selectedId || selectedId === phase.id)) {
+      return { id: phase.id, phase };
+    }
+  }
+  return null;
 }
 
 export function openMethodologyMap() {
@@ -789,6 +853,25 @@ export function openMethodologyMap() {
   state.guidedModeling.mapOpen = true;
   resetMapStack();
   state.guidedModeling.mapSelectedId = state.guidedModeling.progress?.selectedPhaseId || null;
+  el.workspace?.classList.add("methodology-map-open");
+  el.methodologyMapOverlay?.classList.remove("hidden");
+  el.methodologyMapOverlay?.setAttribute("aria-hidden", "false");
+  renderProcessMap();
+}
+
+/** Open the map at a phase or stage selected from the compact methodology navigator. */
+export function openMethodologyMapAt({ phaseId = null, stageId = null } = {}) {
+  if (!isModelingLevel(state.activeType)) return;
+
+  state.guidedModeling.mapOpen = true;
+  resetMapStack();
+  if (phaseId) {
+    pushMapContext({ type: "phase", phaseId });
+  }
+  if (phaseId && stageId) {
+    pushMapContext({ type: "stage", phaseId, stageId });
+  }
+  state.guidedModeling.mapSelectedId = stageId || phaseId || null;
   el.workspace?.classList.add("methodology-map-open");
   el.methodologyMapOverlay?.classList.remove("hidden");
   el.methodologyMapOverlay?.setAttribute("aria-hidden", "false");
@@ -854,17 +937,6 @@ export function createMethodologyMapOpenButton() {
   btn.className = "methodology-map-open-btn";
   btn.title = "Open interactive process map";
   btn.innerHTML = `<span class="icon-svg icon-mask" aria-hidden="true"></span> Process map`;
-  btn.addEventListener("click", openMethodologyMap);
-  return btn;
-}
-
-export function createMethodologyMapHeaderButton() {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "methodology-map-header-btn";
-  btn.title = "Open process map";
-  btn.setAttribute("aria-label", "Open process map");
-  btn.innerHTML = `<span class="icon-svg icon-mask" aria-hidden="true"></span>`;
   btn.addEventListener("click", openMethodologyMap);
   return btn;
 }

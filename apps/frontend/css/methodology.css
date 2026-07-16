@@ -24,7 +24,7 @@
 }
 
 .methodology-hero {
-  padding: 8px 2px 10px;
+  padding: 8px 2px 12px;
   border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 10px;
 }
@@ -87,17 +87,15 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 12px;
-  padding: 10px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--surface-2) 72%, var(--panel) 28%);
+  margin-bottom: 10px;
+  padding: 2px;
 }
 
 .methodology-progress-track {
   display: flex;
   align-items: center;
   gap: 3px;
+  margin-bottom: 4px;
 }
 
 .methodology-progress-segment {
@@ -358,13 +356,9 @@
 }
 
 .methodology-detail {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px;
+  padding: 2px;
   margin-bottom: 10px;
-  background: var(--panel);
   color: var(--text);
-  box-shadow: var(--shadow-sm);
 }
 
 .methodology-detail-header {
@@ -505,14 +499,15 @@
 }
 
 .methodology-btn {
-  font-size: 0.74rem;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface);
+  min-height: 32px;
+  font: 600 0.72rem/1.2 var(--font-ui);
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-2) 88%, var(--panel) 12%);
   color: var(--text-strong);
   cursor: pointer;
-  font-weight: 600;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
 }
 
 .methodology-btn:hover {
@@ -525,6 +520,29 @@
   border-color: var(--accent);
   color: #fff;
   width: 100%;
+}
+
+.methodology-btn-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-soft);
+}
+
+.methodology-btn-quiet:hover {
+  border-color: var(--border-subtle);
+  color: var(--text-strong);
+}
+
+.methodology-btn-danger {
+  border-color: color-mix(in srgb, var(--danger, #c34a4a) 38%, var(--border));
+  background: transparent;
+  color: var(--danger, #c34a4a);
+}
+
+.methodology-btn-danger:hover {
+  border-color: var(--danger, #c34a4a);
+  background: color-mix(in srgb, var(--danger, #c34a4a) 9%, transparent);
+  color: var(--danger, #c34a4a);
 }
 
 .methodology-btn-primary:hover {
@@ -577,28 +595,28 @@
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
 }
 
 .methodology-stage-track {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 
 .methodology-stage-chip {
-  font-size: 0.62rem;
-  padding: 3px 7px;
-  border-radius: 999px;
+  font-size: 0.66rem;
+  padding: 5px 8px;
+  border-radius: 7px;
   border: 1px solid var(--border-subtle);
   background: var(--surface);
   color: var(--muted);
   cursor: pointer;
   font-weight: 600;
   max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: left;
 }
 
 .methodology-stage-chip.is-current {
@@ -616,9 +634,17 @@
   font-size: 0.65rem;
   font-weight: 650;
   color: var(--muted);
-  margin: 0 0 4px;
+  margin: 4px 0 4px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.methodology-navigator-label {
+  margin-top: 2px;
+  font: 700 0.62rem/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .methodology-loop-card {
