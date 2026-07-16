@@ -21,7 +21,7 @@ import tools.jackson.databind.ObjectMapper;
  */
 public final class ModelingProcessService {
 
-  private static final Set<String> LEVELS = Set.of("cim", "pim", "psm", "end-to-end");
+  private static final Set<String> LEVELS = Set.of("cim", "pim", "psm", "artifact", "end-to-end");
 
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final MdeRuntimePaths runtimePaths;
@@ -43,7 +43,7 @@ public final class ModelingProcessService {
   /**
    * Returns a modeling process definition for the requested level.
    *
-   * @param level {@code cim}, {@code pim}, {@code psm}, or {@code end-to-end}
+   * @param level {@code cim}, {@code pim}, {@code psm}, {@code artifact}, or {@code end-to-end}
    * @return process definition map
    */
   public Map<String, Object> processDefinition(String level) {
@@ -59,8 +59,9 @@ public final class ModelingProcessService {
    */
   public Map<String, Object> coverageMatrix(String level) {
     String normalized = normalizeLevel(level);
-    if ("end-to-end".equals(normalized)) {
-      throw new PlatformException(400, "Coverage matrix is not defined for end-to-end.");
+    if ("end-to-end".equals(normalized) || "artifact".equals(normalized)) {
+      throw new PlatformException(
+          400, "Coverage matrix is not defined for " + normalized + ".");
     }
     Path file = methodologyRoot().resolve("coverage-matrix").resolve(normalized + "-coverage.json");
     return readJsonFile(file, "coverage matrix for " + normalized);
@@ -76,8 +77,9 @@ public final class ModelingProcessService {
   @SuppressWarnings("unchecked")
   public Map<String, Object> coverageStatus(String level, Map<String, Object> model) {
     String normalized = normalizeLevel(level);
-    if ("end-to-end".equals(normalized)) {
-      throw new PlatformException(400, "Coverage status is not defined for end-to-end.");
+    if ("end-to-end".equals(normalized) || "artifact".equals(normalized)) {
+      throw new PlatformException(
+          400, "Coverage status is not defined for " + normalized + ".");
     }
     Map<String, Object> matrix = coverageMatrix(normalized);
     List<Map<String, Object>> entries = listOfMaps(matrix.get("entries"));

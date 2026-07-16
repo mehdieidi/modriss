@@ -1603,6 +1603,11 @@ export async function switchTab(type) {
     updateModelSaveUi();
     setStatus("Artifact Explorer");
     await loadCurrentProjectArtifact({ collapseTree: true });
+    const { onGuidedModelingContextChanged, switchLeftPaneMode } = await import(
+      "./guided-modeling.js"
+    );
+    switchLeftPaneMode("palette");
+    onGuidedModelingContextChanged();
     return;
   }
 

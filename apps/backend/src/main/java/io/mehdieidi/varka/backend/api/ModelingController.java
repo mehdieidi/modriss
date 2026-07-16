@@ -61,10 +61,10 @@ public class ModelingController {
   /**
    * Returns the canonical modeling process definition for a level.
    *
-   * @param level {@code cim}, {@code pim}, {@code psm}, or {@code end-to-end}
+   * @param level {@code cim}, {@code pim}, {@code psm}, {@code artifact}, or {@code end-to-end}
    * @return SPEM-aligned process definition
    */
-  @GetMapping("/modeling/process/{level:cim|pim|psm|end-to-end}")
+  @GetMapping("/modeling/process/{level:cim|pim|psm|artifact|end-to-end}")
   Map<String, Object> processDefinition(@PathVariable String level) {
     return modelingProcess.processDefinition(level);
   }

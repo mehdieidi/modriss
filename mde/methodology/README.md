@@ -1,7 +1,7 @@
 # Varka Modeling Methodologies
 
-Canonical, machine-readable **iterative-incremental** modeling process definitions for CIM, PIM,
-AWS PSM, and the end-to-end pipeline. Each process follows **SPEM 2.0**: sequential phases → stages
+Canonical, machine-readable **iterative-incremental** process definitions for CIM, PIM,
+AWS PSM, generated-artifact deployment readiness, and the end-to-end pipeline. Each process follows **SPEM 2.0**: sequential phases → stages
 → optional sub-stages → atomic tasks, plus roles, artifact kinds, guidelines, and a
 **process engine** (the agile kernel that delivers increments).
 
@@ -34,5 +34,5 @@ When metamodels change:
 
 ## API
 
-- `GET /api/modeling/process/{cim|pim|psm|end-to-end}` — process definition
+- `GET /api/modeling/process/{cim|pim|psm|artifact|end-to-end}` — process definition
 - `GET /api/modeling/process/{cim|pim|psm}/coverage` — coverage matrix

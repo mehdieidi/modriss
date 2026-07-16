@@ -1,0 +1,120 @@
+{
+  "processId": "varka.artifact.deployment-readiness",
+  "spemVersion": "2.0",
+  "level": "artifact",
+  "displayName": "Generated Artifacts & Deployment Readiness",
+  "roles": [
+    { "id": "release-engineer", "name": "Release Engineer", "responsibilities": ["Owns release plan, versioning, approvals, and deployment evidence"] },
+    { "id": "cloud-platform-engineer", "name": "Cloud Platform Engineer", "responsibilities": ["Hardens infrastructure, IAM, environment configuration, and deployment automation"] },
+    { "id": "application-engineer", "name": "Application Engineer", "responsibilities": ["Reviews generated code, completes application configuration, and fixes implementation gaps"] },
+    { "id": "security-engineer", "name": "Security Engineer", "responsibilities": ["Reviews secrets, access control, dependencies, and security controls"] },
+    { "id": "quality-engineer", "name": "Quality Engineer", "responsibilities": ["Defines test evidence and verifies functional and non-functional acceptance"] },
+    { "id": "service-owner", "name": "Service Owner", "responsibilities": ["Accepts operational readiness, rollback posture, and production handover"] }
+  ],
+  "artifactKinds": [
+    { "id": "artifact.generated-baseline", "name": "Generated Project Baseline", "description": "Reviewed, version-controlled output generated from the approved PSM" },
+    { "id": "artifact.environment-contract", "name": "Environment Configuration Contract", "description": "Per-environment parameters, secrets references, account/region bindings, and ownership" },
+    { "id": "artifact.security-record", "name": "Security Review Record", "description": "Least-privilege, secret handling, dependency, and data-protection evidence" },
+    { "id": "artifact.verification-evidence", "name": "Verification Evidence", "description": "Build, validation, test, and quality-gate results" },
+    { "id": "artifact.release-plan", "name": "Release & Rollback Plan", "description": "Version, deployment sequence, approvals, rollback steps, and communications" },
+    { "id": "artifact.operations-pack", "name": "Operations Handover Pack", "description": "Runbooks, dashboards, alarms, support ownership, and post-release checks" }
+  ],
+  "guidelines": [
+    { "id": "artifact.guid.generated-baseline", "name": "Generated output is a controlled baseline", "appliesTo": "process", "text": "Treat generated files as a PSM-derived baseline: review every generated change, commit it to source control, and feed structural defects back to the PSM instead of repeatedly patching generated output." },
+    { "id": "artifact.guid.environment-parity", "name": "Environment parity with explicit differences", "appliesTo": "artifact.ph2", "text": "Keep development, test, staging, and production configuration structurally equivalent. Record intentional differences as parameters or approved environment exceptions." },
+    { "id": "artifact.guid.no-secrets", "name": "No secrets in artifacts", "appliesTo": "artifact.ph2", "text": "Store secret values only in the approved secret manager or CI/CD secret store; generated templates and repositories contain references, never secret material." },
+    { "id": "artifact.guid.evidence", "name": "Evidence before promotion", "appliesTo": "artifact.ph3", "text": "Promotion requires reproducible build, validation, test, and security evidence for the exact release candidate." },
+    { "id": "artifact.guid.rollback", "name": "Rehearse recovery", "appliesTo": "artifact.ph4", "text": "A release is not ready until rollback, data protection, alerting, and ownership are demonstrably usable by the on-call team." }
+  ],
+  "processEngine": {
+    "id": "varka.artifact.readiness.engine",
+    "displayName": "Artifact Deployment-Readiness Engine",
+    "description": "Refines generated AWS SAM project artifacts into a reviewed, verified, releasable, and operable deployment package.",
+    "incrementUnit": "release-candidate",
+    "deliverable": { "name": "Approved deployment package", "description": "A versioned artifact set with configuration, verification evidence, release approval, rollback plan, and operations handover." },
+    "cycle": [
+      { "id": "artifact.engine.inspect", "name": "Inspect & Baseline", "type": "phase", "primaryRole": "application-engineer", "phaseIds": ["artifact.ph1"] },
+      { "id": "artifact.engine.harden", "name": "Harden Environments", "type": "phase", "primaryRole": "cloud-platform-engineer", "phaseIds": ["artifact.ph2"] },
+      { "id": "artifact.engine.verify", "name": "Verify Release Candidate", "type": "phase", "primaryRole": "quality-engineer", "phaseIds": ["artifact.ph3"] },
+      { "id": "artifact.engine.release", "name": "Release & Handover", "type": "phase", "primaryRole": "release-engineer", "phaseIds": ["artifact.ph4"] }
+    ],
+    "loop": { "fromStepId": "artifact.engine.release", "toStepId": "artifact.engine.inspect", "condition": "release-candidate-rework-required", "guidance": "When verification, approval, or operational rehearsal exposes a defect, correct the source PSM or artifact baseline, regenerate where necessary, and repeat the affected readiness stages." }
+  },
+  "phases": [
+    {
+      "id": "artifact.ph1", "name": "Inspect & Baseline Generated Project", "order": 1,
+      "objective": "Turn the PSM-generated project into a traceable, reviewed, version-controlled release baseline and identify model changes that must return to PSM.", "primaryRole": "application-engineer",
+      "entryCriteria": ["Artifacts were generated from an approved PSM", "A target repository and release owner are available"],
+      "exitCriteria": ["Generated files are inventoried and committed", "Implementation gaps are classified as artifact refinements or PSM feedback"],
+      "inEngine": true,
+      "stages": [
+        { "id": "artifact.ph1.st1", "name": "Inventory Generated Output", "objective": "Understand exactly what was generated and how it maps to the intended deployment.", "primaryRole": "application-engineer", "tasks": [
+          { "id": "artifact.ph1.st1.t1", "name": "Review project structure and generated templates", "primaryRole": "application-engineer", "artifacts": [{ "id": "artifact.generated-baseline", "name": "Generated Project Baseline" }], "steps": ["Inspect template, source, configuration, documentation, and pipeline files in the artifact explorer.", "Identify entry points, Lambda handlers, infrastructure resources, parameters, outputs, and generated deployment instructions.", "Compare the generated structure with the PSM deployable slice and record missing or unexpected components."], "entryCriteria": ["Artifact explorer contains generated files"], "exitCriteria": ["Project inventory and PSM-to-file trace are recorded"], "validationRules": ["Every deployable resource has an identifiable template or source owner"], "paletteFocus": [], "durationEstimate": "30–60 min" },
+          { "id": "artifact.ph1.st1.t2", "name": "Establish source-control and release baseline", "primaryRole": "release-engineer", "artifacts": [{ "id": "artifact.generated-baseline", "name": "Generated Project Baseline" }], "steps": ["Create a dedicated branch or repository according to team policy.", "Commit the unmodified generated baseline with generator, PSM revision, and generation timestamp recorded.", "Tag or otherwise identify the baseline so later refinements are reviewable."], "entryCriteria": ["Generated output has been reviewed"], "exitCriteria": ["Baseline is versioned and reproducible"], "validationRules": ["No unreviewed local-only changes remain"], "paletteFocus": [], "durationEstimate": "15–30 min" }
+        ] },
+        { "id": "artifact.ph1.st2", "name": "Classify Refinements", "objective": "Keep architecture changes in the model and implementation-specific refinements in the project.", "primaryRole": "cloud-platform-engineer", "tasks": [
+          { "id": "artifact.ph1.st2.t1", "name": "Route structural gaps back to the PSM", "primaryRole": "cloud-platform-engineer", "artifacts": [{ "id": "artifact.generated-baseline", "name": "Generated Project Baseline" }], "steps": ["Classify each gap as a PSM modeling defect, generator limitation, or legitimate implementation refinement.", "For missing resources, permissions, integrations, or policies, update and validate the PSM before regenerating artifacts.", "Record the reason for any approved hand-maintained template extension."], "entryCriteria": ["Inventory differences are known"], "exitCriteria": ["PSM feedback and local refinements have named owners"], "validationRules": ["Architecture decisions are not hidden only in generated files"], "paletteFocus": [], "durationEstimate": "30–90 min" },
+          { "id": "artifact.ph1.st2.t2", "name": "Complete repository hygiene", "primaryRole": "application-engineer", "artifacts": [{ "id": "artifact.generated-baseline", "name": "Generated Project Baseline" }], "steps": ["Add repository documentation, ownership, license, ignore rules, and contribution instructions required by the organization.", "Confirm generated documentation names the service, supported environments, and deployment prerequisites.", "Ensure build outputs and local credentials are excluded from source control."], "entryCriteria": ["Baseline branch exists"], "exitCriteria": ["Repository can be safely shared and reviewed"], "validationRules": ["Repository contains no generated build output or credential material"], "paletteFocus": [], "durationEstimate": "30 min" }
+        ] }
+      ]
+    },
+    {
+      "id": "artifact.ph2", "name": "Harden Environment & Delivery Configuration", "order": 2,
+      "objective": "Make the generated project safe and repeatable across target environments without embedding secrets or account-specific assumptions.", "primaryRole": "cloud-platform-engineer",
+      "entryCriteria": ["Generated baseline is version-controlled", "Target environments and account ownership are known"],
+      "exitCriteria": ["Environment contract, least-privilege access, and CI/CD configuration are reviewed"], "inEngine": true,
+      "stages": [
+        { "id": "artifact.ph2.st1", "name": "Externalize Environment Configuration", "objective": "Separate deploy-time configuration and secret references from source and templates.", "primaryRole": "cloud-platform-engineer", "tasks": [
+          { "id": "artifact.ph2.st1.t1", "name": "Define parameter and environment contract", "primaryRole": "cloud-platform-engineer", "artifacts": [{ "id": "artifact.environment-contract", "name": "Environment Configuration Contract" }], "steps": ["List required parameters, outputs, domains, regions, account IDs, tags, feature flags, and external endpoints.", "Provide validated values or references for development, test, staging, and production.", "Document defaults, allowed ranges, and the owner for every environment-specific value."], "entryCriteria": ["Deployment templates and runtime configuration are known"], "exitCriteria": ["All environment values have a documented source and owner"], "validationRules": ["Production values are not copied into non-production configuration"], "paletteFocus": [], "durationEstimate": "45–90 min" },
+          { "id": "artifact.ph2.st1.t2", "name": "Configure secret references and encryption", "primaryRole": "security-engineer", "artifacts": [{ "id": "artifact.environment-contract", "name": "Environment Configuration Contract" }, { "id": "artifact.security-record", "name": "Security Review Record" }], "steps": ["Replace inline credentials, tokens, and sensitive defaults with approved secret-manager or parameter-store references.", "Verify encryption keys, rotation expectations, and access paths for each secret or protected data store.", "Document bootstrap steps that create secrets before deployment."], "entryCriteria": ["Parameter contract is drafted"], "exitCriteria": ["Secrets are externalized and bootstrap steps are reproducible"], "validationRules": ["No secret value is committed to source control or template defaults"], "paletteFocus": [], "durationEstimate": "30–60 min" }
+        ] },
+        { "id": "artifact.ph2.st2", "name": "Harden Delivery Automation", "objective": "Create a controlled path for building and deploying the exact release candidate.", "primaryRole": "release-engineer", "tasks": [
+          { "id": "artifact.ph2.st2.t1", "name": "Review IAM and deployment permissions", "primaryRole": "security-engineer", "artifacts": [{ "id": "artifact.security-record", "name": "Security Review Record" }], "steps": ["Review execution roles, resource policies, and CI/CD identities against least-privilege requirements.", "Separate deployment permissions from application runtime permissions.", "Record exceptions, approval owners, and expiration dates for elevated access."], "entryCriteria": ["Infrastructure and delivery identities are defined"], "exitCriteria": ["Required permissions are approved and bounded"], "validationRules": ["No wildcard permission remains without documented justification"], "paletteFocus": [], "durationEstimate": "45–90 min" },
+          { "id": "artifact.ph2.st2.t2", "name": "Implement repeatable build and deployment pipeline", "primaryRole": "release-engineer", "artifacts": [{ "id": "artifact.environment-contract", "name": "Environment Configuration Contract" }], "steps": ["Configure the approved CI/CD workflow to restore dependencies, build, package, validate, and deploy the artifact.", "Pin or record runtime, build-image, and dependency-resolution versions.", "Require review and controlled promotion between environments."], "entryCriteria": ["Environment contract and deployment identities are available"], "exitCriteria": ["A pipeline can produce a uniquely identifiable release candidate"], "validationRules": ["Build and deploy steps do not depend on a developer workstation"], "paletteFocus": [], "durationEstimate": "60–120 min" }
+        ] }
+      ]
+    },
+    {
+      "id": "artifact.ph3", "name": "Verify Release Candidate", "order": 3,
+      "objective": "Prove that the exact release candidate is buildable, secure, functional, observable, and deployable before production approval.", "primaryRole": "quality-engineer",
+      "entryCriteria": ["Pipeline and environment contract are available", "Release candidate is versioned"],
+      "exitCriteria": ["Required verification evidence is attached to the release candidate", "Defects are resolved or explicitly accepted"], "inEngine": true,
+      "stages": [
+        { "id": "artifact.ph3.st1", "name": "Build & Static Verification", "objective": "Check packaging, template validity, dependencies, and security posture.", "primaryRole": "quality-engineer", "tasks": [
+          { "id": "artifact.ph3.st1.t1", "name": "Run reproducible build and infrastructure validation", "primaryRole": "quality-engineer", "artifacts": [{ "id": "artifact.verification-evidence", "name": "Verification Evidence" }], "steps": ["Build and package the project using the delivery pipeline.", "Run the project's infrastructure/template validation and capture the results.", "Verify generated deployment artifacts match the tagged source revision."], "entryCriteria": ["Versioned release candidate is available"], "exitCriteria": ["Build and template validation evidence is retained"], "validationRules": ["Build succeeds from a clean environment"], "paletteFocus": [], "durationEstimate": "30–60 min" },
+          { "id": "artifact.ph3.st1.t2", "name": "Assess dependencies and security findings", "primaryRole": "security-engineer", "artifacts": [{ "id": "artifact.security-record", "name": "Security Review Record" }, { "id": "artifact.verification-evidence", "name": "Verification Evidence" }], "steps": ["Run approved dependency, secret, and infrastructure security scans.", "Triage findings by severity and exploitability; fix blockers or obtain time-bound risk acceptance.", "Verify logging, encryption, retention, and data-handling controls meet the PSM intent."], "entryCriteria": ["Packaged release candidate exists"], "exitCriteria": ["Security findings are resolved or formally accepted"], "validationRules": ["No unresolved critical finding proceeds without explicit risk acceptance"], "paletteFocus": [], "durationEstimate": "45–90 min" }
+        ] },
+        { "id": "artifact.ph3.st2", "name": "Deploy & Exercise Non-Production", "objective": "Demonstrate the release candidate in a production-like environment.", "primaryRole": "quality-engineer", "tasks": [
+          { "id": "artifact.ph3.st2.t1", "name": "Deploy to staging and execute acceptance tests", "primaryRole": "quality-engineer", "artifacts": [{ "id": "artifact.verification-evidence", "name": "Verification Evidence" }], "steps": ["Deploy the exact candidate through the pipeline to a controlled non-production environment.", "Execute smoke, integration, contract, and business acceptance tests for the deployable slice.", "Record test data constraints, results, defects, and any accepted deviations."], "entryCriteria": ["Build and security checks pass"], "exitCriteria": ["Acceptance evidence covers critical user and integration paths"], "validationRules": ["Tests target the deployed candidate, not only local code"], "paletteFocus": [], "durationEstimate": "60–180 min" },
+          { "id": "artifact.ph3.st2.t2", "name": "Verify observability and operational signals", "primaryRole": "cloud-platform-engineer", "artifacts": [{ "id": "artifact.verification-evidence", "name": "Verification Evidence" }, { "id": "artifact.operations-pack", "name": "Operations Handover Pack" }], "steps": ["Confirm logs, metrics, traces, dashboards, and alarms are emitted for critical paths.", "Trigger representative failure and recovery scenarios to verify alert routing and diagnostic context.", "Set practical thresholds and identify the team that responds to each alert."], "entryCriteria": ["Candidate is deployed to staging"], "exitCriteria": ["Critical operational signals and alert ownership are verified"], "validationRules": ["An operator can detect and diagnose a failed critical path"], "paletteFocus": [], "durationEstimate": "45–90 min" }
+        ] }
+      ]
+    },
+    {
+      "id": "artifact.ph4", "name": "Approve Release & Operational Handover", "order": 4,
+      "objective": "Prepare a controlled production release with recovery, ownership, communications, and post-deployment verification defined.", "primaryRole": "release-engineer",
+      "entryCriteria": ["Verification evidence is complete", "Production deployment window and approvers are known"],
+      "exitCriteria": ["Deployment package is approved, recoverable, and handed to operations"], "inEngine": true,
+      "stages": [
+        { "id": "artifact.ph4.st1", "name": "Plan Release & Recovery", "objective": "Make production deployment and failure recovery deliberate and executable.", "primaryRole": "release-engineer", "tasks": [
+          { "id": "artifact.ph4.st1.t1", "name": "Create release, rollback, and communication plan", "primaryRole": "release-engineer", "artifacts": [{ "id": "artifact.release-plan", "name": "Release & Rollback Plan" }], "steps": ["Define release scope, version, deployment sequence, approvals, maintenance window, and stakeholder communications.", "Document rollback triggers, steps, data considerations, decision owner, and expected recovery time.", "Rehearse rollback or recovery in non-production when the change affects data, interfaces, or critical availability."], "entryCriteria": ["Staging evidence is accepted"], "exitCriteria": ["Release and rollback plan are approved by accountable owners"], "validationRules": ["Rollback does not rely on undocumented manual knowledge"], "paletteFocus": [], "durationEstimate": "45–90 min" },
+          { "id": "artifact.ph4.st1.t2", "name": "Obtain production readiness approval", "primaryRole": "service-owner", "artifacts": [{ "id": "artifact.release-plan", "name": "Release & Rollback Plan" }, { "id": "artifact.security-record", "name": "Security Review Record" }], "steps": ["Review release scope, risk, verification evidence, security findings, operational readiness, and rollback posture.", "Capture go/no-go decision, approvers, constraints, and follow-up actions.", "Confirm support and business stakeholders understand the release window and success criteria."], "entryCriteria": ["Release plan and evidence are available"], "exitCriteria": ["Go/no-go decision is recorded"], "validationRules": ["Production deployment has an accountable approver"], "paletteFocus": [], "durationEstimate": "30 min" }
+        ] },
+        { "id": "artifact.ph4.st2", "name": "Handover & Post-Deployment Validation", "objective": "Ensure the service can be supported after deployment and verify production health immediately after release.", "primaryRole": "service-owner", "tasks": [
+          { "id": "artifact.ph4.st2.t1", "name": "Complete operations handover", "primaryRole": "service-owner", "artifacts": [{ "id": "artifact.operations-pack", "name": "Operations Handover Pack" }], "steps": ["Publish runbooks for deployment, rollback, common incidents, access requests, and escalation.", "Assign service ownership, on-call coverage, dashboards, alerts, service objectives, and support contacts.", "Transfer repository, pipeline, and environment access according to the operating model."], "entryCriteria": ["Release approval exists"], "exitCriteria": ["Operations team can support the deployed service"], "validationRules": ["Runbooks identify owners and escalation paths"], "paletteFocus": [], "durationEstimate": "45–90 min" },
+          { "id": "artifact.ph4.st2.t2", "name": "Execute production validation and close release", "primaryRole": "release-engineer", "artifacts": [{ "id": "artifact.verification-evidence", "name": "Verification Evidence" }, { "id": "artifact.operations-pack", "name": "Operations Handover Pack" }], "steps": ["Deploy the approved release candidate using the documented pipeline and plan.", "Perform post-deployment smoke checks, monitor health signals, and confirm business and technical success criteria.", "Close the release or invoke rollback; record lessons and feed recurring issues to the PSM or generator backlog."], "entryCriteria": ["Approved release window is open"], "exitCriteria": ["Production outcome and follow-up actions are recorded"], "validationRules": ["Production health is checked before the release is closed"], "paletteFocus": [], "durationEstimate": "30–90 min" }
+        ] }
+      ]
+    }
+  ],
+  "changeManagement": { "workflows": [
+    { "id": "artifact.change.psm-feedback", "name": "PSM feedback and regeneration", "trigger": "A generated artifact reveals a missing or incorrect resource, integration, permission, or policy.", "steps": ["Record the artifact gap and affected release candidate.", "Correct and validate the PSM source model.", "Regenerate artifacts, reapply approved extensions, and repeat affected verification tasks."], "impactedStages": ["artifact.ph1.st2", "artifact.ph3.st1", "artifact.ph3.st2"], "crossLevel": true },
+    { "id": "artifact.change.release-rework", "name": "Release-candidate rework", "trigger": "Verification, approval, or post-deployment validation fails.", "steps": ["Contain the issue and decide whether to fix forward or roll back.", "Correct the baseline, configuration, PSM, or generator as appropriate.", "Create a new versioned candidate and repeat the required gates."], "impactedStages": ["artifact.ph2.st2", "artifact.ph3.st1", "artifact.ph3.st2", "artifact.ph4.st1"] }
+  ] },
+  "milestones": [
+    { "id": "artifact.m1.baseline", "name": "Generated baseline accepted", "phaseId": "artifact.ph1" },
+    { "id": "artifact.m2.hardened", "name": "Environment and delivery controls approved", "phaseId": "artifact.ph2" },
+    { "id": "artifact.m3.verified", "name": "Release candidate verified", "phaseId": "artifact.ph3" },
+    { "id": "artifact.m4.ready", "name": "Deployment-ready package handed over", "phaseId": "artifact.ph4" }
+  ]
+}

@@ -49,6 +49,16 @@ class ModelingProcessServiceTest {
   }
 
   @Test
+  void loadsArtifactDeploymentReadinessProcess() {
+    Map<String, Object> process = service.processDefinition("artifact");
+    assertEquals("varka.artifact.deployment-readiness", process.get("processId"));
+    assertEquals(4, list(process.get("phases")).size());
+    assertFalse(list(process.get("roles")).isEmpty());
+    assertFalse(list(process.get("artifactKinds")).isEmpty());
+    assertNotNull(process.get("processEngine"));
+  }
+
+  @Test
   void coverageMatrixCoversAllCimConcepts() {
     Map<String, Object> matrix = service.coverageMatrix("cim");
     assertEquals(0, list(matrix.get("orphanedConcepts")).size());

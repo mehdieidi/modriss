@@ -748,8 +748,8 @@ function renderProcessMap() {
   };
   const stack = getMapStack();
 
-  if (!process || !isModelingLevel(state.activeType)) {
-    canvasHost.innerHTML = `<div class="methodology-map-detail-empty">Open a CIM, PIM, or PSM model to view the process map.</div>`;
+  if (!process || (!isModelingLevel(state.activeType) && state.activeType !== "artifact")) {
+    canvasHost.innerHTML = `<div class="methodology-map-detail-empty">Open a CIM, PIM, PSM, or generated artifacts to view the process map.</div>`;
     return;
   }
 

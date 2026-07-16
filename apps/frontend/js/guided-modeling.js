@@ -145,8 +145,12 @@ function saveProgress(progress) {
 }
 
 function processForActiveLevel() {
-  if (!isModelingLevel(state.activeType)) return null;
+  if (!isMethodologyLevel(state.activeType)) return null;
   return state.guidedModeling.definitions[state.activeType] || null;
+}
+
+function isMethodologyLevel(level) {
+  return isModelingLevel(level) || level === "artifact";
 }
 
 function phaseProgress(process, progress) {
@@ -247,6 +251,11 @@ export function switchLeftPaneMode(mode) {
   if (!el.workspace) return;
   const next = mode === "methodology" ? "methodology" : "palette";
   state.leftPaneMode = next;
+  const isArtifact = state.activeType === "artifact";
+  if (isArtifact) {
+    el.modelingPanel?.classList.toggle("hidden", next !== "methodology");
+    el.artifactPanel?.classList.toggle("hidden", next === "methodology");
+  }
   if (next === "methodology") {
     state.guidedModeling.paletteFocusActive = false;
     state.paletteCollapsed = false;
@@ -259,7 +268,9 @@ export function switchLeftPaneMode(mode) {
   if (next === "methodology") {
     renderGuidedModelingPanel();
   }
-  renderPalette();
+  if (!isArtifact) {
+    renderPalette();
+  }
 }
 
 export function syncMethodologyRailState() {
@@ -273,7 +284,7 @@ export async function loadGuidedModelingDefinitions() {
   if (state.guidedModeling.loading) return;
   state.guidedModeling.loading = true;
   try {
-    const levels = modelingLevelKeys();
+    const levels = [...modelingLevelKeys(), "artifact"];
     const results = await Promise.all(
       levels.map(async (level) => {
         const def = await api(`/modeling/process/${level}`);
@@ -593,17 +604,19 @@ function renderPhaseDetail(host, process, progress) {
 
   const row = document.createElement("div");
   row.className = "methodology-actions-row";
-  const paletteBtn = document.createElement("button");
-  paletteBtn.type = "button";
-  paletteBtn.className = "methodology-btn";
-  paletteBtn.textContent = "Show palette elements";
-  paletteBtn.addEventListener("click", openPaletteForCurrentPhase);
+  if (isModelingLevel(state.activeType)) {
+    const paletteBtn = document.createElement("button");
+    paletteBtn.type = "button";
+    paletteBtn.className = "methodology-btn";
+    paletteBtn.textContent = "Show palette elements";
+    paletteBtn.addEventListener("click", openPaletteForCurrentPhase);
+    row.appendChild(paletteBtn);
+  }
   const aiBtn = document.createElement("button");
   aiBtn.type = "button";
   aiBtn.className = "methodology-btn";
   aiBtn.textContent = "Ask AI";
   aiBtn.addEventListener("click", openAssistantForGuidedPhase);
-  row.appendChild(paletteBtn);
   row.appendChild(aiBtn);
   actions.appendChild(row);
 
@@ -977,10 +990,10 @@ export function renderGuidedModelingPanel() {
   const host = el.methodologyPanelHost;
   if (!host) return;
 
-  if (!isModelingLevel(state.activeType)) {
+  if (!isMethodologyLevel(state.activeType)) {
     phaseMenuOpen = false;
     removeFloatedPhaseMenu();
-    host.innerHTML = `<div class="methodology-empty">Open a CIM, PIM, or PSM model to use the methodology guide.</div>`;
+    host.innerHTML = `<div class="methodology-empty">Open a CIM, PIM, PSM, or generated artifacts to use the methodology guide.</div>`;
     return;
   }
 

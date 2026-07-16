@@ -100,6 +100,8 @@ const LEVEL_INTROS = {
   cim: "CIM process engine advances one capability slice per cycle: frame → discover → explore → synthesize → converge/review → repeat.",
   pim: "PIM process engine advances one service slice per cycle: frame → contracts/data → compute/API → integrate → assure → readiness/review → repeat.",
   psm: "PSM process engine advances one deployable AWS slice per cycle: frame → network/identity → data/messaging → events/compute → API/workflow → readiness/review → repeat.",
+  artifact:
+    "Artifact refinement advances a generated project through inspection → environment hardening → verification → release readiness → operational handover.",
 };
 
 const STAGE_NARRATIVES = {

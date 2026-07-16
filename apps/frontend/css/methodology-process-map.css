@@ -26,15 +26,12 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  margin-left: calc(var(--sidebar-w, 248px) + 4px);
+  margin-left: calc(var(--sidebar-w, 248px) + 0px);
   display: flex;
   flex-direction: column;
   border: var(--glass-pane-border);
-  border-radius: 10px;
+  border-radius: 7px;
   background: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.35),
-    var(--glass-pane-highlight);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   overflow: hidden;
