@@ -12,7 +12,9 @@ import {
 import { applyDefinitionAccent, renderPalette, syncPaletteCollapsedUi } from "./canvas.js";
 import {
   createMethodologyMapOpenButton,
+  closeMethodologyMap,
   initMethodologyProcessMap,
+  openMethodologyMap,
   openMethodologyMapAt,
   refreshMethodologyProcessMap,
 } from "./methodology-process-map.js";
@@ -254,6 +256,9 @@ export function switchLeftPaneMode(mode) {
   if (isArtifact) {
     el.modelingPanel?.classList.toggle("hidden", next !== "methodology");
     el.artifactPanel?.classList.toggle("hidden", next === "methodology");
+    if (next === "palette") {
+      closeMethodologyMap();
+    }
   }
   if (next === "methodology") {
     state.guidedModeling.paletteFocusActive = false;
@@ -277,6 +282,11 @@ export function syncMethodologyRailState() {
   const mode = state.leftPaneMode || "palette";
   el.paletteRailToggleBtn?.classList.toggle("active", !hidden && mode === "palette");
   el.methodologyRailBtn?.classList.toggle("active", !hidden && mode === "methodology");
+  if (el.paletteRailToggleBtn) {
+    const isArtifact = state.activeType === "artifact";
+    el.paletteRailToggleBtn.title = isArtifact ? "File explorer" : "Toggle Palette";
+    el.paletteRailToggleBtn.setAttribute("aria-label", isArtifact ? "File explorer" : "Toggle Palette");
+  }
 }
 
 export async function loadGuidedModelingDefinitions() {
@@ -1047,8 +1057,14 @@ export function onGuidedModelingContextChanged() {
 
 export function showMethodologyPane() {
   switchLeftPaneMode("methodology");
+  if (state.activeType === "artifact") {
+    openMethodologyMap();
+  }
 }
 
 export function showPalettePane() {
+  if (state.activeType === "artifact") {
+    closeMethodologyMap();
+  }
   switchLeftPaneMode("palette");
 }

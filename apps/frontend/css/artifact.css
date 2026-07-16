@@ -26,6 +26,20 @@
   border-right: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
 }
 
+/* The methodology navigator replaces the artifact explorer in this column.
+   Keep its normal pane spacing instead of inheriting the explorer's flush
+   layout. */
+.workspace.artifact-mode.left-pane-methodology .left-pane {
+  padding: 8px 7px;
+}
+
+.workspace.artifact-mode.left-pane-methodology .pane-shell {
+  gap: 8px;
+  padding: 8px;
+  border: var(--glass-pane-border);
+  border-radius: 7px;
+}
+
 .workspace.artifact-mode .canvas-stage {
   padding: 0;
 }

@@ -857,7 +857,10 @@ function mapContextDetailNode(process, stack, selectedId) {
 }
 
 export function openMethodologyMap() {
-  if (!isModelingLevel(state.activeType)) return;
+  // Artifact generation is the final methodology level.  It does not have a
+  // canvas model, but it does have a process definition and must be able to
+  // open the same map from the artifact explorer.
+  if (!isModelingLevel(state.activeType) && state.activeType !== "artifact") return;
   state.guidedModeling.mapOpen = true;
   resetMapStack();
   state.guidedModeling.mapSelectedId = state.guidedModeling.progress?.selectedPhaseId || null;
@@ -869,7 +872,7 @@ export function openMethodologyMap() {
 
 /** Open the map at a phase or stage selected from the compact methodology navigator. */
 export function openMethodologyMapAt({ phaseId = null, stageId = null } = {}) {
-  if (!isModelingLevel(state.activeType)) return;
+  if (!isModelingLevel(state.activeType) && state.activeType !== "artifact") return;
 
   state.guidedModeling.mapOpen = true;
   resetMapStack();

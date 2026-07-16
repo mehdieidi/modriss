@@ -509,6 +509,10 @@ function togglePaletteRail() {
     showPalettePane();
   } else if (state.leftPaneMode === "methodology") {
     showPalettePane();
+  } else if (state.activeType === "artifact") {
+    // In the artifacts tab this control is the file explorer.  Keep the
+    // current file and editor state intact rather than collapsing it.
+    showPalettePane();
   } else {
     el.workspace.classList.add("palette-hidden");
   }
@@ -524,7 +528,11 @@ function toggleMethodologyRail() {
   const hidden = el.workspace.classList.contains("palette-hidden");
   const showingMethodology = state.leftPaneMode === "methodology" && !hidden;
   if (showingMethodology) {
-    el.workspace.classList.add("palette-hidden");
+    if (state.activeType === "artifact") {
+      showPalettePane();
+    } else {
+      el.workspace.classList.add("palette-hidden");
+    }
   } else {
     showMethodologyPane();
   }

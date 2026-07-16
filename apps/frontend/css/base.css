@@ -846,7 +846,8 @@ body.modal-open {
   .workspace.artifact-mode.palette-collapsed.attr-open .workspace-main,
   .workspace.artifact-mode.palette-collapsed.impact-open .workspace-main,
   .workspace.artifact-mode.impact-open .workspace-main {
-    grid-template-columns: clamp(220px, 24vw, 252px) 1fr;
+    --sidebar-w: clamp(220px, 24vw, 252px);
+    grid-template-columns: var(--sidebar-w) 1fr;
   }
 
   .workspace.palette-collapsed .workspace-main,
