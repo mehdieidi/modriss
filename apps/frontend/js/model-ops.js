@@ -1552,7 +1552,7 @@ export async function generateForCurrentContext() {
 
 export async function switchTab(type) {
   if (type !== state.activeType) {
-    const { closeChatWindow } = await import("./chat.js?v=chat-stop-20260704a");
+    const { closeChatWindow } = await import("./chat.js?v=chat-provenance-ui-20260718a");
     closeChatWindow();
   }
   closeAttributePanel();

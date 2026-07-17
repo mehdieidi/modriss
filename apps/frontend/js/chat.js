@@ -506,7 +506,6 @@ function appendDurableTurnActions(turn, typeKey) {
           state.chat.sessions.get(chatScopeKey(typeKey))?.sessionId,
         ),
       );
-      appendDurableProvenance(completed);
       appendDurableTurnActions(completed, typeKey);
     }
   };
@@ -547,25 +546,6 @@ function appendDurableTurnActions(turn, typeKey) {
     actions.appendChild(undoButton);
   }
   if (actions.childElementCount) el.chatMessages.appendChild(actions);
-}
-
-function appendDurableProvenance(turn) {
-  const entries = Array.isArray(turn?.provenance) ? turn.provenance : [];
-  if (!entries.length) return;
-  const container = document.createElement("div");
-  container.className = "chat-proposal-actions";
-  for (const entry of entries) {
-    const badge = document.createElement("span");
-    const inferred = String(entry?.kind || "").toUpperCase() === "INFERRED";
-    badge.className = "chat-proposal-btn";
-    badge.textContent = inferred ? "Inferred" : "Source-grounded";
-    const detail = inferred
-      ? entry?.assumption || "Conservative modeling assumption."
-      : `Evidence: ${entry?.sourceUnitId || "source unit"}`;
-    badge.title = `${entry?.elementId || "Element"}. ${detail}`;
-    container.appendChild(badge);
-  }
-  el.chatMessages.appendChild(container);
 }
 
 function updateChatComposerActionButton() {
@@ -1557,7 +1537,6 @@ export async function sendChatMessage() {
       activeTurnId = null;
       endChatActivity(null, response?.state || null);
       appendAssistantDeduped(await durableAssistantMessage(response, session.sessionId));
-      appendDurableProvenance(response);
       appendDurableTurnActions(response, state.activeType);
     } else {
       applyHttpActivity(response);

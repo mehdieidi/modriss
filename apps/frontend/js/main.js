@@ -44,7 +44,7 @@ import {
   toggleChatHistoryPanel,
   uploadChatAttachment,
   updateChatAttachmentLabel,
-} from "./chat.js?v=chat-stop-20260704a";
+} from "./chat.js?v=chat-provenance-ui-20260718a";
 import {
   bindProjectDialogActions,
   deleteCurrentProject,

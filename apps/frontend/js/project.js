@@ -16,7 +16,7 @@ import { renderViewWorkbench } from "./view-explorer.js";
 import { restoreTabGraphState } from "./graph-store.js";
 import { materializeActiveView } from "./view-materializer.js";
 import { clearArtifactState } from "./artifact.js";
-import { resetChatForProjectChange } from "./chat.js?v=chat-stop-20260704a";
+import { resetChatForProjectChange } from "./chat.js?v=chat-provenance-ui-20260718a";
 import { apiUrl, MODEL_TYPES } from "./config.js";
 import { confirmAction } from "./confirm-action.js";
 import { resetModelSaveState, updateModelSaveUi } from "./model-save-ui.js";
