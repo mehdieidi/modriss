@@ -81,7 +81,7 @@ public final class AgentModelTools {
   }
 
   public List<TypeContract> describeTypes(List<String> names) {
-    return contracts.describe(active().level(), names);
+    return contracts.requiredContainmentClosure(active().level(), names);
   }
 
   public JsonNode readModel(String id) {
@@ -352,10 +352,6 @@ public final class AgentModelTools {
       TypeContract type = contracts.require(level, createdTypes.get(id));
       ObjectNode attributes = createdAttributes.get(id);
       synthesizeRequiredAttributes(type, attributes);
-      if (level == ModelLevel.CIM && "DomainEntity".equals(type.eClass())) {
-        synthesizeDomainEntityIdentity(
-            level, operations, refs, createdTypes, createdAttributes, id, attributes);
-      }
       synthesizeRequiredContainments(
           level, operations, refs, createdTypes, createdAttributes, id, type);
     }
@@ -374,90 +370,9 @@ public final class AgentModelTools {
   }
 
   private JsonNode defaultRequiredAttribute(TypeContract type, AttributeContract attribute) {
-    String policy = policyAttributeDefault(type.eClass(), attribute.name());
-    if (policy != null)
-      return tools.jackson.databind.node.JsonNodeFactory.instance.textNode(policy);
-    if (!attribute.enumLiterals().isEmpty()) {
-      return tools.jackson.databind.node.JsonNodeFactory.instance.textNode(
-          attribute.enumLiterals().get(0));
-    }
-    String attrType = attribute.type() == null ? "" : attribute.type();
-    if (attrType.endsWith("Boolean") || attrType.equals("EBoolean")) {
-      return tools.jackson.databind.node.JsonNodeFactory.instance.booleanNode(false);
-    }
-    if (attrType.endsWith("Integer") || attrType.equals("EInt")) {
-      return tools.jackson.databind.node.JsonNodeFactory.instance.numberNode(1);
-    }
-    if (attrType.endsWith("String") || attrType.equals("EString")) {
-      return tools.jackson.databind.node.JsonNodeFactory.instance.textNode(
-          type.eClass() + " " + attribute.name());
-    }
+    // Ecore does not declare a safe value here. The model must supply it; selecting enum values,
+    // strings, or domain-specific policies in Java would silently invent modeling semantics.
     return null;
-  }
-
-  private String policyAttributeDefault(String type, String attribute) {
-    if ("InformationItem".equals(type) && "type".equals(attribute)) return "TEXT";
-    if ("DomainEntity".equals(type) && "identityStrategy".equals(attribute)) return "SURROGATE_KEY";
-    return null;
-  }
-
-  private void synthesizeDomainEntityIdentity(
-      ModelLevel level,
-      List<Operation> operations,
-      Map<String, String> refs,
-      Map<String, String> createdTypes,
-      Map<String, ObjectNode> createdAttributes,
-      String entityId,
-      ObjectNode entityAttributes) {
-    String identityId = entityId + "-identity";
-    if (createdTypes.containsKey(identityId)
-        || hasConnection(operations, entityId, "identityAttributes")) {
-      return;
-    }
-    ObjectNode identityAttributes =
-        tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
-    String entityName = entityAttributes.path("name").asText(entityId);
-    identityAttributes.put("name", entityName + " Identifier");
-    identityAttributes.put("businessName", entityName + " identifier");
-    identityAttributes.put("required", true);
-    identityAttributes.put("type", "IDENTIFIER");
-    TypeContract infoType = contracts.require(level, "InformationItem");
-    synthesizeRequiredAttributes(infoType, identityAttributes);
-    refs.put(identityId, identityId);
-    createdTypes.put(identityId, "InformationItem");
-    createdAttributes.put(identityId, identityAttributes);
-    operations.add(
-        new Operation(
-            OperationType.ADD_ELEMENT,
-            identityId,
-            "InformationItem",
-            identityAttributes,
-            null,
-            null));
-    operations.add(
-        new Operation(
-            OperationType.CONNECT_ELEMENTS,
-            identityId,
-            "InformationItem",
-            null,
-            entityId,
-            "identityAttributes"));
-    operations.add(
-        new Operation(
-            OperationType.CONNECT_ELEMENTS,
-            identityId,
-            "InformationItem",
-            null,
-            entityId,
-            "primaryIdentityAttribute"));
-    operations.add(
-        new Operation(
-            OperationType.CONNECT_ELEMENTS,
-            identityId,
-            "InformationItem",
-            null,
-            entityId,
-            "attributes"));
   }
 
   private void synthesizeRequiredContainments(

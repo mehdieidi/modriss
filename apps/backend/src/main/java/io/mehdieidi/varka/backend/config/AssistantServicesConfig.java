@@ -54,10 +54,11 @@ public class AssistantServicesConfig {
   @Bean
   LexicalRetrievalIndex lexicalRetrievalIndex(
       AssistantMetamodelSchemaService schemas,
+      MetamodelKnowledgeService knowledge,
       org.springframework.beans.factory.ObjectProvider<
               org.springframework.ai.embedding.EmbeddingModel>
           embeddings) {
-    return new LexicalRetrievalIndex(schemas, null, embeddings.getIfAvailable());
+    return new LexicalRetrievalIndex(schemas, knowledge, null, embeddings.getIfAvailable());
   }
 
   @Bean

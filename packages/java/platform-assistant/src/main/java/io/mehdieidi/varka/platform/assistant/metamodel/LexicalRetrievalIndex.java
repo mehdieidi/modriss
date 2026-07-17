@@ -19,18 +19,19 @@ import org.springframework.ai.embedding.EmbeddingModel;
 /** Local lexical retrieval fallback; it never sends model or document text to a remote service. */
 public final class LexicalRetrievalIndex {
   private final AssistantMetamodelSchemaService schemas;
+  private final MetamodelKnowledgeService knowledge;
   private final Path repositoryRoot;
   private final EmbeddingModel embeddingModel;
   private final Map<ModelLevel, List<ContextSnippet>> localCorpus = new ConcurrentHashMap<>();
   private final Map<String, float[]> embeddingCache = new ConcurrentHashMap<>();
 
   public LexicalRetrievalIndex(AssistantMetamodelSchemaService schemas) {
-    this(schemas, discoverRepositoryRoot(Path.of("").toAbsolutePath().normalize()), null);
+    this(schemas, new MetamodelKnowledgeService(schemas), null, null);
   }
 
   /** Allows deployment packaging/tests to choose the repository/document root explicitly. */
   public LexicalRetrievalIndex(AssistantMetamodelSchemaService schemas, Path repositoryRoot) {
-    this(schemas, repositoryRoot, null);
+    this(schemas, new MetamodelKnowledgeService(schemas), repositoryRoot, null);
   }
 
   /**
@@ -38,7 +39,23 @@ public final class LexicalRetrievalIndex {
    */
   public LexicalRetrievalIndex(
       AssistantMetamodelSchemaService schemas, Path repositoryRoot, EmbeddingModel embeddingModel) {
+    this(schemas, new MetamodelKnowledgeService(schemas), repositoryRoot, embeddingModel);
+  }
+
+  /**
+   * Creates retrieval over Ecore contracts and approved guidance.
+   *
+   * <p>Every retrieved EClass is expanded with its required containment closure before it is sent
+   * to the provider. This is structural retrieval, not an intent heuristic: a model can therefore
+   * construct an element such as {@code Function} together with the exact contract it requires.
+   */
+  public LexicalRetrievalIndex(
+      AssistantMetamodelSchemaService schemas,
+      MetamodelKnowledgeService knowledge,
+      Path repositoryRoot,
+      EmbeddingModel embeddingModel) {
     this.schemas = schemas;
+    this.knowledge = knowledge == null ? new MetamodelKnowledgeService(schemas) : knowledge;
     this.repositoryRoot =
         repositoryRoot == null
             ? discoverRepositoryRoot(Path.of("").toAbsolutePath().normalize())
@@ -67,18 +84,38 @@ public final class LexicalRetrievalIndex {
         embeddingModel == null || query == null || query.isBlank()
             ? null
             : embeddingModel.embed(query);
-    return candidates.stream()
-        .map(
-            snippet ->
-                new Scored(snippet, score(snippet, terms), similarity(queryEmbedding, snippet)))
-        .sorted(
-            Comparator.comparingDouble(Scored::rank)
-                .reversed()
-                .thenComparing(item -> item.snippet().title()))
-        .filter(item -> terms.isEmpty() || item.score() > 0)
-        .limit(Math.max(1, limit))
-        .map(Scored::snippet)
-        .toList();
+    List<ContextSnippet> selected =
+        candidates.stream()
+            .map(
+                snippet ->
+                    new Scored(snippet, score(snippet, terms), similarity(queryEmbedding, snippet)))
+            .sorted(
+                Comparator.comparingDouble(Scored::rank)
+                    .reversed()
+                    .thenComparing(item -> item.snippet().title()))
+            .filter(item -> terms.isEmpty() || item.score() > 0)
+            .limit(Math.max(1, limit))
+            .map(Scored::snippet)
+            .toList();
+    return withRequiredContainmentClosure(level, selected);
+  }
+
+  private List<ContextSnippet> withRequiredContainmentClosure(
+      ModelLevel level, List<ContextSnippet> selected) {
+    List<String> selectedTypes =
+        selected.stream()
+            .map(ContextSnippet::title)
+            .filter(title -> knowledge.index().typeContract(level, title).isPresent())
+            .toList();
+    if (selectedTypes.isEmpty()) return selected;
+
+    Map<String, ContextSnippet> result = new java.util.LinkedHashMap<>();
+    for (ContextSnippet snippet : selected)
+      result.put(snippet.source() + "\n" + snippet.title(), snippet);
+    for (ContextSnippet contract : knowledge.contractClosure(level, selectedTypes)) {
+      result.put("ecore-closure\n" + contract.title(), contract);
+    }
+    return List.copyOf(result.values());
   }
 
   private double similarity(float[] query, ContextSnippet snippet) {

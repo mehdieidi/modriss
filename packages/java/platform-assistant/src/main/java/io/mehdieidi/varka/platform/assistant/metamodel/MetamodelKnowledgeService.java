@@ -4,7 +4,6 @@ import io.mehdieidi.varka.platform.assistant.patch.AssistantMetamodelSchemaServi
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.modeling.config.ModelingConfigService;
-import java.util.ArrayList;
 import java.util.List;
 
 /** Ecore-derived knowledge service used by the unified modeling agent path. */
@@ -101,24 +100,21 @@ public class MetamodelKnowledgeService {
   /** Returns exact type-contract snippets for a candidate set plus their required containments. */
   public List<AssistantModelProvider.ContextSnippet> contractClosure(
       ModelLevel level, List<String> candidateTypes) {
-    List<AssistantModelProvider.ContextSnippet> result = new ArrayList<>();
-    for (String type : schemas.knownTypes(level, candidateTypes)) {
-      result.add(typeContractSnippet(level, type));
+    java.util.LinkedHashSet<String> pending =
+        new java.util.LinkedHashSet<>(schemas.knownTypes(level, candidateTypes));
+    java.util.LinkedHashSet<String> visited = new java.util.LinkedHashSet<>();
+    while (!pending.isEmpty()) {
+      String type = pending.iterator().next();
+      pending.remove(type);
+      if (!visited.add(type)) continue;
       typeContract(level, type).references().stream()
-          .filter(MetamodelKnowledgeService.ReferenceContract::required)
-          .filter(MetamodelKnowledgeService.ReferenceContract::containment)
-          .forEach(reference -> result.add(typeContractSnippet(level, reference.targetType())));
+          .filter(ReferenceContract::required)
+          .filter(ReferenceContract::containment)
+          .map(ReferenceContract::targetType)
+          .filter(target -> !visited.contains(target))
+          .forEach(pending::add);
     }
-    return result.stream()
-        .collect(
-            java.util.stream.Collectors.toMap(
-                AssistantModelProvider.ContextSnippet::title,
-                snippet -> snippet,
-                (left, ignored) -> left,
-                java.util.LinkedHashMap::new))
-        .values()
-        .stream()
-        .toList();
+    return visited.stream().map(type -> typeContractSnippet(level, type)).toList();
   }
 
   private AssistantModelProvider.ContextSnippet typeContractSnippet(

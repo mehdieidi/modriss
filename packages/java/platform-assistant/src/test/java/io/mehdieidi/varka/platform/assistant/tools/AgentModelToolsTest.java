@@ -51,7 +51,7 @@ class AgentModelToolsTest {
   }
 
   @Test
-  void synthesizesRequiredCimEntityIdentityWithoutAnotherProviderTurn() throws Exception {
+  void doesNotInventCimEntityIdentityOrAttributeDefaults() throws Exception {
     AgentModelTools tools = cimTools();
     tools.bind(ModelLevel.CIM, workspace());
 
@@ -74,10 +74,9 @@ class AgentModelToolsTest {
                 true));
 
     String json = result.model().toString();
-    assertTrue(json.contains("\"identityStrategy\":\"SURROGATE_KEY\""));
-    assertTrue(json.contains("\"eClass\":\"InformationItem\""));
-    assertTrue(json.contains("\"type\":\"IDENTIFIER\""));
-    assertTrue(json.contains("\"primaryIdentityAttribute\":\"patient-identity\""));
+    assertTrue(json.contains("\"eClass\":\"DomainEntity\""));
+    assertTrue(!json.contains("\"identityStrategy\""));
+    assertTrue(!json.contains("\"InformationItem\""));
   }
 
   @Test

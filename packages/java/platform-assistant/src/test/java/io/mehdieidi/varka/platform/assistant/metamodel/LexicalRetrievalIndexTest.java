@@ -14,7 +14,7 @@ class LexicalRetrievalIndexTest {
     var first = index.search(ModelLevel.CIM, "goal actor", 4);
     var second = index.search(ModelLevel.CIM, "goal actor", 4);
     assertEquals(first, second);
-    assertEquals(4, first.size());
+    assertTrue(first.size() >= 4);
   }
 
   @Test
@@ -25,5 +25,16 @@ class LexicalRetrievalIndexTest {
 
     assertTrue(
         matches.stream().anyMatch(item -> item.source().contains("community-clinic-user-stories")));
+  }
+
+  @Test
+  void ecoreClosureIncludesAFunctionsRequiredContract() {
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+
+    var closure = knowledge.contractClosure(ModelLevel.PIM, java.util.List.of("Function"));
+
+    assertTrue(closure.stream().anyMatch(item -> item.title().equals("Function EClass contract")));
+    assertTrue(
+        closure.stream().anyMatch(item -> item.title().equals("FunctionContract EClass contract")));
   }
 }

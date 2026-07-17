@@ -30,6 +30,35 @@ public final class TypeContractService {
     return names.stream().distinct().map(name -> require(level, name)).toList();
   }
 
+  /**
+   * Returns requested contracts plus their complete required-containment closure.
+   *
+   * <p>This follows the live Ecore graph and is deliberately independent of prompt wording or
+   * DSML-specific names. A provider that requests a parent contract receives every mandatory
+   * contained contract needed to construct it correctly.
+   */
+  public List<TypeContract> requiredContainmentClosure(ModelLevel level, List<String> names) {
+    if (names == null || names.isEmpty()) {
+      throw new PlatformException(400, "At least one type name is required.");
+    }
+    java.util.LinkedHashSet<String> pending = new java.util.LinkedHashSet<>();
+    for (String name : names) pending.add(require(level, name).eClass());
+    java.util.LinkedHashSet<String> visited = new java.util.LinkedHashSet<>();
+    while (!pending.isEmpty()) {
+      String typeName = pending.iterator().next();
+      pending.remove(typeName);
+      if (!visited.add(typeName)) continue;
+      require(level, typeName).references().stream()
+          .filter(MetamodelKnowledgeService.ReferenceContract::required)
+          .filter(MetamodelKnowledgeService.ReferenceContract::containment)
+          .map(MetamodelKnowledgeService.ReferenceContract::targetType)
+          .map(target -> require(level, target).eClass())
+          .filter(target -> !visited.contains(target))
+          .forEach(pending::add);
+    }
+    return visited.stream().map(type -> require(level, type)).toList();
+  }
+
   public List<TypeContract> all(ModelLevel level) {
     return knowledge.typeContracts(level);
   }

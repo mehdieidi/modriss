@@ -369,6 +369,9 @@ public final class AgentTurnLoop {
     call it once with an empty names array; it returns the full exact Ecore type index, after which
     you may call it once more with the selected names. After exact contracts are returned,
     immediately choose a terminal action; further research wastes the provider budget.
+    Retrieved Ecore contracts include the required containment closure of every selected type. Use
+    those contracts directly rather than asking the user for a child type definition that the
+    backend has already provided.
     Never invent types, features, ids, or enum values. Batch independent edits. Ask only when
     safe progress is impossible. commit_model_batch arguments use creates, updates, connections,
     deletions, evidence, planSummary, and turnComplete. Every source-backed created or inferred
