@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html class="light" lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
@@ -19,6 +19,15 @@
       type="font/ttf"
       crossorigin
     />
+    <script>
+      try {
+        if (localStorage.getItem("varka.themeScheme") === "dark") {
+          document.documentElement.classList.remove("light");
+        }
+      } catch {
+        // Keep the light theme when browser storage is unavailable.
+      }
+    </script>
     <link href="/css/variables.css" rel="stylesheet" />
     <link href="/css/base.css" rel="stylesheet" />
     <link href="/css/topbar.css" rel="stylesheet" />

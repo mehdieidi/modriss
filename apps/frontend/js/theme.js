@@ -96,6 +96,8 @@ export async function initTheme() {
   const storedScheme = localStorage.getItem(THEME_SCHEME_STORAGE);
   if (storedScheme === THEME_LIGHT || storedScheme === THEME_DARK) {
     setLightClass(storedScheme === THEME_LIGHT);
+  } else {
+    setLightClass(true);
   }
   updateThemeToggleIcon();
   await loadActiveThemeProfile();
