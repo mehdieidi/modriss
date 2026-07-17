@@ -22,6 +22,7 @@ public class AdminQueryService {
   public Overview overview() {
     return new Overview(
         scalar("SELECT count(*) FROM users"),
+        scalar("SELECT count(*) FROM guest_accounts"),
         scalar("SELECT count(*) FROM disabled_users"),
         scalar("SELECT count(*) FROM auth_sessions WHERE expires_at > now()"),
         scalar("SELECT count(*) FROM projects"),
@@ -37,11 +38,14 @@ public class AdminQueryService {
     return jdbc.query(
         """
 SELECT u.id, u.email, u.display_name, u.created_at, u.updated_at,
+  ga.user_id IS NOT NULL AS guest, COALESCE(ga.prompt_limit, 0) AS guest_prompt_limit,
+  COALESCE(ga.prompts_used, 0) AS guest_prompts_used,
   d.disabled_at,
   COALESCE(s.active_sessions, 0) AS active_sessions,
   COALESCE(p.project_count, 0) AS project_count,
   COALESCE(ar.roles, '') AS roles
 FROM users u
+LEFT JOIN guest_accounts ga ON ga.user_id = u.id
 LEFT JOIN disabled_users d ON d.user_id = u.id
 LEFT JOIN (
   SELECT user_id, count(*) active_sessions FROM auth_sessions
@@ -297,6 +301,9 @@ ORDER BY p.updated_at DESC
         rs.getString("id"),
         rs.getString("email"),
         rs.getString("display_name"),
+        rs.getBoolean("guest"),
+        rs.getInt("guest_prompt_limit"),
+        rs.getInt("guest_prompts_used"),
         rs.getLong("active_sessions"),
         rs.getLong("project_count"),
         roles == null || roles.isBlank() ? List.of() : List.of(roles.split(",")),
@@ -319,6 +326,7 @@ ORDER BY p.updated_at DESC
 
   public record Overview(
       long users,
+      long guestUsers,
       long disabledUsers,
       long activeSessions,
       long projects,
@@ -333,6 +341,9 @@ ORDER BY p.updated_at DESC
       String id,
       String email,
       String displayName,
+      boolean guest,
+      int guestPromptLimit,
+      int guestPromptsUsed,
       long activeSessions,
       long projectCount,
       List<String> adminRoles,

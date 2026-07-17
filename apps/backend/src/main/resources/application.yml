@@ -48,6 +48,8 @@ spring:
 
 varka:
   session-ttl: 30d
+  guest:
+    prompt-limit: ${VARKA_GUEST_PROMPT_LIMIT:5}
   admin:
     bootstrap-enabled: ${VARKA_ADMIN_BOOTSTRAP_ENABLED:false}
     bootstrap-emails: ${VARKA_ADMIN_BOOTSTRAP_EMAILS:}

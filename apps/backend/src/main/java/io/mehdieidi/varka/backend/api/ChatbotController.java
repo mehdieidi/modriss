@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mehdieidi.varka.backend.assistant.AssistantRealtimeHub;
 import io.mehdieidi.varka.backend.assistant.DurableAssistantTurnWorker;
 import io.mehdieidi.varka.backend.assistant.DurableTurnUndoService;
+import io.mehdieidi.varka.backend.guest.GuestAccessService;
 import io.mehdieidi.varka.backend.upload.UploadScope;
 import io.mehdieidi.varka.backend.upload.UploadService;
 import io.mehdieidi.varka.backend.upload.UploadedFileRecord;
@@ -58,6 +59,7 @@ public class ChatbotController {
   private final UploadService uploads;
   private final AssistantTurnStore turns;
   private final DurableTurnUndoService durableUndo;
+  private final GuestAccessService guests;
   private final java.util.concurrent.ScheduledExecutorService turnEventReplay =
       Executors.newSingleThreadScheduledExecutor(
           runnable -> {
@@ -79,7 +81,7 @@ public class ChatbotController {
       AuthSupport auth,
       ProjectService projects,
       UploadService uploads) {
-    this(assistant, realtime, auth, projects, uploads, null, null);
+    this(assistant, realtime, auth, projects, uploads, null, null, null);
   }
 
   public ChatbotController(
@@ -89,7 +91,7 @@ public class ChatbotController {
       ProjectService projects,
       UploadService uploads,
       AssistantTurnStore turns) {
-    this(assistant, realtime, auth, projects, uploads, turns, null);
+    this(assistant, realtime, auth, projects, uploads, turns, null, null);
   }
 
   @Autowired
@@ -100,7 +102,8 @@ public class ChatbotController {
       ProjectService projects,
       UploadService uploads,
       AssistantTurnStore turns,
-      DurableTurnUndoService durableUndo) {
+      DurableTurnUndoService durableUndo,
+      GuestAccessService guests) {
     this.assistant = assistant;
     this.realtime = realtime;
     this.auth = auth;
@@ -108,6 +111,7 @@ public class ChatbotController {
     this.uploads = uploads;
     this.turns = turns;
     this.durableUndo = durableUndo;
+    this.guests = guests;
   }
 
   /**
@@ -235,6 +239,7 @@ public class ChatbotController {
       if (existing.isPresent()) {
         return ResponseEntity.accepted().body(accepted(existing.get()));
       }
+      consumeGuestPrompt(user);
       Instant acceptedAt = Instant.now();
       var starter = assistant.ensureModel(user, sessionId, request.modelId());
       Long requestedRevision =
@@ -277,6 +282,7 @@ public class ChatbotController {
               "modelId", starter.id(), "revision", starter.revision(), "kind", "starter"));
       return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(turn));
     }
+    consumeGuestPrompt(user);
     long orchestratorStarted = System.nanoTime();
     var response =
         assistant.message(
@@ -308,6 +314,12 @@ public class ChatbotController {
                 "COMPLETED",
                 "Agent turn completed",
                 io.mehdieidi.varka.platform.assistant.domain.AssistantWorkflowState.APPLIED)));
+  }
+
+  private void consumeGuestPrompt(UserRecord user) {
+    if (guests != null) {
+      guests.consumePrompt(user);
+    }
   }
 
   private TurnAcceptedResponse accepted(AssistantTurn turn) {

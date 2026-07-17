@@ -374,7 +374,7 @@ function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
 function OverviewView({ data }: { data: DataState }) {
   const overview = data.overview;
   const cards = [
-    ["Users", overview?.users, <Users size={20} />, `${overview?.disabledUsers ?? 0} disabled`],
+    ["Users", overview?.users, <Users size={20} />, `${overview?.guestUsers ?? 0} guests`],
     ["Active sessions", overview?.activeSessions, <Activity size={20} />, "valid tokens"],
     ["Projects", overview?.projects, <Layers3 size={20} />, `${overview?.models ?? 0} models`],
     ["Artifacts", overview?.artifacts, <Box size={20} />, "generated outputs"],
@@ -403,6 +403,7 @@ function OverviewView({ data }: { data: DataState }) {
           <Attention label="Failed MDE jobs" value={overview?.failedJobs ?? 0} />
           <Attention label="Failed assistant turns" value={overview?.failedAssistantTurns ?? 0} />
           <Attention label="Disabled accounts" value={overview?.disabledUsers ?? 0} />
+          <Attention label="Guest accounts" value={overview?.guestUsers ?? 0} />
           <Attention label="Active sessions" value={overview?.activeSessions ?? 0} />
         </div>
       </section>
@@ -418,9 +419,9 @@ function UsersView(props: {
   refresh: () => Promise<void>;
   onError: (err: unknown) => void;
 }) {
-  async function action(path: string, body: object) {
+  async function action(path: string, body: object, method = "POST") {
     try {
-      await api<void>(path, props.token, { method: "POST", body: JSON.stringify(body) });
+      await api<void>(path, props.token, { method, body: JSON.stringify(body) });
       await props.refresh();
     } catch (err) {
       props.onError(err);
@@ -429,16 +430,17 @@ function UsersView(props: {
 
   return (
     <Table
-      headers={["User", "Roles", "Sessions", "Projects", "Status", "Created", "Actions"]}
+      headers={["User", "Type / quota", "Roles", "Sessions", "Projects", "Status", "Created", "Actions"]}
       rows={props.rows.map((user) => [
         <RecordTitle title={user.displayName} subtitle={user.email} key="user" />,
+        user.guest ? `${user.guestPromptsUsed} / ${user.guestPromptLimit} prompts` : "Registered",
         <Pills values={user.adminRoles} empty="none" key="roles" />,
         user.activeSessions,
         user.projectCount,
         <Status value={user.disabled ? "DISABLED" : "ACTIVE"} key="status" />,
         formatDate(user.createdAt),
         <div className="row-actions" key="actions">
-          {props.canAdmin && (
+          {props.canAdmin && !user.guest && (
             <>
               <button onClick={() => action(`/api/admin/users/${user.id}/roles`, { role: "ADMIN", reason: "admin panel grant" })}>
                 Admin
@@ -463,6 +465,20 @@ function UsersView(props: {
               }
             >
               {user.disabled ? "Enable" : "Disable"}
+            </button>
+          )}
+          {props.canAdmin && user.guest && (
+            <button
+              className="danger"
+              onClick={() =>
+                action(
+                  `/api/admin/users/${user.id}`,
+                  { reason: "admin panel guest deletion" },
+                  "DELETE",
+                )
+              }
+            >
+              Delete guest
             </button>
           )}
         </div>,

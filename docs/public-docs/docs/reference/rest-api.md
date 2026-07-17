@@ -10,13 +10,13 @@ Interactive and machine-readable contracts:
 
 ## Authentication
 
-Registration and login return a session token. Send it on protected endpoints:
+Registration, login, and guest access return a session token. Send it on protected endpoints:
 
 ```http
 X-Auth-Token: <token>
 ```
 
-Public endpoints include health, registration, login, modeling configuration, layout, generated API
+Public endpoints include health, registration, login, guest-session creation, modeling configuration, layout, generated API
 documentation, and Swagger UI.
 
 ## Error Shape
@@ -40,13 +40,19 @@ Common statuses are `400`, `401`, `403`, `404`, `409`, `413`, `500`, and `501`.
 
 ### Authentication
 
-| Method | Path                 | Purpose                      |
-| ------ | -------------------- | ---------------------------- |
-| `POST` | `/api/auth/register` | Register and start a session |
-| `POST` | `/api/auth/login`    | Start a session              |
-| `GET`  | `/api/auth/me`       | Get current user             |
-| `PUT`  | `/api/auth/me`       | Update display name          |
-| `POST` | `/api/auth/logout`   | End current session          |
+| Method | Path                 | Purpose                                                             |
+| ------ | -------------------- | ------------------------------------------------------------------- |
+| `POST` | `/api/auth/register` | Register and start a session                                        |
+| `POST` | `/api/auth/login`    | Start a session                                                     |
+| `POST` | `/api/auth/guest`    | Start an isolated guest session (five assistant prompts by default) |
+| `GET`  | `/api/auth/me`       | Get current user                                                    |
+| `PUT`  | `/api/auth/me`       | Update display name                                                 |
+| `POST` | `/api/auth/logout`   | End current session                                                 |
+
+Guest accounts are normal authenticated accounts with an anonymous display name; their projects,
+models, uploads, and assistant history remain isolated by the same ownership checks as registered
+users. The server atomically counts accepted assistant prompts and returns `403` once the guest
+allowance is exhausted. The limit defaults to five and can be configured with `VARKA_GUEST_PROMPT_LIMIT`.
 
 ### Projects
 

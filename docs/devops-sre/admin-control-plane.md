@@ -11,6 +11,10 @@ Admin access is separate from ordinary application authentication.
 - Admin authorization is granted through `admin_roles`.
 - Supported roles are `ADMIN`, `OPERATOR`, and `VIEWER`.
 - Disabled users are rejected by authenticated backend flows.
+- Guest accounts appear in the Users view with their prompt allowance and usage. Administrators can
+  disable guests and revoke their sessions through the same audited controls used for registered users.
+  An `ADMIN` can also permanently delete a guest and the projects it owns; this is audited and
+  intentionally unavailable for registered accounts.
 - Bootstrap access is controlled by `VARKA_ADMIN_BOOTSTRAP_ENABLED` and
   `VARKA_ADMIN_BOOTSTRAP_EMAILS`, and `VARKA_ADMIN_BOOTSTRAP_TOKEN`.
 

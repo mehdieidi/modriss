@@ -138,7 +138,8 @@ class UploadServiceTest {
             Duration.ofDays(1),
             List.of(),
             null,
-            new BackendProperties.Upload(Path.of("uploads"), 1024L, 200));
+            new BackendProperties.Upload(Path.of("uploads"), 1024L, 200),
+            null);
     UploadService service = new UploadService(new FailingUploadStorage(), properties, mapper);
     UploadScope scope = new UploadScope("user", "project", ModelLevel.CIM, "session");
 
@@ -165,7 +166,8 @@ class UploadServiceTest {
             Duration.ofDays(1),
             List.of(),
             null,
-            new BackendProperties.Upload(Path.of("uploads"), maxFileBytes, maxTextChars));
+            new BackendProperties.Upload(Path.of("uploads"), maxFileBytes, maxTextChars),
+            null);
     return new UploadService(
         new LocalUploadStorage(tempDir.resolve("uploads"), mapper), properties, mapper);
   }

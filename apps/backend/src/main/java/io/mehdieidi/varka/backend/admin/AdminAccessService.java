@@ -13,6 +13,7 @@ import java.util.UUID;
 import org.slf4j.MDC;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.JacksonException;
 
 /** Authorizes and audits administrative access. */
@@ -118,6 +119,7 @@ public class AdminAccessService {
 
   public void grantRole(AdminPrincipal actor, String userId, String role, String reason) {
     requireOwner(actor.user());
+    rejectGuestAdministration(userId);
     String normalized = normalizeRole(role);
     jdbc.update(
         """
@@ -175,6 +177,24 @@ public class AdminAccessService {
     audit(actor, "USER_SESSIONS_REVOKED", "USER", userId, reason, Map.of("count", count));
   }
 
+  /** Permanently removes a guest account and the projects it owns. */
+  @Transactional
+  public void deleteGuest(AdminPrincipal actor, String userId, String reason) {
+    requireOwner(actor.user());
+    if (actor.user().id().equals(userId)) {
+      throw new PlatformException(409, "Administrators cannot delete their own account.");
+    }
+    Integer guest =
+        jdbc.queryForObject(
+            "SELECT count(*) FROM guest_accounts WHERE user_id = ?", Integer.class, userId);
+    if (guest == null || guest == 0) {
+      throw new PlatformException(400, "Only guest accounts can be deleted from this endpoint.");
+    }
+    jdbc.update("DELETE FROM projects WHERE owner_user_id = ?", userId);
+    jdbc.update("DELETE FROM users WHERE id = ?", userId);
+    audit(actor, "GUEST_DELETED", "GUEST", userId, reason, Map.of("ownedProjectsDeleted", true));
+  }
+
   public void audit(
       AdminPrincipal actor,
       String action,
@@ -205,6 +225,15 @@ public class AdminAccessService {
       throw new PlatformException(400, "Unsupported admin role.");
     }
     return normalized;
+  }
+
+  private void rejectGuestAdministration(String userId) {
+    Integer guest =
+        jdbc.queryForObject(
+            "SELECT count(*) FROM guest_accounts WHERE user_id = ?", Integer.class, userId);
+    if (guest != null && guest > 0) {
+      throw new PlatformException(400, "Guest accounts cannot receive administrator roles.");
+    }
   }
 
   private static String normalizeEmail(String email) {

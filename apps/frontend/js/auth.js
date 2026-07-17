@@ -53,6 +53,23 @@ function setAuthMode(mode) {
   }
 }
 
+function setAuthChoiceVisible(visible) {
+  el.authChoice?.classList.toggle("hidden", !visible);
+  el.authModeSwitch?.classList.toggle("hidden", visible);
+  el.authForm?.classList.toggle("hidden", visible);
+  if (el.authSubmitBtn) {
+    el.authSubmitBtn.classList.toggle("hidden", visible);
+  }
+  if (el.authTitle) {
+    el.authTitle.textContent = visible ? "How would you like to continue?" : "Sign in to Varka";
+  }
+  if (el.authSubtitle) {
+    el.authSubtitle.textContent = visible
+      ? "Use a guest workspace or access your account."
+      : "Use your account to continue.";
+  }
+}
+
 function showAuthError(message) {
   if (!el.authError) {
     return;
@@ -118,6 +135,7 @@ async function showAuthDialog() {
   }
   let mode = "login";
   setAuthMode(mode);
+  setAuthChoiceVisible(true);
   clearAuthError();
   clearAuthSuccess();
   el.authEmailInput.value = "";
@@ -135,6 +153,12 @@ async function showAuthDialog() {
     const setBusy = (busy) => {
       if (el.authSubmitBtn) {
         el.authSubmitBtn.disabled = busy;
+      }
+      if (el.authGuestBtn) {
+        el.authGuestBtn.disabled = busy;
+      }
+      if (el.authContinueLoginBtn) {
+        el.authContinueLoginBtn.disabled = busy;
       }
       if (el.authLoginTabBtn) {
         el.authLoginTabBtn.disabled = busy;
@@ -166,6 +190,8 @@ async function showAuthDialog() {
       el.authPasswordInput?.removeEventListener("keydown", onKeyDown);
       el.authDisplayNameInput?.removeEventListener("keydown", onKeyDown);
       el.authConfirmPasswordInput?.removeEventListener("keydown", onKeyDown);
+      el.authGuestBtn?.removeEventListener("click", onGuest);
+      el.authContinueLoginBtn?.removeEventListener("click", onContinueLogin);
     };
 
     const resolveSession = (result) => {
@@ -187,6 +213,23 @@ async function showAuthDialog() {
       clearAuthSuccess();
       setAuthMode(mode);
       el.authDisplayNameInput?.focus();
+    };
+
+    const onContinueLogin = () => {
+      setAuthChoiceVisible(false);
+      el.authEmailInput?.focus();
+    };
+
+    const onGuest = async () => {
+      clearAuthError();
+      try {
+        setBusy(true);
+        const result = await api("/auth/guest", { method: "POST" });
+        resolveSession(result);
+      } catch (error) {
+        showAuthError(formatUserError(error));
+        setBusy(false);
+      }
     };
 
     const onSubmit = async () => {
@@ -247,8 +290,10 @@ async function showAuthDialog() {
     el.authPasswordInput?.addEventListener("keydown", onKeyDown);
     el.authDisplayNameInput?.addEventListener("keydown", onKeyDown);
     el.authConfirmPasswordInput?.addEventListener("keydown", onKeyDown);
+    el.authGuestBtn?.addEventListener("click", onGuest);
+    el.authContinueLoginBtn?.addEventListener("click", onContinueLogin);
 
-    el.authEmailInput?.focus();
+    el.authGuestBtn?.focus();
   });
 }
 

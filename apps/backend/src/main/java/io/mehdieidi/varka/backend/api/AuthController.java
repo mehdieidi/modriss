@@ -2,6 +2,7 @@ package io.mehdieidi.varka.backend.api;
 
 import io.mehdieidi.varka.backend.admin.AdminAccessService;
 import io.mehdieidi.varka.backend.analytics.VisitorAnalyticsService;
+import io.mehdieidi.varka.backend.guest.GuestAccessService;
 import io.mehdieidi.varka.platform.identity.application.AuthService;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +27,7 @@ public class AuthController {
   private final AuthService authService;
   private final AdminAccessService adminAccess;
   private final VisitorAnalyticsService analytics;
+  private final GuestAccessService guests;
 
   /**
    * Creates the authentication controller.
@@ -33,10 +35,14 @@ public class AuthController {
    * @param authService authentication service
    */
   public AuthController(
-      AuthService authService, AdminAccessService adminAccess, VisitorAnalyticsService analytics) {
+      AuthService authService,
+      AdminAccessService adminAccess,
+      VisitorAnalyticsService analytics,
+      GuestAccessService guests) {
     this.authService = authService;
     this.adminAccess = adminAccess;
     this.analytics = analytics;
+    this.guests = guests;
   }
 
   /**
@@ -49,7 +55,7 @@ public class AuthController {
   AuthResponse register(@Valid @RequestBody RegisterRequest request) {
     AuthService.AuthResult result =
         authService.register(request.email(), request.password(), request.displayName());
-    return new AuthResponse(result.token(), UserDto.from(result.user()));
+    return new AuthResponse(result.token(), UserDto.from(result.user(), false));
   }
 
   /**
@@ -63,7 +69,14 @@ public class AuthController {
     AuthService.AuthResult result = authService.login(request.email(), request.password());
     adminAccess.requireEnabled(result.user());
     analytics.recordLogin(result.user(), httpRequest, request.publicIp());
-    return new AuthResponse(result.token(), UserDto.from(result.user()));
+    return new AuthResponse(result.token(), UserDto.from(result.user(), false));
+  }
+
+  /** Creates an isolated anonymous session. No client-provided identity is trusted. */
+  @PostMapping("/guest")
+  AuthResponse guest() {
+    AuthService.AuthResult result = guests.createGuest();
+    return new AuthResponse(result.token(), UserDto.from(result.user(), true));
   }
 
   /**
@@ -76,7 +89,7 @@ public class AuthController {
   UserDto me(@RequestHeader("X-Auth-Token") String token) {
     UserRecord user = authService.requireUser(token);
     adminAccess.requireEnabled(user);
-    return UserDto.from(user);
+    return UserDto.from(user, guests.isGuest(user.id()));
   }
 
   /**
@@ -91,7 +104,7 @@ public class AuthController {
       @RequestHeader("X-Auth-Token") String token, @Valid @RequestBody UpdateMeRequest request) {
     UserRecord user = authService.updateDisplayName(token, request.displayName());
     adminAccess.requireEnabled(user);
-    return UserDto.from(user);
+    return UserDto.from(user, guests.isGuest(user.id()));
   }
 
   /**
@@ -146,10 +159,11 @@ public class AuthController {
    * Public representation of an authenticated user.
    *
    * @param id stable user identifier
-   * @param email user email
+   * @param email user email, omitted for anonymous guests
    * @param displayName user-facing display name
+   * @param guest whether this is an anonymous account
    */
-  public record UserDto(String id, String email, String displayName) {
+  public record UserDto(String id, String email, String displayName, boolean guest) {
 
     /**
      * Converts a persisted user into its API representation.
@@ -157,8 +171,8 @@ public class AuthController {
      * @param user persisted user
      * @return public user representation
      */
-    static UserDto from(UserRecord user) {
-      return new UserDto(user.id(), user.email(), user.displayName());
+    static UserDto from(UserRecord user, boolean guest) {
+      return new UserDto(user.id(), guest ? null : user.email(), user.displayName(), guest);
     }
   }
 }

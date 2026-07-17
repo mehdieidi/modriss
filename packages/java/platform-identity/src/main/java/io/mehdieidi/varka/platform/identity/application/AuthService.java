@@ -84,6 +84,25 @@ public final class AuthService {
     return issueSession(user);
   }
 
+  /** Creates an anonymous account with an unguessable internal credential and a session. */
+  public AuthResult registerGuest() {
+    Instant now = Instant.now();
+    String id = UUID.randomUUID().toString();
+    String salt = randomToken(24);
+    UserRecord user =
+        new UserRecord(
+            id,
+            "guest-" + id + "@guest.varka.invalid",
+            "Guest",
+            hashPassword(randomToken(32), salt),
+            salt,
+            now,
+            now);
+    store.write(Path.of("users", user.id() + ".json"), user);
+    log.info("Registered guest account {}", user.id());
+    return issueSession(user);
+  }
+
   /**
    * Verifies credentials and issues a fresh session.
    *

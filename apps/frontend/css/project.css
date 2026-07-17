@@ -582,3 +582,7 @@ body.canvas-panning * {
     grid-template-columns: 1fr;
   }
 }
+.auth-choice {
+  display: grid;
+  gap: 12px;
+}

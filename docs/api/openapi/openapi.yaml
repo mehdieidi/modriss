@@ -87,6 +87,19 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /api/auth/guest:
+    post:
+      tags: [Auth]
+      summary: Create an anonymous guest session
+      description: Creates an isolated guest account. Guest accounts are limited to five assistant prompts by default.
+      security: []
+      responses:
+        "200":
+          description: Created guest session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
   /api/auth/me:
     get:
       tags: [Auth]
@@ -1299,6 +1312,16 @@ paths:
           description: User detail
         "401":
           $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags: [Admin]
+      summary: Permanently delete a guest account and its owned projects
+      responses:
+        "204":
+          description: Guest deleted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/admin/users/{id}/roles:
     parameters:
       - name: id
@@ -1657,15 +1680,18 @@ components:
           $ref: "#/components/schemas/UserDto"
     UserDto:
       type: object
-      required: [id, email, displayName]
+      required: [id, displayName, guest]
       properties:
         id:
           type: string
         email:
           type: string
           format: email
+          nullable: true
         displayName:
           type: string
+        guest:
+          type: boolean
     SaveProjectRequest:
       type: object
       required: [name]

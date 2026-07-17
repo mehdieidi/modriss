@@ -1273,7 +1273,23 @@
         <div class="modal-dialog auth-dialog">
           <h3 class="modal-title" id="authTitle">Sign in to VARKA</h3>
           <p class="modal-subtitle" id="authSubtitle">Use your account to continue.</p>
-          <div aria-label="Authentication mode" class="auth-mode-switch" role="tablist">
+          <div class="auth-choice" id="authChoice">
+            <button class="btn btn-primary btn-full" id="authGuestBtn" type="button">
+              Continue as guest
+            </button>
+            <p class="modal-subtitle">
+              Guests can use every editor feature and send up to 5 chatbot prompts.
+            </p>
+            <button class="btn btn-secondary btn-full" id="authContinueLoginBtn" type="button">
+              Log in or register
+            </button>
+          </div>
+          <div
+            aria-label="Authentication mode"
+            class="auth-mode-switch hidden"
+            id="authModeSwitch"
+            role="tablist"
+          >
             <button
               class="btn btn-secondary btn-sm auth-mode-btn active"
               id="authLoginTabBtn"
@@ -1291,7 +1307,7 @@
           </div>
           <div class="auth-message auth-message-error hidden" id="authError"></div>
           <div class="auth-message auth-message-success hidden" id="authSuccess"></div>
-          <form class="auth-form" id="authForm" novalidate>
+          <form class="auth-form hidden" id="authForm" novalidate>
             <input
               autocomplete="name"
               class="project-input hidden"

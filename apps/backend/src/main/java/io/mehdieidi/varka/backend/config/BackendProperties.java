@@ -16,7 +16,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "varka")
 public record BackendProperties(
-    Path storageRoot, Duration sessionTtl, List<String> allowedOrigins, Mde mde, Upload upload) {
+    Path storageRoot,
+    Duration sessionTtl,
+    List<String> allowedOrigins,
+    Mde mde,
+    Upload upload,
+    Guest guest) {
 
   /** Applies safe defaults and immutable collection semantics to bound properties. */
   public BackendProperties {
@@ -30,6 +35,7 @@ public record BackendProperties(
                 null)
             : mde;
     upload = upload == null ? new Upload(null, null, null) : upload;
+    guest = guest == null ? new Guest(null) : guest;
   }
 
   /**
@@ -125,6 +131,13 @@ public record BackendProperties(
     public Upload {
       maxFileBytes = maxFileBytes == null ? 1_048_576L : maxFileBytes;
       maxTextChars = maxTextChars == null ? 120_000 : maxTextChars;
+    }
+  }
+
+  /** Guest-account limits that protect the assistant from anonymous overuse. */
+  public record Guest(Integer promptLimit) {
+    public Guest {
+      promptLimit = promptLimit == null ? 5 : Math.max(1, promptLimit);
     }
   }
 }

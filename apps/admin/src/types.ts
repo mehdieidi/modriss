@@ -7,6 +7,7 @@ export type AdminMe = {
 
 export type Overview = {
   users: number;
+  guestUsers: number;
   disabledUsers: number;
   activeSessions: number;
   projects: number;
@@ -22,6 +23,9 @@ export type UserSummary = {
   id: string;
   email: string;
   displayName: string;
+  guest: boolean;
+  guestPromptLimit: number;
+  guestPromptsUsed: number;
   activeSessions: number;
   projectCount: number;
   adminRoles: string[];

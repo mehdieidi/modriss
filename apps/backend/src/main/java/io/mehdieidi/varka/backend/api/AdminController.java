@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -84,6 +85,16 @@ public class AdminController {
       @RequestHeader("X-Auth-Token") String token, @PathVariable String id) {
     access.requireAdmin(auth.user(token));
     return queries.user(id);
+  }
+
+  @DeleteMapping("/users/{id}")
+  ResponseEntity<Void> deleteGuest(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable String id,
+      @RequestBody(required = false) ReasonRequest request) {
+    access.deleteGuest(
+        access.requireOwner(auth.user(token)), id, request == null ? "" : request.reason());
+    return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/users/{id}/roles")
