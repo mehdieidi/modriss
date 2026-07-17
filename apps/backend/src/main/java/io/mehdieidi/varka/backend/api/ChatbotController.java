@@ -400,7 +400,10 @@ public class ChatbotController {
             previous.modelId(),
             previous.revision(),
             "continue-" + previous.id() + "-" + java.util.UUID.randomUUID(),
-            "Continue the remaining work from the previous saved checkpoint. " + previous.message(),
+            previous.message()
+                + "\n\nContinue this same request from the persisted checkpoint. Inspect the "
+                + "current model if needed, preserve valid prior work, and complete the remaining "
+                + "requested modeling work.",
             previous.sourceText(),
             previous.selectedElementIds(),
             AssistantTurn.State.QUEUED,

@@ -861,6 +861,9 @@ export async function loadModelById(
       saveCurrentTabGraphState(typeKey);
     }
   }
+  // Assistant turns load their durable checkpoint through this path. Persist the selection as
+  // well as the model itself so a browser refresh restores the same checkpointed model.
+  await syncProjectActiveModel(typeKey, record.id);
   clearDiagramUndoHistory(typeKey);
   clearValidationIssues();
   setActiveModelName(record.name || defaultModelName(typeKey));
@@ -941,6 +944,7 @@ async function loadModelRecord(
       saveCurrentTabGraphState(typeKey);
     }
   }
+  await syncProjectActiveModel(typeKey, record.id);
   rememberModelSummary(typeKey, record);
   clearDiagramUndoHistory(typeKey);
   clearValidationIssues();

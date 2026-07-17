@@ -526,6 +526,7 @@ public class AssistantMetamodelSchemaService {
             new TypeSchema(
                 text(raw, "type"),
                 Boolean.TRUE.equals(raw.get("creatable")),
+                Boolean.TRUE.equals(raw.get("relationshipElement")),
                 strings(raw.get("supertypes")),
                 text(raw, "label"),
                 text(raw, "category"),
@@ -577,6 +578,7 @@ public class AssistantMetamodelSchemaService {
   public record TypeSchema(
       String name,
       boolean creatable,
+      boolean relationshipElement,
       List<String> supertypes,
       String label,
       String category,

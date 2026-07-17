@@ -1,7 +1,9 @@
 package io.mehdieidi.varka.platform.assistant.patch;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mehdieidi.varka.platform.assistant.domain.SemanticModelPatch;
 import java.util.List;
@@ -81,6 +83,49 @@ class AssistantPatchCompilerTest {
 
     assertEquals("output-1", preview.at("/queries/0/output/0").asText());
     assertEquals("", preview.at("/diagram/elements/0/output").asText());
+  }
+
+  @Test
+  void projectsRelationshipEClassAsAnEdgeInsteadOfADanglingDiagramNode() throws Exception {
+    var model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","diagram":{"elements":[
+{"id":"start","eClass":"StartStep","name":"Start"},
+{"id":"finish","eClass":"SuccessEndStep","name":"Finish"}],"relationships":[]},
+"workflows":[{"id":"workflow","eClass":"Workflow","name":"Order workflow","steps":[
+{"id":"start","eClass":"StartStep","name":"Start"},
+{"id":"finish","eClass":"SuccessEndStep","name":"Finish"}],"transitions":[
+{"id":"transition","eClass":"WorkflowTransition"}]}]}
+""");
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.CONNECT_ELEMENTS,
+                    "start",
+                    "StartStep",
+                    null,
+                    "transition",
+                    "source"),
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.CONNECT_ELEMENTS,
+                    "finish",
+                    "SuccessEndStep",
+                    null,
+                    "transition",
+                    "target")));
+
+    var preview = compiler.apply(model, compiler.compile(model, patch));
+
+    assertEquals("start", preview.at("/workflows/0/transitions/0/source").asText());
+    assertEquals("finish", preview.at("/workflows/0/transitions/0/target").asText());
+    assertEquals(1, preview.path("diagram").path("relationships").size());
+    assertEquals("transition", preview.at("/diagram/relationships/0/id").asText());
+    assertEquals("start", preview.at("/diagram/relationships/0/sourceElementId").asText());
+    assertEquals("finish", preview.at("/diagram/relationships/0/targetElementId").asText());
+    assertTrue(preview.path("diagram").path("elements").size() == 2);
+    assertFalse(preview.path("diagram").path("elements").toString().contains("transition"));
   }
 
   @Test
@@ -184,6 +229,35 @@ class AssistantPatchCompilerTest {
     assertEquals("/services/-", compiled.patch().get(0).path());
     assertEquals("/graph/elements/-", compiled.patch().get(1).path());
     assertEquals("Orders", preview.at("/graph/elements/0/name").asText());
+  }
+
+  @Test
+  void placesUnownedWorkflowInTheOnlyExistingCompatibleService() throws Exception {
+    var model =
+        mapper.readTree(
+            """
+{
+  "id":"pim-root","eClass":"PIMModel","modelLevel":"PIM",
+  "services":[{"id":"orders-service","eClass":"ServerlessService","name":"Orders"}],
+  "graph":{"elements":[{"id":"orders-service","eClass":"ServerlessService","name":"Orders"}],"relationships":[]}
+}
+""");
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "order-workflow",
+                    "Workflow",
+                    mapper.readTree("{\"name\":\"Order workflow\"}"),
+                    null,
+                    null)));
+
+    var preview = compiler.apply(model, compiler.compile(model, patch));
+
+    assertEquals("order-workflow", preview.at("/services/0/workflows/0/id").asText());
+    assertEquals(1, preview.path("services").size());
+    assertEquals(2, preview.path("graph").path("elements").size());
   }
 
   @Test

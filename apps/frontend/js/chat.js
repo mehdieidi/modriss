@@ -213,9 +213,12 @@ function stripLegacyThinkingCancelButtons() {
   el.chatMessages?.querySelectorAll(".chat-thinking-cancel").forEach((node) => node.remove());
 }
 
-function ensureThinkingStream(initialMessage = null, stage = "PLANNING") {
+function ensureThinkingStream(initialMessage = null, stage = "PLANNING", anchorMessage = null) {
   stripLegacyThinkingCancelButtons();
-  if (!activeThinkingEl) {
+  // A background thread hydration or DOM refresh can remove the old element. Never keep a
+  // disconnected reference: the next turn must create a visible progress surface immediately.
+  if (!activeThinkingEl?.isConnected) {
+    activeThinkingEl = null;
     removeChatWelcome();
     const msg = document.createElement("div");
     msg.className = "chat-msg assistant chat-thinking-live";
@@ -249,7 +252,11 @@ function ensureThinkingStream(initialMessage = null, stage = "PLANNING") {
     bubble.appendChild(status);
 
     msg.appendChild(bubble);
-    el.chatMessages.appendChild(msg);
+    if (anchorMessage?.isConnected && anchorMessage.parentElement === el.chatMessages) {
+      anchorMessage.after(msg);
+    } else {
+      el.chatMessages.appendChild(msg);
+    }
     activeThinkingEl = msg;
     thinkingSteps = [];
     thinkingProgress = null;
@@ -709,9 +716,13 @@ function applyHttpActivity(response) {
   pushThinkingStep(activity.message, activity.stage);
 }
 
-function beginChatActivity(message, workflowState = null) {
+function beginChatActivity(message, workflowState = null, anchorMessage = null) {
   chatBusyDepth += 1;
-  ensureThinkingStream(message, workflowState ? idleStageForWorkflow(workflowState) : "PLANNING");
+  ensureThinkingStream(
+    message,
+    workflowState ? idleStageForWorkflow(workflowState) : "PLANNING",
+    anchorMessage,
+  );
   updateChatComposerActionButton();
 }
 
@@ -1183,6 +1194,7 @@ function appendChat(role, text) {
   msg.appendChild(bubble);
   el.chatMessages.appendChild(msg);
   scrollChatToBottom();
+  return msg;
 }
 
 function appendAssistantDeduped(text) {
@@ -1484,12 +1496,14 @@ export async function sendChatMessage() {
   }
   const text = typedText || defaultAttachmentMessage();
 
-  beginChatActivity("Understanding your request");
-  el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
-
   let response = null;
   try {
-    const session = await ensureChatSession();
+    const userMessage = appendChat("user", text);
+    el.chatInput.value = "";
+    beginChatActivity("Understanding your request", null, userMessage);
+    // Hydration is for opening/restoring a conversation. Doing it while sending clears the
+    // just-created activity UI (and could also reset its busy state) before the turn is accepted.
+    const session = await ensureChatSession({ hydrate: false });
     if (!session) {
       endChatActivity("Could not start chat session.", "FAILED");
       return;
@@ -1505,9 +1519,6 @@ export async function sendChatMessage() {
       );
       await saveCurrentModel({ quiet: true, rethrow: true });
     }
-    appendChat("user", text);
-    el.chatInput.value = "";
-
     await ensureChatRealtime(chatScopeKey(state.activeType), state.activeType, session.sessionId);
 
     response = await api(`/chatbot/sessions/${session.sessionId}/messages`, {

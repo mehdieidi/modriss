@@ -236,13 +236,35 @@ public final class AgentTurnLoop {
           } else if (action.tool() == AgentAction.Kind.INSPECT_MODEL) {
             check(canceled, deadline, cancellationRequested, stopReason);
             String id = action.arguments().path("id").asText("");
-            user = initialUser + "\n\nInspection result:\n" + turnTools.readModel(id);
+            user =
+                initialUser
+                    + "\n\nInspection result:\n"
+                    + turnTools.readModel(id)
+                    + "\n\n"
+                    + "You now have the required model facts. Do not inspect or describe types"
+                    + " again; return one terminal action (commit_model_batch, answer_user, or"
+                    + " ask_user).";
             continue;
           } else if (action.tool() == AgentAction.Kind.DESCRIBE_TYPES) {
             check(canceled, deadline, cancellationRequested, stopReason);
             List<String> names = new ArrayList<>();
             action.arguments().path("names").forEach(value -> names.add(value.asText()));
-            user = initialUser + "\n\nExact type contracts:\n" + turnTools.describeTypes(names);
+            if (names.isEmpty()) {
+              user =
+                  initialUser
+                      + "\n\nThe complete exact Ecore type index is:\n"
+                      + guides.index(level)
+                      + "\n\nChoose the exact types needed for the request and call describe_types "
+                      + "with a non-empty names array. Do not answer the user yet.";
+              continue;
+            }
+            user =
+                initialUser
+                    + "\n\nExact type contracts:\n"
+                    + turnTools.describeTypes(names)
+                    + "\n\n"
+                    + "You now have the exact contracts. Do not inspect or describe types again;"
+                    + " return one terminal action (commit_model_batch, answer_user, or ask_user).";
             continue;
           }
         } catch (PlatformException toolFailure) {
@@ -323,6 +345,14 @@ public final class AgentTurnLoop {
     objects, policy entries, permissions, and event-source details are not standalone diagram
     nodes: create them only when you also provide the exact owner clientRef/id and containment
     reference, otherwise summarize that detail on a root-contained aggregate element.
+    Relationships are first-class model content, never optional decoration. When the request
+    creates a process, workflow, flow, association, dependency, or otherwise says or clearly
+    implies that created elements interact, include every valid connection needed to express that
+    meaning. For a relationship EClass whose contract exposes source and target references,
+    create that relationship object under its valid containment owner and connect its source and
+    target in the same batch; it renders as an edge, not a standalone node. For an ordinary
+    non-containment EReference, add a connections entry from the owning element to the target.
+    Do not invent a relationship when the user's request does not establish one.
     Decide the appropriate action from the user's meaning and the available model context. Use
     answer_user for questions, explanations, analysis, or advice that do not require a model
     mutation, even when they mention modeling or change-related terms. Use commit_model_batch
@@ -335,6 +365,10 @@ public final class AgentTurnLoop {
     When the inventory is sufficient, select answer_user in your first response. Do not use
     describe_types merely to explain the current model: that tool is for exact contracts needed
     to plan a mutation.
+    Call describe_types with a non-empty names array only. If you need to discover type names,
+    call it once with an empty names array; it returns the full exact Ecore type index, after which
+    you may call it once more with the selected names. After exact contracts are returned,
+    immediately choose a terminal action; further research wastes the provider budget.
     Never invent types, features, ids, or enum values. Batch independent edits. Ask only when
     safe progress is impossible. commit_model_batch arguments use creates, updates, connections,
     deletions, evidence, planSummary, and turnComplete. Every source-backed created or inferred

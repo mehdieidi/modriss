@@ -114,23 +114,39 @@ public class AssistantPatchCompiler {
             if (rootContainment.isPresent()) {
               addRootContainedElement(root, patch, inverse, rootContainment.get(), element);
             } else {
-              GenericPlacement placement =
-                  genericPlacement(level, operation.elementType())
-                      .orElseThrow(
-                          () ->
-                              new PlatformException(
-                                  422,
-                                  "Element type requires an explicit Ecore containment owner: "
-                                      + operation.elementType()));
-              ObjectNode owner =
-                  JsonNodeFactory.instance
-                      .objectNode()
-                      .put("id", "__assistant_owner_" + placement.ownerType())
-                      .put("eClass", placement.ownerType());
-              addRootContainedElement(root, patch, inverse, placement.rootContainment(), owner);
-              LocatedElement locatedOwner = locateElement(root, owner.path("id").asText());
-              addContainedElement(locatedOwner, placement.containment(), element, patch, inverse);
+              Optional<ExistingPlacement> existingPlacement =
+                  existingPlacement(level, root, operation);
+              if (existingPlacement.isPresent()) {
+                addContainedElement(
+                    existingPlacement.get().owner(),
+                    existingPlacement.get().containment(),
+                    element,
+                    patch,
+                    inverse);
+              } else {
+                GenericPlacement placement =
+                    genericPlacement(level, operation.elementType())
+                        .orElseThrow(
+                            () ->
+                                new PlatformException(
+                                    422,
+                                    "Element type requires an explicit Ecore containment owner: "
+                                        + operation.elementType()));
+                ObjectNode owner =
+                    JsonNodeFactory.instance
+                        .objectNode()
+                        .put("id", "__assistant_owner_" + placement.ownerType())
+                        .put("eClass", placement.ownerType());
+                addRootContainedElement(root, patch, inverse, placement.rootContainment(), owner);
+                LocatedElement locatedOwner = locateElement(root, owner.path("id").asText());
+                addContainedElement(locatedOwner, placement.containment(), element, patch, inverse);
+              }
             }
+          }
+          if (isRelationshipElement(level, operation.elementType())) {
+            // Relationship EClasses are semantic edge records. They are projected after their
+            // source and target references have both been established.
+            continue;
           }
           patch.add(
               new ModelService.ModelPatchOperation(
@@ -200,6 +216,11 @@ public class AssistantPatchCompiler {
                 new ModelService.ModelPatchOperation(
                     previous == null ? "remove" : "replace", referencePath, previous));
             source.node().set(operation.referenceName(), targetId);
+          }
+          if (isRelationshipElement(level, source.node().path("eClass").asText())) {
+            addRelationshipElementProjection(
+                source, visualContainer, patch, inverse, affected, relationships);
+            continue;
           }
           JsonNode relationship = relationshipPayload(operation);
           patch.add(
@@ -482,6 +503,23 @@ public class AssistantPatchCompiler {
     return schemas.rootContainment(level, operation.elementType());
   }
 
+  /** Synthesizes one owner only when Ecore gives a unique concrete root-contained route. */
+  private Optional<GenericPlacement> genericPlacement(
+      io.mehdieidi.varka.platform.kernel.ModelLevel level, String childType) {
+    List<GenericPlacement> candidates = new java.util.ArrayList<>();
+    for (AssistantMetamodelSchemaService.TypeSchema owner : schemas.types(level)) {
+      if (!owner.creatable()) continue;
+      Optional<AssistantMetamodelSchemaService.ReferenceSchema> root =
+          schemas.rootContainment(level, owner.name());
+      if (root.isEmpty()) continue;
+      for (AssistantMetamodelSchemaService.ReferenceSchema containment :
+          schemas.containments(level, owner.name(), childType)) {
+        candidates.add(new GenericPlacement(owner.name(), root.get(), containment));
+      }
+    }
+    return candidates.size() == 1 ? Optional.of(candidates.get(0)) : Optional.empty();
+  }
+
   private void addRootContainedElement(
       ObjectNode root,
       List<ModelService.ModelPatchOperation> patch,
@@ -515,21 +553,60 @@ public class AssistantPatchCompiler {
     ((ArrayNode) owned).add(element.deepCopy());
   }
 
-  /** Synthesizes one owner only when Ecore gives a unique concrete root-contained route. */
-  private Optional<GenericPlacement> genericPlacement(
-      io.mehdieidi.varka.platform.kernel.ModelLevel level, String childType) {
-    List<GenericPlacement> candidates = new java.util.ArrayList<>();
-    for (AssistantMetamodelSchemaService.TypeSchema owner : schemas.types(level)) {
-      if (!owner.creatable()) continue;
-      Optional<AssistantMetamodelSchemaService.ReferenceSchema> root =
-          schemas.rootContainment(level, owner.name());
-      if (root.isEmpty()) continue;
-      for (AssistantMetamodelSchemaService.ReferenceSchema containment :
-          schemas.containments(level, owner.name(), childType)) {
-        candidates.add(new GenericPlacement(owner.name(), root.get(), containment));
+  /**
+   * Finds the unambiguous existing semantic owner for an otherwise unplaced element.
+   *
+   * <p>The visual graph deliberately duplicates semantic elements. Searching only the semantic tree
+   * prevents a canvas projection from becoming an owner, and avoids creating an artificial
+   * container whenever the user is extending an existing model.
+   */
+  private Optional<ExistingPlacement> existingPlacement(
+      io.mehdieidi.varka.platform.kernel.ModelLevel level,
+      ObjectNode root,
+      SemanticModelPatch.Operation operation) {
+    List<ExistingPlacement> candidates = new ArrayList<>();
+    collectExistingPlacements(level, root, "", operation.elementType(), candidates);
+    return candidates.size() == 1 ? Optional.of(candidates.get(0)) : Optional.empty();
+  }
+
+  private void collectExistingPlacements(
+      io.mehdieidi.varka.platform.kernel.ModelLevel level,
+      JsonNode node,
+      String path,
+      String childType,
+      List<ExistingPlacement> candidates) {
+    if (node == null || node.isNull()) return;
+    if (node.isObject()) {
+      ObjectNode object = (ObjectNode) node;
+      String ownerType = object.path("eClass").asText();
+      if (!ownerType.isBlank() && !path.isBlank()) {
+        for (AssistantMetamodelSchemaService.ReferenceSchema containment :
+            schemas.containments(level, ownerType, childType)) {
+          candidates.add(new ExistingPlacement(new LocatedElement(path, object), containment));
+        }
+      }
+      var fields = object.properties().iterator();
+      while (fields.hasNext()) {
+        var entry = fields.next();
+        if (path.isBlank()
+            && ("diagram".equals(entry.getKey()) || "graph".equals(entry.getKey()))) {
+          continue;
+        }
+        collectExistingPlacements(
+            level,
+            entry.getValue(),
+            path + "/" + escapePointer(entry.getKey()),
+            childType,
+            candidates);
+      }
+      return;
+    }
+    if (node.isArray()) {
+      for (int index = 0; index < node.size(); index++) {
+        collectExistingPlacements(
+            level, node.get(index), path + "/" + index, childType, candidates);
       }
     }
-    return candidates.size() == 1 ? Optional.of(candidates.get(0)) : Optional.empty();
   }
 
   private void addContainedElement(
@@ -558,6 +635,9 @@ public class AssistantPatchCompiler {
       ((ArrayNode) owned).add(element.deepCopy());
     } else throw new PlatformException(422, "Containment feature is not a collection.");
   }
+
+  private record ExistingPlacement(
+      LocatedElement owner, AssistantMetamodelSchemaService.ReferenceSchema containment) {}
 
   private record GenericPlacement(
       String ownerType,
@@ -633,7 +713,52 @@ public class AssistantPatchCompiler {
     node.put("kind", safe(operation.referenceName()));
     node.put("source", safe(operation.sourceElementId()));
     node.put("target", safe(operation.targetElementId()));
+    node.put("sourceElementId", safe(operation.sourceElementId()));
+    node.put("targetElementId", safe(operation.targetElementId()));
     return node;
+  }
+
+  /** Projects a CVS-marked relationship EClass as a canvas edge once both endpoints exist. */
+  private void addRelationshipElementProjection(
+      LocatedElement relationshipElement,
+      String visualContainer,
+      List<ModelService.ModelPatchOperation> patch,
+      List<ModelService.ModelPatchOperation> inverse,
+      List<String> affected,
+      ArrayNode relationships) {
+    String sourceId = text(relationshipElement.node().get("source"));
+    String targetId = text(relationshipElement.node().get("target"));
+    if (sourceId.isBlank() || targetId.isBlank()) return;
+    String relationshipId = text(relationshipElement.node().get("id"));
+    if (relationshipId.isBlank()
+        || java.util.stream.StreamSupport.stream(relationships.spliterator(), false)
+            .anyMatch(existing -> relationshipId.equals(text(existing.get("id"))))) return;
+    ObjectNode edge = JsonNodeFactory.instance.objectNode();
+    edge.put("id", relationshipId);
+    edge.put("kind", relationshipElement.node().path("eClass").asText("RELATIONSHIP"));
+    edge.put("source", sourceId);
+    edge.put("target", targetId);
+    edge.put("sourceElementId", sourceId);
+    edge.put("targetElementId", targetId);
+    String label = text(relationshipElement.node().get("name"));
+    if (!label.isBlank()) edge.put("label", label);
+    patch.add(
+        new ModelService.ModelPatchOperation(
+            "add", "/" + visualContainer + "/relationships/-", edge));
+    inverse.add(
+        0,
+        new ModelService.ModelPatchOperation(
+            "remove", "/" + visualContainer + "/relationships/" + relationships.size(), null));
+    relationships.add(edge.deepCopy());
+    affected.add(relationshipId);
+  }
+
+  private boolean isRelationshipElement(
+      io.mehdieidi.varka.platform.kernel.ModelLevel level, String type) {
+    return schemas
+        .typeSchema(level, type)
+        .map(AssistantMetamodelSchemaService.TypeSchema::relationshipElement)
+        .orElse(false);
   }
 
   private LocatedElement locateElement(JsonNode node, String id) {
