@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 class AssistantHardeningServiceTest {
 
   @org.junit.jupiter.api.AfterEach
+  @SuppressWarnings("unused") // Invoked by JUnit after each test.
   void clearBudget() {
     ProviderCallBudget.clear();
   }
@@ -28,7 +29,9 @@ class AssistantHardeningServiceTest {
 
     hardening.checkRateLimit("user-1");
 
-    assertThrows(PlatformException.class, () -> hardening.checkRateLimit("user-1"));
+    PlatformException failure =
+        assertThrows(PlatformException.class, () -> hardening.checkRateLimit("user-1"));
+    assertEquals(429, failure.status());
   }
 
   @Test

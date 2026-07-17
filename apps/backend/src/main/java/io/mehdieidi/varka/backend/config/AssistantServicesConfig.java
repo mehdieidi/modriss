@@ -19,11 +19,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AssistantServicesConfig {
   @Bean
+  @SuppressWarnings("unused") // Invoked by Spring while building the application context.
   AssistantSessionStore assistantSessionStore() {
     return new AssistantSessionStore();
   }
 
   @Bean
+  @SuppressWarnings("unused") // Invoked by Spring while building the application context.
   AssistantMetamodelSchemaService assistantMetamodelSchemaService(
       io.mehdieidi.varka.platform.modeling.config.ModelingConfigService modelingConfig,
       io.mehdieidi.varka.platform.modeling.metamodel.MetamodelResolver resolver) {
@@ -31,27 +33,32 @@ public class AssistantServicesConfig {
   }
 
   @Bean
+  @SuppressWarnings("unused") // Invoked by Spring while building the application context.
   MetamodelContractGraph metamodelContractGraph(
       io.mehdieidi.varka.platform.modeling.metamodel.MetamodelResolver resolver) {
     return new MetamodelContractGraph(resolver);
   }
 
   @Bean
+  @SuppressWarnings("unused") // Invoked by Spring while building the application context.
   MetamodelKnowledgeService metamodelKnowledgeService(AssistantMetamodelSchemaService schemas) {
     return new MetamodelKnowledgeService(schemas);
   }
 
   @Bean
+  @SuppressWarnings("unused") // Invoked by Spring while building the application context.
   AssistantPatchCompiler assistantPatchCompiler(AssistantMetamodelSchemaService schemas) {
     return new AssistantPatchCompiler(schemas);
   }
 
   @Bean
+  @SuppressWarnings("unused") // Invoked by Spring while building the application context.
   ModelCommandCompiler modelCommandCompiler(AssistantPatchCompiler compiler) {
     return new ModelCommandCompiler(compiler);
   }
 
   @Bean
+  @SuppressWarnings("unused") // Invoked by Spring while building the application context.
   LexicalRetrievalIndex lexicalRetrievalIndex(
       AssistantMetamodelSchemaService schemas,
       MetamodelKnowledgeService knowledge,
@@ -62,16 +69,19 @@ public class AssistantServicesConfig {
   }
 
   @Bean
+  @SuppressWarnings("unused") // Invoked by Spring while building the application context.
   AssistantPromptGuard assistantPromptGuard(AssistantSettings settings) {
     return new AssistantPromptGuard(settings);
   }
 
   @Bean
+  @SuppressWarnings("unused") // Invoked by Spring while building the application context.
   AssistantMetrics assistantMetrics(VarkaMetrics metrics) {
     return new BackendAssistantMetrics(metrics);
   }
 
   @Bean
+  @SuppressWarnings("unused") // Invoked by Spring while building the application context.
   AssistantHardeningService assistantHardeningService(
       AssistantSettings settings, AssistantMetrics metrics) {
     return new AssistantHardeningService(settings, metrics);

@@ -15,6 +15,7 @@ import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.model.application.ModelService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HexFormat;
@@ -48,11 +49,6 @@ public final class AgentModelTools {
   public AgentModelTools(
       TypeContractService contracts, ModelService models, ModelCommandCompiler commandCompiler) {
     this(contracts, models, commandCompiler, null);
-  }
-
-  private AgentModelTools(
-      TypeContractService contracts, ModelService models, Context scopedContext) {
-    this(contracts, models, null, scopedContext);
   }
 
   private AgentModelTools(
@@ -101,8 +97,8 @@ public final class AgentModelTools {
     Map<String, Integer> typeCounts = new TreeMap<>();
     List<String> elements = new ArrayList<>();
     collectModelContext(root, root.path("id").asText(), typeCounts, elements);
-    StringBuilder context = new StringBuilder();
-    context
+    StringBuilder modelContext = new StringBuilder();
+    modelContext
         .append("rootId=")
         .append(root.path("id").asText("(none)"))
         .append(", rootType=")
@@ -110,16 +106,16 @@ public final class AgentModelTools {
         .append(", level=")
         .append(root.path("modelLevel").asText("(none)"))
         .append("\nType counts: ");
-    if (typeCounts.isEmpty()) context.append("none");
+    if (typeCounts.isEmpty()) modelContext.append("none");
     else
-      context.append(
+      modelContext.append(
           typeCounts.entrySet().stream()
               .map(entry -> entry.getKey() + "=" + entry.getValue())
               .collect(java.util.stream.Collectors.joining(", ")));
-    context.append("\nElements:");
-    if (elements.isEmpty()) context.append(" none");
-    else elements.forEach(element -> context.append("\n- ").append(element));
-    return context.toString();
+    modelContext.append("\nElements:");
+    if (elements.isEmpty()) modelContext.append(" none");
+    else elements.forEach(element -> modelContext.append("\n- ").append(element));
+    return modelContext.toString();
   }
 
   private void collectModelContext(
@@ -350,8 +346,6 @@ public final class AgentModelTools {
     List<String> initialIds = new ArrayList<>(createdTypes.keySet());
     for (String id : initialIds) {
       TypeContract type = contracts.require(level, createdTypes.get(id));
-      ObjectNode attributes = createdAttributes.get(id);
-      synthesizeRequiredAttributes(type, attributes);
       synthesizeRequiredContainments(
           level, operations, refs, createdTypes, createdAttributes, id, type);
     }
@@ -359,20 +353,6 @@ public final class AgentModelTools {
       TypeContract type = contracts.require(level, createdTypes.get(id));
       synthesizeRequiredReferences(level, snapshot, operations, createdTypes, id, type);
     }
-  }
-
-  private void synthesizeRequiredAttributes(TypeContract type, ObjectNode attributes) {
-    for (AttributeContract attribute : type.attributes()) {
-      if (!attribute.required() || hasValue(attributes.get(attribute.name()))) continue;
-      JsonNode value = defaultRequiredAttribute(type, attribute);
-      if (value != null) attributes.set(attribute.name(), value);
-    }
-  }
-
-  private JsonNode defaultRequiredAttribute(TypeContract type, AttributeContract attribute) {
-    // Ecore does not declare a safe value here. The model must supply it; selecting enum values,
-    // strings, or domain-specific policies in Java would silently invent modeling semantics.
-    return null;
   }
 
   private void synthesizeRequiredContainments(
@@ -392,11 +372,9 @@ public final class AgentModelTools {
       String childType = containmentDefaultType(level, reference);
       if (childType == null) continue;
       String childId = uniqueRef(createdTypes, ownerId + "-" + reference.name());
-      TypeContract type = contracts.require(level, childType);
-      if (!type.creatable()) continue;
+      if (!contracts.require(level, childType).creatable()) continue;
       ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
       attributes.put("name", readableName(childType));
-      synthesizeRequiredAttributes(type, attributes);
       refs.put(childId, childId);
       createdTypes.put(childId, childType);
       createdAttributes.put(childId, attributes);
@@ -627,13 +605,6 @@ public final class AgentModelTools {
     return null;
   }
 
-  private boolean hasValue(JsonNode value) {
-    if (value == null || value.isNull()) return false;
-    if (value.isTextual()) return !value.asText().isBlank();
-    if (value.isArray()) return !value.isEmpty();
-    return true;
-  }
-
   private boolean hasConnection(List<Operation> operations, String sourceId, String reference) {
     return operations.stream()
         .anyMatch(
@@ -775,7 +746,7 @@ public final class AgentModelTools {
           .formatHex(
               MessageDigest.getInstance("SHA-256")
                   .digest(element.toString().getBytes(StandardCharsets.UTF_8)));
-    } catch (Exception ex) {
+    } catch (NoSuchAlgorithmException ex) {
       throw new IllegalStateException("SHA-256 unavailable", ex);
     }
   }

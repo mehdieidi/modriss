@@ -212,60 +212,69 @@ public final class AgentTurnLoop {
                 null,
                 ProviderCallBudget.count());
           }
-          if (action.tool() == AgentAction.Kind.COMMIT_MODEL_BATCH) {
-            check(canceled, deadline, cancellationRequested, stopReason);
-            turnTools.commitModelBatch(command(action), destructiveConfirmed);
-            check(canceled, deadline, cancellationRequested, stopReason);
-            validation = turnTools.validateModel();
-            check(canceled, deadline, cancellationRequested, stopReason);
-            publish(
-                sessionId,
-                "tool.completed",
-                Map.of("tool", action.tool().wireName(), "valid", validation.valid()));
-            if (validation.valid()) {
-              return new TurnResult(
-                  "Model checkpoint saved.",
-                  workspace.patch(),
-                  workspace.inversePatch(),
-                  validation,
-                  reply.provider(),
-                  reply.model(),
-                  turnTools.committedBatch(),
-                  ProviderCallBudget.count());
+          switch (action.tool()) {
+            case COMMIT_MODEL_BATCH -> {
+              check(canceled, deadline, cancellationRequested, stopReason);
+              turnTools.commitModelBatch(command(action), destructiveConfirmed);
+              check(canceled, deadline, cancellationRequested, stopReason);
+              ModelService.ValidationResult checkpointValidation = turnTools.validateModel();
+              validation = checkpointValidation;
+              check(canceled, deadline, cancellationRequested, stopReason);
+              publish(
+                  sessionId,
+                  "tool.completed",
+                  Map.of("tool", action.tool().wireName(), "valid", checkpointValidation.valid()));
+              if (checkpointValidation.valid()) {
+                return new TurnResult(
+                    "Model checkpoint saved.",
+                    workspace.patch(),
+                    workspace.inversePatch(),
+                    checkpointValidation,
+                    reply.provider(),
+                    reply.model(),
+                    turnTools.committedBatch(),
+                    ProviderCallBudget.count());
+              }
             }
-          } else if (action.tool() == AgentAction.Kind.INSPECT_MODEL) {
-            check(canceled, deadline, cancellationRequested, stopReason);
-            String id = action.arguments().path("id").asText("");
-            user =
-                initialUser
-                    + "\n\nInspection result:\n"
-                    + turnTools.readModel(id)
-                    + "\n\n"
-                    + "You now have the required model facts. Do not inspect or describe types"
-                    + " again; return one terminal action (commit_model_batch, answer_user, or"
-                    + " ask_user).";
-            continue;
-          } else if (action.tool() == AgentAction.Kind.DESCRIBE_TYPES) {
-            check(canceled, deadline, cancellationRequested, stopReason);
-            List<String> names = new ArrayList<>();
-            action.arguments().path("names").forEach(value -> names.add(value.asText()));
-            if (names.isEmpty()) {
+            case INSPECT_MODEL -> {
+              check(canceled, deadline, cancellationRequested, stopReason);
+              String id = action.arguments().path("id").asText("");
               user =
                   initialUser
-                      + "\n\nThe complete exact Ecore type index is:\n"
-                      + guides.index(level)
-                      + "\n\nChoose the exact types needed for the request and call describe_types "
-                      + "with a non-empty names array. Do not answer the user yet.";
+                      + "\n\nInspection result:\n"
+                      + turnTools.readModel(id)
+                      + "\n\n"
+                      + "You now have the required model facts. Do not inspect or describe types"
+                      + " again; return one terminal action (commit_model_batch, answer_user, or"
+                      + " ask_user).";
               continue;
             }
-            user =
-                initialUser
-                    + "\n\nExact type contracts:\n"
-                    + turnTools.describeTypes(names)
-                    + "\n\n"
-                    + "You now have the exact contracts. Do not inspect or describe types again;"
-                    + " return one terminal action (commit_model_batch, answer_user, or ask_user).";
-            continue;
+            case DESCRIBE_TYPES -> {
+              check(canceled, deadline, cancellationRequested, stopReason);
+              List<String> names = new ArrayList<>();
+              action.arguments().path("names").forEach(value -> names.add(value.asText()));
+              if (names.isEmpty()) {
+                user =
+                    initialUser
+                        + "\n\nThe complete exact Ecore type index is:\n"
+                        + guides.index(level)
+                        + "\n\n"
+                        + "Choose the exact types needed for the request and call describe_types"
+                        + " with a non-empty names array. Do not answer the user yet.";
+                continue;
+              }
+              user =
+                  initialUser
+                      + "\n\nExact type contracts:\n"
+                      + turnTools.describeTypes(names)
+                      + "\n\n"
+                      + "You now have the exact contracts. Do not inspect or describe types again;"
+                      + " return one terminal action (commit_model_batch, answer_user, or"
+                      + " ask_user).";
+              continue;
+            }
+            case ANSWER_USER, ASK_USER ->
+                throw new IllegalStateException("Terminal action was not returned.");
           }
         } catch (PlatformException toolFailure) {
           if (repairableToolFailure(toolFailure) && ProviderCallBudget.hasRemaining()) {
@@ -280,18 +289,23 @@ public final class AgentTurnLoop {
           }
           throw toolFailure;
         }
+        ModelService.ValidationResult currentValidation = validation;
+        if (currentValidation == null) {
+          throw new IllegalStateException(
+              "A non-terminal agent action did not validate the model.");
+        }
         publish(
             sessionId,
             "assistant.delta.validated",
-            Map.of("valid", validation.valid(), "issues", validation.issues()));
-        if (validation.valid()) break;
+            Map.of("valid", currentValidation.valid(), "issues", currentValidation.issues()));
+        if (currentValidation.valid()) break;
         if (workspace.patch().isEmpty()) break;
         user =
             initialUser
                 + "\n\nThe working model failed structural validation after your previous tool "
                 + "calls. Continue from the current working copy and use tools to repair every "
                 + "issue before replying. Diagnostics:\n"
-                + validation.issues();
+                + currentValidation.issues();
       }
       if (reply == null)
         throw new PlatformException(502, "The model provider returned no response.");
@@ -410,7 +424,7 @@ public final class AgentTurnLoop {
   private ModelCommandBatch command(AgentAction action) {
     try {
       return new ObjectMapper().readValue(action.arguments().toString(), ModelCommandBatch.class);
-    } catch (Exception ex) {
+    } catch (tools.jackson.core.JacksonException ex) {
       throw new PlatformException(422, "commit_model_batch arguments are invalid.");
     }
   }
