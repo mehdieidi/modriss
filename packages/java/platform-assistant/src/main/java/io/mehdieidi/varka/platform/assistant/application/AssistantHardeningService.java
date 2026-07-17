@@ -113,6 +113,11 @@ public class AssistantHardeningService {
           metrics.recordAssistantProviderSuccess(provider, role.name(), model);
           return result;
         } catch (RuntimeException ex) {
+          // A budget/circuit/platform decision is already user-safe and actionable. Retrying it
+          // would either consume a nonexistent call or mask its original cause as a retry error.
+          if (ex instanceof PlatformException platformException) {
+            throw platformException;
+          }
           PlatformException providerFailure = classifyProviderFailure(ex);
           if (providerFailure != null) {
             log.warn(
@@ -136,33 +141,33 @@ public class AssistantHardeningService {
           }
           last = ex;
           if (attempt < attempts) {
+            // Retries are real provider requests. Do not let a configured retry turn the actual
+            // provider error into the less useful "call budget exceeded" failure.
+            if (!ProviderCallBudget.hasRemaining()) {
+              recordFailure(provider);
+              throw providerRequestFailed(last);
+            }
             sleep();
           }
         }
       }
       recordFailure(provider);
-      if (last instanceof PlatformException platformException) {
-        throw platformException;
-      }
-      log.warn(
-          "AI provider call failed after retries provider={} role={} model={} assistantTurnId={} "
-              + "sessionId={} requestId={}: {}",
-          provider,
-          role,
-          model,
-          mdc("assistantTurnId"),
-          mdc("assistantSessionId"),
-          mdc("requestId"),
-          last == null ? "unknown" : last.toString());
-      String diagnostic = providerFailureDiagnostic(last);
-      throw new PlatformException(
-          502,
-          "AI provider request failed. Check provider base URL, model, API key, and proxy"
-              + " settings."
-              + (diagnostic.isBlank() ? "" : " Provider error: " + diagnostic));
+      throw providerRequestFailed(last);
     } finally {
       // Provider duration metrics are recorded by the backend metrics adapter.
     }
+  }
+
+  private PlatformException providerRequestFailed(RuntimeException failure) {
+    if (failure instanceof PlatformException platformException) {
+      return platformException;
+    }
+    String diagnostic = providerFailureDiagnostic(failure);
+    return new PlatformException(
+        502,
+        "AI provider request failed. Check provider base URL, model, API key, and proxy"
+            + " settings."
+            + (diagnostic.isBlank() ? "" : " Provider error: " + diagnostic));
   }
 
   private void recordFailure(String provider) {

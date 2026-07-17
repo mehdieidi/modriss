@@ -58,6 +58,33 @@ class AssistantHardeningServiceTest {
   }
 
   @Test
+  void preservesProviderFailureWhenNoBudgetRemainsForConfiguredRetry() {
+    AssistantSettings properties =
+        AssistantSettingsFixtures.withHardening(
+            30, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 1, Duration.ZERO, 12);
+    AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
+    AtomicInteger attempts = new AtomicInteger();
+
+    ProviderCallBudget.bind(1);
+    PlatformException failure =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                hardening.providerCall(
+                    AssistantModelRole.RESPONDER,
+                    "test",
+                    "model",
+                    () -> {
+                      attempts.incrementAndGet();
+                      throw new IllegalStateException("temporary provider failure");
+                    }));
+
+    assertEquals(502, failure.status());
+    assertEquals(1, attempts.get());
+    assertEquals(1, ProviderCallBudget.count());
+  }
+
+  @Test
   void opensCircuitAfterFailures() {
     AssistantSettings properties =
         AssistantSettingsFixtures.withHardening(
