@@ -105,46 +105,22 @@ function diffArrays(previous, next, path) {
   if (!previousIds || !nextIds) {
     return [{ op: "replace", path: path || "/", value: next }];
   }
-  const previousById = new Map(
-    previous.map((item, index) => [
-      String(item.id),
-      {
-        item,
-        index,
-      },
-    ]),
-  );
-  const nextById = new Map(
-    next.map((item, index) => [
-      String(item.id),
-      {
-        item,
-        index,
-      },
-    ]),
-  );
+
+  // Array paths are positional. Removing an item changes every following index, so a patch
+  // which removes entries and then updates retained entries at their old indexes is invalid.
+  // That is particularly common when replacing a hand-built diagram with an imported XMI
+  // model. Replace the complete array whenever its membership or ordering changes; only
+  // generate nested patches when each item remains at the same position.
   if (
-    previousIds.filter((id) => nextById.has(id)).join("\u0000") !==
-    nextIds.filter((id) => previousById.has(id)).join("\u0000")
+    previous.length !== next.length ||
+    previous.some((item, index) => String(item.id) !== String(next[index].id))
   ) {
     return [{ op: "replace", path: path || "/", value: next }];
   }
+
   const operations = [];
-  for (let index = previous.length - 1; index >= 0; index -= 1) {
-    const id = String(previous[index].id);
-    if (!nextById.has(id)) {
-      operations.push({ op: "remove", path: pointerJoin(path, index) });
-    }
-  }
-  for (const [id, entry] of nextById.entries()) {
-    const previousEntry = previousById.get(id);
-    if (!previousEntry) {
-      operations.push({ op: "add", path: pointerJoin(path, "-"), value: entry.item });
-      continue;
-    }
-    operations.push(
-      ...diffJson(previousEntry.item, entry.item, pointerJoin(path, previousEntry.index)),
-    );
+  for (let index = 0; index < previous.length; index += 1) {
+    operations.push(...diffJson(previous[index], next[index], pointerJoin(path, index)));
   }
   return operations;
 }
@@ -384,10 +360,12 @@ export async function flushCurrentModelPatch({ name, rethrow = false, prepared =
     }
     return updated || true;
   } catch (error) {
-    const stalePatchPath =
+    const invalidPatchTarget =
       error?.status === 400 &&
-      /Patch (replace|remove) path does not exist:/i.test(String(error?.message || ""));
-    if (stalePatchPath) {
+      /Patch (replace|remove) path does not exist:|Patch array index is out of bounds\./i.test(
+        String(error?.message || ""),
+      );
+    if (invalidPatchTarget) {
       return false;
     }
     if (rethrow) {
