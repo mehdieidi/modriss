@@ -15,6 +15,10 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -38,6 +42,26 @@ public final class DurableAssistantTurnWorker {
             return thread;
           });
 
+  /**
+   * Executes claimed turns independently of Spring's scheduler thread. A zero-capacity queue is
+   * deliberate: turns remain QUEUED in PostgreSQL until a worker is actually available rather than
+   * being marked RUNNING while waiting in an in-memory queue.
+   */
+  private final ThreadPoolExecutor workers =
+      new ThreadPoolExecutor(
+          2,
+          2,
+          0L,
+          TimeUnit.MILLISECONDS,
+          new SynchronousQueue<>(),
+          runnable -> {
+            Thread thread = new Thread(runnable, "assistant-turn-worker");
+            thread.setDaemon(true);
+            return thread;
+          });
+
+  private final Semaphore workerCapacity = new Semaphore(2);
+
   public DurableAssistantTurnWorker(
       AssistantTurnStore turns,
       AgenticAssistantFacade assistant,
@@ -53,7 +77,25 @@ public final class DurableAssistantTurnWorker {
   public void runOne() {
     try {
       turns.expireTimedOut(Instant.now());
-      turns.claim(workerId, Instant.now(), Duration.ofSeconds(30)).ifPresent(this::execute);
+      if (!workerCapacity.tryAcquire()) return;
+      var claimed = turns.claim(workerId, Instant.now(), Duration.ofSeconds(30));
+      if (claimed.isEmpty()) {
+        workerCapacity.release();
+        return;
+      }
+      try {
+        workers.execute(
+            () -> {
+              try {
+                execute(claimed.get());
+              } finally {
+                workerCapacity.release();
+              }
+            });
+      } catch (java.util.concurrent.RejectedExecutionException ignored) {
+        workerCapacity.release();
+        // The lease expires quickly and another poller can safely resume the turn.
+      }
     } catch (org.springframework.jdbc.BadSqlGrammarException missingAssistantSchema) {
       // Some focused web-contract tests initialize only the platform schema. Production Flyway
       // always installs the assistant schema before this scheduled worker is enabled.
@@ -234,5 +276,6 @@ public final class DurableAssistantTurnWorker {
   @PreDestroy
   void shutdown() {
     heartbeats.shutdownNow();
+    workers.shutdownNow();
   }
 }

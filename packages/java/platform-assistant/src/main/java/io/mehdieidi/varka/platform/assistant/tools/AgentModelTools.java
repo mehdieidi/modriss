@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
@@ -86,6 +87,63 @@ public final class AgentModelTools {
   public JsonNode readModel(String id) {
     JsonNode model = active().workspace().snapshot();
     return id == null || id.isBlank() ? model : find(model, id);
+  }
+
+  /**
+   * Builds compact, deterministic current-model context for the agent prompt.
+   *
+   * <p>This is intentionally not a serialization of the complete model: it gives the provider the
+   * element inventory required for ordinary questions while retaining {@link #readModel(String)}
+   * for a focused deep inspection.
+   */
+  public String modelContext() {
+    JsonNode root = active().workspace().snapshot();
+    Map<String, Integer> typeCounts = new TreeMap<>();
+    List<String> elements = new ArrayList<>();
+    collectModelContext(root, root.path("id").asText(), typeCounts, elements);
+    StringBuilder context = new StringBuilder();
+    context
+        .append("rootId=")
+        .append(root.path("id").asText("(none)"))
+        .append(", rootType=")
+        .append(root.path("eClass").asText("(none)"))
+        .append(", level=")
+        .append(root.path("modelLevel").asText("(none)"))
+        .append("\nType counts: ");
+    if (typeCounts.isEmpty()) context.append("none");
+    else
+      context.append(
+          typeCounts.entrySet().stream()
+              .map(entry -> entry.getKey() + "=" + entry.getValue())
+              .collect(java.util.stream.Collectors.joining(", ")));
+    context.append("\nElements:");
+    if (elements.isEmpty()) context.append(" none");
+    else elements.forEach(element -> context.append("\n- ").append(element));
+    return context.toString();
+  }
+
+  private void collectModelContext(
+      JsonNode node, String rootId, Map<String, Integer> typeCounts, List<String> elements) {
+    if (node == null) return;
+    if (node.isObject()) {
+      String type = node.path("eClass").asText("").trim();
+      String id = node.path("id").asText("").trim();
+      if (!type.isEmpty()) {
+        typeCounts.merge(type, 1, Integer::sum);
+        if (!id.isEmpty() && !id.equals(rootId) && elements.size() < 80) {
+          String name = node.path("name").asText(node.path("label").asText("")).trim();
+          String description = node.path("description").asText("").replaceAll("\\s+", " ").trim();
+          StringBuilder item = new StringBuilder("id=").append(id).append(", type=").append(type);
+          if (!name.isEmpty()) item.append(", name=").append(name);
+          if (!description.isEmpty())
+            item.append(", description=")
+                .append(description, 0, Math.min(description.length(), 240));
+          elements.add(item.toString());
+        }
+      }
+    }
+    if (node.isContainer())
+      node.forEach(child -> collectModelContext(child, rootId, typeCounts, elements));
   }
 
   public List<JsonNode> searchModel(String query) {

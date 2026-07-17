@@ -60,6 +60,43 @@ class AgentTurnLoopTest {
   }
 
   @Test
+  void honorsTheModelsAnswerForAnExplanationThatMentionsUpdating() throws Exception {
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(any(), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    FakeProvider provider = new FakeProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            2);
+    var json =
+        new ObjectMapper()
+            .readTree(
+                """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","diagram":{"elements":[],"relationships":[]}}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+
+    var result =
+        loop.run(
+            "s",
+            ModelLevel.CIM,
+            "Explain how this model could be updated, but do not change it.",
+            null,
+            workspace);
+
+    assertEquals("Done", result.message());
+    assertEquals(1, result.providerCalls());
+    assertTrue(result.patch().isEmpty());
+  }
+
+  @Test
   void durableCancellationStopsBeforeTheProviderBoundary() throws Exception {
     ModelService models = mock(ModelService.class);
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
@@ -164,6 +201,36 @@ class AgentTurnLoopTest {
     assertEquals(2, provider.calls);
   }
 
+  @Test
+  void repairsAnEmptyTerminalAnswerWithinBudget() throws Exception {
+    ModelService models = mock(ModelService.class);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    EmptyAnswerThenRecoveryProvider provider = new EmptyAnswerThenRecoveryProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            3,
+            2);
+    var json =
+        new ObjectMapper()
+            .readTree(
+                """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","diagram":{"elements":[],"relationships":[]}}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+
+    var result = loop.run("s", ModelLevel.CIM, "Explain", null, workspace);
+
+    assertEquals("Recovered", result.message());
+    assertEquals(2, result.providerCalls());
+  }
+
   private static final class FakeProvider implements AssistantModelProvider {
     int calls;
 
@@ -223,6 +290,29 @@ class AgentTurnLoopTest {
       }
       return new AssistantReply(
           "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"Recovered\"}}", "fake", "fake");
+    }
+  }
+
+  private static final class EmptyAnswerThenRecoveryProvider implements AssistantModelProvider {
+    int calls;
+
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    public boolean available() {
+      return true;
+    }
+
+    public AssistantReply complete(AssistantPrompt prompt) {
+      calls++;
+      ProviderCallBudget.consume(prompt.role());
+      return new AssistantReply(
+          calls == 1
+              ? "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"\"}}"
+              : "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"Recovered\"}}",
+          "fake",
+          "fake");
     }
   }
 }

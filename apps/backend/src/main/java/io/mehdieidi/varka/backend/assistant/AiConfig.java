@@ -64,9 +64,7 @@ public class AiConfig {
         properties.turnTimeout(),
         properties.sourceTurnTimeout(),
         Math.min(properties.maxAgentSteps(), 3),
-        // The loop raises this to three only for source-document turns. Ordinary turns are
-        // deliberately capped at two actual provider requests.
-        Math.min(properties.maxProviderCallsPerTurn(), 2));
+        properties.maxProviderCallsPerTurn());
   }
 
   @Bean(destroyMethod = "close")

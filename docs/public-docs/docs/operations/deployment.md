@@ -37,13 +37,13 @@ backend ports should stay private.
 
 Recommended public hostnames:
 
-| Surface  | Example hostname              | Exposure                                  |
-| -------- | ----------------------------- | ----------------------------------------- |
-| Editor   | `https://editor.example.com`  | Public                                    |
-| API      | `https://api.example.com`     | Public, authenticated and rate-limited    |
-| Admin    | `https://admin.example.com`   | Restricted by admin auth and network rule |
-| Landing  | `https://example.com`         | Public                                    |
-| Grafana  | `https://grafana.example.com` | VPN, SSO, or IP allowlist only            |
+| Surface | Example hostname              | Exposure                                  |
+| ------- | ----------------------------- | ----------------------------------------- |
+| Editor  | `https://editor.example.com`  | Public                                    |
+| API     | `https://api.example.com`     | Public, authenticated and rate-limited    |
+| Admin   | `https://admin.example.com`   | Restricted by admin auth and network rule |
+| Landing | `https://example.com`         | Public                                    |
+| Grafana | `https://grafana.example.com` | VPN, SSO, or IP allowlist only            |
 
 ## Domain and DNS
 

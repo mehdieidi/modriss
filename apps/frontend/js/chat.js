@@ -450,6 +450,25 @@ async function waitForDurableTurn(turnId, typeKey, eventCursor = 0) {
   }
 }
 
+async function durableAssistantMessage(turn, sessionId) {
+  const finalMessage = String(turn?.finalMessage || "").trim();
+  if (finalMessage) {
+    return finalMessage;
+  }
+  if (sessionId) {
+    const thread = await api(`/chatbot/sessions/${sessionId}/thread`);
+    const messages = Array.isArray(thread?.messages) ? thread.messages : [];
+    const latestAssistantMessage = [...messages]
+      .reverse()
+      .find((message) => String(message?.role || "").toUpperCase() === "ASSISTANT");
+    const recovered = String(latestAssistantMessage?.content || "").trim();
+    if (recovered) {
+      return recovered;
+    }
+  }
+  return "The assistant completed without returning a response.";
+}
+
 function appendDurableTurnActions(turn, typeKey) {
   const stateName = String(turn?.state || "");
   if (
@@ -474,7 +493,12 @@ function appendDurableTurnActions(turn, typeKey) {
       );
       activeTurnId = null;
       endChatActivity(null, completed?.state || null);
-      appendAssistantDeduped(completed?.finalMessage || "Assistant turn finished.");
+      appendAssistantDeduped(
+        await durableAssistantMessage(
+          completed,
+          state.chat.sessions.get(chatScopeKey(typeKey))?.sessionId,
+        ),
+      );
       appendDurableProvenance(completed);
       appendDurableTurnActions(completed, typeKey);
     }
@@ -1521,7 +1545,7 @@ export async function sendChatMessage() {
       );
       activeTurnId = null;
       endChatActivity(null, response?.state || null);
-      appendAssistantDeduped(response?.finalMessage || "Assistant turn finished.");
+      appendAssistantDeduped(await durableAssistantMessage(response, session.sessionId));
       appendDurableProvenance(response);
       appendDurableTurnActions(response, state.activeType);
     } else {

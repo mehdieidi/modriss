@@ -175,11 +175,11 @@ public record AiProperties(
   }
 
   private static String normalizeOpenAiCompatibleBaseUrl(String value) {
-    String normalized = blankToDefault(value, "https://api.openai.com");
+    String normalized = blankToDefault(value, "https://api.openai.com/v1");
     while (normalized.endsWith("/")) {
       normalized = normalized.substring(0, normalized.length() - 1);
     }
-    return normalized;
+    return normalized.endsWith("/v1") ? normalized : normalized + "/v1";
   }
 
   /** Supported assistant chat providers. */
