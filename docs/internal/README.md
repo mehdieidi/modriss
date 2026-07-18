@@ -6,12 +6,13 @@ readers, and operators.
 
 ## AI Assistant
 
-| Document                                                                | Description                                     |
-| ----------------------------------------------------------------------- | ----------------------------------------------- |
-| [assistant.md](ai/assistant.md)                                         | Assistant architecture, modes, and guardrails   |
-| [sample-prompts.md](ai/sample-prompts.md)                               | Example prompts for modeling workflows          |
-| [implementation-learning-guide.md](ai/implementation-learning-guide.md) | End-to-end learning path through the AI stack   |
-| [ai-migration-plan.md](../ai-migration-plan.md)                         | Historical redesign plan and technology choices |
+| Document                                                                    | Description                                      |
+| --------------------------------------------------------------------------- | ------------------------------------------------ |
+| [assistant.md](ai/assistant.md)                                             | Assistant architecture, modes, and guardrails    |
+| [agents-pattern-assessment.md](ai/anthropic-effective-agents-assessment.md) | Mapping of the implemented assistant to patterns |
+| [sample-prompts.md](ai/sample-prompts.md)                                   | Example prompts for modeling workflows           |
+| [implementation-learning-guide.md](ai/implementation-learning-guide.md)     | End-to-end learning path through the AI stack    |
+| [ai-migration-plan.md](../ai-migration-plan.md)                             | Historical redesign plan and technology choices  |
 
 ## Generated Artifacts
 

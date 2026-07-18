@@ -46,6 +46,7 @@ The diagrams were derived from:
 | Methodology   | [26-psm-methodology.md](26-psm-methodology.md)                                                   | PSM phase flow and SamStack hub                    |
 | Methodology   | [27-end-to-end-methodology.md](27-end-to-end-methodology.md)                                     | CIM→PIM→PSM pipeline with EVL/ETL gates            |
 | DevOps/SRE    | [28-devops-sre-runtime.md](28-devops-sre-runtime.md)                                             | Edge routing, workloads, observability, triage     |
+| AI assistant  | [29-anthropic-effective-agents-pattern-assessment.md](29-agents-pattern-assessment.md)           | Pattern mapping and intentional exclusions         |
 
 ## API Coverage
 
