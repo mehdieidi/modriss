@@ -72,6 +72,7 @@ public class AssistantHardeningService {
    */
   public <T> T providerCall(
       AssistantModelRole role, String provider, String model, Supplier<T> call) {
+    long providerStarted = System.nanoTime();
     Instant now = clock.instant();
     Circuit snapshot = circuits.getOrDefault(provider, new Circuit(0, Instant.EPOCH));
     if (now.isBefore(snapshot.openUntil())) {
@@ -116,6 +117,16 @@ public class AssistantHardeningService {
           // A budget/circuit/platform decision is already user-safe and actionable. Retrying it
           // would either consume a nonexistent call or mask its original cause as a retry error.
           if (ex instanceof PlatformException platformException) {
+            // Provider adapters may already normalize a transient HTTP/proxy failure to a
+            // PlatformException. Preserve the bounded retry policy for those failures while
+            // keeping validation, quota, and cancellation errors immediately actionable.
+            if (retryable(platformException)
+                && attempt < attempts
+                && ProviderCallBudget.hasRemaining()) {
+              last = ex;
+              sleep();
+              continue;
+            }
             throw platformException;
           }
           PlatformException providerFailure = classifyProviderFailure(ex);
@@ -136,6 +147,15 @@ public class AssistantHardeningService {
                 providerFailure.status(),
                 rootCause(ex).getClass().getSimpleName(),
                 rootCause(ex).getMessage());
+            last = ex;
+            // Transient upstream/proxy failures are retried inside the same explicit call budget.
+            // Client errors (quota/rate limit) remain immediately actionable and are never retried.
+            if (retryable(providerFailure)
+                && attempt < attempts
+                && ProviderCallBudget.hasRemaining()) {
+              sleep();
+              continue;
+            }
             recordFailure(provider);
             throw providerFailure;
           }
@@ -154,7 +174,8 @@ public class AssistantHardeningService {
       recordFailure(provider);
       throw providerRequestFailed(last);
     } finally {
-      // Provider duration metrics are recorded by the backend metrics adapter.
+      // Include retries and backoff: this is the latency a durable turn actually experiences.
+      metrics.recordAssistantPhaseDuration("provider", elapsedMillis(providerStarted));
     }
   }
 
@@ -229,6 +250,12 @@ public class AssistantHardeningService {
       Thread.currentThread().interrupt();
       throw new PlatformException(503, "AI provider retry was interrupted.");
     }
+  }
+
+  private boolean retryable(PlatformException failure) {
+    // A timeout has already spent the caller's latency budget; retrying it compounds tail
+    // latency. Transport/upstream 5xx responses are usually safe to retry once.
+    return failure.status() >= 500 && failure.status() < 504;
   }
 
   private long elapsedMillis(long started) {

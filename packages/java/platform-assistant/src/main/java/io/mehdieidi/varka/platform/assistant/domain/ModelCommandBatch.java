@@ -37,5 +37,10 @@ public record ModelCommandBatch(
 
   public record Deletion(String elementId) {}
 
-  public record Evidence(String elementRef, String sourceUnitId, String kind, String assumption) {}
+  public record Evidence(
+      String elementRef,
+      String sourceUnitId,
+      String requirementId,
+      String kind,
+      String assumption) {}
 }

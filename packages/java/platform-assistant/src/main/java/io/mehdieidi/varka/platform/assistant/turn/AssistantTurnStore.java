@@ -11,6 +11,16 @@ import tools.jackson.databind.JsonNode;
 public interface AssistantTurnStore {
   AssistantTurn create(AssistantTurn turn);
 
+  /** Links a continuation to its durable parent after both rows have been created. */
+  void linkContinuation(String parentTurnId, String childTurnId);
+
+  /** Returns direct durable continuations in acceptance order. */
+  List<AssistantTurn> continuations(String parentTurnId);
+
+  void saveContextCache(String turnId, ContextCache cache);
+
+  Optional<ContextCache> contextCache(String turnId);
+
   Optional<AssistantTurn> find(String turnId);
 
   Optional<AssistantTurn> findByIdempotency(String threadId, String key);
@@ -49,7 +59,10 @@ public interface AssistantTurnStore {
 
   void setProviderCallCount(String turnId, int providerCalls);
 
-  void recordProviderCalls(String turnId, String provider, String model, int providerCalls);
+  /** Persists aggregate provider-reported token usage for the durable turn. */
+  void setTokenUsage(String turnId, long promptTokens, long completionTokens);
+
+  void recordProviderCalls(String turnId, List<ProviderCall> calls);
 
   void saveCheckpoint(String turnId, String modelId, long revision, Object inversePatch);
 
@@ -58,7 +71,12 @@ public interface AssistantTurnStore {
   List<Checkpoint> checkpoints(String turnId);
 
   void saveProvenance(
-      String turnId, String elementId, String sourceUnitId, String kind, String assumption);
+      String turnId,
+      String elementId,
+      String sourceUnitId,
+      String requirementId,
+      String kind,
+      String assumption);
 
   /**
    * Evidence labels displayed with a durable turn; source content itself is never returned here.
@@ -72,5 +90,21 @@ public interface AssistantTurnStore {
 
   record Checkpoint(String modelId, long revision, JsonNode inversePatch) {}
 
-  record Provenance(String elementId, String sourceUnitId, String kind, String assumption) {}
+  record Provenance(
+      String elementId,
+      String sourceUnitId,
+      String requirementId,
+      String kind,
+      String assumption) {}
+
+  /** Provider-call telemetry persisted without prompt or response content. */
+  record ProviderCall(
+      String provider,
+      String model,
+      long latencyMillis,
+      long promptTokens,
+      long completionTokens,
+      boolean usageReported) {}
+
+  record ContextCache(List<String> selectedSourceUnitIds, List<String> contractClosures) {}
 }

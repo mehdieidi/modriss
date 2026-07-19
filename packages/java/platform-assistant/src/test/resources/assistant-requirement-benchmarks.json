@@ -1,0 +1,43 @@
+[
+  {
+    "name": "cim-pantry-labelled-requirements",
+    "level": "CIM",
+    "source": "R1 A visitor requests a pantry appointment.\nR2 A coordinator approves or rejects requests.\nR3 Approval reserves inventory and sends a notification.",
+    "expectedElements": {
+      "R1": ["AppointmentRequest"],
+      "R2": ["RequestReview"],
+      "R3": ["InventoryReservation", "ApprovalNotification"]
+    },
+    "modelOutput": {
+      "elements": [
+        { "id": "appointment-request", "name": "AppointmentRequest", "requirementIds": ["R1"] },
+        { "id": "review", "name": "RequestReview", "requirementIds": ["R2"] },
+        { "id": "reserve", "name": "InventoryReservation", "requirementIds": ["R3"] },
+        { "id": "notify", "name": "ApprovalNotification", "requirementIds": ["R3"] }
+      ]
+    },
+    "minimumRecall": 1.0,
+    "minimumPrecision": 1.0
+  },
+  {
+    "name": "pim-order-labelled-requirements",
+    "level": "PIM",
+    "source": "R1 Accept an HTTP order command.\nR2 Persist idempotency keys.\nR3 Publish an order-created event.\nR4 Call the payment provider.",
+    "expectedElements": {
+      "R1": ["OrderApi"],
+      "R2": ["IdempotencyStore"],
+      "R3": ["OrderCreatedEvent"],
+      "R4": ["PaymentAdapter"]
+    },
+    "modelOutput": {
+      "elements": [
+        { "id": "api", "name": "OrderApi", "requirementIds": ["R1"] },
+        { "id": "idempotency", "name": "IdempotencyStore", "requirementIds": ["R2"] },
+        { "id": "event", "name": "OrderCreatedEvent", "requirementIds": ["R3"] },
+        { "id": "payment", "name": "PaymentAdapter", "requirementIds": ["R4"] }
+      ]
+    },
+    "minimumRecall": 1.0,
+    "minimumPrecision": 1.0
+  }
+]

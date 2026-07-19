@@ -14,8 +14,11 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.chat.prompt.Prompt;
 
 /** Shared Spring AI provider behavior for bounded assistant calls. */
 abstract class AbstractAssistantModelProvider implements AssistantModelProvider {
@@ -35,8 +38,8 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
   private final ProxyAvailability proxyAvailability;
   private final AssistantPromptGuard promptGuard;
   private final AssistantHardeningService hardening;
-  private final Supplier<ChatClient> chatClientSupplier;
-  private volatile ChatClient chatClient;
+  private final Supplier<ChatModel> chatModelSupplier;
+  private volatile ChatModel chatModel;
 
   AbstractAssistantModelProvider(
       String providerKey,
@@ -44,13 +47,13 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
       AssistantHardeningService hardening,
-      Supplier<ChatClient> chatClientSupplier) {
+      Supplier<ChatModel> chatModelSupplier) {
     this.providerKey = providerKey;
     this.properties = properties;
     this.proxyAvailability = proxyAvailability;
     this.promptGuard = promptGuard;
     this.hardening = hardening;
-    this.chatClientSupplier = chatClientSupplier;
+    this.chatModelSupplier = chatModelSupplier;
   }
 
   @Override
@@ -60,7 +63,9 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
 
   @Override
   public boolean available() {
-    return properties.enabled() && apiKeyConfigured() && proxyAvailability.check().available();
+    return properties.enabled()
+        && apiKeyConfigured()
+        && proxyAvailability.check(providerKey).available();
   }
 
   @Override
@@ -71,21 +76,11 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     String providerCallId = providerCallId();
     logRequest(prompt, model, providerCallId);
     long providerStarted = System.nanoTime();
-    String content =
-        hardening.providerCall(
-            prompt.role(),
-            providerKey,
-            model,
-            () -> {
-              var request = chatClient().prompt().options(options(model, prompt.role()));
-              return request
-                  .system(SYSTEM_GUARDRAIL + "\n" + prompt.system())
-                  .user(userWithContext(prompt))
-                  .call()
-                  .content();
-            });
+    org.springframework.ai.chat.model.ChatResponse response =
+        hardening.providerCall(prompt.role(), providerKey, model, () -> callModel(prompt, model));
+    String content = response.getResult().getOutput().getText();
     logResponse(prompt.role(), model, content, providerCallId, providerStarted);
-    return new AssistantReply(content == null ? "" : content, providerKey, model);
+    return new AssistantReply(content == null ? "" : content, providerKey, model, usage(response));
   }
 
   @Override
@@ -96,21 +91,11 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     String providerCallId = providerCallId();
     logRequest(prompt, model, providerCallId);
     long providerStarted = System.nanoTime();
-    String content =
-        hardening.providerCall(
-            prompt.role(),
-            providerKey,
-            model,
-            () -> {
-              var request = chatClient().prompt().options(options(model, prompt.role()));
-              return request
-                  .system(SYSTEM_GUARDRAIL + "\n" + prompt.system())
-                  .user(userWithContext(prompt))
-                  .call()
-                  .content();
-            });
+    org.springframework.ai.chat.model.ChatResponse response =
+        hardening.providerCall(prompt.role(), providerKey, model, () -> callModel(prompt, model));
+    String content = response.getResult().getOutput().getText();
     logResponse(prompt.role(), model, content, providerCallId, providerStarted);
-    return new AssistantReply(content == null ? "" : content, providerKey, model);
+    return new AssistantReply(content == null ? "" : content, providerKey, model, usage(response));
   }
 
   @Override
@@ -121,21 +106,11 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     String providerCallId = providerCallId();
     logRequest(prompt, model, providerCallId);
     long providerStarted = System.nanoTime();
-    String content =
-        hardening.providerCall(
-            prompt.role(),
-            providerKey,
-            model,
-            () ->
-                chatClient()
-                    .prompt()
-                    .options(options(model, prompt.role()))
-                    .system(SYSTEM_GUARDRAIL + "\n" + prompt.system())
-                    .user(userWithContext(prompt))
-                    .call()
-                    .content());
+    org.springframework.ai.chat.model.ChatResponse response =
+        hardening.providerCall(prompt.role(), providerKey, model, () -> callModel(prompt, model));
+    String content = response.getResult().getOutput().getText();
     logResponse(prompt.role(), model, content, providerCallId, providerStarted);
-    return new AssistantReply(content == null ? "" : content, providerKey, model);
+    return new AssistantReply(content == null ? "" : content, providerKey, model, usage(response));
   }
 
   protected abstract String baseUrl();
@@ -146,22 +121,49 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
 
   protected abstract ChatOptions.Builder<?> options(String model, AssistantModelRole role);
 
-  private ChatClient chatClient() {
-    ChatClient current = chatClient;
+  /**
+   * Calls the provider model directly so ChatClient never tries to execute an LLM action as a tool.
+   */
+  private org.springframework.ai.chat.model.ChatResponse callModel(
+      AssistantPrompt prompt, String model) {
+    return chatModel()
+        .call(
+            new Prompt(
+                java.util.List.of(
+                    new SystemMessage(SYSTEM_GUARDRAIL + "\n" + prompt.system()),
+                    new UserMessage(userWithContext(prompt))),
+                options(model, prompt.role()).build()));
+  }
+
+  private ChatModel chatModel() {
+    ChatModel current = chatModel;
     if (current != null) {
       return current;
     }
     synchronized (this) {
-      if (chatClient == null) {
-        chatClient = chatClientSupplier.get();
+      if (chatModel == null) {
+        chatModel = chatModelSupplier.get();
       }
-      return chatClient;
+      return chatModel;
     }
   }
 
   private String proxyDescription() {
-    AiProperties.Proxy proxy = properties.proxy();
+    AiProperties.Proxy proxy = properties.proxyFor(providerKey);
     return proxy.enabled() ? proxy.type() + " " + proxy.host() + ":" + proxy.port() : "direct";
+  }
+
+  private TokenUsage usage(org.springframework.ai.chat.model.ChatResponse response) {
+    if (response == null
+        || response.getMetadata() == null
+        || response.getMetadata().getUsage() == null) {
+      return TokenUsage.unavailable();
+    }
+    var usage = response.getMetadata().getUsage();
+    Integer prompt = usage.getPromptTokens();
+    Integer completion = usage.getCompletionTokens();
+    return new TokenUsage(
+        prompt == null ? -1 : prompt.longValue(), completion == null ? -1 : completion.longValue());
   }
 
   private String userWithContext(AssistantPrompt prompt) {
@@ -240,7 +242,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     if (!apiKeyConfigured()) {
       throw new PlatformException(503, "AI provider API key is not configured.");
     }
-    ProxyAvailability.ProxyCheck proxy = proxyAvailability.check();
+    ProxyAvailability.ProxyCheck proxy = proxyAvailability.check(providerKey);
     if (!proxy.available()) {
       throw new PlatformException(503, proxy.message());
     }

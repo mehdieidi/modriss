@@ -4,12 +4,12 @@ import com.google.genai.Client;
 import com.google.genai.types.ClientOptions;
 import com.google.genai.types.ProxyOptions;
 import com.google.genai.types.ProxyType;
+import io.mehdieidi.varka.platform.assistant.agent.AgentActionSchema;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
 import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.provider.ProxyAvailability;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 
@@ -30,7 +30,7 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
         proxyAvailability,
         promptGuard,
         hardening,
-        () -> ChatClient.create(chatModel(properties)));
+        () -> chatModel(properties));
   }
 
   private static GoogleGenAiChatModel chatModel(AiProperties properties) {
@@ -56,7 +56,7 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
   }
 
   private static ClientOptions clientOptions(AiProperties properties) {
-    AiProperties.Proxy proxy = properties.proxy();
+    AiProperties.Proxy proxy = properties.proxyFor(AiProperties.Provider.GEMINI.key());
     ProxyOptions.Builder proxyOptions = ProxyOptions.builder();
     if (!proxy.enabled() || proxy.type() == AiProperties.ProxyType.DIRECT) {
       proxyOptions.type(ProxyType.Known.DIRECT);
@@ -92,6 +92,8 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
     return GoogleGenAiChatOptions.builder()
         .model(model)
         .temperature(0.2)
+        .responseMimeType("application/json")
+        .responseSchema(AgentActionSchema.json())
         .maxOutputTokens(Math.min(properties.tokenBudget(), completionLimit(role)));
   }
 

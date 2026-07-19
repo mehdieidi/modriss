@@ -91,6 +91,11 @@ public interface AssistantSettings {
     return 4;
   }
 
+  /** Maximum durable checkpoints the assistant may create automatically for one request. */
+  default int maxAutomaticSlices() {
+    return 12;
+  }
+
   /**
    * Whether CIM source attachments should use LLM evidence extraction instead of a local fast path.
    */

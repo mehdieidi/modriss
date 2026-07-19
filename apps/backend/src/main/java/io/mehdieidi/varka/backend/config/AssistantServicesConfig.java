@@ -120,6 +120,46 @@ public class AssistantServicesConfig {
     }
 
     @Override
+    public void recordAssistantTokenEstimate(String direction, String provider, long tokens) {
+      metrics.recordAssistantTokenEstimate(direction, provider, tokens);
+    }
+
+    @Override
+    public void recordAssistantTokenUsage(String direction, String provider, long tokens) {
+      metrics.recordAssistantTokenUsage(direction, provider, tokens);
+    }
+
+    @Override
+    public void recordAssistantRetrievalChars(int chars) {
+      metrics.recordAssistantRetrievalChars(chars);
+    }
+
+    @Override
+    public void recordAssistantMalformedAction(String reason) {
+      metrics.recordAssistantMalformedAction(reason);
+    }
+
+    @Override
+    public void recordAssistantRepairReason(String reason) {
+      metrics.recordAssistantRepairReason(reason);
+    }
+
+    @Override
+    public void recordAssistantAction(String action, int step) {
+      metrics.recordAssistantAction(action, step);
+    }
+
+    @Override
+    public void recordAssistantStructuralValidation(boolean valid) {
+      metrics.recordAssistantStructuralValidation(valid);
+    }
+
+    @Override
+    public void recordAssistantCheckpoint(String operation) {
+      metrics.recordAssistantCheckpoint(operation);
+    }
+
+    @Override
     public void recordAssistantCircuitRejected(String provider) {
       metrics.recordAssistantCircuitRejected(provider);
     }

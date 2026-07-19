@@ -52,7 +52,7 @@ class AgentTurnLoopTest {
     var workspace =
         new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
 
-    var result = loop.run("s", ModelLevel.CIM, "Explain", null, workspace);
+    var result = loop.run("s", ModelLevel.CIM, "Create a model change", null, workspace);
 
     assertEquals("Done", result.message());
     assertEquals(1, result.providerCalls());
@@ -194,7 +194,7 @@ class AgentTurnLoopTest {
     var workspace =
         new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
 
-    var result = loop.run("s", ModelLevel.CIM, "Explain", null, workspace);
+    var result = loop.run("s", ModelLevel.CIM, "Create a model change", null, workspace);
 
     assertEquals("Recovered", result.message());
     assertEquals(2, result.providerCalls());
@@ -225,10 +225,41 @@ class AgentTurnLoopTest {
     var workspace =
         new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
 
-    var result = loop.run("s", ModelLevel.CIM, "Explain", null, workspace);
+    var result = loop.run("s", ModelLevel.CIM, "Create a model change", null, workspace);
 
     assertEquals("Recovered", result.message());
     assertEquals(2, result.providerCalls());
+  }
+
+  @Test
+  void rejectsClarificationForAnExistingElementWhenTheModelIsEmpty() throws Exception {
+    ModelService models = mock(ModelService.class);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    AskThenAnswerProvider provider = new AskThenAnswerProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            3,
+            2);
+    var json =
+        new ObjectMapper()
+            .readTree(
+                """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","diagram":{"elements":[],"relationships":[]}}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.PIM, "m", 1, json, new AssistantPatchCompiler(), null);
+
+    var result = loop.run("s", ModelLevel.PIM, "Create a vending-machine backend", null, workspace);
+
+    assertEquals("Recovered", result.message());
+    assertEquals(2, result.providerCalls());
+    assertTrue(provider.correctivePromptReceived);
   }
 
   private static final class FakeProvider implements AssistantModelProvider {
@@ -313,6 +344,35 @@ class AgentTurnLoopTest {
               : "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"Recovered\"}}",
           "fake",
           "fake");
+    }
+  }
+
+  private static final class AskThenAnswerProvider implements AssistantModelProvider {
+    int calls;
+    boolean correctivePromptReceived;
+
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    public boolean available() {
+      return true;
+    }
+
+    public AssistantReply complete(AssistantPrompt prompt) {
+      calls++;
+      ProviderCallBudget.consume(prompt.role());
+      if (calls == 1) {
+        return new AssistantReply(
+            "{\"tool\":\"ask_user\",\"arguments\":{\"message\":\"Which existing service should own"
+                + " this?\"}}",
+            "fake",
+            "fake");
+      }
+      correctivePromptReceived =
+          prompt.user().contains("asking the user to choose an existing owner");
+      return new AssistantReply(
+          "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"Recovered\"}}", "fake", "fake");
     }
   }
 }

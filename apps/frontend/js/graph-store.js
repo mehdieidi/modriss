@@ -2357,16 +2357,22 @@ function preferredDefaultViewId(byId, typeKey) {
   return byId.keys().next().value || null;
 }
 
-function resolveActiveViewId(byId, typeKey, activeViewId) {
+function resolveActiveViewId(byId, typeKey, activeViewId, preserveRequestedView = false) {
   const mainId = mainViewId(typeKey);
   const requested = String(activeViewId || "").trim();
-  if (requested && requested !== mainId && byId.has(requested)) {
+  if (requested && byId.has(requested) && (preserveRequestedView || requested !== mainId)) {
     return requested;
   }
   return preferredDefaultViewId(byId, typeKey);
 }
 
-function installViews(views, activeViewId, typeKey = state.activeType, modelName = "") {
+function installViews(
+  views,
+  activeViewId,
+  typeKey = state.activeType,
+  modelName = "",
+  { preserveRequestedView = false } = {},
+) {
   const byId = new Map();
   sanitizeWorkbenchViews(views, typeKey)
     .filter((view) => viewBelongsToLevel(view, typeKey) && !isFocusView(view))
@@ -2378,7 +2384,7 @@ function installViews(views, activeViewId, typeKey = state.activeType, modelName
         byId.set(view.id, view);
       }
     });
-  const resolvedActive = resolveActiveViewId(byId, typeKey, activeViewId);
+  const resolvedActive = resolveActiveViewId(byId, typeKey, activeViewId, preserveRequestedView);
   state.views = {
     byId,
     activeViewId: resolvedActive,
@@ -2503,13 +2509,26 @@ export function installGraphAndViews(
   typeKey,
   modelJson = {},
   fallbackName = "",
-  { skipFragments = false, skipClientLayout = false } = {},
+  {
+    skipFragments = false,
+    skipClientLayout = false,
+    preserveActiveViewId = null,
+    preserveActiveView = false,
+  } = {},
 ) {
   const graph = buildGraph(typeKey, modelJson || {});
   const views = buildViews(typeKey, graph, modelJson || {}, fallbackName);
   const fragments = skipFragments ? [] : buildFragments(typeKey, graph, views, modelJson || {});
   installGraph(graph);
-  installViews(views, modelJson?.activeViewId || null, typeKey, fallbackName);
+  installViews(
+    views,
+    preserveActiveViewId || modelJson?.activeViewId || null,
+    typeKey,
+    fallbackName,
+    {
+      preserveRequestedView: preserveActiveView,
+    },
+  );
   if (!skipFragments) {
     installFragments(fragments);
   } else {
@@ -2533,7 +2552,12 @@ export async function installGraphAndViewsAsync(
   typeKey,
   modelJson = {},
   fallbackName = "",
-  { skipFragments = false, skipClientLayout = false } = {},
+  {
+    skipFragments = false,
+    skipClientLayout = false,
+    preserveActiveViewId = null,
+    preserveActiveView = false,
+  } = {},
 ) {
   const graph = buildGraph(typeKey, modelJson || {});
   await yieldToMain();
@@ -2542,7 +2566,15 @@ export async function installGraphAndViewsAsync(
   const fragments = skipFragments ? [] : buildFragments(typeKey, graph, views, modelJson || {});
   await yieldToMain();
   installGraph(graph);
-  installViews(views, modelJson?.activeViewId || null, typeKey, fallbackName);
+  installViews(
+    views,
+    preserveActiveViewId || modelJson?.activeViewId || null,
+    typeKey,
+    fallbackName,
+    {
+      preserveRequestedView: preserveActiveView,
+    },
+  );
   if (!skipFragments) {
     installFragments(fragments);
   } else {

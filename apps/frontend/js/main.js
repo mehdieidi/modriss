@@ -1,7 +1,7 @@
 import { el } from "./dom.js";
 import { state } from "./state.js";
 import { initFrontendTelemetry } from "./telemetry.js";
-import { initTheme, loadActiveThemeProfile, toggleTheme } from "./theme.js";
+import { initTheme, toggleTheme } from "./theme.js";
 import {
   applyViewport,
   fitViewportToDiagram,
@@ -702,14 +702,6 @@ function bindEvents() {
   if (el.themeRailToggleBtn) {
     el.themeRailToggleBtn.addEventListener("click", toggleTheme);
   }
-  window.addEventListener("focus", () => {
-    void loadActiveThemeProfile();
-  });
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) {
-      void loadActiveThemeProfile();
-    }
-  });
   document.documentElement.addEventListener("varka:theme-change", () => {
     renderDiagram();
     renderPalette();

@@ -166,7 +166,10 @@ public final class AgenticTurnService {
         turn.inversePatch(),
         workspace.affectedElementIds(),
         turn.commandBatch(),
-        turn.providerCalls());
+        turn.providerCalls(),
+        turn.promptTokens(),
+        turn.completionTokens(),
+        turn.providerCallDetails());
   }
 
   public boolean cancel(String sessionId) {
@@ -174,6 +177,9 @@ public final class AgenticTurnService {
   }
 
   private String contextualMessage(String sessionId, String message) {
+    // Automatic slices already carry the complete original request and a persisted checkpoint.
+    // Replaying earlier slices can reintroduce a stale clarification or duplicate plan.
+    if (message != null && message.contains("[automatic-slice:")) return message;
     if (memory == null) return message;
     List<io.mehdieidi.varka.platform.assistant.domain.memory.AssistantMemoryRecords.MessageRecord>
         history =
@@ -207,5 +213,9 @@ public final class AgenticTurnService {
       List<ModelService.ModelPatchOperation> inversePatch,
       List<String> affectedElementIds,
       io.mehdieidi.varka.platform.assistant.domain.ModelCommandBatch commandBatch,
-      int providerCalls) {}
+      int providerCalls,
+      long promptTokens,
+      long completionTokens,
+      List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
+          providerCallDetails) {}
 }

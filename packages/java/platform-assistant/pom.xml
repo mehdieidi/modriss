@@ -75,6 +75,31 @@
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <artifactId>flyway-core</artifactId>
+      <groupId>org.flywaydb</groupId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <artifactId>flyway-database-postgresql</artifactId>
+      <groupId>org.flywaydb</groupId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <artifactId>postgresql</artifactId>
+      <groupId>org.postgresql</groupId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+      <groupId>org.testcontainers</groupId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <artifactId>testcontainers-postgresql</artifactId>
+      <groupId>org.testcontainers</groupId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <description>AI modeling assistant orchestration, patch pipeline, and session workflow.</description>
   <modelVersion>4.0.0</modelVersion>

@@ -15,11 +15,14 @@ public final class AgentActionCodec {
   public AgentAction parse(String response) {
     try {
       JsonNode root = mapper.readTree(jsonObject(response));
-      if (!root.isObject() || !root.hasNonNull("tool") || !root.path("arguments").isObject()) {
+      if (!root.isObject()
+          || (!root.hasNonNull("action") && !root.hasNonNull("tool"))
+          || !root.path("arguments").isObject()) {
         throw new IllegalArgumentException();
       }
       return new AgentAction(
-          AgentAction.Kind.fromWire(root.path("tool").asText()), root.path("arguments"));
+          AgentAction.Kind.fromWire(root.path("action").asText(root.path("tool").asText())),
+          root.path("arguments"));
     } catch (Exception ex) {
       throw new PlatformException(
           422, "Provider returned malformed AgentAction structured output.");

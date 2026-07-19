@@ -6,7 +6,6 @@ import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
 import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.provider.ProxyAvailability;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 
@@ -25,7 +24,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
         proxyAvailability,
         promptGuard,
         hardening,
-        () -> ChatClient.create(chatModel(properties)));
+        () -> chatModel(properties));
   }
 
   private static OpenAiChatModel chatModel(AiProperties properties) {
@@ -40,7 +39,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
             .apiKey(apiKey)
             .timeout(properties.requestTimeout())
             .maxRetries(0);
-    AiProperties.Proxy proxy = properties.proxy();
+    AiProperties.Proxy proxy = properties.proxyFor(AiProperties.Provider.OPENAI.key());
     if (proxy.enabled() && proxy.type() != AiProperties.ProxyType.DIRECT) {
       client.proxy(
           new java.net.Proxy(
@@ -84,6 +83,9 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
             .model(model)
             .temperature(0.2)
             .maxCompletionTokens(Math.min(properties.tokenBudget(), completionLimit(role)));
+    // Several OpenAI-compatible proxies reject JSON Schema with a polymorphic arguments object.
+    // The action codec and model-command compiler still validate the closed envelope and every
+    // nested model command; JSON_OBJECT keeps this provider path interoperable.
     builder.responseFormat(
         OpenAiChatModel.ResponseFormat.builder()
             .type(OpenAiChatModel.ResponseFormat.Type.JSON_OBJECT)

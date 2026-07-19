@@ -54,7 +54,8 @@ public class AiConfig {
       MetamodelGuideGenerator guides,
       LexicalRetrievalIndex retrieval,
       AssistantRealtimeHub realtime,
-      AiProperties properties) {
+      AiProperties properties,
+      io.mehdieidi.varka.platform.assistant.spi.AssistantMetrics metrics) {
     return new AgentTurnLoop(
         provider,
         tools,
@@ -63,8 +64,10 @@ public class AiConfig {
         realtime,
         properties.turnTimeout(),
         properties.sourceTurnTimeout(),
-        Math.min(properties.maxAgentSteps(), 3),
-        properties.maxProviderCallsPerTurn());
+        properties.maxAgentSteps(),
+        properties.maxProviderCallsPerTurn(),
+        properties.maxProviderCallsSourceTurn(),
+        metrics);
   }
 
   @Bean(destroyMethod = "close")

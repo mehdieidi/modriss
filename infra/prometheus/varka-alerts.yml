@@ -88,6 +88,42 @@ groups:
         annotations:
           summary: Assistant turns are completing without full progress
 
+      - alert: VarkaAssistantQueueLatencySlo
+        expr: histogram_quantile(0.95, sum(rate(varka_assistant_phase_seconds_bucket{phase="queue"}[15m])) by (le)) > 30
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant queue p95 exceeds the 30 second SLO
+
+      - alert: VarkaAssistantTurnLatencySlo
+        expr: histogram_quantile(0.95, sum(rate(varka_assistant_phase_seconds_bucket{phase="durable_turn"}[15m])) by (le)) > 300
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant end-to-end turn p95 exceeds the five minute SLO
+
+      - alert: VarkaAssistantSuccessRateSlo
+        expr: |
+          sum(rate(varka_assistant_turn_outcome_total{outcome=~"SUCCEEDED|PARTIAL"}[30m]))
+          / clamp_min(sum(rate(varka_assistant_turn_outcome_total[30m])), 1) < 0.90
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant durable-turn success rate is below 90 percent
+
+      - alert: VarkaAssistantStructuralValiditySlo
+        expr: |
+          sum(rate(varka_assistant_structural_validation_total{result="invalid"}[30m]))
+          / clamp_min(sum(rate(varka_assistant_structural_validation_total[30m])), 1) > 0.05
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant structural-validation failure rate exceeds five percent
+
       - alert: VarkaEdgeDown
         expr: up{job="varka-caddy"} == 0
         for: 2m

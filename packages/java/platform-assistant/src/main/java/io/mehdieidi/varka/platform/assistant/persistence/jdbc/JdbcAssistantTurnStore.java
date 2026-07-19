@@ -3,6 +3,7 @@ package io.mehdieidi.varka.platform.assistant.persistence.jdbc;
 import io.mehdieidi.varka.platform.assistant.turn.AssistantTurn;
 import io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
+import io.mehdieidi.varka.platform.kernel.PlatformException;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -27,29 +28,84 @@ public final class JdbcAssistantTurnStore implements AssistantTurnStore {
 
   @Override
   public AssistantTurn create(AssistantTurn turn) {
-    jdbc.update(
-        """
-        INSERT INTO assistant_turns(id, thread_id, user_id, project_id, level, model_id,
-          expected_revision, idempotency_key, message, source_text, selected_element_ids, state,
-          accepted_at, deadline_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)
-        """,
-        turn.id(),
-        turn.threadId(),
-        turn.userId(),
-        turn.projectId(),
-        turn.level().name(),
-        turn.modelId(),
-        turn.expectedRevision(),
-        turn.idempotencyKey(),
-        turn.message(),
-        turn.sourceText(),
-        json(turn.selectedElementIds()),
-        turn.state().name(),
-        timestamp(turn.acceptedAt()),
-        timestamp(turn.deadlineAt()));
+    try {
+      jdbc.update(
+          """
+          INSERT INTO assistant_turns(id, thread_id, user_id, project_id, level, model_id,
+            expected_revision, idempotency_key, message, source_text, selected_element_ids, state,
+            accepted_at, deadline_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)
+          """,
+          turn.id(),
+          turn.threadId(),
+          turn.userId(),
+          turn.projectId(),
+          turn.level().name(),
+          turn.modelId(),
+          turn.expectedRevision(),
+          turn.idempotencyKey(),
+          turn.message(),
+          turn.sourceText(),
+          json(turn.selectedElementIds()),
+          turn.state().name(),
+          timestamp(turn.acceptedAt()),
+          timestamp(turn.deadlineAt()));
+    } catch (DuplicateKeyException activeTurn) {
+      throw new PlatformException(409, "An assistant turn is already active for this model.");
+    }
     appendEvent(turn.id(), "turn.accepted", Map.of("state", turn.state().name()));
     return turn;
+  }
+
+  @Override
+  public void linkContinuation(String parentTurnId, String childTurnId) {
+    jdbc.update(
+        "UPDATE assistant_turns SET parent_turn_id = ? WHERE id = ?", parentTurnId, childTurnId);
+  }
+
+  @Override
+  public List<AssistantTurn> continuations(String parentTurnId) {
+    return jdbc.query(
+        """
+        WITH RECURSIVE chain AS (
+          SELECT id, 1 AS depth FROM assistant_turns WHERE parent_turn_id = ?
+          UNION ALL
+          SELECT child.id, chain.depth + 1
+          FROM assistant_turns child JOIN chain ON child.parent_turn_id = chain.id
+        )
+        SELECT turns.* FROM assistant_turns turns JOIN chain ON chain.id = turns.id
+        ORDER BY chain.depth, turns.accepted_at
+        """,
+        this::turn,
+        parentTurnId);
+  }
+
+  @Override
+  public void saveContextCache(String turnId, AssistantTurnStore.ContextCache cache) {
+    jdbc.update(
+        "INSERT INTO assistant_turn_context_cache(turn_id, selected_source_ids, contract_closures,"
+            + " created_at) VALUES (?, ?::jsonb, ?::jsonb, ?) ON CONFLICT (turn_id) DO UPDATE SET"
+            + " selected_source_ids = EXCLUDED.selected_source_ids, contract_closures ="
+            + " EXCLUDED.contract_closures",
+        turnId,
+        json(cache == null ? List.of() : cache.selectedSourceUnitIds()),
+        json(cache == null ? List.of() : cache.contractClosures()),
+        timestamp(Instant.now()));
+  }
+
+  @Override
+  public Optional<AssistantTurnStore.ContextCache> contextCache(String turnId) {
+    return jdbc
+        .query(
+            "SELECT selected_source_ids, contract_closures FROM assistant_turn_context_cache WHERE"
+                + " turn_id = ?",
+            (rs, row) ->
+                new AssistantTurnStore.ContextCache(
+                    list(rs.getString("selected_source_ids")),
+                    list(rs.getString("contract_closures"))),
+            turnId)
+        .stream()
+        .findFirst();
   }
 
   @Override
@@ -279,15 +335,28 @@ RETURNING *
   }
 
   @Override
-  public void recordProviderCalls(String turnId, String provider, String model, int providerCalls) {
-    for (int call = 0; call < Math.max(0, providerCalls); call++) {
+  public void setTokenUsage(String turnId, long promptTokens, long completionTokens) {
+    jdbc.update(
+        "UPDATE assistant_turns SET prompt_tokens = ?, completion_tokens = ? WHERE id = ?",
+        Math.max(0L, promptTokens),
+        Math.max(0L, completionTokens),
+        turnId);
+  }
+
+  @Override
+  public void recordProviderCalls(String turnId, List<AssistantTurnStore.ProviderCall> calls) {
+    for (AssistantTurnStore.ProviderCall call :
+        calls == null ? List.<AssistantTurnStore.ProviderCall>of() : calls) {
       jdbc.update(
-          "INSERT INTO assistant_provider_calls(turn_id, provider, model, started_at,"
-              + " finish_reason) VALUES (?, ?, ?, ?, ?)",
+          "INSERT INTO assistant_provider_calls(turn_id, provider, model, started_at, latency_ms,"
+              + " prompt_tokens, completion_tokens, finish_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
           turnId,
-          provider,
-          model,
+          call.provider(),
+          call.model(),
           timestamp(Instant.now()),
+          Math.max(0L, call.latencyMillis()),
+          call.usageReported() ? Math.max(0L, call.promptTokens()) : null,
+          call.usageReported() ? Math.max(0L, call.completionTokens()) : null,
           "COMPLETED");
     }
   }
@@ -340,13 +409,19 @@ RETURNING *
 
   @Override
   public void saveProvenance(
-      String turnId, String elementId, String sourceUnitId, String kind, String assumption) {
+      String turnId,
+      String elementId,
+      String sourceUnitId,
+      String requirementId,
+      String kind,
+      String assumption) {
     jdbc.update(
-        "INSERT INTO assistant_element_provenance(turn_id, element_id, source_unit_id, kind,"
-            + " assumption) VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
+        "INSERT INTO assistant_element_provenance(turn_id, element_id, source_unit_id,"
+            + " requirement_id, kind, assumption) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
         turnId,
         elementId,
         sourceUnitId,
+        requirementId,
         kind,
         assumption);
   }
@@ -354,12 +429,13 @@ RETURNING *
   @Override
   public List<AssistantTurnStore.Provenance> provenance(String turnId) {
     return jdbc.query(
-        "SELECT element_id, source_unit_id, kind, assumption FROM assistant_element_provenance"
-            + " WHERE turn_id = ? ORDER BY id",
+        "SELECT element_id, source_unit_id, requirement_id, kind, assumption FROM"
+            + " assistant_element_provenance WHERE turn_id = ? ORDER BY id",
         (rs, row) ->
             new AssistantTurnStore.Provenance(
                 rs.getString("element_id"),
                 rs.getString("source_unit_id"),
+                rs.getString("requirement_id"),
                 rs.getString("kind"),
                 rs.getString("assumption")),
         turnId);

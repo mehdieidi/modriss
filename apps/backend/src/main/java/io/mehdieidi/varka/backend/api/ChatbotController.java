@@ -5,6 +5,7 @@ import io.mehdieidi.varka.backend.assistant.AssistantRealtimeHub;
 import io.mehdieidi.varka.backend.assistant.DurableAssistantTurnWorker;
 import io.mehdieidi.varka.backend.assistant.DurableTurnUndoService;
 import io.mehdieidi.varka.backend.guest.GuestAccessService;
+import io.mehdieidi.varka.backend.observability.VarkaMetrics;
 import io.mehdieidi.varka.backend.upload.UploadScope;
 import io.mehdieidi.varka.backend.upload.UploadService;
 import io.mehdieidi.varka.backend.upload.UploadedFileRecord;
@@ -12,6 +13,7 @@ import io.mehdieidi.varka.platform.assistant.application.AgenticAssistantFacade;
 import io.mehdieidi.varka.platform.assistant.domain.AssistantProposal;
 import io.mehdieidi.varka.platform.assistant.domain.AssistantReadyPayload;
 import io.mehdieidi.varka.platform.assistant.session.AssistantSessionStore;
+import io.mehdieidi.varka.platform.assistant.spi.AssistantSettings;
 import io.mehdieidi.varka.platform.assistant.turn.AssistantTurn;
 import io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
@@ -51,6 +53,7 @@ import tools.jackson.databind.JsonNode;
 public class ChatbotController {
 
   private static final Logger log = LoggerFactory.getLogger(ChatbotController.class);
+  private static final Duration DEFAULT_ASSISTANT_TURN_TIMEOUT = Duration.ofMinutes(5);
 
   private final AgenticAssistantFacade assistant;
   private final AssistantRealtimeHub realtime;
@@ -60,6 +63,8 @@ public class ChatbotController {
   private final AssistantTurnStore turns;
   private final DurableTurnUndoService durableUndo;
   private final GuestAccessService guests;
+  private final VarkaMetrics metrics;
+  private final AssistantSettings assistantSettings;
   private final java.util.concurrent.ScheduledExecutorService turnEventReplay =
       Executors.newSingleThreadScheduledExecutor(
           runnable -> {
@@ -67,6 +72,13 @@ public class ChatbotController {
             thread.setDaemon(true);
             return thread;
           });
+
+  private Duration turnTimeout(String sourceText) {
+    if (assistantSettings == null) return DEFAULT_ASSISTANT_TURN_TIMEOUT;
+    return sourceText == null || sourceText.isBlank()
+        ? assistantSettings.turnTimeout()
+        : assistantSettings.sourceTurnTimeout();
+  }
 
   /**
    * Creates the controller.
@@ -81,7 +93,7 @@ public class ChatbotController {
       AuthSupport auth,
       ProjectService projects,
       UploadService uploads) {
-    this(assistant, realtime, auth, projects, uploads, null, null, null);
+    this(assistant, realtime, auth, projects, uploads, null, null, null, null, null);
   }
 
   public ChatbotController(
@@ -91,7 +103,7 @@ public class ChatbotController {
       ProjectService projects,
       UploadService uploads,
       AssistantTurnStore turns) {
-    this(assistant, realtime, auth, projects, uploads, turns, null, null);
+    this(assistant, realtime, auth, projects, uploads, turns, null, null, null, null);
   }
 
   @Autowired
@@ -103,7 +115,9 @@ public class ChatbotController {
       UploadService uploads,
       AssistantTurnStore turns,
       DurableTurnUndoService durableUndo,
-      GuestAccessService guests) {
+      GuestAccessService guests,
+      VarkaMetrics metrics,
+      AssistantSettings assistantSettings) {
     this.assistant = assistant;
     this.realtime = realtime;
     this.auth = auth;
@@ -112,6 +126,8 @@ public class ChatbotController {
     this.turns = turns;
     this.durableUndo = durableUndo;
     this.guests = guests;
+    this.metrics = metrics;
+    this.assistantSettings = assistantSettings;
   }
 
   /**
@@ -259,7 +275,7 @@ public class ChatbotController {
               request.selectedElementIds(),
               AssistantTurn.State.QUEUED,
               acceptedAt,
-              acceptedAt.plus(Duration.ofMinutes(5)),
+              acceptedAt.plus(turnTimeout(attachment.content())),
               null,
               null,
               false,
@@ -370,7 +386,14 @@ public class ChatbotController {
             .map(
                 item ->
                     new ProvenanceResponse(
-                        item.elementId(), item.sourceUnitId(), item.kind(), item.assumption()))
+                        item.elementId(),
+                        item.sourceUnitId(),
+                        item.requirementId(),
+                        item.kind(),
+                        item.assumption()))
+            .toList(),
+        turns.continuations(turnId).stream()
+            .map(item -> new ContinuationResponse(item.id(), item.state(), item.revision()))
             .toList());
   }
 
@@ -420,7 +443,7 @@ public class ChatbotController {
             previous.selectedElementIds(),
             AssistantTurn.State.QUEUED,
             acceptedAt,
-            acceptedAt.plus(Duration.ofMinutes(5)),
+            acceptedAt.plus(turnTimeout(previous.sourceText())),
             null,
             null,
             false,
@@ -434,6 +457,7 @@ public class ChatbotController {
             0,
             0);
     turns.create(next);
+    turns.linkContinuation(previous.id(), next.id());
     return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(next));
   }
 
@@ -466,7 +490,7 @@ public class ChatbotController {
             previous.selectedElementIds(),
             AssistantTurn.State.QUEUED,
             acceptedAt,
-            acceptedAt.plus(Duration.ofMinutes(5)),
+            acceptedAt.plus(turnTimeout(previous.sourceText())),
             null,
             null,
             false,
@@ -499,6 +523,26 @@ public class ChatbotController {
     if (durableUndo == null) throw new PlatformException(503, "Durable turn undo is unavailable.");
     var result = durableUndo.undo(user, turn);
     return new TurnUndoResponse(result.modelId(), result.revision());
+  }
+
+  /** Records explicit user acceptance/rejection without storing free-form feedback as telemetry. */
+  @PostMapping("/api/chatbot/turns/{turnId}/feedback")
+  public ResponseEntity<Void> feedback(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable String turnId,
+      @RequestBody TurnFeedbackRequest request) {
+    UserRecord user = auth.user(token);
+    AssistantTurn turn =
+        turns
+            .find(turnId)
+            .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
+    if (!turn.userId().equals(user.id()))
+      throw new PlatformException(404, "Assistant turn not found.");
+    String signal = request.accepted() ? "accepted" : "rejected";
+    turns.appendEvent(turn.id(), "turn.feedback", java.util.Map.of("accepted", request.accepted()));
+    turns.audit(turn.id(), "USER_" + signal.toUpperCase(java.util.Locale.ROOT), java.util.Map.of());
+    if (metrics != null) metrics.recordAssistantUserSignal(signal);
+    return ResponseEntity.accepted().build();
   }
 
   /**
@@ -885,17 +929,28 @@ public class ChatbotController {
       int providerCalls,
       long promptTokens,
       long completionTokens,
-      List<ProvenanceResponse> provenance) {}
+      List<ProvenanceResponse> provenance,
+      List<ContinuationResponse> continuations) {}
 
   /** Source-grounded and inferred labels for the elements committed in this turn. */
   public record ProvenanceResponse(
-      String elementId, String sourceUnitId, String kind, String assumption) {}
+      String elementId,
+      String sourceUnitId,
+      String requirementId,
+      String kind,
+      String assumption) {}
+
+  /** Direct continuations for an automatically or explicitly resumed progressive turn. */
+  public record ContinuationResponse(String turnId, AssistantTurn.State state, Long revision) {}
 
   /** A persisted model checkpoint available for reload and safe inverse application. */
   public record CheckpointResponse(String modelId, long revision) {}
 
   /** Revision returned after a safe checkpoint inverse is persisted. */
   public record TurnUndoResponse(String modelId, long revision) {}
+
+  /** Explicit binary quality signal for an applied assistant turn. */
+  public record TurnFeedbackRequest(boolean accepted) {}
 
   /**
    * HTTP-visible assistant activity snapshot.

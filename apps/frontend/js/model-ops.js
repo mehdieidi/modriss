@@ -827,8 +827,15 @@ export async function loadModelById(
     skipFragments = false,
     skipClientLayout = false,
     deferTabSnapshot = false,
+    preserveActiveView = false,
   } = {},
 ) {
+  const activeViewIdToPreserve =
+    preserveActiveView &&
+    state.activeType === typeKey &&
+    String(state.modelId || "") === String(id || "")
+      ? state.views?.activeViewId || null
+      : null;
   if (state.activeType !== typeKey) {
     await switchTab(typeKey);
   }
@@ -846,6 +853,8 @@ export async function loadModelById(
     {
       skipFragments,
       skipClientLayout,
+      preserveActiveViewId: activeViewIdToPreserve,
+      preserveActiveView: Boolean(activeViewIdToPreserve),
     },
   );
   await yieldToMain();

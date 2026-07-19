@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.backend.assistant;
 
+import io.mehdieidi.varka.backend.observability.VarkaMetrics;
 import io.mehdieidi.varka.platform.assistant.turn.AssistantTurn;
 import io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
@@ -17,12 +18,14 @@ public final class DurableTurnUndoService {
   private final AssistantTurnStore turns;
   private final ModelService models;
   private final ObjectMapper mapper;
+  private final VarkaMetrics metrics;
 
   public DurableTurnUndoService(
-      AssistantTurnStore turns, ModelService models, ObjectMapper mapper) {
+      AssistantTurnStore turns, ModelService models, ObjectMapper mapper, VarkaMetrics metrics) {
     this.turns = turns;
     this.models = models;
     this.mapper = mapper;
+    this.metrics = metrics;
   }
 
   public UndoResult undo(UserRecord user, AssistantTurn turn) {
@@ -48,6 +51,8 @@ public final class DurableTurnUndoService {
           "model.checkpoint",
           java.util.Map.of(
               "kind", "undo", "modelId", updated.id(), "revision", updated.revision()));
+      metrics.recordAssistantUserSignal("undo");
+      metrics.recordAssistantCheckpoint("undo");
       return new UndoResult(updated.id(), updated.revision());
     } catch (PlatformException ex) {
       throw ex;

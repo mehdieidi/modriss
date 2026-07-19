@@ -172,6 +172,69 @@ public class VarkaMetrics {
         .record(millis, TimeUnit.MILLISECONDS);
   }
 
+  public void recordAssistantTokenEstimate(String direction, String provider, long tokens) {
+    if (tokens > 0) {
+      registry
+          .counter(
+              "varka.assistant.tokens.estimated",
+              "direction",
+              safeTag(direction),
+              "provider",
+              safeTag(provider))
+          .increment(tokens);
+    }
+  }
+
+  public void recordAssistantTokenUsage(String direction, String provider, long tokens) {
+    if (tokens > 0) {
+      registry
+          .counter(
+              "varka.assistant.tokens.reported",
+              "direction",
+              safeTag(direction),
+              "provider",
+              safeTag(provider))
+          .increment(tokens);
+    }
+  }
+
+  public void recordAssistantRetrievalChars(int chars) {
+    if (chars > 0) registry.summary("varka.assistant.retrieval.chars").record(chars);
+  }
+
+  public void recordAssistantMalformedAction(String reason) {
+    registry.counter("varka.assistant.action.malformed", "reason", safeTag(reason)).increment();
+  }
+
+  public void recordAssistantRepairReason(String reason) {
+    registry.counter("varka.assistant.repair.reason", "reason", safeTag(reason)).increment();
+  }
+
+  public void recordAssistantUserSignal(String signal) {
+    registry.counter("varka.assistant.user.signal", "signal", safeTag(signal)).increment();
+  }
+
+  public void recordAssistantAction(String action, int step) {
+    registry
+        .counter(
+            "varka.assistant.action.sequence",
+            "action",
+            safeTag(action),
+            "step",
+            String.valueOf(Math.max(0, step)))
+        .increment();
+  }
+
+  public void recordAssistantStructuralValidation(boolean valid) {
+    registry
+        .counter("varka.assistant.structural.validation", "result", valid ? "valid" : "invalid")
+        .increment();
+  }
+
+  public void recordAssistantCheckpoint(String operation) {
+    registry.counter("varka.assistant.checkpoint", "operation", safeTag(operation)).increment();
+  }
+
   private static String safeTag(String value) {
     return value == null || value.isBlank() ? "unknown" : value.trim();
   }

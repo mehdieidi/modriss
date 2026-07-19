@@ -68,6 +68,7 @@ public final class AgenticAssistantFacade {
       String title,
       String resumeId,
       boolean forceNew) {
+    requireSupportedLevel(level);
     projects.get(user, projectId);
     String display =
         title == null || title.isBlank() ? level.apiName() + "-assistant" : title.trim();
@@ -103,6 +104,7 @@ public final class AgenticAssistantFacade {
 
   public List<ConversationSummary> conversations(
       UserRecord user, String projectId, ModelLevel level, int days, int limit) {
+    requireSupportedLevel(level);
     projects.get(user, projectId);
     return memory.listRecentConversations(
         user.id(),
@@ -170,6 +172,7 @@ public final class AgenticAssistantFacade {
       java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException>
           stopReason) {
     var session = session(user, sessionId);
+    requireSupportedLevel(session.level());
     ModelRecord model = ensureModel(user, sessionId, modelId);
     return turns.run(
         user,
@@ -244,6 +247,13 @@ public final class AgenticAssistantFacade {
 
   private ObjectNode emptyModel(AssistantSessionStore.AssistantSession session) {
     return modelingConfig.starterModel(session.level(), session.title());
+  }
+
+  /** AI modeling is intentionally limited to the conceptual and platform-independent levels. */
+  private void requireSupportedLevel(ModelLevel level) {
+    if (level != ModelLevel.CIM && level != ModelLevel.PIM) {
+      throw new PlatformException(422, "AI modeling is available only for CIM and PIM levels.");
+    }
   }
 
   public record ThreadMessage(String role, String content) {}

@@ -4,6 +4,7 @@ import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantSettings;
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -27,6 +28,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param hardening rate-limit and circuit-breaker settings
  * @param embeddings local embedding settings
  * @param proxy AI-only outbound proxy settings
+ * @param providerProxies optional provider-specific proxy overrides (for example openai or gemini)
  * @param openaiCompatible OpenAI-compatible endpoint settings
  * @param gemini Google Gemini Developer API settings
  * @param models role-specific model names
@@ -41,6 +43,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param sourceTurnTimeout overall assistant turn timeout when a source attachment is present
  * @param maxCimModelingPasses maximum incremental CIM modeling passes per source-backed turn
  * @param preferLlmSourceExtraction whether CIM attachments use LLM evidence extraction
+ * @param maxAutomaticSlices maximum progressive checkpoints automatically created for one request
  */
 @ConfigurationProperties(prefix = "varka.ai")
 public record AiProperties(
@@ -59,6 +62,7 @@ public record AiProperties(
     String fallbackProvider,
     Hardening hardening,
     Proxy proxy,
+    Map<String, Proxy> providerProxies,
     OpenAiCompatible openaiCompatible,
     Gemini gemini,
     Models models,
@@ -73,13 +77,14 @@ public record AiProperties(
     boolean llmContractRerankEnabled,
     Duration sourceTurnTimeout,
     int maxCimModelingPasses,
-    boolean preferLlmSourceExtraction)
+    boolean preferLlmSourceExtraction,
+    int maxAutomaticSlices)
     implements AssistantSettings {
 
   /** Applies conservative defaults for local development. */
   public AiProperties {
     provider = Provider.from(provider).key();
-    requestTimeout = requestTimeout == null ? Duration.ofMinutes(5) : requestTimeout;
+    requestTimeout = requestTimeout == null ? Duration.ofSeconds(90) : requestTimeout;
     turnTimeout = turnTimeout == null ? Duration.ofMinutes(5) : turnTimeout;
     maxToolCalls = maxToolCalls <= 0 ? 24 : maxToolCalls;
     validationRepairAttempts =
@@ -101,9 +106,10 @@ public record AiProperties(
     hardening =
         hardening == null
             ? new Hardening(
-                30, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 0, Duration.ofMillis(250), 12)
+                30, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 1, Duration.ofMillis(250), 12)
             : hardening;
     proxy = proxy == null ? new Proxy(false, ProxyType.HTTP, null, null, null) : proxy;
+    providerProxies = providerProxies == null ? Map.of() : Map.copyOf(providerProxies);
     openaiCompatible =
         openaiCompatible == null ? new OpenAiCompatible(null, null) : openaiCompatible;
     gemini = gemini == null ? new Gemini(null) : gemini;
@@ -112,6 +118,7 @@ public record AiProperties(
     maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 3 : maxProviderCallsSourceTurn;
     sourceTurnTimeout = sourceTurnTimeout == null ? Duration.ofMinutes(5) : sourceTurnTimeout;
     maxCimModelingPasses = maxCimModelingPasses <= 0 ? 4 : maxCimModelingPasses;
+    maxAutomaticSlices = maxAutomaticSlices <= 0 ? 12 : maxAutomaticSlices;
   }
 
   @Override
@@ -130,6 +137,11 @@ public record AiProperties(
   }
 
   @Override
+  public int maxAutomaticSlices() {
+    return maxAutomaticSlices;
+  }
+
+  @Override
   public boolean llmContractRerankEnabled() {
     return llmContractRerankEnabled;
   }
@@ -141,6 +153,13 @@ public record AiProperties(
    */
   public Provider providerKind() {
     return Provider.from(provider);
+  }
+
+  /** Resolves the proxy for a provider, falling back to the legacy shared proxy configuration. */
+  public Proxy proxyFor(String provider) {
+    if (provider == null || provider.isBlank()) return proxy;
+    Proxy configured = providerProxies.get(provider.trim().toLowerCase(java.util.Locale.ROOT));
+    return configured == null ? proxy : configured;
   }
 
   /**

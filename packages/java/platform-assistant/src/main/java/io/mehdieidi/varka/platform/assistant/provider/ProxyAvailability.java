@@ -5,6 +5,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** Checks the dedicated AI proxy without affecting non-AI outbound traffic. */
 public class ProxyAvailability {
@@ -12,8 +13,7 @@ public class ProxyAvailability {
   private static final Duration CACHE_TTL = Duration.ofSeconds(30);
 
   private final AiProperties properties;
-  private volatile ProxyCheck cachedCheck;
-  private volatile Instant cachedAt = Instant.EPOCH;
+  private final java.util.Map<String, TimedCheck> cachedChecks = new ConcurrentHashMap<>();
 
   /**
    * Creates the proxy checker.
@@ -30,29 +30,24 @@ public class ProxyAvailability {
    * @return availability result
    */
   public ProxyCheck check() {
-    AiProperties.Proxy proxy = properties.proxy();
-    if (!proxy.enabled() || proxy.type() == AiProperties.ProxyType.DIRECT) {
-      return cachedOrResolve(new ProxyCheck(true, "AI proxy is disabled."));
-    }
-    Instant now = Instant.now();
-    ProxyCheck snapshot = cachedCheck;
-    if (snapshot != null && cachedAt.plus(CACHE_TTL).isAfter(now)) {
-      return snapshot;
-    }
-    ProxyCheck resolved = checkReachable(proxy);
-    cachedCheck = resolved;
-    cachedAt = now;
-    return resolved;
+    return check(properties.provider());
   }
 
-  private ProxyCheck cachedOrResolve(ProxyCheck resolved) {
+  /** Checks the proxy profile used by the specified provider. */
+  public ProxyCheck check(String provider) {
+    String key = provider == null || provider.isBlank() ? "default" : provider;
+    AiProperties.Proxy proxy = properties.proxyFor(provider);
+    TimedCheck snapshot = cachedChecks.get(key);
     Instant now = Instant.now();
-    ProxyCheck snapshot = cachedCheck;
-    if (snapshot != null && cachedAt.plus(CACHE_TTL).isAfter(now)) {
-      return snapshot;
+    if (snapshot != null && snapshot.checkedAt().plus(CACHE_TTL).isAfter(now))
+      return snapshot.check();
+    if (!proxy.enabled() || proxy.type() == AiProperties.ProxyType.DIRECT) {
+      ProxyCheck resolved = new ProxyCheck(true, "AI proxy is disabled.");
+      cachedChecks.put(key, new TimedCheck(resolved, now));
+      return resolved;
     }
-    cachedCheck = resolved;
-    cachedAt = now;
+    ProxyCheck resolved = checkReachable(proxy);
+    cachedChecks.put(key, new TimedCheck(resolved, now));
     return resolved;
   }
 
@@ -81,4 +76,6 @@ public class ProxyAvailability {
    * @param message diagnostic message
    */
   public record ProxyCheck(boolean available, String message) {}
+
+  private record TimedCheck(ProxyCheck check, Instant checkedAt) {}
 }

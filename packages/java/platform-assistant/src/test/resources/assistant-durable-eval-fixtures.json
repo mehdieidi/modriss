@@ -1,0 +1,52 @@
+[
+  {
+    "id": "source-to-cim-pantry",
+    "route": "COMPLEX_EDIT",
+    "assertions": ["checkpoint", "structural_validity", "provenance"]
+  },
+  {
+    "id": "create-cim-library",
+    "route": "COMPLEX_EDIT",
+    "assertions": ["checkpoint", "structural_validity"]
+  },
+  {
+    "id": "create-pim-serverless",
+    "route": "COMPLEX_EDIT",
+    "assertions": ["checkpoint", "structural_validity"]
+  },
+  {
+    "id": "edit-existing-pim-add-pattern",
+    "route": "COMPLEX_EDIT",
+    "assertions": ["checkpoint", "structural_validity"]
+  },
+  { "id": "answer-only", "route": "EXPLANATION", "assertions": ["one_call", "no_mutation"] },
+  {
+    "id": "create-cim",
+    "route": "COMPLEX_EDIT",
+    "assertions": ["checkpoint", "structural_validity"]
+  },
+  { "id": "edit-pim", "route": "SMALL_EDIT", "assertions": ["checkpoint", "structural_validity"] },
+  {
+    "id": "delete-confirmation",
+    "route": "DESTRUCTIVE",
+    "assertions": ["needs_confirmation", "no_mutation_before_confirmation"]
+  },
+  { "id": "stale-revision", "route": "SMALL_EDIT", "assertions": ["conflict", "no_mutation"] },
+  { "id": "cancellation", "route": "COMPLEX_EDIT", "assertions": ["cancelled", "no_checkpoint"] },
+  { "id": "malformed-repair", "route": "SMALL_EDIT", "assertions": ["repair", "call_budget"] },
+  {
+    "id": "attachment-provenance-cim",
+    "route": "COMPLEX_EDIT",
+    "assertions": ["provenance", "labelled_requirement_recall"]
+  },
+  {
+    "id": "labelled-requirements-pim",
+    "route": "COMPLEX_EDIT",
+    "assertions": ["requirement_precision", "requirement_recall"]
+  },
+  {
+    "id": "automatic-multi-slice",
+    "route": "COMPLEX_EDIT",
+    "assertions": ["checkpoint", "automatic_continuation", "call_budget"]
+  }
+]

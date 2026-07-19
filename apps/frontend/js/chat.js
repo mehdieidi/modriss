@@ -68,6 +68,11 @@ let streamingAssistantText = "";
 let renderedChatScopeKey = null;
 
 const CHAT_HISTORY_DAYS = 3;
+const ASSISTANT_MODEL_TYPES = new Set(["cim", "pim"]);
+
+function assistantAvailableFor(typeKey = state.activeType) {
+  return ASSISTANT_MODEL_TYPES.has(String(typeKey || "").toLowerCase());
+}
 
 function disconnectChatChannel(scopeKey) {
   const channel = state.chat.channels.get(scopeKey);
@@ -411,7 +416,9 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
             } else if (eventName === "model.checkpoint") {
               updateThinkingStatus("Model checkpoint saved.", "APPLYING");
               if (event?.payload?.modelId) {
-                void loadModelById(typeKey, event.payload.modelId).catch(() => {
+                void loadModelById(typeKey, event.payload.modelId, {
+                  preserveActiveView: true,
+                }).catch(() => {
                   setStatus("Checkpoint saved; model refresh will retry with turn polling.");
                 });
               }
@@ -433,27 +440,61 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
   return controller;
 }
 
+function automaticContinuation(turn) {
+  return (turn?.continuations || []).find(
+    (continuation) =>
+      String(continuation?.state || "") === "QUEUED" ||
+      String(continuation?.state || "") === "RUNNING",
+  );
+}
+
+async function waitForAutomaticContinuation(turnId) {
+  // The worker marks the checkpoint PARTIAL before it can persist a queued child (the database
+  // permits only one active turn for a model). Wait briefly for that durable link rather than
+  // treating the checkpoint as a terminal, manually-continuable result.
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const refreshed = await api(`/chatbot/turns/${turnId}`);
+    const continuation = automaticContinuation(refreshed);
+    if (continuation?.turnId) return { turn: refreshed, continuation };
+    await new Promise((resolve) => window.setTimeout(resolve, 250));
+  }
+  return null;
+}
+
 async function waitForDurableTurn(turnId, typeKey, eventCursor = 0) {
-  const events = streamDurableTurnEvents(turnId, typeKey, eventCursor);
   let latest = null;
-  try {
-    for (;;) {
-      latest = await api(`/chatbot/turns/${turnId}`);
-      const stateName = String(latest?.state || "");
-      updateThinkingStatus(
-        latest?.finalMessage || `Assistant turn ${stateName.toLowerCase() || "is running"}.`,
-        stateName === "RUNNING" ? "PLANNING" : stateName,
-      );
-      if (DURABLE_TERMINAL_STATES.has(stateName)) {
-        if (latest?.modelId) {
-          await applyAssistantModelResponse(typeKey, latest);
+  let currentTurnId = turnId;
+  let currentEventCursor = eventCursor;
+  for (;;) {
+    const events = streamDurableTurnEvents(currentTurnId, typeKey, currentEventCursor);
+    try {
+      for (;;) {
+        latest = await api(`/chatbot/turns/${currentTurnId}`);
+        const stateName = String(latest?.state || "");
+        updateThinkingStatus(
+          latest?.finalMessage || `Assistant turn ${stateName.toLowerCase() || "is running"}.`,
+          stateName === "RUNNING" ? "PLANNING" : stateName,
+        );
+        if (DURABLE_TERMINAL_STATES.has(stateName)) {
+          if (latest?.modelId) {
+            await applyAssistantModelResponse(typeKey, latest);
+          }
+          const linked =
+            stateName === "PARTIAL" ? await waitForAutomaticContinuation(currentTurnId) : null;
+          if (linked?.continuation?.turnId) {
+            updateThinkingStatus("Checkpoint saved. Continuing the next model slice.", "PLANNING");
+            currentTurnId = linked.continuation.turnId;
+            activeTurnId = currentTurnId;
+            currentEventCursor = 0;
+            break;
+          }
+          return latest;
         }
-        return latest;
+        await new Promise((resolve) => window.setTimeout(resolve, 1000));
       }
-      await new Promise((resolve) => window.setTimeout(resolve, 1000));
+    } finally {
+      events.abort();
     }
-  } finally {
-    events.abort();
   }
 }
 
@@ -478,6 +519,11 @@ async function durableAssistantMessage(turn, sessionId) {
 
 function appendDurableTurnActions(turn, typeKey) {
   const stateName = String(turn?.state || "");
+  // A partial parent with a queued/running child is an automatic continuation, not an invitation
+  // to submit the same request again.
+  if (stateName === "PARTIAL" && automaticContinuation(turn)?.turnId) {
+    return;
+  }
   if (
     !turn?.turnId ||
     !["PARTIAL", "NEEDS_CONFIRMATION", "SUCCEEDED", "CANCELLED", "TIMED_OUT", "FAILED"].includes(
@@ -537,7 +583,8 @@ function appendDurableTurnActions(turn, typeKey) {
     undoButton.addEventListener("click", async () => {
       try {
         const undone = await api(`/chatbot/turns/${turn.turnId}/undo`, { method: "POST" });
-        if (undone?.modelId) await loadModelById(typeKey, undone.modelId);
+        if (undone?.modelId)
+          await loadModelById(typeKey, undone.modelId, { preserveActiveView: true });
         appendAssistantDeduped("The last saved checkpoint was undone.");
       } catch (error) {
         setError(error);
@@ -750,6 +797,10 @@ async function ensureChatRealtime(scopeKey, typeKey, sessionId) {
 // ── Chat session / realtime ───────────────────────────────────────────────────
 
 export async function ensureChatSession({ hydrate = true, ...options } = {}) {
+  if (!assistantAvailableFor()) {
+    setStatus("AI modeling is available only for CIM and PIM levels.");
+    return null;
+  }
   if (state.chat.available === false) {
     setStatus("Chat is not available in this backend build.");
     return null;
@@ -805,6 +856,11 @@ export async function ensureChatSession({ hydrate = true, ...options } = {}) {
 }
 
 export async function prepareChatWindow() {
+  if (!assistantAvailableFor()) {
+    closeChatWindow();
+    setStatus("AI modeling is available only for CIM and PIM levels.");
+    return null;
+  }
   const scopeKey = chatScopeKey();
   const isScopeChange = renderedChatScopeKey !== scopeKey;
   if (isScopeChange) {
@@ -1141,6 +1197,15 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
     })
       .then(() => clearAssistantModelPreview({ restore: false }))
       .catch(() => clearAssistantModelPreview({ restore: true }));
+    return;
+  }
+  if (eventType === "model.checkpoint") {
+    const modelId = String(payload?.modelId || "").trim();
+    if (modelId) {
+      void loadModelById(typeKey, modelId, { preserveActiveView: true }).catch(() => {
+        setStatus("Checkpoint saved; model refresh will retry with turn polling.");
+      });
+    }
   }
 }
 
@@ -1401,7 +1466,7 @@ async function applyAssistantModelResponse(
     return;
   }
   if (responseModelId) {
-    await loadModelById(typeKey, responseModelId);
+    await loadModelById(typeKey, responseModelId, { preserveActiveView: true });
     if (state.project) {
       state.project.activeModelIds = {
         ...(state.project.activeModelIds || {}),

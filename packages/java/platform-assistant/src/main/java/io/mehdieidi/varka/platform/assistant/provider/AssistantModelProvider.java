@@ -85,7 +85,24 @@ public interface AssistantModelProvider {
    * @param provider provider key
    * @param model model name
    */
-  record AssistantReply(String content, String provider, String model) {}
+  record AssistantReply(String content, String provider, String model, TokenUsage usage) {
+    public AssistantReply(String content, String provider, String model) {
+      this(content, provider, model, TokenUsage.unavailable());
+    }
+  }
+
+  /**
+   * Provider-reported usage for a single call. Negative values mean the provider did not report it.
+   */
+  record TokenUsage(long promptTokens, long completionTokens) {
+    public static TokenUsage unavailable() {
+      return new TokenUsage(-1, -1);
+    }
+
+    public boolean reported() {
+      return promptTokens >= 0 || completionTokens >= 0;
+    }
+  }
 
   /**
    * Provider metadata.

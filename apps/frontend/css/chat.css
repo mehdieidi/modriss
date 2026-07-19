@@ -540,8 +540,8 @@
 .chat-msg.user .chat-msg-bubble {
   border-radius: 13px 13px 5px;
   border: 1px solid color-mix(in srgb, var(--accent-light) 36%, transparent);
-  color: color-mix(in srgb, var(--accent-dark) 88%, #000 12%);
-  background: color-mix(in srgb, var(--accent-light) 72%, #fff 28%);
+  color: #000000;
+  background: color-mix(in srgb, var(--accent) 24%, #f0f6ff 76%);
   box-shadow: 0 6px 16px color-mix(in srgb, var(--accent-glow) 54%, transparent);
 }
 

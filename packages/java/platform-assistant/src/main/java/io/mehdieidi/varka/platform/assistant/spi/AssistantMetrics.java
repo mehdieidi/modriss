@@ -59,6 +59,30 @@ public interface AssistantMetrics {
    */
   default void recordAssistantPhaseDuration(String phase, long millis) {}
 
+  /** Records estimated prompt and completion tokens where a provider does not return usage. */
+  default void recordAssistantTokenEstimate(String direction, String provider, long tokens) {}
+
+  /** Records provider-reported (rather than estimated) token usage. */
+  default void recordAssistantTokenUsage(String direction, String provider, long tokens) {}
+
+  /** Records the amount of deterministic/retrieved context attached to a provider request. */
+  default void recordAssistantRetrievalChars(int chars) {}
+
+  /** Records malformed or backend-rejected model action envelopes. */
+  default void recordAssistantMalformedAction(String reason) {}
+
+  /** Records a validator/tool repair reason without retaining user or source content. */
+  default void recordAssistantRepairReason(String reason) {}
+
+  /** Records the ordered action selected by the provider without retaining prompt content. */
+  default void recordAssistantAction(String action, int step) {}
+
+  /** Records a structural validation outcome. */
+  default void recordAssistantStructuralValidation(boolean valid) {}
+
+  /** Records a durable checkpoint operation, including safe undo. */
+  default void recordAssistantCheckpoint(String operation) {}
+
   /**
    * Records a rate-limited assistant request.
    *
