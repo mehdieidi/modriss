@@ -721,8 +721,10 @@ public class ChatbotController {
                     replayTurnEvents(emitter, turnId, replayCursor);
                     if (turns.find(turnId).map(AssistantTurn::terminal).orElse(true))
                       emitter.complete();
-                  } catch (IOException | RuntimeException ex) {
-                    emitter.completeWithError(ex);
+                  } catch (IOException ex) {
+                    closeTurnEventStream(emitter, turnId, ex);
+                  } catch (RuntimeException ex) {
+                    closeTurnEventStream(emitter, turnId, ex);
                   }
                 },
                 250,
@@ -732,8 +734,8 @@ public class ChatbotController {
         emitter.onTimeout(() -> replay[0].cancel(false));
         emitter.onError(error -> replay[0].cancel(false));
       }
-    } catch (IOException ex) {
-      emitter.completeWithError(ex);
+    } catch (IOException | RuntimeException ex) {
+      closeTurnEventStream(emitter, turnId, ex);
     }
     return emitter;
   }
@@ -745,6 +747,13 @@ public class ChatbotController {
           SseEmitter.event().id(Long.toString(event.eventId())).name(event.type()).data(event));
       cursor[0] = event.eventId();
     }
+  }
+
+  private void closeTurnEventStream(SseEmitter emitter, String turnId, Exception error) {
+    if (!(error instanceof IOException))
+      log.error("Unable to replay assistant turn events for {}", turnId, error);
+    // An SSE response cannot be replaced by the global JSON error response once streaming starts.
+    emitter.complete();
   }
 
   /**

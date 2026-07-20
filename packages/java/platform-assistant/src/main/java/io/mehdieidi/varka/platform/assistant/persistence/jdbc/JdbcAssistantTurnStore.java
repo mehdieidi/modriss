@@ -196,8 +196,7 @@ FROM candidate WHERE t.id = candidate.id RETURNING t.*
             """,
             (rs, row) -> new Cancellation(rs.getString("id"), rs.getString("state")),
             turnId,
-            timestamp(Instant.now()),
-            turnId);
+            timestamp(Instant.now()));
     for (Cancellation item : cancelled) {
       if ("CANCELLED".equals(item.state())) {
         appendEvent(

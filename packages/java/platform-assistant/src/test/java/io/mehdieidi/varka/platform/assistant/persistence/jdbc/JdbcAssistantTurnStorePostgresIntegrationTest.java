@@ -96,6 +96,22 @@ class JdbcAssistantTurnStorePostgresIntegrationTest {
     assertEquals(1, turns.checkpoints(turn.id()).size());
   }
 
+  @Test
+  void cancellationCancelsQueuedTurnsInTheContinuationTree() {
+    AssistantTurn parent = turn("turn-cancel-parent");
+    AssistantTurn child = turn("turn-cancel-child");
+    turns.create(parent);
+    turns.create(child);
+    turns.linkContinuation(parent.id(), child.id());
+
+    turns.requestCancellation(parent.id());
+
+    assertEquals(AssistantTurn.State.CANCELLED, turns.find(parent.id()).orElseThrow().state());
+    assertEquals(AssistantTurn.State.CANCELLED, turns.find(child.id()).orElseThrow().state());
+    assertTrue(turns.find(parent.id()).orElseThrow().cancellationRequested());
+    assertTrue(turns.find(child.id()).orElseThrow().cancellationRequested());
+  }
+
   private AssistantTurn turn(String id) {
     Instant now = Instant.now();
     return new AssistantTurn(

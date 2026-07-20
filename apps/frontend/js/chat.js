@@ -7,7 +7,7 @@ import { apiUrl, MODEL_TYPES } from "./config.js";
 import { toDiagram } from "./diagram.js";
 import { renderDiagram } from "./canvas.js";
 import { renderMarkdown } from "./markdown.js";
-import { loadModelById, saveCurrentModel } from "./model-ops.js";
+import { autoLayoutCurrentDiagram, loadModelById, saveCurrentModel } from "./model-ops.js";
 import { syncMobileDockState } from "./mobile-ui.js";
 import { hasUnsavedModelChanges } from "./model-save-ui.js";
 
@@ -1611,6 +1611,7 @@ async function applyAssistantModelResponse(
     } finally {
       assistantModelApplyInFlight.delete(updateKey);
     }
+    await autoLayoutCompletedAssistantTurn(response);
     if (state.project) {
       state.project.activeModelIds = {
         ...(state.project.activeModelIds || {}),
@@ -1635,6 +1636,24 @@ async function applyAssistantModelResponse(
   }
   renderDiagram();
   clearAssistantModelPreview({ restore: false });
+}
+
+async function autoLayoutCompletedAssistantTurn(response) {
+  const turnState = String(response?.state || "").toUpperCase();
+  if (!DURABLE_TERMINAL_STATES.has(turnState) || turnState === "PARTIAL") {
+    return;
+  }
+  // Intermediate checkpoints can be followed by an automatic continuation. Persisting a layout
+  // at that point would advance the model revision and conflict with the worker's next slice.
+  // Once the final turn is complete, persist a complete layout for its newly created view nodes.
+  await autoLayoutCurrentDiagram({
+    progress: false,
+    status: false,
+    busy: false,
+    rethrow: true,
+    force: true,
+    skipClientLayout: true,
+  });
 }
 
 export function updateChatAttachmentLabel() {
