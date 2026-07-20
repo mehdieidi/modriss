@@ -416,9 +416,7 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
             } else if (eventName === "model.checkpoint") {
               updateThinkingStatus("Model checkpoint saved.", "APPLYING");
               if (event?.payload?.modelId) {
-                void loadModelById(typeKey, event.payload.modelId, {
-                  preserveActiveView: true,
-                }).catch(() => {
+                void applyAssistantModelResponse(typeKey, event.payload).catch(() => {
                   setStatus("Checkpoint saved; model refresh will retry with turn polling.");
                 });
               }
@@ -441,18 +439,17 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
 }
 
 function automaticContinuation(turn) {
-  return (turn?.continuations || []).find(
-    (continuation) =>
-      String(continuation?.state || "") === "QUEUED" ||
-      String(continuation?.state || "") === "RUNNING",
-  );
+  // A fast worker can finish the child before the parent is polled again. It is still the
+  // automatic continuation and its final checkpoint must be loaded into the canvas.
+  const continuations = Array.isArray(turn?.continuations) ? turn.continuations : [];
+  return continuations[continuations.length - 1] || null;
 }
 
 async function waitForAutomaticContinuation(turnId) {
   // The worker marks the checkpoint PARTIAL before it can persist a queued child (the database
-  // permits only one active turn for a model). Wait briefly for that durable link rather than
-  // treating the checkpoint as a terminal, manually-continuable result.
-  for (let attempt = 0; attempt < 20; attempt += 1) {
+  // permits only one active turn for a model). Wait for that durable link rather than treating a
+  // checkpoint as terminal; the child may already be terminal when it becomes visible.
+  for (let attempt = 0; attempt < 60; attempt += 1) {
     const refreshed = await api(`/chatbot/turns/${turnId}`);
     const continuation = automaticContinuation(refreshed);
     if (continuation?.turnId) return { turn: refreshed, continuation };
@@ -1039,6 +1036,12 @@ async function hydrateChatThread(typeKey, sessionId) {
     if (hasMessages) {
       el.chatMessages.innerHTML = "";
       for (const message of thread.messages) {
+        if (
+          String(message.role || "").toLowerCase() === "user" &&
+          String(message.content || "").includes("[automatic-slice:")
+        ) {
+          continue;
+        }
         const role = String(message.role || "").toLowerCase() === "user" ? "user" : "assistant";
         appendChat(role, message.content || "");
       }
@@ -1200,9 +1203,8 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
     return;
   }
   if (eventType === "model.checkpoint") {
-    const modelId = String(payload?.modelId || "").trim();
-    if (modelId) {
-      void loadModelById(typeKey, modelId, { preserveActiveView: true }).catch(() => {
+    if (String(payload?.modelId || "").trim()) {
+      void applyAssistantModelResponse(typeKey, payload).catch(() => {
         setStatus("Checkpoint saved; model refresh will retry with turn polling.");
       });
     }
@@ -1466,7 +1468,25 @@ async function applyAssistantModelResponse(
     return;
   }
   if (responseModelId) {
-    await loadModelById(typeKey, responseModelId, { preserveActiveView: true });
+    const responseRevision = Number(response.revision);
+    const currentRevision = Number(state.modelRevision);
+    const isCurrentModel = responseModelId === liveModelId;
+    // A durable turn always reports its working model ID, even for an explanation. Reloading
+    // that unchanged revision recreates the canvas and may invoke layout recovery. Only a newer
+    // revision (or a newly selected model) is a model change that belongs on the canvas.
+    if (
+      isCurrentModel &&
+      Number.isFinite(responseRevision) &&
+      responseRevision <= currentRevision
+    ) {
+      clearAssistantModelPreview({ restore: false });
+      return;
+    }
+    await loadModelById(typeKey, responseModelId, {
+      preserveActiveView: true,
+      autoLayout: false,
+      skipClientLayout: true,
+    });
     if (state.project) {
       state.project.activeModelIds = {
         ...(state.project.activeModelIds || {}),

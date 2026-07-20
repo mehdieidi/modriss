@@ -187,6 +187,47 @@ public final class AgenticAssistantFacade {
         stopReason);
   }
 
+  /** Executes a queued durable worker turn without writing internal worker prompts to history. */
+  public AgenticTurnService.Result durableMessage(
+      UserRecord user,
+      String sessionId,
+      String modelId,
+      Long revision,
+      String message,
+      String source,
+      boolean destructiveConfirmed,
+      java.util.function.BooleanSupplier cancellationRequested,
+      java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException>
+          stopReason) {
+    var session = session(user, sessionId);
+    requireSupportedLevel(session.level());
+    ModelRecord model = ensureModel(user, sessionId, modelId);
+    return turns.runDurable(
+        user,
+        sessionId,
+        session.level(),
+        model.id(),
+        revision,
+        message,
+        source,
+        destructiveConfirmed,
+        cancellationRequested,
+        stopReason);
+  }
+
+  /** Records accepted user input before a queued durable worker claims it. */
+  public void recordUserMessage(UserRecord user, String sessionId, String message) {
+    session(user, sessionId);
+    if (message != null && !message.isBlank())
+      memory.appendMessage(sessionId, "USER", message, Map.of());
+  }
+
+  /** Records a user-visible durable result once, after its final state is persisted. */
+  public void recordAssistantMessage(String sessionId, String message) {
+    if (message != null && !message.isBlank())
+      memory.appendMessage(sessionId, "ASSISTANT", message, Map.of("workflowState", "APPLIED"));
+  }
+
   /** Ensures a persisted, structurally valid starter model before any provider work starts. */
   public ModelRecord ensureModel(UserRecord user, String sessionId, String modelId) {
     var session = session(user, sessionId);
@@ -216,6 +257,7 @@ public final class AgenticAssistantFacade {
     List<ThreadMessage> messages =
         memory.recentMessages(sessionId, 100).stream()
             .sorted(java.util.Comparator.comparing(MessageRecord::createdAt))
+            .filter(item -> !isInternalContinuation(item.role(), item.content()))
             .map(item -> new ThreadMessage(item.role(), item.content()))
             .toList();
     return new ThreadSnapshot(
@@ -254,6 +296,12 @@ public final class AgenticAssistantFacade {
     if (level != ModelLevel.CIM && level != ModelLevel.PIM) {
       throw new PlatformException(422, "AI modeling is available only for CIM and PIM levels.");
     }
+  }
+
+  private boolean isInternalContinuation(String role, String content) {
+    return "USER".equalsIgnoreCase(role)
+        && content != null
+        && content.contains("[automatic-slice:");
   }
 
   public record ThreadMessage(String role, String content) {}

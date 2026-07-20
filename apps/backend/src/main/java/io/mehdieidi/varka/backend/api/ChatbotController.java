@@ -289,6 +289,9 @@ public class ChatbotController {
               0,
               0);
       turns.create(turn);
+      // Record only the submitted request. Automatic slice prompts are worker control data, not
+      // chat messages, and never belong in the user's conversation transcript.
+      assistant.recordUserMessage(user, sessionId, request.message());
       turns.saveCheckpoint(
           turn.id(), starter.id(), starter.revision(), java.util.Map.of("kind", "starter"));
       turns.appendEvent(

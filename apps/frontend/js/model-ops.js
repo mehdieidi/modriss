@@ -858,7 +858,7 @@ export async function loadModelById(
     },
   );
   await yieldToMain();
-  state.diagram = materializeActiveView();
+  state.diagram = materializeActiveView({ skipLayoutRepair: skipClientLayout });
   if (state.tabs[typeKey]) {
     state.tabs[typeKey].modelId = record.id;
     state.tabs[typeKey].modelRevision = state.modelRevision;

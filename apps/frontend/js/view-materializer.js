@@ -147,7 +147,12 @@ function runtimeEdge(relationship, viewEdge = null) {
   };
 }
 
-function materializeViewGraph(view, elementIds, relationshipIds) {
+function materializeViewGraph(
+  view,
+  elementIds,
+  relationshipIds,
+  { skipLayoutRepair = false } = {},
+) {
   const viewNodes = viewNodeByElement(view);
   const viewEdges = viewEdgeByRelationship(view);
   const nodes = elementIds
@@ -164,11 +169,15 @@ function materializeViewGraph(view, elementIds, relationshipIds) {
       }
       return nodeIds.has(connection.sourceId) && nodeIds.has(connection.targetId);
     });
-  ensureReadableLayout(nodes, connections, nodeSizeForType(state.activeType));
+  // A loaded view already owns its node coordinates. In particular, assistant checkpoints
+  // must not turn a small model edit into a client-side re-layout of every node.
+  if (!skipLayoutRepair) {
+    ensureReadableLayout(nodes, connections, nodeSizeForType(state.activeType));
+  }
   return { nodes, connections };
 }
 
-export function materializeActiveView() {
+export function materializeActiveView({ skipLayoutRepair = false } = {}) {
   reconcileGraphRelationshipsIfDirty(state.activeType);
   const view = activeView();
   if (!view) {
@@ -188,7 +197,9 @@ export function materializeActiveView() {
     relationshipIds = selectRelationshipIdsForView(state.graph, view, visibleElementIds);
   }
   const visibleElementIdSet = new Set(visibleElementIds);
-  const visible = materializeViewGraph(view, visibleElementIds, relationshipIds);
+  const visible = materializeViewGraph(view, visibleElementIds, relationshipIds, {
+    skipLayoutRepair,
+  });
   const materializedNodeIds = new Set(visible.nodes.map((node) => node.id));
   const materializedEdgeIds = new Set(visible.connections.map((edge) => edge.id));
   window.varkaViewAudit = {

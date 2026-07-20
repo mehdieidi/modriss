@@ -165,7 +165,7 @@ public final class DurableAssistantTurnWorker {
               ? turn.message().substring(CONFIRMED_DESTRUCTION_PREFIX.length())
               : turn.message();
       var result =
-          assistant.message(
+          assistant.durableMessage(
               user,
               turn.threadId(),
               turn.modelId(),
@@ -346,6 +346,7 @@ public final class DurableAssistantTurnWorker {
       Long revision,
       String remainingWork) {
     turns.complete(turn.id(), state, message, revision, remainingWork);
+    assistant.recordAssistantMessage(turn.threadId(), message);
     metrics.recordAssistantTurnOutcome("durable", state.name());
     metrics.recordAssistantPhaseDuration(
         "durable_turn",

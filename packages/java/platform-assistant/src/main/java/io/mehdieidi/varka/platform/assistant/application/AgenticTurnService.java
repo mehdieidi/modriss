@@ -117,8 +117,62 @@ public final class AgenticTurnService {
       java.util.function.BooleanSupplier cancellationRequested,
       java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException>
           stopReason) {
+    return run(
+        user,
+        sessionId,
+        level,
+        modelId,
+        revision,
+        message,
+        sourceDocument,
+        destructiveConfirmed,
+        cancellationRequested,
+        stopReason,
+        true);
+  }
+
+  /** Runs a durable turn whose transcript is recorded by the durable worker on completion. */
+  public Result runDurable(
+      UserRecord user,
+      String sessionId,
+      ModelLevel level,
+      String modelId,
+      Long revision,
+      String message,
+      String sourceDocument,
+      boolean destructiveConfirmed,
+      java.util.function.BooleanSupplier cancellationRequested,
+      java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException>
+          stopReason) {
+    return run(
+        user,
+        sessionId,
+        level,
+        modelId,
+        revision,
+        message,
+        sourceDocument,
+        destructiveConfirmed,
+        cancellationRequested,
+        stopReason,
+        false);
+  }
+
+  private Result run(
+      UserRecord user,
+      String sessionId,
+      ModelLevel level,
+      String modelId,
+      Long revision,
+      String message,
+      String sourceDocument,
+      boolean destructiveConfirmed,
+      java.util.function.BooleanSupplier cancellationRequested,
+      java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException> stopReason,
+      boolean persistConversation) {
     ModelRecord current = models.get(user, level, modelId);
-    if (memory != null) memory.appendMessage(sessionId, "USER", message, Map.of());
+    if (persistConversation && memory != null)
+      memory.appendMessage(sessionId, "USER", message, Map.of());
     String contextualMessage = contextualMessage(sessionId, message);
     long expectedRevision = revision == null ? current.revision() : revision;
     String extracted =
@@ -152,7 +206,7 @@ public final class AgenticTurnService {
         stopReason == null ? null : stopReason.get();
     if (stop != null) throw stop;
     ModelRecord updated = workspace.patch().isEmpty() ? current : workspace.apply(models, user);
-    if (memory != null) {
+    if (persistConversation && memory != null) {
       memory.appendMessage(
           sessionId, "ASSISTANT", turn.message(), Map.of("workflowState", "APPLIED"));
       memory.updateThreadModel(sessionId, updated.id(), updated.revision());
