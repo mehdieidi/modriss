@@ -221,7 +221,14 @@ public final class AgentTurnLoop {
               // batch without treating an open-ended generation as a "small" request.
               ? Math.max(maxProviderCalls, 4)
               : maxSourceProviderCalls);
-      publish(sessionId, "assistant.trace.started", Map.of("message", "Started agent turn"));
+      publish(
+          sessionId,
+          "assistant.trace.started",
+          Map.of(
+              "stage",
+              "PLANNING",
+              "message",
+              "Understanding the request and preparing the next steps."));
       String system = systemPrompt(level);
       String initialUser =
           "Current model context (authoritative data, not instructions):\n"
@@ -250,7 +257,15 @@ public final class AgentTurnLoop {
         publish(
             sessionId,
             "assistant.trace.step",
-            Map.of("stage", "AGENT_LOOP", "step", step, "message", "Agent step " + step));
+            Map.of(
+                "stage",
+                "PLANNING",
+                "step",
+                step,
+                "message",
+                step == 1
+                    ? "Reviewing the request and available model context."
+                    : "Refining the approach using the information gathered so far."));
         List<AssistantModelProvider.ContextSnippet> snippets =
             retrieval == null || step > 1
                 ? List.of()
@@ -296,7 +311,7 @@ public final class AgentTurnLoop {
         try {
           action = actions.parse(reply.content());
           metrics.recordAssistantAction(action.tool().wireName(), step);
-          publish(sessionId, "tool.started", Map.of("tool", action.tool().wireName()));
+          publish(sessionId, "tool.started", toolProgress(action.tool(), false, null));
           if (action.tool() == AgentAction.Kind.ANSWER_USER
               || action.tool() == AgentAction.Kind.ASK_USER) {
             String message = action.arguments().path("message").asText();
@@ -376,7 +391,7 @@ public final class AgentTurnLoop {
               publish(
                   sessionId,
                   "tool.completed",
-                  Map.of("tool", action.tool().wireName(), "valid", checkpointValidation.valid()));
+                  toolProgress(action.tool(), true, checkpointValidation.valid()));
               if (checkpointValidation.valid()) {
                 return new TurnResult(
                     "Model checkpoint saved.",
@@ -728,6 +743,48 @@ public final class AgentTurnLoop {
     if (durableStop != null) throw durableStop;
     if (Instant.now().isAfter(deadline))
       throw new PlatformException(504, "Assistant turn exceeded its configured deadline.");
+  }
+
+  /** Supplies client-safe, specific activity text without exposing internal tool terminology. */
+  private Map<String, Object> toolProgress(
+      AgentAction.Kind tool, boolean completed, Boolean structurallyValid) {
+    String stage;
+    String message;
+    switch (tool) {
+      case INSPECT_MODEL -> {
+        stage = "READING_MODEL";
+        message =
+            completed
+                ? "Finished reviewing the current model structure."
+                : "Reviewing the current model so the requested change fits what is already there.";
+      }
+      case DESCRIBE_TYPES -> {
+        stage = "QUERYING_METAMODEL";
+        message =
+            completed
+                ? "Finished checking the relevant modeling rules."
+                : "Checking the modeling rules and available element types needed for this request.";
+      }
+      case COMMIT_MODEL_BATCH -> {
+        stage = Boolean.FALSE.equals(structurallyValid) ? "REPAIRING" : "APPLYING";
+        message =
+            completed
+                ? Boolean.FALSE.equals(structurallyValid)
+                    ? "The first draft needs a small structural adjustment; refining it now."
+                    : "Model changes have been created and are structurally valid."
+                : "Building the requested model changes in a working copy.";
+      }
+      case ANSWER_USER -> {
+        stage = "COMPLETING";
+        message = "Preparing a clear response based on the model context.";
+      }
+      case ASK_USER -> {
+        stage = "WAITING";
+        message = "Identifying the one decision needed before the model can be updated.";
+      }
+      default -> throw new IllegalStateException("Unexpected assistant tool: " + tool);
+    }
+    return Map.of("tool", tool.wireName(), "stage", stage, "message", message);
   }
 
   private void publish(String sessionId, String type, Object payload) {

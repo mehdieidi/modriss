@@ -47,6 +47,76 @@ const THINKING_STAGE_LABELS = Object.freeze({
   FAILED: "Encountered an issue",
 });
 
+const ASSISTANT_TOOL_PROGRESS = Object.freeze({
+  inspect_model: {
+    stage: "READING_MODEL",
+    started: "Reviewing the current model so the requested change fits what is already there.",
+    completed: "Finished reviewing the current model structure.",
+  },
+  describe_types: {
+    stage: "QUERYING_METAMODEL",
+    started: "Checking the modeling rules and available element types needed for this request.",
+    completed: "Finished checking the relevant modeling rules.",
+  },
+  commit_model_batch: {
+    stage: "APPLYING",
+    started: "Building the requested model changes in a working copy.",
+    completed: "Model changes have been created; checking that they are structurally valid.",
+  },
+  answer_user: {
+    stage: "COMPLETING",
+    started: "Preparing a clear response based on the model context.",
+    completed: "Response is ready.",
+  },
+  ask_user: {
+    stage: "WAITING",
+    started: "Identifying the one decision needed before the model can be updated.",
+    completed: "A decision is needed to continue.",
+  },
+});
+
+function assistantProgressForEvent(eventType, payload = {}) {
+  const tool = String(payload?.tool || "").trim().toLowerCase();
+  const toolProgress = ASSISTANT_TOOL_PROGRESS[tool];
+  if (eventType === "assistant.trace.started") {
+    return {
+      stage: "PLANNING",
+      message: "Understanding your request and preparing the next steps.",
+    };
+  }
+  if (eventType === "assistant.trace.step") {
+    const step = Number(payload?.step) || 1;
+    return {
+      stage: "PLANNING",
+      message:
+        step === 1
+          ? "Reviewing your request and the available model context."
+          : "Refining the approach using the information gathered so far.",
+    };
+  }
+  if (eventType === "tool.started" || eventType === "assistant.tool.started") {
+    return toolProgress || {
+      stage: "PLANNING",
+      message: "Reviewing the model context needed to complete your request.",
+    };
+  }
+  if (eventType === "tool.completed" || eventType === "assistant.tool.completed") {
+    if (tool === "commit_model_batch" && payload?.valid === false) {
+      return {
+        stage: "REPAIRING",
+        message: "The first draft needs a small structural adjustment; refining it now.",
+      };
+    }
+    return toolProgress
+      ? { stage: toolProgress.stage, message: toolProgress.completed }
+      : { stage: "PLANNING", message: "Finished reviewing the information needed for this request." };
+  }
+  return {
+    stage: payload?.stage || "PLANNING",
+    message: payload?.message || "Working on your request.",
+  };
+}
+
 const RISK_LABELS = Object.freeze({
   LOW: "Low risk",
   MEDIUM: "Medium impact",
@@ -1122,34 +1192,43 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
     return;
   }
   if (eventType === "assistant.worker.started" || eventType === "assistant.worker.completed") {
+    const index = Number(payload?.index) || 0;
+    const count = Number(payload?.count) || 0;
     updateThinkingStatus(
-      `Document worker ${payload?.index || "?"}/${payload?.count || "?"} ${
-        eventType.endsWith("completed") ? "completed" : "started"
-      }`,
+      eventType.endsWith("completed")
+        ? `Finished reviewing source document${index ? ` ${index}` : ""}${
+            count ? ` of ${count}` : ""
+          }.`
+        : `Reviewing source document${index ? ` ${index}` : ""}${
+            count ? ` of ${count}` : ""
+          } to capture the requested details.`,
       "ANALYZING_SOURCE",
     );
     return;
   }
   if (eventType === "assistant.trace.started") {
-    updateThinkingStatus("Started the modeling turn.", "PLANNING");
+    const progress = assistantProgressForEvent(eventType, payload);
+    updateThinkingStatus(progress.message, progress.stage);
     return;
   }
-  if (eventType === "assistant.trace.step" || eventType === "assistant.progress") {
-    updateThinkingStatus(payload?.message || "Working with the model", payload?.stage);
+  if (eventType === "assistant.trace.step") {
+    const progress = assistantProgressForEvent(eventType, payload);
+    updateThinkingStatus(progress.message, progress.stage);
     return;
   }
-  if (eventType === "assistant.tool.started") {
-    updateThinkingStatus(
-      payload?.message || "Inspecting model context.",
-      payload?.stage || "PLANNING",
-    );
+  if (eventType === "assistant.progress") {
+    const progress = assistantProgressForEvent(eventType, payload);
+    updateThinkingStatus(progress.message, progress.stage);
     return;
   }
-  if (eventType === "assistant.tool.completed") {
-    updateThinkingStatus(
-      payload?.message || "Context inspection finished.",
-      payload?.stage || "PLANNING",
-    );
+  if (
+    eventType === "tool.started" ||
+    eventType === "assistant.tool.started" ||
+    eventType === "tool.completed" ||
+    eventType === "assistant.tool.completed"
+  ) {
+    const progress = assistantProgressForEvent(eventType, payload);
+    updateThinkingStatus(progress.message, progress.stage);
     return;
   }
   if (eventType === "assistant.turn.completed" || eventType === "assistant.turn.failed") {
