@@ -427,6 +427,9 @@ public class ChatbotController {
       throw new PlatformException(404, "Assistant turn not found.");
     if (!previous.terminal())
       throw new PlatformException(409, "Only a completed turn can be continued.");
+    if (!turns.continuations(turnId).isEmpty())
+      throw new PlatformException(
+          409, "This turn already has an automatic continuation in progress or completed.");
     Instant acceptedAt = Instant.now();
     AssistantTurn next =
         new AssistantTurn(

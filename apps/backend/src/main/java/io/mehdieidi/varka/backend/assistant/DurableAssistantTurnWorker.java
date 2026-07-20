@@ -302,7 +302,12 @@ public final class DurableAssistantTurnWorker {
       if (ex instanceof AgentTurnLoop.TurnExecutionException turnFailure) {
         turns.setProviderCallCount(turn.id(), turnFailure.providerCalls());
       }
-      if ((ex.status() == 502 || ex.status() == 504)
+      // A malformed structured action and a backend-rejected action are provider recovery cases,
+      // just like a provider timeout.  The loop has already used its bounded in-turn repair
+      // attempts; start a fresh durable slice so the user sees the saved checkpoint (if any) and
+      // the agent keeps working without a browser "Continue" round trip.  This applies equally
+      // to CIM and PIM because it is independent of the metamodel/action that failed.
+      if (automaticallyRecoverable(ex)
           && !turns.cancellationRequested(turn.id())
           && enqueueRecoveryTurn(turn, ex.getMessage())) {
         complete(
@@ -311,7 +316,7 @@ public final class DurableAssistantTurnWorker {
             ex.status() == 504
                 ? "This slice reached its time limit; continuing automatically from the durable"
                     + " checkpoint."
-                : "The provider did not finish this slice; retrying automatically from the durable"
+                : "The agent could not complete this slice; retrying automatically from the durable"
                     + " checkpoint.",
             turn.revision(),
             ex.getMessage());
@@ -482,6 +487,17 @@ public final class DurableAssistantTurnWorker {
     return turn.sourceText() == null || turn.sourceText().isBlank()
         ? settings.turnTimeout()
         : settings.sourceTurnTimeout();
+  }
+
+  /**
+   * Failures caused by a provider response or its model command are safe to retry from the durable
+   * checkpoint. User cancellation, destructive confirmation, authorization, and model revision
+   * conflicts deliberately remain terminal so automatic work never bypasses a user or concurrency
+   * decision.
+   */
+  private boolean automaticallyRecoverable(
+      io.mehdieidi.varka.platform.kernel.PlatformException ex) {
+    return ex.status() == 422 || ex.status() == 502 || ex.status() == 504;
   }
 
   private int automaticSliceCount(String message) {
