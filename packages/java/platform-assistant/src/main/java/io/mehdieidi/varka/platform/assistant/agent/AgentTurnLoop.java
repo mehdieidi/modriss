@@ -763,7 +763,8 @@ public final class AgentTurnLoop {
         message =
             completed
                 ? "Finished checking the relevant modeling rules."
-                : "Checking the modeling rules and available element types needed for this request.";
+                : "Checking the modeling rules and available element types needed for this"
+                    + " request.";
       }
       case COMMIT_MODEL_BATCH -> {
         stage = Boolean.FALSE.equals(structurallyValid) ? "REPAIRING" : "APPLYING";

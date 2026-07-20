@@ -605,12 +605,17 @@ public class ChatbotController {
   public ThreadResponse thread(
       @RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
     AgenticAssistantFacade.ThreadSnapshot snapshot = assistant.thread(auth.user(token), sessionId);
+    AssistantTurn activeTurn = turns.activeForThread(sessionId).orElse(null);
     return new ThreadResponse(
         snapshot.messages().stream()
             .map(message -> new ThreadMessageResponse(message.role(), message.content()))
             .toList(),
         snapshot.workflowState(),
-        snapshot.provider());
+        snapshot.provider(),
+        activeTurn == null
+            ? null
+            : new ActiveTurnResponse(
+                activeTurn.id(), activeTurn.state(), accepted(activeTurn).eventCursor()));
   }
 
   private ResolvedRequestAttachment resolveRequestAttachments(
@@ -983,7 +988,11 @@ public class ChatbotController {
       io.mehdieidi.varka.platform.assistant.domain.AssistantWorkflowState workflowState,
       io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider
               .AssistantProviderMetadata
-          provider) {}
+          provider,
+      ActiveTurnResponse activeTurn) {}
+
+  /** Active durable work exposed during thread hydration after a browser reload. */
+  public record ActiveTurnResponse(String turnId, AssistantTurn.State state, long eventCursor) {}
 
   /** One durable thread message. */
   public record ThreadMessageResponse(String role, String content) {}

@@ -25,6 +25,9 @@ public interface AssistantTurnStore {
 
   Optional<AssistantTurn> findByIdempotency(String threadId, String key);
 
+  /** Returns the current queued or running turn for a thread, if durable work is still active. */
+  Optional<AssistantTurn> activeForThread(String threadId);
+
   Optional<AssistantTurn> claim(String workerId, Instant now, Duration lease);
 
   boolean heartbeat(String turnId, String workerId, Instant now, Duration lease);

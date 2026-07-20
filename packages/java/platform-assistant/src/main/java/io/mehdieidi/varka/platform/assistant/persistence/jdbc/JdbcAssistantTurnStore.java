@@ -120,6 +120,14 @@ public final class JdbcAssistantTurnStore implements AssistantTurnStore {
   }
 
   @Override
+  public Optional<AssistantTurn> activeForThread(String threadId) {
+    return one(
+        "SELECT * FROM assistant_turns WHERE thread_id = ? AND state IN ('QUEUED', 'RUNNING') "
+            + "ORDER BY accepted_at DESC LIMIT 1",
+        threadId);
+  }
+
+  @Override
   public Optional<AssistantTurn> claim(String workerId, Instant now, Duration lease) {
     List<AssistantTurn> claimed =
         jdbc.query(
@@ -167,26 +175,39 @@ FROM candidate WHERE t.id = candidate.id RETURNING t.*
 
   @Override
   public void requestCancellation(String turnId) {
-    List<String> queued =
+    List<Cancellation> cancelled =
         jdbc.query(
-            "UPDATE assistant_turns SET cancellation_requested = true, state = 'CANCELLED',"
-                + " lease_until = NULL, completed_at = ? WHERE id = ? AND state = 'QUEUED'"
-                + " RETURNING id",
-            (rs, row) -> rs.getString(1),
+            """
+            WITH RECURSIVE turn_tree AS (
+              SELECT id FROM assistant_turns WHERE id = ?
+              UNION ALL
+              SELECT child.id FROM assistant_turns child
+              JOIN turn_tree parent ON child.parent_turn_id = parent.id
+            )
+            UPDATE assistant_turns
+            SET cancellation_requested = true,
+                state = CASE WHEN state = 'QUEUED' THEN 'CANCELLED' ELSE state END,
+                lease_until = CASE WHEN state = 'QUEUED' THEN NULL ELSE lease_until END,
+                completed_at = CASE WHEN state = 'QUEUED' THEN ? ELSE completed_at END,
+                final_message = CASE WHEN state = 'QUEUED'
+                  THEN 'Assistant turn was cancelled.' ELSE final_message END
+            WHERE id IN (SELECT id FROM turn_tree) AND state IN ('QUEUED', 'RUNNING')
+            RETURNING id, state
+            """,
+            (rs, row) -> new Cancellation(rs.getString("id"), rs.getString("state")),
+            turnId,
             timestamp(Instant.now()),
             turnId);
-    if (!queued.isEmpty()) {
-      appendEvent(
-          turnId,
-          "turn.completed",
-          Map.of("state", "CANCELLED", "message", "Assistant turn was cancelled."));
-      return;
+    for (Cancellation item : cancelled) {
+      if ("CANCELLED".equals(item.state())) {
+        appendEvent(
+            item.id(),
+            "turn.completed",
+            Map.of("state", "CANCELLED", "message", "Assistant turn was cancelled."));
+      } else {
+        appendEvent(item.id(), "turn.stage", Map.of("stage", "CANCELLING"));
+      }
     }
-    if (jdbc.update(
-            "UPDATE assistant_turns SET cancellation_requested = true WHERE id = ? AND state ="
-                + " 'RUNNING'",
-            turnId)
-        == 1) appendEvent(turnId, "turn.stage", Map.of("stage", "CANCELLING"));
   }
 
   @Override
@@ -195,7 +216,7 @@ FROM candidate WHERE t.id = candidate.id RETURNING t.*
         jdbc.query(
             "UPDATE assistant_turns SET state = 'TIMED_OUT', lease_until = NULL, completed_at = ?,"
                 + " final_message = COALESCE(final_message, 'Assistant turn exceeded its configured"
-                + " deadline.') WHERE state IN ('QUEUED','RUNNING') AND deadline_at <= ? RETURNING"
+                + " deadline.') WHERE state = 'QUEUED' AND deadline_at <= ? RETURNING"
                 + " id",
             (rs, row) -> rs.getString(1),
             timestamp(now),
@@ -544,4 +565,6 @@ SELECT ?, ?, project_id, user_id, ?, ?::jsonb, ? FROM assistant_turns WHERE id =
       return mapper.createObjectNode();
     }
   }
+
+  private record Cancellation(String id, String state) {}
 }

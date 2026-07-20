@@ -7,6 +7,7 @@ import io.mehdieidi.varka.backend.admin.AdminQueryService;
 import io.mehdieidi.varka.backend.admin.AdminThemeService;
 import io.mehdieidi.varka.backend.admin.AdminThemeService.ThemeProfileRequest;
 import io.mehdieidi.varka.backend.admin.AdminThemeService.ThemeState;
+import io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
@@ -35,6 +36,7 @@ public class AdminController {
   private final AdminQueryService queries;
   private final AdminThemeService themes;
   private final JdbcTemplate jdbc;
+  private final AssistantTurnStore assistantTurns;
 
   public AdminController(
       AuthSupport auth,
@@ -42,13 +44,15 @@ public class AdminController {
       AdminNotationService notation,
       AdminQueryService queries,
       AdminThemeService themes,
-      JdbcTemplate jdbc) {
+      JdbcTemplate jdbc,
+      AssistantTurnStore assistantTurns) {
     this.auth = auth;
     this.access = access;
     this.notation = notation;
     this.queries = queries;
     this.themes = themes;
     this.jdbc = jdbc;
+    this.assistantTurns = assistantTurns;
   }
 
   @GetMapping("/me")
@@ -286,12 +290,7 @@ public class AdminController {
       @PathVariable String id,
       @RequestBody(required = false) ReasonRequest request) {
     AdminPrincipal principal = access.requireOperator(auth.user(token));
-    jdbc.update(
-        """
-        UPDATE assistant_turns SET cancellation_requested = true
-        WHERE id = ? AND state IN ('QUEUED', 'RUNNING')
-        """,
-        id);
+    assistantTurns.requestCancellation(id);
     access.audit(
         principal,
         "ASSISTANT_TURN_CANCEL_REQUESTED",

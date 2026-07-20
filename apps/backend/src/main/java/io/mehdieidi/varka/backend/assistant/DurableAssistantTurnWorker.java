@@ -307,9 +307,7 @@ public final class DurableAssistantTurnWorker {
       // attempts; start a fresh durable slice so the user sees the saved checkpoint (if any) and
       // the agent keeps working without a browser "Continue" round trip.  This applies equally
       // to CIM and PIM because it is independent of the metamodel/action that failed.
-      if (automaticallyRecoverable(ex)
-          && !turns.cancellationRequested(turn.id())
-          && enqueueRecoveryTurn(turn, ex.getMessage())) {
+      if (automaticallyRecoverable(ex) && !turns.cancellationRequested(turn.id())) {
         complete(
             turn,
             AssistantTurn.State.PARTIAL,
@@ -320,6 +318,10 @@ public final class DurableAssistantTurnWorker {
                     + " checkpoint.",
             turn.revision(),
             ex.getMessage());
+        // The active-turn database constraint intentionally permits only one queued/running
+        // turn for a model. Release this slice before creating its retry; doing it in the other
+        // order made retries fail silently or leave the UI attached to a stale parent turn.
+        if (!turns.cancellationRequested(turn.id())) enqueueRecoveryTurn(turn, ex.getMessage());
         return;
       }
       AssistantTurn.State state =
@@ -338,7 +340,16 @@ public final class DurableAssistantTurnWorker {
           };
       complete(turn, state, ex.getMessage(), null, null);
     } catch (RuntimeException ex) {
-      complete(turn, AssistantTurn.State.FAILED, "Assistant processing failed.", null, null);
+      complete(
+          turn,
+          turns.cancellationRequested(turn.id())
+              ? AssistantTurn.State.CANCELLED
+              : AssistantTurn.State.FAILED,
+          turns.cancellationRequested(turn.id())
+              ? "Assistant turn was cancelled."
+              : "Assistant processing failed.",
+          null,
+          null);
     } finally {
       heartbeat.cancel(false);
     }

@@ -76,7 +76,9 @@ const ASSISTANT_TOOL_PROGRESS = Object.freeze({
 });
 
 function assistantProgressForEvent(eventType, payload = {}) {
-  const tool = String(payload?.tool || "").trim().toLowerCase();
+  const tool = String(payload?.tool || "")
+    .trim()
+    .toLowerCase();
   const toolProgress = ASSISTANT_TOOL_PROGRESS[tool];
   if (eventType === "assistant.trace.started") {
     return {
@@ -95,10 +97,12 @@ function assistantProgressForEvent(eventType, payload = {}) {
     };
   }
   if (eventType === "tool.started" || eventType === "assistant.tool.started") {
-    return toolProgress || {
-      stage: "PLANNING",
-      message: "Reviewing the model context needed to complete your request.",
-    };
+    return (
+      toolProgress || {
+        stage: "PLANNING",
+        message: "Reviewing the model context needed to complete your request.",
+      }
+    );
   }
   if (eventType === "tool.completed" || eventType === "assistant.tool.completed") {
     if (tool === "commit_model_batch" && payload?.valid === false) {
@@ -109,7 +113,10 @@ function assistantProgressForEvent(eventType, payload = {}) {
     }
     return toolProgress
       ? { stage: toolProgress.stage, message: toolProgress.completed }
-      : { stage: "PLANNING", message: "Finished reviewing the information needed for this request." };
+      : {
+          stage: "PLANNING",
+          message: "Finished reviewing the information needed for this request.",
+        };
   }
   return {
     stage: payload?.stage || "PLANNING",
@@ -1119,9 +1126,29 @@ async function hydrateChatThread(typeKey, sessionId) {
         appendChat(role, message.content || "");
       }
     }
-    if (thread.workflowState)
+    const activeTurn = thread?.activeTurn;
+    if (activeTurn?.turnId) {
+      // A page reload must reconnect to the durable child turn, not merely replay the parent
+      // message. Without this, the UI showed generic realtime progress but never polled the
+      // checkpoint or reloaded canvas changes.
+      activeTurnId = activeTurn.turnId;
+      beginChatActivity("Restoring the in-progress assistant turn.", "PLANNING");
+      void waitForDurableTurn(activeTurn.turnId, typeKey, activeTurn.eventCursor || 0)
+        .then(async (completed) => {
+          if (activeTurnId !== activeTurn.turnId && activeTurnId !== null) return;
+          activeTurnId = null;
+          endChatActivity(null, completed?.state || null);
+          appendAssistantDeduped(await durableAssistantMessage(completed, sessionId));
+          appendDurableTurnActions(completed, typeKey);
+        })
+        .catch((error) => {
+          activeTurnId = null;
+          endChatActivity("Could not restore the assistant turn.", "FAILED");
+          setError(error, { prefix: "Could not restore assistant progress." });
+        });
+    } else if (thread.workflowState) {
       applyWorkflowSnapshot(thread.workflowState, workflowLabel(thread.workflowState));
-    else resetChatActivityUi();
+    } else resetChatActivityUi();
     updateChatProviderLabel(thread.provider);
   } catch {
     resetChatActivityUi();
