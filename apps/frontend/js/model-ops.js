@@ -828,6 +828,7 @@ export async function loadModelById(
     skipClientLayout = false,
     deferTabSnapshot = false,
     preserveActiveView = false,
+    preserveViewport = false,
   } = {},
 ) {
   const activeViewIdToPreserve =
@@ -882,7 +883,12 @@ export async function loadModelById(
     renderViewWorkbench();
     const { onGuidedModelingContextChanged } = await import("./guided-modeling.js");
     onGuidedModelingContextChanged();
-    await centerCurrentDiagram();
+    // Checkpointed assistant changes arrive while the user may be inspecting any
+    // part of the model. Rendering the graph already applies a G6 data diff; do
+    // not follow it with the normal fit/center operation in that case.
+    if (!preserveViewport) {
+      await centerCurrentDiagram();
+    }
     resetModelSaveState();
     if (autoLayout && !activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
       await autoLayoutCurrentDiagram({

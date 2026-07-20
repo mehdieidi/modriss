@@ -2489,7 +2489,7 @@ async function renderDiagramNow({ full = false } = {}) {
   if (full) {
     await syncCanvasFromState({ full: true });
   } else {
-    renderCanvasDiagram();
+    await renderCanvasDiagram();
   }
   el.canvasGrid?.style.setProperty("--viewport-scale", String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);

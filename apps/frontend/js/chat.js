@@ -63,6 +63,9 @@ let activeTurnCanceling = false;
 let activeTurnId = null;
 let streamingAssistantEl = null;
 let streamingAssistantText = "";
+// SSE and durable-turn polling can report the same checkpoint at nearly the
+// same time. Share its load so the canvas receives one incremental update.
+const assistantModelApplyInFlight = new Map();
 // The chat window is a single DOM surface, while sessions are scoped by project and level.
 // Track which scoped session owns the rendered surface so content cannot leak between levels.
 let renderedChatScopeKey = null;
@@ -1482,11 +1485,26 @@ async function applyAssistantModelResponse(
       clearAssistantModelPreview({ restore: false });
       return;
     }
-    await loadModelById(typeKey, responseModelId, {
+    const updateKey = `${typeKey}:${responseModelId}:${Number.isFinite(responseRevision) ? responseRevision : "latest"}`;
+    const existing = assistantModelApplyInFlight.get(updateKey);
+    if (existing) {
+      await existing;
+      return;
+    }
+    const apply = loadModelById(typeKey, responseModelId, {
       preserveActiveView: true,
+      // A checkpoint must appear in the user's current viewport. The renderer
+      // diffs the existing graph, so neither a layout pass nor a fit is needed.
+      preserveViewport: true,
       autoLayout: false,
       skipClientLayout: true,
     });
+    assistantModelApplyInFlight.set(updateKey, apply);
+    try {
+      await apply;
+    } finally {
+      assistantModelApplyInFlight.delete(updateKey);
+    }
     if (state.project) {
       state.project.activeModelIds = {
         ...(state.project.activeModelIds || {}),

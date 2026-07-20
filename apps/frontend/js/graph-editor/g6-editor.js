@@ -2030,7 +2030,7 @@ export function syncG6FromState({ full = false } = {}) {
   editor.lastLod = options.detailLevel;
   editor.lastShowLabels = options.showLabels;
   resizeGraphToHost();
-  void prepareGraphData(options).then((data) => {
+  return prepareGraphData(options).then((data) => {
     if (!editor?.graph) {
       return;
     }
