@@ -32,23 +32,23 @@ import org.springframework.context.annotation.Primary;
 public class AiConfig {
 
   @Bean
-  MetamodelGuideGenerator metamodelGuideGenerator(MetamodelKnowledgeService knowledge) {
+  public MetamodelGuideGenerator metamodelGuideGenerator(MetamodelKnowledgeService knowledge) {
     return new MetamodelGuideGenerator(knowledge);
   }
 
   @Bean
-  TypeContractService typeContractService(MetamodelKnowledgeService knowledge) {
+  public TypeContractService typeContractService(MetamodelKnowledgeService knowledge) {
     return new TypeContractService(knowledge);
   }
 
   @Bean
-  AgentModelTools agentModelTools(
+  public AgentModelTools agentModelTools(
       TypeContractService contracts, ModelService models, ModelCommandCompiler commandCompiler) {
     return new AgentModelTools(contracts, models, commandCompiler);
   }
 
   @Bean
-  AgentTurnLoop agentTurnLoop(
+  public AgentTurnLoop agentTurnLoop(
       AssistantModelProvider provider,
       AgentModelTools tools,
       MetamodelGuideGenerator guides,
@@ -71,13 +71,13 @@ public class AiConfig {
   }
 
   @Bean(destroyMethod = "close")
-  SourceDocumentWorkers sourceDocumentWorkers(
+  public SourceDocumentWorkers sourceDocumentWorkers(
       AssistantModelProvider provider, AssistantRealtimeHub realtime) {
     return new SourceDocumentWorkers(provider, realtime, 2, 12000);
   }
 
   @Bean
-  AgenticTurnService agenticTurnService(
+  public AgenticTurnService agenticTurnService(
       ModelService models,
       AssistantPatchCompiler patches,
       AgentTurnLoop loop,
@@ -87,7 +87,7 @@ public class AiConfig {
   }
 
   @Bean
-  AgenticAssistantFacade agenticAssistantFacade(
+  public AgenticAssistantFacade agenticAssistantFacade(
       io.mehdieidi.varka.platform.assistant.session.AssistantSessionStore sessions,
       io.mehdieidi.varka.platform.assistant.spi.AssistantMemoryStore memory,
       io.mehdieidi.varka.platform.assistant.spi.AssistantChatMemory chatMemory,
@@ -113,17 +113,17 @@ public class AiConfig {
 
   @Bean
   @Primary
-  AssistantSettings assistantSettings(AiProperties properties) {
+  public AssistantSettings assistantSettings(AiProperties properties) {
     return properties;
   }
 
   @Bean
-  ProxyAvailability proxyAvailability(AiProperties properties) {
+  public ProxyAvailability proxyAvailability(AiProperties properties) {
     return new ProxyAvailability(properties);
   }
 
   @Bean
-  OpenAiCompatibleAssistantModelProvider openAiCompatibleAssistantModelProvider(
+  public OpenAiCompatibleAssistantModelProvider openAiCompatibleAssistantModelProvider(
       AiProperties properties,
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
@@ -133,7 +133,7 @@ public class AiConfig {
   }
 
   @Bean
-  GeminiAssistantModelProvider geminiAssistantModelProvider(
+  public GeminiAssistantModelProvider geminiAssistantModelProvider(
       AiProperties properties,
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
@@ -143,7 +143,7 @@ public class AiConfig {
 
   @Bean
   @Primary
-  AssistantModelProvider assistantModelProvider(
+  public AssistantModelProvider assistantModelProvider(
       AiProperties properties,
       OpenAiCompatibleAssistantModelProvider openai,
       GeminiAssistantModelProvider gemini) {
