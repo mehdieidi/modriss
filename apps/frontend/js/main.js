@@ -58,6 +58,7 @@ import { beginModelSave } from "./model-save-ui.js";
 import { formatUserError } from "./errors.js";
 import { CHAT_ATTACHMENT_MAX_BYTES } from "./config.js";
 import { isMobileViewport } from "./responsive.js";
+import { applyTextDirection } from "./text-direction.js";
 import { closeMobilePanels, setMobileBackdropVisible, syncMobileDockState } from "./mobile-ui.js";
 import { ensureAuthenticated, logout, updateDisplayName } from "./auth.js";
 import { initSvgIconMasks } from "./icons.js";
@@ -1054,8 +1055,14 @@ function bindEvents() {
     });
   });
 
-  el.chatInput?.addEventListener("focus", expandChatInput);
-  el.chatInput?.addEventListener("input", expandChatInput);
+  el.chatInput?.addEventListener("focus", () => {
+    applyTextDirection(el.chatInput, el.chatInput.value);
+    expandChatInput();
+  });
+  el.chatInput?.addEventListener("input", () => {
+    applyTextDirection(el.chatInput, el.chatInput.value);
+    expandChatInput();
+  });
   el.chatInput?.addEventListener("blur", (event) => {
     const related = event.relatedTarget;
     if (related === el.chatSendBtn || el.chatInputRow?.contains(related)) {

@@ -10,6 +10,7 @@ import { renderMarkdown } from "./markdown.js";
 import { autoLayoutCurrentDiagram, loadModelById, saveCurrentModel } from "./model-ops.js";
 import { syncMobileDockState } from "./mobile-ui.js";
 import { hasUnsavedModelChanges } from "./model-save-ui.js";
+import { applyTextDirection } from "./text-direction.js";
 
 const TERMINAL_WORKFLOW_STATES = new Set([
   "EXPLAINED",
@@ -1341,6 +1342,7 @@ function appendChat(role, text) {
 
   const bubble = document.createElement("div");
   bubble.className = "chat-msg-bubble";
+  applyTextDirection(bubble, text);
   if (role === "assistant") {
     bubble.appendChild(renderMarkdown(text));
   } else {
@@ -1376,6 +1378,7 @@ function appendAssistantTextDelta(delta) {
     streamingAssistantEl.dataset.chatKind = "message";
     const bubble = document.createElement("div");
     bubble.className = "chat-msg-bubble";
+    applyTextDirection(bubble, "");
     streamingAssistantEl.appendChild(bubble);
     el.chatMessages.appendChild(streamingAssistantEl);
     streamingAssistantText = "";
@@ -1383,6 +1386,7 @@ function appendAssistantTextDelta(delta) {
   streamingAssistantText += delta;
   streamingAssistantEl.dataset.chatText = streamingAssistantText;
   const bubble = streamingAssistantEl.querySelector(".chat-msg-bubble");
+  applyTextDirection(bubble, streamingAssistantText);
   bubble.replaceChildren(renderMarkdown(streamingAssistantText));
   scrollChatToBottom();
 }
@@ -1599,11 +1603,12 @@ async function applyAssistantModelResponse(
     }
     const apply = loadModelById(typeKey, responseModelId, {
       preserveActiveView: true,
-      // A checkpoint must appear in the user's current viewport. The renderer
-      // diffs the existing graph, so neither a layout pass nor a fit is needed.
+      // A checkpoint must appear in the user's current viewport. Preserve the
+      // viewport, but repair new or overlapping node positions before rendering;
+      // the backend ELK pass below will persist the final layout.
       preserveViewport: true,
       autoLayout: false,
-      skipClientLayout: true,
+      skipClientLayout: false,
     });
     assistantModelApplyInFlight.set(updateKey, apply);
     try {
@@ -1708,6 +1713,7 @@ export async function sendChatMessage() {
   try {
     const userMessage = appendChat("user", text);
     el.chatInput.value = "";
+    applyTextDirection(el.chatInput, "");
     beginChatActivity("Understanding your request", null, userMessage);
     // Hydration is for opening/restoring a conversation. Doing it while sending clears the
     // just-created activity UI (and could also reset its busy state) before the turn is accepted.
