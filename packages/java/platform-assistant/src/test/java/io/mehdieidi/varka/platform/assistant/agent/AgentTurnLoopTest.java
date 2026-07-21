@@ -200,6 +200,9 @@ class AgentTurnLoopTest {
 
     assertEquals(502, failure.status());
     assertEquals(1, failure.providerCalls());
+    assertEquals(0, failure.promptTokens());
+    assertEquals(0, failure.completionTokens());
+    assertTrue(failure.providerCallDetails().isEmpty());
     assertEquals(1, provider.calls);
   }
 
@@ -300,14 +303,17 @@ class AgentTurnLoopTest {
   private static final class FakeProvider implements AssistantModelProvider {
     int calls;
 
+    @Override
     public AssistantProviderMetadata metadata() {
       return new AssistantProviderMetadata("fake", "", "");
     }
 
+    @Override
     public boolean available() {
       return true;
     }
 
+    @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       calls++;
       ProviderCallBudget.consume(prompt.role());
@@ -317,14 +323,17 @@ class AgentTurnLoopTest {
   }
 
   private static final class SourcePlanProvider implements AssistantModelProvider {
+    @Override
     public AssistantProviderMetadata metadata() {
       return new AssistantProviderMetadata("fake", "", "");
     }
 
+    @Override
     public boolean available() {
       return true;
     }
 
+    @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       ProviderCallBudget.consume(prompt.role());
       return new AssistantReply(
@@ -338,14 +347,17 @@ class AgentTurnLoopTest {
   private static final class FailingProvider implements AssistantModelProvider {
     int calls;
 
+    @Override
     public AssistantProviderMetadata metadata() {
       return new AssistantProviderMetadata("fake", "", "");
     }
 
+    @Override
     public boolean available() {
       return true;
     }
 
+    @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       calls++;
       ProviderCallBudget.consume(prompt.role());
@@ -356,14 +368,17 @@ class AgentTurnLoopTest {
   private static final class RepairingProvider implements AssistantModelProvider {
     int calls;
 
+    @Override
     public AssistantProviderMetadata metadata() {
       return new AssistantProviderMetadata("fake", "", "");
     }
 
+    @Override
     public boolean available() {
       return true;
     }
 
+    @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       calls++;
       ProviderCallBudget.consume(prompt.role());
@@ -381,14 +396,17 @@ class AgentTurnLoopTest {
   private static final class EmptyAnswerThenRecoveryProvider implements AssistantModelProvider {
     int calls;
 
+    @Override
     public AssistantProviderMetadata metadata() {
       return new AssistantProviderMetadata("fake", "", "");
     }
 
+    @Override
     public boolean available() {
       return true;
     }
 
+    @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       calls++;
       ProviderCallBudget.consume(prompt.role());
@@ -405,14 +423,17 @@ class AgentTurnLoopTest {
     int calls;
     boolean correctivePromptReceived;
 
+    @Override
     public AssistantProviderMetadata metadata() {
       return new AssistantProviderMetadata("fake", "", "");
     }
 
+    @Override
     public boolean available() {
       return true;
     }
 
+    @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       calls++;
       ProviderCallBudget.consume(prompt.role());

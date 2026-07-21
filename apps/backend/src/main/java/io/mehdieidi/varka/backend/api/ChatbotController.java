@@ -723,9 +723,7 @@ public class ChatbotController {
                     replayTurnEvents(emitter, turnId, replayCursor);
                     if (turns.find(turnId).map(AssistantTurn::terminal).orElse(true))
                       emitter.complete();
-                  } catch (IOException ex) {
-                    closeTurnEventStream(emitter, turnId, ex);
-                  } catch (RuntimeException ex) {
+                  } catch (IOException | RuntimeException ex) {
                     closeTurnEventStream(emitter, turnId, ex);
                   }
                 },

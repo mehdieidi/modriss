@@ -82,9 +82,8 @@ public class AiConfig {
       AssistantPatchCompiler patches,
       AgentTurnLoop loop,
       SourceDocumentWorkers workers,
-      AssistantRealtimeHub realtime,
       io.mehdieidi.varka.platform.assistant.spi.AssistantMemoryStore memory) {
-    return new AgenticTurnService(models, patches, loop, workers, realtime, memory);
+    return new AgenticTurnService(models, patches, loop, workers, memory);
   }
 
   @Bean

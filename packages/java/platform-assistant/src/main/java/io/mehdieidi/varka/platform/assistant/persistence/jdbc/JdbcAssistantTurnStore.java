@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
@@ -512,7 +513,8 @@ SELECT ?, ?, project_id, user_id, ?, ?::jsonb, ? FROM assistant_turns WHERE id =
     return jdbc.query(sql, this::turn, args).stream().findFirst();
   }
 
-  private AssistantTurn turn(ResultSet rs, int ignored) throws java.sql.SQLException {
+  private AssistantTurn turn(ResultSet rs, @SuppressWarnings("unused") int rowNum)
+      throws java.sql.SQLException {
     return new AssistantTurn(
         rs.getString("id"),
         rs.getString("thread_id"),
@@ -542,7 +544,8 @@ SELECT ?, ?, project_id, user_id, ?, ?::jsonb, ? FROM assistant_turns WHERE id =
         rs.getLong("completion_tokens"));
   }
 
-  private AssistantTurn.Event event(ResultSet rs, int ignored) throws java.sql.SQLException {
+  private AssistantTurn.Event event(ResultSet rs, @SuppressWarnings("unused") int rowNum)
+      throws java.sql.SQLException {
     return new AssistantTurn.Event(
         rs.getLong("id"),
         rs.getString("turn_id"),
@@ -564,7 +567,7 @@ SELECT ?, ?, project_id, user_id, ?, ?::jsonb, ? FROM assistant_turns WHERE id =
   private String json(Object value) {
     try {
       return mapper.writeValueAsString(value);
-    } catch (Exception ex) {
+    } catch (JacksonException ex) {
       throw new IllegalStateException("Could not encode assistant state", ex);
     }
   }
@@ -574,7 +577,7 @@ SELECT ?, ?, project_id, user_id, ?, ?::jsonb, ? FROM assistant_turns WHERE id =
       return value == null
           ? List.of()
           : mapper.readValue(value, new TypeReference<List<String>>() {});
-    } catch (Exception ex) {
+    } catch (JacksonException ex) {
       return List.of();
     }
   }
@@ -584,7 +587,7 @@ SELECT ?, ?, project_id, user_id, ?, ?::jsonb, ? FROM assistant_turns WHERE id =
       return value == null
           ? Map.of()
           : mapper.readValue(value, new TypeReference<Map<String, Object>>() {});
-    } catch (Exception ex) {
+    } catch (JacksonException ex) {
       return Map.of();
     }
   }
@@ -592,7 +595,7 @@ SELECT ?, ?, project_id, user_id, ?, ?::jsonb, ? FROM assistant_turns WHERE id =
   private tools.jackson.databind.JsonNode tree(String value) {
     try {
       return mapper.readTree(value);
-    } catch (Exception ex) {
+    } catch (JacksonException ex) {
       return mapper.createObjectNode();
     }
   }

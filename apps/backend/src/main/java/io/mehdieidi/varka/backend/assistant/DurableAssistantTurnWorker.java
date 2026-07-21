@@ -369,6 +369,8 @@ public final class DurableAssistantTurnWorker {
     } catch (io.mehdieidi.varka.platform.kernel.PlatformException ex) {
       if (ex instanceof AgentTurnLoop.TurnExecutionException turnFailure) {
         turns.setProviderCallCount(turn.id(), turnFailure.providerCalls());
+        turns.setTokenUsage(turn.id(), turnFailure.promptTokens(), turnFailure.completionTokens());
+        turns.recordProviderCalls(turn.id(), turnFailure.providerCallDetails());
       }
       // A malformed structured action and a backend-rejected action are provider recovery cases,
       // just like a provider timeout.  The loop has already used its bounded in-turn repair
@@ -763,6 +765,7 @@ public final class DurableAssistantTurnWorker {
   }
 
   @PreDestroy
+  @SuppressWarnings("unused")
   void shutdown() {
     heartbeats.shutdownNow();
     workers.shutdownNow();

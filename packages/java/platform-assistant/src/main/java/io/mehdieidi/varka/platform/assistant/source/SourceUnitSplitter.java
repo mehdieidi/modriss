@@ -3,6 +3,7 @@ package io.mehdieidi.varka.platform.assistant.source;
 import io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.SourceUnit;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
@@ -57,7 +58,7 @@ public final class SourceUnitSplitter {
           + end
           + "-"
           + HexFormat.of().formatHex(digest).substring(0, 12);
-    } catch (Exception ex) {
+    } catch (NoSuchAlgorithmException ex) {
       throw new IllegalStateException("SHA-256 unavailable", ex);
     }
   }

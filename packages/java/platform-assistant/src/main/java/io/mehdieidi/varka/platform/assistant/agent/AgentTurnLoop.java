@@ -212,6 +212,10 @@ public final class AgentTurnLoop {
     if (cancellations.putIfAbsent(sessionId, canceled) != null)
       throw new PlatformException(409, "An assistant turn is already active for this session.");
     AgentModelTools turnTools = tools.scoped(level, workspace);
+    long promptTokens = 0;
+    long completionTokens = 0;
+    List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
+        providerCallDetails = new ArrayList<>();
     try {
       ProviderCallBudget.bind(
           sourceDocument == null || sourceDocument.isBlank()
@@ -244,10 +248,6 @@ public final class AgentTurnLoop {
       ModelService.ValidationResult validation = null;
       boolean fullModelInspected = false;
       boolean checkpointInspectionRequired = userMessage.contains(AUTOMATIC_SLICE_MARKER);
-      long promptTokens = 0;
-      long completionTokens = 0;
-      List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
-          providerCallDetails = new ArrayList<>();
       for (int step = 1; step <= maxSteps; step++) {
         check(canceled, deadline, cancellationRequested, stopReason);
         if (!ProviderCallBudget.hasRemaining()) {
@@ -416,7 +416,8 @@ public final class AgentTurnLoop {
               }
             }
             case PLAN_SOURCE_MODEL -> {
-              if (!sourceBacked || sourceDocument.contains("<source-blueprint>"))
+              if (!sourceBacked
+                  || (sourceDocument != null && sourceDocument.contains("<source-blueprint>")))
                 throw new PlatformException(
                     422, "plan_source_model is only valid before a source blueprint exists.");
               JsonNode blueprint = validatedSourceBlueprint(action.arguments(), sourceDocument);
@@ -536,7 +537,8 @@ public final class AgentTurnLoop {
           providerCallDetails,
           null);
     } catch (PlatformException ex) {
-      throw new TurnExecutionException(ex, ProviderCallBudget.count());
+      throw new TurnExecutionException(
+          ex, ProviderCallBudget.count(), promptTokens, completionTokens, providerCallDetails);
     } finally {
       ProviderCallBudget.clear();
       cancellations.remove(sessionId, canceled);
@@ -908,14 +910,41 @@ researching the metamodel.
    */
   public static final class TurnExecutionException extends PlatformException {
     private final int providerCalls;
+    private final long promptTokens;
+    private final long completionTokens;
+    private final List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
+        providerCallDetails;
 
-    private TurnExecutionException(PlatformException cause, int providerCalls) {
+    private TurnExecutionException(
+        PlatformException cause,
+        int providerCalls,
+        long promptTokens,
+        long completionTokens,
+        List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
+            providerCallDetails) {
       super(cause.status(), cause.getMessage(), cause);
       this.providerCalls = providerCalls;
+      this.promptTokens = Math.max(0L, promptTokens);
+      this.completionTokens = Math.max(0L, completionTokens);
+      this.providerCallDetails =
+          providerCallDetails == null ? List.of() : List.copyOf(providerCallDetails);
     }
 
     public int providerCalls() {
       return providerCalls;
+    }
+
+    public long promptTokens() {
+      return promptTokens;
+    }
+
+    public long completionTokens() {
+      return completionTokens;
+    }
+
+    public List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
+        providerCallDetails() {
+      return providerCallDetails;
     }
   }
 }

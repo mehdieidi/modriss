@@ -34,6 +34,7 @@ class JdbcAssistantTurnStorePostgresIntegrationTest {
   private JdbcAssistantTurnStore turns;
 
   @BeforeEach
+  @SuppressWarnings("unused")
   void setUp() {
     var dataSource =
         new DriverManagerDataSource(

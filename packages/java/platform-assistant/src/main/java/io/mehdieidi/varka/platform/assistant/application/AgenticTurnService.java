@@ -4,7 +4,6 @@ import io.mehdieidi.varka.platform.assistant.agent.AgentTurnLoop;
 import io.mehdieidi.varka.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.varka.platform.assistant.source.SourceDocumentWorkers;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantMemoryStore;
-import io.mehdieidi.varka.platform.assistant.spi.AssistantRealtimePublisher;
 import io.mehdieidi.varka.platform.assistant.workspace.ModelWorkspace;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
@@ -20,7 +19,6 @@ public final class AgenticTurnService {
   private final AssistantPatchCompiler patches;
   private final AgentTurnLoop loop;
   private final SourceDocumentWorkers sourceWorkers;
-  private final AssistantRealtimePublisher realtime;
   private final AssistantMemoryStore memory;
 
   public AgenticTurnService(
@@ -28,22 +26,11 @@ public final class AgenticTurnService {
       AssistantPatchCompiler patches,
       AgentTurnLoop loop,
       SourceDocumentWorkers sourceWorkers,
-      AssistantRealtimePublisher realtime) {
-    this(models, patches, loop, sourceWorkers, realtime, null);
-  }
-
-  public AgenticTurnService(
-      ModelService models,
-      AssistantPatchCompiler patches,
-      AgentTurnLoop loop,
-      SourceDocumentWorkers sourceWorkers,
-      AssistantRealtimePublisher realtime,
       AssistantMemoryStore memory) {
     this.models = models;
     this.patches = patches;
     this.loop = loop;
     this.sourceWorkers = sourceWorkers;
-    this.realtime = realtime;
     this.memory = memory;
   }
 
