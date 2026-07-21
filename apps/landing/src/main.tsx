@@ -102,7 +102,7 @@ function App() {
     <section className="hero" id="top">
       <div className="hero-copy">
         <div className="eyebrow"><span className="pulse" /> AI-assisted model-driven engineering for AWS serverless</div>
-        <h1>From domain intent<br />to <em>defensible systems.</em></h1>
+        <h1>Transform business intent<br />into <em>validated AWS architectures.</em></h1>
         <p className="hero-lede">Varka connects business intent, software architecture, and AWS deployment design in one traceable modeling pipeline—then generates a project your team can inspect, test, and own.</p>
         <div className="hero-actions">
           <a className="button primary" href={appUrl}>Start modeling <Icon name="arrow" size={18} /></a>

@@ -21,6 +21,11 @@ public interface AssistantTurnStore {
 
   Optional<ContextCache> contextCache(String turnId);
 
+  /** Durable, validated source-to-CIM plan used to resume incremental model application. */
+  void saveSourceBlueprint(String turnId, JsonNode blueprint, int nextSlice);
+
+  Optional<SourceBlueprint> sourceBlueprint(String turnId);
+
   Optional<AssistantTurn> find(String turnId);
 
   Optional<AssistantTurn> findByIdempotency(String threadId, String key);
@@ -100,14 +105,36 @@ public interface AssistantTurnStore {
       String kind,
       String assumption) {}
 
-  /** Provider-call telemetry persisted without prompt or response content. */
+  /** Provider-call telemetry, including the redacted prompts actually sent to the provider. */
   record ProviderCall(
       String provider,
       String model,
       long latencyMillis,
       long promptTokens,
       long completionTokens,
-      boolean usageReported) {}
+      boolean usageReported,
+      String systemPrompt,
+      String userPrompt) {
+    public ProviderCall(
+        String provider,
+        String model,
+        long latencyMillis,
+        long promptTokens,
+        long completionTokens,
+        boolean usageReported) {
+      this(
+          provider,
+          model,
+          latencyMillis,
+          promptTokens,
+          completionTokens,
+          usageReported,
+          null,
+          null);
+    }
+  }
 
   record ContextCache(List<String> selectedSourceUnitIds, List<String> contractClosures) {}
+
+  record SourceBlueprint(JsonNode blueprint, int nextSlice) {}
 }

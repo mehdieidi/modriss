@@ -109,6 +109,35 @@ public final class JdbcAssistantTurnStore implements AssistantTurnStore {
   }
 
   @Override
+  public void saveSourceBlueprint(
+      String turnId, tools.jackson.databind.JsonNode blueprint, int nextSlice) {
+    Instant now = Instant.now();
+    jdbc.update(
+        "INSERT INTO assistant_source_blueprints(turn_id, blueprint, next_slice, created_at,"
+            + " updated_at) VALUES (?, ?::jsonb, ?, ?, ?) ON CONFLICT (turn_id) DO UPDATE SET"
+            + " blueprint = EXCLUDED.blueprint, next_slice = EXCLUDED.next_slice, updated_at ="
+            + " EXCLUDED.updated_at",
+        turnId,
+        blueprint == null ? "{}" : blueprint.toString(),
+        Math.max(0, nextSlice),
+        timestamp(now),
+        timestamp(now));
+  }
+
+  @Override
+  public Optional<AssistantTurnStore.SourceBlueprint> sourceBlueprint(String turnId) {
+    return jdbc
+        .query(
+            "SELECT blueprint, next_slice FROM assistant_source_blueprints WHERE turn_id = ?",
+            (rs, row) ->
+                new AssistantTurnStore.SourceBlueprint(
+                    tree(rs.getString("blueprint")), rs.getInt("next_slice")),
+            turnId)
+        .stream()
+        .findFirst();
+  }
+
+  @Override
   public Optional<AssistantTurn> find(String turnId) {
     return one("SELECT * FROM assistant_turns WHERE id = ?", turnId);
   }
@@ -369,7 +398,8 @@ RETURNING *
         calls == null ? List.<AssistantTurnStore.ProviderCall>of() : calls) {
       jdbc.update(
           "INSERT INTO assistant_provider_calls(turn_id, provider, model, started_at, latency_ms,"
-              + " prompt_tokens, completion_tokens, finish_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+              + " prompt_tokens, completion_tokens, finish_reason, system_prompt, user_prompt)"
+              + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           turnId,
           call.provider(),
           call.model(),
@@ -377,7 +407,9 @@ RETURNING *
           Math.max(0L, call.latencyMillis()),
           call.usageReported() ? Math.max(0L, call.promptTokens()) : null,
           call.usageReported() ? Math.max(0L, call.completionTokens()) : null,
-          "COMPLETED");
+          "COMPLETED",
+          call.systemPrompt(),
+          call.userPrompt());
     }
   }
 

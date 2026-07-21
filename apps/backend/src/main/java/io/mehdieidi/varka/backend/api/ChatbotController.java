@@ -444,7 +444,9 @@ public class ChatbotController {
             previous.message()
                 + "\n\nContinue this same request from the persisted checkpoint. Inspect the "
                 + "current model if needed, preserve valid prior work, and complete the remaining "
-                + "requested modeling work.",
+                + "requested modeling work.\n"
+                + DurableAssistantTurnWorker.AUTOMATIC_SLICE_MARKER
+                + "manual] Continue with the next source window, not a repeated document slice.",
             previous.sourceText(),
             previous.selectedElementIds(),
             AssistantTurn.State.QUEUED,

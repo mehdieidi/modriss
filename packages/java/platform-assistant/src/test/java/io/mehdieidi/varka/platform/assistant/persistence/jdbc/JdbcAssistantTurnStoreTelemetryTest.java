@@ -22,7 +22,9 @@ class JdbcAssistantTurnStoreTelemetryTest {
   void persistsReportedUsageForEachProviderCall() {
     JdbcAssistantTurnStore store = new JdbcAssistantTurnStore(jdbc, new ObjectMapper());
     store.recordProviderCalls(
-        "turn-1", List.of(new ProviderCall("gemini", "flash", 42, 11, 7, true)));
+        "turn-1",
+        List.of(
+            new ProviderCall("gemini", "flash", 42, 11, 7, true, "system prompt", "user prompt")));
     verify(jdbc)
         .update(
             anyString(),
@@ -33,7 +35,9 @@ class JdbcAssistantTurnStoreTelemetryTest {
             eq(42L),
             eq(11L),
             eq(7L),
-            eq("COMPLETED"));
+            eq("COMPLETED"),
+            eq("system prompt"),
+            eq("user prompt"));
   }
 
   @Test

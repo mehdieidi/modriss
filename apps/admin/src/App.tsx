@@ -25,6 +25,7 @@ import { CvsEditorView } from "./CvsEditor";
 import {
   AdminMe,
   AssistantTurnSummary,
+  AssistantProviderCallPrompt,
   AuditEvent,
   JobSummary,
   LandingPageVisit,
@@ -570,6 +571,28 @@ function AssistantView(props: {
   refresh: () => Promise<void>;
   onError: (err: unknown) => void;
 }) {
+  const [promptTurn, setPromptTurn] = useState<AssistantTurnSummary | null>(null);
+  const [providerCalls, setProviderCalls] = useState<AssistantProviderCallPrompt[]>([]);
+  const [loadingPrompts, setLoadingPrompts] = useState(false);
+
+  async function showPrompts(turn: AssistantTurnSummary) {
+    setPromptTurn(turn);
+    setProviderCalls([]);
+    setLoadingPrompts(true);
+    try {
+      setProviderCalls(
+        await api<AssistantProviderCallPrompt[]>(
+          `/api/admin/assistant/turns/${turn.id}/provider-calls`,
+          props.token,
+        ),
+      );
+    } catch (err) {
+      props.onError(err);
+    } finally {
+      setLoadingPrompts(false);
+    }
+  }
+
   async function cancel(id: string) {
     try {
       await api<void>(`/api/admin/assistant/turns/${id}/cancel`, props.token, {
@@ -593,15 +616,25 @@ function AssistantView(props: {
         turn.providerCalls,
         turn.promptTokens + turn.completionTokens,
         formatDate(turn.acceptedAt),
-        props.canOperate && ["QUEUED", "RUNNING"].includes(turn.state) ? (
-          <button className="danger" onClick={() => cancel(turn.id)} key="cancel">
-            Cancel
-          </button>
-        ) : (
-          "-"
-        ),
+        <div className="row-actions" key="actions">
+          <button onClick={() => void showPrompts(turn)}>View prompts</button>
+          {props.canOperate && ["QUEUED", "RUNNING"].includes(turn.state) && (
+            <button className="danger" onClick={() => cancel(turn.id)}>
+              Cancel
+            </button>
+          )}
+        </div>,
       ])}
-    />
+    >
+      {promptTurn && (
+        <PromptModal
+          turn={promptTurn}
+          providerCalls={providerCalls}
+          loading={loadingPrompts}
+          onClose={() => setPromptTurn(null)}
+        />
+      )}
+    </Table>
   );
 }
 
@@ -1012,7 +1045,15 @@ function themeProfileState(profile: ThemeProfile) {
   return profile.builtIn ? "Built-in" : "Custom";
 }
 
-function Table({ headers, rows }: { headers: string[]; rows: Array<Array<ReactNode>> }) {
+function Table({
+  headers,
+  rows,
+  children,
+}: {
+  headers: string[];
+  rows: Array<Array<ReactNode>>;
+  children?: ReactNode;
+}) {
   return (
     <section className="panel table-panel">
       <div className="table-scroll">
@@ -1043,7 +1084,70 @@ function Table({ headers, rows }: { headers: string[]; rows: Array<Array<ReactNo
           </tbody>
         </table>
       </div>
+      {children}
     </section>
+  );
+}
+
+function PromptModal({
+  turn,
+  providerCalls,
+  loading,
+  onClose,
+}: {
+  turn: AssistantTurnSummary;
+  providerCalls: AssistantProviderCallPrompt[];
+  loading: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
+      <section
+        className="prompt-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="provider-prompts-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="modal-heading">
+          <div>
+            <h2 id="provider-prompts-title">Provider prompts</h2>
+            <p>{turn.id}</p>
+          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Close provider prompts">
+            Close
+          </button>
+        </div>
+        {loading ? (
+          <p className="muted">Loading prompts…</p>
+        ) : providerCalls.length === 0 ? (
+          <p className="muted">No provider calls were recorded for this turn.</p>
+        ) : (
+          <div className="provider-prompt-list">
+            {providerCalls.map((call, index) => (
+              <article className="provider-prompt" key={call.id}>
+                <header>
+                  <strong>Call {index + 1}</strong>
+                  <span>
+                    {call.provider || "Unknown provider"} / {call.model || "Unknown model"} · {formatDate(call.startedAt)}
+                  </span>
+                </header>
+                {call.systemPrompt === null && call.userPrompt === null ? (
+                  <p className="muted">Prompt content was not retained for this historical call.</p>
+                ) : (
+                  <>
+                    <h3>System prompt</h3>
+                    <pre>{call.systemPrompt || ""}</pre>
+                    <h3>User prompt</h3>
+                    <pre>{call.userPrompt || ""}</pre>
+                  </>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 

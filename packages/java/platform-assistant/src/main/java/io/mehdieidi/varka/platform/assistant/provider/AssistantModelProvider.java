@@ -85,9 +85,19 @@ public interface AssistantModelProvider {
    * @param provider provider key
    * @param model model name
    */
-  record AssistantReply(String content, String provider, String model, TokenUsage usage) {
+  record AssistantReply(
+      String content,
+      String provider,
+      String model,
+      TokenUsage usage,
+      String systemPrompt,
+      String userPrompt) {
+    public AssistantReply(String content, String provider, String model, TokenUsage usage) {
+      this(content, provider, model, usage, null, null);
+    }
+
     public AssistantReply(String content, String provider, String model) {
-      this(content, provider, model, TokenUsage.unavailable());
+      this(content, provider, model, TokenUsage.unavailable(), null, null);
     }
   }
 

@@ -97,6 +97,32 @@ class JdbcAssistantTurnStorePostgresIntegrationTest {
   }
 
   @Test
+  void persistsSourceBlueprintAndSliceCursorForAContinuation() throws Exception {
+    AssistantTurn parent = turn("turn-blueprint-parent");
+    AssistantTurn child = turn("turn-blueprint-child");
+    turns.create(parent);
+    turns.create(child);
+    turns.linkContinuation(parent.id(), child.id());
+    var blueprint =
+        new ObjectMapper()
+            .readTree(
+                """
+                {"domain":"Commerce","slices":[
+                  {"focus":"Order intake","sourceUnitIds":["src-1"]},
+                  {"focus":"Fulfilment","sourceUnitIds":["src-2"]}
+                ]}
+                """);
+
+    turns.saveSourceBlueprint(parent.id(), blueprint, 1);
+    var saved = turns.sourceBlueprint(parent.id()).orElseThrow();
+    turns.saveSourceBlueprint(child.id(), saved.blueprint(), saved.nextSlice());
+
+    assertEquals(1, saved.nextSlice());
+    assertEquals("Commerce", saved.blueprint().path("domain").asText());
+    assertEquals(1, turns.sourceBlueprint(child.id()).orElseThrow().nextSlice());
+  }
+
+  @Test
   void cancellationCancelsQueuedTurnsInTheContinuationTree() {
     AssistantTurn parent = turn("turn-cancel-parent");
     AssistantTurn child = turn("turn-cancel-child");

@@ -94,6 +94,15 @@ export type AssistantTurnSummary = {
   completedAt: string | null;
 };
 
+export type AssistantProviderCallPrompt = {
+  id: number;
+  provider: string | null;
+  model: string | null;
+  startedAt: string;
+  systemPrompt: string | null;
+  userPrompt: string | null;
+};
+
 export type AuditEvent = {
   id: string;
   actorId: string | null;

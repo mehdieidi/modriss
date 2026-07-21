@@ -209,6 +209,25 @@ ORDER BY p.updated_at DESC
                 instant(rs, "completed_at")));
   }
 
+  public List<AssistantProviderCallPrompt> assistantProviderCallPrompts(String turnId) {
+    return jdbc.query(
+        """
+        SELECT id, provider, model, started_at, system_prompt, user_prompt
+        FROM assistant_provider_calls
+        WHERE turn_id = ?
+        ORDER BY id
+        """,
+        (rs, row) ->
+            new AssistantProviderCallPrompt(
+                rs.getLong("id"),
+                rs.getString("provider"),
+                rs.getString("model"),
+                instant(rs, "started_at"),
+                rs.getString("system_prompt"),
+                rs.getString("user_prompt")),
+        turnId);
+  }
+
   public List<AuditEvent> auditEvents() {
     return jdbc.query(
         """
@@ -413,6 +432,14 @@ ORDER BY p.updated_at DESC
       Instant acceptedAt,
       Instant startedAt,
       Instant completedAt) {}
+
+  public record AssistantProviderCallPrompt(
+      long id,
+      String provider,
+      String model,
+      Instant startedAt,
+      String systemPrompt,
+      String userPrompt) {}
 
   public record AuditEvent(
       String id,

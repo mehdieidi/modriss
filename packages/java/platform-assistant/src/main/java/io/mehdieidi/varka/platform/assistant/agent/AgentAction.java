@@ -11,6 +11,7 @@ public record AgentAction(Kind tool, JsonNode arguments) {
   /** The only tools visible to a provider. */
   public enum Kind {
     COMMIT_MODEL_BATCH("commit_model_batch"),
+    PLAN_SOURCE_MODEL("plan_source_model"),
     INSPECT_MODEL("inspect_model"),
     DESCRIBE_TYPES("describe_types"),
     ANSWER_USER("answer_user"),

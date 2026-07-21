@@ -27,6 +27,41 @@ import tools.jackson.databind.ObjectMapper;
 
 class AgentTurnLoopTest {
   @Test
+  void createsValidatedSourceBlueprintBeforeModelApplication() throws Exception {
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(any(), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            new SourcePlanProvider(),
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            3,
+            3);
+    var json =
+        new ObjectMapper()
+            .readTree("{\"id\":\"root\",\"eClass\":\"CIMModel\",\"modelLevel\":\"CIM\"}");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+
+    var result =
+        loop.run(
+            "s",
+            ModelLevel.CIM,
+            "Create a CIM",
+            "<source-unit id=\"src-1\">Order placed</source-unit>",
+            workspace);
+
+    assertTrue(result.sourceBlueprint() != null);
+    assertEquals("Commerce", result.sourceBlueprint().path("domain").asText());
+    assertEquals(1, result.sourceBlueprint().path("slices").size());
+  }
+
+  @Test
   void executesTerminalStructuredActionWithinBudget() throws Exception {
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(any(), any()))
@@ -278,6 +313,25 @@ class AgentTurnLoopTest {
       ProviderCallBudget.consume(prompt.role());
       return new AssistantReply(
           "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"Done\"}}", "fake", "fake");
+    }
+  }
+
+  private static final class SourcePlanProvider implements AssistantModelProvider {
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    public boolean available() {
+      return true;
+    }
+
+    public AssistantReply complete(AssistantPrompt prompt) {
+      ProviderCallBudget.consume(prompt.role());
+      return new AssistantReply(
+          "{\"tool\":\"plan_source_model\",\"arguments\":{\"domain\":\"Commerce\",\"slices\":[{\"focus\":\"Order"
+              + " intake\",\"sourceUnitIds\":[\"src-1\"]}]}}",
+          "fake",
+          "fake");
     }
   }
 

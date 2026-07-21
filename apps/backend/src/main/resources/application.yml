@@ -73,7 +73,7 @@ varka:
   ai:
     enabled: ${VARKA_AI_ENABLED:false}
     provider: ${VARKA_AI_PROVIDER:openai}
-    request-timeout: ${VARKA_AI_REQUEST_TIMEOUT:90s}
+    request-timeout: ${VARKA_AI_REQUEST_TIMEOUT:60s}
     turn-timeout: ${VARKA_AI_TURN_TIMEOUT:5m}
     max-agent-steps: ${VARKA_AI_MAX_AGENT_STEPS:4}
     token-budget: ${VARKA_AI_TOKEN_BUDGET:16000}
@@ -82,8 +82,8 @@ varka:
     max-source-chunk-tokens: ${VARKA_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
     max-source-chunks-per-turn: ${VARKA_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
     max-provider-calls-per-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN:2}
-    max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:4}
-    source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:5m}
+    max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:3}
+    source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:2m}
     max-automatic-slices: ${VARKA_AI_MAX_AUTOMATIC_SLICES:12}
     fallback-provider: ${VARKA_AI_FALLBACK_PROVIDER:}
     hardening:

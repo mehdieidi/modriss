@@ -494,6 +494,14 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
             const event = JSON.parse(raw);
             if (eventName === "turn.stage") {
               updateThinkingStatus(event?.payload?.stage || "Assistant is working.", "PLANNING");
+            } else if (eventName === "source.blueprint.saved") {
+              const slices = Number(event?.payload?.slices) || 0;
+              updateThinkingStatus(
+                slices
+                  ? `Source map prepared with ${slices} model slice${slices === 1 ? "" : "s"}.`
+                  : "Source map prepared; applying the first model slice.",
+                "PLANNING",
+              );
             } else if (eventName === "model.checkpoint") {
               updateThinkingStatus("Model checkpoint saved.", "APPLYING");
               if (event?.payload?.modelId) {
@@ -610,6 +618,7 @@ function appendDurableTurnActions(turn, typeKey) {
   ) {
     return;
   }
+  appendDurableTurnSummary(turn);
   const actions = document.createElement("div");
   actions.className = "chat-proposal-actions";
   const runFollowUp = async (path) => {
@@ -634,6 +643,12 @@ function appendDurableTurnActions(turn, typeKey) {
     }
   };
   if (stateName === "PARTIAL") {
+    // A continuation cannot improve a turn that never produced durable model work; it merely
+    // repeats the same failed provider interaction.
+    if ((Number(turn?.checkpointCount) || 0) <= 0 && (Number(turn?.savedElementCount) || 0) <= 0) {
+      if (actions.childElementCount) el.chatMessages.appendChild(actions);
+      return;
+    }
     const continueButton = document.createElement("button");
     continueButton.type = "button";
     continueButton.className = "chat-proposal-btn";
@@ -671,6 +686,50 @@ function appendDurableTurnActions(turn, typeKey) {
     actions.appendChild(undoButton);
   }
   if (actions.childElementCount) el.chatMessages.appendChild(actions);
+}
+
+function appendDurableTurnSummary(turn) {
+  if (
+    !turn?.turnId ||
+    el.chatMessages.querySelector(`[data-chat-turn-summary="${CSS.escape(turn.turnId)}"]`)
+  ) {
+    return;
+  }
+  const saved = Number(turn.savedElementCount) || 0;
+  const checkpoints = Number(turn.checkpointCount) || 0;
+  const coverage = Number(turn.coveragePercent);
+  const remaining = String(turn.remainingWork || "").trim();
+  if (!saved && !checkpoints && !remaining && !Number.isFinite(coverage)) return;
+
+  const card = document.createElement("div");
+  card.className = "chat-msg assistant";
+  card.dataset.chatKind = "turn-summary";
+  card.dataset.chatTurnSummary = turn.turnId;
+  const bubble = document.createElement("div");
+  bubble.className = "chat-msg-bubble chat-proposal-card";
+  const title = document.createElement("div");
+  title.className = "chat-proposal-title";
+  title.textContent = checkpoints ? "Saved model progress" : "Modeling progress";
+  bubble.appendChild(title);
+  const facts = [];
+  if (saved) facts.push(`${saved} element${saved === 1 ? "" : "s"} saved`);
+  if (checkpoints) facts.push(`${checkpoints} checkpoint${checkpoints === 1 ? "" : "s"}`);
+  if (Number.isFinite(coverage)) facts.push(`${coverage}% source coverage`);
+  if (facts.length) {
+    const detail = document.createElement("p");
+    detail.className = "chat-proposal-intro";
+    detail.textContent = facts.join(" · ");
+    bubble.appendChild(detail);
+  }
+  if (remaining) {
+    const next = document.createElement("div");
+    next.className = "chat-proposal-meta";
+    next.textContent = `Next: ${remaining}`;
+    bubble.appendChild(next);
+  }
+  card.appendChild(bubble);
+  el.chatMessages.appendChild(card);
+  scrollChatToBottom();
 }
 
 function updateChatComposerActionButton() {

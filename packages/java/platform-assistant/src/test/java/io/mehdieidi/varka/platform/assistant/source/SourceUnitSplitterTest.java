@@ -28,4 +28,14 @@ class SourceUnitSplitterTest {
 
     assertEquals(annotated, workers.extract("session-1", annotated));
   }
+
+  @Test
+  void retainsAnOrdinaryDocumentAsOneSemanticUnit() {
+    String source = "# User stories\n\n" + "As a customer I place an order.\n\n".repeat(20);
+
+    var units = new SourceUnitSplitter(6000).split(source);
+
+    assertEquals(1, units.size());
+    assertEquals(source, units.get(0).content());
+  }
 }

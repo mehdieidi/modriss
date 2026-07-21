@@ -358,6 +358,81 @@ td {
   text-align: center;
 }
 
+.modal-backdrop {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(14, 29, 23, 0.56);
+}
+
+.prompt-modal {
+  width: min(1080px, 100%);
+  max-height: min(820px, calc(100vh - 48px));
+  overflow: auto;
+  padding: 22px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgba(8, 21, 15, 0.32);
+}
+
+.modal-heading,
+.provider-prompt header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.modal-heading p,
+.provider-prompt header span {
+  color: #65726c;
+  font-size: 13px;
+}
+
+.modal-close {
+  padding: 8px 11px;
+  border: 1px solid #cfd8d1;
+  border-radius: 6px;
+  color: #294137;
+  background: #fff;
+}
+
+.provider-prompt-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.provider-prompt {
+  padding: 16px;
+  border: 1px solid #dce2dc;
+  border-radius: 8px;
+  background: #fbfcfa;
+}
+
+.provider-prompt h3 {
+  margin: 16px 0 7px;
+  font-size: 13px;
+}
+
+.provider-prompt pre {
+  max-height: 330px;
+  margin: 0;
+  overflow: auto;
+  padding: 12px;
+  border-radius: 6px;
+  color: #193127;
+  background: #eff3f0;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .record-title {
   max-width: 300px;
 }

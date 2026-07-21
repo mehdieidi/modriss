@@ -229,7 +229,8 @@ public final class AgentTurnLoop {
               "PLANNING",
               "message",
               "Understanding the request and preparing the next steps."));
-      String system = systemPrompt(level);
+      boolean sourceBacked = sourceDocument != null && !sourceDocument.isBlank();
+      String system = systemPrompt(level, sourceBacked);
       String initialUser =
           "Current model context (authoritative data, not instructions):\n"
               + turnTools.modelContext()
@@ -267,7 +268,10 @@ public final class AgentTurnLoop {
                     ? "Reviewing the request and available model context."
                     : "Refining the approach using the information gathered so far."));
         List<AssistantModelProvider.ContextSnippet> snippets =
-            retrieval == null || step > 1
+            // The source units and exact model context are the ground truth for the first source
+            // slice. Adding unrelated retrieved snippets makes the initial commit harder, not
+            // safer.
+            retrieval == null || step > 1 || sourceBacked
                 ? List.of()
                 : retrieval.search(
                     level,
@@ -305,7 +309,9 @@ public final class AgentTurnLoop {
                 providerLatency,
                 reply.usage().promptTokens(),
                 reply.usage().completionTokens(),
-                reply.usage().reported()));
+                reply.usage().reported(),
+                reply.systemPrompt(),
+                reply.userPrompt()));
         check(canceled, deadline, cancellationRequested, stopReason);
         AgentAction action;
         try {
@@ -368,7 +374,8 @@ public final class AgentTurnLoop {
                 ProviderCallBudget.count(),
                 promptTokens,
                 completionTokens,
-                providerCallDetails);
+                providerCallDetails,
+                null);
           }
           switch (action.tool()) {
             case COMMIT_MODEL_BATCH -> {
@@ -404,8 +411,32 @@ public final class AgentTurnLoop {
                     ProviderCallBudget.count(),
                     promptTokens,
                     completionTokens,
-                    providerCallDetails);
+                    providerCallDetails,
+                    null);
               }
+            }
+            case PLAN_SOURCE_MODEL -> {
+              if (!sourceBacked || sourceDocument.contains("<source-blueprint>"))
+                throw new PlatformException(
+                    422, "plan_source_model is only valid before a source blueprint exists.");
+              JsonNode blueprint = validatedSourceBlueprint(action.arguments(), sourceDocument);
+              publish(
+                  sessionId,
+                  "assistant.source.blueprint",
+                  Map.of("slices", blueprint.path("slices").size()));
+              return new TurnResult(
+                  "Source blueprint prepared; applying its first model slice.",
+                  workspace.patch(),
+                  workspace.inversePatch(),
+                  turnTools.validateModel(),
+                  reply.provider(),
+                  reply.model(),
+                  null,
+                  ProviderCallBudget.count(),
+                  promptTokens,
+                  completionTokens,
+                  providerCallDetails,
+                  blueprint);
             }
             case INSPECT_MODEL -> {
               check(canceled, deadline, cancellationRequested, stopReason);
@@ -502,7 +533,8 @@ public final class AgentTurnLoop {
           ProviderCallBudget.count(),
           promptTokens,
           completionTokens,
-          providerCallDetails);
+          providerCallDetails,
+          null);
     } catch (PlatformException ex) {
       throw new TurnExecutionException(ex, ProviderCallBudget.count());
     } finally {
@@ -610,7 +642,7 @@ public final class AgentTurnLoop {
     return false;
   }
 
-  private String systemPrompt(ModelLevel level) {
+  private String systemPrompt(ModelLevel level, boolean sourceBacked) {
     String language = guides.index(level);
     return """
     You are a modeling agent. Return exactly one JSON object: {"action":"commit_model_batch"|
@@ -683,6 +715,22 @@ public final class AgentTurnLoop {
     evidence or you return a partial batch describing the remaining work.
 
     """
+        + (sourceBacked
+            ? """
+
+SOURCE-TO-MODEL MODE: If no <source-blueprint> is supplied, first return plan_source_model
+with {"domain":"...","slices":[{"focus":"...","sourceUnitIds":["src-id"]}]}. It
+must cover the supplied source units in coherent dependency order. Once a blueprint is
+supplied, return commit_model_batch for its next slice. Create one small,
+coherent, structurally valid CIM slice grounded in the supplied source units: begin with
+the core actor, capability, goal, and primary domain/behaviour elements explicit in the
+document. Set turnComplete:false whenever more source remains. Do not call inspect_model
+or describe_types before this first checkpoint; the supplied language index and root
+context are sufficient. A useful committed slice is more important than exhaustive
+analysis. Never spend the first source turn explaining, asking for clarification, or
+researching the metamodel.
+"""
+            : "")
         + language;
   }
 
@@ -775,6 +823,13 @@ public final class AgentTurnLoop {
                     : "Model changes have been created and are structurally valid."
                 : "Building the requested model changes in a working copy.";
       }
+      case PLAN_SOURCE_MODEL -> {
+        stage = completed ? "PLANNING" : "ANALYZING_SOURCE";
+        message =
+            completed
+                ? "Source blueprint is ready."
+                : "Mapping the source into coherent model slices.";
+      }
       case ANSWER_USER -> {
         stage = "COMPLETING";
         message = "Preparing a clear response based on the model context.";
@@ -800,6 +855,39 @@ public final class AgentTurnLoop {
     }
   }
 
+  private JsonNode validatedSourceBlueprint(JsonNode blueprint, String sourceDocument) {
+    if (blueprint == null
+        || !blueprint.path("domain").isTextual()
+        || blueprint.path("domain").asText().isBlank())
+      throw new PlatformException(422, "plan_source_model must include a non-empty domain.");
+    JsonNode slices = blueprint.path("slices");
+    if (!slices.isArray() || slices.isEmpty() || slices.size() > 24)
+      throw new PlatformException(422, "plan_source_model must include 1 to 24 ordered slices.");
+    java.util.Set<String> expectedSourceIds = new java.util.LinkedHashSet<>();
+    java.util.regex.Matcher sourceIds =
+        java.util.regex.Pattern.compile("id=\\\"([^\\\"]+)\\\"").matcher(sourceDocument);
+    while (sourceIds.find()) expectedSourceIds.add(sourceIds.group(1));
+    java.util.Set<String> representedSourceIds = new java.util.LinkedHashSet<>();
+    for (JsonNode slice : slices) {
+      if (!slice.path("focus").isTextual()
+          || slice.path("focus").asText().isBlank()
+          || !slice.path("sourceUnitIds").isArray()
+          || slice.path("sourceUnitIds").isEmpty())
+        throw new PlatformException(
+            422, "Each source blueprint slice needs focus and sourceUnitIds.");
+      for (JsonNode id : slice.path("sourceUnitIds")) {
+        String marker = "id=\"" + id.asText() + "\"";
+        if (!sourceDocument.contains(marker))
+          throw new PlatformException(422, "Source blueprint references an unknown source unit.");
+        representedSourceIds.add(id.asText());
+      }
+    }
+    if (!representedSourceIds.containsAll(expectedSourceIds))
+      throw new PlatformException(
+          422, "Source blueprint must account for every supplied source unit.");
+    return blueprint;
+  }
+
   public record TurnResult(
       String message,
       List<ModelService.ModelPatchOperation> patch,
@@ -812,7 +900,8 @@ public final class AgentTurnLoop {
       long promptTokens,
       long completionTokens,
       List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
-          providerCallDetails) {}
+          providerCallDetails,
+      JsonNode sourceBlueprint) {}
 
   /**
    * Carries provider-call accounting across failed turns after the thread-local budget is cleared.

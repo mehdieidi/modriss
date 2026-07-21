@@ -80,7 +80,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
         hardening.providerCall(prompt.role(), providerKey, model, () -> callModel(prompt, model));
     String content = response.getResult().getOutput().getText();
     logResponse(prompt.role(), model, content, providerCallId, providerStarted);
-    return new AssistantReply(content == null ? "" : content, providerKey, model, usage(response));
+    return reply(content, model, response, prompt);
   }
 
   @Override
@@ -95,7 +95,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
         hardening.providerCall(prompt.role(), providerKey, model, () -> callModel(prompt, model));
     String content = response.getResult().getOutput().getText();
     logResponse(prompt.role(), model, content, providerCallId, providerStarted);
-    return new AssistantReply(content == null ? "" : content, providerKey, model, usage(response));
+    return reply(content, model, response, prompt);
   }
 
   @Override
@@ -110,7 +110,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
         hardening.providerCall(prompt.role(), providerKey, model, () -> callModel(prompt, model));
     String content = response.getResult().getOutput().getText();
     logResponse(prompt.role(), model, content, providerCallId, providerStarted);
-    return new AssistantReply(content == null ? "" : content, providerKey, model, usage(response));
+    return reply(content, model, response, prompt);
   }
 
   protected abstract String baseUrl();
@@ -164,6 +164,20 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     Integer completion = usage.getCompletionTokens();
     return new TokenUsage(
         prompt == null ? -1 : prompt.longValue(), completion == null ? -1 : completion.longValue());
+  }
+
+  private AssistantReply reply(
+      String content,
+      String model,
+      org.springframework.ai.chat.model.ChatResponse response,
+      AssistantPrompt prompt) {
+    return new AssistantReply(
+        content == null ? "" : content,
+        providerKey,
+        model,
+        usage(response),
+        SYSTEM_GUARDRAIL + "\n" + prompt.system(),
+        userWithContext(prompt));
   }
 
   private String userWithContext(AssistantPrompt prompt) {

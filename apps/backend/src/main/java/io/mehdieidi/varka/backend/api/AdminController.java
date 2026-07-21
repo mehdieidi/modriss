@@ -284,6 +284,13 @@ public class AdminController {
     return queries.assistantTurns();
   }
 
+  @GetMapping("/assistant/turns/{id}/provider-calls")
+  List<AdminQueryService.AssistantProviderCallPrompt> assistantProviderCallPrompts(
+      @RequestHeader("X-Auth-Token") String token, @PathVariable String id) {
+    access.requireAdmin(auth.user(token));
+    return queries.assistantProviderCallPrompts(id);
+  }
+
   @PostMapping("/assistant/turns/{id}/cancel")
   ResponseEntity<Void> cancelAssistantTurn(
       @RequestHeader("X-Auth-Token") String token,
