@@ -206,7 +206,7 @@ class AssistantPatchCompilerTest {
   }
 
   @Test
-  void appendsVisualElementsToGraphWhenSavedModelHasNoDiagram() throws Exception {
+  void rejectsGraphProjectionWhenCreateHasNoExplicitOwner() throws Exception {
     var model =
         mapper.readTree(
             """
@@ -223,16 +223,13 @@ class AssistantPatchCompilerTest {
                     null,
                     null)));
 
-    AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
-    var preview = compiler.apply(model, compiled);
-
-    assertEquals("/services/-", compiled.patch().get(0).path());
-    assertEquals("/graph/elements/-", compiled.patch().get(1).path());
-    assertEquals("Orders", preview.at("/graph/elements/0/name").asText());
+    assertThrows(
+        io.mehdieidi.varka.platform.kernel.PlatformException.class,
+        () -> compiler.compile(model, patch));
   }
 
   @Test
-  void placesUnownedWorkflowInTheOnlyExistingCompatibleService() throws Exception {
+  void rejectsWorkflowWhenCompatibleOwnerWasNotExplicitlySelected() throws Exception {
     var model =
         mapper.readTree(
             """
@@ -253,15 +250,13 @@ class AssistantPatchCompilerTest {
                     null,
                     null)));
 
-    var preview = compiler.apply(model, compiler.compile(model, patch));
-
-    assertEquals("order-workflow", preview.at("/services/0/workflows/0/id").asText());
-    assertEquals(1, preview.path("services").size());
-    assertEquals(2, preview.path("graph").path("elements").size());
+    assertThrows(
+        io.mehdieidi.varka.platform.kernel.PlatformException.class,
+        () -> compiler.compile(model, patch));
   }
 
   @Test
-  void createsDiagramContainerBeforeAppendingVisualElements() throws Exception {
+  void rejectsDiagramProjectionWhenCreateHasNoExplicitOwner() throws Exception {
     var model =
         mapper.readTree(
             """
@@ -278,17 +273,13 @@ class AssistantPatchCompilerTest {
                     null,
                     null)));
 
-    AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
-    var preview = compiler.apply(model, compiled);
-
-    assertEquals("/diagram", compiled.patch().get(0).path());
-    assertEquals("/services/-", compiled.patch().get(1).path());
-    assertEquals("/diagram/elements/-", compiled.patch().get(2).path());
-    assertEquals("Orders", preview.at("/diagram/elements/0/name").asText());
+    assertThrows(
+        io.mehdieidi.varka.platform.kernel.PlatformException.class,
+        () -> compiler.compile(model, patch));
   }
 
   @Test
-  void createsMissingDiagramElementArrayBeforeAppendingVisualElements() throws Exception {
+  void rejectsDiagramElementProjectionWhenCreateHasNoExplicitOwner() throws Exception {
     var model =
         mapper.readTree(
             """
@@ -305,14 +296,9 @@ class AssistantPatchCompilerTest {
                     null,
                     null)));
 
-    AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
-    var preview = compiler.apply(model, compiled);
-
-    assertEquals("/diagram/elements", compiled.patch().get(0).path());
-    assertEquals("/diagram/relationships", compiled.patch().get(1).path());
-    assertEquals("/services/-", compiled.patch().get(2).path());
-    assertEquals("/diagram/elements/-", compiled.patch().get(3).path());
-    assertEquals("Orders", preview.at("/diagram/elements/0/name").asText());
+    assertThrows(
+        io.mehdieidi.varka.platform.kernel.PlatformException.class,
+        () -> compiler.compile(model, patch));
   }
 
   @Test
@@ -344,7 +330,7 @@ class AssistantPatchCompilerTest {
   }
 
   @Test
-  void protectsBackendOwnedIdentityFromPlannerAttributes() throws Exception {
+  void rejectsBackendOwnedIdentityAttributesWithoutSalvagingTheCreate() throws Exception {
     var model =
         mapper.readTree(
             """
@@ -362,10 +348,9 @@ class AssistantPatchCompilerTest {
                     null,
                     null)));
 
-    var preview = compiler.apply(model, compiler.compile(model, patch));
-
-    assertEquals("function-1", preview.at("/services/0/functions/0/id").asText());
-    assertEquals("Function", preview.at("/services/0/functions/0/eClass").asText());
+    assertThrows(
+        io.mehdieidi.varka.platform.kernel.PlatformException.class,
+        () -> compiler.compile(model, patch));
   }
 
   @Test
@@ -373,7 +358,7 @@ class AssistantPatchCompilerTest {
     var starter =
         mapper.readTree(
             """
-            {"eClass":"PIMModel","modelLevel":"PIM","policies":[],
+            {"id":"pim-root","eClass":"PIMModel","modelLevel":"PIM","policies":[],
              "diagram":{"elements":[],"relationships":[]},
              "graph":{"elements":[],"relationships":[]}}
             """);
@@ -385,9 +370,9 @@ class AssistantPatchCompilerTest {
                     "order-idempotency",
                     "IdempotencyPolicy",
                     mapper.readTree(
-                        "{\"displayName\":\"Order Idempotency\",\"keySource\":\"request header\"}"),
-                    null,
-                    null)));
+                        "{\"name\":\"Order Idempotency\",\"keySource\":\"request header\"}"),
+                    "pim-root",
+                    "policies")));
 
     AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(starter, patch);
     var persisted = compiler.apply(starter, compiled);
@@ -503,7 +488,7 @@ class AssistantPatchCompilerTest {
   }
 
   @Test
-  void createsMissingContainmentCollectionUnderNewCanonicalizedOwner() throws Exception {
+  void rejectsNewChildWhenItsParentWasNotExplicitlyContained() throws Exception {
     var model =
         mapper.readTree(
             """
@@ -531,17 +516,13 @@ class AssistantPatchCompilerTest {
                     "api-1",
                     "routes")));
 
-    AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
-    var preview = compiler.apply(model, compiled);
-
-    assertEquals("/services/0/apis", compiled.patch().get(1).path());
-    assertEquals("Api", preview.at("/services/0/apis/0/eClass").asText());
-    assertEquals("/services/0/apis/0/routes", compiled.patch().get(3).path());
-    assertEquals("resource-1", preview.at("/services/0/apis/0/routes/0/id").asText());
+    assertThrows(
+        io.mehdieidi.varka.platform.kernel.PlatformException.class,
+        () -> compiler.compile(model, patch));
   }
 
   @Test
-  void routesStarterRootOwnedElementThroughKnownSemanticCollection() throws Exception {
+  void rejectsRootPlacementWhenItsContainmentFeatureWasNotExplicitlySelected() throws Exception {
     var model =
         mapper.readTree(
             """
@@ -562,10 +543,27 @@ class AssistantPatchCompilerTest {
                     null,
                     null)));
 
-    AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
-    var preview = compiler.apply(model, compiled);
+    assertThrows(
+        io.mehdieidi.varka.platform.kernel.PlatformException.class,
+        () -> compiler.compile(model, patch));
+  }
 
-    assertEquals("/services/0/stores", compiled.patch().get(1).path());
-    assertEquals("store-1", preview.at("/services/0/stores/0/id").asText());
+  @Test
+  void rejectsCreateWithoutExplicitOwnerAndContainment() throws Exception {
+    var model = mapper.readTree("{\"id\":\"root\",\"eClass\":\"PIMModel\",\"modelLevel\":\"PIM\"}");
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "service-1",
+                    "ServerlessService",
+                    mapper.readTree("{\"name\":\"Orders\"}"),
+                    null,
+                    null)));
+
+    assertThrows(
+        io.mehdieidi.varka.platform.kernel.PlatformException.class,
+        () -> compiler.compile(model, patch));
   }
 }

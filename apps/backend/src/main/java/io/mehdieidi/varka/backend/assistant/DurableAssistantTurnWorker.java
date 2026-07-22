@@ -3,9 +3,9 @@ package io.mehdieidi.varka.backend.assistant;
 import io.mehdieidi.varka.backend.observability.VarkaMetrics;
 import io.mehdieidi.varka.platform.assistant.agent.AgentTurnLoop;
 import io.mehdieidi.varka.platform.assistant.application.AgenticAssistantFacade;
-import io.mehdieidi.varka.platform.assistant.source.RequirementCoverageEvaluator;
+import io.mehdieidi.varka.platform.assistant.source.SourceFactGraph;
 import io.mehdieidi.varka.platform.assistant.source.SourceUnitSplitter;
-import io.mehdieidi.varka.platform.assistant.spi.AssistantSettings;
+import io.mehdieidi.varka.platform.assistant.source.SourceWorkPlan;
 import io.mehdieidi.varka.platform.assistant.turn.AssistantTurn;
 import io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore;
 import io.mehdieidi.varka.platform.identity.domain.UserRecord;
@@ -14,11 +14,6 @@ import jakarta.annotation.PreDestroy;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.Locale;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
@@ -26,8 +21,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -37,21 +31,11 @@ public final class DurableAssistantTurnWorker {
   /** Server-written marker used only by the confirmation endpoint, never shown to providers. */
   public static final String CONFIRMED_DESTRUCTION_PREFIX = "[durable-confirmed-destruction] ";
 
-  public static final String AUTOMATIC_SLICE_MARKER = "[automatic-slice:";
-
-  /** A recovery retry repeats a slice; it must never become an unbounded second work loop. */
-  private static final String AUTOMATIC_RECOVERY_MARKER = "[automatic-recovery]";
-
-  private static final int MAX_AUTOMATIC_PROVIDER_RECOVERIES = 3;
-
-  private static final int SOURCE_UNITS_PER_SLICE = 6;
-  private static final Pattern REQUIREMENT_ID = Pattern.compile("(?i)\\bR[-_ ]?(\\d+)\\b");
-
   private final AssistantTurnStore turns;
   private final AgenticAssistantFacade assistant;
   private final PlatformStore store;
   private final VarkaMetrics metrics;
-  private final AssistantSettings settings;
+  private final boolean workflowEngineV2;
   private final String workerId = "assistant-" + UUID.randomUUID();
   // Documents up to 24k characters remain whole. Larger documents are segmented only at semantic
   // boundaries; each incremental slice also receives a map of the complete source below.
@@ -89,16 +73,19 @@ public final class DurableAssistantTurnWorker {
       AgenticAssistantFacade assistant,
       PlatformStore store,
       VarkaMetrics metrics,
-      AssistantSettings settings) {
+      @Value("${varka.ai.workflow-engine-v2:true}") boolean workflowEngineV2) {
     this.turns = turns;
     this.assistant = assistant;
     this.store = store;
     this.metrics = metrics;
-    this.settings = settings;
+    this.workflowEngineV2 = workflowEngineV2;
   }
 
   @Scheduled(fixedDelayString = "${varka.ai.worker-poll-interval:PT0.5S}")
   public void runOne() {
+    // The rollout switch deliberately prevents claiming new work while V2 is disabled. The
+    // automatic-slice executor has been removed, so falling back would be unsafe and misleading.
+    if (!workflowEngineV2) return;
     try {
       turns.expireTimedOut(Instant.now());
       if (!workerCapacity.tryAcquire()) return;
@@ -127,6 +114,20 @@ public final class DurableAssistantTurnWorker {
   }
 
   private void execute(AssistantTurn turn) {
+    turns
+        .workflow(turn.id())
+        .ifPresent(
+            workflow -> {
+              turns.saveWorkflow(
+                  new AssistantTurnStore.Workflow(
+                      workflow.turnId(),
+                      workflow.workflowKind(),
+                      "EXECUTING",
+                      workflow.currentWorkItemId(),
+                      workflow.plan()));
+              turns.appendEvent(
+                  turn.id(), "turn.work_item.started", java.util.Map.of("phase", "EXECUTING"));
+            });
     // Queue time is distinct from end-to-end turn duration; it reveals saturation before users
     // experience deadline failures.
     metrics.recordAssistantPhaseDuration(
@@ -146,6 +147,8 @@ public final class DurableAssistantTurnWorker {
       if (turn.sourceText() != null && !turn.sourceText().isBlank()) {
         units = sourceUnits.split(turn.sourceText());
         turns.saveSourceUnits(turn.id(), units);
+        if (turns.sourceFacts(turn.id()).isEmpty())
+          turns.saveSourceFacts(turn.id(), SourceFactGraph.fromSpans(units));
         java.util.List<AssistantTurnStore.SourceUnit> sourceUnitsForTurn = units;
         var blueprint = turns.sourceBlueprint(turn.id());
         java.util.List<AssistantTurnStore.SourceUnit> selected =
@@ -188,6 +191,25 @@ public final class DurableAssistantTurnWorker {
           destructiveConfirmed
               ? turn.message().substring(CONFIRMED_DESTRUCTION_PREFIX.length())
               : turn.message();
+      if (!turn.selectedElementIds().isEmpty()) {
+        message +=
+            "\n\nSelected canvas elements are focus context only: "
+                + String.join(", ", turn.selectedElementIds())
+                + ". Inspect these ids first, then inspect related ownership and references before"
+                + " editing.";
+      }
+      String checkpointKey = turn.id() + "-checkpoint-" + (turn.checkpointCount() + 1);
+      // Persist the intent before invoking code which can mutate the model. A restarted worker
+      // finalizes the same key, never creates a second canvas change.
+      turns.beginCheckpoint(
+          turn.id(),
+          turn.modelId(),
+          turn.revision() != null
+              ? turn.revision()
+              : turn.expectedRevision() == null ? 0L : turn.expectedRevision(),
+          checkpointKey,
+          "Checkpoint " + (turn.checkpointCount() + 1),
+          null);
       var result =
           assistant.durableMessage(
               user,
@@ -203,12 +225,20 @@ public final class DurableAssistantTurnWorker {
                       ? new io.mehdieidi.varka.platform.kernel.PlatformException(
                           504, "Assistant turn exceeded its configured deadline.")
                       : null);
+      turns.recordValidationAttempt(
+          new AssistantTurnStore.ValidationAttempt(turn.id(), null, 1, true, null, Instant.now()));
+      turns.appendEvent(turn.id(), "turn.validation.completed", java.util.Map.of("valid", true));
       if (!result.inversePatch().isEmpty()) {
-        turns.saveCheckpoint(turn.id(), result.modelId(), result.revision(), result.inversePatch());
+        turns.finalizeCheckpoint(
+            turn.id(),
+            checkpointKey,
+            result.revision(),
+            result.inversePatch(),
+            java.util.Map.of("valid", true));
         metrics.recordAssistantCheckpoint("saved");
         turns.appendEvent(
             turn.id(),
-            "model.checkpoint",
+            "model.checkpoint.committed",
             java.util.Map.of("modelId", result.modelId(), "revision", result.revision()));
         turns.audit(
             turn.id(),
@@ -217,10 +247,19 @@ public final class DurableAssistantTurnWorker {
       }
       if (result.sourceBlueprint() != null) {
         turns.saveSourceBlueprint(turn.id(), result.sourceBlueprint(), 0);
+        var plan = SourceWorkPlan.fromBlueprint(turn.id(), result.sourceBlueprint());
+        turns.saveWorkItems(turn.id(), plan);
+        turns.saveWorkflow(
+            new AssistantTurnStore.Workflow(
+                turn.id(),
+                "DOCUMENT_TO_CIM",
+                "PLANNED",
+                plan.isEmpty() ? null : plan.get(0).id(),
+                result.sourceBlueprint()));
         turns.appendEvent(
             turn.id(),
-            "source.blueprint.saved",
-            java.util.Map.of("slices", result.sourceBlueprint().path("slices").size()));
+            "turn.plan.ready",
+            java.util.Map.of("workItems", plan.size(), "sourceSpans", units.size()));
       }
       turns.setSavedElementCount(turn.id(), result.affectedElementIds().size());
       turns.setProviderCallCount(turn.id(), result.providerCalls());
@@ -253,8 +292,6 @@ public final class DurableAssistantTurnWorker {
                 .map(AssistantTurnStore.SourceUnit::id)
                 .collect(java.util.stream.Collectors.toSet());
         java.util.Set<String> accounted = new java.util.HashSet<>();
-        java.util.Set<String> expectedRequirements = requirementIds(turn.sourceText());
-        java.util.Set<String> representedRequirements = new java.util.HashSet<>();
         var batch = result.commandBatch();
         if (batch != null) {
           for (var evidence : batch.evidence()) {
@@ -267,13 +304,10 @@ public final class DurableAssistantTurnWorker {
               throw new io.mehdieidi.varka.platform.kernel.PlatformException(
                   422, "Evidence references an unknown source unit.");
             if (!"SOURCE_GROUNDED".equals(kind)) sourceUnitId = null;
-            String requirementId = normalizeRequirementId(evidence.requirementId());
-            if (requirementId != null
-                && !expectedRequirements.isEmpty()
-                && !expectedRequirements.contains(requirementId)) {
-              throw new io.mehdieidi.varka.platform.kernel.PlatformException(
-                  422, "Evidence references an unknown labelled requirement: " + requirementId);
-            }
+            String requirementId =
+                evidence.requirementId() == null || evidence.requirementId().isBlank()
+                    ? null
+                    : evidence.requirementId().trim();
             turns.saveProvenance(
                 turn.id(),
                 evidence.elementRef(),
@@ -282,45 +316,39 @@ public final class DurableAssistantTurnWorker {
                 kind,
                 evidence.assumption());
             if (sourceUnitId != null) {
+              String groundedSpanId = sourceUnitId;
               accounted.add(sourceUnitId);
               turns.markSourceUnit(
                   turn.id(),
                   sourceUnitId,
                   "MODELED",
                   "Referenced by committed element " + evidence.elementRef() + ".");
+              turns.sourceFacts(turn.id()).stream()
+                  .filter(
+                      fact -> groundedSpanId.equals(fact.payload().path("sourceSpanId").asText()))
+                  .findFirst()
+                  .ifPresent(
+                      fact ->
+                          turns.saveSourceFacts(
+                              turn.id(),
+                              java.util.List.of(
+                                  new AssistantTurnStore.SourceFact(
+                                      fact.id(),
+                                      fact.kind(),
+                                      "MODELED",
+                                      fact.payload(),
+                                      fact.assumption()))));
             }
-            if (requirementId != null) representedRequirements.add(requirementId);
           }
         }
-        var requirementScore =
-            RequirementCoverageEvaluator.score(expectedRequirements, representedRequirements);
-        int coverage =
-            expectedRequirements.isEmpty()
-                ? (units.isEmpty() ? 100 : (accounted.size() * 100 / units.size()))
-                : (int) Math.round(requirementScore.recall() * 100d);
+        int coverage = units.isEmpty() ? 100 : (accounted.size() * 100 / units.size());
         remainingWork =
-            !expectedRequirements.isEmpty()
-                ? (requirementScore.recall() >= 1d
-                    ? null
-                    : "Labelled requirements still need model evidence: "
-                        + requirementScore.falseNegatives()
-                        + ".")
-                : accounted.size() == units.size()
-                    ? null
-                    : "Source units still need explicit modeling evidence: "
-                        + (units.size() - accounted.size())
-                        + ".";
-        int completedSourceWindow =
-            Math.min(
-                units.size(), (automaticSliceCount(turn.message()) + 1) * SOURCE_UNITS_PER_SLICE);
-        if (expectedRequirements.isEmpty() && !units.isEmpty()) {
-          // Source-unit state is stored per durable turn. Earlier slices are already committed, so
-          // carry their completed windows into the user-visible aggregate coverage while still
-          // penalising any unit in this window that lacks explicit evidence.
-          int evidencedProgress =
-              Math.max(0, completedSourceWindow - selectedSourceUnitCount + accounted.size());
-          coverage = evidencedProgress * 100 / units.size();
-        }
+            accounted.size() == units.size()
+                ? null
+                : "Source spans still need explicit modeling evidence: "
+                    + (units.size() - accounted.size())
+                    + ".";
+        int completedSourceWindow = Math.min(units.size(), selectedSourceUnitCount);
         if (completedSourceWindow < units.size()) {
           String nextWindow =
               "Source units still queued for the next model slice: "
@@ -330,6 +358,11 @@ public final class DurableAssistantTurnWorker {
           if (state == AssistantTurn.State.SUCCEEDED) state = AssistantTurn.State.PARTIAL;
         }
         turns.setSourceCoverage(turn.id(), coverage, remainingWork);
+        turns.appendEvent(
+            turn.id(),
+            "turn.coverage.updated",
+            java.util.Map.of(
+                "coveragePercent", coverage, "unresolvedSpans", units.size() - accounted.size()));
         if (state == AssistantTurn.State.SUCCEEDED && remainingWork != null)
           state = AssistantTurn.State.PARTIAL;
         if (state != AssistantTurn.State.SUCCEEDED && state != AssistantTurn.State.PARTIAL)
@@ -340,12 +373,38 @@ public final class DurableAssistantTurnWorker {
           && result.sourceBlueprint() == null
           && sourceBlueprint.get().nextSlice() + 1
               < sourceBlueprint.get().blueprint().path("slices").size()) {
-        var next =
-            sourceBlueprint
-                .get()
-                .blueprint()
-                .path("slices")
-                .get(sourceBlueprint.get().nextSlice() + 1);
+        int completedSlice = sourceBlueprint.get().nextSlice();
+        int nextSlice = completedSlice + 1;
+        turns.saveSourceBlueprint(turn.id(), sourceBlueprint.get().blueprint(), nextSlice);
+        var workItems = turns.workItems(turn.id());
+        if (!workItems.isEmpty()) {
+          turns.saveWorkItems(
+              turn.id(),
+              workItems.stream()
+                  .map(
+                      item ->
+                          new AssistantTurnStore.WorkItem(
+                              item.id(),
+                              item.ordinal(),
+                              item.label(),
+                              item.ordinal() == completedSlice + 1 ? "COMPLETED" : item.status(),
+                              item.idempotencyKey(),
+                              item.payload()))
+                  .toList());
+          String nextWorkItem = workItems.size() > nextSlice ? workItems.get(nextSlice).id() : null;
+          turns
+              .workflow(turn.id())
+              .ifPresent(
+                  workflow ->
+                      turns.saveWorkflow(
+                          new AssistantTurnStore.Workflow(
+                              workflow.turnId(),
+                              workflow.workflowKind(),
+                              "EXECUTING",
+                              nextWorkItem,
+                              workflow.plan())));
+        }
+        var next = sourceBlueprint.get().blueprint().path("slices").get(nextSlice);
         String nextFocus = next.path("focus").asText("the next planned model slice");
         remainingWork =
             remainingWork == null
@@ -361,41 +420,25 @@ public final class DurableAssistantTurnWorker {
               : result.message(),
           result.revision(),
           remainingWork);
-      if (state == AssistantTurn.State.PARTIAL
-          && (result.commandBatch() != null || result.sourceBlueprint() != null)
-          && !turns.cancellationRequested(turn.id())) {
-        enqueueNextSlice(turn, result, remainingWork);
-      }
+      // PARTIAL is deliberately durable state on this same turn. Resume reclaims it from the
+      // checkpoint; no child turn or string-encoded continuation is created.
     } catch (io.mehdieidi.varka.platform.kernel.PlatformException ex) {
       if (ex instanceof AgentTurnLoop.TurnExecutionException turnFailure) {
         turns.setProviderCallCount(turn.id(), turnFailure.providerCalls());
         turns.setTokenUsage(turn.id(), turnFailure.promptTokens(), turnFailure.completionTokens());
         turns.recordProviderCalls(turn.id(), turnFailure.providerCallDetails());
       }
-      // A malformed structured action and a backend-rejected action are provider recovery cases,
-      // just like a provider timeout.  The loop has already used its bounded in-turn repair
-      // attempts; start a fresh durable slice so the user sees the saved checkpoint (if any) and
-      // the agent keeps working without a browser "Continue" round trip.  This applies equally
-      // to CIM and PIM because it is independent of the metamodel/action that failed.
-      if (automaticallyRecoverable(ex) && !turns.cancellationRequested(turn.id())) {
-        boolean recoveryQueued = recoveryCanBeQueued(turn);
+      // Bounded in-turn repair is exhausted. Preserve the validated checkpoint, expose the
+      // exact remaining work, and let the user explicitly resume the same durable run.
+      if ((ex.status() == 422 || ex.status() == 502 || ex.status() == 504)
+          && !turns.cancellationRequested(turn.id())) {
         complete(
             turn,
             AssistantTurn.State.PARTIAL,
-            recoveryQueued
-                ? ex.status() == 504
-                    ? "This slice reached its time limit; retrying from the durable"
-                        + " checkpoint."
-                    : "This slice could not be applied; retrying from the durable" + " checkpoint."
-                : "This slice could not be applied. Saved checkpoints remain on the canvas; review "
-                    + "the remaining work and continue when ready.",
+            "This work item could not be applied. Saved checkpoints remain available; resume this"
+                + " turn when ready.",
             turn.revision(),
             ex.getMessage());
-        // The active-turn database constraint intentionally permits only one queued/running
-        // turn for a model. Release this slice before creating its retry; doing it in the other
-        // order made retries fail silently or leave the UI attached to a stale parent turn.
-        if (recoveryQueued && !turns.cancellationRequested(turn.id()))
-          enqueueRecoveryTurn(turn, ex.getMessage());
         return;
       }
       AssistantTurn.State state =
@@ -436,6 +479,17 @@ public final class DurableAssistantTurnWorker {
       Long revision,
       String remainingWork) {
     turns.complete(turn.id(), state, message, revision, remainingWork);
+    turns
+        .workflow(turn.id())
+        .ifPresent(
+            workflow ->
+                turns.saveWorkflow(
+                    new AssistantTurnStore.Workflow(
+                        workflow.turnId(),
+                        workflow.workflowKind(),
+                        state.terminal() ? state.name() : "EXECUTING",
+                        workflow.currentWorkItemId(),
+                        workflow.plan())));
     assistant.recordAssistantMessage(turn.threadId(), message);
     metrics.recordAssistantTurnOutcome("durable", state.name());
     metrics.recordAssistantPhaseDuration(
@@ -443,210 +497,20 @@ public final class DurableAssistantTurnWorker {
         Math.max(0L, java.time.Duration.between(turn.acceptedAt(), Instant.now()).toMillis()));
   }
 
-  /**
-   * Continues deliberately partial model generation without requiring a browser round-trip. Each
-   * slice is a new durable turn/checkpoint with its own deadline and provider-call budget. The
-   * marker is only a runaway guard for a provider that repeatedly returns incomplete batches.
-   */
-  private void enqueueNextSlice(
-      AssistantTurn previous,
-      io.mehdieidi.varka.platform.assistant.application.AgenticTurnService.Result result,
-      String remainingWork) {
-    int nextSlice = automaticSliceCount(previous.message()) + 1;
-    int maxSlices = Math.max(1, settings.maxAutomaticSlices());
-    if (nextSlice >= maxSlices) {
-      turns.appendEvent(
-          previous.id(),
-          "model.slice.limit_reached",
-          java.util.Map.of("maxSlices", maxSlices, "remainingWork", safeRemaining(remainingWork)));
-      return;
-    }
-    Instant acceptedAt = Instant.now();
-    String message =
-        previous.message()
-            + "\n\n"
-            + AUTOMATIC_SLICE_MARKER
-            + nextSlice
-            + "] Continue the same requested generation from the persisted checkpoint. "
-            + "Preserve valid work, model the next coherent slice, and set turnComplete=true only "
-            + "when the complete request is represented.";
-    AssistantTurn next =
-        new AssistantTurn(
-            UUID.randomUUID().toString(),
-            previous.threadId(),
-            previous.userId(),
-            previous.projectId(),
-            previous.level(),
-            result.modelId(),
-            result.revision(),
-            "automatic-slice-" + previous.id() + "-" + nextSlice,
-            message,
-            previous.sourceText(),
-            previous.selectedElementIds(),
-            AssistantTurn.State.QUEUED,
-            acceptedAt,
-            acceptedAt.plus(iterationTimeout(previous)),
-            null,
-            null,
-            false,
-            result.revision(),
-            0,
-            0,
-            previous.coveragePercent(),
-            remainingWork,
-            null,
-            0,
-            0,
-            0);
-    turns.create(next);
-    turns
-        .sourceBlueprint(previous.id())
-        .ifPresent(
-            blueprint ->
-                turns.saveSourceBlueprint(
-                    next.id(),
-                    blueprint.blueprint(),
-                    result.sourceBlueprint() == null ? blueprint.nextSlice() + 1 : 0));
-    // Do not inherit the previous source window. The next turn must receive the next deterministic
-    // document slice; inheriting this cache made a large attachment repeatedly model the same six
-    // units while coverage could never advance.
-    turns.linkContinuation(previous.id(), next.id());
-    turns.appendEvent(
-        previous.id(),
-        "model.slice.continued",
-        java.util.Map.of(
-            "nextTurnId", next.id(),
-            "slice", nextSlice,
-            "deadlineAt", next.deadlineAt().toString()));
-  }
-
-  /**
-   * Retries an exhausted/malformed provider turn as a fresh bounded turn. A new provider context
-   * often recovers from intermittent compatible-provider output failures or a completed slice
-   * deadline. Like a normal slice, the retry has a fresh deadline and provider-call budget.
-   */
-  private boolean enqueueRecoveryTurn(AssistantTurn previous, String reason) {
-    if (!recoveryCanBeQueued(previous)) return false;
-    int nextSlice = automaticSliceCount(previous.message()) + 1;
-    Instant acceptedAt = Instant.now();
-    AssistantTurn retry =
-        new AssistantTurn(
-            UUID.randomUUID().toString(),
-            previous.threadId(),
-            previous.userId(),
-            previous.projectId(),
-            previous.level(),
-            previous.modelId(),
-            previous.revision() == null ? previous.expectedRevision() : previous.revision(),
-            "automatic-retry-" + previous.id() + "-" + nextSlice,
-            previous.message()
-                + "\n\n"
-                + AUTOMATIC_RECOVERY_MARKER
-                + "\n"
-                + AUTOMATIC_SLICE_MARKER
-                + nextSlice
-                + "] Continue the same requested generation from the persisted checkpoint. The"
-                + " prior slice ended before it could finish. Preserve valid work and return one"
-                + " valid terminal action. Failure summary: "
-                + safeRemaining(reason),
-            previous.sourceText(),
-            previous.selectedElementIds(),
-            AssistantTurn.State.QUEUED,
-            acceptedAt,
-            acceptedAt.plus(iterationTimeout(previous)),
-            null,
-            null,
-            false,
-            previous.revision(),
-            0,
-            0,
-            previous.coveragePercent(),
-            reason,
-            null,
-            0,
-            0,
-            0);
-    turns.create(retry);
-    turns.contextCache(previous.id()).ifPresent(cache -> turns.saveContextCache(retry.id(), cache));
-    turns
-        .sourceBlueprint(previous.id())
-        .ifPresent(
-            blueprint ->
-                turns.saveSourceBlueprint(
-                    retry.id(), blueprint.blueprint(), blueprint.nextSlice()));
-    turns.linkContinuation(previous.id(), retry.id());
-    turns.appendEvent(
-        previous.id(),
-        "turn.recovery.queued",
-        java.util.Map.of(
-            "nextTurnId", retry.id(),
-            "reason", safeRemaining(reason),
-            "deadlineAt", retry.deadlineAt().toString()));
-    return true;
-  }
-
-  private boolean recoveryCanBeQueued(AssistantTurn turn) {
-    if (recoveryCount(turn.message()) >= MAX_AUTOMATIC_PROVIDER_RECOVERIES) return false;
-    return automaticSliceCount(turn.message()) + 1 < Math.max(1, settings.maxAutomaticSlices());
-  }
-
-  private int recoveryCount(String message) {
-    if (message == null || message.isBlank()) return 0;
-    int count = 0;
-    int from = 0;
-    while ((from = message.indexOf(AUTOMATIC_RECOVERY_MARKER, from)) >= 0) {
-      count++;
-      from += AUTOMATIC_RECOVERY_MARKER.length();
-    }
-    return count;
-  }
-
-  private java.time.Duration iterationTimeout(AssistantTurn turn) {
-    return turn.sourceText() == null || turn.sourceText().isBlank()
-        ? settings.turnTimeout()
-        : settings.sourceTurnTimeout();
-  }
-
-  /**
-   * Failures caused by a provider response or its model command are safe to retry from the durable
-   * checkpoint. User cancellation, destructive confirmation, authorization, and model revision
-   * conflicts deliberately remain terminal so automatic work never bypasses a user or concurrency
-   * decision.
-   */
-  private boolean automaticallyRecoverable(
-      io.mehdieidi.varka.platform.kernel.PlatformException ex) {
-    return ex.status() == 422 || ex.status() == 502 || ex.status() == 504;
-  }
-
-  private int automaticSliceCount(String message) {
-    if (message == null || message.isBlank()) return 0;
-    int count = 0;
-    int from = 0;
-    while ((from = message.indexOf(AUTOMATIC_SLICE_MARKER, from)) >= 0) {
-      count++;
-      from += AUTOMATIC_SLICE_MARKER.length();
-    }
-    return count;
-  }
-
   private java.util.List<AssistantTurnStore.SourceUnit> selectCachedSourceUnits(
       AssistantTurn turn, java.util.List<AssistantTurnStore.SourceUnit> units) {
-    int slice = automaticSliceCount(turn.message());
-    if (slice > 0 && !isRecovery(turn.message())) return selectProgressiveSourceUnits(units, slice);
     java.util.Set<String> cached =
         turns
             .contextCache(turn.id())
             .map(AssistantTurnStore.ContextCache::selectedSourceUnitIds)
             .map(java.util.HashSet::new)
             .orElseGet(java.util.HashSet::new);
-    if (cached.isEmpty()) return selectProgressiveSourceUnits(units, 0);
+    // The analyst always receives the complete supplied document.  Subsequent executor calls use
+    // only its explicit dependency-aware work item selection.
+    if (cached.isEmpty()) return units;
     java.util.List<AssistantTurnStore.SourceUnit> selected =
         units.stream().filter(unit -> cached.contains(unit.id())).toList();
-    return selected.isEmpty() ? selectSourceUnits(units, turn.message()) : selected;
-  }
-
-  private boolean isRecovery(String message) {
-    return message != null && message.contains(AUTOMATIC_RECOVERY_MARKER);
+    return selected.isEmpty() ? units : selected;
   }
 
   /** Uses the LLM's validated source-unit plan instead of a positional window when available. */
@@ -658,21 +522,6 @@ public final class DurableAssistantTurnWorker {
     java.util.Set<String> ids = new java.util.LinkedHashSet<>();
     slices.get(blueprint.nextSlice()).path("sourceUnitIds").forEach(item -> ids.add(item.asText()));
     return units.stream().filter(unit -> ids.contains(unit.id())).toList();
-  }
-
-  /**
-   * Selects non-overlapping, ordered source windows so every automatic slice has fresh ground
-   * truth.
-   */
-  private java.util.List<AssistantTurnStore.SourceUnit> selectProgressiveSourceUnits(
-      java.util.List<AssistantTurnStore.SourceUnit> units, int slice) {
-    int start = Math.max(0, slice) * SOURCE_UNITS_PER_SLICE;
-    if (start >= units.size()) return selectSourceUnits(units, "");
-    return units.subList(start, Math.min(units.size(), start + SOURCE_UNITS_PER_SLICE));
-  }
-
-  private String safeRemaining(String remainingWork) {
-    return remainingWork == null ? "" : remainingWork;
   }
 
   private String annotatedSourceUnits(
@@ -710,58 +559,6 @@ public final class DurableAssistantTurnWorker {
   private String sourceSummary(String content) {
     String normalized = content == null ? "" : content.replaceAll("\\s+", " ").trim();
     return normalized.length() <= 240 ? normalized : normalized.substring(0, 237) + "...";
-  }
-
-  /**
-   * Bounds source context before the first provider request. Selection is deterministic so an
-   * evidence id in the model always remains traceable to the persisted source unit. The first unit
-   * is retained for document-level context; the remaining slots favour request vocabulary.
-   */
-  private java.util.List<AssistantTurnStore.SourceUnit> selectSourceUnits(
-      java.util.List<AssistantTurnStore.SourceUnit> units, String request) {
-    if (units.size() <= SOURCE_UNITS_PER_SLICE) return units;
-    Set<String> terms = new LinkedHashSet<>();
-    for (String token :
-        (request == null ? "" : request).toLowerCase(Locale.ROOT).split("[^a-z0-9]+")) {
-      if (token.length() >= 4) terms.add(token);
-    }
-    ArrayList<AssistantTurnStore.SourceUnit> ranked = new ArrayList<>(units);
-    ranked.sort(
-        Comparator.comparingInt((AssistantTurnStore.SourceUnit unit) -> sourceScore(unit, terms))
-            .reversed()
-            .thenComparingInt(AssistantTurnStore.SourceUnit::ordinal));
-    LinkedHashSet<AssistantTurnStore.SourceUnit> selected = new LinkedHashSet<>();
-    selected.add(units.get(0));
-    for (AssistantTurnStore.SourceUnit unit : ranked) {
-      if (selected.size() >= SOURCE_UNITS_PER_SLICE) break;
-      selected.add(unit);
-    }
-    return selected.stream()
-        .sorted(Comparator.comparingInt(AssistantTurnStore.SourceUnit::ordinal))
-        .toList();
-  }
-
-  private int sourceScore(AssistantTurnStore.SourceUnit unit, Set<String> terms) {
-    String content = unit.content().toLowerCase(Locale.ROOT);
-    int score = 0;
-    for (String term : terms) {
-      if (content.contains(term)) score++;
-    }
-    return score;
-  }
-
-  private Set<String> requirementIds(String source) {
-    Set<String> ids = new LinkedHashSet<>();
-    if (source == null) return ids;
-    Matcher matcher = REQUIREMENT_ID.matcher(source);
-    while (matcher.find()) ids.add("R" + matcher.group(1));
-    return ids;
-  }
-
-  private String normalizeRequirementId(String value) {
-    if (value == null || value.isBlank()) return null;
-    Matcher matcher = REQUIREMENT_ID.matcher(value.trim());
-    return matcher.matches() ? "R" + matcher.group(1) : value.trim();
   }
 
   @PreDestroy

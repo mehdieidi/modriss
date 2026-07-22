@@ -34,6 +34,20 @@ public final class DurableTurnUndoService {
             .latestCheckpoint(turn.id())
             .orElseThrow(
                 () -> new PlatformException(409, "This turn has no reversible checkpoint."));
+    return rollback(user, turn, checkpoint);
+  }
+
+  public UndoResult rollback(UserRecord user, AssistantTurn turn, long checkpointId) {
+    var checkpoint =
+        turns.checkpoints(turn.id()).stream()
+            .filter(item -> item.id() == checkpointId)
+            .findFirst()
+            .orElseThrow(() -> new PlatformException(404, "Checkpoint not found."));
+    return rollback(user, turn, checkpoint);
+  }
+
+  private UndoResult rollback(
+      UserRecord user, AssistantTurn turn, AssistantTurnStore.Checkpoint checkpoint) {
     try {
       List<ModelPatchOperation> inverse =
           mapper.readValue(
@@ -48,7 +62,7 @@ public final class DurableTurnUndoService {
           models.patch(user, turn.level(), model.id(), model.name(), inverse, model.revision());
       turns.appendEvent(
           turn.id(),
-          "model.checkpoint",
+          "model.checkpoint.committed",
           java.util.Map.of(
               "kind", "undo", "modelId", updated.id(), "revision", updated.revision()));
       metrics.recordAssistantUserSignal("undo");

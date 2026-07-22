@@ -18,16 +18,9 @@ public final class SourceUnitSplitter {
 
   public List<SourceUnit> split(String text) {
     String source = text == null ? "" : text.replace("\r\n", "\n");
-    // A source document is a single semantic artefact. Do not fragment a normally sized user-story
-    // or event-storming file merely because it contains several paragraphs: the relationships are
-    // the information the modeling agent needs to see together.
-    if (source.length() <= limit * 4) {
-      return source.isEmpty()
-          ? List.of()
-          : List.of(
-              new SourceUnit(id(1, 0, source.length(), source), 1, 0, source.length(), source));
-    }
+    if (source.isEmpty()) return List.of();
     List<SourceUnit> result = new ArrayList<>();
+    if (source.length() <= limit) return structuralSpans(source);
     for (int start = 0, ordinal = 1; start < source.length(); ordinal++) {
       int end = Math.min(source.length(), start + limit);
       if (end < source.length()) {
@@ -44,6 +37,42 @@ public final class SourceUnitSplitter {
       start = end;
     }
     return result;
+  }
+
+  /**
+   * Keeps headings, paragraphs, list blocks and event-storming lanes addressable for provenance.
+   */
+  private List<SourceUnit> structuralSpans(String source) {
+    List<SourceUnit> spans = new ArrayList<>();
+    int start = 0;
+    int ordinal = 1;
+    for (int cursor = 0; cursor < source.length(); cursor++) {
+      boolean heading =
+          cursor > start && source.charAt(cursor) == '#' && source.charAt(cursor - 1) == '\n';
+      boolean blankLine =
+          cursor + 1 < source.length()
+              && source.charAt(cursor) == '\n'
+              && source.charAt(cursor + 1) == '\n';
+      if (!heading && !blankLine) continue;
+      int end = heading ? cursor : cursor + 2;
+      if (end > start) {
+        String content = source.substring(start, end);
+        spans.add(
+            new SourceUnit(id(ordinal++, start, end, content), ordinal - 1, start, end, content));
+        start = end;
+      }
+    }
+    if (start < source.length()) {
+      String content = source.substring(start);
+      spans.add(
+          new SourceUnit(
+              id(ordinal, start, source.length(), content),
+              ordinal,
+              start,
+              source.length(),
+              content));
+    }
+    return spans;
   }
 
   private String id(int ordinal, int start, int end, String value) {

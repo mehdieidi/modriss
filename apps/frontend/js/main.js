@@ -44,7 +44,7 @@ import {
   toggleChatHistoryPanel,
   uploadChatAttachment,
   updateChatAttachmentLabel,
-} from "./chat.js?v=chat-provenance-ui-20260718a";
+} from "./chat.js?v=durable-workflow-ui-20260722a";
 import {
   bindProjectDialogActions,
   deleteCurrentProject,
@@ -1076,53 +1076,43 @@ function bindEvents() {
   });
 
   el.chatFileInput?.addEventListener("change", async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      state.chat.attachment = null;
-      updateChatAttachmentLabel();
+    const files = [...(event.target.files || [])];
+    if (!files.length) return;
+    const existing = state.chat.attachments || [];
+    const available = 3 - existing.length;
+    if (files.length > available) {
+      event.target.value = "";
+      setError(`You can attach at most 3 files to one message.`);
       return;
     }
-    if (file.size > CHAT_ATTACHMENT_MAX_BYTES) {
-      state.chat.attachment = null;
+    const oversized = files.find((file) => file.size > CHAT_ATTACHMENT_MAX_BYTES);
+    if (oversized) {
       event.target.value = "";
-      updateChatAttachmentLabel();
-      setError(`File too large (${file.size} bytes). Max ${CHAT_ATTACHMENT_MAX_BYTES} bytes.`);
+      setError(`File too large (${oversized.size} bytes). Max ${CHAT_ATTACHMENT_MAX_BYTES} bytes.`);
       return;
     }
     try {
-      setStatus(`Uploading: ${file.name}`);
-      const attachment = await uploadChatAttachment(file);
-      if (!attachment) {
-        state.chat.attachment = null;
-        event.target.value = "";
-        updateChatAttachmentLabel();
-        return;
+      const uploaded = [];
+      for (const file of files) {
+        setStatus(`Uploading: ${file.name}`);
+        const attachment = await uploadChatAttachment(file);
+        if (!attachment) throw new Error(`Could not attach ${file.name}.`);
+        uploaded.push({
+          id: attachment.id,
+          name: attachment.fileName || file.name,
+          sizeBytes: attachment.sizeBytes || file.size,
+        });
       }
-      state.chat.attachment = {
-        id: attachment.id,
-        name: attachment.fileName || file.name,
-        sizeBytes: attachment.sizeBytes || file.size,
-      };
+      state.chat.attachments = [...existing, ...uploaded];
+      event.target.value = "";
       updateChatAttachmentLabel();
-      setStatus(`Attached: ${file.name}`);
+      setStatus(`${uploaded.length} attachment${uploaded.length === 1 ? "" : "s"} added`);
     } catch (error) {
-      state.chat.attachment = null;
       event.target.value = "";
       updateChatAttachmentLabel();
       setError(error, { prefix: "Failed to read file." });
     }
   });
-
-  if (el.chatFileClearBtn) {
-    el.chatFileClearBtn.addEventListener("click", () => {
-      state.chat.attachment = null;
-      if (el.chatFileInput) {
-        el.chatFileInput.value = "";
-      }
-      updateChatAttachmentLabel();
-      setStatus("Attachment removed");
-    });
-  }
 
   el.chatInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {

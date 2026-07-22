@@ -144,7 +144,7 @@ class AssistantHardeningServiceTest {
   }
 
   @Test
-  void returnsProviderTimeoutWithoutRetrying() {
+  void retriesProviderTimeoutWithinTheConfiguredBound() {
     AssistantSettings properties =
         AssistantSettingsFixtures.withHardening(
             30, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 2, Duration.ZERO, 12);
@@ -169,6 +169,32 @@ class AssistantHardeningServiceTest {
         "AI provider returned no response within 600 seconds. The provider or model is currently "
             + "too slow; try again shortly.",
         ex.getMessage());
-    assertEquals(1, attempts.get());
+    assertEquals(3, attempts.get());
+  }
+
+  @Test
+  void schemaConfigurationErrorsDoNotOpenTheTransientFailureCircuit() {
+    AssistantSettings properties =
+        AssistantSettingsFixtures.withHardening(
+            30, Duration.ofMinutes(1), 1, Duration.ofMinutes(1), 0, Duration.ZERO, 12);
+    AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
+
+    PlatformException schemaFailure =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                hardening.providerCall(
+                    AssistantModelRole.MODELER,
+                    "openai",
+                    "configured-model",
+                    () -> {
+                      throw new IllegalStateException("400 - response schema is unsupported");
+                    }));
+
+    assertEquals(400, schemaFailure.status());
+    assertEquals(
+        "ok",
+        hardening.providerCall(
+            AssistantModelRole.MODELER, "openai", "configured-model", () -> "ok"));
   }
 }

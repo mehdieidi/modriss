@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.platform.assistant.tools;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -51,60 +52,79 @@ class AgentModelToolsTest {
   }
 
   @Test
-  void doesNotInventCimEntityIdentityOrAttributeDefaults() throws Exception {
+  void rejectsCreateWithoutExplicitContainmentInsteadOfInventingDefaults() throws Exception {
     AgentModelTools tools = cimTools();
     tools.bind(ModelLevel.CIM, workspace());
 
-    var result =
-        tools.commitModelBatch(
-            new ModelCommandBatch(
-                List.of(
-                    new ModelCommandBatch.Create(
-                        "patient",
-                        "DomainEntity",
-                        Map.of("name", text("Patient")),
-                        null,
-                        null,
-                        null)),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                "draft entity",
-                true));
-
-    String json = result.model().toString();
-    assertTrue(json.contains("\"eClass\":\"DomainEntity\""));
-    assertTrue(!json.contains("\"identityStrategy\""));
-    assertTrue(!json.contains("\"InformationItem\""));
+    assertThrows(
+        PlatformException.class,
+        () ->
+            tools.commitModelBatch(
+                new ModelCommandBatch(
+                    List.of(
+                        new ModelCommandBatch.Create(
+                            "patient",
+                            "DomainEntity",
+                            Map.of("name", text("Patient")),
+                            null,
+                            null,
+                            null)),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    "draft entity",
+                    true)));
   }
 
   @Test
-  void synthesizesRequiredCimProcessStep() throws Exception {
+  void inspectsSelectedModelRecordsWithTypeAndOwnershipContext() throws Exception {
+    AgentModelTools tools = cimTools();
+    JsonNode model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","domains":[
+  {"id":"sales","eClass":"Domain","name":"Sales","entities":[
+    {"id":"order","eClass":"DomainEntity","name":"Order"}]}]}
+""");
+    tools.bind(
+        ModelLevel.CIM,
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, model, new AssistantPatchCompiler(), null));
+
+    JsonNode inspected =
+        tools.inspectModel(
+            new AgentModelTools.InspectionSelector(
+                List.of("order"), List.of("DomainEntity"), List.of("sales"), null, 0, 10));
+
+    assertEquals(1, inspected.path("total").asInt());
+    assertEquals("order", inspected.path("elements").get(0).path("id").asText());
+    assertEquals("sales", inspected.path("elements").get(0).path("ownerId").asText());
+  }
+
+  @Test
+  void rejectsCreateWithoutExplicitRequiredChildrenInsteadOfSynthesizingThem() throws Exception {
     AgentModelTools tools = cimTools();
     tools.bind(ModelLevel.CIM, workspace());
 
-    var result =
-        tools.commitModelBatch(
-            new ModelCommandBatch(
-                List.of(
-                    new ModelCommandBatch.Create(
-                        "schedule",
-                        "BusinessProcess",
-                        Map.of("name", text("Schedule appointment")),
-                        null,
-                        null,
-                        null)),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                "draft process",
-                true));
-
-    String json = result.model().toString();
-    assertTrue(json.contains("\"eClass\":\"StartStep\""));
-    assertTrue(json.contains("\"steps\""));
+    assertThrows(
+        PlatformException.class,
+        () ->
+            tools.commitModelBatch(
+                new ModelCommandBatch(
+                    List.of(
+                        new ModelCommandBatch.Create(
+                            "schedule",
+                            "BusinessProcess",
+                            Map.of("name", text("Schedule appointment")),
+                            null,
+                            null,
+                            null)),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    "draft process",
+                    true)));
   }
 
   private AgentModelTools cimTools() {

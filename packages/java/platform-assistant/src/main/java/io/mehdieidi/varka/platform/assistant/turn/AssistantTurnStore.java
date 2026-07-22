@@ -51,6 +51,42 @@ public interface AssistantTurnStore {
       Long revision,
       String remainingWork);
 
+  /** Requeues the same durable request from its last committed checkpoint. */
+  void resume(String turnId, Long expectedRevision);
+
+  /** Records a user-approved rebase before resuming a conflicted request. */
+  void rebase(String turnId, long expectedRevision);
+
+  default void saveWorkflow(Workflow workflow) {}
+
+  default Optional<Workflow> workflow(String turnId) {
+    return Optional.empty();
+  }
+
+  default void saveWorkItems(String turnId, List<WorkItem> items) {}
+
+  default List<WorkItem> workItems(String turnId) {
+    return List.of();
+  }
+
+  default void saveSourceFacts(String turnId, List<SourceFact> facts) {}
+
+  default List<SourceFact> sourceFacts(String turnId) {
+    return List.of();
+  }
+
+  default void recordValidationAttempt(ValidationAttempt attempt) {}
+
+  /**
+   * Returns durable structural-validation attempts in creation order.
+   *
+   * <p>The live-evaluation gate uses these records to report repair passes without inferring them
+   * from provider-call totals.
+   */
+  default List<ValidationAttempt> validationAttempts(String turnId) {
+    return List.of();
+  }
+
   AssistantTurn.Event appendEvent(String turnId, String type, Map<String, Object> payload);
 
   List<AssistantTurn.Event> events(String turnId, long afterEventId);
@@ -74,6 +110,27 @@ public interface AssistantTurnStore {
 
   void saveCheckpoint(String turnId, String modelId, long revision, Object inversePatch);
 
+  /** Creates or returns a durable checkpoint intent before mutating the model. */
+  default Checkpoint beginCheckpoint(
+      String turnId,
+      String modelId,
+      long baseRevision,
+      String idempotencyKey,
+      String label,
+      String candidateHash) {
+    throw new UnsupportedOperationException("Checkpoint intents are unavailable");
+  }
+
+  /** Atomically makes a validated checkpoint visible. Safe to repeat after a crash. */
+  default Checkpoint finalizeCheckpoint(
+      String turnId,
+      String idempotencyKey,
+      long revision,
+      Object inversePatch,
+      Object validationSummary) {
+    throw new UnsupportedOperationException("Checkpoint finalization is unavailable");
+  }
+
   Optional<Checkpoint> latestCheckpoint(String turnId);
 
   List<Checkpoint> checkpoints(String turnId);
@@ -96,7 +153,39 @@ public interface AssistantTurnStore {
   /** Locally extracted, stable source span. */
   record SourceUnit(String id, int ordinal, int startOffset, int endOffset, String content) {}
 
-  record Checkpoint(String modelId, long revision, JsonNode inversePatch) {}
+  record Checkpoint(
+      long id,
+      String modelId,
+      long revision,
+      JsonNode inversePatch,
+      String idempotencyKey,
+      int ordinal,
+      String label,
+      Long baseRevision,
+      String candidateHash,
+      String status,
+      JsonNode validationSummary) {}
+
+  record Workflow(
+      String turnId, String workflowKind, String phase, String currentWorkItemId, JsonNode plan) {}
+
+  record WorkItem(
+      String id,
+      int ordinal,
+      String label,
+      String status,
+      String idempotencyKey,
+      JsonNode payload) {}
+
+  record SourceFact(String id, String kind, String status, JsonNode payload, String assumption) {}
+
+  record ValidationAttempt(
+      String turnId,
+      String workItemId,
+      int attempt,
+      boolean valid,
+      JsonNode diagnostics,
+      Instant createdAt) {}
 
   record Provenance(
       String elementId,

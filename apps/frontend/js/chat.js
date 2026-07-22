@@ -278,7 +278,7 @@ export function resetChatForProjectChange() {
   }
   state.chat.channels.clear();
   state.chat.sessions.clear();
-  state.chat.attachment = null;
+  state.chat.attachments = [];
   state.chat.historyOpen = false;
   renderedChatScopeKey = null;
   resetChatActivityUi();
@@ -492,7 +492,18 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
           if (!eventName || !raw) continue;
           try {
             const event = JSON.parse(raw);
-            if (eventName === "turn.stage") {
+            if (eventName === "turn.plan.ready") {
+              updateThinkingStatus("Durable work plan is ready.", "PLANNING");
+            } else if (eventName === "turn.work_item.started") {
+              updateThinkingStatus("Modeling the next planned work item.", "PLANNING");
+            } else if (eventName === "turn.validation.completed") {
+              updateThinkingStatus("Validation completed for the current draft.", "VALIDATING");
+            } else if (eventName === "turn.coverage.updated") {
+              updateThinkingStatus(
+                `${Number(event?.payload?.coveragePercent) || 0}% source coverage recorded.`,
+                "COMPLETING",
+              );
+            } else if (eventName === "turn.stage") {
               updateThinkingStatus(event?.payload?.stage || "Assistant is working.", "PLANNING");
             } else if (eventName === "source.blueprint.saved") {
               const slices = Number(event?.payload?.slices) || 0;
@@ -502,7 +513,10 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
                   : "Source map prepared; applying the first model slice.",
                 "PLANNING",
               );
-            } else if (eventName === "model.checkpoint") {
+            } else if (
+              eventName === "model.checkpoint" ||
+              eventName === "model.checkpoint.committed"
+            ) {
               updateThinkingStatus("Model checkpoint saved.", "APPLYING");
               if (event?.payload?.modelId) {
                 void applyAssistantModelResponse(typeKey, event.payload).catch(() => {
@@ -527,60 +541,26 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
   return controller;
 }
 
-function automaticContinuation(turn) {
-  // A fast worker can finish the child before the parent is polled again. It is still the
-  // automatic continuation and its final checkpoint must be loaded into the canvas.
-  const continuations = Array.isArray(turn?.continuations) ? turn.continuations : [];
-  return continuations[continuations.length - 1] || null;
-}
-
-async function waitForAutomaticContinuation(turnId) {
-  // The worker marks the checkpoint PARTIAL before it can persist a queued child (the database
-  // permits only one active turn for a model). Wait for that durable link rather than treating a
-  // checkpoint as terminal; the child may already be terminal when it becomes visible.
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    const refreshed = await api(`/chatbot/turns/${turnId}`);
-    const continuation = automaticContinuation(refreshed);
-    if (continuation?.turnId) return { turn: refreshed, continuation };
-    await new Promise((resolve) => window.setTimeout(resolve, 250));
-  }
-  return null;
-}
-
 async function waitForDurableTurn(turnId, typeKey, eventCursor = 0) {
   let latest = null;
-  let currentTurnId = turnId;
-  let currentEventCursor = eventCursor;
-  for (;;) {
-    const events = streamDurableTurnEvents(currentTurnId, typeKey, currentEventCursor);
-    try {
-      for (;;) {
-        latest = await api(`/chatbot/turns/${currentTurnId}`);
-        const stateName = String(latest?.state || "");
-        updateThinkingStatus(
-          latest?.finalMessage || `Assistant turn ${stateName.toLowerCase() || "is running"}.`,
-          stateName === "RUNNING" ? "PLANNING" : stateName,
-        );
-        if (DURABLE_TERMINAL_STATES.has(stateName)) {
-          if (latest?.modelId) {
-            await applyAssistantModelResponse(typeKey, latest);
-          }
-          const linked =
-            stateName === "PARTIAL" ? await waitForAutomaticContinuation(currentTurnId) : null;
-          if (linked?.continuation?.turnId) {
-            updateThinkingStatus("Checkpoint saved. Continuing the next model slice.", "PLANNING");
-            currentTurnId = linked.continuation.turnId;
-            activeTurnId = currentTurnId;
-            currentEventCursor = 0;
-            break;
-          }
-          return latest;
-        }
-        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+  const events = streamDurableTurnEvents(turnId, typeKey, eventCursor);
+  try {
+    for (;;) {
+      latest = await api(`/chatbot/turns/${turnId}`);
+      renderDurableRun(latest, typeKey);
+      const stateName = String(latest?.state || "");
+      updateThinkingStatus(
+        latest?.finalMessage || `Assistant turn ${stateName.toLowerCase() || "is running"}.`,
+        stateName === "RUNNING" ? "PLANNING" : stateName,
+      );
+      if (DURABLE_TERMINAL_STATES.has(stateName)) {
+        if (latest?.modelId) await applyAssistantModelResponse(typeKey, latest);
+        return latest;
       }
-    } finally {
-      events.abort();
+      await new Promise((resolve) => window.setTimeout(resolve, 1000));
     }
+  } finally {
+    events.abort();
   }
 }
 
@@ -605,24 +585,28 @@ async function durableAssistantMessage(turn, sessionId) {
 
 function appendDurableTurnActions(turn, typeKey) {
   const stateName = String(turn?.state || "");
-  // A partial parent with a queued/running child is an automatic continuation, not an invitation
-  // to submit the same request again.
-  if (stateName === "PARTIAL" && automaticContinuation(turn)?.turnId) {
-    return;
-  }
   if (
     !turn?.turnId ||
-    !["PARTIAL", "NEEDS_CONFIRMATION", "SUCCEEDED", "CANCELLED", "TIMED_OUT", "FAILED"].includes(
-      stateName,
-    )
+    ![
+      "PARTIAL",
+      "NEEDS_CONFIRMATION",
+      "CONFLICTED",
+      "SUCCEEDED",
+      "CANCELLED",
+      "TIMED_OUT",
+      "FAILED",
+    ].includes(stateName)
   ) {
     return;
   }
   appendDurableTurnSummary(turn);
   const actions = document.createElement("div");
   actions.className = "chat-proposal-actions";
-  const runFollowUp = async (path) => {
-    const accepted = await api(path, { method: "POST" });
+  const runFollowUp = async (path, body = null) => {
+    const accepted = await api(path, {
+      method: "POST",
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
     if (accepted?.turnId) {
       activeTurnId = accepted.turnId;
       beginChatActivity("Continuing assistant turn", "PLANNING");
@@ -643,20 +627,26 @@ function appendDurableTurnActions(turn, typeKey) {
     }
   };
   if (stateName === "PARTIAL") {
-    // A continuation cannot improve a turn that never produced durable model work; it merely
-    // repeats the same failed provider interaction.
-    if ((Number(turn?.checkpointCount) || 0) <= 0 && (Number(turn?.savedElementCount) || 0) <= 0) {
-      if (actions.childElementCount) el.chatMessages.appendChild(actions);
-      return;
-    }
-    const continueButton = document.createElement("button");
-    continueButton.type = "button";
-    continueButton.className = "chat-proposal-btn";
-    continueButton.textContent = "Continue";
-    continueButton.addEventListener("click", () =>
+    const resumeButton = document.createElement("button");
+    resumeButton.type = "button";
+    resumeButton.className = "chat-proposal-btn";
+    resumeButton.textContent = "Resume";
+    resumeButton.addEventListener("click", () =>
       runFollowUp(`/chatbot/turns/${turn.turnId}/continue`).catch((error) => setError(error)),
     );
-    actions.appendChild(continueButton);
+    actions.appendChild(resumeButton);
+  }
+  if (stateName === "CONFLICTED") {
+    const rebaseButton = document.createElement("button");
+    rebaseButton.type = "button";
+    rebaseButton.className = "chat-proposal-btn";
+    rebaseButton.textContent = "Rebase and resume";
+    rebaseButton.addEventListener("click", () =>
+      runFollowUp(`/chatbot/turns/${turn.turnId}/rebase`, {
+        expectedRevision: Number(state.modelRevision) || 0,
+      }).catch((error) => setError(error)),
+    );
+    actions.appendChild(rebaseButton);
   }
   if (stateName === "NEEDS_CONFIRMATION") {
     const confirmButton = document.createElement("button");
@@ -672,7 +662,7 @@ function appendDurableTurnActions(turn, typeKey) {
     const undoButton = document.createElement("button");
     undoButton.type = "button";
     undoButton.className = "chat-proposal-btn";
-    undoButton.textContent = "Undo turn";
+    undoButton.textContent = "Undo latest";
     undoButton.addEventListener("click", async () => {
       try {
         const undone = await api(`/chatbot/turns/${turn.turnId}/undo`, { method: "POST" });
@@ -729,6 +719,90 @@ function appendDurableTurnSummary(turn) {
   }
   card.appendChild(bubble);
   el.chatMessages.appendChild(card);
+  scrollChatToBottom();
+}
+
+function renderDurableRun(turn, typeKey) {
+  if (!turn?.turnId || !el.chatMessages) return;
+  let card = el.chatMessages.querySelector(`[data-chat-durable-run="${CSS.escape(turn.turnId)}"]`);
+  if (!card) {
+    card = document.createElement("div");
+    card.className = "chat-msg assistant";
+    card.dataset.chatKind = "durable-run";
+    card.dataset.chatDurableRun = turn.turnId;
+    const bubble = document.createElement("div");
+    bubble.className = "chat-msg-bubble chat-proposal-card chat-durable-run";
+    card.appendChild(bubble);
+    el.chatMessages.appendChild(card);
+  }
+  const bubble = card.firstElementChild;
+  bubble.replaceChildren();
+  const title = document.createElement("div");
+  title.className = "chat-proposal-title";
+  title.textContent = `${turn.workflowKind || "Modeling"} · ${String(turn.state || "QUEUED").replaceAll("_", " ")}`;
+  bubble.appendChild(title);
+  const details = document.createElement("p");
+  details.className = "chat-proposal-intro";
+  const coverage = Number(turn.coveragePercent);
+  details.textContent = [
+    turn.phase && `Phase: ${turn.phase}`,
+    Number.isFinite(coverage) && `Source coverage: ${coverage}%`,
+    turn.currentWorkItemId && `Current item: ${turn.currentWorkItemId}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  if (details.textContent) bubble.appendChild(details);
+  const workItems = Array.isArray(turn.workItems) ? turn.workItems : [];
+  if (workItems.length) {
+    const plan = document.createElement("ol");
+    plan.className = "chat-durable-plan";
+    for (const item of workItems) {
+      const entry = document.createElement("li");
+      entry.className = `is-${String(item.status || "queued").toLowerCase()}`;
+      entry.textContent = `${item.label || `Work item ${item.ordinal}`}: ${String(item.status || "QUEUED").replaceAll("_", " ")}`;
+      plan.appendChild(entry);
+    }
+    bubble.appendChild(plan);
+  }
+  const checkpoints = Array.isArray(turn.checkpoints) ? turn.checkpoints : [];
+  if (checkpoints.length) {
+    const checkpointList = document.createElement("div");
+    checkpointList.className = "chat-durable-checkpoints";
+    for (const checkpoint of checkpoints) {
+      const row = document.createElement("div");
+      row.className = "chat-durable-checkpoint";
+      const label = document.createElement("span");
+      label.textContent = `Checkpoint ${checkpoint.ordinal}: ${checkpoint.label || "Saved"}`;
+      const rollback = document.createElement("button");
+      rollback.type = "button";
+      rollback.className = "chat-proposal-btn";
+      rollback.textContent = "Roll back";
+      rollback.addEventListener("click", async () => {
+        try {
+          rollback.disabled = true;
+          const result = await api(
+            `/chatbot/turns/${turn.turnId}/checkpoints/${checkpoint.checkpointId}/rollback`,
+            { method: "POST" },
+          );
+          if (result?.modelId)
+            await loadModelById(typeKey, result.modelId, { preserveActiveView: true });
+          appendAssistantDeduped(`Rolled back to checkpoint ${checkpoint.ordinal}.`);
+        } catch (error) {
+          rollback.disabled = false;
+          setError(error);
+        }
+      });
+      row.append(label, rollback);
+      checkpointList.appendChild(row);
+    }
+    bubble.appendChild(checkpointList);
+  }
+  if (turn.remainingWork) {
+    const remaining = document.createElement("div");
+    remaining.className = "chat-proposal-meta";
+    remaining.textContent = `Remaining: ${turn.remainingWork}`;
+    bubble.appendChild(remaining);
+  }
   scrollChatToBottom();
 }
 
@@ -955,7 +1029,6 @@ export async function ensureChatSession({ hydrate = true, ...options } = {}) {
     cached?.sessionId &&
     cached.projectId === state.project.id
   ) {
-    await ensureChatRealtime(scopeKey, typeKey, cached.sessionId);
     if (hydrate) {
       await hydrateChatThread(typeKey, cached.sessionId);
     }
@@ -984,7 +1057,6 @@ export async function ensureChatSession({ hydrate = true, ...options } = {}) {
     projectId: state.project.id,
   };
   state.chat.sessions.set(scopeKey, session);
-  await connectChatRealtime(scopeKey, typeKey, session.sessionId);
   if (hydrate) {
     await hydrateChatThread(typeKey, session.sessionId);
   }
@@ -1129,7 +1201,7 @@ export async function resumeChatConversation(sessionId) {
   const scopeKey = chatScopeKey(typeKey);
   disconnectChatChannel(scopeKey);
   state.chat.sessions.delete(scopeKey);
-  state.chat.attachment = null;
+  state.chat.attachments = [];
   if (el.chatFileInput) {
     el.chatFileInput.value = "";
   }
@@ -1149,7 +1221,7 @@ export async function startNewChatConversation() {
   const scopeKey = chatScopeKey(typeKey);
   disconnectChatChannel(scopeKey);
   state.chat.sessions.delete(scopeKey);
-  state.chat.attachment = null;
+  state.chat.attachments = [];
   if (el.chatFileInput) {
     el.chatFileInput.value = "";
   }
@@ -1176,12 +1248,6 @@ async function hydrateChatThread(typeKey, sessionId) {
     if (hasMessages) {
       el.chatMessages.innerHTML = "";
       for (const message of thread.messages) {
-        if (
-          String(message.role || "").toLowerCase() === "user" &&
-          String(message.content || "").includes("[automatic-slice:")
-        ) {
-          continue;
-        }
         const role = String(message.role || "").toLowerCase() === "user" ? "user" : "assistant";
         appendChat(role, message.content || "");
       }
@@ -1707,9 +1773,8 @@ async function autoLayoutCompletedAssistantTurn(response) {
   if (!DURABLE_TERMINAL_STATES.has(turnState) || turnState === "PARTIAL") {
     return;
   }
-  // Intermediate checkpoints can be followed by an automatic continuation. Persisting a layout
-  // at that point would advance the model revision and conflict with the worker's next slice.
-  // Once the final turn is complete, persist a complete layout for its newly created view nodes.
+  // A partial durable run remains resumable from its last checkpoint. Persist layout only once
+  // the run is terminal, so a user-initiated resume cannot conflict with a layout revision.
   await autoLayoutCurrentDiagram({
     progress: false,
     status: false,
@@ -1721,17 +1786,33 @@ async function autoLayoutCompletedAssistantTurn(response) {
 }
 
 export function updateChatAttachmentLabel() {
-  const attachment = state.chat.attachment;
-  if (attachment) {
-    if (el.chatFileNameText) {
-      el.chatFileNameText.textContent = attachment.name;
-    }
-    el.chatFileName?.classList.remove("hidden");
-    el.chatAttachBar?.classList.remove("hidden");
-  } else {
-    el.chatFileName?.classList.add("hidden");
-    el.chatAttachBar?.classList.add("hidden");
+  const attachments = Array.isArray(state.chat.attachments) ? state.chat.attachments : [];
+  if (!el.chatAttachBar) return;
+  el.chatAttachBar.replaceChildren();
+  for (const attachment of attachments) {
+    const tag = document.createElement("div");
+    tag.className = "chat-file-tag";
+    const name = document.createElement("span");
+    name.className = "chat-file-name";
+    name.textContent = attachment.name;
+    const clear = document.createElement("button");
+    clear.className = "chat-file-clear";
+    clear.type = "button";
+    clear.title = `Remove ${attachment.name}`;
+    clear.setAttribute("aria-label", clear.title);
+    clear.textContent = "×";
+    clear.addEventListener("click", () => removeChatAttachment(attachment.id));
+    tag.append(name, clear);
+    el.chatAttachBar.appendChild(tag);
   }
+  el.chatAttachBar.classList.toggle("hidden", attachments.length === 0);
+}
+
+export function removeChatAttachment(attachmentId) {
+  state.chat.attachments = (state.chat.attachments || []).filter(
+    (attachment) => attachment.id !== attachmentId,
+  );
+  updateChatAttachmentLabel();
 }
 
 export async function uploadChatAttachment(file) {
@@ -1762,8 +1843,8 @@ export async function sendChatMessage() {
     return;
   }
   const typedText = el.chatInput.value.trim();
-  const attachment = state.chat.attachment;
-  if (!typedText && !attachment) {
+  const attachments = Array.isArray(state.chat.attachments) ? state.chat.attachments : [];
+  if (!typedText && !attachments.length) {
     return;
   }
   const text = typedText || defaultAttachmentMessage();
@@ -1792,8 +1873,6 @@ export async function sendChatMessage() {
       );
       await saveCurrentModel({ quiet: true, rethrow: true });
     }
-    await ensureChatRealtime(chatScopeKey(state.activeType), state.activeType, session.sessionId);
-
     response = await api(`/chatbot/sessions/${session.sessionId}/messages`, {
       method: "POST",
       body: JSON.stringify({
@@ -1812,7 +1891,7 @@ export async function sendChatMessage() {
             ].filter(Boolean),
           ),
         ],
-        attachmentIds: attachment?.id ? [attachment.id] : [],
+        attachmentIds: attachments.map((attachment) => attachment.id),
       }),
     });
 
@@ -1847,7 +1926,7 @@ export async function sendChatMessage() {
         response?.workflowState || response?.state,
       )
     ) {
-      state.chat.attachment = null;
+      state.chat.attachments = [];
       if (el.chatFileInput) {
         el.chatFileInput.value = "";
       }

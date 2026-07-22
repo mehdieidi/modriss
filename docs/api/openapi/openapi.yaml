@@ -1489,6 +1489,100 @@ paths:
       responses:
         "202":
           description: Telemetry accepted
+  /api/chatbot/turns/{turnId}/rebase:
+    post:
+      tags: [Assistant]
+      summary: Rebase a non-overlapping durable assistant turn
+      responses:
+        "202": { description: Rebased turn accepted }
+  /api/chatbot/turns/{turnId}/checkpoints/{checkpointId}/rollback:
+    post:
+      tags: [Assistant]
+      summary: Roll back a durable assistant checkpoint
+      responses:
+        "200": { description: Checkpoint rolled back }
+  /api/chatbot/turns/{turnId}/feedback:
+    post:
+      tags: [Assistant]
+      summary: Record assistant-turn feedback
+      responses:
+        "202": { description: Feedback accepted }
+  /api/chatbot/sessions/{sessionId}/proposals/{proposalId}:
+    get:
+      tags: [Assistant]
+      summary: Get an assistant proposal
+      responses:
+        "200": { description: Assistant proposal }
+  /api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo:
+    post:
+      tags: [Assistant]
+      summary: Undo an assistant proposal
+      responses:
+        "200": { description: Proposal undone }
+  /api/admin/assistant/turns/{id}/provider-calls:
+    get:
+      tags: [Admin]
+      summary: List provider calls for an assistant turn
+      responses:
+        "200": { description: Provider-call audit }
+  /api/admin/landing-page-visits:
+    get:
+      tags: [Admin]
+      summary: List landing page visits
+      responses:
+        "200": { description: Landing page visits }
+  /api/admin/notation/{level}:
+    get:
+      tags: [Admin]
+      summary: Get notation configuration
+      responses:
+        "200": { description: Notation configuration }
+    post:
+      tags: [Admin]
+      summary: Update notation configuration
+      responses:
+        "200": { description: Notation configuration updated }
+  /api/admin/theme-profiles:
+    get:
+      tags: [Admin]
+      summary: List theme profiles
+      responses:
+        "200": { description: Theme profiles }
+    post:
+      tags: [Admin]
+      summary: Create a theme profile
+      responses:
+        "200": { description: Theme profile created }
+  /api/admin/theme-profiles/{id}:
+    post:
+      tags: [Admin]
+      summary: Update a theme profile
+      responses:
+        "200": { description: Theme profile updated }
+  /api/admin/theme-profiles/{id}/activate:
+    post:
+      tags: [Admin]
+      summary: Activate a theme profile
+      responses:
+        "200": { description: Theme profile activated }
+  /api/admin/theme-profiles/{id}/delete:
+    post:
+      tags: [Admin]
+      summary: Delete a theme profile
+      responses:
+        "200": { description: Theme profile deleted }
+  /api/admin/user-login-events:
+    get:
+      tags: [Admin]
+      summary: List user login events
+      responses:
+        "200": { description: User login events }
+  /api/theme:
+    get:
+      tags: [Admin]
+      summary: Get active theme
+      responses:
+        "200": { description: Active theme }
 components:
   securitySchemes:
     AuthToken:

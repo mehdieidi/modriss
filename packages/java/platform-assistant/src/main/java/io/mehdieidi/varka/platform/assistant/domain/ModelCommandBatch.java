@@ -35,7 +35,15 @@ public record ModelCommandBatch(
 
   public record Connection(String source, String reference, String target) {}
 
-  public record Deletion(String elementId) {}
+  /**
+   * A destructive operation must be tied to the exact inspected element state. The durable
+   * confirmation flow may replay a batch, but it must never delete a subsequently edited item.
+   */
+  public record Deletion(String elementId, String preconditionHash) {
+    public Deletion(String elementId) {
+      this(elementId, null);
+    }
+  }
 
   public record Evidence(
       String elementRef,

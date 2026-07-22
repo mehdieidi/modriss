@@ -45,8 +45,8 @@
     "assertions": ["requirement_precision", "requirement_recall"]
   },
   {
-    "id": "automatic-multi-slice",
+    "id": "durable-resume",
     "route": "COMPLEX_EDIT",
-    "assertions": ["checkpoint", "automatic_continuation", "call_budget"]
+    "assertions": ["checkpoint", "structural_validity", "durable_resume", "call_budget"]
   }
 ]

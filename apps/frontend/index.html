@@ -1161,19 +1161,7 @@
           <span></span><span></span><span></span>
         </div>
         <div class="chat-composer" id="chatInputRow">
-          <div class="chat-composer-attachments hidden" id="chatAttachBar">
-            <div class="chat-file-tag hidden" id="chatFileName">
-              <span id="chatFileNameText">file.txt</span>
-              <button
-                class="chat-file-clear"
-                id="chatFileClearBtn"
-                title="Remove attachment"
-                type="button"
-              >
-                ×
-              </button>
-            </div>
-          </div>
+          <div class="chat-composer-attachments hidden" id="chatAttachBar"></div>
           <textarea
             aria-label="Chat message input"
             autocomplete="off"
@@ -1189,7 +1177,7 @@
                 class="chat-attach-icon icon-svg icon-mask"
                 style="--icon-src: url(&quot;/assets/icons/attach.svg&quot;)"
               ></span>
-              <input accept=".txt,.md,.json" id="chatFileInput" type="file" />
+              <input accept=".txt,.md,.json" id="chatFileInput" multiple type="file" />
             </label>
             <button
               class="chat-send-btn"

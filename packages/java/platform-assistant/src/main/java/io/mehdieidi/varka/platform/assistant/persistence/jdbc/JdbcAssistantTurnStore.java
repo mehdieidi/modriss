@@ -277,6 +277,163 @@ FROM candidate WHERE t.id = candidate.id RETURNING t.*
   }
 
   @Override
+  public void resume(String turnId, Long expectedRevision) {
+    int changed =
+        jdbc.update(
+            "UPDATE assistant_turns SET state = 'QUEUED', expected_revision = COALESCE(?,"
+                + " revision), cancellation_requested = false, worker_id = NULL, lease_until ="
+                + " NULL, completed_at = NULL, final_message = NULL WHERE id = ? AND state IN"
+                + " ('PARTIAL','TIMED_OUT','FAILED','CANCELLED','CONFLICTED','NEEDS_INPUT')",
+            expectedRevision,
+            turnId);
+    if (changed != 1) throw new PlatformException(409, "This turn cannot be resumed.");
+    appendEvent(
+        turnId,
+        "turn.resumed",
+        Map.of("expectedRevision", expectedRevision == null ? "" : expectedRevision));
+  }
+
+  @Override
+  public void rebase(String turnId, long expectedRevision) {
+    int changed =
+        jdbc.update(
+            "UPDATE assistant_turns SET expected_revision = ?, state = 'QUEUED', worker_id = NULL,"
+                + " lease_until = NULL, completed_at = NULL, final_message = NULL,"
+                + " cancellation_requested = false WHERE id = ? AND state = 'CONFLICTED'",
+            expectedRevision,
+            turnId);
+    if (changed != 1) throw new PlatformException(409, "Only a conflicted turn can be rebased.");
+    appendEvent(turnId, "turn.rebased", Map.of("expectedRevision", expectedRevision));
+  }
+
+  @Override
+  public void saveWorkflow(Workflow workflow) {
+    jdbc.update(
+        "INSERT INTO assistant_workflows(turn_id, workflow_kind, phase, current_work_item_id, plan,"
+            + " updated_at) VALUES (?, ?, ?, ?, ?::jsonb, ?) ON CONFLICT (turn_id) DO UPDATE SET"
+            + " workflow_kind = EXCLUDED.workflow_kind, phase = EXCLUDED.phase,"
+            + " current_work_item_id = EXCLUDED.current_work_item_id, plan = EXCLUDED.plan,"
+            + " updated_at = EXCLUDED.updated_at",
+        workflow.turnId(),
+        workflow.workflowKind(),
+        workflow.phase(),
+        workflow.currentWorkItemId(),
+        workflow.plan() == null ? "{}" : workflow.plan().toString(),
+        timestamp(Instant.now()));
+  }
+
+  @Override
+  public Optional<Workflow> workflow(String turnId) {
+    return jdbc
+        .query(
+            "SELECT turn_id, workflow_kind, phase, current_work_item_id, plan FROM"
+                + " assistant_workflows WHERE turn_id = ?",
+            (rs, row) ->
+                new Workflow(
+                    rs.getString("turn_id"),
+                    rs.getString("workflow_kind"),
+                    rs.getString("phase"),
+                    rs.getString("current_work_item_id"),
+                    tree(rs.getString("plan"))),
+            turnId)
+        .stream()
+        .findFirst();
+  }
+
+  @Override
+  public void saveWorkItems(String turnId, List<WorkItem> items) {
+    for (WorkItem item : items)
+      jdbc.update(
+          "INSERT INTO assistant_work_items(id, turn_id, ordinal, label, status, idempotency_key,"
+              + " payload) VALUES (?, ?, ?, ?, ?, ?, ?::jsonb) ON CONFLICT (turn_id,"
+              + " idempotency_key) DO UPDATE SET status = EXCLUDED.status, payload ="
+              + " EXCLUDED.payload, label = EXCLUDED.label",
+          item.id(),
+          turnId,
+          item.ordinal(),
+          item.label(),
+          item.status(),
+          item.idempotencyKey(),
+          item.payload() == null ? "{}" : item.payload().toString());
+  }
+
+  @Override
+  public List<WorkItem> workItems(String turnId) {
+    return jdbc.query(
+        "SELECT id, ordinal, label, status, idempotency_key, payload FROM assistant_work_items"
+            + " WHERE turn_id = ? ORDER BY ordinal",
+        (rs, row) ->
+            new WorkItem(
+                rs.getString("id"),
+                rs.getInt("ordinal"),
+                rs.getString("label"),
+                rs.getString("status"),
+                rs.getString("idempotency_key"),
+                tree(rs.getString("payload"))),
+        turnId);
+  }
+
+  @Override
+  public void saveSourceFacts(String turnId, List<SourceFact> facts) {
+    for (SourceFact fact : facts)
+      jdbc.update(
+          "INSERT INTO assistant_source_facts(id, turn_id, kind, status, payload, assumption)"
+              + " VALUES (?, ?, ?, ?, ?::jsonb, ?) ON CONFLICT (id) DO UPDATE SET status ="
+              + " EXCLUDED.status, payload = EXCLUDED.payload, assumption = EXCLUDED.assumption",
+          fact.id(),
+          turnId,
+          fact.kind(),
+          fact.status(),
+          fact.payload() == null ? "{}" : fact.payload().toString(),
+          fact.assumption());
+  }
+
+  @Override
+  public List<SourceFact> sourceFacts(String turnId) {
+    return jdbc.query(
+        "SELECT id, kind, status, payload, assumption FROM assistant_source_facts WHERE turn_id ="
+            + " ?",
+        (rs, row) ->
+            new SourceFact(
+                rs.getString("id"),
+                rs.getString("kind"),
+                rs.getString("status"),
+                tree(rs.getString("payload")),
+                rs.getString("assumption")),
+        turnId);
+  }
+
+  @Override
+  public void recordValidationAttempt(ValidationAttempt attempt) {
+    jdbc.update(
+        "INSERT INTO assistant_validation_attempts(turn_id, work_item_id, attempt, valid,"
+            + " diagnostics, created_at) VALUES (?, ?, ?, ?, ?::jsonb, ?) ON CONFLICT (turn_id,"
+            + " work_item_id, attempt) DO NOTHING",
+        attempt.turnId(),
+        attempt.workItemId(),
+        attempt.attempt(),
+        attempt.valid(),
+        attempt.diagnostics() == null ? "[]" : attempt.diagnostics().toString(),
+        timestamp(attempt.createdAt()));
+  }
+
+  @Override
+  public List<ValidationAttempt> validationAttempts(String turnId) {
+    return jdbc.query(
+        "SELECT turn_id, work_item_id, attempt, valid, diagnostics, created_at "
+            + "FROM assistant_validation_attempts WHERE turn_id = ? ORDER BY created_at, attempt",
+        (rs, row) ->
+            new ValidationAttempt(
+                rs.getString("turn_id"),
+                rs.getString("work_item_id"),
+                rs.getInt("attempt"),
+                rs.getBoolean("valid"),
+                tree(rs.getString("diagnostics")),
+                rs.getTimestamp("created_at").toInstant()),
+        turnId);
+  }
+
+  @Override
   public AssistantTurn.Event appendEvent(String turnId, String type, Map<String, Object> payload) {
     DuplicateKeyException duplicate = null;
     for (int attempt = 0; attempt < 3; attempt++) {
@@ -416,32 +573,77 @@ RETURNING *
 
   @Override
   public void saveCheckpoint(String turnId, String modelId, long revision, Object inversePatch) {
+    String key = "legacy-" + revision;
+    beginCheckpoint(turnId, modelId, Math.max(0, revision - 1), key, "Checkpoint", null);
+    finalizeCheckpoint(turnId, key, revision, inversePatch, Map.of());
+  }
+
+  @Override
+  public Checkpoint beginCheckpoint(
+      String turnId,
+      String modelId,
+      long baseRevision,
+      String idempotencyKey,
+      String label,
+      String candidateHash) {
     jdbc.update(
-        "INSERT INTO assistant_checkpoints(turn_id, model_id, revision, inverse_patch, created_at)"
-            + " VALUES (?, ?, ?, ?::jsonb, ?)",
+        "INSERT INTO assistant_checkpoints(turn_id, model_id, revision, inverse_patch, created_at,"
+            + " idempotency_key, ordinal, label, base_revision, candidate_hash, status) SELECT ?,"
+            + " ?, ?, '{}'::jsonb, ?, ?, COALESCE(MAX(ordinal), 0) + 1, ?, ?, ?, 'INTENT' FROM"
+            + " assistant_checkpoints WHERE turn_id = ? ON CONFLICT (turn_id, idempotency_key) DO"
+            + " NOTHING",
         turnId,
         modelId,
-        revision,
-        json(inversePatch == null ? Map.of() : inversePatch),
-        timestamp(Instant.now()));
+        baseRevision,
+        timestamp(Instant.now()),
+        idempotencyKey,
+        label,
+        baseRevision,
+        candidateHash,
+        turnId);
+    return checkpoint(
+        "SELECT * FROM assistant_checkpoints WHERE turn_id = ? AND idempotency_key = ?",
+        turnId,
+        idempotencyKey);
+  }
+
+  @Override
+  public Checkpoint finalizeCheckpoint(
+      String turnId,
+      String idempotencyKey,
+      long revision,
+      Object inversePatch,
+      Object validationSummary) {
+    int changed =
+        jdbc.update(
+            "UPDATE assistant_checkpoints SET revision = ?, inverse_patch = ?::jsonb,"
+                + " validation_summary = ?::jsonb, status = 'COMMITTED' WHERE turn_id = ?"
+                + " AND idempotency_key = ? AND status IN ('INTENT','COMMITTED')",
+            revision,
+            json(inversePatch == null ? Map.of() : inversePatch),
+            json(validationSummary == null ? Map.of() : validationSummary),
+            turnId,
+            idempotencyKey);
+    if (changed != 1) throw new PlatformException(409, "Checkpoint intent was not found.");
     jdbc.update(
-        "UPDATE assistant_turns SET checkpoint_count = checkpoint_count + 1, revision = ? WHERE id"
-            + " = ?",
+        "UPDATE assistant_turns SET checkpoint_count = (SELECT count(*) FROM assistant_checkpoints"
+            + " WHERE turn_id = ? AND status = 'COMMITTED'), revision = ? WHERE id = ?",
+        turnId,
         revision,
         turnId);
+    return checkpoint(
+        "SELECT * FROM assistant_checkpoints WHERE turn_id = ? AND idempotency_key = ?",
+        turnId,
+        idempotencyKey);
   }
 
   @Override
   public Optional<AssistantTurnStore.Checkpoint> latestCheckpoint(String turnId) {
     return jdbc
         .query(
-            "SELECT model_id, revision, inverse_patch FROM assistant_checkpoints WHERE turn_id = ?"
-                + " ORDER BY id DESC LIMIT 1",
-            (rs, row) ->
-                new AssistantTurnStore.Checkpoint(
-                    rs.getString("model_id"),
-                    rs.getLong("revision"),
-                    tree(rs.getString("inverse_patch"))),
+            "SELECT * FROM assistant_checkpoints WHERE turn_id = ? AND status = 'COMMITTED' ORDER"
+                + " BY id DESC LIMIT 1",
+            (rs, row) -> checkpoint(rs, row),
             turnId)
         .stream()
         .findFirst();
@@ -450,14 +652,32 @@ RETURNING *
   @Override
   public List<AssistantTurnStore.Checkpoint> checkpoints(String turnId) {
     return jdbc.query(
-        "SELECT model_id, revision, inverse_patch FROM assistant_checkpoints WHERE turn_id = ?"
-            + " ORDER BY id",
-        (rs, row) ->
-            new AssistantTurnStore.Checkpoint(
-                rs.getString("model_id"),
-                rs.getLong("revision"),
-                tree(rs.getString("inverse_patch"))),
+        "SELECT * FROM assistant_checkpoints WHERE turn_id = ? AND status = 'COMMITTED' ORDER BY"
+            + " ordinal",
+        (rs, row) -> checkpoint(rs, row),
         turnId);
+  }
+
+  private Checkpoint checkpoint(String sql, Object... args) {
+    return jdbc.query(sql, (rs, row) -> checkpoint(rs, row), args).stream()
+        .findFirst()
+        .orElseThrow(() -> new PlatformException(409, "Checkpoint intent was not found."));
+  }
+
+  private Checkpoint checkpoint(ResultSet rs, @SuppressWarnings("unused") int row)
+      throws java.sql.SQLException {
+    return new Checkpoint(
+        rs.getLong("id"),
+        rs.getString("model_id"),
+        rs.getLong("revision"),
+        tree(rs.getString("inverse_patch")),
+        rs.getString("idempotency_key"),
+        rs.getInt("ordinal"),
+        rs.getString("label"),
+        (Long) rs.getObject("base_revision"),
+        rs.getString("candidate_hash"),
+        rs.getString("status"),
+        tree(rs.getString("validation_summary")));
   }
 
   @Override

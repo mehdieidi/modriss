@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.platform.assistant.agent;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
@@ -31,10 +32,54 @@ class AssistantDurableEvalFixtureTest {
                   "malformed-repair",
                   "attachment-provenance-cim",
                   "labelled-requirements-pim",
-                  "automatic-multi-slice")));
+                  "durable-resume")));
       assertTrue(fixtures.stream().allMatch(item -> !item.assertions().isEmpty()));
     }
   }
 
+  @Test
+  void v2AcceptanceContractUsesSemanticObligationsInsteadOfOperationCounts() throws Exception {
+    try (InputStream input =
+        getClass().getResourceAsStream("/assistant-v2-acceptance-fixtures.json")) {
+      List<V2Fixture> fixtures =
+          new ObjectMapper().readValue(input, new TypeReference<List<V2Fixture>>() {});
+
+      assertTrue(
+          fixtures.stream().anyMatch(item -> item.id().equals("document-to-cim-community-clinic")));
+      assertTrue(
+          fixtures.stream()
+              .anyMatch(item -> item.id().equals("document-to-cim-marketplace-returns")));
+      assertTrue(fixtures.stream().anyMatch(item -> item.level().equals("CIM")));
+      assertTrue(fixtures.stream().anyMatch(item -> item.level().equals("PIM")));
+      assertTrue(
+          fixtures.stream()
+              .anyMatch(
+                  item ->
+                      item.id().equals("unsupported-psm-assistant-request")
+                          && item.level().equals("PSM")));
+      assertTrue(
+          fixtures.stream()
+              .allMatch(
+                  item ->
+                      !item.semanticObligations().isEmpty()
+                          && !item.structuralAssertions().isEmpty()
+                          && !item.durabilityAssertions().isEmpty()
+                          && !item.uxAssertions().isEmpty()));
+      assertFalse(
+          fixtures.stream()
+              .flatMap(item -> item.semanticObligations().stream())
+              .anyMatch(
+                  value -> value.toLowerCase(java.util.Locale.ROOT).contains("minoperation")));
+    }
+  }
+
   private record Fixture(String id, String route, List<String> assertions) {}
+
+  private record V2Fixture(
+      String id,
+      String level,
+      List<String> semanticObligations,
+      List<String> structuralAssertions,
+      List<String> durabilityAssertions,
+      List<String> uxAssertions) {}
 }

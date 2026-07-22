@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 /** Schema-validated editing and inspection tools exposed to the modeling agent. */
@@ -83,6 +84,97 @@ public final class AgentModelTools {
   public JsonNode readModel(String id) {
     JsonNode model = active().workspace().snapshot();
     return id == null || id.isBlank() ? model : find(model, id);
+  }
+
+  /**
+   * Returns compact semantic records for a structured model inspection. This deliberately avoids
+   * returning an uncontrolled model dump while allowing feature edits to inspect stable ids, types,
+   * ownership, and relationship neighbourhoods before proposing a patch.
+   */
+  public JsonNode inspectModel(InspectionSelector selector) {
+    InspectionSelector effective = selector == null ? InspectionSelector.all() : selector;
+    List<InspectedElement> elements = new ArrayList<>();
+    collectInspected(active().workspace().snapshot(), null, null, elements);
+    List<InspectedElement> filtered =
+        elements.stream()
+            .filter(item -> effective.ids().isEmpty() || effective.ids().contains(item.id()))
+            .filter(
+                item ->
+                    effective.eClasses().isEmpty() || effective.eClasses().contains(item.eClass()))
+            .filter(
+                item ->
+                    effective.ownerIds().isEmpty() || effective.ownerIds().contains(item.ownerId()))
+            .filter(item -> matchesSelectorQuery(item, effective.query()))
+            .toList();
+    int pageSize = Math.max(1, Math.min(effective.pageSize(), 100));
+    int from = Math.min(Math.max(0, effective.page()) * pageSize, filtered.size());
+    int to = Math.min(from + pageSize, filtered.size());
+    ObjectNode result = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+    result.put("total", filtered.size());
+    result.put("page", Math.max(0, effective.page()));
+    result.put("pageSize", pageSize);
+    ArrayNode records = result.putArray("elements");
+    for (InspectedElement item : filtered.subList(from, to)) {
+      ObjectNode record = records.addObject();
+      record.put("id", item.id());
+      record.put("eClass", item.eClass());
+      if (item.name() != null && !item.name().isBlank()) record.put("name", item.name());
+      if (item.ownerId() != null) record.put("ownerId", item.ownerId());
+      if (item.ownerFeature() != null) record.put("ownerFeature", item.ownerFeature());
+      ArrayNode outgoing = record.putArray("outgoingReferences");
+      item.outgoingReferences().forEach(outgoing::add);
+    }
+    return result;
+  }
+
+  private boolean matchesSelectorQuery(InspectedElement item, String query) {
+    if (query == null || query.isBlank()) return true;
+    String needle = query.trim().toLowerCase(Locale.ROOT);
+    return item.id().toLowerCase(Locale.ROOT).contains(needle)
+        || item.eClass().toLowerCase(Locale.ROOT).contains(needle)
+        || (item.name() != null && item.name().toLowerCase(Locale.ROOT).contains(needle));
+  }
+
+  private void collectInspected(
+      JsonNode node, String ownerId, String ownerFeature, List<InspectedElement> items) {
+    if (node == null) return;
+    if (node.isObject()) {
+      String id = node.path("id").asText("").trim();
+      String eClass = node.path("eClass").asText("").trim();
+      if (!id.isBlank() && !eClass.isBlank()) {
+        List<String> outgoing = new ArrayList<>();
+        node.properties()
+            .forEach(entry -> collectReferenceIds(entry.getValue(), entry.getKey(), outgoing));
+        items.add(
+            new InspectedElement(
+                id,
+                eClass,
+                node.path("name").asText(node.path("label").asText("")),
+                ownerId,
+                ownerFeature,
+                outgoing));
+        node.properties()
+            .forEach(entry -> collectInspected(entry.getValue(), id, entry.getKey(), items));
+        return;
+      }
+    }
+    if (node.isObject())
+      node.properties()
+          .forEach(entry -> collectInspected(entry.getValue(), ownerId, entry.getKey(), items));
+    else if (node.isArray())
+      node.forEach(child -> collectInspected(child, ownerId, ownerFeature, items));
+  }
+
+  private void collectReferenceIds(JsonNode node, String feature, List<String> references) {
+    if (node == null) return;
+    if (node.isTextual()
+        && (feature.endsWith("Id") || feature.endsWith("Ids") || feature.endsWith("Ref")))
+      references.add(feature + "=" + node.asText());
+    else if (node.isArray() && (feature.endsWith("Ids") || feature.endsWith("Refs")))
+      node.forEach(
+          value -> {
+            if (value.isTextual()) references.add(feature + "=" + value.asText());
+          });
   }
 
   /**
@@ -217,6 +309,11 @@ public final class AgentModelTools {
         throw new PlatformException(422, "Create clientRef is required.");
       if (refs.put(create.clientRef(), create.clientRef()) != null)
         throw new PlatformException(422, "Duplicate clientRef: " + create.clientRef());
+      if (blank(create.owner()) == null || blank(create.reference()) == null) {
+        throw new PlatformException(
+            422,
+            "Create '" + create.clientRef() + "' requires explicit owner and containment feature.");
+      }
       TypeContract type = contracts.require(active.level(), create.eClass());
       createdTypes.put(create.clientRef(), type.eClass());
       ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
@@ -229,7 +326,7 @@ public final class AgentModelTools {
               create.clientRef(),
               type.eClass(),
               attributes,
-              resolveCreateOwner(create.owner(), refs, active.workspace().snapshot()),
+              resolveRef(create.owner(), refs),
               blank(create.reference())));
     }
     for (ModelCommandBatch.Update update : batch.updates()) {
@@ -282,16 +379,14 @@ public final class AgentModelTools {
               source,
               connection.reference()));
     }
-    synthesizeRequiredClosure(
-        active.level(),
-        active.workspace().snapshot(),
-        operations,
-        refs,
-        createdTypes,
-        createdAttributes);
     for (ModelCommandBatch.Deletion deletion : batch.deletions()) {
       String id = resolveRef(deletion.elementId(), refs);
       JsonNode element = find(active.workspace().snapshot(), id);
+      if (deletion.preconditionHash() == null || deletion.preconditionHash().isBlank())
+        throw new PlatformException(
+            422, "Deletion '" + id + "' requires the inspected preconditionHash.");
+      if (!deletion.preconditionHash().equals(elementHash(element)))
+        throw new PlatformException(409, "Deletion precondition changed for element '" + id + "'.");
       operations.add(
           new Operation(
               OperationType.DELETE_ELEMENT, id, element.path("eClass").asText(), null, null, null));
@@ -300,7 +395,7 @@ public final class AgentModelTools {
     ModelWorkspace.MutationResult result =
         commandCompiler == null
             ? active.workspace().mutate(semantic)
-            : mutateStructurallyValidComponents(active.workspace(), semantic);
+            : mutateAtomically(active.workspace(), semantic);
     committedBatch = batch;
     return result;
   }
@@ -561,48 +656,32 @@ public final class AgentModelTools {
     Map<String, AttributeContract> legal = new LinkedHashMap<>();
     type.attributes().forEach(attribute -> legal.put(attribute.name(), attribute));
     ObjectNode normalized = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
-    List<String> notes = new ArrayList<>();
     attributes
         .properties()
         .forEach(
             entry -> {
               String name = entry.getKey();
               JsonNode value = entry.getValue();
-              if ("label".equals(name)) {
-                normalized.set(name, value);
-                return;
-              }
               AttributeContract contract = legal.get(name);
               if (contract == null) {
-                if (value != null && !value.isNull() && !value.asText("").isBlank()) {
-                  notes.add(name + ": " + value.asText());
-                }
-                return;
+                throw new PlatformException(
+                    422, "Attribute '" + name + "' is not writable on " + type.eClass() + ".");
               }
               if (!contract.enumLiterals().isEmpty()
                   && value != null
                   && !contract.enumLiterals().contains(value.asText())) {
-                notes.add(name + ": " + value.asText() + " (not a valid enum literal)");
-                return;
+                throw new PlatformException(
+                    422,
+                    "Invalid enum value for "
+                        + type.eClass()
+                        + "."
+                        + name
+                        + ". Allowed values: "
+                        + contract.enumLiterals());
               }
               normalized.set(name, value);
             });
-    if (!notes.isEmpty()) {
-      String note = "Additional requested details: " + String.join("; ", notes);
-      String target = narrativeAttribute(legal);
-      if (target != null) {
-        String existing = normalized.path(target).asText("");
-        normalized.put(target, existing.isBlank() ? note : existing + "\n" + note);
-      }
-    }
     return normalized;
-  }
-
-  private String narrativeAttribute(Map<String, AttributeContract> legal) {
-    for (String candidate : List.of("documentation", "description", "summary", "rationale")) {
-      if (legal.containsKey(candidate)) return candidate;
-    }
-    return null;
   }
 
   private boolean hasConnection(List<Operation> operations, String sourceId, String reference) {
@@ -636,32 +715,9 @@ public final class AgentModelTools {
     return type.replaceAll("(?<!^)([A-Z])", " $1");
   }
 
-  private ModelWorkspace.MutationResult mutateStructurallyValidComponents(
+  private ModelWorkspace.MutationResult mutateAtomically(
       ModelWorkspace workspace, SemanticModelPatch semantic) {
-    try {
-      return workspace.mutate(commandCompiler.compile(workspace.snapshot(), semantic));
-    } catch (PlatformException fullBatchFailure) {
-      List<String> affected = new ArrayList<>();
-      int patchOperations = 0;
-      JsonNode latest = workspace.snapshot();
-      for (Operation operation : semantic.operations()) {
-        try {
-          ModelWorkspace.MutationResult result =
-              workspace.mutate(
-                  commandCompiler.compile(
-                      workspace.snapshot(), new SemanticModelPatch(List.of(operation))));
-          affected.addAll(result.affectedElementIds());
-          patchOperations += result.patchOperations();
-          latest = result.model();
-        } catch (PlatformException ignoredRejectedComponent) {
-          // Keep every independently valid model component and leave rejected components out of
-          // the checkpoint. The final validation gate still decides whether the turn can succeed.
-        }
-      }
-      if (patchOperations == 0) throw fullBatchFailure;
-      return new ModelWorkspace.MutationResult(
-          affected.stream().distinct().toList(), patchOperations, latest);
-    }
+    return workspace.mutate(commandCompiler.compile(workspace.snapshot(), semantic));
   }
 
   private JsonNode find(JsonNode root, String id) {
@@ -704,42 +760,6 @@ public final class AgentModelTools {
     return result == null ? null : refs.getOrDefault(result, result);
   }
 
-  private String resolveCreateOwner(String value, Map<String, String> refs, JsonNode root) {
-    String result = resolveRef(value, refs);
-    return isRootOwnerAlias(result, root) ? null : result;
-  }
-
-  private boolean isRootOwnerAlias(String value, JsonNode root) {
-    if (value == null || value.isBlank() || root == null || !root.isObject()) return false;
-    if (containsId(root, value)) return false;
-    String normalized = value.trim().toLowerCase(Locale.ROOT);
-    String rootId = root.path("id").asText("").trim().toLowerCase(Locale.ROOT);
-    String rootType = root.path("eClass").asText("").trim().toLowerCase(Locale.ROOT);
-    String level = root.path("modelLevel").asText("").trim().toLowerCase(Locale.ROOT);
-    return normalized.equals(rootId)
-        || normalized.equals(rootType)
-        || normalized.equals(level + "model")
-        || normalized.equals("root")
-        || normalized.equals("model")
-        || normalized.equals("m1")
-        || normalized.endsWith("-model");
-  }
-
-  private boolean containsId(JsonNode root, String id) {
-    List<JsonNode> found = new ArrayList<>(1);
-    collect(
-        root,
-        node -> {
-          if (found.isEmpty()
-              && node.isObject()
-              && id.equals(node.path("id").asText())
-              && !node.path("id").asText().equals(root.path("id").asText())) {
-            found.add(node);
-          }
-        });
-    return !found.isEmpty();
-  }
-
   private String elementHash(JsonNode element) {
     try {
       return HexFormat.of()
@@ -765,7 +785,33 @@ public final class AgentModelTools {
 
   public record PlanItem(String text, String status) {}
 
+  public record InspectionSelector(
+      List<String> ids,
+      List<String> eClasses,
+      List<String> ownerIds,
+      String query,
+      int page,
+      int pageSize) {
+    public InspectionSelector {
+      ids = ids == null ? List.of() : List.copyOf(ids);
+      eClasses = eClasses == null ? List.of() : List.copyOf(eClasses);
+      ownerIds = ownerIds == null ? List.of() : List.copyOf(ownerIds);
+    }
+
+    public static InspectionSelector all() {
+      return new InspectionSelector(List.of(), List.of(), List.of(), null, 0, 50);
+    }
+  }
+
   private record Context(ModelLevel level, ModelWorkspace workspace, List<PlanItem> plan) {}
 
   private record TargetCandidate(String id, String type, int rank) {}
+
+  private record InspectedElement(
+      String id,
+      String eClass,
+      String name,
+      String ownerId,
+      String ownerFeature,
+      List<String> outgoingReferences) {}
 }

@@ -257,7 +257,6 @@ public final class AgenticAssistantFacade {
     List<ThreadMessage> messages =
         memory.recentMessages(sessionId, 100).stream()
             .sorted(java.util.Comparator.comparing(MessageRecord::createdAt))
-            .filter(item -> !isInternalContinuation(item.role(), item.content()))
             .map(item -> new ThreadMessage(item.role(), item.content()))
             .toList();
     return new ThreadSnapshot(
@@ -296,12 +295,6 @@ public final class AgenticAssistantFacade {
     if (level != ModelLevel.CIM && level != ModelLevel.PIM) {
       throw new PlatformException(422, "AI modeling is available only for CIM and PIM levels.");
     }
-  }
-
-  private boolean isInternalContinuation(String role, String content) {
-    return "USER".equalsIgnoreCase(role)
-        && content != null
-        && content.contains("[automatic-slice:");
   }
 
   public record ThreadMessage(String role, String content) {}

@@ -1,6 +1,7 @@
 package io.mehdieidi.varka.platform.assistant.provider;
 
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
+import io.mehdieidi.varka.platform.assistant.provider.springai.AbstractAssistantModelProvider;
 import io.mehdieidi.varka.platform.assistant.provider.springai.GeminiAssistantModelProvider;
 import io.mehdieidi.varka.platform.assistant.provider.springai.OpenAiCompatibleAssistantModelProvider;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
@@ -63,11 +64,16 @@ public final class ConfiguredAssistantModelProvider implements AssistantModelPro
   private <T> T withFallback(Function<AssistantModelProvider, T> call) {
     AssistantModelProvider configured = primary();
     if (!configured.available()) {
+      String diagnostic =
+          configured instanceof AbstractAssistantModelProvider provider
+              ? " (" + provider.availabilityDiagnostic() + ")"
+              : "";
       throw new PlatformException(
           503,
           "The configured AI provider '"
               + configured.metadata().provider()
-              + "' is not currently available.");
+              + "' is not currently available."
+              + diagnostic);
     }
     try {
       return call.apply(configured);

@@ -1,0 +1,134 @@
+[
+  {
+    "id": "document-to-cim-community-clinic",
+    "level": "CIM",
+    "sourceDocumentPath": "mde/samples/document-to-cim/community-clinic-user-stories.md",
+    "semanticObligations": [
+      "Patient",
+      "Clinic Scheduler",
+      "Provider",
+      "Compliance Officer",
+      "Search Available Appointments",
+      "Book Appointment",
+      "Cancel or Reschedule Appointment",
+      "Manage Provider Availability",
+      "Prepare Visit Context",
+      "Audit Patient Data Access",
+      "Appointment Slot",
+      "Provider Schedule",
+      "Access Log Entry",
+      "held slot expires after 10 minutes",
+      "Identity verification provider is not yet selected"
+    ],
+    "structuralAssertions": [
+      "emf_conformant",
+      "relationships_present",
+      "no_placeholder_only_nodes"
+    ],
+    "durabilityAssertions": ["checkpoint_persisted", "replay_safe", "undo_available"],
+    "uxAssertions": [
+      "first_checkpoint_within_30_seconds",
+      "completion_within_5_minutes",
+      "checkpoint_visible_before_completion"
+    ]
+  },
+  {
+    "id": "document-to-cim-marketplace-returns",
+    "level": "CIM",
+    "sourceDocumentPath": "mde/samples/document-to-cim/marketplace-returns-event-storming.md",
+    "semanticObligations": [
+      "Customer",
+      "Seller Operations Specialist",
+      "Warehouse Inspector",
+      "Support Agent",
+      "Finance Analyst",
+      "Request Return",
+      "Approve Return",
+      "Record Item Inspection",
+      "Issue Refund",
+      "Return Requested",
+      "Refund Issued",
+      "Refund Failed",
+      "Auto Approval Policy",
+      "Inspection Policy",
+      "Return Request",
+      "Refund",
+      "Fraud scoring provider is not selected"
+    ],
+    "structuralAssertions": [
+      "emf_conformant",
+      "relationships_present",
+      "no_placeholder_only_nodes"
+    ],
+    "durabilityAssertions": ["checkpoint_persisted", "replay_safe", "undo_available"],
+    "uxAssertions": [
+      "first_checkpoint_within_30_seconds",
+      "completion_within_5_minutes",
+      "checkpoint_visible_before_completion"
+    ]
+  },
+  {
+    "id": "create-full-cim-feature",
+    "level": "CIM",
+    "semanticObligations": [
+      "actor",
+      "goal",
+      "domain_concept",
+      "process_or_policy",
+      "meaningful_relationship"
+    ],
+    "structuralAssertions": ["emf_conformant", "validated_checkpoint"],
+    "durabilityAssertions": ["checkpoint_persisted", "restart_safe"],
+    "uxAssertions": ["checkpoint_visible_before_completion"]
+  },
+  {
+    "id": "create-full-pim-feature",
+    "level": "PIM",
+    "semanticObligations": [
+      "api",
+      "function",
+      "data_store",
+      "event_or_workflow",
+      "meaningful_relationship"
+    ],
+    "structuralAssertions": ["emf_conformant", "validated_checkpoint"],
+    "durabilityAssertions": ["checkpoint_persisted", "restart_safe"],
+    "uxAssertions": ["checkpoint_visible_before_completion"]
+  },
+  {
+    "id": "edit-existing-cim-and-pim",
+    "level": "CIM_OR_PIM",
+    "semanticObligations": [
+      "requested_cross_cutting_feature",
+      "preserve_unrelated_elements",
+      "meaningful_relationship"
+    ],
+    "structuralAssertions": ["emf_conformant", "validated_checkpoint"],
+    "durabilityAssertions": ["rebase_non_overlapping", "conflict_overlapping", "no_lost_user_edit"],
+    "uxAssertions": ["checkpoint_visible_before_completion"]
+  },
+  {
+    "id": "explain-without-mutation",
+    "level": "CIM_OR_PIM",
+    "semanticObligations": ["grounded_explanation"],
+    "structuralAssertions": ["no_model_mutation"],
+    "durabilityAssertions": ["no_checkpoint"],
+    "uxAssertions": ["answer_visible"]
+  },
+  {
+    "id": "deletion-confirmation-and-resume",
+    "level": "CIM_OR_PIM",
+    "semanticObligations": ["exact_selected_deletion"],
+    "structuralAssertions": ["validated_checkpoint_after_confirmation"],
+    "durabilityAssertions": ["no_mutation_before_confirmation", "cancel_safe", "resume_safe"],
+    "uxAssertions": ["confirmation_visible"]
+  },
+  {
+    "id": "unsupported-psm-assistant-request",
+    "level": "PSM",
+    "semanticObligations": ["explicit_unsupported_response"],
+    "structuralAssertions": ["no_model_mutation"],
+    "durabilityAssertions": ["no_checkpoint"],
+    "uxAssertions": ["unsupported_reason_visible"]
+  }
+]

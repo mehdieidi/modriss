@@ -173,6 +173,7 @@ public final class AgenticTurnService {
             expectedRevision,
             current.modelJson(),
             patches,
+            models,
             // A working copy is deliberately private. Durable consumers receive only the
             // persisted checkpoint emitted by the turn worker after model persistence succeeds.
             event -> {});
@@ -219,9 +220,6 @@ public final class AgenticTurnService {
   }
 
   private String contextualMessage(String sessionId, String message) {
-    // Automatic slices already carry the complete original request and a persisted checkpoint.
-    // Replaying earlier slices can reintroduce a stale clarification or duplicate plan.
-    if (message != null && message.contains("[automatic-slice:")) return message;
     if (memory == null) return message;
     List<io.mehdieidi.varka.platform.assistant.domain.memory.AssistantMemoryRecords.MessageRecord>
         history =

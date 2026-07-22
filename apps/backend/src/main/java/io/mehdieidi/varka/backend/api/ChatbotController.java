@@ -154,6 +154,7 @@ public class ChatbotController {
     UserRecord user = auth.user(token);
     projects.get(user, request.projectId());
     ModelLevel level = ModelLevel.fromApiName(request.modelType());
+    rejectUnsupportedAssistantLevel(level);
     AssistantSessionStore.AssistantSession session =
         assistant.startSession(
             user,
@@ -199,6 +200,7 @@ public class ChatbotController {
     UserRecord user = auth.user(token);
     projects.get(user, projectId);
     ModelLevel modelLevel = ModelLevel.fromApiName(level);
+    rejectUnsupportedAssistantLevel(modelLevel);
     return assistant.conversations(user, projectId, modelLevel, days, 30).stream()
         .map(
             conversation ->
@@ -209,6 +211,12 @@ public class ChatbotController {
                     conversation.updatedAt().toString(),
                     conversation.messageCount()))
         .toList();
+  }
+
+  private static void rejectUnsupportedAssistantLevel(ModelLevel level) {
+    if (level == ModelLevel.PSM) {
+      throw new PlatformException(422, "AI modeling is available only for CIM and PIM levels.");
+    }
   }
 
   /**
@@ -289,16 +297,20 @@ public class ChatbotController {
               0,
               0);
       turns.create(turn);
+      String workflowKind =
+          attachment.content() == null || attachment.content().isBlank()
+              ? "CREATE_OR_EDIT_MODEL"
+              : "DOCUMENT_TO_CIM";
+      turns.saveWorkflow(
+          new AssistantTurnStore.Workflow(turn.id(), workflowKind, "QUEUED", null, null));
+      turns.appendEvent(
+          turn.id(), "turn.plan.ready", java.util.Map.of("workflowKind", workflowKind));
       // Record only the submitted request. Automatic slice prompts are worker control data, not
       // chat messages, and never belong in the user's conversation transcript.
       assistant.recordUserMessage(user, sessionId, request.message());
-      turns.saveCheckpoint(
-          turn.id(), starter.id(), starter.revision(), java.util.Map.of("kind", "starter"));
-      turns.appendEvent(
-          turn.id(),
-          "model.checkpoint",
-          java.util.Map.of(
-              "modelId", starter.id(), "revision", starter.revision(), "kind", "starter"));
+      // A starter model is only the workspace baseline. It is not a checkpoint created by this
+      // turn: publishing it would make an explanation appear to mutate the canvas and would
+      // make rollback target a revision the assistant never saved.
       return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(turn));
     }
     consumeGuestPrompt(user);
@@ -369,13 +381,23 @@ public class ChatbotController {
             .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
     if (!turn.userId().equals(user.id()))
       throw new PlatformException(404, "Assistant turn not found.");
+    var workflow = turns.workflow(turnId).orElse(null);
+    int repairAttempts = Math.max(0, turns.validationAttempts(turnId).size() - 1);
     return new TurnStatusResponse(
         turn.id(),
         turn.state(),
         turn.modelId(),
         turn.revision(),
         turns.checkpoints(turnId).stream()
-            .map(item -> new CheckpointResponse(item.modelId(), item.revision()))
+            .map(
+                item ->
+                    new CheckpointResponse(
+                        item.id(),
+                        item.ordinal(),
+                        item.label(),
+                        item.modelId(),
+                        item.revision(),
+                        item.status()))
             .toList(),
         turn.checkpointCount(),
         turn.savedElementCount(),
@@ -385,6 +407,7 @@ public class ChatbotController {
         turn.providerCalls(),
         turn.promptTokens(),
         turn.completionTokens(),
+        repairAttempts,
         turns.provenance(turnId).stream()
             .map(
                 item ->
@@ -395,8 +418,14 @@ public class ChatbotController {
                         item.kind(),
                         item.assumption()))
             .toList(),
-        turns.continuations(turnId).stream()
-            .map(item -> new ContinuationResponse(item.id(), item.state(), item.revision()))
+        List.of(),
+        workflow == null ? null : workflow.workflowKind(),
+        workflow == null ? null : workflow.phase(),
+        workflow == null ? null : workflow.currentWorkItemId(),
+        turns.workItems(turnId).stream()
+            .map(
+                item ->
+                    new WorkItemResponse(item.id(), item.ordinal(), item.label(), item.status()))
             .toList());
   }
 
@@ -425,48 +454,26 @@ public class ChatbotController {
             .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
     if (!previous.userId().equals(user.id()))
       throw new PlatformException(404, "Assistant turn not found.");
-    if (!previous.terminal())
-      throw new PlatformException(409, "Only a completed turn can be continued.");
-    if (!turns.continuations(turnId).isEmpty())
-      throw new PlatformException(
-          409, "This turn already has an automatic continuation in progress or completed.");
-    Instant acceptedAt = Instant.now();
-    AssistantTurn next =
-        new AssistantTurn(
-            java.util.UUID.randomUUID().toString(),
-            previous.threadId(),
-            previous.userId(),
-            previous.projectId(),
-            previous.level(),
-            previous.modelId(),
-            previous.revision(),
-            "continue-" + previous.id() + "-" + java.util.UUID.randomUUID(),
-            previous.message()
-                + "\n\nContinue this same request from the persisted checkpoint. Inspect the "
-                + "current model if needed, preserve valid prior work, and complete the remaining "
-                + "requested modeling work.\n"
-                + DurableAssistantTurnWorker.AUTOMATIC_SLICE_MARKER
-                + "manual] Continue with the next source window, not a repeated document slice.",
-            previous.sourceText(),
-            previous.selectedElementIds(),
-            AssistantTurn.State.QUEUED,
-            acceptedAt,
-            acceptedAt.plus(turnTimeout(previous.sourceText())),
-            null,
-            null,
-            false,
-            previous.revision(),
-            0,
-            0,
-            previous.coveragePercent(),
-            previous.remainingWork(),
-            null,
-            0,
-            0,
-            0);
-    turns.create(next);
-    turns.linkContinuation(previous.id(), next.id());
-    return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(next));
+    turns.resume(previous.id(), previous.revision());
+    AssistantTurn resumed = turns.find(turnId).orElseThrow();
+    return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(resumed));
+  }
+
+  @PostMapping("/api/chatbot/turns/{turnId}/rebase")
+  public ResponseEntity<TurnAcceptedResponse> rebaseTurn(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable String turnId,
+      @RequestBody RebaseTurnRequest request) {
+    UserRecord user = auth.user(token);
+    AssistantTurn turn =
+        turns
+            .find(turnId)
+            .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
+    if (!turn.userId().equals(user.id()))
+      throw new PlatformException(404, "Assistant turn not found.");
+    turns.rebase(turnId, request.expectedRevision());
+    return ResponseEntity.status(HttpStatus.ACCEPTED)
+        .body(accepted(turns.find(turnId).orElseThrow()));
   }
 
   /** Re-runs a deletion-requesting turn only after an explicit, authenticated confirmation. */
@@ -530,6 +537,23 @@ public class ChatbotController {
       throw new PlatformException(404, "Assistant turn not found.");
     if (durableUndo == null) throw new PlatformException(503, "Durable turn undo is unavailable.");
     var result = durableUndo.undo(user, turn);
+    return new TurnUndoResponse(result.modelId(), result.revision());
+  }
+
+  @PostMapping("/api/chatbot/turns/{turnId}/checkpoints/{checkpointId}/rollback")
+  public TurnUndoResponse rollbackCheckpoint(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable String turnId,
+      @PathVariable long checkpointId) {
+    UserRecord user = auth.user(token);
+    AssistantTurn turn =
+        turns
+            .find(turnId)
+            .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
+    if (!turn.userId().equals(user.id()))
+      throw new PlatformException(404, "Assistant turn not found.");
+    if (durableUndo == null) throw new PlatformException(503, "Durable turn undo is unavailable.");
+    var result = durableUndo.rollback(user, turn, checkpointId);
     return new TurnUndoResponse(result.modelId(), result.revision());
   }
 
@@ -949,8 +973,15 @@ public class ChatbotController {
       int providerCalls,
       long promptTokens,
       long completionTokens,
+      int repairAttempts,
       List<ProvenanceResponse> provenance,
-      List<ContinuationResponse> continuations) {}
+      List<ContinuationResponse> continuations,
+      String workflowKind,
+      String phase,
+      String currentWorkItemId,
+      List<WorkItemResponse> workItems) {}
+
+  public record WorkItemResponse(String id, int ordinal, String label, String status) {}
 
   /** Source-grounded and inferred labels for the elements committed in this turn. */
   public record ProvenanceResponse(
@@ -964,10 +995,14 @@ public class ChatbotController {
   public record ContinuationResponse(String turnId, AssistantTurn.State state, Long revision) {}
 
   /** A persisted model checkpoint available for reload and safe inverse application. */
-  public record CheckpointResponse(String modelId, long revision) {}
+  public record CheckpointResponse(
+      long checkpointId, int ordinal, String label, String modelId, long revision, String status) {}
 
   /** Revision returned after a safe checkpoint inverse is persisted. */
   public record TurnUndoResponse(String modelId, long revision) {}
+
+  /** Revision observed after the caller has resolved a non-overlapping canvas change. */
+  public record RebaseTurnRequest(long expectedRevision) {}
 
   /** Explicit binary quality signal for an applied assistant turn. */
   public record TurnFeedbackRequest(boolean accepted) {}

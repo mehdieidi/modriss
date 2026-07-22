@@ -1057,7 +1057,7 @@
   padding: 4px 6px 4px 9px;
 }
 
-#chatFileNameText {
+.chat-file-name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1083,6 +1083,40 @@
 .chat-file-clear:hover {
   color: var(--danger);
   background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.chat-durable-run {
+  display: grid;
+  gap: 8px;
+}
+
+.chat-durable-plan {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.chat-durable-plan .is-completed {
+  color: var(--success, #4caf50);
+}
+
+.chat-durable-plan .is-running,
+.chat-durable-plan .is-executing {
+  color: var(--accent-light);
+}
+
+.chat-durable-checkpoints {
+  display: grid;
+  gap: 5px;
+}
+
+.chat-durable-checkpoint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
 }
 
 .chat-composer textarea {

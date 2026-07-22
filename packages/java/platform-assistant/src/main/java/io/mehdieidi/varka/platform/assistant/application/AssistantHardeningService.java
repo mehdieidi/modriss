@@ -74,7 +74,8 @@ public class AssistantHardeningService {
       AssistantModelRole role, String provider, String model, Supplier<T> call) {
     long providerStarted = System.nanoTime();
     Instant now = clock.instant();
-    Circuit snapshot = circuits.getOrDefault(provider, new Circuit(0, Instant.EPOCH));
+    String circuitKey = provider + "/" + (model == null ? "" : model);
+    Circuit snapshot = circuits.getOrDefault(circuitKey, new Circuit(0, Instant.EPOCH));
     if (now.isBefore(snapshot.openUntil())) {
       metrics.recordAssistantCircuitRejected(provider);
       log.warn(
@@ -110,7 +111,7 @@ public class AssistantHardeningService {
               mdc("requestId"),
               attempt,
               elapsedMillis(attemptStarted));
-          circuits.remove(provider);
+          circuits.remove(circuitKey);
           metrics.recordAssistantProviderSuccess(provider, role.name(), model);
           return result;
         } catch (RuntimeException ex) {
@@ -156,7 +157,9 @@ public class AssistantHardeningService {
               sleep();
               continue;
             }
-            recordFailure(provider);
+            if (isTransientProviderFailure(providerFailure)) {
+              recordFailure(circuitKey, provider);
+            }
             throw providerFailure;
           }
           last = ex;
@@ -164,14 +167,14 @@ public class AssistantHardeningService {
             // Retries are real provider requests. Do not let a configured retry turn the actual
             // provider error into the less useful "call budget exceeded" failure.
             if (!ProviderCallBudget.hasRemaining()) {
-              recordFailure(provider);
+              recordFailure(circuitKey, provider);
               throw providerRequestFailed(last);
             }
             sleep();
           }
         }
       }
-      recordFailure(provider);
+      recordFailure(circuitKey, provider);
       throw providerRequestFailed(last);
     } finally {
       // Include retries and backoff: this is the latency a durable turn actually experiences.
@@ -191,15 +194,15 @@ public class AssistantHardeningService {
             + (diagnostic.isBlank() ? "" : " Provider error: " + diagnostic));
   }
 
-  private void recordFailure(String provider) {
+  private void recordFailure(String circuitKey, String provider) {
     AssistantSettings.Hardening hardening = properties.hardening();
-    Circuit previous = circuits.getOrDefault(provider, new Circuit(0, Instant.EPOCH));
+    Circuit previous = circuits.getOrDefault(circuitKey, new Circuit(0, Instant.EPOCH));
     int failures = previous.failures() + 1;
     Instant openUntil =
         failures >= hardening.circuitFailureThreshold()
             ? clock.instant().plus(hardening.circuitOpenDuration())
             : Instant.EPOCH;
-    circuits.put(provider, new Circuit(failures, openUntil));
+    circuits.put(circuitKey, new Circuit(failures, openUntil));
     log.warn(
         "AI provider failure recorded provider={} failures={} circuitOpenUntil={}"
             + " assistantTurnId={} sessionId={} requestId={}",
@@ -231,6 +234,17 @@ public class AssistantHardeningService {
             "AI provider usage limit has been reached. Wait for the provider quota to reset or "
                 + "configure a fallback provider.");
       }
+      if (message != null
+          && (message.startsWith("400 ")
+              || message.startsWith("400 -")
+              || (message.contains("400")
+                  && (message.toLowerCase(java.util.Locale.ROOT).contains("schema")
+                      || message.toLowerCase(java.util.Locale.ROOT).contains("tool"))))) {
+        return new PlatformException(
+            400,
+            "AI provider rejected the configured tool/schema protocol. Check "
+                + "VARKA_AI_OPENAI_PROTOCOL, the selected model, and endpoint capabilities.");
+      }
       if (current instanceof SocketTimeoutException) {
         return new PlatformException(
             504,
@@ -253,9 +267,14 @@ public class AssistantHardeningService {
   }
 
   private boolean retryable(PlatformException failure) {
-    // A timeout has already spent the caller's latency budget; retrying it compounds tail
-    // latency. Transport/upstream 5xx responses are usually safe to retry once.
-    return failure.status() >= 500 && failure.status() < 504;
+    // Freemodel may intermittently abandon an otherwise valid compatible request. The caller
+    // supplies a bounded per-turn retry and latency budget, so timeout and upstream 5xx failures
+    // are safe to retry while configuration and validation failures remain immediately visible.
+    return failure.status() >= 500 && failure.status() <= 504;
+  }
+
+  private boolean isTransientProviderFailure(PlatformException failure) {
+    return failure.status() >= 500;
   }
 
   private long elapsedMillis(long started) {

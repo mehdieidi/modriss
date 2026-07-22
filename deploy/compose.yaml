@@ -81,6 +81,9 @@ services:
       # The OpenAI Java SDK also checks OPENAI_API_KEY internally. Keep the app-level
       # OpenAI-compatible key as the source of truth while satisfying that SDK path.
       OPENAI_API_KEY: ${OPENAI_API_KEY:-${OPENAI_COMPATIBLE_API_KEY:-}}
+      # Bind the application property directly as well. This keeps provider availability checks
+      # aligned with the SDK credential when an OpenAI-compatible endpoint is selected.
+      VARKA_AI_OPENAI_COMPATIBLE_API_KEY: ${OPENAI_COMPATIBLE_API_KEY:-}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     volumes:

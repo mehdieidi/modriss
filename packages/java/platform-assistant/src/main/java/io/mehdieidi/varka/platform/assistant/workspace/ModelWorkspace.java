@@ -20,6 +20,7 @@ public final class ModelWorkspace {
   private final String modelId;
   private final long baseRevision;
   private final AssistantPatchCompiler compiler;
+  private final ModelService structuralValidator;
   private final Consumer<DeltaEvent> deltaSink;
   private final List<ModelService.ModelPatchOperation> patch = new ArrayList<>();
   private final List<ModelService.ModelPatchOperation> inversePatch = new ArrayList<>();
@@ -33,10 +34,23 @@ public final class ModelWorkspace {
       JsonNode model,
       AssistantPatchCompiler compiler,
       Consumer<DeltaEvent> deltaSink) {
+    this(level, modelId, baseRevision, model, compiler, null, deltaSink);
+  }
+
+  /** Creates a workspace that validates every complete candidate draft before accepting it. */
+  public ModelWorkspace(
+      ModelLevel level,
+      String modelId,
+      long baseRevision,
+      JsonNode model,
+      AssistantPatchCompiler compiler,
+      ModelService structuralValidator,
+      Consumer<DeltaEvent> deltaSink) {
     this.level = Objects.requireNonNull(level, "level");
     this.modelId = Objects.requireNonNull(modelId, "modelId");
     this.baseRevision = baseRevision;
     this.compiler = Objects.requireNonNull(compiler, "compiler");
+    this.structuralValidator = structuralValidator;
     if (model == null || !model.isObject())
       throw new IllegalArgumentException("model must be a JSON object");
     this.model = ((ObjectNode) model).deepCopy();
@@ -50,7 +64,18 @@ public final class ModelWorkspace {
 
   /** Applies a complete precompiled structural batch to this isolated workspace. */
   public synchronized MutationResult mutate(AssistantPatchCompiler.CompiledPatch compiled) {
-    model = compiler.apply(model, compiled);
+    ObjectNode candidate = compiler.apply(model, compiled);
+    if (structuralValidator != null) {
+      ModelService.ValidationResult validation =
+          structuralValidator.validateStructural(level, candidate);
+      if (validation == null || !validation.valid()) {
+        throw new io.mehdieidi.varka.platform.kernel.PlatformException(
+            422,
+            "Assistant draft patch was rejected by Ecore validation: "
+                + (validation == null ? "no validation result" : validation.issues()));
+      }
+    }
+    model = candidate;
     patch.addAll(compiled.patch());
     inversePatch.addAll(0, compiled.inversePatch());
     compiled.affectedElements().stream()

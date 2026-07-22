@@ -63,7 +63,7 @@ export const state = {
     available: true,
     sessions: new Map(),
     channels: new Map(),
-    attachment: null,
+    attachments: [],
     historyOpen: false,
   },
   assistantPreview: null,

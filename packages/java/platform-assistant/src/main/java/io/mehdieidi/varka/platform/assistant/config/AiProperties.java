@@ -43,7 +43,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param sourceTurnTimeout overall assistant turn timeout when a source attachment is present
  * @param maxCimModelingPasses maximum incremental CIM modeling passes per source-backed turn
  * @param preferLlmSourceExtraction whether CIM attachments use LLM evidence extraction
- * @param maxAutomaticSlices maximum progressive checkpoints automatically created for one request
  */
 @ConfigurationProperties(prefix = "varka.ai")
 public record AiProperties(
@@ -77,8 +76,7 @@ public record AiProperties(
     boolean llmContractRerankEnabled,
     Duration sourceTurnTimeout,
     int maxCimModelingPasses,
-    boolean preferLlmSourceExtraction,
-    int maxAutomaticSlices)
+    boolean preferLlmSourceExtraction)
     implements AssistantSettings {
 
   /** Applies conservative defaults for local development. */
@@ -118,7 +116,6 @@ public record AiProperties(
     maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 3 : maxProviderCallsSourceTurn;
     sourceTurnTimeout = sourceTurnTimeout == null ? Duration.ofMinutes(5) : sourceTurnTimeout;
     maxCimModelingPasses = maxCimModelingPasses <= 0 ? 4 : maxCimModelingPasses;
-    maxAutomaticSlices = maxAutomaticSlices <= 0 ? 12 : maxAutomaticSlices;
   }
 
   @Override
@@ -134,11 +131,6 @@ public record AiProperties(
   @Override
   public boolean preferLlmSourceExtraction() {
     return preferLlmSourceExtraction;
-  }
-
-  @Override
-  public int maxAutomaticSlices() {
-    return maxAutomaticSlices;
   }
 
   @Override
@@ -194,7 +186,10 @@ public record AiProperties(
   }
 
   private static String normalizeOpenAiCompatibleBaseUrl(String value) {
-    String normalized = blankToDefault(value, "https://api.openai.com/v1");
+    String environment = System.getenv("OPENAI_COMPATIBLE_BASE_URL");
+    String normalized =
+        blankToDefault(
+            value == null || value.isBlank() ? environment : value, "https://api.openai.com/v1");
     while (normalized.endsWith("/")) {
       normalized = normalized.substring(0, normalized.length() - 1);
     }
@@ -321,12 +316,37 @@ public record AiProperties(
    * @param baseUrl provider API base URL
    * @param apiKey provider API key
    */
-  public record OpenAiCompatible(String baseUrl, String apiKey) {
+  public record OpenAiCompatible(String baseUrl, String apiKey, OpenAiProtocol protocol) {
+
+    /** Retains the pre-ACI two-value configuration constructor. */
+    public OpenAiCompatible(String baseUrl, String apiKey) {
+      this(baseUrl, apiKey, OpenAiProtocol.AUTO);
+    }
 
     /** Applies OpenAI's API base URL when no compatible endpoint is configured. */
     public OpenAiCompatible {
       baseUrl = normalizeOpenAiCompatibleBaseUrl(baseUrl);
       apiKey = apiKey == null ? "" : apiKey.trim();
+      protocol = protocol == null ? OpenAiProtocol.AUTO : protocol;
+    }
+  }
+
+  /** OpenAI-compatible response protocol. */
+  public enum OpenAiProtocol {
+    AUTO,
+    TOOLS,
+    JSON_SCHEMA;
+
+    /** Binds the documented environment values safely. */
+    public static OpenAiProtocol from(String value) {
+      if (value == null || value.isBlank()) return AUTO;
+      return switch (value.trim().toLowerCase(java.util.Locale.ROOT)) {
+        case "auto" -> AUTO;
+        case "tools" -> TOOLS;
+        case "json_schema", "json-schema" -> JSON_SCHEMA;
+        default ->
+            throw new IllegalArgumentException("Unsupported VARKA_AI_OPENAI_PROTOCOL: " + value);
+      };
     }
   }
 
@@ -350,11 +370,19 @@ public record AiProperties(
    * @param responder model used for user-facing answers
    * @param summarizer model used for rolling summaries
    */
-  public record Models(String planner, String responder, String summarizer) {
+  public record Models(
+      String director, String modeler, String critic, String summarizer, String responder) {
+
+    /** Retains compatibility with the original planner/responder/summarizer configuration. */
+    public Models(String planner, String responder, String summarizer) {
+      this(planner, planner, planner, summarizer, responder);
+    }
 
     /** Normalizes configured model names. */
     public Models {
-      planner = planner == null ? "" : planner.trim();
+      director = director == null ? "" : director.trim();
+      modeler = modeler == null ? "" : modeler.trim();
+      critic = critic == null ? "" : critic.trim();
       responder = responder == null ? "" : responder.trim();
       summarizer = summarizer == null ? "" : summarizer.trim();
     }
@@ -378,7 +406,20 @@ public record AiProperties(
      */
     public String forRole(Provider provider, AssistantModelRole role) {
       Provider resolvedProvider = provider == null ? Provider.OPENAI : provider;
-      return blankToDefault(responder, defaultModel(resolvedProvider));
+      String selected =
+          switch (role == null ? AssistantModelRole.RESPONDER : role) {
+            case DIRECTOR -> director;
+            case MODELER -> modeler;
+            case CRITIC -> critic;
+            case SUMMARIZER -> summarizer;
+            case RESPONDER -> responder;
+          };
+      if (selected == null || selected.isBlank()) {
+        String environmentKey =
+            "VARKA_AI_" + (role == null ? AssistantModelRole.RESPONDER : role).name() + "_MODEL";
+        selected = System.getenv(environmentKey);
+      }
+      return blankToDefault(selected, defaultModel(resolvedProvider));
     }
 
     private static String defaultModel(Provider provider) {

@@ -35,6 +35,15 @@ public final class ModelCommandCompiler {
         throw new PlatformException(422, "Create clientRef is required.");
       if (create.eClass() == null || create.eClass().isBlank())
         throw new PlatformException(422, "Create eClass is required.");
+      if (create.owner() == null
+          || create.owner().isBlank()
+          || create.reference() == null
+          || create.reference().isBlank())
+        throw new PlatformException(
+            422,
+            "Create '"
+                + create.clientRef()
+                + "' requires an explicit owner and containment feature.");
       if (refs.put(create.clientRef(), create.clientRef()) != null)
         throw new PlatformException(422, "Duplicate clientRef: " + create.clientRef());
       ObjectNode attributes = JsonNodeFactory.instance.objectNode();

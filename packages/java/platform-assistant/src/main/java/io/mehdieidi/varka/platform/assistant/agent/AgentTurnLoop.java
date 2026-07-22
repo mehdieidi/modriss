@@ -5,6 +5,9 @@ import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.domain.ModelCommandBatch;
 import io.mehdieidi.varka.platform.assistant.metamodel.LexicalRetrievalIndex;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelGuideGenerator;
+import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.AttributeContract;
+import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.ReferenceContract;
+import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.TypeContract;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantMetrics;
@@ -28,8 +31,6 @@ import tools.jackson.databind.ObjectMapper;
 
 /** Bounded non-streaming coding-agent-style turn loop over a validated model workspace. */
 public final class AgentTurnLoop {
-
-  private static final String AUTOMATIC_SLICE_MARKER = "[automatic-slice:";
 
   private final AssistantModelProvider provider;
   private final AgentModelTools tools;
@@ -247,7 +248,6 @@ public final class AgentTurnLoop {
       AssistantModelProvider.AssistantReply reply = null;
       ModelService.ValidationResult validation = null;
       boolean fullModelInspected = false;
-      boolean checkpointInspectionRequired = userMessage.contains(AUTOMATIC_SLICE_MARKER);
       for (int step = 1; step <= maxSteps; step++) {
         check(canceled, deadline, cancellationRequested, stopReason);
         if (!ProviderCallBudget.hasRemaining()) {
@@ -346,10 +346,6 @@ public final class AgentTurnLoop {
                   422,
                   "The assistant asked for an existing element even though the model is empty.");
             }
-            if (checkpointInspectionRequired && !fullModelInspected) {
-              user = requirePersistedModelInspection(userMessage, sourceDocument);
-              continue;
-            }
             if (action.tool() == AgentAction.Kind.ASK_USER && !fullModelInspected) {
               // The compact inventory is intentionally small. Before asking the user for any
               // identifier or owner, make the agent inspect the authoritative persisted model.
@@ -380,10 +376,6 @@ public final class AgentTurnLoop {
           switch (action.tool()) {
             case COMMIT_MODEL_BATCH -> {
               check(canceled, deadline, cancellationRequested, stopReason);
-              if (checkpointInspectionRequired && !fullModelInspected) {
-                user = requirePersistedModelInspection(userMessage, sourceDocument);
-                continue;
-              }
               ModelCommandBatch batch = command(action);
               String duplicate = duplicateAggregateCreation(batch, workspace);
               if (duplicate != null) {
@@ -442,11 +434,17 @@ public final class AgentTurnLoop {
             case INSPECT_MODEL -> {
               check(canceled, deadline, cancellationRequested, stopReason);
               String id = action.arguments().path("id").asText("");
-              if (id.isBlank()) fullModelInspected = true;
+              AgentModelTools.InspectionSelector selector = inspectionSelector(action.arguments());
+              if (id.isBlank()
+                  && selector.ids().isEmpty()
+                  && selector.eClasses().isEmpty()
+                  && selector.ownerIds().isEmpty()
+                  && (selector.query() == null || selector.query().isBlank()))
+                fullModelInspected = true;
               user =
                   followUpContext(userMessage, sourceDocument)
                       + "\n\nInspection result:\n"
-                      + turnTools.readModel(id)
+                      + (id.isBlank() ? turnTools.inspectModel(selector) : turnTools.readModel(id))
                       + "\n\n"
                       + "You now have the required model facts. Do not inspect or describe types"
                       + " again; return one terminal action (commit_model_batch, answer_user, or"
@@ -467,15 +465,21 @@ public final class AgentTurnLoop {
                         + " with a non-empty names array. Do not answer the user yet.";
                 continue;
               }
-              List<String> selectedNames = names.size() > 8 ? names.subList(0, 8) : names;
+              List<String> selectedNames = new ArrayList<>();
+              String rootType = workspace.snapshot().path("eClass").asText("").trim();
+              if (!rootType.isBlank()) selectedNames.add(rootType);
+              for (String name : names) {
+                if (selectedNames.size() >= 4) break;
+                if (!selectedNames.contains(name)) selectedNames.add(name);
+              }
               user =
                   followUpContext(userMessage, sourceDocument)
                       + "\n\nExact type contracts:\n"
                       + compactContracts(turnTools.describeTypes(selectedNames))
                       + "\n\n"
-                      + "You now have the exact contracts. Do not inspect or describe types again;"
-                      + " return one terminal action (commit_model_batch, answer_user, or"
-                      + " ask_user).";
+                      + "You now have the exact contracts. Do not inspect or describe types again."
+                      + " The next action must be apply_draft_patch; do not answer or ask the user."
+                      + " Submit one complete candidate batch using only these contracts.";
               continue;
             }
             case ANSWER_USER, ASK_USER ->
@@ -556,12 +560,24 @@ public final class AgentTurnLoop {
     return !containsModelElement(root, rootId);
   }
 
-  private String requirePersistedModelInspection(String userMessage, String sourceDocument) {
-    return followUpContext(userMessage, sourceDocument)
-        + "\n\nThis is an automatic continuation from a persisted checkpoint. Before any"
-        + " commit_model_batch, answer_user, or ask_user action, return inspect_model with"
-        + " an empty id. The inspection result is authoritative: preserve existing aggregates"
-        + " and extend them by their actual ids; do not recreate a similarly named container.";
+  private AgentModelTools.InspectionSelector inspectionSelector(JsonNode arguments) {
+    return new AgentModelTools.InspectionSelector(
+        stringValues(arguments.path("ids")),
+        stringValues(arguments.path("eClasses")),
+        stringValues(arguments.path("ownerIds")),
+        arguments.path("query").asText(null),
+        Math.max(0, arguments.path("page").asInt(0)),
+        Math.max(1, arguments.path("pageSize").asInt(50)));
+  }
+
+  private List<String> stringValues(JsonNode values) {
+    List<String> result = new ArrayList<>();
+    if (values.isArray())
+      values.forEach(
+          value -> {
+            if (!value.asText().isBlank()) result.add(value.asText());
+          });
+    return result;
   }
 
   private String duplicateAggregateCreation(ModelCommandBatch batch, ModelWorkspace workspace) {
@@ -771,13 +787,48 @@ researching the metamodel.
         + "\n[source evidence truncated for this repair; preserve only represented units]";
   }
 
-  private String compactContracts(Object contracts) {
-    String value = String.valueOf(contracts);
-    int limit = 18000;
-    return value.length() <= limit
-        ? value
-        : value.substring(0, limit)
-            + "\n[contract output truncated; use the returned types and create a terminal batch]";
+  /** Serializes the exact selected contracts compactly without cutting arbitrary text mid-value. */
+  private String compactContracts(List<TypeContract> contracts) {
+    StringBuilder result = new StringBuilder();
+    for (TypeContract type : contracts) {
+      result.append("type ").append(type.eClass()).append("; creatable=").append(type.creatable());
+      if (!type.attributes().isEmpty()) {
+        result.append("; attributes=");
+        appendAttributes(result, type.attributes());
+      }
+      if (!type.references().isEmpty()) {
+        result.append("; references=");
+        appendReferences(result, type.references());
+      }
+      result.append('\n');
+    }
+    return result.toString();
+  }
+
+  private void appendAttributes(StringBuilder result, List<AttributeContract> attributes) {
+    for (AttributeContract attribute : attributes) {
+      result
+          .append(attribute.name())
+          .append(':')
+          .append(attribute.type())
+          .append(attribute.required() ? "!" : "?");
+      if (!attribute.enumLiterals().isEmpty()) result.append(attribute.enumLiterals());
+      result.append(' ');
+    }
+  }
+
+  private void appendReferences(StringBuilder result, List<ReferenceContract> references) {
+    for (ReferenceContract reference : references) {
+      result
+          .append(reference.name())
+          .append("->")
+          .append(reference.targetType())
+          .append(reference.containment() ? " containment" : " reference")
+          .append(reference.required() ? "!" : "?")
+          .append(reference.many() ? " many" : " one");
+      if (reference.readonly()) result.append(" readonly");
+      result.append(' ');
+    }
   }
 
   private void check(
@@ -865,10 +916,7 @@ researching the metamodel.
     JsonNode slices = blueprint.path("slices");
     if (!slices.isArray() || slices.isEmpty() || slices.size() > 24)
       throw new PlatformException(422, "plan_source_model must include 1 to 24 ordered slices.");
-    java.util.Set<String> expectedSourceIds = new java.util.LinkedHashSet<>();
-    java.util.regex.Matcher sourceIds =
-        java.util.regex.Pattern.compile("id=\\\"([^\\\"]+)\\\"").matcher(sourceDocument);
-    while (sourceIds.find()) expectedSourceIds.add(sourceIds.group(1));
+    java.util.Set<String> expectedSourceIds = sourceUnitIds(sourceDocument);
     java.util.Set<String> representedSourceIds = new java.util.LinkedHashSet<>();
     for (JsonNode slice : slices) {
       if (!slice.path("focus").isTextual()
@@ -888,6 +936,28 @@ researching the metamodel.
       throw new PlatformException(
           422, "Source blueprint must account for every supplied source unit.");
     return blueprint;
+  }
+
+  /**
+   * Reads our local source envelope without treating document text as a regular-expression input.
+   */
+  private java.util.Set<String> sourceUnitIds(String sourceDocument) {
+    java.util.Set<String> ids = new java.util.LinkedHashSet<>();
+    if (sourceDocument == null) return ids;
+    int from = 0;
+    while ((from = sourceDocument.indexOf("<source-unit", from)) >= 0) {
+      int close = sourceDocument.indexOf('>', from);
+      if (close < 0) break;
+      String header = sourceDocument.substring(from, close + 1);
+      int id = header.indexOf("id=\"");
+      if (id >= 0) {
+        int start = id + 4;
+        int end = header.indexOf('"', start);
+        if (end > start) ids.add(header.substring(start, end));
+      }
+      from = close + 1;
+    }
+    return ids;
   }
 
   public record TurnResult(

@@ -88,7 +88,8 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
   }
 
   @Override
-  protected GoogleGenAiChatOptions.Builder options(String model, AssistantModelRole role) {
+  protected GoogleGenAiChatOptions.Builder options(
+      String model, AssistantModelRole role, boolean toolsRequested) {
     return GoogleGenAiChatOptions.builder()
         .model(model)
         .temperature(0.2)

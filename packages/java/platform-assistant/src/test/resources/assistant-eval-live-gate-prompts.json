@@ -5,9 +5,7 @@
     "level": "PIM",
     "prompt": "Explain what kinds of elements a minimal serverless PIM model usually contains.",
     "emptyCanvas": true,
-    "minOperations": 0,
-    "minElementAdds": 0,
-    "minConnections": 0,
+    "semanticObligations": ["grounded explanation", "no mutation"],
     "requiresSourceAnalysis": false
   },
   {
@@ -16,9 +14,7 @@
     "level": "PIM",
     "prompt": "Create one API named Health Check API and one Function that implements it.",
     "emptyCanvas": true,
-    "minOperations": 2,
-    "minElementAdds": 2,
-    "minConnections": 0,
+    "semanticObligations": ["Health Check API", "implementing Function"],
     "requiresSourceAnalysis": false
   },
   {
@@ -27,10 +23,7 @@
     "level": "PIM",
     "prompt": "Add a Function named Refund Command to this payment model. Place it as a root-owned function.",
     "emptyCanvas": false,
-    "requiredContracts": ["Workflow", "Function"],
-    "minOperations": 1,
-    "minElementAdds": 1,
-    "minConnections": 0,
+    "semanticObligations": ["Refund Command Function", "root-owned placement"],
     "requiresSourceAnalysis": false
   },
   {
@@ -40,9 +33,13 @@
     "prompt": "From the workshop notes, create root-owned CIM actors and commands. Use placement referenceName actors and commands. Connect at least one Actor to a Command with issuesCommands.",
     "emptyCanvas": true,
     "sourceDocument": "Clinic intake workshop:\n- Patient books an appointment.\n- Reception confirms copay.\n- Notification service sends reminder.\n- Risk: duplicate bookings for same slot.",
-    "minOperations": 4,
-    "minElementAdds": 3,
-    "minConnections": 1,
+    "semanticObligations": [
+      "Patient",
+      "Reception",
+      "Notification service",
+      "appointment booking",
+      "duplicate bookings risk"
+    ],
     "requiresSourceAnalysis": true
   },
   {
@@ -51,20 +48,7 @@
     "level": "CIM",
     "prompt": "Create actors and one command for patient appointment booking.",
     "emptyCanvas": true,
-    "minOperations": 3,
-    "minElementAdds": 2,
-    "minConnections": 1,
-    "requiresSourceAnalysis": false
-  },
-  {
-    "id": "live-psm-explain-01",
-    "category": "psm",
-    "level": "PSM",
-    "prompt": "Explain what elements a minimal AWS serverless PSM usually contains.",
-    "emptyCanvas": true,
-    "minOperations": 0,
-    "minElementAdds": 0,
-    "minConnections": 0,
+    "semanticObligations": ["patient", "appointment booking", "actor-command relationship"],
     "requiresSourceAnalysis": false
   }
 ]

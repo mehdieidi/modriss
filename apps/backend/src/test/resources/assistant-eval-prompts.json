@@ -151,27 +151,6 @@
     "emptyCanvas": true
   },
   {
-    "id": "psm-create-01",
-    "category": "psm",
-    "level": "PSM",
-    "prompt": "Create an AWS serverless platform with API Gateway, Lambda, DynamoDB, and EventBridge.",
-    "emptyCanvas": true
-  },
-  {
-    "id": "psm-create-02",
-    "category": "psm",
-    "level": "PSM",
-    "prompt": "Design an AWS backend for a vending machine network using Lambda and DynamoDB.",
-    "emptyCanvas": true
-  },
-  {
-    "id": "psm-create-03",
-    "category": "psm",
-    "level": "PSM",
-    "prompt": "Build an AWS event-driven architecture skeleton for order fulfillment.",
-    "emptyCanvas": true
-  },
-  {
     "id": "connect-01",
     "category": "refine",
     "level": "PIM",
@@ -262,13 +241,6 @@
     "category": "cim",
     "level": "CIM",
     "prompt": "Model the core actors and capabilities for an online learning platform.",
-    "emptyCanvas": true
-  },
-  {
-    "id": "psm-create-04",
-    "category": "psm",
-    "level": "PSM",
-    "prompt": "Scaffold an AWS API Gateway and Lambda backend for a ticketing platform.",
     "emptyCanvas": true
   },
   {

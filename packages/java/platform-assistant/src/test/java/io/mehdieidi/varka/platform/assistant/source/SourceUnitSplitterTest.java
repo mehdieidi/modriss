@@ -30,12 +30,14 @@ class SourceUnitSplitterTest {
   }
 
   @Test
-  void retainsAnOrdinaryDocumentAsOneSemanticUnit() {
+  void createsAddressableSpansAtStructuralBoundaries() {
     String source = "# User stories\n\n" + "As a customer I place an order.\n\n".repeat(20);
 
     var units = new SourceUnitSplitter(6000).split(source);
 
-    assertEquals(1, units.size());
-    assertEquals(source, units.get(0).content());
+    assertTrue(units.size() > 1);
+    assertEquals(
+        source,
+        units.stream().map(unit -> unit.content()).collect(java.util.stream.Collectors.joining()));
   }
 }
