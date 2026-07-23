@@ -302,6 +302,10 @@ public final class AgentModelTools {
     Context active = active();
     List<Operation> operations = new ArrayList<>();
     Map<String, String> refs = new LinkedHashMap<>();
+    // `rootId` is an explicit symbolic reference in the provider-facing patch contract. It is
+    // resolved only to this workspace's immutable root, never guessed from another element.
+    String rootId = active.workspace().snapshot().path("id").asText("").trim();
+    if (!rootId.isBlank()) refs.put("rootId", rootId);
     Map<String, String> createdTypes = new LinkedHashMap<>();
     Map<String, ObjectNode> createdAttributes = new LinkedHashMap<>();
     for (ModelCommandBatch.Create create : batch.creates()) {

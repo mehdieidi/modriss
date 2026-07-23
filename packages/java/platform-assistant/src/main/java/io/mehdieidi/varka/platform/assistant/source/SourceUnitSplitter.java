@@ -54,6 +54,11 @@ public final class SourceUnitSplitter {
               && source.charAt(cursor) == '\n'
               && source.charAt(cursor + 1) == '\n';
       if (!heading && !blankLine) continue;
+      // A heading is context for the content which follows it, not independently modelable
+      // evidence.  Do not turn a document title followed by a blank line into a dead source
+      // unit: it cannot ground a meaningful model element and leaves a coverage obligation that
+      // a later workflow increment can never satisfy.
+      if (blankLine && !hasSubstantiveContent(source.substring(start, cursor))) continue;
       int end = heading ? cursor : cursor + 2;
       if (end > start) {
         String content = source.substring(start, end);
@@ -73,6 +78,14 @@ public final class SourceUnitSplitter {
               content));
     }
     return spans;
+  }
+
+  private boolean hasSubstantiveContent(String value) {
+    for (String line : value.split("\\n")) {
+      String trimmed = line.trim();
+      if (!trimmed.isEmpty() && !trimmed.startsWith("#")) return true;
+    }
+    return false;
   }
 
   private String id(int ordinal, int start, int end, String value) {

@@ -709,6 +709,7 @@ export async function saveCurrentModel({
   quiet = false,
   skipBeginSave = false,
   force = false,
+  forceFullUpdate = false,
 } = {}) {
   if (saveInFlight) {
     return saveInFlight;
@@ -719,7 +720,12 @@ export async function saveCurrentModel({
     }
     return;
   }
-  saveInFlight = performSaveCurrentModel({ rethrow, quiet, skipBeginSave }).finally(() => {
+  saveInFlight = performSaveCurrentModel({
+    rethrow,
+    quiet,
+    skipBeginSave,
+    forceFullUpdate,
+  }).finally(() => {
     saveInFlight = null;
   });
   return saveInFlight;
@@ -729,6 +735,7 @@ async function performSaveCurrentModel({
   rethrow = false,
   quiet = false,
   skipBeginSave = false,
+  forceFullUpdate = false,
 } = {}) {
   if (!isModelingType()) {
     if (!quiet) {
@@ -755,11 +762,13 @@ async function performSaveCurrentModel({
       await waitForSaveIndicatorPaint();
     }
     if (state.modelId) {
-      let updated = await flushCurrentModelPatch({
-        name: selectedName,
-        rethrow: true,
-        prepared,
-      });
+      let updated = forceFullUpdate
+        ? false
+        : await flushCurrentModelPatch({
+            name: selectedName,
+            rethrow: true,
+            prepared,
+          });
       if (!updated) {
         if (!prepared.nextModel) {
           prepared = await prepareModelForSave({ forceFull: true });
@@ -2008,7 +2017,7 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
     );
     if (!hasErrorIssue) {
       setGenerationProgressPhase("Saving imported model…", 68);
-      await saveCurrentModel({ rethrow: true, quiet: true });
+      await saveCurrentModel({ rethrow: true, quiet: true, forceFullUpdate: true });
     } else {
       resetModelSaveState({ dirty: true });
     }

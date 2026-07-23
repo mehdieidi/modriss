@@ -5,6 +5,8 @@ param(
   [string]$BaseUrl = "http://127.0.0.1:8080",
   [int]$TimeoutSeconds = 420,
   [ValidateRange(0, 8)]
+  [int]$MaxDurableResumes = 4,
+  [ValidateRange(0, 8)]
   [int]$ProviderRetryCount = 8,
   [string[]]$FixtureId = @(),
   [string]$ReportPath = "docs/internal/ai/live-eval-gate-report.md",
@@ -76,7 +78,7 @@ function Wait-Turn {
       $providerCalls += [int]$turn.providerCalls
       $promptTokens += [long]$turn.promptTokens
       $completionTokens += [long]$turn.completionTokens
-      if ($turn.state -eq "PARTIAL" -and $turn.remainingWork) {
+      if ($turn.state -eq "PARTIAL" -and $turn.remainingWork -and (Count-Checkpoint $turn) -gt 0 -and $resumeCount -lt $MaxDurableResumes) {
         Invoke-Api -Method POST -Path "/api/chatbot/turns/$TurnId/continue" -Token $Token | Out-Null
         $resumeCount++
         continue

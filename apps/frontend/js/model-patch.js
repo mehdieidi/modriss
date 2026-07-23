@@ -362,7 +362,7 @@ export async function flushCurrentModelPatch({ name, rethrow = false, prepared =
   } catch (error) {
     const invalidPatchTarget =
       error?.status === 400 &&
-      /Patch (replace|remove) path does not exist:|Patch array index is out of bounds\./i.test(
+      /Patch (parent path|replace|remove) does not exist:|Patch array index is out of bounds\./i.test(
         String(error?.message || ""),
       );
     if (invalidPatchTarget) {

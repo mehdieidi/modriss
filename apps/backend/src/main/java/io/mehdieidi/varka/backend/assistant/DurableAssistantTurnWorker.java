@@ -260,6 +260,12 @@ public final class DurableAssistantTurnWorker {
             turn.id(),
             "turn.plan.ready",
             java.util.Map.of("workItems", plan.size(), "sourceSpans", units.size()));
+        // Planning is a durable increment, not completion of a source-backed request.  Mark it
+        // resumable so the client/gate advances this same turn to the first planned slice.
+        remainingWork =
+            plan.isEmpty()
+                ? "The source plan is ready; resume this turn to model the source."
+                : "The source plan is ready; resume this turn with " + plan.get(0).label() + ".";
       }
       turns.setSavedElementCount(turn.id(), result.affectedElementIds().size());
       turns.setProviderCallCount(turn.id(), result.providerCalls());
@@ -285,6 +291,9 @@ public final class DurableAssistantTurnWorker {
             turn.id(),
             "model.slice",
             java.util.Map.of("complete", false, "remainingWork", remainingWork));
+      }
+      if (state == AssistantTurn.State.SUCCEEDED && result.sourceBlueprint() != null) {
+        state = AssistantTurn.State.PARTIAL;
       }
       if (turn.sourceText() != null && !turn.sourceText().isBlank()) {
         java.util.Set<String> knownUnits =
@@ -341,6 +350,13 @@ public final class DurableAssistantTurnWorker {
             }
           }
         }
+        // Coverage is durable across resumed checkpoints.  Counting only the evidence produced
+        // by this increment made every later slice appear to lose the spans modeled by earlier
+        // slices, so a two-checkpoint source workflow could remain PARTIAL forever.
+        turns.provenance(turn.id()).stream()
+            .map(AssistantTurnStore.Provenance::sourceUnitId)
+            .filter(spanId -> spanId != null && !spanId.isBlank())
+            .forEach(accounted::add);
         int coverage = units.isEmpty() ? 100 : (accounted.size() * 100 / units.size());
         remainingWork =
             accounted.size() == units.size()
@@ -348,6 +364,13 @@ public final class DurableAssistantTurnWorker {
                 : "Source spans still need explicit modeling evidence: "
                     + (units.size() - accounted.size())
                     + ".";
+        // For an unplanned source-backed increment, structural validity plus evidence for every
+        // source unit is the durable completion contract.  Do not keep resuming merely because
+        // the provider conservatively returned turnComplete=false after it already covered the
+        // entire supplied document.
+        if (accounted.size() == units.size() && turns.sourceBlueprint(turn.id()).isEmpty()) {
+          state = AssistantTurn.State.SUCCEEDED;
+        }
         int completedSourceWindow = Math.min(units.size(), selectedSourceUnitCount);
         if (completedSourceWindow < units.size()) {
           String nextWindow =
@@ -431,6 +454,7 @@ public final class DurableAssistantTurnWorker {
       // Bounded in-turn repair is exhausted. Preserve the validated checkpoint, expose the
       // exact remaining work, and let the user explicitly resume the same durable run.
       if ((ex.status() == 422 || ex.status() == 502 || ex.status() == 504)
+          && turn.checkpointCount() > 0
           && !turns.cancellationRequested(turn.id())) {
         complete(
             turn,
@@ -499,6 +523,14 @@ public final class DurableAssistantTurnWorker {
 
   private java.util.List<AssistantTurnStore.SourceUnit> selectCachedSourceUnits(
       AssistantTurn turn, java.util.List<AssistantTurnStore.SourceUnit> units) {
+    java.util.Set<String> alreadyModeled =
+        turns.provenance(turn.id()).stream()
+            .map(AssistantTurnStore.Provenance::sourceUnitId)
+            .filter(id -> id != null && !id.isBlank())
+            .collect(java.util.stream.Collectors.toSet());
+    java.util.List<AssistantTurnStore.SourceUnit> remaining =
+        units.stream().filter(unit -> !alreadyModeled.contains(unit.id())).toList();
+    if (!remaining.isEmpty()) return remaining;
     java.util.Set<String> cached =
         turns
             .contextCache(turn.id())

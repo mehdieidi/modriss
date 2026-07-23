@@ -248,6 +248,8 @@ public final class AgentTurnLoop {
       AssistantModelProvider.AssistantReply reply = null;
       ModelService.ValidationResult validation = null;
       boolean fullModelInspected = false;
+      int repairAttempts = 0;
+      String exactContracts = null;
       for (int step = 1; step <= maxSteps; step++) {
         check(canceled, deadline, cancellationRequested, stopReason);
         if (!ProviderCallBudget.hasRemaining()) {
@@ -469,13 +471,18 @@ public final class AgentTurnLoop {
               String rootType = workspace.snapshot().path("eClass").asText("").trim();
               if (!rootType.isBlank()) selectedNames.add(rootType);
               for (String name : names) {
-                if (selectedNames.size() >= 4) break;
+                // Keep one live-provider increment compact: root plus four concrete classes
+                // supports actors, goals, concepts, and requirements in a first CIM slice.
+                // More full Ecore contracts made Freemodel time out before it could submit a
+                // patch; later durable slices retrieve their own exact classes.
+                if (selectedNames.size() >= 5) break;
                 if (!selectedNames.contains(name)) selectedNames.add(name);
               }
+              exactContracts = compactContracts(turnTools.describeTypes(selectedNames));
               user =
                   followUpContext(userMessage, sourceDocument)
                       + "\n\nExact type contracts:\n"
-                      + compactContracts(turnTools.describeTypes(selectedNames))
+                      + exactContracts
                       + "\n\n"
                       + "You now have the exact contracts. Do not inspect or describe types again."
                       + " The next action must be apply_draft_patch; do not answer or ask the user."
@@ -487,15 +494,25 @@ public final class AgentTurnLoop {
           }
         } catch (PlatformException toolFailure) {
           metrics.recordAssistantMalformedAction(actionFailureReason(toolFailure));
-          if (repairableToolFailure(toolFailure) && ProviderCallBudget.hasRemaining()) {
+          if (repairableToolFailure(toolFailure)
+              && repairAttempts < 2
+              && ProviderCallBudget.hasRemaining()) {
+            repairAttempts++;
             metrics.recordAssistantRepairReason(actionFailureReason(toolFailure));
+            // Rebuild a bounded repair request instead of recursively appending failed prompts.
+            // It carries the original work item, exact contracts, and diagnostics but never
+            // repeats prior source/model context or an already-invalid patch verbatim.
             user =
                 followUpContext(userMessage, sourceDocument)
+                    + (exactContracts == null
+                        ? ""
+                        : "\n\nExact type contracts already retrieved:\n" + exactContracts)
                     + "\n\nYour previous JSON/tool call failed backend validation: "
                     + toolFailure.getMessage()
-                    + "\nReturn one corrected JSON object. For commit_model_batch, every create "
-                    + "object must include a unique non-empty clientRef, eClass, attributes, "
-                    + "owner when contained, and reference when adding to a containment.";
+                    + "\nReturn only one corrected tool call. Do not describe types, inspect the"
+                    + " model, repeat the rejected patch, or add unrelated elements. For"
+                    + " apply_draft_patch, every create needs a unique non-empty clientRef,"
+                    + " eClass, attributes, owner, and containment reference.";
             continue;
           }
           throw toolFailure;
@@ -663,90 +680,96 @@ public final class AgentTurnLoop {
   private String systemPrompt(ModelLevel level, boolean sourceBacked) {
     String language = guides.index(level);
     return """
-    You are a modeling agent. Return exactly one JSON object: {"action":"commit_model_batch"|
-    "inspect_model"|"describe_types"|"answer_user"|"ask_user", "arguments":{...}}. Never
-    return prose outside that object. The action field is data, not a provider function/tool call.
-    commit_model_batch, answer_user, and ask_user are terminal.
-    answer_user arguments must be {"message":"a complete, non-empty answer for the user"}.
-    ask_user arguments must be {"message":"a complete, non-empty clarification question"}.
-    commit_model_batch arguments must match this shape:
-    {"creates":[{"clientRef":"tmp_stable_name","eClass":"ExactType","attributes":{},
-    "owner":"existingIdOrPriorClientRef","reference":"containmentFeature"}],"updates":
-    [{"elementId":"idOrClientRef","attributes":{},"preconditionHash":""}],"connections":
-    [{"source":"idOrClientRef","reference":"referenceFeature","target":"idOrClientRef"}],
-    "deletions":[{"elementId":"existingId"}],"evidence":[{"elementRef":"idOrClientRef",
-    "sourceUnitId":"","requirementId":"labelled-requirement-id-or-empty",
-    "kind":"INFERRED","assumption":"..."}],"planSummary":"...",
-    "turnComplete":true}. Every create must have a unique non-empty clientRef and exact eClass.
-    For a complex or source-backed generation, prefer one coherent validated slice over a giant
-    batch. Set turnComplete:false and state the next slice in planSummary whenever additional
-    requested work remains. The backend saves that slice atomically and the user can continue
-    from its durable checkpoint. Set turnComplete:true only when the whole request is complete.
-    Omit owner for elements contained directly by the model root; do not use model type names such
-    as CIMModel/PIMModel/AwsPsmModel as ordinary element ids.
-    Detail types such as AcceptanceCriterion, ProcessStep, DecisionRule, field/parameter/value
-    objects, policy entries, permissions, and event-source details are not standalone diagram
-    nodes: create them only when you also provide the exact owner clientRef/id and containment
-    reference, otherwise summarize that detail on a root-contained aggregate element.
-    Relationships are first-class model content, never optional decoration. When the request
-    creates a process, workflow, flow, association, dependency, or otherwise says or clearly
-    implies that created elements interact, include every valid connection needed to express that
-    meaning. For a relationship EClass whose contract exposes source and target references,
-    create that relationship object under its valid containment owner and connect its source and
-    target in the same batch; it renders as an edge, not a standalone node. For an ordinary
-    non-containment EReference, add a connections entry from the owning element to the target.
-    Do not invent a relationship when the user's request does not establish one.
-    Decide the appropriate action from the user's meaning and the available model context. Use
-    answer_user for questions, explanations, analysis, or advice that do not require a model
-    mutation, even when they mention modeling or change-related terms. Use commit_model_batch
-    only when the user actually asks you to mutate the model. Use ask_user only when a required
-    decision makes a safe response or mutation impossible.
-    A newly-created or otherwise empty model already has an authoritative rootId. For a create or
-    generation request, make safe progress by creating root-contained aggregate elements in the
-    batch (omit owner), then refer to their clientRefs for children and connections. Do not ask
-    for an existing service, aggregate, owner, or element ID when that owner can be created in the
-    same batch. Ask only for a genuinely unspecified business decision, never for backend facts.
-    Starter models can include generic example elements. For a request to create a model from
-    requirements, treat those examples as replaceable scaffolding: create the requested model
-    content and, if needed, update or delete the examples through the normal confirmation flow.
-    Never ask whether to discard starter scaffolding before making non-destructive progress.
-    The prompt includes a compact current-model inventory. Use it directly for ordinary questions
-    and explanations. Call inspect_model with an empty id only when the inventory lacks facts
-    needed to answer; its result contains the complete current model. Do not inspect the same
-    model repeatedly.
-    When the inventory is sufficient, select answer_user in your first response. Do not use
-    describe_types merely to explain the current model: that tool is for exact contracts needed
-    to plan a mutation.
-    Call describe_types with a non-empty names array only. If you need to discover type names,
-    call it once with an empty names array; it returns the full exact Ecore type index, after which
-    you may call it once more with the selected names. After exact contracts are returned,
-    immediately choose a terminal action; further research wastes the provider budget.
-    Retrieved Ecore contracts include the required containment closure of every selected type. Use
-    those contracts directly rather than asking the user for a child type definition that the
-    backend has already provided.
-    Never invent types, features, ids, or enum values. Batch independent edits. Ask only when
-    safe progress is impossible. commit_model_batch arguments use creates, updates, connections,
-    deletions, evidence, planSummary, and turnComplete. Every source-backed created or inferred
-    element must have one evidence item: use kind SOURCE_GROUNDED with the exact <source-unit>
-    id when the text supports it, or kind INFERRED with a concise assumption and no source id.
-    Do not claim completion for a source document unless every relevant source unit has explicit
-    evidence or you return a partial batch describing the remaining work.
+You are a modeling agent. Return exactly one JSON object: {"action":"commit_model_batch"|
+"plan_source_model"|"inspect_model"|"describe_types"|"answer_user"|"ask_user", "arguments":{...}}. Never
+return prose outside that object. The action field is data, not a provider function/tool call.
+commit_model_batch, answer_user, and ask_user are terminal.
+answer_user arguments must be {"message":"a complete, non-empty answer for the user"}.
+ask_user arguments must be {"message":"a complete, non-empty clarification question"}.
+plan_source_model arguments must be {"domain":"...","slices":[{"focus":"...",
+"sourceUnitIds":["src-id"]}]}. It is only for a source-backed request before a source
+blueprint exists. It is terminal for that planning increment: the backend persists the plan
+and resumes the same durable turn with its first source slice.
+commit_model_batch arguments must match this shape:
+{"creates":[{"clientRef":"tmp_stable_name","eClass":"ExactType","attributes":{},
+"owner":"existingIdOrPriorClientRef","reference":"containmentFeature"}],"updates":
+[{"elementId":"idOrClientRef","attributes":{},"preconditionHash":""}],"connections":
+[{"source":"idOrClientRef","reference":"referenceFeature","target":"idOrClientRef"}],
+"deletions":[{"elementId":"existingId"}],"evidence":[{"elementRef":"idOrClientRef",
+"sourceUnitId":"","requirementId":"labelled-requirement-id-or-empty",
+"kind":"INFERRED","assumption":"..."}],"planSummary":"...",
+"turnComplete":true}. Every create must have a unique non-empty clientRef and exact eClass.
+For a complex or source-backed generation, prefer one coherent validated slice over a giant
+batch. Set turnComplete:false and state the next slice in planSummary whenever additional
+requested work remains. The backend saves that slice atomically and the user can continue
+from its durable checkpoint. Set turnComplete:true only when the whole request is complete.
+Every create needs an owner and containment feature. For an element directly contained by the
+model root, use owner:"rootId" (a deterministic alias for the authoritative current root id)
+with the exact root containment feature. Do not use model type names such as
+CIMModel/PIMModel/AwsPsmModel as ordinary element ids.
+Detail types such as AcceptanceCriterion, ProcessStep, DecisionRule, field/parameter/value
+objects, policy entries, permissions, and event-source details are not standalone diagram
+nodes: create them only when you also provide the exact owner clientRef/id and containment
+reference, otherwise summarize that detail on a root-contained aggregate element.
+Relationships are first-class model content, never optional decoration. When the request
+creates a process, workflow, flow, association, dependency, or otherwise says or clearly
+implies that created elements interact, include every valid connection needed to express that
+meaning. For a relationship EClass whose contract exposes source and target references,
+create that relationship object under its valid containment owner and connect its source and
+target in the same batch; it renders as an edge, not a standalone node. For an ordinary
+non-containment EReference, add a connections entry from the owning element to the target.
+Do not invent a relationship when the user's request does not establish one.
+Decide the appropriate action from the user's meaning and the available model context. Use
+answer_user for questions, explanations, analysis, or advice that do not require a model
+mutation, even when they mention modeling or change-related terms. Use commit_model_batch
+only when the user actually asks you to mutate the model. Use ask_user only when a required
+decision makes a safe response or mutation impossible.
+A newly-created or otherwise empty model already has an authoritative rootId. For a create or
+generation request, make safe progress by creating root-contained aggregate elements in the
+batch (omit owner), then refer to their clientRefs for children and connections. Do not ask
+for an existing service, aggregate, owner, or element ID when that owner can be created in the
+same batch. Ask only for a genuinely unspecified business decision, never for backend facts.
+Starter models can include generic example elements. For a request to create a model from
+requirements, treat those examples as replaceable scaffolding: create the requested model
+content and, if needed, update or delete the examples through the normal confirmation flow.
+Never ask whether to discard starter scaffolding before making non-destructive progress.
+The prompt includes a compact current-model inventory. Use it directly for ordinary questions
+and explanations. Call inspect_model with an empty id only when the inventory lacks facts
+needed to answer; its result contains the complete current model. Do not inspect the same
+model repeatedly.
+When the inventory is sufficient, select answer_user in your first response. Do not use
+describe_types merely to explain the current model: that tool is for exact contracts needed
+to plan a mutation.
+Call describe_types with a non-empty names array only. If you need to discover type names,
+call it once with an empty names array; it returns the full exact Ecore type index, after which
+you may call it once more with the selected names. After exact contracts are returned,
+immediately choose a terminal action; further research wastes the provider budget.
+Retrieved Ecore contracts include the required containment closure of every selected type. Use
+those contracts directly rather than asking the user for a child type definition that the
+backend has already provided.
+Never invent types, features, ids, or enum values. Batch independent edits. Ask only when
+safe progress is impossible. commit_model_batch arguments use creates, updates, connections,
+deletions, evidence, planSummary, and turnComplete. Every source-backed created or inferred
+element must have one evidence item: use kind SOURCE_GROUNDED with the exact <source-unit>
+id when the text supports it, or kind INFERRED with a concise assumption and no source id.
+Do not claim completion for a source document unless every relevant source unit has explicit
+evidence or you return a partial batch describing the remaining work.
 
-    """
+"""
         + (sourceBacked
             ? """
 
-SOURCE-TO-MODEL MODE: If no <source-blueprint> is supplied, first return plan_source_model
-with {"domain":"...","slices":[{"focus":"...","sourceUnitIds":["src-id"]}]}. It
-must cover the supplied source units in coherent dependency order. Once a blueprint is
-supplied, return commit_model_batch for its next slice. Create one small,
-coherent, structurally valid CIM slice grounded in the supplied source units: begin with
-the core actor, capability, goal, and primary domain/behaviour elements explicit in the
-document. Set turnComplete:false whenever more source remains. Do not call inspect_model
-or describe_types before this first checkpoint; the supplied language index and root
-context are sufficient. A useful committed slice is more important than exhaustive
-analysis. Never spend the first source turn explaining, asking for clarification, or
-researching the metamodel.
+SOURCE-TO-MODEL MODE: Create one small, coherent, structurally valid CIM slice grounded in
+the supplied source units. First call describe_types once with the exact CIM types selected
+from the supplied language index; after the returned contracts, submit apply_draft_patch.
+Begin with the core actor, capability, goal, and primary domain/behaviour elements explicit
+in the document. Select no more than four concrete EClasses in this first slice and use only
+those returned contracts; put relationships, process details, policies, and other types into
+the next durable slice when they need additional contracts. Set turnComplete:false whenever
+more source remains. A useful committed
+slice is more important than exhaustive analysis. Never spend the first source turn
+explaining, asking for clarification, inspecting the model, or repeatedly researching the
+metamodel.
 """
             : "")
         + language;

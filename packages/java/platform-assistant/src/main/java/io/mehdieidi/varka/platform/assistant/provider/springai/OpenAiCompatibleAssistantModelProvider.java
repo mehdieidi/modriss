@@ -14,6 +14,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -173,7 +174,8 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       // returned, the executor permits only a terminal mutation; leaving every read tool
       // selectable lets compatible providers repeatedly call describe_types despite the
       // explicit state-machine instruction in the prompt.
-      if (prompt.user().contains("The next action must be apply_draft_patch.")) {
+      if (prompt.user().contains("The next action must be apply_draft_patch.")
+          || prompt.user().contains("Return one corrected JSON object.")) {
         body.putObject("tool_choice")
             .put("type", "function")
             .putObject("function")
@@ -184,20 +186,25 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
         body.put("tool_choice", "required");
       }
       body.put("parallel_tool_calls", false);
+      // Some compatible gateways leave a socket open indefinitely rather than returning their
+      // advertised timeout response. HttpRequest.timeout alone did not reliably interrupt that
+      // condition, which left durable turns RUNNING forever. Bound the future itself as well.
+      var request =
+          HttpRequest.newBuilder(URI.create(baseUrl() + "/chat/completions"))
+              .timeout(properties.requestTimeout())
+              .header("Authorization", "Bearer " + configuredApiKey(properties))
+              .header("Content-Type", "application/json")
+              .POST(
+                  HttpRequest.BodyPublishers.ofString(
+                      mapper.writeValueAsString(body), StandardCharsets.UTF_8))
+              .build();
       var response =
           HttpClient.newBuilder()
               .connectTimeout(properties.requestTimeout())
               .build()
-              .send(
-                  HttpRequest.newBuilder(URI.create(baseUrl() + "/chat/completions"))
-                      .timeout(properties.requestTimeout())
-                      .header("Authorization", "Bearer " + configuredApiKey(properties))
-                      .header("Content-Type", "application/json")
-                      .POST(
-                          HttpRequest.BodyPublishers.ofString(
-                              mapper.writeValueAsString(body), StandardCharsets.UTF_8))
-                      .build(),
-                  HttpResponse.BodyHandlers.ofString());
+              .sendAsync(request, HttpResponse.BodyHandlers.ofString())
+              .orTimeout(properties.requestTimeout().toMillis(), TimeUnit.MILLISECONDS)
+              .join();
       if (response.statusCode() / 100 != 2) {
         throw new PlatformException(
             response.statusCode(),

@@ -40,4 +40,14 @@ class SourceUnitSplitterTest {
         source,
         units.stream().map(unit -> unit.content()).collect(java.util.stream.Collectors.joining()));
   }
+
+  @Test
+  void retainsDocumentHeadingWithTheFirstModelableSpan() {
+    String source = "# Community pantry\n\nAs a visitor I request an appointment.\n";
+
+    var units = new SourceUnitSplitter(6000).split(source);
+
+    assertEquals(1, units.size());
+    assertEquals(source, units.get(0).content());
+  }
 }
