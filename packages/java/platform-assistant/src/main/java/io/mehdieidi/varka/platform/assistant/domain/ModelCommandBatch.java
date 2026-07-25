@@ -22,6 +22,14 @@ public record ModelCommandBatch(
     planSummary = planSummary == null ? "" : planSummary.trim();
   }
 
+  /** Returns whether this batch changes the semantic model. Evidence alone is not a mutation. */
+  public boolean hasMutations() {
+    return !(creates.isEmpty()
+        && updates.isEmpty()
+        && connections.isEmpty()
+        && deletions.isEmpty());
+  }
+
   public record Create(
       String clientRef,
       String eClass,

@@ -78,6 +78,29 @@ class AgentModelToolsTest {
   }
 
   @Test
+  void rejectsAnEmptyBatchBecauseItCannotProduceASavedCheckpoint() throws Exception {
+    AgentModelTools tools = cimTools();
+    tools.bind(ModelLevel.CIM, workspace());
+
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        "no changes",
+                        true)));
+
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("at least one create"));
+  }
+
+  @Test
   void inspectsSelectedModelRecordsWithTypeAndOwnershipContext() throws Exception {
     AgentModelTools tools = cimTools();
     JsonNode model =

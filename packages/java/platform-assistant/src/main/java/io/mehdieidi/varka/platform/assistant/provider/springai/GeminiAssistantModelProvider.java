@@ -89,12 +89,16 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
 
   @Override
   protected GoogleGenAiChatOptions.Builder options(
-      String model, AssistantModelRole role, boolean toolsRequested) {
+      String model,
+      AssistantModelRole role,
+      boolean toolsRequested,
+      io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt
+          prompt) {
     return GoogleGenAiChatOptions.builder()
         .model(model)
         .temperature(0.2)
         .responseMimeType("application/json")
-        .responseSchema(AgentActionSchema.json())
+        .responseSchema(AgentActionSchema.json(prompt.patchContracts()))
         .maxOutputTokens(Math.min(properties.tokenBudget(), completionLimit(role)));
   }
 

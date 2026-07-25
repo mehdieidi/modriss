@@ -296,6 +296,12 @@ public final class AgentModelTools {
   public ModelWorkspace.MutationResult commitModelBatch(
       ModelCommandBatch batch, boolean destructiveConfirmed) {
     if (batch == null) throw new PlatformException(400, "Model command batch is required.");
+    if (!batch.hasMutations()) {
+      throw new PlatformException(
+          422,
+          "Model command batch must contain at least one create, update, connection, or deletion; "
+              + "evidence alone cannot create a checkpoint.");
+    }
     if (!batch.deletions().isEmpty() && !destructiveConfirmed) {
       throw new PlatformException(409, "Deletion requires turn confirmation.");
     }

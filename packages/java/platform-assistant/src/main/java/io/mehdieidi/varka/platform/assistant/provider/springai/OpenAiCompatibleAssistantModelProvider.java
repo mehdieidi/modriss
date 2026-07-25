@@ -102,16 +102,18 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
 
   @Override
   protected OpenAiChatOptions.Builder options(
-      String model, AssistantModelRole role, boolean toolsRequested) {
+      String model,
+      AssistantModelRole role,
+      boolean toolsRequested,
+      io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt
+          prompt) {
     OpenAiChatOptions.Builder builder =
         OpenAiChatOptions.builder()
             .model(model)
             .temperature(0.2)
             .maxCompletionTokens(Math.min(properties.tokenBudget(), completionLimit(role)));
     boolean useNativeTools =
-        properties.openaiCompatible().protocol() != AiProperties.OpenAiProtocol.JSON_SCHEMA
-            && (toolsRequested
-                || properties.openaiCompatible().protocol() == AiProperties.OpenAiProtocol.TOOLS);
+        properties.openaiCompatible().protocol() == AiProperties.OpenAiProtocol.TOOLS;
     if (useNativeTools) {
       // These callbacks deliberately only echo the model's structured arguments. The workflow
       // consumes the resulting tool call and is the sole authority that executes model tools.
@@ -123,13 +125,13 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                           FunctionToolCallback.<String, String>builder(name, arguments -> arguments)
                               .description(
                                   "Varka assistant tool; backend validates and executes it.")
-                              .inputSchema(toolArgumentsSchema(name))
+                              .inputSchema(toolArgumentsSchema(name, prompt.patchContracts()))
                               .build())
               .toList());
       builder.parallelToolCalls(false);
     } else {
       // outputSchema requests the strict JSON-schema fallback supported by compatible endpoints.
-      builder.outputSchema(AgentActionSchema.json());
+      builder.outputSchema(AgentActionSchema.json(prompt.patchContracts()));
     }
     return builder;
   }
@@ -139,7 +141,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt prompt,
       String model,
       boolean toolsRequested) {
-    if (properties.openaiCompatible().protocol() == AiProperties.OpenAiProtocol.JSON_SCHEMA) {
+    if (properties.openaiCompatible().protocol() != AiProperties.OpenAiProtocol.TOOLS) {
       return super.callModel(prompt, model, toolsRequested);
     }
     try {
@@ -168,7 +170,9 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
         var function = tool.putObject("function");
         function.put("name", name);
         function.put("description", toolDescription(name));
-        function.set("parameters", mapper.valueToTree(AgentActionSchema.toolSchema(name)));
+        function.set(
+            "parameters",
+            mapper.valueToTree(AgentActionSchema.toolSchema(name, prompt.patchContracts())));
       }
       // The workflow executes exactly one action at a time. Once exact contracts have been
       // returned, the executor permits only a terminal mutation; leaving every read tool
@@ -271,10 +275,15 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     };
   }
 
-  private static String toolArgumentsSchema(String name) {
+  private static String toolArgumentsSchema(
+      String name,
+      java.util.List<
+              io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService
+                  .TypeContract>
+          patchContracts) {
     try {
       return new com.fasterxml.jackson.databind.ObjectMapper()
-          .writeValueAsString(AgentActionSchema.toolSchema(name));
+          .writeValueAsString(AgentActionSchema.toolSchema(name, patchContracts));
     } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
       throw new IllegalStateException("Unable to encode native assistant tool schema", ex);
     }

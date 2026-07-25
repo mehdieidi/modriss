@@ -1,6 +1,7 @@
 package io.mehdieidi.varka.platform.assistant.provider;
 
 import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
+import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.TypeContract;
 import java.util.List;
 
 /** Provider-neutral boundary for assistant model calls. */
@@ -58,7 +59,16 @@ public interface AssistantModelProvider {
    * @param snippets compact retrieved context snippets
    */
   record AssistantPrompt(
-      AssistantModelRole role, String system, String user, List<ContextSnippet> snippets) {
+      AssistantModelRole role,
+      String system,
+      String user,
+      List<ContextSnippet> snippets,
+      List<TypeContract> patchContracts) {
+
+    public AssistantPrompt(
+        AssistantModelRole role, String system, String user, List<ContextSnippet> snippets) {
+      this(role, system, user, snippets, List.of());
+    }
 
     /** Applies immutable collection semantics. */
     public AssistantPrompt {
@@ -66,6 +76,7 @@ public interface AssistantModelProvider {
       system = system == null ? "" : system;
       user = user == null ? "" : user;
       snippets = snippets == null ? List.of() : List.copyOf(snippets);
+      patchContracts = patchContracts == null ? List.of() : List.copyOf(patchContracts);
     }
   }
 

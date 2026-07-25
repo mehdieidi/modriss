@@ -139,7 +139,7 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
   protected abstract String modelFor(AssistantModelRole role);
 
   protected abstract ChatOptions.Builder<?> options(
-      String model, AssistantModelRole role, boolean toolsRequested);
+      String model, AssistantModelRole role, boolean toolsRequested, AssistantPrompt prompt);
 
   /**
    * Calls the provider model directly so ChatClient never tries to execute an LLM action as a tool.
@@ -152,7 +152,7 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
                 java.util.List.of(
                     new SystemMessage(SYSTEM_GUARDRAIL + "\n" + prompt.system()),
                     new UserMessage(userWithContext(prompt))),
-                options(model, prompt.role(), toolsRequested).build()));
+                options(model, prompt.role(), toolsRequested, prompt).build()));
   }
 
   private ChatModel chatModel() {

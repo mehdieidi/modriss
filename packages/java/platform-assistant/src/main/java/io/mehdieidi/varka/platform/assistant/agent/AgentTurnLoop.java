@@ -250,6 +250,7 @@ public final class AgentTurnLoop {
       boolean fullModelInspected = false;
       int repairAttempts = 0;
       String exactContracts = null;
+      List<TypeContract> patchContracts = List.of();
       for (int step = 1; step <= maxSteps; step++) {
         check(canceled, deadline, cancellationRequested, stopReason);
         if (!ProviderCallBudget.hasRemaining()) {
@@ -288,7 +289,8 @@ public final class AgentTurnLoop {
         long providerStarted = System.nanoTime();
         reply =
             provider.completeStructured(
-                new AssistantPrompt(AssistantModelRole.RESPONDER, system, user, snippets));
+                new AssistantPrompt(
+                    AssistantModelRole.RESPONDER, system, user, snippets, patchContracts));
         long providerLatency =
             java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - providerStarted);
         metrics.recordAssistantPhaseDuration("provider", providerLatency);
@@ -478,7 +480,8 @@ public final class AgentTurnLoop {
                 if (selectedNames.size() >= 5) break;
                 if (!selectedNames.contains(name)) selectedNames.add(name);
               }
-              exactContracts = compactContracts(turnTools.describeTypes(selectedNames));
+              patchContracts = turnTools.describeTypes(selectedNames);
+              exactContracts = compactContracts(patchContracts);
               user =
                   followUpContext(userMessage, sourceDocument)
                       + "\n\nExact type contracts:\n"

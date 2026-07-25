@@ -15,4 +15,13 @@ class AiPropertiesTest {
         "https://api.example.test/v1",
         new AiProperties.OpenAiCompatible("https://api.example.test/v1/", "key").baseUrl());
   }
+
+  @Test
+  void retainsTheExplicitStrictJsonSchemaProtocol() {
+    assertEquals(
+        AiProperties.OpenAiProtocol.JSON_SCHEMA,
+        new AiProperties.OpenAiCompatible(
+                "https://api.example.test/v1", "key", AiProperties.OpenAiProtocol.JSON_SCHEMA)
+            .protocol());
+  }
 }
