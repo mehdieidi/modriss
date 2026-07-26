@@ -62,7 +62,7 @@ build/
 .vscode/
 
 # Temporary file storage
-storage/
+/storage/
 
 # Node tooling
 node_modules/
