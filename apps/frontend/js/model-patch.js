@@ -16,6 +16,13 @@ function pointerJoin(base, segment) {
   return `${base}/${pointerSegment(segment)}`;
 }
 
+function isOptionalLayoutProperty(path, key) {
+  if (key !== "x" && key !== "y") {
+    return false;
+  }
+  return /^\/graph\/elements\/\d+$/.test(path) || /^\/views\/\d+\/nodes\/\d+$/.test(path);
+}
+
 function jsonEqual(left, right) {
   if (left === right) {
     return true;
@@ -72,7 +79,7 @@ function keyedById(array) {
   return new Set(ids).size === ids.length ? ids : null;
 }
 
-function diffJson(previous, next, path = "") {
+function diffJson(previous, next, path = "", { preferAdd = false } = {}) {
   if (jsonEqual(previous, next)) {
     return [];
   }
@@ -83,7 +90,11 @@ function diffJson(previous, next, path = "") {
     return [{ op: "remove", path: path || "/" }];
   }
   if (!previous || !next || typeof previous !== "object" || typeof next !== "object") {
-    return [{ op: "replace", path: path || "/", value: next }];
+    // RFC 6902 `add` replaces an existing object member as well as creating a missing one.
+    // Prefer it for object members because persisted models can legitimately omit optional
+    // layout fields (such as graph element x/y) even when the browser's saved baseline has
+    // them. `replace` would reject that otherwise valid save.
+    return [{ op: preferAdd ? "add" : "replace", path: path || "/", value: next }];
   }
   if (Array.isArray(previous) || Array.isArray(next)) {
     return diffArrays(previous, next, path);
@@ -91,7 +102,11 @@ function diffJson(previous, next, path = "") {
   const operations = [];
   const keys = new Set([...Object.keys(previous), ...Object.keys(next)]);
   for (const key of keys) {
-    operations.push(...diffJson(previous[key], next[key], pointerJoin(path, key)));
+    operations.push(
+      ...diffJson(previous[key], next[key], pointerJoin(path, key), {
+        preferAdd: isOptionalLayoutProperty(path, key),
+      }),
+    );
   }
   return operations;
 }
@@ -176,14 +191,14 @@ function buildPositionPatch(baseModel, positions) {
       const y = Math.round(coords.y);
       if (element.x !== x) {
         operations.push({
-          op: "replace",
+          op: "add",
           path: `/graph/elements/${graphElementIndex}/x`,
           value: x,
         });
       }
       if (element.y !== y) {
         operations.push({
-          op: "replace",
+          op: "add",
           path: `/graph/elements/${graphElementIndex}/y`,
           value: y,
         });
@@ -196,14 +211,14 @@ function buildPositionPatch(baseModel, positions) {
       const y = Math.round(coords.y);
       if (viewNode.x !== x) {
         operations.push({
-          op: "replace",
+          op: "add",
           path: `/views/${viewIndex}/nodes/${nodeIndex}/x`,
           value: x,
         });
       }
       if (viewNode.y !== y) {
         operations.push({
-          op: "replace",
+          op: "add",
           path: `/views/${viewIndex}/nodes/${nodeIndex}/y`,
           value: y,
         });
