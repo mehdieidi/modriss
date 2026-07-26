@@ -1739,6 +1739,19 @@ function layoutNodesForElements(graph, elementIds, existingNodes = [], typeKey =
       height: existing?.height,
     };
   });
+  // Persisted view coordinates are authoritative. Layout repair is only for a new/incomplete
+  // view; applying it to a fully positioned view makes a reload subtly undo user placement.
+  const allNodesAlreadyPositioned =
+    nodes.length > 0 &&
+    nodes.every(
+      (node) =>
+        Number.isFinite(Number(node.x)) &&
+        Number.isFinite(Number(node.y)) &&
+        existingByElement.has(node.elementId),
+    );
+  if (allNodesAlreadyPositioned) {
+    return nodes;
+  }
   const fakeNodes = nodes.map((node) => ({
     id: node.elementId,
     x: node.x,
@@ -1757,22 +1770,11 @@ function layoutNodesForElements(graph, elementIds, existingNodes = [], typeKey =
       sourceId: relationship.sourceElementId,
       targetId: relationship.targetElementId,
     }));
-  const movedNodeIds = ensureReadableLayout(fakeNodes, fakeEdges, nodeSizeForType(typeKey));
+  ensureReadableLayout(fakeNodes, fakeEdges, nodeSizeForType(typeKey));
   fakeNodes.forEach((node, index) => {
     nodes[index].x = node.x;
     nodes[index].y = node.y;
   });
-  const allNodesAlreadyPositioned =
-    nodes.length > 0 &&
-    nodes.every(
-      (node) =>
-        Number.isFinite(Number(node.x)) &&
-        Number.isFinite(Number(node.y)) &&
-        existingByElement.has(node.elementId),
-    );
-  if (allNodesAlreadyPositioned && !movedNodeIds.size) {
-    return nodes;
-  }
   return nodes;
 }
 
@@ -1958,6 +1960,10 @@ function defaultMainView(
 
 export function isNamedInstanceView(typeKey, view) {
   if (!view) {
+    return false;
+  }
+  // Container and neighborhood canvases are durable layouts, not disposable named views.
+  if (isFocusView(view)) {
     return false;
   }
   const kind = String(view?.kind || "").toUpperCase();
@@ -2206,7 +2212,7 @@ function buildViews(typeKey, graph, modelJson, fallbackName) {
     const normalizedViews = sanitizeWorkbenchViews(
       rawViews
         .map((view) => normalizeView(view, graph, typeKey, fallbackName, { deferLayout: true }))
-        .filter((view) => viewBelongsToLevel(view, typeKey) && !isFocusView(view)),
+        .filter((view) => viewBelongsToLevel(view, typeKey)),
       typeKey,
     );
     const existingKeys = new Set();
@@ -2375,7 +2381,7 @@ function installViews(
 ) {
   const byId = new Map();
   sanitizeWorkbenchViews(views, typeKey)
-    .filter((view) => viewBelongsToLevel(view, typeKey) && !isFocusView(view))
+    .filter((view) => viewBelongsToLevel(view, typeKey))
     .forEach((view) => byId.set(view.id, view));
   generateLazyGlobalViews(typeKey, state.graph, modelName)
     .filter((view) => !view.scope?.rootElementId)
@@ -2801,14 +2807,14 @@ function mergeManualBacklog(primary, secondary) {
 
 export function serializeRuntimeViews() {
   return sanitizeWorkbenchViews(
-    [...state.views.byId.values()].filter((view) => !isFocusView(view) && !view._lazyContent),
+    [...state.views.byId.values()].filter((view) => !view._lazyContent),
     state.activeType,
   ).map(clone);
 }
 
 export async function serializeRuntimeViewsAsync() {
   const views = sanitizeWorkbenchViews(
-    [...state.views.byId.values()].filter((view) => !isFocusView(view) && !view._lazyContent),
+    [...state.views.byId.values()].filter((view) => !view._lazyContent),
     state.activeType,
   );
   return cloneArrayChunked(views);

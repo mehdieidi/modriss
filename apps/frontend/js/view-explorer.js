@@ -7,7 +7,6 @@ import {
   activeView,
   ensureActiveGraphAndViews,
   isNamedInstanceView,
-  refreshViewContent,
   saveCurrentTabGraphState,
   selectElementIdsForView,
   selectRelationshipIdsForView,
@@ -667,12 +666,6 @@ export function renderViewWorkbench() {
 
 export async function openWorkbenchView(viewId) {
   viewMenuOpen = false;
-  const targetView = state.views.byId.get(viewId);
-  if (targetView) {
-    const { yieldToMain } = await import("./utils.js");
-    await yieldToMain();
-    refreshViewContent(targetView);
-  }
   if (setActiveViewId(viewId)) {
     materializeActiveView();
     renderPaletteCallback?.();
@@ -680,6 +673,19 @@ export async function openWorkbenchView(viewId) {
     renderViewWorkbench();
     saveCurrentTabGraphState();
     await fitViewportToDiagram({ fit: true, frames: 3 });
+    const view = activeView();
+    // A generated/imported view has no durable arrangement until its first activation.
+    // Thereafter `autoLayoutApplied` is persisted by the backend (or set by a user drag),
+    // making ordinary view switches strictly read-only.
+    if (!view?.autoLayoutApplied && state.diagram.nodes.length) {
+      const { autoLayoutCurrentDiagram } = await import("./model-ops.js");
+      await autoLayoutCurrentDiagram({
+        progress: true,
+        status: true,
+        force: false,
+      });
+      return;
+    }
     setStatus("View selected.");
   }
 }

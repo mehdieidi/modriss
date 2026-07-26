@@ -1,4 +1,4 @@
-import { clearDirtySaveHints, consumeViewSyncNeeded, getDirtySaveHints } from "./model-save-ui.js";
+import { clearDirtySaveHints, consumeViewSyncNeeded } from "./model-save-ui.js";
 import { MODEL_TYPES } from "./config.js";
 import { state } from "./state.js";
 import { api } from "./api.js";
@@ -140,117 +140,6 @@ function diffArrays(previous, next, path) {
   return operations;
 }
 
-function graphElementIndexById(baseModel) {
-  const index = new Map();
-  const elements = baseModel?.graph?.elements;
-  if (!Array.isArray(elements)) {
-    return index;
-  }
-  elements.forEach((element, elementIndex) => {
-    const id = String(element?.id || "").trim();
-    if (id) {
-      index.set(id, elementIndex);
-    }
-  });
-  return index;
-}
-
-function viewNodeIndexesByElementId(baseModel) {
-  const paths = new Map();
-  const views = baseModel?.views;
-  if (!Array.isArray(views)) {
-    return paths;
-  }
-  views.forEach((view, viewIndex) => {
-    const nodes = view?.nodes;
-    if (!Array.isArray(nodes)) {
-      return;
-    }
-    nodes.forEach((node, nodeIndex) => {
-      const elementId = String(node?.elementId || "").trim();
-      if (!elementId) {
-        return;
-      }
-      const existing = paths.get(elementId) || [];
-      existing.push({ viewIndex, nodeIndex });
-      paths.set(elementId, existing);
-    });
-  });
-  return paths;
-}
-
-function buildPositionPatch(baseModel, positions) {
-  const graphIndex = graphElementIndexById(baseModel);
-  const viewPaths = viewNodeIndexesByElementId(baseModel);
-  const operations = [];
-  for (const [elementId, coords] of positions.entries()) {
-    const graphElementIndex = graphIndex.get(elementId);
-    if (graphElementIndex !== undefined) {
-      const element = baseModel.graph.elements[graphElementIndex];
-      const x = Math.round(coords.x);
-      const y = Math.round(coords.y);
-      if (element.x !== x) {
-        operations.push({
-          op: "add",
-          path: `/graph/elements/${graphElementIndex}/x`,
-          value: x,
-        });
-      }
-      if (element.y !== y) {
-        operations.push({
-          op: "add",
-          path: `/graph/elements/${graphElementIndex}/y`,
-          value: y,
-        });
-      }
-    }
-    const nodePaths = viewPaths.get(elementId) || [];
-    for (const { viewIndex, nodeIndex } of nodePaths) {
-      const viewNode = baseModel.views[viewIndex].nodes[nodeIndex];
-      const x = Math.round(coords.x);
-      const y = Math.round(coords.y);
-      if (viewNode.x !== x) {
-        operations.push({
-          op: "add",
-          path: `/views/${viewIndex}/nodes/${nodeIndex}/x`,
-          value: x,
-        });
-      }
-      if (viewNode.y !== y) {
-        operations.push({
-          op: "add",
-          path: `/views/${viewIndex}/nodes/${nodeIndex}/y`,
-          value: y,
-        });
-      }
-    }
-  }
-  return operations;
-}
-
-function applyPositionPatchToBaseModel(baseModel, positions) {
-  if (!baseModel || !positions.size) {
-    return;
-  }
-  const graphIndex = graphElementIndexById(baseModel);
-  const viewPaths = viewNodeIndexesByElementId(baseModel);
-  for (const [elementId, coords] of positions.entries()) {
-    const x = Math.round(coords.x);
-    const y = Math.round(coords.y);
-    const graphElementIndex = graphIndex.get(elementId);
-    if (graphElementIndex !== undefined) {
-      const element = baseModel.graph.elements[graphElementIndex];
-      element.x = x;
-      element.y = y;
-    }
-    for (const { viewIndex, nodeIndex } of viewPaths.get(elementId) || []) {
-      const viewNode = baseModel.views[viewIndex].nodes[nodeIndex];
-      viewNode.x = x;
-      viewNode.y = y;
-    }
-  }
-}
-
 export function buildModelPatch(previousModel, nextModel) {
   const operations = diffJson(previousModel || {}, nextModel || {});
   if (!operations.length) {
@@ -288,40 +177,7 @@ function adoptSavedBaseModel(nextModel) {
   state.baseModel = nextModel;
 }
 
-export async function prepareModelForSave({ syncView = true, forceFull = false } = {}) {
-  if (!forceFull) {
-    const hints = getDirtySaveHints();
-    if (hints.positionOnly && state.baseModel?.graph?.elements) {
-      const operations = buildPositionPatch(state.baseModel, hints.positions);
-      if (!operations.length) {
-        const graphIndex = graphElementIndexById(state.baseModel);
-        const viewPaths = viewNodeIndexesByElementId(state.baseModel);
-        const canResolve = [...hints.positions.keys()].every(
-          (id) => graphIndex.has(id) || (viewPaths.get(id)?.length ?? 0) > 0,
-        );
-        if (canResolve) {
-          applyPositionPatchToBaseModel(state.baseModel, hints.positions);
-          return {
-            nextModel: null,
-            operations: [],
-            incremental: "positions",
-            positions: hints.positions,
-          };
-        }
-      } else if (
-        operations.length <= MAX_PATCH_OPERATIONS &&
-        !operations.some((operation) => operation.path === "/")
-      ) {
-        return {
-          nextModel: null,
-          operations,
-          incremental: "positions",
-          positions: hints.positions,
-        };
-      }
-    }
-  }
-
+export async function prepareModelForSave({ syncView = true } = {}) {
   await yieldToMain();
   if (syncView && consumeViewSyncNeeded()) {
     syncActiveViewFromVisibleGraph();
@@ -345,9 +201,7 @@ export async function flushCurrentModelPatch({ name, rethrow = false, prepared =
   }
   if (!operations.length) {
     await yieldToMain();
-    if (prepared?.incremental === "positions") {
-      applyPositionPatchToBaseModel(state.baseModel, prepared.positions);
-    } else if (nextModel) {
+    if (nextModel) {
       adoptSavedBaseModel(nextModel);
     }
     clearDirtySaveHints();
@@ -364,9 +218,7 @@ export async function flushCurrentModelPatch({ name, rethrow = false, prepared =
       body,
     });
     await yieldToMain();
-    if (prepared?.incremental === "positions") {
-      applyPositionPatchToBaseModel(state.baseModel, prepared.positions);
-    } else if (nextModel) {
+    if (nextModel) {
       adoptSavedBaseModel(nextModel);
     }
     clearDirtySaveHints();

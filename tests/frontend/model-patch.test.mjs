@@ -51,3 +51,22 @@ test("continues to replace non-layout graph properties", () => {
     },
   ]);
 });
+
+test("keeps independently saved layouts in separate views", () => {
+  const previous = {
+    views: [
+      { id: "business-process", autoLayoutApplied: false, nodes: [{ elementId: "n1", x: 20, y: 30 }] },
+      { id: "capability", autoLayoutApplied: true, nodes: [{ elementId: "n1", x: 400, y: 50 }] },
+    ],
+  };
+  const next = structuredClone(previous);
+  next.views[0].autoLayoutApplied = true;
+  next.views[0].nodes[0] = { elementId: "n1", x: 180, y: 90 };
+
+  const operations = buildModelPatch(previous, next);
+
+  assert.deepEqual(operations, [
+    { op: "replace", path: "/views/0/autoLayoutApplied", value: true },
+    { op: "replace", path: "/views/0/nodes", value: [{ elementId: "n1", x: 180, y: 90 }] },
+  ]);
+});

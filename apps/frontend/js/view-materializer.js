@@ -1,6 +1,5 @@
 import { state } from "./state.js";
 import { emptyDiagram } from "./utils.js";
-import { ensureReadableLayout, nodeSizeForType } from "./layout-engine.js";
 import {
   activeView,
   reconcileGraphRelationshipsIfDirty,
@@ -147,12 +146,7 @@ function runtimeEdge(relationship, viewEdge = null) {
   };
 }
 
-function materializeViewGraph(
-  view,
-  elementIds,
-  relationshipIds,
-  { skipLayoutRepair = false } = {},
-) {
+function materializeViewGraph(view, elementIds, relationshipIds) {
   const viewNodes = viewNodeByElement(view);
   const viewEdges = viewEdgeByRelationship(view);
   const nodes = elementIds
@@ -169,15 +163,13 @@ function materializeViewGraph(
       }
       return nodeIds.has(connection.sourceId) && nodeIds.has(connection.targetId);
     });
-  // A loaded view already owns its node coordinates. In particular, assistant checkpoints
-  // must not turn a small model edit into a client-side re-layout of every node.
-  if (!skipLayoutRepair) {
-    ensureReadableLayout(nodes, connections, nodeSizeForType(state.activeType));
-  }
+  // Materialization is intentionally read-only. Any automatic layout is an explicit,
+  // persisted operation; changing coordinates while merely selecting a view would overwrite
+  // a user's saved layout when that view is later synchronized.
   return { nodes, connections };
 }
 
-export function materializeActiveView({ skipLayoutRepair = false } = {}) {
+export function materializeActiveView() {
   reconcileGraphRelationshipsIfDirty(state.activeType);
   const view = activeView();
   if (!view) {
@@ -197,9 +189,7 @@ export function materializeActiveView({ skipLayoutRepair = false } = {}) {
     relationshipIds = selectRelationshipIdsForView(state.graph, view, visibleElementIds);
   }
   const visibleElementIdSet = new Set(visibleElementIds);
-  const visible = materializeViewGraph(view, visibleElementIds, relationshipIds, {
-    skipLayoutRepair,
-  });
+  const visible = materializeViewGraph(view, visibleElementIds, relationshipIds);
   const materializedNodeIds = new Set(visible.nodes.map((node) => node.id));
   const materializedEdgeIds = new Set(visible.connections.map((edge) => edge.id));
   window.varkaViewAudit = {

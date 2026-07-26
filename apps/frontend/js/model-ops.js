@@ -757,8 +757,7 @@ async function performSaveCurrentModel({
     }
     await yieldToMain();
     let prepared = await prepareModelForSave();
-    const positionOnlySave = prepared.incremental === "positions";
-    if (doBusy && !positionOnlySave) {
+    if (doBusy) {
       await waitForSaveIndicatorPaint();
     }
     if (state.modelId) {

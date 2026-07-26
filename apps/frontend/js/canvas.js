@@ -705,11 +705,33 @@ function _edgeForFocusRelationship(relationship, viewEdge = null) {
   };
 }
 
-function focusViewIdFor(elementId) {
-  return `view-${state.activeType}-focus-${String(elementId || "").replaceAll(
+function focusViewIdFor(elementId, flavor = "container") {
+  // A focus canvas is a real saved view. Its identity must be stable across closing,
+  // switching views, and browser reloads; timestamps made every reopen a new view.
+  return `view-${state.activeType}-focus-${String(flavor || "container").replaceAll(
     /[^A-Za-z0-9_-]+/g,
     "-",
-  )}-${Date.now().toString(36)}`;
+  )}-${String(elementId || "").replaceAll(/[^A-Za-z0-9_-]+/g, "-")}`;
+}
+
+function savedFocusViewFor(elementId, scopeKind, depth = undefined) {
+  const normalizedElementId = String(elementId || "");
+  const normalizedScopeKind = String(scopeKind || "").toUpperCase();
+  return [...state.views.byId.values()].find((view) => {
+    if (
+      String(view?.kind || "").toUpperCase() !== "FOCUS" &&
+      !String(view?.id || "").includes("-focus-")
+    ) {
+      return false;
+    }
+    if (
+      String(view?.scope?.rootElementId || "") !== normalizedElementId ||
+      String(view?.scope?.scopeKind || "").toUpperCase() !== normalizedScopeKind
+    ) {
+      return false;
+    }
+    return depth === undefined || Number(view?.scope?.depth) === Number(depth);
+  });
 }
 
 function containerFocusOwnerType(focus) {
@@ -826,7 +848,7 @@ function createContainerFocusView(node) {
   const positionById = new Map(fakeNodes.map((entry) => [entry.id, entry]));
   const edgePositions = viewEdgesByRelationship(previousView);
   return {
-    id: focusViewIdFor(node.id),
+    id: focusViewIdFor(node.id, "container"),
     name: `${node.label || node.id} Contents`,
     level: modelingLevelLabel(state.activeType),
     kind: String(focusPolicy.viewKind || "FOCUS"),
@@ -897,7 +919,7 @@ function createNeighborhoodFocusView(node, depth = 1) {
   const positionById = new Map(fakeNodes.map((entry) => [entry.id, entry]));
   const normalizedDepth = Math.max(1, Math.min(2, Number(depth) || 1));
   return {
-    id: focusViewIdFor(`${node.id}-n${normalizedDepth}`),
+    id: focusViewIdFor(node.id, `neighborhood-${normalizedDepth}`),
     name: `${node.label || node.id} Neighborhood ${normalizedDepth}`,
     level: modelingLevelLabel(state.activeType),
     kind: "FOCUS",
@@ -936,9 +958,16 @@ export function openContainerFocus(elementId) {
     return false;
   }
   const previousViewId = state.views.activeViewId;
-  const focusView = createContainerFocusView(node);
-  prepareViewNodeIndex(focusView);
-  state.views.byId.set(focusView.id, focusView);
+  const focusPolicy = modelingContainerFocusPolicy(state.activeType);
+  const focusViewId = focusViewIdFor(node.id, "container");
+  const focusView =
+    state.views.byId.get(focusViewId) ||
+    savedFocusViewFor(node.id, String(focusPolicy.scopeKind || "CONTAINER")) ||
+    createContainerFocusView(node);
+  if (!state.views.byId.has(focusViewId)) {
+    prepareViewNodeIndex(focusView);
+    state.views.byId.set(focusView.id, focusView);
+  }
   state.views.activeViewId = focusView.id;
   focusStack().push({
     typeKey: state.activeType,
@@ -979,9 +1008,15 @@ export function openNeighborhoodFocus(elementId, depth = 1) {
   }
   const previousViewId = state.views.activeViewId;
   const normalizedDepth = Math.max(1, Math.min(2, Number(depth) || 1));
-  const focusView = createNeighborhoodFocusView(node, normalizedDepth);
-  prepareViewNodeIndex(focusView);
-  state.views.byId.set(focusView.id, focusView);
+  const focusViewId = focusViewIdFor(node.id, `neighborhood-${normalizedDepth}`);
+  const focusView =
+    state.views.byId.get(focusViewId) ||
+    savedFocusViewFor(node.id, "NEIGHBORHOOD", normalizedDepth) ||
+    createNeighborhoodFocusView(node, normalizedDepth);
+  if (!state.views.byId.has(focusViewId)) {
+    prepareViewNodeIndex(focusView);
+    state.views.byId.set(focusView.id, focusView);
+  }
   state.views.activeViewId = focusView.id;
   focusStack().push({
     typeKey: state.activeType,
@@ -1007,7 +1042,6 @@ export function closeCanvasFocus() {
     focusStack().length = 0;
     return false;
   }
-  state.views.byId.delete(focus.focusViewId);
   focusStack().pop();
   state.views.activeViewId =
     focus.previousViewId && state.views.byId.has(focus.previousViewId)
@@ -2674,12 +2708,18 @@ function endG6NodeDrag(nodeId, position, { moved = false } = {}) {
   }
   syncNodeMetaToGraph(node);
   if (moved || state.dragNode?.moved) {
+    const view = activeView();
+    // A deliberate drag establishes this view's layout, so initial-load auto-layout must not
+    // replace the user's saved arrangement later.
+    if (view) {
+      view.autoLayoutApplied = true;
+    }
     commitUndoSnapshot(state.dragNode?.undoSnapshot);
     persistNodePositionInActiveView(node);
     markModelDirty({
       viewSynced: true,
       kind: "positions",
-      position: { elementId: node.id, x: node.x, y: node.y },
+      position: { elementId: node.id, viewId: activeView()?.id, x: node.x, y: node.y },
     });
   }
   refreshCanvasEdges([...(edgeIdsByNodeId.get(node.id) || [])]);

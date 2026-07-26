@@ -71,7 +71,12 @@ export function markModelDirty({ viewSynced = false, kind = "semantics", positio
   current.dirty = true;
   current.dirtyKinds.add(kind);
   if (position?.elementId) {
-    current.dirtyPositions.set(String(position.elementId), {
+    const viewId = String(position.viewId || "");
+    // A node can have a different position in every view. Keep each edit separately
+    // until save rather than letting the most recently visited view overwrite another.
+    current.dirtyPositions.set(`${viewId}:${String(position.elementId)}`, {
+      elementId: String(position.elementId),
+      viewId,
       x: position.x,
       y: position.y,
     });
