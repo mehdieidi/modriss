@@ -12,6 +12,7 @@ class FlywayMigrationVerificationTest {
 
   @Test
   void appliesAllMigrationsFromEmptyDatabase() {
+    PostgresTestSupport.assumeAvailable();
     String schema = "flyway_verify_" + System.nanoTime();
     DriverManagerDataSource dataSource =
         new DriverManagerDataSource(

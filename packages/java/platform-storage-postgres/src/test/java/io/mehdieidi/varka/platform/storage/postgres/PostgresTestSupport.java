@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.platform.storage.postgres;
 
+import org.junit.jupiter.api.Assumptions;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -16,11 +17,25 @@ public final class PostgresTestSupport {
           .withPassword("varka")
           .withInitScript("db/test-init.sql");
 
-  static {
-    CONTAINER.start();
-  }
+  private static boolean started;
 
   private PostgresTestSupport() {}
+
+  /**
+   * Starts the shared PostgreSQL container or skips the calling test when Docker is unavailable.
+   */
+  public static synchronized void assumeAvailable() {
+    if (started) {
+      return;
+    }
+    try {
+      CONTAINER.start();
+      started = true;
+    } catch (RuntimeException ex) {
+      Assumptions.abort(
+          "Docker is not available for PostgreSQL integration tests: " + ex.getMessage());
+    }
+  }
 
   /**
    * Returns the JDBC URL for the shared PostgreSQL test container.
@@ -28,6 +43,7 @@ public final class PostgresTestSupport {
    * @return JDBC connection URL
    */
   public static String jdbcUrl() {
+    assumeAvailable();
     return CONTAINER.getJdbcUrl();
   }
 
@@ -37,6 +53,7 @@ public final class PostgresTestSupport {
    * @return database username
    */
   public static String username() {
+    assumeAvailable();
     return CONTAINER.getUsername();
   }
 
@@ -46,6 +63,7 @@ public final class PostgresTestSupport {
    * @return database password
    */
   public static String password() {
+    assumeAvailable();
     return CONTAINER.getPassword();
   }
 }

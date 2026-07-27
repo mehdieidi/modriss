@@ -41,15 +41,19 @@ import tools.jackson.databind.node.ObjectNode;
 @ResourceLock("postgres")
 class PostgresPlatformStoreIntegrationTest {
 
-  private final String baseUrl = PostgresTestSupport.jdbcUrl();
-  private final String user = PostgresTestSupport.username();
-  private final String password = PostgresTestSupport.password();
+  private String baseUrl;
+  private String user;
+  private String password;
   private String schema;
   private JdbcTemplate jdbc;
   private PostgresPlatformStore store;
 
   @BeforeAll
   void setUpSchema() {
+    PostgresTestSupport.assumeAvailable();
+    baseUrl = PostgresTestSupport.jdbcUrl();
+    user = PostgresTestSupport.username();
+    password = PostgresTestSupport.password();
     schema = "test_" + UUID.randomUUID().toString().replace("-", "");
     DriverManagerDataSource admin = dataSource(baseUrl);
     JdbcTemplate adminJdbc = new JdbcTemplate(admin);
