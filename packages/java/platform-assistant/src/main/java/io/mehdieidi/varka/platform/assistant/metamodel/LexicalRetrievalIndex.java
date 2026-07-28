@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.ai.embedding.EmbeddingModel;
 
-/** Local lexical retrieval fallback; it never sends model or document text to a remote service. */
+/** Local metamodel and methodology retrieval; it never generates model content. */
 public final class LexicalRetrievalIndex {
   private final AssistantMetamodelSchemaService schemas;
   private final MetamodelKnowledgeService knowledge;
@@ -134,8 +134,11 @@ public final class LexicalRetrievalIndex {
   }
 
   /**
-   * Loads approved, repository-owned guidance only. Missing files simply leave lexical Ecore
-   * retrieval active, which keeps production startup offline and deterministic.
+   * Loads approved, repository-owned methodology guidance only.
+   *
+   * <p>Source-document samples are intentionally excluded from the implicit corpus. They may be
+   * supplied to the model only as explicit examples or evaluation fixtures so ordinary user
+   * transformations are not biased toward sample domains or wording.
    */
   private List<ContextSnippet> loadCorpus(ModelLevel level) {
     List<Path> paths = new ArrayList<>();
@@ -143,13 +146,6 @@ public final class LexicalRetrievalIndex {
     paths.add(
         repositoryRoot.resolve(
             "docs/public-docs/docs/guides/" + level.apiName() + "-modeling-methodology.md"));
-    if (level == ModelLevel.CIM) {
-      paths.add(
-          repositoryRoot.resolve("mde/samples/document-to-cim/community-clinic-user-stories.md"));
-      paths.add(
-          repositoryRoot.resolve(
-              "mde/samples/document-to-cim/marketplace-returns-event-storming.md"));
-    }
     List<ContextSnippet> snippets = new ArrayList<>();
     for (Path path : paths) appendChunks(snippets, path);
     return List.copyOf(snippets);

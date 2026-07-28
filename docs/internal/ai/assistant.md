@@ -1,9 +1,12 @@
-# AI Assistant Setup
+# AI Assistant Setup and Current Design
 
 This project has a bounded backend assistant for model help, source-backed modeling, and validated
 model mutation. It works from the active project, selected model level, current model ID/revision,
 selected elements, optional text attachments, deterministic metamodel contracts, and bounded recent
 conversation context.
+
+For the current source-to-CIM workflow status and live-eval notes, see
+[current-llm-workflow.md](current-llm-workflow.md).
 
 ## What the assistant uses
 
@@ -32,9 +35,12 @@ VARKA_AI_RESPONDER_MODEL=gpt-4o-mini
 VARKA_AI_MAX_TOOL_CALLS=24
 VARKA_AI_MAX_AGENT_STEPS=8
 VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=8
+VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=6
 VARKA_AI_TOKEN_BUDGET=16000
 VARKA_AI_REQUEST_TIMEOUT=5m
 VARKA_AI_TURN_TIMEOUT=5m
+VARKA_AI_SOURCE_TURN_TIMEOUT=5m
+VARKA_AI_OPENAI_PROTOCOL=tools
 ```
 
 `VARKA_AI_REQUEST_TIMEOUT` and `VARKA_AI_TURN_TIMEOUT` default to 5 minutes. Connection
@@ -43,9 +49,14 @@ provider may still be processing the original request.
 
 For another OpenAI-compatible provider, keep `VARKA_AI_PROVIDER=openai` or use the accepted aliases
 `openai-compatible` / `openai_compatible`, then set `OPENAI_COMPATIBLE_BASE_URL`,
-`OPENAI_COMPATIBLE_API_KEY`, and `VARKA_AI_RESPONDER_MODEL` to provider-specific values. The
-current model resolver uses the responder model for assistant roles; planner and summarizer model
-keys are accepted for compatibility but are not separate runtime selectors.
+`OPENAI_COMPATIBLE_API_KEY`, and role model variables to provider-specific values. Current role
+keys are `VARKA_AI_DIRECTOR_MODEL`, `VARKA_AI_MODELER_MODEL`, `VARKA_AI_CRITIC_MODEL`,
+`VARKA_AI_SUMMARIZER_MODEL`, and `VARKA_AI_RESPONDER_MODEL`; the older planner/responder/summarizer
+triple is still accepted for compatibility.
+
+`VARKA_AI_OPENAI_PROTOCOL=tools` selects the native OpenAI-compatible tool-call path. The provider
+adapter also accepts strict JSON action content when a compatible endpoint returns a JSON object in
+`message.content` instead of native `tool_calls`.
 
 For Gemini:
 
@@ -74,6 +85,30 @@ There is one assistant modeling mode. Model-changing turns run through `AgentTur
 tool-based access to an in-memory `ModelWorkspace`. Tool calls are checked against live Ecore
 contracts before they mutate the workspace. The final workspace is structurally validated and then
 committed atomically against the expected model revision.
+
+The LLM returns one action per step:
+
+- `plan_source_model` for a large source-document blueprint.
+- `inspect_model` for current model facts.
+- `describe_types` for exact Ecore contracts.
+- `commit_model_batch` for creates, updates, connections, deletions, and source evidence.
+- `answer_user` for non-mutating answers.
+- `ask_user` when required input is missing.
+
+The OpenAI-compatible native tool schema exposes the mutation action as `apply_draft_patch` and maps
+it back to `commit_model_batch` internally.
+
+### Source-backed CIM flow
+
+For source attachments, the worker extracts text and persists bounded `assistant_source_units`.
+The prompt includes either concrete source units or a source-document map. Small and medium files are
+modeled directly; larger files may be planned into slices with `plan_source_model`. Source-backed
+turns reject premature answer/question actions while modelable source evidence remains in scope.
+
+Committed element provenance is labelled source-grounded or inferred. The backend replaces
+provider-facing `clientRef` values with UUID element IDs, validates source evidence IDs, normalizes
+safe containment/reference issues, and records checkpoint/source coverage details on the durable
+turn.
 
 ## Docker Compose
 
@@ -281,6 +316,19 @@ new turns must use the updated revision or they will conflict.
 The assistant may explain, ask for needed input, apply a validated change, finish partially, or ask
 for explicit confirmation before destructive work. The backend never commits an invalid mutation.
 Applied changes can be undone when a checkpoint inverse is available.
+
+## Current live status
+
+Latest local live test through the real multipart upload path:
+
+- `story-v1-single.md`: `SUCCEEDED`, 100% source coverage, one checkpoint, 16 saved elements, four
+  provider calls.
+- Semantic validation still reports `CIMModelHasSemanticCore` for the live persisted result. The
+  unit-tested semantic-core synthesis guard exists, but the live JSON/XMI validation discrepancy
+  remains the next issue to fix before treating source-to-CIM as fully validation-green.
+
+Focused regression tests for source splitting, provider action parsing, turn-loop behavior, and
+model tools currently pass: 26 tests, 0 failures.
 
 ## Does the frontend offer turn controls or undo?
 

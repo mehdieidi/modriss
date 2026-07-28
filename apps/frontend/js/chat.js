@@ -499,8 +499,11 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
             } else if (eventName === "turn.validation.completed") {
               updateThinkingStatus("Validation completed for the current draft.", "VALIDATING");
             } else if (eventName === "turn.coverage.updated") {
+              const unresolved = Number(event?.payload?.unresolvedSpans) || 0;
               updateThinkingStatus(
-                `${Number(event?.payload?.coveragePercent) || 0}% source coverage recorded.`,
+                unresolved
+                  ? "Recorded source grounding for the current model slice."
+                  : "Source grounding recorded for the modeled document.",
                 "COMPLETING",
               );
             } else if (eventName === "turn.stage") {
@@ -687,9 +690,8 @@ function appendDurableTurnSummary(turn) {
   }
   const saved = Number(turn.savedElementCount) || 0;
   const checkpoints = Number(turn.checkpointCount) || 0;
-  const coverage = Number(turn.coveragePercent);
   const remaining = String(turn.remainingWork || "").trim();
-  if (!saved && !checkpoints && !remaining && !Number.isFinite(coverage)) return;
+  if (!saved && !checkpoints && !remaining) return;
 
   const card = document.createElement("div");
   card.className = "chat-msg assistant";
@@ -704,7 +706,6 @@ function appendDurableTurnSummary(turn) {
   const facts = [];
   if (saved) facts.push(`${saved} element${saved === 1 ? "" : "s"} saved`);
   if (checkpoints) facts.push(`${checkpoints} checkpoint${checkpoints === 1 ? "" : "s"}`);
-  if (Number.isFinite(coverage)) facts.push(`${coverage}% source coverage`);
   if (facts.length) {
     const detail = document.createElement("p");
     detail.className = "chat-proposal-intro";
@@ -743,10 +744,8 @@ function renderDurableRun(turn, typeKey) {
   bubble.appendChild(title);
   const details = document.createElement("p");
   details.className = "chat-proposal-intro";
-  const coverage = Number(turn.coveragePercent);
   details.textContent = [
     turn.phase && `Phase: ${turn.phase}`,
-    Number.isFinite(coverage) && `Source coverage: ${coverage}%`,
     turn.currentWorkItemId && `Current item: ${turn.currentWorkItemId}`,
   ]
     .filter(Boolean)

@@ -47,7 +47,6 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     if (apiKey.isBlank()) apiKey = "sk-not-configured";
     OpenAIOkHttpClient.Builder client =
         OpenAIOkHttpClient.builder()
-            .fromEnv()
             .baseUrl(properties.openaiCompatible().baseUrl())
             .apiKey(apiKey)
             .timeout(properties.requestTimeout())
@@ -202,20 +201,27 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                   HttpRequest.BodyPublishers.ofString(
                       mapper.writeValueAsString(body), StandardCharsets.UTF_8))
               .build();
+      HttpClient.Builder httpClient =
+          HttpClient.newBuilder().connectTimeout(properties.requestTimeout());
+      AiProperties.Proxy proxy = properties.proxyFor(AiProperties.Provider.OPENAI.key());
+      if (proxy.enabled() && proxy.type() != AiProperties.ProxyType.DIRECT) {
+        httpClient.proxy(java.net.ProxySelector.of(proxy.address()));
+      }
       var response =
-          HttpClient.newBuilder()
-              .connectTimeout(properties.requestTimeout())
+          httpClient
               .build()
               .sendAsync(request, HttpResponse.BodyHandlers.ofString())
               .orTimeout(properties.requestTimeout().toMillis(), TimeUnit.MILLISECONDS)
               .join();
       if (response.statusCode() / 100 != 2) {
+        String errorBody = providerErrorSnippet(response.body());
         throw new PlatformException(
             response.statusCode(),
             response.statusCode() >= 400 && response.statusCode() < 500
                 ? "AI provider rejected the configured tool protocol. Check "
                     + "VARKA_AI_OPENAI_PROTOCOL, the selected model, and endpoint capabilities."
-                : "AI provider returned HTTP " + response.statusCode() + ".");
+                    + errorBody
+                : "AI provider returned HTTP " + response.statusCode() + "." + errorBody);
       }
       var message = mapper.readTree(response.body()).path("choices").path(0).path("message");
       String content = nativeToolAction(mapper, message);
@@ -230,6 +236,13 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     }
   }
 
+  private static String providerErrorSnippet(String body) {
+    String value = body == null ? "" : body.replaceAll("\\s+", " ").trim();
+    if (value.isBlank()) return "";
+    if (value.length() > 500) value = value.substring(0, 500) + "...";
+    return " Provider response: " + value;
+  }
+
   /** Translates one raw OpenAI tool call to the legacy closed action envelope. */
   static String nativeToolAction(
       com.fasterxml.jackson.databind.ObjectMapper mapper,
@@ -237,7 +250,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       throws com.fasterxml.jackson.core.JsonProcessingException {
     var calls = message.path("tool_calls");
     if (!calls.isArray() || calls.size() != 1) {
-      throw new PlatformException(422, "Provider must return exactly one assistant tool call.");
+      return nativeContentAction(mapper, message.path("content").asText(""));
     }
     var call = calls.get(0);
     String name = call.path("function").path("name").asText();
@@ -249,6 +262,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     String action =
         switch (name) {
           case "respond_to_user" -> "answer_user";
+          case "plan_source_model" -> "plan_source_model";
           case "inspect_model", "describe_types" -> name;
           case "apply_draft_patch" -> "commit_model_batch";
           // These tools are included in the V2 provider contract, but the current bounded
@@ -263,9 +277,31 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     return "{\"action\":\"" + action + "\",\"arguments\":" + arguments + "}";
   }
 
+  private static String nativeContentAction(
+      com.fasterxml.jackson.databind.ObjectMapper mapper, String content) {
+    String trimmed = content == null ? "" : content.trim();
+    if (trimmed.isBlank()) {
+      throw new PlatformException(422, "Provider must return exactly one assistant tool call.");
+    }
+    com.fasterxml.jackson.databind.JsonNode value;
+    try {
+      value = mapper.readTree(trimmed);
+    } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+      throw new PlatformException(422, "Provider must return exactly one assistant tool call.");
+    }
+    if (value.path("action").isTextual() && value.path("arguments").isObject()) {
+      return trimmed;
+    }
+    if (value.path("message").isTextual() && !value.path("message").asText().isBlank()) {
+      return "{\"action\":\"answer_user\",\"arguments\":" + trimmed + "}";
+    }
+    throw new PlatformException(422, "Provider must return exactly one assistant tool call.");
+  }
+
   private static String toolDescription(String name) {
     return switch (name) {
       case "respond_to_user" -> "Return the final user-facing answer in message.";
+      case "plan_source_model" -> "Plan source document spans into coherent CIM modeling slices.";
       case "inspect_model" -> "Read a model element or inventory using id.";
       case "describe_types" -> "Retrieve exact Ecore contracts for names.";
       case "apply_draft_patch" -> "Submit one complete candidate model patch.";

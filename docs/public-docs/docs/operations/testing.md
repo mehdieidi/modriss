@@ -74,6 +74,27 @@ python scripts/format.py --check
 8. Download the artifact ZIP and run its generated validation and tests.
 9. Deploy the generated project to LocalStack and verify runtime effects.
 
+## Assistant Source-Backed Live Eval
+
+For the chatbot attachment workflow, use the focused live-eval script after the Docker Compose
+backend is rebuilt and healthy:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\live-cim-source-file-eval.ps1 `
+  -StoryPath tmp\assistant-source-tests\story-v1-single.md `
+  -TimeoutSeconds 1500 `
+  -MaxContinues 8
+```
+
+The script registers a temporary user, creates a project and CIM model, uploads the source file
+through the multipart chatbot attachment endpoint, submits a durable turn, waits for terminal
+status, fetches the updated model, and calls validation.
+
+Current expected one-story behavior is `SUCCEEDED`, one checkpoint, 100% source coverage, and saved
+model elements. The known remaining issue is semantic validation:
+`CIMModelHasSemanticCore` can still fail on the live persisted model even when the turn lifecycle
+succeeds.
+
 ## What to Test After Language Changes
 
 Verify formal structure, UI metadata coverage, JSON/XMI round trips, EVL results, incoming and

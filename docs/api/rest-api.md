@@ -147,32 +147,43 @@ Assistant commands use REST. Realtime progress uses authenticated SSE with durab
 See
 [public realtime reference](../public-docs/docs/reference/realtime-api.md).
 
-| Method   | Path                                            | Purpose                     |
-| -------- | ----------------------------------------------- | --------------------------- |
-| `POST`   | `/api/chatbot/sessions`                         | Create or resume a session  |
-| `GET`    | `/api/chatbot/conversations`                    | List recent conversations   |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/messages`    | Submit a user message       |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/attachments` | Upload a text attachment    |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/thread`      | Load thread history         |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/events`      | Open SSE event stream       |
-| `DELETE` | `/api/chatbot/sessions/{sessionId}`             | Clear session memory        |
-| `GET`    | `/api/chatbot/turns/{turnId}`                   | Get durable turn status     |
-| `POST`   | `/api/chatbot/turns/{turnId}/cancel`            | Persist cancellation        |
-| `POST`   | `/api/chatbot/turns/{turnId}/continue`          | Continue partial work       |
-| `POST`   | `/api/chatbot/turns/{turnId}/confirm`           | Confirm a destructive batch |
-| `POST`   | `/api/chatbot/turns/{turnId}/undo`              | Undo a saved checkpoint     |
-| `GET`    | `/api/chatbot/turns/{turnId}/events`            | Replay durable SSE events   |
+| Method   | Path                                                              | Purpose                          |
+| -------- | ----------------------------------------------------------------- | -------------------------------- |
+| `POST`   | `/api/chatbot/sessions`                                           | Create or resume a session       |
+| `GET`    | `/api/chatbot/conversations`                                      | List recent conversations        |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/messages`                      | Submit a user message            |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/attachments`                   | Upload a text attachment         |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/thread`                        | Load thread history              |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/events`                        | Open SSE event stream            |
+| `DELETE` | `/api/chatbot/sessions/{sessionId}`                               | Clear session memory             |
+| `GET`    | `/api/chatbot/turns/{turnId}`                                     | Get durable turn status          |
+| `POST`   | `/api/chatbot/turns/{turnId}/cancel`                              | Persist cancellation             |
+| `POST`   | `/api/chatbot/turns/{turnId}/continue`                            | Continue partial work            |
+| `POST`   | `/api/chatbot/turns/{turnId}/confirm`                             | Confirm a destructive batch      |
+| `POST`   | `/api/chatbot/turns/{turnId}/undo`                                | Undo a saved checkpoint          |
+| `POST`   | `/api/chatbot/turns/{turnId}/rebase`                              | Rebase after safe revision drift |
+| `POST`   | `/api/chatbot/turns/{turnId}/checkpoints/{checkpointId}/rollback` | Roll back a specific checkpoint  |
+| `POST`   | `/api/chatbot/turns/{turnId}/feedback`                            | Record accepted/rejected signal  |
+| `GET`    | `/api/chatbot/turns/{turnId}/events`                              | Replay durable SSE events        |
 
 ### Message request and response
 
 `POST /api/chatbot/sessions/{sessionId}/messages` requires `idempotencyKey` and accepts `message`,
-optional `modelId`, `expectedRevision`, `selectedElementIds`, and `attachmentIds`. It returns `202` with
-`turnId`, state, model/revision, acceptance/deadline timestamps, and an event cursor.
+optional `modelId`, `revision`, `expectedRevision`, `activeView`, `selectedElementIds`,
+`attachmentIds`, or inline `attachmentName`/`attachmentContent`. Text attachments may be uploaded
+first with `POST /api/chatbot/sessions/{sessionId}/attachments` and then referenced by ID. Message
+submission returns `202` with `turnId`, state, model/revision, acceptance/deadline timestamps, and
+an event cursor.
 
 `GET /api/chatbot/turns/{turnId}` is the polling fallback and returns checkpoint counts, saved
 elements, source coverage, remaining work, provider-call/token usage, and source-grounded or
 inferred provenance labels. Reload the model after a `model.checkpoint` event; no uncommitted model
 preview or proposal approval protocol is exposed.
+
+For source-backed CIM generation, `coveragePercent=100` means all tracked source units were
+accounted for by source-grounded or inferred provenance. It does not by itself guarantee semantic
+EVL validity; clients should call the model validation endpoint when a validation-green model is
+required.
 
 ## Impact Analysis
 

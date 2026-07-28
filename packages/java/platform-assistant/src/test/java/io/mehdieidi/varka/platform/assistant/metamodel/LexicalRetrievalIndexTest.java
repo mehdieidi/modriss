@@ -18,13 +18,17 @@ class LexicalRetrievalIndexTest {
   }
 
   @Test
-  void indexesApprovedLocalDocumentToCimSamplesWhenTheyAreAvailable() {
+  void excludesDocumentToCimSamplesFromImplicitRetrievalCorpus() {
     LexicalRetrievalIndex index = new LexicalRetrievalIndex(new AssistantMetamodelSchemaService());
 
     var matches = index.search(ModelLevel.CIM, "community clinic patient appointment", 12);
 
     assertTrue(
-        matches.stream().anyMatch(item -> item.source().contains("community-clinic-user-stories")));
+        matches.stream()
+            .noneMatch(
+                item ->
+                    item.source().contains("community-clinic-user-stories")
+                        || item.source().contains("marketplace-returns-event-storming")));
   }
 
   @Test

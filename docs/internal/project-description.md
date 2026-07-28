@@ -103,13 +103,17 @@ The assistant is presented as a chatbot icon on the modeling canvas. When the us
 a chatbot window appears inside the editor. Through this interface, the user can interact with the
 assistant using natural language.
 
-The AI assistant is designed to understand the current state of the model being edited. It is also
-aware of the formal metamodel definitions and validation constraints. Based on user prompts, the
-assistant can create, modify, and refine model elements while ensuring that its outputs conform to
-the defined metamodels and EVL constraints.
+The AI assistant is designed to understand the current state of the model being edited. It receives
+backend-owned Ecore-derived contracts and validation feedback. Based on user prompts, the assistant
+can create, modify, and refine model elements through validated backend tools. Structural
+metamodel conformance is enforced before commit; semantic EVL validation is checked separately and
+can still report issues that require follow-up modeling or implementation fixes.
 
 Instead of manually creating every element, the user can describe the intended model changes in
-natural language, and the assistant can generate or update the model accordingly.
+natural language, upload source documents such as user stories, and ask the assistant to generate
+or update the model accordingly. The source-backed CIM workflow is actively being hardened: the
+one-story attachment path now reaches a saved `SUCCEEDED` checkpoint with 100% source coverage,
+while a semantic-core validation discrepancy remains under investigation.
 
 The assistant’s changes are reflected visually on the frontend canvas through REST model reloads
 and authenticated server-sent events for durable turn progress. The chat interaction is designed to

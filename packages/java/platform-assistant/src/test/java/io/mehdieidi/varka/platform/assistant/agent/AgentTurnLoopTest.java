@@ -240,6 +240,36 @@ class AgentTurnLoopTest {
   }
 
   @Test
+  void acceptsStringEncodedCommandItemsFromStructuredProviders() throws Exception {
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(any(), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            new StringEncodedPatchProvider(),
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            2);
+    var json =
+        new ObjectMapper()
+            .readTree(
+                """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","diagram":{"elements":[],"relationships":[]}}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+
+    var result = loop.run("s", ModelLevel.CIM, "Create a goal", null, workspace);
+
+    assertEquals("Model checkpoint saved.", result.message());
+    assertEquals(1, result.providerCalls());
+    assertTrue(!result.patch().isEmpty());
+  }
+
+  @Test
   void repairsAnEmptyTerminalAnswerWithinBudget() throws Exception {
     ModelService models = mock(ModelService.class);
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
@@ -414,6 +444,29 @@ class AgentTurnLoopTest {
           calls == 1
               ? "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"\"}}"
               : "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"Recovered\"}}",
+          "fake",
+          "fake");
+    }
+  }
+
+  private static final class StringEncodedPatchProvider implements AssistantModelProvider {
+    @Override
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    @Override
+    public boolean available() {
+      return true;
+    }
+
+    @Override
+    public AssistantReply complete(AssistantPrompt prompt) {
+      ProviderCallBudget.consume(prompt.role());
+      return new AssistantReply(
+          """
+{"tool":"commit_model_batch","arguments":{"creates":["{\\"clientRef\\":\\"goal_online_scheduling\\",\\"eClass\\":\\"BusinessGoal\\",\\"attributes\\":{\\"name\\":\\"Online Scheduling\\"},\\"owner\\":\\"rootId\\",\\"reference\\":\\"goals\\"}"],"updates":[],"connections":[],"deletions":[],"evidence":[],"planSummary":"Created goal","turnComplete":true}}
+""",
           "fake",
           "fake");
     }

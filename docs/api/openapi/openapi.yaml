@@ -1106,9 +1106,20 @@ paths:
     post:
       tags: [Assistant]
       summary: Send assistant message
+      description: Accepts an idempotent durable assistant turn. Text attachments may be referenced by attachmentIds and can drive source-backed CIM modeling.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantMessageRequest"
       responses:
         "202":
           description: Durable assistant turn accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TurnAcceptedResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/chatbot/sessions/{sessionId}/attachments:
@@ -1135,6 +1146,10 @@ paths:
       responses:
         "200":
           description: Uploaded attachment metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantAttachmentResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "413":
@@ -1184,6 +1199,10 @@ paths:
       responses:
         "200":
           description: Durable turn status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TurnStatusResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/chatbot/turns/{turnId}/cancel:
@@ -1214,6 +1233,10 @@ paths:
       responses:
         "202":
           description: Continuation accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TurnAcceptedResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/chatbot/turns/{turnId}/undo:
@@ -1229,6 +1252,10 @@ paths:
       responses:
         "200":
           description: Checkpoint undone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TurnUndoResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/chatbot/turns/{turnId}/confirm:
@@ -1244,6 +1271,10 @@ paths:
       responses:
         "202":
           description: Confirmed turn accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TurnAcceptedResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/chatbot/turns/{turnId}/events:
@@ -1493,18 +1524,40 @@ paths:
     post:
       tags: [Assistant]
       summary: Rebase a non-overlapping durable assistant turn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RebaseTurnRequest"
       responses:
-        "202": { description: Rebased turn accepted }
+        "202":
+          description: Rebased turn accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TurnAcceptedResponse"
   /api/chatbot/turns/{turnId}/checkpoints/{checkpointId}/rollback:
     post:
       tags: [Assistant]
       summary: Roll back a durable assistant checkpoint
       responses:
-        "200": { description: Checkpoint rolled back }
+        "200":
+          description: Checkpoint rolled back
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TurnUndoResponse"
   /api/chatbot/turns/{turnId}/feedback:
     post:
       tags: [Assistant]
       summary: Record assistant-turn feedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TurnFeedbackRequest"
       responses:
         "202": { description: Feedback accepted }
   /api/chatbot/sessions/{sessionId}/proposals/{proposalId}:
@@ -1986,6 +2039,228 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ValidationIssue"
+    AssistantMessageRequest:
+      type: object
+      required: [message, idempotencyKey]
+      properties:
+        message:
+          type: string
+        modelId:
+          type: string
+        revision:
+          type: integer
+          format: int64
+        expectedRevision:
+          type: integer
+          format: int64
+        activeView:
+          type: string
+          enum: [CIM, PIM, PSM]
+        selectedElementIds:
+          type: array
+          items:
+            type: string
+        attachmentIds:
+          type: array
+          items:
+            type: string
+        attachmentName:
+          type: string
+          description: Optional inline attachment name. Prefer uploaded attachmentIds for files.
+        attachmentContent:
+          type: string
+          description: Optional inline text attachment content.
+        idempotencyKey:
+          type: string
+    AssistantAttachmentResponse:
+      type: object
+      required: [id, fileName, contentType, sizeBytes]
+      properties:
+        id:
+          type: string
+        fileName:
+          type: string
+        contentType:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        level:
+          type: string
+        projectId:
+          type: string
+        uploadedAt:
+          type: string
+          format: date-time
+    TurnAcceptedResponse:
+      type: object
+      required: [turnId, state, eventCursor]
+      properties:
+        turnId:
+          type: string
+        state:
+          $ref: "#/components/schemas/AssistantTurnState"
+        modelId:
+          type: string
+        revision:
+          type: integer
+          format: int64
+        acceptedAt:
+          type: string
+          format: date-time
+        deadlineAt:
+          type: string
+          format: date-time
+        eventCursor:
+          type: integer
+          format: int64
+    TurnStatusResponse:
+      type: object
+      required: [turnId, state, checkpointCount, savedElementCount, providerCalls]
+      properties:
+        turnId:
+          type: string
+        state:
+          $ref: "#/components/schemas/AssistantTurnState"
+        modelId:
+          type: string
+        revision:
+          type: integer
+          format: int64
+        checkpoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantCheckpoint"
+        checkpointCount:
+          type: integer
+        savedElementCount:
+          type: integer
+        coveragePercent:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Source-unit accounting coverage, not semantic EVL validity.
+        remainingWork:
+          type: string
+        finalMessage:
+          type: string
+        providerCalls:
+          type: integer
+        promptTokens:
+          type: integer
+          format: int64
+        completionTokens:
+          type: integer
+          format: int64
+        repairAttempts:
+          type: integer
+        provenance:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantProvenance"
+        continuations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantContinuation"
+        workflowKind:
+          type: string
+        phase:
+          type: string
+        currentWorkItemId:
+          type: string
+        workItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantWorkItem"
+    AssistantTurnState:
+      type: string
+      enum:
+        [
+          QUEUED,
+          RUNNING,
+          SUCCEEDED,
+          PARTIAL,
+          NEEDS_INPUT,
+          NEEDS_CONFIRMATION,
+          CONFLICTED,
+          CANCELLED,
+          TIMED_OUT,
+          FAILED,
+        ]
+    AssistantCheckpoint:
+      type: object
+      properties:
+        checkpointId:
+          type: integer
+          format: int64
+        ordinal:
+          type: integer
+        label:
+          type: string
+        modelId:
+          type: string
+        revision:
+          type: integer
+          format: int64
+        status:
+          type: string
+    AssistantProvenance:
+      type: object
+      properties:
+        elementId:
+          type: string
+        sourceUnitId:
+          type: string
+        requirementId:
+          type: string
+        kind:
+          type: string
+          enum: [SOURCE_GROUNDED, INFERRED]
+        assumption:
+          type: string
+    AssistantContinuation:
+      type: object
+      properties:
+        turnId:
+          type: string
+        state:
+          $ref: "#/components/schemas/AssistantTurnState"
+        revision:
+          type: integer
+          format: int64
+    AssistantWorkItem:
+      type: object
+      properties:
+        id:
+          type: string
+        ordinal:
+          type: integer
+        label:
+          type: string
+        status:
+          type: string
+    TurnUndoResponse:
+      type: object
+      required: [modelId, revision]
+      properties:
+        modelId:
+          type: string
+        revision:
+          type: integer
+          format: int64
+    RebaseTurnRequest:
+      type: object
+      required: [expectedRevision]
+      properties:
+        expectedRevision:
+          type: integer
+          format: int64
+    TurnFeedbackRequest:
+      type: object
+      required: [accepted]
+      properties:
+        accepted:
+          type: boolean
     TransformRequest:
       type: object
       required: [sourceModelId]

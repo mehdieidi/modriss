@@ -114,6 +114,8 @@ public final class DurableAssistantTurnWorker {
   }
 
   private void execute(AssistantTurn turn) {
+    org.slf4j.MDC.put("assistantTurnId", turn.id());
+    org.slf4j.MDC.put("assistantSessionId", turn.threadId());
     turns
         .workflow(turn.id())
         .ifPresent(
@@ -145,7 +147,7 @@ public final class DurableAssistantTurnWorker {
       java.util.List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.SourceUnit>
           units = java.util.List.of();
       if (turn.sourceText() != null && !turn.sourceText().isBlank()) {
-        units = sourceUnits.split(turn.sourceText());
+        units = turnScopedSourceUnits(turn.id(), sourceUnits.split(turn.sourceText()));
         turns.saveSourceUnits(turn.id(), units);
         if (turns.sourceFacts(turn.id()).isEmpty())
           turns.saveSourceFacts(turn.id(), SourceFactGraph.fromSpans(units));
@@ -153,7 +155,7 @@ public final class DurableAssistantTurnWorker {
         var blueprint = turns.sourceBlueprint(turn.id());
         java.util.List<AssistantTurnStore.SourceUnit> selected =
             blueprint
-                .map(item -> selectBlueprintSourceUnits(sourceUnitsForTurn, item))
+                .map(item -> selectBlueprintSourceUnits(turn.id(), sourceUnitsForTurn, item))
                 .filter(items -> !items.isEmpty())
                 .orElseGet(() -> selectCachedSourceUnits(turn, sourceUnitsForTurn));
         selectedSourceUnitCount = selected.size();
@@ -364,21 +366,11 @@ public final class DurableAssistantTurnWorker {
                 : "Source spans still need explicit modeling evidence: "
                     + (units.size() - accounted.size())
                     + ".";
-        // For an unplanned source-backed increment, structural validity plus evidence for every
-        // source unit is the durable completion contract.  Do not keep resuming merely because
-        // the provider conservatively returned turnComplete=false after it already covered the
-        // entire supplied document.
-        if (accounted.size() == units.size() && turns.sourceBlueprint(turn.id()).isEmpty()) {
+        // Structural validity plus evidence for every source unit is the durable completion
+        // contract. Do not keep resuming merely because the provider conservatively returned
+        // turnComplete=false after it already covered the entire supplied document.
+        if (accounted.size() == units.size()) {
           state = AssistantTurn.State.SUCCEEDED;
-        }
-        int completedSourceWindow = Math.min(units.size(), selectedSourceUnitCount);
-        if (completedSourceWindow < units.size()) {
-          String nextWindow =
-              "Source units still queued for the next model slice: "
-                  + (units.size() - completedSourceWindow)
-                  + ".";
-          remainingWork = remainingWork == null ? nextWindow : remainingWork + " " + nextWindow;
-          if (state == AssistantTurn.State.SUCCEEDED) state = AssistantTurn.State.PARTIAL;
         }
         turns.setSourceCoverage(turn.id(), coverage, remainingWork);
         turns.appendEvent(
@@ -393,6 +385,7 @@ public final class DurableAssistantTurnWorker {
       }
       var sourceBlueprint = turns.sourceBlueprint(turn.id());
       if (sourceBlueprint.isPresent()
+          && remainingWork != null
           && result.sourceBlueprint() == null
           && sourceBlueprint.get().nextSlice() + 1
               < sourceBlueprint.get().blueprint().path("slices").size()) {
@@ -493,7 +486,24 @@ public final class DurableAssistantTurnWorker {
           null);
     } finally {
       heartbeat.cancel(false);
+      org.slf4j.MDC.remove("assistantTurnId");
+      org.slf4j.MDC.remove("assistantSessionId");
     }
+  }
+
+  private java.util.List<AssistantTurnStore.SourceUnit> turnScopedSourceUnits(
+      String turnId, java.util.List<AssistantTurnStore.SourceUnit> units) {
+    if (units == null || units.isEmpty()) return java.util.List.of();
+    return units.stream()
+        .map(
+            unit ->
+                new AssistantTurnStore.SourceUnit(
+                    turnId + ":" + unit.id(),
+                    unit.ordinal(),
+                    unit.startOffset(),
+                    unit.endOffset(),
+                    unit.content()))
+        .toList();
   }
 
   private void complete(
@@ -547,13 +557,27 @@ public final class DurableAssistantTurnWorker {
 
   /** Uses the LLM's validated source-unit plan instead of a positional window when available. */
   private java.util.List<AssistantTurnStore.SourceUnit> selectBlueprintSourceUnits(
+      String turnId,
       java.util.List<AssistantTurnStore.SourceUnit> units,
       AssistantTurnStore.SourceBlueprint blueprint) {
     var slices = blueprint.blueprint().path("slices");
     if (!slices.isArray() || blueprint.nextSlice() >= slices.size()) return java.util.List.of();
-    java.util.Set<String> ids = new java.util.LinkedHashSet<>();
-    slices.get(blueprint.nextSlice()).path("sourceUnitIds").forEach(item -> ids.add(item.asText()));
-    return units.stream().filter(unit -> ids.contains(unit.id())).toList();
+    java.util.Set<String> alreadyModeled =
+        turns.provenance(turnId).stream()
+            .map(AssistantTurnStore.Provenance::sourceUnitId)
+            .filter(id -> id != null && !id.isBlank())
+            .collect(java.util.stream.Collectors.toSet());
+    for (int index = blueprint.nextSlice(); index < slices.size(); index++) {
+      java.util.Set<String> ids = new java.util.LinkedHashSet<>();
+      slices.get(index).path("sourceUnitIds").forEach(item -> ids.add(item.asText()));
+      java.util.List<AssistantTurnStore.SourceUnit> selected =
+          units.stream()
+              .filter(unit -> ids.contains(unit.id()))
+              .filter(unit -> !alreadyModeled.contains(unit.id()))
+              .toList();
+      if (!selected.isEmpty()) return selected;
+    }
+    return java.util.List.of();
   }
 
   private String annotatedSourceUnits(

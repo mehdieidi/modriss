@@ -61,20 +61,27 @@ Set `VARKA_AI_ENABLED=true` before selecting a provider. `VARKA_AI_PROVIDER` acc
 to the `openai` provider path and use `OPENAI_COMPATIBLE_BASE_URL` plus
 `OPENAI_COMPATIBLE_API_KEY`; Gemini uses `GEMINI_API_KEY`.
 
-Timeouts, token budgets, context limits, agent steps, tool-call limits, repair attempts, source
+Timeouts, token budgets, context limits, agent steps, provider-call limits, repair attempts, source
 passes, rate limits, retries, and recent-message windows all trade completeness and resilience
-against latency, memory use, and provider cost. Increasing them allows more complex turns; lowering
-them makes failures faster and cheaper. `VARKA_AI_FALLBACK_PROVIDER` is used only after an HTTP 429
-from the primary provider. Durable assistant message submission currently requires an
-`idempotencyKey` in the request body so retries cannot apply duplicate work.
+against latency, memory use, and provider cost. `VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN` and
+`VARKA_AI_SOURCE_TURN_TIMEOUT` are the larger budgets used for source-backed attachment turns.
+Increasing them allows more complex documents; lowering them makes failures faster and cheaper.
+`VARKA_AI_FALLBACK_PROVIDER` is used only after an HTTP 429 from the primary provider. Durable
+assistant message submission currently requires an `idempotencyKey` in the request body so retries
+cannot apply duplicate work.
 
-`VARKA_AI_RESPONDER_MODEL` is the active model-selection knob. Empty values use provider defaults:
-`gpt-4o-mini` for OpenAI-compatible providers and `gemini-2.0-flash` for Gemini. The
-`VARKA_AI_PLANNER_MODEL` and `VARKA_AI_SUMMARIZER_MODEL` keys are still accepted for compatibility,
-but the current resolver uses the responder model for assistant roles. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION`
-and `VARKA_AI_LLM_CONTRACT_RERANK_ENABLED` can improve source/retrieval quality at the cost of
-extra provider calls. The proxy variables accept `DIRECT`, `HTTP`, or `SOCKS`; proxy settings
-affect AI provider traffic only.
+Model selection is role-aware. Use `VARKA_AI_DIRECTOR_MODEL`, `VARKA_AI_MODELER_MODEL`,
+`VARKA_AI_CRITIC_MODEL`, `VARKA_AI_SUMMARIZER_MODEL`, and `VARKA_AI_RESPONDER_MODEL` when you need
+role-specific models. The older `VARKA_AI_PLANNER_MODEL`, `VARKA_AI_RESPONDER_MODEL`, and
+`VARKA_AI_SUMMARIZER_MODEL` triple is still accepted for compatibility. Empty values use provider
+defaults: `gpt-4o-mini` for OpenAI-compatible providers and `gemini-2.0-flash` for Gemini.
+
+For OpenAI-compatible providers, `VARKA_AI_OPENAI_PROTOCOL` accepts `auto`, `tools`, or the legacy
+JSON action mode. `tools` uses native Chat Completions tool calls and is preferred for providers
+that implement the tool-call contract correctly. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION` and
+`VARKA_AI_LLM_CONTRACT_RERANK_ENABLED` can improve source/retrieval quality at the cost of extra
+provider calls. The proxy variables accept `DIRECT`, `HTTP`, or `SOCKS`; proxy settings affect AI
+provider traffic only.
 
 ## Observability
 

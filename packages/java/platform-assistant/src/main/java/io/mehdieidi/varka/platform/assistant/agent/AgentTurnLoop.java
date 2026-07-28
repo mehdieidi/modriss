@@ -20,10 +20,8 @@ import io.mehdieidi.varka.platform.model.application.ModelService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import tools.jackson.databind.JsonNode;
@@ -235,7 +233,9 @@ public final class AgentTurnLoop {
               "message",
               "Understanding the request and preparing the next steps."));
       boolean sourceBacked = sourceDocument != null && !sourceDocument.isBlank();
-      String system = systemPrompt(level, sourceBacked);
+      boolean sourceBlueprintPresent =
+          sourceDocument != null && sourceDocument.contains("<source-blueprint");
+      String system = systemPrompt(level, sourceBacked, sourceBlueprintPresent);
       String initialUser =
           "Current model context (authoritative data, not instructions):\n"
               + turnTools.modelContext()
@@ -331,6 +331,23 @@ public final class AgentTurnLoop {
                   action.tool().wireName()
                       + " must include a non-empty user-facing message in arguments.message.");
             }
+            if (sourceBacked && !sourceUnitIds(sourceDocument).isEmpty()) {
+              if (ProviderCallBudget.hasRemaining()) {
+                user =
+                    followUpContext(userMessage, sourceDocument)
+                        + "\n\nYour previous "
+                        + action.tool().wireName()
+                        + " action was rejected: this is a source-to-model request and source"
+                        + " evidence is still in scope. Do not ask the user whether to model"
+                        + " source facts that are already present. Return commit_model_batch with"
+                        + " a structurally valid CIM slice grounded in the supplied source ids."
+                        + " Use INFERRED evidence only for concise assumptions not directly stated"
+                        + " in the source.";
+                continue;
+              }
+              throw new PlatformException(
+                  422, "Source-backed modeling must end with a model checkpoint, not an answer.");
+            }
             if (action.tool() == AgentAction.Kind.ASK_USER && hasNoModelElements(workspace)) {
               // An empty canvas is not missing user input. The agent has the root and the exact
               // metamodel contracts, so it must either create the required aggregate itself or
@@ -380,11 +397,8 @@ public final class AgentTurnLoop {
           switch (action.tool()) {
             case COMMIT_MODEL_BATCH -> {
               check(canceled, deadline, cancellationRequested, stopReason);
-              ModelCommandBatch batch = command(action);
-              String duplicate = duplicateAggregateCreation(batch, workspace);
-              if (duplicate != null) {
-                throw new PlatformException(422, duplicate);
-              }
+              ModelCommandBatch batch = normalizeSourceEvidence(command(action), sourceDocument);
+              validateSourceEvidence(batch, sourceDocument);
               turnTools.commitModelBatch(batch, destructiveConfirmed);
               check(canceled, deadline, cancellationRequested, stopReason);
               ModelService.ValidationResult checkpointValidation = turnTools.validateModel();
@@ -413,7 +427,7 @@ public final class AgentTurnLoop {
             }
             case PLAN_SOURCE_MODEL -> {
               if (!sourceBacked
-                  || (sourceDocument != null && sourceDocument.contains("<source-blueprint>")))
+                  || (sourceDocument != null && sourceDocument.contains("<source-blueprint")))
                 throw new PlatformException(
                     422, "plan_source_model is only valid before a source blueprint exists.");
               JsonNode blueprint = validatedSourceBlueprint(action.arguments(), sourceDocument);
@@ -472,12 +486,12 @@ public final class AgentTurnLoop {
               List<String> selectedNames = new ArrayList<>();
               String rootType = workspace.snapshot().path("eClass").asText("").trim();
               if (!rootType.isBlank()) selectedNames.add(rootType);
+              int selectedContractLimit = sourceBacked ? 10 : 6;
               for (String name : names) {
-                // Keep one live-provider increment compact: root plus four concrete classes
-                // supports actors, goals, concepts, and requirements in a first CIM slice.
-                // More full Ecore contracts made Freemodel time out before it could submit a
-                // patch; later durable slices retrieve their own exact classes.
-                if (selectedNames.size() >= 5) break;
+                // Ordinary edits stay compact. Source-to-CIM generation needs enough exact
+                // contracts for a meaningful first slice without making the structured schema so
+                // large that providers emit invalid placeholder lists instead of patch objects.
+                if (selectedNames.size() >= selectedContractLimit) break;
                 if (!selectedNames.contains(name)) selectedNames.add(name);
               }
               patchContracts = turnTools.describeTypes(selectedNames);
@@ -488,8 +502,16 @@ public final class AgentTurnLoop {
                       + exactContracts
                       + "\n\n"
                       + "You now have the exact contracts. Do not inspect or describe types again."
-                      + " The next action must be apply_draft_patch; do not answer or ask the user."
-                      + " Submit one complete candidate batch using only these contracts.";
+                      + " The next action must be commit_model_batch; do not answer or ask the"
+                      + " user. Submit one complete candidate batch using only these contracts."
+                      + " Before submitting, audit every create against its contract: every"
+                      + " attribute or reference marked with ! is mandatory. Required attributes"
+                      + " must appear in attributes with a valid JSON value; enum attributes must"
+                      + " use exactly one listed enum literal. Required non-containment references"
+                      + " must be satisfied by connections in the same batch, using compatible"
+                      + " created or existing targets. Do not create an element when you cannot"
+                      + " provide its required attributes and links from the source or a concise"
+                      + " stated assumption.";
               continue;
             }
             case ANSWER_USER, ASK_USER ->
@@ -498,7 +520,7 @@ public final class AgentTurnLoop {
         } catch (PlatformException toolFailure) {
           metrics.recordAssistantMalformedAction(actionFailureReason(toolFailure));
           if (repairableToolFailure(toolFailure)
-              && repairAttempts < 2
+              && repairAttempts < 4
               && ProviderCallBudget.hasRemaining()) {
             repairAttempts++;
             metrics.recordAssistantRepairReason(actionFailureReason(toolFailure));
@@ -514,8 +536,24 @@ public final class AgentTurnLoop {
                     + toolFailure.getMessage()
                     + "\nReturn only one corrected tool call. Do not describe types, inspect the"
                     + " model, repeat the rejected patch, or add unrelated elements. For"
-                    + " apply_draft_patch, every create needs a unique non-empty clientRef,"
-                    + " eClass, attributes, owner, and containment reference.";
+                    + " apply_draft_patch, creates must be an array of create objects, never an"
+                    + " array of clientRef strings. Every create object needs a unique non-empty"
+                    + " clientRef, eClass, attributes, owner, and containment reference."
+                    + " connections and evidence must also be arrays of objects, not strings."
+                    + " If backend validation reports RequiredAttribute, keep the intended"
+                    + " source-grounded element and add the missing required attribute using the"
+                    + " exact returned contract; for enum attributes choose exactly one allowed"
+                    + " literal and state any assumption in evidence. If backend validation"
+                    + " reports RequiredReference, add or create a compatible target and connect"
+                    + " it through the exact required non-containment reference, or remove the"
+                    + " element whose required link cannot be satisfied from the source. If"
+                    + " backend validation"
+                    + " reports that a relationship reference is not writable or has an invalid"
+                    + " target, remove that connection unless the exact source eClass contract"
+                    + " contains a valid non-containment, non-readonly replacement reference."
+                    + " In CIM, Requirement.dependsOn connects a Requirement only to another"
+                    + " Requirement; never use it to connect a requirement to a Command,"
+                    + " Query, Actor, Capability, Goal, Event, or domain element.";
             continue;
           }
           throw toolFailure;
@@ -600,68 +638,6 @@ public final class AgentTurnLoop {
     return result;
   }
 
-  private String duplicateAggregateCreation(ModelCommandBatch batch, ModelWorkspace workspace) {
-    List<ElementIdentity> existing = new ArrayList<>();
-    collectElementIdentities(
-        workspace.snapshot(), workspace.snapshot().path("id").asText(), existing);
-    for (ModelCommandBatch.Create create : batch.creates()) {
-      JsonNode nameNode = create.attributes() == null ? null : create.attributes().get("name");
-      String proposedName = nameNode == null ? "" : nameNode.asText("").trim();
-      if (proposedName.isBlank()) continue;
-      for (ElementIdentity current : existing) {
-        if (create.eClass().equals(current.eClass())
-            && namesDescribeSameAggregate(proposedName, current.name())) {
-          return "Create '"
-              + proposedName
-              + "' would duplicate existing "
-              + current.eClass()
-              + " '"
-              + current.name()
-              + "' (id="
-              + current.id()
-              + "). Reuse or extend that existing aggregate instead.";
-        }
-      }
-    }
-    return null;
-  }
-
-  private void collectElementIdentities(
-      JsonNode node, String rootId, List<ElementIdentity> identities) {
-    if (node == null) return;
-    if (node.isObject()) {
-      String id = node.path("id").asText("").trim();
-      String eClass = node.path("eClass").asText("").trim();
-      String name = node.path("name").asText(node.path("label").asText("")).trim();
-      if (!id.isEmpty() && !id.equals(rootId) && !eClass.isEmpty() && !name.isEmpty()) {
-        ElementIdentity identity = new ElementIdentity(id, eClass, name);
-        if (!identities.contains(identity)) identities.add(identity);
-      }
-      node.properties()
-          .forEach(entry -> collectElementIdentities(entry.getValue(), rootId, identities));
-      return;
-    }
-    if (node.isArray()) node.forEach(item -> collectElementIdentities(item, rootId, identities));
-  }
-
-  private boolean namesDescribeSameAggregate(String left, String right) {
-    Set<String> leftTerms = nameTerms(left);
-    Set<String> rightTerms = nameTerms(right);
-    return leftTerms.size() >= 2
-        && rightTerms.size() >= 2
-        && (leftTerms.containsAll(rightTerms) || rightTerms.containsAll(leftTerms));
-  }
-
-  private Set<String> nameTerms(String value) {
-    Set<String> terms = new LinkedHashSet<>();
-    for (String term : value.toLowerCase(java.util.Locale.ROOT).split("[^a-z0-9]+")) {
-      if (!term.isBlank()) terms.add(term);
-    }
-    return terms;
-  }
-
-  private record ElementIdentity(String id, String eClass, String name) {}
-
   private boolean containsModelElement(JsonNode node, String rootId) {
     if (node == null) return false;
     if (node.isObject()) {
@@ -680,7 +656,8 @@ public final class AgentTurnLoop {
     return false;
   }
 
-  private String systemPrompt(ModelLevel level, boolean sourceBacked) {
+  private String systemPrompt(
+      ModelLevel level, boolean sourceBacked, boolean sourceBlueprintPresent) {
     String language = guides.index(level);
     return """
 You are a modeling agent. Return exactly one JSON object: {"action":"commit_model_batch"|
@@ -702,6 +679,9 @@ commit_model_batch arguments must match this shape:
 "sourceUnitId":"","requirementId":"labelled-requirement-id-or-empty",
 "kind":"INFERRED","assumption":"..."}],"planSummary":"...",
 "turnComplete":true}. Every create must have a unique non-empty clientRef and exact eClass.
+creates, updates, connections, deletions, and evidence are always arrays of JSON objects. Never
+put a bare clientRef, id, or string in any of those arrays. A clientRef is only a field inside
+a create object or a value used by owner/source/target inside another object.
 For a complex or source-backed generation, prefer one coherent validated slice over a giant
 batch. Set turnComplete:false and state the next slice in planSummary whenever additional
 requested work remains. The backend saves that slice atomically and the user can continue
@@ -721,6 +701,12 @@ meaning. For a relationship EClass whose contract exposes source and target refe
 create that relationship object under its valid containment owner and connect its source and
 target in the same batch; it renders as an edge, not a standalone node. For an ordinary
 non-containment EReference, add a connections entry from the owning element to the target.
+Connection references are source-type-specific: the reference must be listed on the source
+eClass contract as a non-containment reference and must not be readonly. Do not use containment,
+opposite, readonly, or target-side references as connections.
+For CIM Requirement.dependsOn, the target type is Requirement. Do not use it for traceability from
+requirements to commands, queries, actors, capabilities, goals, events, or domain elements; omit
+that edge unless an exact compatible reference is present in the source eClass contract.
 Do not invent a relationship when the user's request does not establish one.
 Decide the appropriate action from the user's meaning and the available model context. Use
 answer_user for questions, explanations, analysis, or advice that do not require a model
@@ -729,9 +715,14 @@ only when the user actually asks you to mutate the model. Use ask_user only when
 decision makes a safe response or mutation impossible.
 A newly-created or otherwise empty model already has an authoritative rootId. For a create or
 generation request, make safe progress by creating root-contained aggregate elements in the
-batch (omit owner), then refer to their clientRefs for children and connections. Do not ask
+batch with owner:"rootId" and the exact root containment feature, then refer to their
+clientRefs for children and connections. For CIM generation, include an update for
+elementId:"rootId" that sets a source-grounded domainName when it is missing. Do not ask
 for an existing service, aggregate, owner, or element ID when that owner can be created in the
 same batch. Ask only for a genuinely unspecified business decision, never for backend facts.
+Every connection source and target must be either an exact clientRef from creates in the same
+batch, rootId, or an existing inspected element id. Do not invent connection endpoint aliases,
+prefixes, or variants such as info_<clientRef>; use the exact clientRef you created.
 Starter models can include generic example elements. For a request to create a model from
 requirements, treat those examples as replaceable scaffolding: create the requested model
 content and, if needed, update or delete the examples through the normal confirmation flow.
@@ -750,6 +741,12 @@ immediately choose a terminal action; further research wastes the provider budge
 Retrieved Ecore contracts include the required containment closure of every selected type. Use
 those contracts directly rather than asking the user for a child type definition that the
 backend has already provided.
+In compact contracts, attributes and references marked with ! are required. Every created element
+must include all required attributes and satisfy all required non-containment references for its
+exact eClass in the same batch. Enum values must be copied exactly from the listed literals; never
+omit a required enum such as a primitive type/classification field. For example, do not create a
+Query without its required output InformationItem, and do not create a DomainEntity without its
+required identityAttributes and primaryIdentityAttribute links.
 Never invent types, features, ids, or enum values. Batch independent edits. Ask only when
 safe progress is impossible. commit_model_batch arguments use creates, updates, connections,
 deletions, evidence, planSummary, and turnComplete. Every source-backed created or inferred
@@ -762,18 +759,24 @@ evidence or you return a partial batch describing the remaining work.
         + (sourceBacked
             ? """
 
-SOURCE-TO-MODEL MODE: Create one small, coherent, structurally valid CIM slice grounded in
-the supplied source units. First call describe_types once with the exact CIM types selected
-from the supplied language index; after the returned contracts, submit apply_draft_patch.
-Begin with the core actor, capability, goal, and primary domain/behaviour elements explicit
-in the document. Select no more than four concrete EClasses in this first slice and use only
-those returned contracts; put relationships, process details, policies, and other types into
-the next durable slice when they need additional contracts. Set turnComplete:false whenever
-more source remains. A useful committed
-slice is more important than exhaustive analysis. Never spend the first source turn
-explaining, asking for clarification, inspecting the model, or repeatedly researching the
-metamodel.
+SOURCE-TO-MODEL MODE: The attached source document is available as explicit source units.
+Create a coherent, structurally valid CIM draft slice grounded in those units. First call
+describe_types once with the exact CIM types selected from the supplied language index; after
+the returned contracts, submit commit_model_batch. For small and medium source documents, make
+the first checkpoint useful on canvas: include multiple actors, requirements/capabilities,
+commands or queries, domain information, events, policies, assumptions, and valid
+relationships when supported by the returned contracts.\
 """
+                + (sourceBlueprintPresent
+                    ? "A source blueprint is already present, so do not call plan_source_model"
+                        + " again; model the supplied current slice."
+                    : "If the prompt has no <source-document-map>, do not call"
+                        + " plan_source_model; model the supplied source units directly in this"
+                        + " turn. Use plan_source_model only when a <source-document-map> shows"
+                        + " that the source is larger than the currently supplied units.")
+                + " Set turnComplete:false\n"
+                + "only when concrete source units still need a later checkpoint; otherwise set"
+                + " turnComplete:true.\n"
             : "")
         + language;
   }
@@ -928,10 +931,92 @@ metamodel.
 
   private ModelCommandBatch command(AgentAction action) {
     try {
-      return new ObjectMapper().readValue(action.arguments().toString(), ModelCommandBatch.class);
+      ObjectMapper mapper = new ObjectMapper();
+      JsonNode normalized = normalizeCommandArguments(mapper, action.arguments());
+      return mapper.readValue(normalized.toString(), ModelCommandBatch.class);
     } catch (tools.jackson.core.JacksonException ex) {
-      throw new PlatformException(422, "commit_model_batch arguments are invalid.");
+      String detail = ex.getOriginalMessage();
+      throw new PlatformException(
+          422,
+          detail == null || detail.isBlank()
+              ? "commit_model_batch arguments are invalid."
+              : "commit_model_batch arguments are invalid: " + detail);
     }
+  }
+
+  private JsonNode normalizeCommandArguments(ObjectMapper mapper, JsonNode arguments)
+      throws tools.jackson.core.JacksonException {
+    if (arguments.isTextual()) {
+      String text = arguments.asText() == null ? "" : arguments.asText().trim();
+      if (text.startsWith("{")) {
+        try {
+          return normalizeCommandArguments(mapper, mapper.readTree(text));
+        } catch (tools.jackson.core.JacksonException ex) {
+          throw new PlatformException(
+              422,
+              "commit_model_batch arguments must be a JSON object, not malformed JSON text. "
+                  + "Do not stringify arguments, arrays, or clientRefs; emit normal JSON objects.");
+        }
+      }
+      throw new PlatformException(
+          422, "commit_model_batch arguments must be a JSON object, not a string.");
+    }
+    if (!(arguments instanceof tools.jackson.databind.node.ObjectNode object)) {
+      throw new PlatformException(422, "commit_model_batch arguments must be a JSON object.");
+    }
+    tools.jackson.databind.node.ObjectNode normalized = object.deepCopy();
+    normalizeCommandArray(mapper, normalized, "creates");
+    normalizeCommandArray(mapper, normalized, "updates");
+    normalizeCommandArray(mapper, normalized, "connections");
+    normalizeCommandArray(mapper, normalized, "deletions");
+    normalizeCommandArray(mapper, normalized, "evidence");
+    return normalized;
+  }
+
+  private void normalizeCommandArray(
+      ObjectMapper mapper, tools.jackson.databind.node.ObjectNode arguments, String field)
+      throws tools.jackson.core.JacksonException {
+    JsonNode values = arguments.path(field);
+    if (values.isTextual()) {
+      String text = values.asText() == null ? "" : values.asText().trim();
+      if (text.startsWith("[")) {
+        try {
+          values = mapper.readTree(text);
+        } catch (tools.jackson.core.JacksonException ex) {
+          throw new PlatformException(
+              422,
+              "commit_model_batch " + field + " must be an array of JSON objects, not a string.");
+        }
+      } else {
+        throw new PlatformException(
+            422,
+            "commit_model_batch " + field + " must be an array of JSON objects, not a string.");
+      }
+    }
+    if (!values.isArray()) return;
+    tools.jackson.databind.node.ArrayNode normalized = mapper.createArrayNode();
+    for (JsonNode value : values) {
+      if (value.isTextual()) {
+        String text = value.asText() == null ? "" : value.asText().trim();
+        if (text.startsWith("{")) {
+          JsonNode decoded = mapper.readTree(text);
+          if (!decoded.isObject()) {
+            throw new PlatformException(
+                422, "commit_model_batch " + field + " entries must be JSON objects.");
+          }
+          normalized.add(decoded);
+        } else {
+          throw new PlatformException(
+              422,
+              "commit_model_batch "
+                  + field
+                  + " entries must be JSON objects, not clientRef strings.");
+        }
+      } else {
+        normalized.add(value);
+      }
+    }
+    arguments.set(field, normalized);
   }
 
   private JsonNode validatedSourceBlueprint(JsonNode blueprint, String sourceDocument) {
@@ -964,9 +1049,106 @@ metamodel.
     return blueprint;
   }
 
+  private void validateSourceEvidence(ModelCommandBatch batch, String sourceDocument) {
+    if (batch == null || sourceDocument == null || sourceDocument.isBlank()) return;
+    java.util.Set<String> expectedSourceIds = sourceUnitIds(sourceDocument);
+    if (expectedSourceIds.isEmpty()) return;
+    for (ModelCommandBatch.Evidence evidence : batch.evidence()) {
+      String kind =
+          evidence.kind() == null
+              ? "INFERRED"
+              : evidence.kind().trim().toUpperCase(java.util.Locale.ROOT);
+      if (!"SOURCE_GROUNDED".equals(kind)) continue;
+      String id = evidence.sourceUnitId() == null ? "" : evidence.sourceUnitId().trim();
+      if (!expectedSourceIds.contains(id)) {
+        throw new PlatformException(
+            422,
+            "Evidence sourceUnitId '"
+                + id
+                + "' is unknown for this turn. Use an exact id from the supplied <source-unit>"
+                + " or mark the evidence as INFERRED with an assumption.");
+      }
+    }
+  }
+
+  private ModelCommandBatch normalizeSourceEvidence(
+      ModelCommandBatch batch, String sourceDocument) {
+    if (batch == null || sourceDocument == null || sourceDocument.isBlank()) return batch;
+    java.util.Map<String, String> aliases = sourceUnitAliases(sourceDocument);
+    if (aliases.isEmpty() || batch.evidence().isEmpty()) return batch;
+    boolean changed = false;
+    java.util.List<ModelCommandBatch.Evidence> evidence = new java.util.ArrayList<>();
+    for (ModelCommandBatch.Evidence item : batch.evidence()) {
+      String sourceUnitId = item.sourceUnitId() == null ? "" : item.sourceUnitId().trim();
+      String normalized = aliases.get(sourceUnitId);
+      if (normalized != null && !normalized.equals(sourceUnitId)) {
+        changed = true;
+        sourceUnitId = normalized;
+      }
+      evidence.add(
+          new ModelCommandBatch.Evidence(
+              item.elementRef(),
+              sourceUnitId,
+              item.requirementId(),
+              item.kind(),
+              item.assumption()));
+    }
+    if (!changed) return batch;
+    return new ModelCommandBatch(
+        batch.creates(),
+        batch.updates(),
+        batch.connections(),
+        batch.deletions(),
+        evidence,
+        batch.planSummary(),
+        batch.turnComplete());
+  }
+
   /**
    * Reads our local source envelope without treating document text as a regular-expression input.
    */
+  private java.util.Map<String, String> sourceUnitAliases(String sourceDocument) {
+    java.util.Map<String, String> aliases = new java.util.LinkedHashMap<>();
+    if (sourceDocument == null) return aliases;
+    int from = 0;
+    while ((from = sourceDocument.indexOf("<source-unit", from)) >= 0) {
+      int close = sourceDocument.indexOf('>', from);
+      if (close < 0) break;
+      String header = sourceDocument.substring(from, close + 1);
+      String id = sourceHeaderAttribute(header, "id");
+      String ordinal = sourceHeaderAttribute(header, "ordinal");
+      if (!id.isBlank()) {
+        aliases.put(id, id);
+        int scope = id.indexOf(':');
+        if (scope >= 0 && scope + 1 < id.length()) {
+          aliases.putIfAbsent(id.substring(scope + 1), id);
+        }
+        if (!ordinal.isBlank()) {
+          aliases.putIfAbsent(ordinal, id);
+          aliases.putIfAbsent("source-" + ordinal, id);
+          aliases.putIfAbsent("src-" + ordinal, id);
+        }
+      }
+      from = close + 1;
+    }
+    from = 0;
+    while ((from = sourceDocument.indexOf("<source-section", from)) >= 0) {
+      int close = sourceDocument.indexOf('>', from);
+      if (close < 0) break;
+      String header = sourceDocument.substring(from, close + 1);
+      String id = sourceHeaderAttribute(header, "id");
+      if (!id.isBlank()) {
+        aliases.put(id, id);
+        int scope = id.indexOf(':');
+        if (scope >= 0 && scope + 1 < id.length()) {
+          aliases.putIfAbsent(id.substring(scope + 1), id);
+        }
+      }
+      from = close + 1;
+    }
+    return aliases;
+  }
+
   private java.util.Set<String> sourceUnitIds(String sourceDocument) {
     java.util.Set<String> ids = new java.util.LinkedHashSet<>();
     if (sourceDocument == null) return ids;
@@ -975,15 +1157,30 @@ metamodel.
       int close = sourceDocument.indexOf('>', from);
       if (close < 0) break;
       String header = sourceDocument.substring(from, close + 1);
-      int id = header.indexOf("id=\"");
-      if (id >= 0) {
-        int start = id + 4;
-        int end = header.indexOf('"', start);
-        if (end > start) ids.add(header.substring(start, end));
-      }
+      String id = sourceHeaderAttribute(header, "id");
+      if (!id.isBlank()) ids.add(id);
+      from = close + 1;
+    }
+    from = 0;
+    while ((from = sourceDocument.indexOf("<source-section", from)) >= 0) {
+      int close = sourceDocument.indexOf('>', from);
+      if (close < 0) break;
+      String header = sourceDocument.substring(from, close + 1);
+      String id = sourceHeaderAttribute(header, "id");
+      if (!id.isBlank()) ids.add(id);
       from = close + 1;
     }
     return ids;
+  }
+
+  private String sourceHeaderAttribute(String header, String attribute) {
+    if (header == null || attribute == null || attribute.isBlank()) return "";
+    String marker = attribute + "=\"";
+    int index = header.indexOf(marker);
+    if (index < 0) return "";
+    int start = index + marker.length();
+    int end = header.indexOf('"', start);
+    return end > start ? header.substring(start, end).trim() : "";
   }
 
   public record TurnResult(

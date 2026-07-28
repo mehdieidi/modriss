@@ -18,11 +18,13 @@ flowchart TB
     provider["ConfiguredAssistantModelProvider"]
     openai["OpenAiCompatibleAssistantModelProvider"]
     gemini["GeminiAssistantModelProvider"]
+    nativeTools["Native tool-call adapter<br/>or strict JSON action fallback"]
     models["ModelService + ProjectService"]
     turns["AssistantTurnStore"]
     sessions["AssistantSessionStore"]
     memory["AssistantChatMemory"]
     uploads["UploadService"]
+    splitter["SourceUnitSplitter<br/>source units and aliases"]
     undo["DurableTurnUndoService"]
     db[("PostgreSQL")]
     ai["OpenAI-compatible API or Gemini"]
@@ -33,6 +35,7 @@ flowchart TB
     api --> uploads
     api --> undo
     worker --> turns
+    worker --> splitter
     worker --> facade
     facade --> sessions
     facade --> memory
@@ -42,12 +45,13 @@ flowchart TB
     tools --> schema
     tools --> models
     loop --> provider
-    provider --> prompts --> hard --> openai --> ai
+    provider --> prompts --> hard --> openai --> nativeTools --> ai
     provider --> prompts --> hard --> gemini --> ai
     turns --> db
     sessions --> db
     memory --> db
     uploads --> db
+    splitter --> turns
     undo --> models
 ```
 
@@ -76,21 +80,29 @@ stateDiagram-v2
 flowchart LR
     user["User request + selected elements + attachments"]
     contracts["Ecore-derived contracts<br/>types, features, enums, containments"]
+    source["Source units + source-document map<br/>for attachments"]
     workspace["In-memory ModelWorkspace"]
     agent["AgentTurnLoop"]
     tools["Validated model tools"]
-    validate["Model validation"]
+    guards["Batch guards<br/>UUID ids, evidence checks, containment/reference normalization"]
+    validate["Structural validation<br/>semantic EVL checked separately"]
     commit["Revision-checked commit"]
     checkpoint["Checkpoint + inverse patch"]
     storage["Persisted model revision"]
 
     user --> agent
+    source --> agent
     contracts --> tools
     workspace --> tools
     agent --> tools
-    tools --> workspace
+    tools --> guards --> workspace
     workspace --> validate
     validate --> commit --> storage
     commit --> checkpoint
     contracts -. "not raw EVL files" .- agent
 ```
+
+Current live status: the source-backed one-story workflow reaches `SUCCEEDED` with 100% coverage and
+a saved checkpoint, but semantic validation can still report `CIMModelHasSemanticCore` on the live
+persisted model. The next fix is in the JSON/XMI persistence/validation path, not the HTTP turn
+lifecycle.

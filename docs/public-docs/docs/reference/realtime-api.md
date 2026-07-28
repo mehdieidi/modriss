@@ -2,8 +2,8 @@
 
 `POST /api/chatbot/sessions/{sessionId}/messages` persists a turn and returns `202` immediately.
 The response carries `turnId`, deadline, model ID, revision, and event cursor. Use
-`GET /api/chatbot/turns/{turnId}` for durable status, `POST /cancel`, `/continue`, and `/undo` for
-turn actions.
+`GET /api/chatbot/turns/{turnId}` for durable status, `POST /cancel`, `/continue`, `/confirm`,
+`/undo`, `/rebase`, `/checkpoints/{checkpointId}/rollback`, and `/feedback` for turn actions.
 
 Realtime uses authenticated fetch-based SSE only:
 
@@ -14,10 +14,16 @@ Last-Event-ID: <optional cursor>
 Accept: text/event-stream
 ```
 
-Every event contains an event ID, turn ID, sequence, type, timestamp, and safe payload. Supported
-event types are `turn.accepted`, `turn.stage`, `tool.started`, `tool.completed`,
-`model.checkpoint`, `turn.needs_input`, and `turn.completed`. Clients must poll turn status when
-SSE disconnects and must tolerate replayed events.
+Every event contains an event ID, turn ID, sequence, type, timestamp, and safe payload. Common event
+types include `turn.accepted`, `turn.stage`, `tool.started`, `tool.completed`,
+`model.checkpoint`, `turn.needs_input`, `turn.needs_confirmation`, `turn.completed`,
+`turn.failed`, `turn.cancelled`, `turn.feedback`, and source-coverage progress payloads. Clients
+must poll turn status when SSE disconnects and must tolerate replayed events.
+
+For source-backed turns, checkpoint/status payloads may include `coveragePercent`, unresolved
+source-unit counts, provider-call counters, repair attempts, and `remainingWork`. Reload the model
+after each `model.checkpoint` event and run model validation separately when semantic validity is a
+gate.
 
 Provider token text streaming and WebSocket access are intentionally not supported. The UI exposes
 only factual stage/checkpoint/validation/coverage progress, never private reasoning.

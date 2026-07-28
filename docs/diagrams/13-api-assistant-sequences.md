@@ -28,6 +28,7 @@ sequenceDiagram
     participant U as UploadService
     participant T as AssistantTurnStore
     participant W as DurableAssistantTurnWorker
+    participant S as SourceUnitSplitter
 
     Client->>C: message, modelId, expectedRevision/revision, selectedElementIds, attachmentIds, idempotencyKey
     C->>A: session(user, sessionId)
@@ -43,6 +44,8 @@ sequenceDiagram
         C->>T: save starter checkpoint and model.checkpoint event
         C-->>Client: 202 TurnAcceptedResponse(turnId, state, modelId, revision, cursor)
         W-->>T: asynchronously claim and process queued turn
+        W->>S: split source attachments when present
+        W->>T: persist source units, coverage, provenance, provider calls
     end
 ```
 
@@ -94,6 +97,19 @@ sequenceDiagram
     C->>Undo: apply checkpoint inverse
     Undo-->>C: modelId, revision
     C-->>Client: TurnUndoResponse
+
+    Client->>C: POST /api/chatbot/turns/{turnId}/rebase
+    C->>T: update expected revision and enqueue continuation
+    C-->>Client: 202 TurnAcceptedResponse
+
+    Client->>C: POST /api/chatbot/turns/{turnId}/checkpoints/{checkpointId}/rollback
+    C->>Undo: apply selected checkpoint inverse
+    Undo-->>C: modelId, revision
+    C-->>Client: TurnUndoResponse
+
+    Client->>C: POST /api/chatbot/turns/{turnId}/feedback
+    C->>T: append turn.feedback event
+    C-->>Client: 202 Accepted
 ```
 
 ## Attachments, Thread, and Clear

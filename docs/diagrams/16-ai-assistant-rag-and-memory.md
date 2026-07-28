@@ -32,11 +32,15 @@ sequenceDiagram
     C->>U: store assistant attachment
     Client->>C: Submit message with attachmentIds
     C->>T: create durable turn with source text
-    W->>S: split source text into bounded units
+    W->>S: split source text into bounded units and aliases
     W->>T: persist assistant_source_units
-    W->>A: run turn with source units and model tools
+    alt large source map
+        W->>A: ask for plan_source_model blueprint
+        A-->>W: ordered modeling slices
+    end
+    W->>A: run turn with source units, contracts, and model tools
     A-->>W: committed elements with source-grounded/inferred labels
-    W->>T: persist assistant_element_provenance
+    W->>T: persist assistant_element_provenance and coveragePercent
 ```
 
 ## Durable Memory Layout
@@ -67,3 +71,7 @@ flowchart LR
     turns --> audits
     limits
 ```
+
+Source coverage is a provenance/accounting signal. It says whether tracked source units were
+modeled, inferred, or intentionally left as remaining work. Semantic EVL validation is still checked
+through the model validation endpoints after a checkpoint.

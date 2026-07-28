@@ -46,7 +46,7 @@ The diagrams were derived from:
 | Methodology   | [26-psm-methodology.md](26-psm-methodology.md)                                                   | PSM phase flow and SamStack hub                    |
 | Methodology   | [27-end-to-end-methodology.md](27-end-to-end-methodology.md)                                     | CIM→PIM→PSM pipeline with EVL/ETL gates            |
 | DevOps/SRE    | [28-devops-sre-runtime.md](28-devops-sre-runtime.md)                                             | Edge routing, workloads, observability, triage     |
-| AI assistant  | [29-anthropic-effective-agents-pattern-assessment.md](29-agents-pattern-assessment.md)           | Pattern mapping and intentional exclusions         |
+| AI assistant  | [29-agents-pattern-assessment.md](29-agents-pattern-assessment.md)                               | Pattern mapping and intentional exclusions         |
 
 ## API Coverage
 
@@ -59,7 +59,8 @@ The API sequence diagrams cover the primary controller route templates and inter
 - Artifacts: 5 routes.
 - Modeling configuration, layout, and process definitions: 7 routes.
 - Assistant REST/SSE: session, message submission, durable turn status, event replay, attachment,
-  thread, cancel, continue, confirm, undo, and clear flows.
+  thread, cancel, continue, confirm, undo, rollback, rebase, feedback, source coverage, and clear
+  flows.
 - Health, OpenAPI, Swagger UI, future-feature wildcard routes, and Actuator endpoints.
 
 `{level}` means one of `cim`, `pim`, or `psm`; the same sequence applies to each concrete level.

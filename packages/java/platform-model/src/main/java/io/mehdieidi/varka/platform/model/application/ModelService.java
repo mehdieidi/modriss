@@ -359,7 +359,9 @@ public final class ModelService {
     ProjectRecord project = projectService.get(user, projectId);
     projectService.requireEditor(project, user.id());
     Instant now = Instant.now();
-    JsonNode normalizedModel = importExport.normalizeModel(name, level, modelJson);
+    String id = UUID.randomUUID().toString();
+    JsonNode normalizedModel =
+        withRootDefaults(importExport.normalizeModel(name, level, modelJson), id, level, name);
     ModelImportExportService.SourceXmiUpdate sourceXmi =
         sourceXmiBytes == null || sourceXmiBytes.length == 0
             ? importExport.resolveSourceXmiUpdate(user, projectId, level, normalizedModel, false)
@@ -369,7 +371,7 @@ public final class ModelService {
     MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
     ModelRecord model =
         new ModelRecord(
-            UUID.randomUUID().toString(),
+            id,
             projectId,
             level,
             requireName(name, level),
@@ -406,8 +408,17 @@ public final class ModelService {
     ProjectRecord project = projectService.get(user, projectId);
     projectService.requireEditor(project, user.id());
     Instant now = Instant.now();
+    String id = UUID.randomUUID().toString();
     ObjectNode normalizedModel =
         modelJson == null ? store.objectMapper().createObjectNode() : modelJson;
+    if (!normalizedModel.hasNonNull("id") || normalizedModel.path("id").asText("").isBlank()) {
+      normalizedModel.put("id", id);
+    }
+    if (level == ModelLevel.CIM
+        && (!normalizedModel.hasNonNull("domainName")
+            || normalizedModel.path("domainName").asText("").isBlank())) {
+      normalizedModel.put("domainName", requireName(name, level));
+    }
     if (!normalizedModel.hasNonNull("name")) {
       normalizedModel.put("name", requireName(name, level));
     }
@@ -426,7 +437,7 @@ public final class ModelService {
     MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
     ModelRecord model =
         new ModelRecord(
-            UUID.randomUUID().toString(),
+            id,
             projectId,
             level,
             requireName(name, level),
@@ -441,6 +452,28 @@ public final class ModelService {
     persistModelAndSourceXmi(null, model, sourceXmi);
     projectService.setActiveModel(user, project.id(), level, model.id());
     return generatedClientRecord(model);
+  }
+
+  private JsonNode withRootDefaults(JsonNode modelJson, String id, ModelLevel level, String name) {
+    if (!(modelJson instanceof ObjectNode objectNode) || id == null || id.isBlank()) {
+      return modelJson;
+    }
+    boolean hasId = objectNode.hasNonNull("id") && !objectNode.path("id").asText("").isBlank();
+    boolean hasDomainName =
+        level != ModelLevel.CIM
+            || (objectNode.hasNonNull("domainName")
+                && !objectNode.path("domainName").asText("").isBlank());
+    if (hasId && hasDomainName) {
+      return modelJson;
+    }
+    ObjectNode copy = objectNode.deepCopy();
+    if (!hasId) {
+      copy.put("id", id);
+    }
+    if (!hasDomainName) {
+      copy.put("domainName", requireName(name, level));
+    }
+    return copy;
   }
 
   /**

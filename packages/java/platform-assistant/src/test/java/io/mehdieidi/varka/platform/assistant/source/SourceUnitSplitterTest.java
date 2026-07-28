@@ -50,4 +50,36 @@ class SourceUnitSplitterTest {
     assertEquals(1, units.size());
     assertEquals(source, units.get(0).content());
   }
+
+  @Test
+  void skipsFilenameWrapperHeadingBeforeRealDocumentHeading() {
+    String source =
+        "## story-v1-single.md\n\n"
+            + "# Bike Repair Appointment Scheduling\n\n"
+            + "As a cyclist, I request a repair appointment.\n";
+
+    var units = new SourceUnitSplitter(6000).split(source);
+
+    assertEquals(1, units.size());
+    assertEquals(
+        "# Bike Repair Appointment Scheduling\n\n"
+            + "As a cyclist, I request a repair appointment.\n",
+        units.get(0).content());
+  }
+
+  @Test
+  void keepsPlainSectionLabelWithFollowingList() {
+    String source =
+        "# Bike Repair Appointment Scheduling\n\n"
+            + "As a cyclist, I want to request a repair appointment online.\n\n"
+            + "Acceptance notes:\n\n"
+            + "- The cyclist enters contact details.\n"
+            + "- The system confirms the request.\n";
+
+    var units = new SourceUnitSplitter(6000).split(source);
+
+    assertEquals(2, units.size());
+    assertTrue(units.get(1).content().startsWith("Acceptance notes:"));
+    assertTrue(units.get(1).content().contains("- The cyclist enters contact details."));
+  }
 }

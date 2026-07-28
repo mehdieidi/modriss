@@ -119,8 +119,20 @@ ZIP download. File paths must be relative and cannot escape the artifact root.
 
 Assistant REST routes create and clear sessions, list conversations, load thread history, submit
 idempotent durable turns, upload text attachments, replay authenticated SSE events, continue
-partial turns, confirm destructive batches, and undo saved checkpoints. See
+partial turns, confirm destructive batches, rebase non-overlapping revision drift, roll back a
+specific checkpoint, record binary feedback, and undo saved checkpoints. See
 [Realtime Assistant API](realtime-api.md).
+
+Message requests include an `idempotencyKey`, user `message`, optional `modelId`, `revision` or
+`expectedRevision`, current `activeView`, selected element IDs, and uploaded `attachmentIds`.
+Uploaded `.md`, `.txt`, and `.json` attachments can drive source-backed CIM modeling. Turn status
+responses include checkpoint counts, saved element counts, source coverage, remaining work,
+provider-call/token counters, repair attempts, provenance, continuation turns, and current
+workflow/work-item fields.
+
+`coveragePercent=100` means tracked source units were accounted for; it is separate from semantic
+EVL validity. Call the model validation endpoint after a checkpoint when a validation-green model is
+required.
 
 ### Planned Routes
 

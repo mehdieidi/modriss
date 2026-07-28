@@ -1,9 +1,8 @@
 package io.mehdieidi.varka.platform.assistant.agent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.AttributeContract;
+import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.ReferenceContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.TypeContract;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +26,7 @@ public final class AgentActionSchema {
       for (String[] action :
           new String[][] {
             {"commit_model_batch", "apply_draft_patch"},
+            {"plan_source_model", "plan_source_model"},
             {"inspect_model", "inspect_model"},
             {"describe_types", "describe_types"},
             {"answer_user", "respond_to_user"},
@@ -54,7 +54,7 @@ public final class AgentActionSchema {
     return toolSchema(toolName, List.of());
   }
 
-  /** Returns a closed schema for one tool, with type-specific patch variants when available. */
+  /** Returns a closed schema for one tool, constrained by the described Ecore contracts. */
   public static Map<String, Object> toolSchema(String toolName, List<TypeContract> patchContracts) {
     if (!toolNames().contains(toolName)) {
       throw new IllegalArgumentException("Unknown assistant tool: " + toolName);
@@ -64,6 +64,22 @@ public final class AgentActionSchema {
       case "inspect_model" -> object(Map.of("id", stringSchema()), List.of("id"));
       case "describe_types" ->
           object(Map.of("names", array(stringSchema(), null)), List.of("names"));
+      case "plan_source_model" ->
+          object(
+              Map.of(
+                  "domain",
+                  stringSchema(),
+                  "slices",
+                  array(
+                      object(
+                          Map.of(
+                              "focus",
+                              stringSchema(),
+                              "sourceUnitIds",
+                              array(stringSchema(), null)),
+                          List.of("focus", "sourceUnitIds")),
+                      null)),
+              List.of("domain", "slices"));
       case "apply_draft_patch" -> patchSchema(patchContracts);
       // V2 names are advertised for capability parity; this legacy executor deliberately rejects
       // them with an actionable response until their independent workflow states are enabled.
@@ -85,7 +101,13 @@ public final class AgentActionSchema {
             List.of("elementId", "attributes", "preconditionHash"));
     Map<String, Object> connection =
         object(
-            Map.of("source", stringSchema(), "reference", stringSchema(), "target", stringSchema()),
+            Map.of(
+                "source",
+                stringSchema(),
+                "reference",
+                writableRelationshipReferenceSchema(contracts == null ? List.of() : contracts),
+                "target",
+                stringSchema()),
             List.of("source", "reference", "target"));
     Map<String, Object> deletion =
         object(
@@ -120,56 +142,94 @@ public final class AgentActionSchema {
   }
 
   private static Map<String, Object> createSchema(List<TypeContract> contracts) {
-    List<Map<String, Object>> variants = new ArrayList<>();
-    for (TypeContract type : contracts) {
-      if (!type.creatable()) continue;
-      Map<String, Object> attributes = new LinkedHashMap<>();
-      List<String> requiredAttributes = new ArrayList<>();
-      for (AttributeContract attribute : type.attributes()) {
-        attributes.put(attribute.name(), attributeSchema(attribute));
-        if (attribute.required()) requiredAttributes.add(attribute.name());
-      }
-      Map<String, Object> properties = new LinkedHashMap<>();
-      properties.put("clientRef", stringSchema());
-      properties.put("eClass", Map.of("const", type.eClass()));
-      properties.put("attributes", object(attributes, requiredAttributes));
-      properties.put("owner", stringSchema());
-      properties.put("reference", stringSchema());
-      properties.put("provenance", stringSchema());
-      variants.add(
-          object(
-              properties,
-              List.of("clientRef", "eClass", "attributes", "owner", "reference", "provenance")));
-    }
-    if (variants.isEmpty()) {
+    List<TypeContract> creatable =
+        contracts.stream()
+            .filter(type -> type.creatable() && !isRootModelType(type.eClass()))
+            .toList();
+    if (creatable.isEmpty()) {
       // Before describe_types no mutation shape is permitted. The provider can still choose a
-      // read/answer action, then receives a regenerated schema after contracts are retrieved.
-      return Map.of("not", Map.of());
+      // read/answer action, then receives a regenerated schema after contracts are retrieved. Use
+      // an ordinary object schema with an impossible enum instead of {"not":{}} because several
+      // OpenAI-compatible tool validators accept only a subset of JSON Schema keywords.
+      return object(
+          Map.of(
+              "clientRef",
+              stringSchema(),
+              "eClass",
+              enumStringSchema(List.of("__describe_types_required__")),
+              "attributes",
+              openObjectSchema(),
+              "owner",
+              stringSchema(),
+              "reference",
+              enumStringSchema(List.of("__describe_types_required__")),
+              "provenance",
+              stringSchema()),
+          List.of("clientRef", "eClass", "attributes", "owner", "reference", "provenance"));
     }
-    return Map.of("oneOf", variants);
+    Map<String, Object> properties = new LinkedHashMap<>();
+    properties.put("clientRef", stringSchema());
+    properties.put(
+        "eClass",
+        enumStringSchema(
+            creatable.stream().map(TypeContract::eClass).distinct().sorted().toList()));
+    // Attribute names and value types are validated by the EMF patch compiler against the exact
+    // described Ecore contracts. Keeping the provider-facing ACI flat avoids malformed oneOf output
+    // from OpenAI-compatible structured-output providers while preserving structural validation.
+    properties.put("attributes", openObjectSchema());
+    properties.put("owner", stringSchema());
+    properties.put("reference", containmentReferenceSchema(creatable, contracts));
+    properties.put("provenance", stringSchema());
+    return object(
+        properties,
+        List.of("clientRef", "eClass", "attributes", "owner", "reference", "provenance"));
   }
 
-  private static Map<String, Object> attributeSchema(AttributeContract attribute) {
-    Map<String, Object> schema = new LinkedHashMap<>();
-    if (!attribute.enumLiterals().isEmpty()) schema.put("enum", attribute.enumLiterals());
-    else schema.put("type", jsonType(attribute.type()));
-    return schema;
+  private static boolean isRootModelType(String eClass) {
+    return "CIMModel".equals(eClass) || "PIMModel".equals(eClass) || "AwsPsmModel".equals(eClass);
   }
 
-  private static String jsonType(String ecoreType) {
-    String type = ecoreType == null ? "" : ecoreType.toLowerCase(java.util.Locale.ROOT);
-    if (type.contains("boolean")) return "boolean";
-    if (type.contains("byte")
-        || type.contains("short")
-        || type.contains("int")
-        || type.contains("long")) return "integer";
-    if (type.contains("float") || type.contains("double") || type.contains("decimal"))
-      return "number";
-    return "string";
+  private static Map<String, Object> containmentReferenceSchema(
+      List<TypeContract> creatableTypes, List<TypeContract> contracts) {
+    List<String> names =
+        contracts.stream()
+            .flatMap(owner -> owner.references().stream())
+            .filter(ReferenceContract::containment)
+            .filter(
+                reference ->
+                    creatableTypes.stream()
+                        .anyMatch(createdType -> accepts(createdType, reference.targetType())))
+            .map(ReferenceContract::name)
+            .distinct()
+            .sorted()
+            .toList();
+    return names.isEmpty() ? stringSchema() : enumStringSchema(names);
+  }
+
+  private static Map<String, Object> writableRelationshipReferenceSchema(
+      List<TypeContract> contracts) {
+    List<String> names =
+        contracts.stream()
+            .flatMap(type -> type.references().stream())
+            .filter(reference -> !reference.containment())
+            .filter(reference -> !reference.readonly())
+            .map(ReferenceContract::name)
+            .distinct()
+            .sorted()
+            .toList();
+    return names.isEmpty() ? stringSchema() : enumStringSchema(names);
+  }
+
+  private static boolean accepts(TypeContract createdType, String targetType) {
+    return createdType.eClass().equals(targetType) || createdType.supertypes().contains(targetType);
   }
 
   private static Map<String, Object> stringSchema() {
     return Map.of("type", "string");
+  }
+
+  private static Map<String, Object> enumStringSchema(List<String> values) {
+    return Map.of("type", "string", "enum", values);
   }
 
   private static Map<String, Object> array(Map<String, Object> items, Integer maxItems) {
@@ -189,9 +249,17 @@ public final class AgentActionSchema {
     return schema;
   }
 
+  private static Map<String, Object> openObjectSchema() {
+    Map<String, Object> schema = new LinkedHashMap<>();
+    schema.put("type", "object");
+    schema.put("additionalProperties", true);
+    return schema;
+  }
+
   public static List<String> toolNames() {
     return List.of(
         "inspect_model",
+        "plan_source_model",
         "search_language",
         "describe_types",
         "apply_draft_patch",

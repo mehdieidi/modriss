@@ -123,21 +123,35 @@ public class AssistantPatchCompiler {
         case CONNECT_ELEMENTS -> {
           LocatedElement source = locateElement(root, operation.sourceElementId());
           LocatedElement target = locateElement(root, operation.targetElementId());
+          String sourceType = source.node().path("eClass").asText();
           AssistantMetamodelSchemaService.ReferenceSchema reference =
               schemas
-                  .reference(
-                      level, source.node().path("eClass").asText(), operation.referenceName())
+                  .reference(level, sourceType, operation.referenceName())
                   .filter(value -> !value.containment() && !value.readonly())
                   .orElseThrow(
                       () ->
                           new PlatformException(
-                              422, "Relationship reference is not writable in the metamodel."));
+                              422,
+                              "Relationship reference '"
+                                  + operation.referenceName()
+                                  + "' is not writable on "
+                                  + sourceType
+                                  + ". Use only non-containment, non-readonly references from"
+                                  + " that source type's exact contract, or omit the connection."));
           if (!schemas.acceptsReferenceTarget(
               level,
-              source.node().path("eClass").asText(),
+              sourceType,
               operation.referenceName(),
               target.node().path("eClass").asText())) {
-            throw new PlatformException(422, "Relationship target is not valid for the reference.");
+            throw new PlatformException(
+                422,
+                "Relationship target "
+                    + target.node().path("eClass").asText()
+                    + " is not valid for "
+                    + sourceType
+                    + "."
+                    + operation.referenceName()
+                    + ".");
           }
           JsonNode previous = source.node().get(operation.referenceName());
           String referencePath = source.path() + "/" + escapePointer(operation.referenceName());
@@ -652,6 +666,9 @@ public class AssistantPatchCompiler {
   }
 
   private LocatedElement locateElement(JsonNode node, String id) {
+    if ("rootId".equals(id) && node != null && node.isObject()) {
+      return new LocatedElement("", (ObjectNode) node);
+    }
     if (node != null && node.isObject() && id != null && id.equals(node.path("id").asText())) {
       return new LocatedElement("", (ObjectNode) node);
     }

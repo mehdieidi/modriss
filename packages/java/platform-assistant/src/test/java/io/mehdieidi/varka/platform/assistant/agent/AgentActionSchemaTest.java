@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.AttributeContract;
+import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.ReferenceContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.TypeContract;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import java.util.List;
@@ -30,7 +31,7 @@ class AgentActionSchemaTest {
   }
 
   @Test
-  void closesPatchAttributesOverTheDescribedEcoreTypes() throws Exception {
+  void keepsCreateSchemaFlatForStructuredOutputProviders() throws Exception {
     var contract =
         new TypeContract(
             ModelLevel.PIM,
@@ -42,17 +43,112 @@ class AgentActionSchemaTest {
     var schema =
         new ObjectMapper()
             .valueToTree(AgentActionSchema.toolSchema("apply_draft_patch", List.of(contract)));
+    var create = schema.path("properties").path("creates").path("items");
     var attributes =
         schema
             .path("properties")
             .path("creates")
             .path("items")
-            .path("oneOf")
-            .get(0)
             .path("properties")
             .path("attributes");
-    assertFalse(attributes.path("additionalProperties").asBoolean(true));
-    assertTrue(attributes.path("properties").has("backoffSeconds"));
-    assertFalse(attributes.path("properties").has("maxRetries"));
+    assertFalse(create.has("oneOf"));
+    assertTrue(attributes.path("additionalProperties").asBoolean(false));
+  }
+
+  @Test
+  void avoidsUnsupportedNotKeywordBeforeTypesAreDescribed() throws Exception {
+    var schema =
+        new ObjectMapper()
+            .valueToTree(AgentActionSchema.toolSchema("apply_draft_patch", List.of()));
+    var create = schema.path("properties").path("creates").path("items");
+    assertEquals("object", create.path("type").asText());
+    assertFalse(create.has("not"));
+    assertEquals(
+        "__describe_types_required__",
+        create.path("properties").path("eClass").path("enum").get(0).asText());
+  }
+
+  @Test
+  void excludesRootModelTypesFromCreatablePatchVariants() throws Exception {
+    var root =
+        new TypeContract(
+            ModelLevel.CIM,
+            "CIMModel",
+            true,
+            List.of(),
+            List.of(),
+            List.of(
+                new ReferenceContract("requirements", "Requirement", false, true, true, false)));
+    var requirement =
+        new TypeContract(
+            ModelLevel.CIM,
+            "Requirement",
+            true,
+            List.of(),
+            List.of(new AttributeContract("name", "EString", true, List.of())),
+            List.of());
+    var schema =
+        new ObjectMapper()
+            .valueToTree(
+                AgentActionSchema.toolSchema("apply_draft_patch", List.of(root, requirement)));
+    var eClasses =
+        schema
+            .path("properties")
+            .path("creates")
+            .path("items")
+            .path("properties")
+            .path("eClass")
+            .path("enum");
+    assertEquals(1, eClasses.size());
+    assertEquals("Requirement", eClasses.get(0).asText());
+  }
+
+  @Test
+  void narrowsPatchReferencesToDescribedWritableEcoreReferences() throws Exception {
+    var root =
+        new TypeContract(
+            ModelLevel.CIM,
+            "CIMModel",
+            false,
+            List.of(),
+            List.of(),
+            List.of(
+                new ReferenceContract("requirements", "Requirement", false, true, true, false)));
+    var requirement =
+        new TypeContract(
+            ModelLevel.CIM,
+            "Requirement",
+            true,
+            List.of(),
+            List.of(new AttributeContract("name", "EString", true, List.of())),
+            List.of(
+                new ReferenceContract("dependsOn", "Requirement", false, true, false, false),
+                new ReferenceContract("source", "Requirement", false, false, false, true)));
+    var schema =
+        new ObjectMapper()
+            .valueToTree(
+                AgentActionSchema.toolSchema("apply_draft_patch", List.of(root, requirement)));
+
+    var createReference =
+        schema
+            .path("properties")
+            .path("creates")
+            .path("items")
+            .path("properties")
+            .path("reference")
+            .path("enum");
+    assertEquals(1, createReference.size());
+    assertEquals("requirements", createReference.get(0).asText());
+
+    var connectionReference =
+        schema
+            .path("properties")
+            .path("connections")
+            .path("items")
+            .path("properties")
+            .path("reference")
+            .path("enum");
+    assertEquals(1, connectionReference.size());
+    assertEquals("dependsOn", connectionReference.get(0).asText());
   }
 }

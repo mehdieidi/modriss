@@ -113,7 +113,7 @@ public record AiProperties(
     gemini = gemini == null ? new Gemini(null) : gemini;
     models = models == null ? new Models(null, null, null) : models;
     maxProviderCallsPerTurn = maxProviderCallsPerTurn <= 0 ? 2 : maxProviderCallsPerTurn;
-    maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 3 : maxProviderCallsSourceTurn;
+    maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 6 : maxProviderCallsSourceTurn;
     sourceTurnTimeout = sourceTurnTimeout == null ? Duration.ofMinutes(5) : sourceTurnTimeout;
     maxCimModelingPasses = maxCimModelingPasses <= 0 ? 4 : maxCimModelingPasses;
   }
@@ -327,7 +327,9 @@ public record AiProperties(
     public OpenAiCompatible {
       baseUrl = normalizeOpenAiCompatibleBaseUrl(baseUrl);
       apiKey = apiKey == null ? "" : apiKey.trim();
-      protocol = protocol == null ? OpenAiProtocol.AUTO : protocol;
+      if (protocol == null || protocol == OpenAiProtocol.AUTO) {
+        protocol = OpenAiProtocol.from(System.getenv("VARKA_AI_OPENAI_PROTOCOL"));
+      }
     }
   }
 

@@ -1,13 +1,33 @@
 # Platform assistant
 
-The assistant package contains one modeling-agent runtime:
+The assistant package contains the bounded modeling-agent runtime used by the chatbot:
 
-`AgentTurnLoop -> AgentModelTools -> ModelWorkspace -> AgenticTurnService`
+`DurableAssistantTurnWorker -> AgenticTurnService -> AgentTurnLoop -> AgentModelTools -> ModelWorkspace`
 
 The agent receives deterministic Ecore contracts, uses validated tools for model inspection and
 editing, streams activity through the realtime publisher, validates the working copy, and applies
-an atomic revision-locked patch. Conversation history, chat memory, proposals, undo, cancellation,
-provider hardening, and parallel source-document workers remain supported.
+an atomic revision-locked patch.
+
+Provider-visible work is normalized into a small action protocol:
+
+- `plan_source_model`
+- `inspect_model`
+- `describe_types`
+- `commit_model_batch`
+- `answer_user`
+- `ask_user`
+
+OpenAI-compatible native tool calls may expose the mutation action as `apply_draft_patch`; the
+provider adapter maps it back to `commit_model_batch`.
+
+Source-backed turns store uploaded text, split it into bounded source units, validate evidence IDs,
+record source-grounded or inferred provenance, and compute source coverage. Model element IDs are
+backend-generated UUIDs; provider `clientRef` values are temporary same-batch references only.
+
+Current local live status is documented in
+`../../../docs/internal/ai/current-llm-workflow.md`. As of 2026-07-29, a one-story attachment turn
+can reach `SUCCEEDED` with 100% coverage and a saved checkpoint, but semantic validation still
+reports `CIMModelHasSemanticCore` on the live persisted model.
 
 Assistant database migrations live under `src/main/resources/db/assistant-migration/` and begin with
 the squashed `V1__assistant_baseline.sql`. The baseline retains conversation, chat-memory,

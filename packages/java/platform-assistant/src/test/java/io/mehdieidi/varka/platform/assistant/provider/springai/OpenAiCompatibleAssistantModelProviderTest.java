@@ -44,4 +44,15 @@ class OpenAiCompatibleAssistantModelProviderTest {
                 () -> OpenAiCompatibleAssistantModelProvider.nativeToolAction(mapper, search))
             .status());
   }
+
+  @Test
+  void acceptsStrictActionJsonContentWhenCompatibleProviderSkipsToolCalls() throws Exception {
+    var message =
+        mapper.readTree(
+            "{\"content\":\"{\\\"action\\\":\\\"describe_types\\\",\\\"arguments\\\":{\\\"names\\\":[\\\"Requirement\\\"]}}\"}");
+
+    assertEquals(
+        "{\"action\":\"describe_types\",\"arguments\":{\"names\":[\"Requirement\"]}}",
+        OpenAiCompatibleAssistantModelProvider.nativeToolAction(mapper, message));
+  }
 }

@@ -21,7 +21,8 @@ flowchart LR
 - CIM-to-PIM and PIM-to-AWS-PSM transformations implemented with ETL.
 - AWS project generation implemented with EGX/EGL.
 - PostgreSQL persistence for users, projects, models, artifacts, jobs, and assistant state.
-- A bounded AI modeling assistant with retrieval, auto-applied validated changes, and undo.
+- A bounded AI modeling assistant with retrieval, source attachments, auto-applied
+  backend-validated changes, checkpoints, provenance, and undo.
 - Reusable Java runners and command-line tools for MDE automation.
 
 ## Choose Your Path
@@ -42,6 +43,10 @@ Varka currently targets AWS serverless architecture. The formal pipeline, backen
 frontend workbenches, storage, assistant, CLI tools, diagram editing, impact-analysis APIs,
 and generated AWS project templates are implemented. Admin workspace APIs under `/api/admin/**`
 remain planned endpoints.
+
+The source-backed CIM assistant workflow is under active hardening. The one-story attachment path
+currently reaches a saved `SUCCEEDED` checkpoint with 100% source coverage, while one semantic
+validation issue in the live persisted model remains under investigation.
 
 The project is both a research platform and an engineering system. Its documentation therefore
 describes not only how to use it, but also the formal sources of truth, traceability boundaries,

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
@@ -44,14 +45,15 @@ public final class ModelCommandCompiler {
             "Create '"
                 + create.clientRef()
                 + "' requires an explicit owner and containment feature.");
-      if (refs.put(create.clientRef(), create.clientRef()) != null)
+      String elementId = UUID.randomUUID().toString();
+      if (refs.put(create.clientRef(), elementId) != null)
         throw new PlatformException(422, "Duplicate clientRef: " + create.clientRef());
       ObjectNode attributes = JsonNodeFactory.instance.objectNode();
       if (create.attributes() != null) create.attributes().forEach(attributes::set);
       operations.add(
           new Operation(
               OperationType.ADD_ELEMENT,
-              create.clientRef(),
+              elementId,
               create.eClass(),
               attributes,
               resolve(create.owner(), refs),

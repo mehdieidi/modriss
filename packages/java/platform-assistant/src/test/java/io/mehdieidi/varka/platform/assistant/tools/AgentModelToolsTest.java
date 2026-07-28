@@ -1,6 +1,7 @@
 package io.mehdieidi.varka.platform.assistant.tools;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -98,6 +99,128 @@ class AgentModelToolsTest {
 
     assertEquals(422, error.status());
     assertTrue(error.getMessage().contains("at least one create"));
+  }
+
+  @Test
+  void resolvesSameBatchClientRefsToBackendGeneratedUuids() throws Exception {
+    AgentModelTools tools = cimTools();
+    ModelWorkspace workspace = workspace();
+    tools.bind(ModelLevel.CIM, workspace);
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        "appointment_process",
+                        "BusinessProcess",
+                        Map.of("name", text("Schedule appointment")),
+                        "rootId",
+                        "processes",
+                        null),
+                    new ModelCommandBatch.Create(
+                        "start_step",
+                        "StartStep",
+                        Map.of("name", text("Start scheduling")),
+                        "appointment_process",
+                        "steps",
+                        null)),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                "draft domain",
+                true));
+
+    JsonNode model = result.model();
+    String processId = model.at("/processes/0/id").asText();
+    String stepId = model.at("/processes/0/steps/0/id").asText();
+
+    assertNotEquals("appointment_process", processId);
+    assertNotEquals("start_step", stepId);
+    assertTrue(processId.matches("[0-9a-fA-F-]{36}"));
+    assertTrue(stepId.matches("[0-9a-fA-F-]{36}"));
+    assertEquals("Start scheduling", model.at("/processes/0/steps/0/name").asText());
+  }
+
+  @Test
+  void synthesizesMinimumCimSemanticCoreWhenBatchOmitsIt() throws Exception {
+    AgentModelTools tools = cimTools();
+    ModelWorkspace workspace = workspace();
+    tools.bind(ModelLevel.CIM, workspace);
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        "request_repair_appointment",
+                        "Requirement",
+                        Map.of(
+                            "name", text("Request repair appointment online"),
+                            "fitCriterion", text("Cyclist receives an appointment reference."),
+                            "mandatory", mapper.getNodeFactory().booleanNode(true),
+                            "productionBlocking", mapper.getNodeFactory().booleanNode(false)),
+                        "rootId",
+                        "requirements",
+                        null)),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                "draft requirement",
+                true));
+
+    JsonNode model = result.model();
+    assertEquals("BusinessGoal", model.at("/goals/0/eClass").asText());
+    assertTrue(model.at("/goals/0/successCriterion").asText().contains("user outcome"));
+    assertEquals("Actor", model.at("/actors/0/eClass").asText());
+    assertEquals("BusinessCapability", model.at("/capabilities/0/eClass").asText());
+    assertEquals(model.at("/goals/0/id").asText(), model.at("/capabilities/0/supports/0").asText());
+    assertEquals(model.at("/actors/0/id").asText(), model.at("/capabilities/0/owner").asText());
+  }
+
+  @Test
+  void rejectsConnectionAliasWithKnownClientRefs() throws Exception {
+    AgentModelTools tools = cimTools();
+    tools.bind(ModelLevel.CIM, workspace());
+
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(
+                            new ModelCommandBatch.Create(
+                                "repair_appointment_request",
+                                "InformationItem",
+                                Map.of(
+                                    "name", text("Repair appointment request"),
+                                    "type", text("OBJECT")),
+                                "rootId",
+                                "informationItems",
+                                null),
+                            new ModelCommandBatch.Create(
+                                "submit_request",
+                                "Command",
+                                Map.of("name", text("Submit request")),
+                                "rootId",
+                                "commands",
+                                null)),
+                        List.of(),
+                        List.of(
+                            new ModelCommandBatch.Connection(
+                                "submit_request", "input", "info_repair_appointment_request")),
+                        List.of(),
+                        List.of(),
+                        "draft command",
+                        true)));
+
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("info_repair_appointment_request"));
+    assertTrue(error.getMessage().contains("repair_appointment_request"));
+    assertTrue(error.getMessage().contains("without prefixes or aliases"));
   }
 
   @Test

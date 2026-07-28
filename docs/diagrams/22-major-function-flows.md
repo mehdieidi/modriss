@@ -105,18 +105,19 @@ flowchart TD
     start([Queued turn])
     claim["DurableAssistantTurnWorker claims lease"]
     load["Load thread, model, expected revision, attachments"]
-    split["Split source text into source units when present"]
+    split["Split source text into source units / source map when present"]
     contracts["Load Ecore-derived metamodel contracts"]
-    loop["Run AgentTurnLoop"]
+    loop["Run AgentTurnLoop<br/>plan_source_model / inspect / describe / commit"]
     tools["Execute checked AgentModelTools against ModelWorkspace"]
-    validate["Validate resulting workspace/model"]
+    guards["Batch guards<br/>UUID ids, evidence IDs, references, containment"]
+    validate["Structural validation of resulting workspace"]
     outcome{"Outcome"}
     commit["Commit valid model revision and checkpoint"]
-    provenance["Persist source provenance and provider-call usage"]
+    provenance["Persist source provenance, coverage, and provider-call usage"]
     events["Append durable turn events"]
     terminal["Mark turn terminal"]
 
-    start --> claim --> load --> split --> contracts --> loop --> tools --> validate --> outcome
+    start --> claim --> load --> split --> contracts --> loop --> tools --> guards --> validate --> outcome
     outcome -- valid work --> commit --> provenance --> events --> terminal
     outcome -- needs input/confirmation/partial/failure --> events --> terminal
 ```

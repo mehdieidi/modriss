@@ -58,10 +58,16 @@ public final class SourceUnitSplitter {
       // evidence.  Do not turn a document title followed by a blank line into a dead source
       // unit: it cannot ground a meaningful model element and leaves a coverage obligation that
       // a later workflow increment can never satisfy.
-      if (blankLine && !hasSubstantiveContent(source.substring(start, cursor))) continue;
+      if (blankLine
+          && (!hasSubstantiveContent(source.substring(start, cursor))
+              || isSectionLabelOnly(source.substring(start, cursor)))) continue;
       int end = heading ? cursor : cursor + 2;
       if (end > start) {
         String content = source.substring(start, end);
+        if (!hasSubstantiveContent(content)) {
+          start = end;
+          continue;
+        }
         spans.add(
             new SourceUnit(id(ordinal++, start, end, content), ordinal - 1, start, end, content));
         start = end;
@@ -86,6 +92,12 @@ public final class SourceUnitSplitter {
       if (!trimmed.isEmpty() && !trimmed.startsWith("#")) return true;
     }
     return false;
+  }
+
+  private boolean isSectionLabelOnly(String value) {
+    String normalized = value == null ? "" : value.trim();
+    if (normalized.isBlank() || normalized.contains("\n")) return false;
+    return normalized.endsWith(":");
   }
 
   private String id(int ordinal, int start, int end, String value) {

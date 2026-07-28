@@ -149,6 +149,7 @@ allowed to do.
 | `VARKA_AI_FALLBACK_PROVIDER`                 | Empty, `openai`, `gemini`                                    | Optional backup provider used after HTTP 429 from the primary provider. Empty means no fallback. Not used for 5xx, timeout, or circuit-open failures. |
 | `VARKA_AI_VALIDATION_REPAIR_ATTEMPTS`        | Non-negative integer                                         | Legacy validation-repair setting. `VARKA_AI_MAX_REPAIR_ATTEMPTS` takes precedence when it is positive.                                                |
 | `VARKA_AI_LLM_CONTRACT_RERANK_ENABLED`       | `true`, `false`                                              | Enables optional LLM reranking of retrieved contracts. It can improve relevance but adds provider calls and latency.                                  |
+| `VARKA_AI_OPENAI_PROTOCOL`                   | `auto`, `tools`, legacy JSON mode                            | Selects the OpenAI-compatible response protocol. `tools` uses native Chat Completions tool calls and is preferred when supported.                     |
 
 ## AI Provider Credentials And Models
 
@@ -159,9 +160,12 @@ These are secrets or provider-specific names. Keep real keys in `.env`, not `.en
 | `OPENAI_COMPATIBLE_BASE_URL` | URL like `https://api.openai.com/v1` or another OpenAI-compatible base URL | Base URL for OpenAI-style providers. Use the provider's API root expected by the OpenAI SDK, usually including `/v1`. |
 | `OPENAI_COMPATIBLE_API_KEY`  | Provider API key or empty                                                  | API key for OpenAI-compatible providers.                                                                              |
 | `GEMINI_API_KEY`             | Gemini API key or empty                                                    | API key for Google Gemini.                                                                                            |
-| `VARKA_AI_PLANNER_MODEL`     | Empty, `auto`, or a provider model name                                    | Accepted for compatibility. The current resolver uses `VARKA_AI_RESPONDER_MODEL` for assistant roles.                 |
-| `VARKA_AI_RESPONDER_MODEL`   | Empty, `auto`, or a provider model name                                    | Active model selector. Empty uses `gpt-4o-mini` for OpenAI-compatible providers or `gemini-2.0-flash` for Gemini.     |
-| `VARKA_AI_SUMMARIZER_MODEL`  | Empty, `auto`, or a provider model name                                    | Accepted for compatibility. The current resolver uses `VARKA_AI_RESPONDER_MODEL` for assistant roles.                 |
+| `VARKA_AI_DIRECTOR_MODEL`    | Empty, `auto`, or a provider model name                                    | Model for request-director/planning work when role-specific selection is enabled.                                     |
+| `VARKA_AI_MODELER_MODEL`     | Empty, `auto`, or a provider model name                                    | Model for model-changing executor work.                                                                               |
+| `VARKA_AI_CRITIC_MODEL`      | Empty, `auto`, or a provider model name                                    | Model for critic/coverage-style checks when used.                                                                     |
+| `VARKA_AI_RESPONDER_MODEL`   | Empty, `auto`, or a provider model name                                    | Model for user-facing answers. Empty uses provider defaults.                                                          |
+| `VARKA_AI_SUMMARIZER_MODEL`  | Empty, `auto`, or a provider model name                                    | Model for rolling summaries.                                                                                          |
+| `VARKA_AI_PLANNER_MODEL`     | Empty, `auto`, or a provider model name                                    | Backward-compatible alias that seeds director/modeler/critic defaults when the newer role keys are not set.           |
 
 ## AI Proxy
 

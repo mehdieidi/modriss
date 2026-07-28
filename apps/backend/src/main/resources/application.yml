@@ -83,8 +83,8 @@ varka:
     max-source-chunk-tokens: ${VARKA_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
     max-source-chunks-per-turn: ${VARKA_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
     max-provider-calls-per-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN:2}
-    max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:3}
-    source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:2m}
+    max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:6}
+    source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:5m}
     fallback-provider: ${VARKA_AI_FALLBACK_PROVIDER:}
     hardening:
       per-user-requests-per-window: ${VARKA_AI_RATE_LIMIT_REQUESTS:30}

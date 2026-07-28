@@ -7,6 +7,7 @@ flowchart TD
     start([User sends message])
     auth["Authenticate and resolve session"]
     attach["Resolve uploaded/inline attachments"]
+    source["Split source attachments<br/>persist source units"]
     idem{"Existing idempotency key?"}
     existing["Return existing turn acceptance"]
     ensure["Ensure active model and starter revision"]
@@ -14,14 +15,14 @@ flowchart TD
     checkpoint["Save starter checkpoint and model.checkpoint event"]
     accepted["Return 202 TurnAcceptedResponse"]
     claim["Worker claims turn"]
-    run["Run AgentTurnLoop with metamodel-checked tools"]
+    run["Run AgentTurnLoop<br/>source units, contracts, model tools"]
     state{"Outcome"}
-    commit["Commit validated model revision"]
-    saveCheckpoint["Save checkpoint, provenance, provider calls, events"]
+    commit["Commit structurally valid model revision"]
+    saveCheckpoint["Save checkpoint, source coverage, provenance, provider calls, events"]
     terminal["Persist terminal state and final message"]
     controls["Client polls status or replays SSE events"]
 
-    start --> auth --> attach --> idem
+    start --> auth --> attach --> source --> idem
     idem -- yes --> existing --> controls
     idem -- no --> ensure --> create --> checkpoint --> accepted --> controls
     create --> claim --> run --> state
@@ -74,4 +75,32 @@ sequenceDiagram
     Undo-->>API: modelId, revision
     API-->>UI: TurnUndoResponse
     UI->>API: reload model if needed
+```
+
+## Rebase, Rollback, and Feedback
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI as Chat panel
+    participant API as ChatbotController
+    participant Turns as AssistantTurnStore
+    participant Undo as DurableTurnUndoService
+    participant M as ModelService
+
+    User->>UI: Resolve stale revision without overlap
+    UI->>API: POST /api/chatbot/turns/{turnId}/rebase
+    API->>Turns: update expected revision and enqueue continuation
+    API-->>UI: TurnAcceptedResponse
+
+    User->>UI: Roll back a specific checkpoint
+    UI->>API: POST /api/chatbot/turns/{turnId}/checkpoints/{checkpointId}/rollback
+    API->>Undo: apply checkpoint inverse
+    Undo->>M: persist new model revision
+    API-->>UI: modelId, revision
+
+    User->>UI: Mark turn accepted or rejected
+    UI->>API: POST /api/chatbot/turns/{turnId}/feedback
+    API->>Turns: append turn.feedback event
+    API-->>UI: 202 Accepted
 ```
