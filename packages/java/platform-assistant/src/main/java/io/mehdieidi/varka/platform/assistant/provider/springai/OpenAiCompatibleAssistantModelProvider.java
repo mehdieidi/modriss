@@ -177,12 +177,9 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       // returned, the executor permits only a terminal mutation; leaving every read tool
       // selectable lets compatible providers repeatedly call describe_types despite the
       // explicit state-machine instruction in the prompt.
-      if (prompt.user().contains("The next action must be apply_draft_patch.")
-          || prompt.user().contains("Return one corrected JSON object.")) {
-        body.putObject("tool_choice")
-            .put("type", "function")
-            .putObject("function")
-            .put("name", "apply_draft_patch");
+      boolean forcePatchTool = shouldForcePatchTool(prompt.user());
+      if (forcePatchTool) {
+        putForcedPatchToolChoice(body, false);
       } else {
         // Requiring a tool call avoids prose that would otherwise be mistaken for structured
         // output.
@@ -192,27 +189,14 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       // Some compatible gateways leave a socket open indefinitely rather than returning their
       // advertised timeout response. HttpRequest.timeout alone did not reliably interrupt that
       // condition, which left durable turns RUNNING forever. Bound the future itself as well.
-      var request =
-          HttpRequest.newBuilder(URI.create(baseUrl() + "/chat/completions"))
-              .timeout(properties.requestTimeout())
-              .header("Authorization", "Bearer " + configuredApiKey(properties))
-              .header("Content-Type", "application/json")
-              .POST(
-                  HttpRequest.BodyPublishers.ofString(
-                      mapper.writeValueAsString(body), StandardCharsets.UTF_8))
-              .build();
-      HttpClient.Builder httpClient =
-          HttpClient.newBuilder().connectTimeout(properties.requestTimeout());
-      AiProperties.Proxy proxy = properties.proxyFor(AiProperties.Provider.OPENAI.key());
-      if (proxy.enabled() && proxy.type() != AiProperties.ProxyType.DIRECT) {
-        httpClient.proxy(java.net.ProxySelector.of(proxy.address()));
+      var response = sendChatRequest(mapper, body);
+      if (forcePatchTool
+          && response.statusCode() / 100 != 2
+          && response.body() != null
+          && response.body().contains("tool_choice.name")) {
+        putForcedPatchToolChoice(body, true);
+        response = sendChatRequest(mapper, body);
       }
-      var response =
-          httpClient
-              .build()
-              .sendAsync(request, HttpResponse.BodyHandlers.ofString())
-              .orTimeout(properties.requestTimeout().toMillis(), TimeUnit.MILLISECONDS)
-              .join();
       if (response.statusCode() / 100 != 2) {
         String errorBody = providerErrorSnippet(response.body());
         throw new PlatformException(
@@ -234,6 +218,51 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     } catch (Exception ex) {
       throw new IllegalStateException("OpenAI-compatible native tool request failed", ex);
     }
+  }
+
+  static boolean shouldForcePatchTool(String userPrompt) {
+    return userPrompt != null
+        && (userPrompt.contains("The next action must be apply_draft_patch.")
+            || userPrompt.contains("The next action must be commit_model_batch")
+            || userPrompt.contains("Return one corrected JSON object."));
+  }
+
+  private static void putForcedPatchToolChoice(
+      com.fasterxml.jackson.databind.node.ObjectNode body, boolean flatName) {
+    body.remove("tool_choice");
+    var toolChoice = body.putObject("tool_choice");
+    toolChoice.put("type", "function");
+    if (flatName) {
+      toolChoice.put("name", "apply_draft_patch");
+    } else {
+      toolChoice.putObject("function").put("name", "apply_draft_patch");
+    }
+  }
+
+  private HttpResponse<String> sendChatRequest(
+      com.fasterxml.jackson.databind.ObjectMapper mapper,
+      com.fasterxml.jackson.databind.node.ObjectNode body)
+      throws java.io.IOException, InterruptedException {
+    var request =
+        HttpRequest.newBuilder(URI.create(baseUrl() + "/chat/completions"))
+            .timeout(properties.requestTimeout())
+            .header("Authorization", "Bearer " + configuredApiKey(properties))
+            .header("Content-Type", "application/json")
+            .POST(
+                HttpRequest.BodyPublishers.ofString(
+                    mapper.writeValueAsString(body), StandardCharsets.UTF_8))
+            .build();
+    HttpClient.Builder httpClient =
+        HttpClient.newBuilder().connectTimeout(properties.requestTimeout());
+    AiProperties.Proxy proxy = properties.proxyFor(AiProperties.Provider.OPENAI.key());
+    if (proxy.enabled() && proxy.type() != AiProperties.ProxyType.DIRECT) {
+      httpClient.proxy(java.net.ProxySelector.of(proxy.address()));
+    }
+    return httpClient
+        .build()
+        .sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        .orTimeout(properties.requestTimeout().toMillis(), TimeUnit.MILLISECONDS)
+        .join();
   }
 
   private static String providerErrorSnippet(String body) {

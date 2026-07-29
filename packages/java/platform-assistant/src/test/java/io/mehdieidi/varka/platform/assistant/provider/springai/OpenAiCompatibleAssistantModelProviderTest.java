@@ -1,7 +1,9 @@
 package io.mehdieidi.varka.platform.assistant.provider.springai;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
@@ -54,5 +56,18 @@ class OpenAiCompatibleAssistantModelProviderTest {
     assertEquals(
         "{\"action\":\"describe_types\",\"arguments\":{\"names\":[\"Requirement\"]}}",
         OpenAiCompatibleAssistantModelProvider.nativeToolAction(mapper, message));
+  }
+
+  @Test
+  void forcesNativePatchToolAfterLegacyCommitInstruction() {
+    assertTrue(
+        OpenAiCompatibleAssistantModelProvider.shouldForcePatchTool(
+            "The next action must be commit_model_batch; do not answer."));
+    assertTrue(
+        OpenAiCompatibleAssistantModelProvider.shouldForcePatchTool(
+            "Return one corrected JSON object."));
+    assertFalse(
+        OpenAiCompatibleAssistantModelProvider.shouldForcePatchTool(
+            "Choose the exact types needed for the request."));
   }
 }
