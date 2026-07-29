@@ -91,9 +91,9 @@ through the multipart chatbot attachment endpoint, submits a durable turn, waits
 status, fetches the updated model, and calls validation.
 
 Current expected one-story behavior is `SUCCEEDED`, one checkpoint, 100% source coverage, and saved
-model elements. The known remaining issue is semantic validation:
-`CIMModelHasSemanticCore` can still fail on the live persisted model even when the turn lifecycle
-succeeds.
+model elements. The assistant workflow itself gates generated output with structural Ecore/EMF
+validation only; EVL validation should be run separately when a test scenario explicitly needs
+semantic review feedback.
 
 ## What to Test After Language Changes
 

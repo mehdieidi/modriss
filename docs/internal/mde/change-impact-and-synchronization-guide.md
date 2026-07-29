@@ -23,7 +23,7 @@ to determine what is required.
 | PIM abstract syntax                | `mde/metamodels/pim/*.emf`                                                                           | `pim-combined.ecore`, PIM EVL, both ETL profiles, PIM UI metadata, model import/export, assistant, samples/tests              |
 | AWS PSM abstract syntax            | `mde/metamodels/psm/*.emf`                                                                           | `psm-combined.ecore`, PSM EVL, PIM-to-PSM ETL, EGX/EGL, PSM UI metadata, model import/export, assistant, samples/tests        |
 | Runtime metamodel                  | `mde/metamodels/{cim,pim,psm}/*-combined.ecore`                                                      | Java EMF loading, validation, transformation, generation, UI structural metadata, metamodel hash/version                      |
-| Semantic validation                | `mde/validation/{cim,pim,psm}/`                                                                      | `ModelService`, EVL CLI, assistant constraint catalog, tests                                                                  |
+| Semantic validation                | `mde/validation/{cim,pim,psm}/`                                                                      | `ModelService`, EVL CLI, validation endpoint tests                                                                            |
 | CIM-to-PIM semantics               | `mde/transformations/cim-to-pim/`                                                                    | ETL runner/CLI, `TransformationService`, generated PIM, tests/docs                                                            |
 | PIM-to-AWS-PSM semantics           | `mde/transformations/pim-to-awspsm/`                                                                 | ETL runner/CLI, `TransformationService`, generated PSM, tests/docs                                                            |
 | PSM-to-artifact semantics          | `mde/generation/awspsm-to-artifacts/`                                                                | M2T runner/CLI, artifact service, generated projects, tests/docs                                                              |
@@ -255,13 +255,13 @@ When changing validation logic:
 3. Keep context model aliases compatible with `ModelService.validationModelName`,
    `ModelService.validationModelAliases`, and the EVL CLI profile commands.
 4. Update transformations when generated target models must satisfy the changed rule.
-5. Update root templates, assistant default/starter behavior, and samples when the new rule affects
-   minimum-valid models.
+5. Update root templates, optional assistant review examples, and samples when the new rule affects
+   models expected to pass explicit EVL validation.
 6. Update generation preconditions if PSM generation relies on the same invariant.
 7. Add positive and negative validation tests.
 8. Restart the backend if metamodel sources changed so Ecore-derived assistant contracts are fresh.
-   EVL-only changes affect workbench validation and assistant tool validation outcomes, but raw EVL
-   rule text is not sent to the provider.
+   EVL-only changes affect workbench validation and explicit model-validation outcomes, but do not
+   gate assistant tool validation.
 
 Use stable rule identifiers in messages. If a rule identifier or message meaning changes, update
 tests, docs, frontend issue handling, and assistant expectations that refer to it.
@@ -581,7 +581,8 @@ Review these for structural or semantic changes:
 - `ModelWorkspace` when workspace mutation semantics change.
 - Assistant prompts/examples/docs and assistant tests.
 
-Always validate representative assistant turns against the current metamodel and EVL profiles.
+Always validate representative assistant turns against the current metamodel. Run EVL profiles
+separately only when the test is explicitly about post-checkpoint semantic review.
 
 ## API, JSON, Schema, and Documentation Impact
 

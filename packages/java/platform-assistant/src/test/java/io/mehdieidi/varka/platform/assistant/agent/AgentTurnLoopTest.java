@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.mehdieidi.varka.platform.assistant.application.ProviderCallBudget;
@@ -267,6 +269,8 @@ class AgentTurnLoopTest {
     assertEquals("Model checkpoint saved.", result.message());
     assertEquals(1, result.providerCalls());
     assertTrue(!result.patch().isEmpty());
+    verify(models).validateStructural(any(), any());
+    verify(models, never()).validate(any(ModelLevel.class), any());
   }
 
   @Test

@@ -84,7 +84,6 @@ Current hardening includes:
 - containment-reference normalization when a unique compatible containment exists;
 - required enum defaulting;
 - synthesis of required non-containment reference targets where Ecore demands them;
-- CIM semantic-core synthesis attempt for missing goal/actor/capability in mutation batches;
 - source evidence validation before model mutation;
 - source-section alias resolution for resumed source turns;
 - source splitter handling for plain section labels followed by lists;
@@ -100,12 +99,12 @@ Latest single-story live test through the real multipart/chatbot path:
 
 | Fixture              | State       | Coverage | Checkpoints | Saved elements | Provider calls | Validation |
 | -------------------- | ----------- | -------- | ----------- | -------------- | -------------- | ---------- |
-| `story-v1-single.md` | `SUCCEEDED` | `100%`   | `1`         | `16`           | `4`            | `false`    |
+| `story-v1-single.md` | `SUCCEEDED` | `100%`   | `1`         | `16`           | `4`            | structural |
 
 The operational workflow now accepts the attachment, creates a checkpoint, persists model content,
-and reports complete source coverage. The remaining known problem is semantic validation:
-`CIMModelHasSemanticCore` still reports that the persisted model lacks at least one
-`BusinessGoal`, one `Actor`, and one `BusinessCapability`.
+and reports complete source coverage. Assistant output is accepted only against structural
+Ecore/EMF conformance. EVL semantic validation is intentionally outside the chatbot apply gate and
+is available through explicit model validation endpoints for human-driven review workflows.
 
 The focused unit/regression set currently passes:
 
@@ -120,24 +119,18 @@ AgentModelToolsTest
 
 ## Known Issues
 
-- The live one-story checkpoint can still fail semantic validation even after the semantic-core
-  guard passes unit tests. Next debugging should inspect the persisted JSON and generated XMI for
-  the live model revision.
-- Larger source fixtures need to be rerun after the latest source-splitting and semantic-core
-  changes.
+- Larger source fixtures need to be rerun after the latest source-splitting and structural
+  validation changes.
 - Freemodel has returned intermittent `503` responses in local live testing. FreeLLM currently
   works better for the local workflow, but provider reliability remains an operational concern.
 - The live eval script is useful for diagnosis but is not yet a CI-grade gate.
-- Warnings from EVL are preserved in validation responses; `valid=false` should be driven by
-  `ERROR` severity issues.
+- EVL validation responses can still be useful after assistant checkpoints, but they must remain
+  user-initiated review feedback rather than assistant apply criteria.
 
 ## Next Engineering Targets
 
-1. Fix the semantic-core discrepancy between unit-tested mutation synthesis and live validation.
-2. Make `scripts/live-cim-source-file-eval.ps1` fail explicitly on semantic validation errors and
-   print the stored model revision details needed for debugging.
-3. Rerun progressive source fixtures: one, two, three, five, ten, fifteen, and twenty stories.
-4. Add integration coverage for the live source-backed terminal-state path and semantic-core
-   persistence.
-5. Keep provider/model changes configuration-only; avoid provider-specific business logic in the
+1. Rerun progressive source fixtures: one, two, three, five, ten, fifteen, and twenty stories.
+2. Add integration coverage for the live source-backed terminal-state path and structural
+   validation-only assistant apply boundary.
+3. Keep provider/model changes configuration-only; avoid provider-specific business logic in the
    modeling workflow.

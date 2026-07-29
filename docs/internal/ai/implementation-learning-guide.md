@@ -106,7 +106,8 @@ not modified by that assistant-state migration.
 
 - Restart or rebuild the backend after metamodel changes so Ecore-derived contracts and packaged
   `mde/` assets are fresh.
-- Revalidate affected models after EVL changes before relying on assistant behavior.
+- Run explicit model validation after EVL changes when reviewing semantic readiness; EVL does not
+  gate assistant apply behavior.
 - Use `POST /api/chatbot/turns/{turnId}/undo` to apply a checkpoint inverse when available.
 - Use `POST /api/chatbot/turns/{turnId}/continue` for partial completed work.
 - Use `POST /api/chatbot/turns/{turnId}/cancel` to request cancellation of queued/running work.

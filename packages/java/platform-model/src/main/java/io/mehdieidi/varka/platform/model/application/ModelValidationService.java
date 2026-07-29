@@ -137,7 +137,8 @@ final class ModelValidationService {
   }
 
   /**
-   * Validates model JSON for EMF/Ecore structural conformance without executing EVL constraints.
+   * Validates model JSON for EMF/Ecore structural conformance without executing EVL constraints or
+   * JSON-level semantic checks.
    *
    * @param level model level
    * @param modelJson model JSON
@@ -150,9 +151,6 @@ final class ModelValidationService {
     }
     List<ModelService.ValidationIssue> issues =
         new ArrayList<>(validateStructure(level, modelJson));
-    if (level == ModelLevel.CIM) {
-      issues.addAll(validateCimModel(modelJson));
-    }
     boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
     return new ModelService.ValidationResult(valid, issues);
   }

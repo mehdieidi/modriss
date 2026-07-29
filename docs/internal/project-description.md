@@ -106,14 +106,14 @@ assistant using natural language.
 The AI assistant is designed to understand the current state of the model being edited. It receives
 backend-owned Ecore-derived contracts and validation feedback. Based on user prompts, the assistant
 can create, modify, and refine model elements through validated backend tools. Structural
-metamodel conformance is enforced before commit; semantic EVL validation is checked separately and
-can still report issues that require follow-up modeling or implementation fixes.
+metamodel conformance is enforced before commit. Semantic EVL validation is intentionally outside
+the chatbot apply path and is available only through explicit validation workflows.
 
 Instead of manually creating every element, the user can describe the intended model changes in
 natural language, upload source documents such as user stories, and ask the assistant to generate
 or update the model accordingly. The source-backed CIM workflow is actively being hardened: the
-one-story attachment path now reaches a saved `SUCCEEDED` checkpoint with 100% source coverage,
-while a semantic-core validation discrepancy remains under investigation.
+one-story attachment path now reaches a saved `SUCCEEDED` checkpoint with 100% source coverage
+under the assistant's structural Ecore/EMF apply gate.
 
 The assistant’s changes are reflected visually on the frontend canvas through REST model reloads
 and authenticated server-sent events for durable turn progress. The chat interaction is designed to

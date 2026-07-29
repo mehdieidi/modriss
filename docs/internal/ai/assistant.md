@@ -323,9 +323,9 @@ Latest local live test through the real multipart upload path:
 
 - `story-v1-single.md`: `SUCCEEDED`, 100% source coverage, one checkpoint, 16 saved elements, four
   provider calls.
-- Semantic validation still reports `CIMModelHasSemanticCore` for the live persisted result. The
-  unit-tested semantic-core synthesis guard exists, but the live JSON/XMI validation discrepancy
-  remains the next issue to fix before treating source-to-CIM as fully validation-green.
+- Assistant checkpoints are gated by structural Ecore/EMF conformance only. The assistant apply
+  path does not execute EVL or require semantic validation to pass; run explicit model validation
+  after a checkpoint when EVL feedback is needed for human review.
 
 Focused regression tests for source splitting, provider action parsing, turn-loop behavior, and
 model tools currently pass: 26 tests, 0 failures.

@@ -25,9 +25,10 @@ record source-grounded or inferred provenance, and compute source coverage. Mode
 backend-generated UUIDs; provider `clientRef` values are temporary same-batch references only.
 
 Current local live status is documented in
-`../../../docs/internal/ai/current-llm-workflow.md`. As of 2026-07-29, a one-story attachment turn
-can reach `SUCCEEDED` with 100% coverage and a saved checkpoint, but semantic validation still
-reports `CIMModelHasSemanticCore` on the live persisted model.
+`../../../docs/internal/ai/current-llm-workflow.md`. As of 2026-07-29, assistant-generated model
+changes are accepted only after structural Ecore/EMF conformance checks. The assistant apply path
+does not execute EVL or require semantic validation to pass; EVL remains available through explicit
+model validation endpoints outside the chatbot workflow.
 
 Assistant database migrations live under `src/main/resources/db/assistant-migration/` and begin with
 the squashed `V1__assistant_baseline.sql`. The baseline retains conversation, chat-memory,

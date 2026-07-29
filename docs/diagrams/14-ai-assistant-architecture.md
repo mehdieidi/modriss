@@ -85,7 +85,7 @@ flowchart LR
     agent["AgentTurnLoop"]
     tools["Validated model tools"]
     guards["Batch guards<br/>UUID ids, evidence checks, containment/reference normalization"]
-    validate["Structural validation<br/>semantic EVL checked separately"]
+    validate["Structural Ecore/EMF validation<br/>no EVL in assistant apply"]
     commit["Revision-checked commit"]
     checkpoint["Checkpoint + inverse patch"]
     storage["Persisted model revision"]
@@ -103,6 +103,5 @@ flowchart LR
 ```
 
 Current live status: the source-backed one-story workflow reaches `SUCCEEDED` with 100% coverage and
-a saved checkpoint, but semantic validation can still report `CIMModelHasSemanticCore` on the live
-persisted model. The next fix is in the JSON/XMI persistence/validation path, not the HTTP turn
-lifecycle.
+a saved checkpoint. Assistant checkpoints are gated by structural Ecore/EMF conformance only; EVL
+semantic validation remains outside the chatbot apply path.

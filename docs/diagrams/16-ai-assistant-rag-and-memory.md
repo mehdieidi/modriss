@@ -73,5 +73,6 @@ flowchart LR
 ```
 
 Source coverage is a provenance/accounting signal. It says whether tracked source units were
-modeled, inferred, or intentionally left as remaining work. Semantic EVL validation is still checked
-through the model validation endpoints after a checkpoint.
+modeled, inferred, or intentionally left as remaining work. Assistant checkpoints do not execute EVL
+or require semantic EVL validity; model validation endpoints remain available for explicit
+post-checkpoint review.

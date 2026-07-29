@@ -41,12 +41,10 @@ As of 2026-07-29, the live one-story attachment path succeeds operationally thro
 multipart upload and chatbot workflow: it creates a checkpoint, saves model elements, reports 100%
 source coverage, and terminates as `SUCCEEDED`.
 
-One known semantic validation issue remains: the saved model can still fail `CIMModelHasSemanticCore`
-because validation does not yet see the required `BusinessGoal`, `Actor`, and `BusinessCapability`
-core in the live persisted model. The backend has a unit-tested semantic-core synthesis guard, but
-the live JSON/XMI persistence path still needs investigation. Treat source-to-CIM generation as
-usable for workflow testing and model-drafting, but not yet as a fully green semantic-validation
-gate for larger documents.
+Assistant-generated model changes are gated by structural Ecore/EMF conformance only. The chatbot
+apply path does not execute EVL and does not require semantic validation to pass before saving a
+checkpoint. Use the explicit model validation endpoints when a human workflow needs EVL semantic
+feedback after an assistant checkpoint.
 
 For implementation details and the current live-eval status, see
 `docs/internal/ai/current-llm-workflow.md`.

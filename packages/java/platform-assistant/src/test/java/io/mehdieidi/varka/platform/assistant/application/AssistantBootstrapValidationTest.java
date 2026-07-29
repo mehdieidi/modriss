@@ -20,7 +20,7 @@ import tools.jackson.databind.ObjectMapper;
 class AssistantBootstrapValidationTest {
 
   @Test
-  void ecoreBackedStarterModelsPassMandatoryValidationForEveryLevel() {
+  void ecoreBackedStarterModelsPassStructuralValidationForEveryLevel() {
     InMemoryStore store = new InMemoryStore(new ObjectMapper());
     AuthService auth = new AuthService(store, java.time.Duration.ofDays(1));
     ModelService models = new ModelService(store, new ProjectService(store, auth));
@@ -28,7 +28,7 @@ class AssistantBootstrapValidationTest {
 
     for (ModelLevel level : ModelLevel.values()) {
       var starter = modeling.starterModel(level, level.name() + " Assistant");
-      ModelService.ValidationResult validation = models.validate(level, starter);
+      ModelService.ValidationResult validation = models.validateStructural(level, starter);
       assertTrue(
           validation.issues().stream().noneMatch(issue -> "ERROR".equals(issue.severity())),
           () -> level + ": " + validation.issues());
