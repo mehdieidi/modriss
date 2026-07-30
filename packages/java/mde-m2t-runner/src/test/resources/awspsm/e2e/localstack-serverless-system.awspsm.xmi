@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="ASCII"?>
+<awspsm:AwsPsmModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:awspsm="https://varka.org/awspsm/1.0" xmlns:awspsmapi="https://varka.org/awspsm/api/1.0" xmlns:awspsmcompute="https://varka.org/awspsm/compute/1.0" xmlns:awspsmevents="https://varka.org/awspsm/events/1.0" xmlns:awspsmmessaging="https://varka.org/awspsm/messaging/1.0" xmlns:awspsmobservability="https://varka.org/awspsm/observability/1.0" xmlns:awspsmsecurity="https://varka.org/awspsm/security/1.0" xmlns:awspsmstorage="https://varka.org/awspsm/storage/1.0" xmlns:awspsmworkflow="https://varka.org/awspsm/workflow/1.0" id="aws_psm_localstack_runtime" name="LocalStack Runtime AWS PSM" accountStrategy="single-account" regionStrategy="single-region" defaultRegion="us-east-1" namingConvention="kebab-case" taggingStrategy="stage-and-service" productionMode="false">
+  <stages id="stage_runtime" name="Runtime" stageName="localstack" region="us-east-1" requiresManualApproval="false" environmentClass="TEST" deploysStacks="stack_runtime"/>
+  <stacks id="stack_runtime" name="Runtime Stack" stackName="varka-localstack-runtime" templatePath="template.yaml" templateDescription="LocalStack deployable generated stack." useSamTransform="true">
+    <capabilities>CAPABILITY_IAM</capabilities>
+    <resources xsi:type="awspsmsecurity:IamRole" id="role_runtime_lambda" name="Runtime Lambda Role" logicalId="RuntimeLambdaRole" productionCritical="false" importedResource="false" roleName="varka-localstack-runtime-role">
+      <assumeRolePolicy id="policy_runtime_assume" name="Runtime Assume Policy" version="2012-10-17">
+        <statements id="stmt_runtime_assume_role" name="Runtime Assume Role Statement" wildcardResource="true" wildcardJustification="IAM trust policies use wildcard resource semantics.">
+          <actions>sts:AssumeRole</actions>
+          <resources>*</resources>
+          <principals id="principal_runtime_lambda" name="Runtime Lambda Principal" principalType="Service">
+            <identifiers>lambda.amazonaws.com</identifiers>
+          </principals>
+        </statements>
+      </assumeRolePolicy>
+    </resources>
+    <resources xsi:type="awspsmsecurity:IamPolicy" id="policy_runtime_lambda" name="Runtime Lambda Policy" logicalId="RuntimeLambdaPolicy" productionCritical="false" importedResource="false" policyName="varka-localstack-runtime-policy" roles="role_runtime_lambda">
+      <document id="policy_runtime_lambda_doc" name="policy_runtime_lambda_doc Policy" version="2012-10-17">
+        <statements id="policy_runtime_lambda_doc_statement" name="policy_runtime_lambda_doc Statement" wildcardAction="true" wildcardResource="true" wildcardJustification="Fixture exercises wildcard rationale rendering.">
+          <actions>*</actions>
+          <resources>*</resources>
+        </statements>
+      </document>
+    </resources>
+    <resources xsi:type="awspsmobservability:CloudWatchLogGroup" id="log_group_runtime_lambda" name="Runtime Lambda Log Group" logicalId="RuntimeLambdaLogGroup" productionCritical="false" importedResource="false" logGroupName="/aws/lambda/varka-localstack-handler" retentionDays="7"/>
+    <resources xsi:type="awspsmcompute:AwsLambdaFunction" id="lambda_runtime_handler" name="Runtime Handler" logicalId="RuntimeHandler" productionCritical="false" importedResource="false" functionName="varka-localstack-handler" descriptionText="LocalStack-deployed generated Go Lambda handler." memorySizeMb="256" timeoutSeconds="30" codeSigningDecision="NOT_REQUIRED" logGroup="log_group_runtime_lambda" role="role_runtime_lambda">
+      <code xsi:type="awspsmcompute:LambdaZipCodeConfig" id="code_runtime_handler" name="Runtime Handler Code"/>
+      <permissions id="permission_runtime_function_url" name="Runtime Function URL Permission" logicalId="RuntimeFunctionUrlPermission" productionCritical="false" importedResource="false" action="lambda:InvokeFunctionUrl" principal="*"/>
+      <permissions id="permission_runtime_http_api" name="Runtime HTTP API Permission" logicalId="RuntimeHttpApiPermission" productionCritical="false" importedResource="false" action="lambda:InvokeFunction" principal="apigateway.amazonaws.com" sourceArn="!Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/POST/runtime'"/>
+      <functionUrl id="url_runtime_handler" name="Runtime Handler Function URL" logicalId="RuntimeHandlerUrl" productionCritical="false" importedResource="false"/>
+    </resources>
+    <resources xsi:type="awspsmmessaging:SqsQueue" id="queue_runtime" name="Runtime Queue" logicalId="RuntimeQueue" productionCritical="false" importedResource="false" queueName="varka-localstack-queue" visibilityTimeoutSeconds="45" sqsManagedSseEnabled="true"/>
+    <resources xsi:type="awspsmmessaging:SnsTopic" id="topic_runtime" name="Runtime Topic" logicalId="RuntimeTopic" productionCritical="false" importedResource="false" topicName="varka-localstack-topic" fifoTopic="false"/>
+    <resources xsi:type="awspsmstorage:DynamoDbTable" id="table_runtime" name="Runtime Table" logicalId="RuntimeTable" productionCritical="false" importedResource="false" tableName="varka-localstack-table">
+      <attributeDefinitions id="attribute_runtime_pk" name="Runtime PK Attribute" attributeName="pk"/>
+      <keySchema id="key_runtime_pk" name="Runtime PK Key" attributeName="pk"/>
+    </resources>
+    <resources xsi:type="awspsmstorage:S3Bucket" id="bucket_runtime" name="Runtime Bucket" logicalId="RuntimeBucket" productionCritical="false" importedResource="false" bucketName="varka-localstack-bucket"/>
+    <resources xsi:type="awspsmsecurity:SsmParameter" id="parameter_runtime_mode" name="Runtime Mode Parameter" logicalId="RuntimeModeParameter" productionCritical="false" importedResource="false" parameterName="/varka/localstack/mode" dataType="text" descriptionText="LocalStack generated fixture mode.">
+      <value id="value_runtime_mode" name="value_runtime_mode" literal="e2e" secret="false"/>
+    </resources>
+    <resources xsi:type="awspsmsecurity:SecretsManagerSecret" id="secret_runtime" name="Runtime Secret" logicalId="RuntimeSecret" productionCritical="false" importedResource="false" secretName="varka/localstack/secret" descriptionText="LocalStack generated fixture secret." generateSecretStringJson="{&quot;SecretStringTemplate&quot;:&quot;{\&quot;mode\&quot;:\&quot;generated\&quot;}&quot;,&quot;GenerateStringKey&quot;:&quot;token&quot;}"/>
+    <resources xsi:type="awspsmevents:EventBridgeBus" id="bus_runtime" name="Runtime Event Bus" logicalId="RuntimeEventBus" productionCritical="false" importedResource="false" busName="varka-localstack-bus" rules="rule_runtime"/>
+    <resources xsi:type="awspsmevents:EventBridgeRule" id="rule_runtime" name="Runtime Event Rule" logicalId="RuntimeEventRule" productionCritical="false" importedResource="false" ruleName="varka-localstack-rule" eventPatternJson="{&quot;source&quot;:[&quot;varka.e2e&quot;]}" state="ENABLED" bus="bus_runtime">
+      <targets id="target_runtime_queue" name="Runtime Queue Target" targetId="RuntimeQueueTarget" targetKind="SQS" targetResource="queue_runtime"/>
+    </resources>
+    <resources xsi:type="awspsmworkflow:StepFunctionStateMachine" id="state_machine_runtime" name="Runtime Workflow" logicalId="RuntimeWorkflow" productionCritical="false" importedResource="false" stateMachineName="varka-localstack-workflow" role="role_runtime_lambda">
+      <aslDocument id="document_runtime_workflow" name="Runtime Workflow ASL" comment="LocalStack generated fixture workflow." startAt="Start">
+        <states id="state_runtime_start" name="Start" stateName="Start" nextState="state_runtime_done"/>
+        <states id="state_runtime_done" name="Done" stateName="Done" type="SUCCEED"/>
+      </aslDocument>
+    </resources>
+    <resources xsi:type="awspsmapi:HttpApi" id="api_runtime_http" name="Runtime HTTP API" logicalId="RuntimeHttpApi" productionCritical="false" importedResource="false" apiName="Runtime HTTP API" descriptionText="LocalStack generated fixture HTTP API." openApiVersion="3.0.3" protocolType="HTTP">
+      <routes xsi:type="awspsmapi:HttpApiRoute" id="route_runtime_submit" name="Runtime Submit Route" logicalId="RuntimeSubmitRoute" productionCritical="false" importedResource="false" operationName="submit-runtime" integration="integration_runtime_http" path="/runtime" routeKey="POST /runtime" method="POST"/>
+    </resources>
+    <resources xsi:type="awspsmapi:ApiGatewayIntegration" id="integration_runtime_http" name="Runtime HTTP Integration" logicalId="RuntimeHttpIntegration" integrationMethod="POST" payloadFormatVersion="2.0" lambdaTarget="lambda_runtime_handler"/>
+  </stacks>
+</awspsm:AwsPsmModel>

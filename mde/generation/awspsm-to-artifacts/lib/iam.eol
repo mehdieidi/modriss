@@ -35,8 +35,10 @@ operation AWSPSMSECURITY!IamStatement emitIamStatementYaml(indentCount : Integer
   }
   outText = outText + self.actions.emitIamListYaml("Action", indentCount + 2);
   outText = outText + self.notActions.emitIamListYaml("NotAction", indentCount + 2);
-  outText = outText + self.resources.emitIamListYaml("Resource", indentCount + 2);
-  outText = outText + self.notResources.emitIamListYaml("NotResource", indentCount + 2);
+  if (self.principals.isEmpty()) {
+    outText = outText + self.resources.emitIamListYaml("Resource", indentCount + 2);
+    outText = outText + self.notResources.emitIamListYaml("NotResource", indentCount + 2);
+  }
   if (self.principals.notEmpty()) {
     outText = outText + spaces(indentCount + 2) + "Principal:\n";
     for (principalObj in self.principals) {
@@ -133,11 +135,42 @@ operation AWSPSMSECURITY!IamStatement emitIamStatementJson(indentCount : Integer
   if (self.actions.notEmpty()) {
     outText = outText + ",\n" + self.actions.emitJsonStringArray("Action", indentCount + 2);
   }
-  if (self.resources.notEmpty()) {
+  if (self.principals.isEmpty() and self.resources.notEmpty()) {
     outText = outText + ",\n" + self.resources.emitJsonStringArray("Resource", indentCount + 2);
+  }
+  if (self.principals.notEmpty()) {
+    outText = outText + ",\n" + self.emitIamPrincipalsJson(indentCount + 2);
   }
   outText = outText + "\n" + spaces(indentCount) + "}";
   return outText;
+}
+
+/** Renders IAM principals in JSON policy documents. */
+operation AWSPSMSECURITY!IamStatement emitIamPrincipalsJson(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "\"Principal\": {";
+  for (principalObj in self.principals) {
+    outText = outText + "\n" + spaces(indentCount + 2) + principalObj.principalType.orElseText("AWS").jsonString() + ": ";
+    outText = outText + principalObj.identifiers.emitJsonStringArrayValue();
+    if (principalObj <> self.principals.last()) {
+      outText = outText + ",";
+    }
+  }
+  return outText + "\n" + spaces(indentCount) + "}";
+}
+
+/** Renders a collection as a JSON string or string array value. */
+operation Collection emitJsonStringArrayValue() : String {
+  if (self.size() = 1) {
+    return self.first().jsonString();
+  }
+  var outText = "[";
+  for (itemText in self) {
+    outText = outText + itemText.jsonString();
+    if (itemText <> self.last()) {
+      outText = outText + ", ";
+    }
+  }
+  return outText + "]";
 }
 
 /** Renders emit json string array. */

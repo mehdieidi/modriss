@@ -175,7 +175,7 @@ operation AWSPSMAPI!ApiGatewayRoute openApiOperation(indentCount : Integer) : St
     }
     outText = outText + spaces(indentCount + 4) + "httpMethod: " + self.integration.integrationMethod.orElseText("POST").yamlScalar() + "\n";
     if (self.api.eClass().getName() = "HttpApi") {
-      outText = outText + spaces(indentCount + 4) + "payloadFormatVersion: " + self.integration.payloadFormatVersion.orElseText("2.0").yamlScalar() + "\n";
+      outText = outText + spaces(indentCount + 4) + "payloadFormatVersion: " + self.integration.payloadFormatVersion.orElseText("2.0").jsonString() + "\n";
     }
   }
   return outText;

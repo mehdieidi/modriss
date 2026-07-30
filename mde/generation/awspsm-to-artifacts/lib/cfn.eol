@@ -88,11 +88,47 @@ operation AWSPSMAPI!ApiGatewayDeployment omitFromCfnTemplate() : Boolean {
     stageObj.deployment = self and stageObj.api.isDefined() and stageObj.api.stages.notEmpty() and stageObj.api.stages.first() = stageObj);
 }
 
-/** OpenAPI DefinitionBody owns modeled HTTP/REST routes and their integrations. */
+/** Finds the API that owns this route, including transient back-references not restored from standalone XMI. */
+operation AWSPSMAPI!ApiGatewayRoute owningApi() {
+  var apiObj = AWSPSMAPI!HttpApi.all.selectOne(candidateObj | candidateObj.routes.includes(self));
+  if (apiObj.isDefined()) {
+    return apiObj;
+  }
+  apiObj = AWSPSMAPI!RestApi.all.selectOne(candidateObj | candidateObj.routes.includes(self));
+  if (apiObj.isDefined()) {
+    return apiObj;
+  }
+  apiObj = AWSPSMAPI!WebSocketApi.all.selectOne(candidateObj | candidateObj.routes.includes(self));
+  if (apiObj.isDefined()) {
+    return apiObj;
+  }
+  if (self.api.isDefined()) {
+    return self.api;
+  }
+  return null;
+}
+
+/** OpenAPI DefinitionBody owns modeled HTTP routes and their integrations. */
 operation AWSPSMAPI!ApiGatewayRoute omitFromCfnTemplate() : Boolean {
-  return self.api.isDefined()
-    and (self.api.eClass().getName() = "HttpApi" or self.api.eClass().getName() = "RestApi")
-    and self.api.routes.includes(self);
+  return self.openApiDefinitionOwnsRoute();
+}
+
+/** Returns whether this route is embedded in an OpenAPI DefinitionBody. */
+operation AWSPSMAPI!ApiGatewayRoute openApiDefinitionOwnsRoute() : Boolean {
+  var apiObj = self.owningApi();
+  return apiObj.isDefined()
+    and apiObj.eClass().getName() = "HttpApi"
+    and apiObj.routes.includes(self);
+}
+
+/** OpenAPI DefinitionBody owns modeled HTTP routes and their integrations. */
+operation AWSPSMAPI!HttpApiRoute omitFromCfnTemplate() : Boolean {
+  return self.openApiDefinitionOwnsRoute();
+}
+
+/** REST API routes are emitted as concrete methods for SAM/CloudFormation coverage. */
+operation AWSPSMAPI!RestApiRoute omitFromCfnTemplate() : Boolean {
+  return false;
 }
 
 /** Integrations embedded in an OpenAPI-owned route must not be emitted a second time. */
@@ -738,7 +774,7 @@ operation AWSPSMSECURITY!SsmParameter cfnTypeText(emitCtx : Map) : String {
 /** Renders emit cfn properties yaml. */
 operation AWSPSMSECURITY!SsmParameter emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", self.parameterName, 6);
-  outText = outText + emitYamlScalarProperty("Type", self.parameterType.asString().replace("_", ""), 6);
+  outText = outText + emitYamlScalarProperty("Type", self.parameterType.ssmParameterTypeText(), 6);
   if (self.value.isDefined()) {
     outText = outText + self.value.emitCfnValueProperty("Value", 6);
   }
@@ -749,6 +785,24 @@ operation AWSPSMSECURITY!SsmParameter emitCfnPropertiesYaml(emitCtx : Map) : Str
   }
   outText = outText + emitYamlScalarProperty("DataType", self.dataType, 6);
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+}
+
+/** Maps modeled SSM parameter type literals to AWS's case-sensitive CloudFormation values. */
+operation Any ssmParameterTypeText() : String {
+  if (self.isUndefined()) {
+    return "";
+  }
+  var typeText = self.asString();
+  if (typeText = "STRING") {
+    return "String";
+  }
+  if (typeText = "STRING_LIST") {
+    return "StringList";
+  }
+  if (typeText = "SECURE_STRING") {
+    return "SecureString";
+  }
+  return typeText;
 }
 
 /** Computes cfn type text. */
@@ -1446,8 +1500,11 @@ operation AWSPSMAPI!WebSocketApi cfnTypeText(emitCtx : Map) : String {
 
 /** Renders emit api common properties yaml. */
 operation AWSPSMAPI!ApiGatewayApi emitApiCommonPropertiesYaml(emitCtx : Map) : String {
-  var outText = emitYamlScalarProperty("Name", firstText(self.apiName, self.physicalName), 6);
-  outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
+  var outText = "";
+  if (not (self.routes.notEmpty() and (self.eClass().getName() = "HttpApi" or self.eClass().getName() = "RestApi"))) {
+    outText = outText + emitYamlScalarProperty("Name", firstText(self.apiName, self.physicalName), 6);
+    outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
+  }
   if (self.routes.notEmpty() and (self.eClass().getName() = "HttpApi" or self.eClass().getName() = "RestApi")) {
     outText = outText + structuredYamlProperty("DefinitionBody", self.emitOpenApiDocument(self.routes), 6);
   }
@@ -1529,7 +1586,7 @@ operation AWSPSMAPI!ApiGatewayIntegration emitCfnPropertiesYaml(emitCtx : Map) :
   else {
     outText = outText + emitYamlScalarProperty("IntegrationUri", self.integrationUri, 6);
   }
-  outText = outText + emitYamlScalarProperty("PayloadFormatVersion", self.payloadFormatVersion.orElseText("2.0"), 6);
+  outText = outText + spaces(6) + "PayloadFormatVersion: " + self.payloadFormatVersion.orElseText("2.0").jsonString() + "\n";
   outText = outText + emitYamlIntegerProperty("TimeoutInMillis", self.timeoutInMillis, 6);
   outText = outText + emitYamlScalarProperty("PassthroughBehavior", self.passthroughBehavior, 6);
   if (self.credentialsRole.isDefined()) {

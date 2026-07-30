@@ -2,10 +2,12 @@ package io.mehdieidi.varka.mde.generation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -66,6 +68,9 @@ final class EpsilonEgxGeneratorTest {
 
   /** Pinned community LocalStack image for reproducible generated integration-test execution. */
   private static final String LOCALSTACK_IMAGE = "localstack/localstack:3.8.1";
+
+  /** LocalStack image that activates Pro features when LOCALSTACK_AUTH_TOKEN is available. */
+  private static final String LOCALSTACK_PRO_IMAGE = "localstack/localstack:latest";
 
   /** Temporary directory for generated source models and artifact projects. */
   @TempDir Path tempDir;
@@ -242,9 +247,6 @@ final class EpsilonEgxGeneratorTest {
     String goExecutable = commandExecutable("go");
     Assumptions.assumeTrue(goExecutable != null, "Go toolchain is not available.");
     Assumptions.assumeTrue(commandExecutable("docker") != null, "Docker is not available.");
-    Assumptions.assumeTrue(
-        dockerImageIsAvailable(LOCALSTACK_IMAGE),
-        () -> "LocalStack image is not available locally: " + LOCALSTACK_IMAGE);
 
     Path sourceModel = tempDir.resolve("localstack-aws-psm.xmi");
     Path outputDirectory = tempDir.resolve("localstack-generated-project");
@@ -256,20 +258,18 @@ final class EpsilonEgxGeneratorTest {
                 REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
     assertEquals(GenerationStatus.SUCCEEDED, report.status(), report.diagnostics().toString());
 
-    String containerId = startLocalStackContainer();
+    LocalStackRuntime localStack = acquireLocalStackRuntime();
     try {
-      int port = localStackHostPort(containerId);
-      String endpoint = "http://127.0.0.1:" + port;
-      waitForLocalStack(containerId, endpoint);
+      waitForLocalStack(localStack.containerId(), localStack.endpoint());
       Map<String, String> env = new HashMap<>();
       env.put("AWS_REGION", "us-east-1");
       env.put("AWS_DEFAULT_REGION", "us-east-1");
-      env.put("AWS_ENDPOINT_URL", endpoint);
+      env.put("AWS_ENDPOINT_URL", localStack.endpoint());
       env.put("AWS_ACCESS_KEY_ID", "test");
       env.put("AWS_SECRET_ACCESS_KEY", "test");
       runGeneratedGoTests(outputDirectory, goExecutable, env);
     } finally {
-      stopDockerContainer(containerId);
+      stopDockerContainer(localStack);
     }
   }
 
@@ -287,13 +287,11 @@ final class EpsilonEgxGeneratorTest {
     Assumptions.assumeTrue(awsExecutable != null, "AWS CLI is not available.");
     Assumptions.assumeTrue(samExecutable != null, "AWS SAM CLI is not available.");
     Assumptions.assumeTrue(commandExecutable("docker") != null, "Docker is not available.");
-    Assumptions.assumeTrue(
-        dockerImageIsAvailable(LOCALSTACK_IMAGE),
-        () -> "LocalStack image is not available locally: " + LOCALSTACK_IMAGE);
 
-    Path sourceModel = tempDir.resolve("localstack-deployable-aws-psm.xmi");
+    Path sourceModel =
+        REPOSITORY_ROOT.resolve(
+            "packages/java/mde-m2t-runner/src/test/resources/awspsm/e2e/localstack-serverless-system.awspsm.xmi");
     Path outputDirectory = tempDir.resolve("localstack-deployable-generated-project");
-    createLocalStackDeployableAwsPsmModel(sourceModel);
     assertSourceModelReloads(sourceModel);
 
     EgxGenerationReport report =
@@ -304,22 +302,28 @@ final class EpsilonEgxGeneratorTest {
     assertGeneratedJsonArtifactsParse(outputDirectory);
     assertGeneratedYamlArtifactsParseAndHaveExpectedShape(outputDirectory);
 
-    String containerId = startLocalStackContainer();
+    LocalStackRuntime localStack = acquireLocalStackRuntime();
     try {
-      int port = localStackHostPort(containerId);
-      String endpoint = "http://127.0.0.1:" + port;
-      waitForLocalStack(containerId, endpoint);
-      Map<String, String> env = localStackAwsEnvironment(endpoint);
+      waitForLocalStack(localStack.containerId(), localStack.endpoint());
+      Map<String, String> env = localStackAwsEnvironment(localStack.endpoint());
       deployGeneratedProjectToLocalStack(
-          outputDirectory, awsExecutable, samExecutable, goExecutable, env, containerId);
+          outputDirectory,
+          awsExecutable,
+          samExecutable,
+          goExecutable,
+          env,
+          localStack.containerId());
       createGeneratedLambdaOnLocalStack(outputDirectory, awsExecutable, env);
       assertGeneratedLocalStackResourcesExist(outputDirectory, awsExecutable, env);
-      assertGeneratedLambdaExecutesOnLocalStack(outputDirectory, awsExecutable, env, containerId);
+      assertGeneratedServiceFamiliesExecuteOnLocalStack(outputDirectory, awsExecutable, env);
+      assertGeneratedHttpEntrypointsExecuteOnLocalStack(outputDirectory, awsExecutable, env);
+      assertGeneratedLambdaExecutesOnLocalStack(
+          outputDirectory, awsExecutable, env, localStack.containerId());
       Map<String, String> goEnv = new HashMap<>(env);
       goEnv.put("GENERATED_LAMBDA_FUNCTION_NAME", "varka-localstack-handler");
       runGeneratedGoTests(outputDirectory, goExecutable, goEnv);
     } finally {
-      stopDockerContainer(containerId);
+      stopDockerContainer(localStack);
     }
   }
 
@@ -784,6 +788,9 @@ final class EpsilonEgxGeneratorTest {
     String endpoint = environment.get("AWS_ENDPOINT_URL");
     String bucketName = "varka-m2t-package-" + UUID.randomUUID().toString().replace("-", "");
     compileGeneratedLambdaBootstrap(outputDirectory, goExecutable, environment);
+    Path ddbItemFile = outputDirectory.resolve("localstack-ddb-item.json");
+    Files.writeString(
+        ddbItemFile, "{\"pk\":{\"S\":\"ORDER#live\"},\"status\":{\"S\":\"accepted\"}}");
     runProcess(
         processBuilder(
             outputDirectory,
@@ -821,7 +828,10 @@ final class EpsilonEgxGeneratorTest {
             "s3://" + bucketName + "/runtime-handler.zip"),
         Duration.ofMinutes(1),
         "Generated Lambda zip upload to LocalStack S3");
+    uploadGeneratedAslDefinitions(outputDirectory, awsExecutable, environment, bucketName);
     writeLocalStackPackagedTemplate(outputDirectory, bucketName);
+    deleteExistingLocalStackStack(
+        outputDirectory, awsExecutable, environment, "varka-localstack-runtime");
 
     ProcessResult createResult =
         runProcessCapturing(
@@ -884,6 +894,65 @@ final class EpsilonEgxGeneratorTest {
               + "\nLocalStack logs:\n"
               + dockerContainerLogs(containerId));
     }
+  }
+
+  /**
+   * Deletes a previous failed/succeeded test stack so repeated LocalStack runs use fresh generated
+   * resources.
+   *
+   * @param outputDirectory generated project root
+   * @param awsExecutable AWS CLI executable
+   * @param environment AWS/LocalStack environment
+   * @param stackName CloudFormation stack name
+   * @throws Exception when deletion fails unexpectedly
+   */
+  private void deleteExistingLocalStackStack(
+      Path outputDirectory, String awsExecutable, Map<String, String> environment, String stackName)
+      throws Exception {
+    String endpoint = environment.get("AWS_ENDPOINT_URL");
+    ProcessResult describe =
+        runProcessCapturing(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                endpoint,
+                "cloudformation",
+                "describe-stacks",
+                "--stack-name",
+                stackName),
+            Duration.ofMinutes(1));
+    if (describe.exitCode() != 0) {
+      return;
+    }
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "cloudformation",
+            "delete-stack",
+            "--stack-name",
+            stackName),
+        Duration.ofMinutes(1),
+        "Previous generated LocalStack stack deletion");
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "cloudformation",
+            "wait",
+            "stack-delete-complete",
+            "--stack-name",
+            stackName),
+        Duration.ofMinutes(6),
+        "Previous generated LocalStack stack delete wait");
   }
 
   /**
@@ -959,10 +1028,6 @@ final class EpsilonEgxGeneratorTest {
   private void writeLocalStackPackagedTemplate(Path outputDirectory, String bucketName)
       throws IOException {
     String templateText = Files.readString(outputDirectory.resolve("template.yaml"));
-    templateText =
-        Pattern.compile("(?ms)^  RuntimeHandler:\\R(?:    .*\\R)*?(?=^  \\w+:\\R|^\\w|\\z)")
-            .matcher(templateText)
-            .replaceFirst("");
     Matcher codeUriMatcher =
         Pattern.compile("(?m)^(\\s*)CodeUri:\\s*['\"]?\\.['\"]?\\s*$").matcher(templateText);
     if (!codeUriMatcher.find()) {
@@ -973,10 +1038,65 @@ final class EpsilonEgxGeneratorTest {
     String packagedCodeUri = indent + "CodeUri: s3://" + bucketName + "/runtime-handler.zip";
     String packagedTemplate =
         codeUriMatcher.replaceFirst(Matcher.quoteReplacement(packagedCodeUri));
+    Matcher definitionUriMatcher =
+        Pattern.compile("(?m)^(\\s*)DefinitionUri:\\s*['\"]?(asl/[^'\"\\s]+)['\"]?\\s*$")
+            .matcher(packagedTemplate);
+    StringBuffer rewrittenTemplate = new StringBuffer();
+    while (definitionUriMatcher.find()) {
+      String definitionUri =
+          definitionUriMatcher.group(1)
+              + "DefinitionUri: s3://"
+              + bucketName
+              + "/"
+              + definitionUriMatcher.group(2);
+      definitionUriMatcher.appendReplacement(
+          rewrittenTemplate, Matcher.quoteReplacement(definitionUri));
+    }
+    definitionUriMatcher.appendTail(rewrittenTemplate);
+    packagedTemplate = rewrittenTemplate.toString();
     assertTrue(
         packagedTemplate.contains("runtime-handler.zip"),
         "Packaged LocalStack SAM template should reference uploaded Lambda zip.");
     Files.writeString(outputDirectory.resolve("packaged-template.yaml"), packagedTemplate);
+  }
+
+  /**
+   * Uploads generated ASL files so SAM/CloudFormation can resolve DefinitionUri during deployment.
+   *
+   * @param outputDirectory generated project root
+   * @param awsExecutable AWS CLI executable
+   * @param environment AWS/LocalStack environment
+   * @param bucketName package bucket
+   * @throws Exception when an upload fails
+   */
+  private void uploadGeneratedAslDefinitions(
+      Path outputDirectory,
+      String awsExecutable,
+      Map<String, String> environment,
+      String bucketName)
+      throws Exception {
+    Path aslDirectory = outputDirectory.resolve("asl");
+    if (!Files.isDirectory(aslDirectory)) {
+      return;
+    }
+    try (Stream<Path> aslFiles = Files.walk(aslDirectory)) {
+      for (Path aslFile : aslFiles.filter(Files::isRegularFile).sorted().toList()) {
+        String key = outputDirectory.relativize(aslFile).toString().replace('\\', '/');
+        runProcess(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                environment.get("AWS_ENDPOINT_URL"),
+                "s3",
+                "cp",
+                key,
+                "s3://" + bucketName + "/" + key),
+            Duration.ofMinutes(1),
+            "Generated ASL upload to LocalStack S3");
+      }
+    }
   }
 
   /**
@@ -1011,6 +1131,19 @@ final class EpsilonEgxGeneratorTest {
             awsExecutable,
             "--endpoint-url",
             endpoint,
+            "lambda",
+            "get-function-url-config",
+            "--function-name",
+            "varka-localstack-handler"),
+        Duration.ofMinutes(1),
+        "Generated Lambda function URL exists in LocalStack");
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
             "sqs",
             "get-queue-url",
             "--queue-name",
@@ -1030,6 +1163,90 @@ final class EpsilonEgxGeneratorTest {
             "varka-localstack-table"),
         Duration.ofMinutes(1),
         "Generated DynamoDB table exists in LocalStack");
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "s3api",
+            "head-bucket",
+            "--bucket",
+            "varka-localstack-bucket"),
+        Duration.ofMinutes(1),
+        "Generated S3 bucket exists in LocalStack");
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "ssm",
+            "get-parameter",
+            "--name",
+            "/varka/localstack/mode"),
+        Duration.ofMinutes(1),
+        "Generated SSM parameter exists in LocalStack");
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "secretsmanager",
+            "describe-secret",
+            "--secret-id",
+            "varka/localstack/secret"),
+        Duration.ofMinutes(1),
+        "Generated Secrets Manager secret exists in LocalStack");
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "events",
+            "describe-event-bus",
+            "--name",
+            "varka-localstack-bus"),
+        Duration.ofMinutes(1),
+        "Generated EventBridge bus exists in LocalStack");
+    String apis =
+        runProcessForOutput(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                endpoint,
+                "apigatewayv2",
+                "get-apis"),
+            Duration.ofMinutes(1),
+            "Generated API Gateway HTTP API inspection");
+    assertTrue(apis.contains("Runtime HTTP API"), "Generated HTTP API should exist in LocalStack.");
+    String stateMachines =
+        runProcessForOutput(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                endpoint,
+                "stepfunctions",
+                "list-state-machines"),
+            Duration.ofMinutes(1),
+            "Generated Step Functions state machine inspection");
+    if (!stateMachines.contains("varka-localstack-workflow")) {
+      assertTrue(
+          Files.readString(outputDirectory.resolve("template.yaml"))
+              .contains("Type: AWS::Serverless::StateMachine"),
+          "Generated SAM template should include the Step Functions state machine even when "
+              + "LocalStack Community omits it during CloudFormation deployment.");
+    }
     String topics =
         runProcessForOutput(
             processBuilder(
@@ -1046,6 +1263,498 @@ final class EpsilonEgxGeneratorTest {
   }
 
   /**
+   * Executes service-level API calls against resources created from the generated template.
+   *
+   * @param outputDirectory generated project root
+   * @param awsExecutable AWS CLI executable
+   * @param environment AWS/LocalStack environment
+   * @throws Exception when a service call fails
+   */
+  private void assertGeneratedServiceFamiliesExecuteOnLocalStack(
+      Path outputDirectory, String awsExecutable, Map<String, String> environment)
+      throws Exception {
+    String endpoint = environment.get("AWS_ENDPOINT_URL");
+    String queueUrl =
+        JSON.readTree(
+                runProcessForOutput(
+                    processBuilder(
+                        outputDirectory,
+                        environment,
+                        awsExecutable,
+                        "--endpoint-url",
+                        endpoint,
+                        "sqs",
+                        "get-queue-url",
+                        "--queue-name",
+                        "varka-localstack-queue"),
+                    Duration.ofMinutes(1),
+                    "Generated SQS queue URL lookup"))
+            .get("QueueUrl")
+            .asText();
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "sqs",
+            "send-message",
+            "--queue-url",
+            queueUrl,
+            "--message-body",
+            "{\"kind\":\"generated-live-check\"}"),
+        Duration.ofMinutes(1),
+        "Generated SQS queue accepts messages");
+    String messages =
+        runProcessForOutput(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                endpoint,
+                "sqs",
+                "receive-message",
+                "--queue-url",
+                queueUrl,
+                "--max-number-of-messages",
+                "1"),
+            Duration.ofMinutes(1),
+            "Generated SQS queue returns messages");
+    assertTrue(
+        messages.contains("generated-live-check"), "Generated SQS message should round trip.");
+
+    Path ddbItemFile = outputDirectory.resolve("localstack-ddb-item.json");
+    Files.writeString(
+        ddbItemFile, "{\"pk\":{\"S\":\"ORDER#live\"},\"status\":{\"S\":\"accepted\"}}");
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "dynamodb",
+            "put-item",
+            "--table-name",
+            "varka-localstack-table",
+            "--item",
+            "file://" + ddbItemFile),
+        Duration.ofMinutes(1),
+        "Generated DynamoDB table accepts an item");
+    Path ddbKeyFile = outputDirectory.resolve("localstack-ddb-key.json");
+    Files.writeString(ddbKeyFile, "{\"pk\":{\"S\":\"ORDER#live\"}}");
+    String item =
+        runProcessForOutput(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                endpoint,
+                "dynamodb",
+                "get-item",
+                "--table-name",
+                "varka-localstack-table",
+                "--key",
+                "file://" + ddbKeyFile),
+            Duration.ofMinutes(1),
+            "Generated DynamoDB table returns an item");
+    assertTrue(item.contains("accepted"), "Generated DynamoDB item should be readable.");
+
+    Path objectFile = outputDirectory.resolve("localstack-s3-object.txt");
+    Files.writeString(objectFile, "generated S3 live check");
+    Path eventEntriesFile = outputDirectory.resolve("localstack-eventbridge-entries.json");
+    Files.writeString(
+        eventEntriesFile,
+        "[{\"Source\":\"varka.e2e\",\"DetailType\":\"GeneratedLiveCheck\",\"Detail\":\"{}\",\"EventBusName\":\"varka-localstack-bus\"}]");
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "s3",
+            "cp",
+            objectFile.toString(),
+            "s3://varka-localstack-bucket/live-check.txt"),
+        Duration.ofMinutes(1),
+        "Generated S3 bucket accepts objects");
+    String s3Objects =
+        runProcessForOutput(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                endpoint,
+                "s3api",
+                "list-objects-v2",
+                "--bucket",
+                "varka-localstack-bucket"),
+            Duration.ofMinutes(1),
+            "Generated S3 bucket lists objects");
+    assertTrue(s3Objects.contains("live-check.txt"), "Generated S3 object should be listed.");
+
+    String parameter =
+        runProcessForOutput(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                endpoint,
+                "ssm",
+                "get-parameter",
+                "--name",
+                "/varka/localstack/mode"),
+            Duration.ofMinutes(1),
+            "Generated SSM parameter returns a value");
+    assertTrue(parameter.contains("e2e"), "Generated SSM parameter value should be readable.");
+
+    String secret =
+        runProcessForOutput(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                endpoint,
+                "secretsmanager",
+                "get-secret-value",
+                "--secret-id",
+                "varka/localstack/secret"),
+            Duration.ofMinutes(1),
+            "Generated Secrets Manager secret returns a value");
+    assertTrue(secret.contains("generated"), "Generated secret value should be readable.");
+
+    String topics =
+        runProcessForOutput(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                endpoint,
+                "sns",
+                "list-topics"),
+            Duration.ofMinutes(1),
+            "Generated SNS topic lookup before publish");
+    Matcher topicMatcher =
+        Pattern.compile("\"TopicArn\"\\s*:\\s*\"([^\"]*varka-localstack-topic[^\"]*)\"")
+            .matcher(topics);
+    assertTrue(topicMatcher.find(), "Generated SNS topic ARN should be discoverable.");
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "sns",
+            "publish",
+            "--topic-arn",
+            topicMatcher.group(1),
+            "--message",
+            "{\"kind\":\"generated-live-check\"}"),
+        Duration.ofMinutes(1),
+        "Generated SNS topic accepts publish");
+
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "events",
+            "put-events",
+            "--entries",
+            "file://" + eventEntriesFile),
+        Duration.ofMinutes(1),
+        "Generated EventBridge bus accepts events");
+
+    String stateMachineArn =
+        ensureGeneratedStateMachineExecutesFromAsl(outputDirectory, awsExecutable, environment);
+    String executionName = "generated-live-" + UUID.randomUUID();
+    Path executionInputFile = outputDirectory.resolve("localstack-stepfunctions-input.json");
+    Files.writeString(executionInputFile, "{\"kind\":\"generated-live-check\"}");
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "stepfunctions",
+            "start-execution",
+            "--state-machine-arn",
+            stateMachineArn,
+            "--name",
+            executionName,
+            "--input",
+            "file://" + executionInputFile),
+        Duration.ofMinutes(1),
+        "Generated Step Functions workflow starts execution");
+  }
+
+  /**
+   * Executes generated HTTP entrypoints through LocalStack, proving API Gateway and Lambda URL
+   * artifacts route to the generated Lambda runtime.
+   *
+   * @param outputDirectory generated project root
+   * @param awsExecutable AWS CLI executable
+   * @param environment AWS/LocalStack environment
+   * @throws Exception when lookup or HTTP execution fails
+   */
+  private void assertGeneratedHttpEntrypointsExecuteOnLocalStack(
+      Path outputDirectory, String awsExecutable, Map<String, String> environment)
+      throws Exception {
+    String endpoint = environment.get("AWS_ENDPOINT_URL");
+    String functionUrlConfig =
+        runProcessForOutput(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                endpoint,
+                "lambda",
+                "get-function-url-config",
+                "--function-name",
+                "varka-localstack-handler"),
+            Duration.ofMinutes(1),
+            "Generated Lambda function URL lookup");
+    String functionUrl = JSON.readTree(functionUrlConfig).path("FunctionUrl").asText();
+    assertFalse(functionUrl.isBlank(), "Generated Lambda function URL should be returned.");
+    HttpResponse<String> functionUrlResponse =
+        postJsonToFirstReachableUrl(
+            localStackHttpCandidates(functionUrl, endpoint),
+            "{\"payload\":{\"source\":\"junit-function-url\"}}");
+    assertGeneratedHttpEntrypointResponse(functionUrlResponse, "Lambda function URL");
+
+    String apis =
+        runProcessForOutput(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                endpoint,
+                "apigatewayv2",
+                "get-apis"),
+            Duration.ofMinutes(1),
+            "Generated HTTP API lookup");
+    JsonNode runtimeApi = null;
+    for (JsonNode api : JSON.readTree(apis).path("Items")) {
+      if ("Runtime HTTP API".equals(api.path("Name").asText())) {
+        runtimeApi = api;
+        break;
+      }
+    }
+    assertNotNull(runtimeApi, "Generated Runtime HTTP API should be discoverable.");
+    String apiId = runtimeApi.path("ApiId").asText();
+    String apiEndpoint = runtimeApi.path("ApiEndpoint").asText();
+    List<String> apiCandidates =
+        new ArrayList<>(localStackHttpCandidates(apiEndpoint + "/runtime", endpoint));
+    apiCandidates.add(endpoint + "/_aws/execute-api/" + apiId + "/runtime");
+    HttpResponse<String> apiResponse =
+        postJsonToFirstReachableUrl(apiCandidates, "{\"payload\":{\"source\":\"junit-http-api\"}}");
+    assertGeneratedHttpEntrypointResponse(apiResponse, "API Gateway HTTP route");
+  }
+
+  /**
+   * Returns host-reachable URL candidates for LocalStack virtual-host endpoints.
+   *
+   * @param urlText primary URL
+   * @param localStackEndpoint LocalStack gateway endpoint reachable from the host JVM
+   * @return primary and HTTP-normalized candidates
+   */
+  private List<String> localStackHttpCandidates(String urlText, String localStackEndpoint) {
+    List<String> candidates = new ArrayList<>();
+    candidates.add(urlText);
+    if (urlText.startsWith("https://")) {
+      candidates.add("http://" + urlText.substring("https://".length()));
+    }
+    try {
+      java.net.URI reportedUri = java.net.URI.create(urlText);
+      java.net.URI endpointUri = java.net.URI.create(localStackEndpoint);
+      String host = reportedUri.getHost();
+      if (host != null
+          && !host.equals("127.0.0.1")
+          && !host.equals("localhost")
+          && !host.endsWith("localhost.localstack.cloud")) {
+        Matcher virtualHostMatcher =
+            Pattern.compile("^(.*\\.(?:lambda-url|execute-api)\\.[a-z0-9-]+\\.).+$").matcher(host);
+        if (virtualHostMatcher.matches()) {
+          java.net.URI hostReachableUri =
+              new java.net.URI(
+                  "http",
+                  reportedUri.getUserInfo(),
+                  virtualHostMatcher.group(1) + "localhost.localstack.cloud",
+                  endpointUri.getPort(),
+                  reportedUri.getPath(),
+                  reportedUri.getQuery(),
+                  reportedUri.getFragment());
+          candidates.add(hostReachableUri.toString());
+        }
+      }
+    } catch (Exception ex) {
+      // Keep the original candidates; the HTTP assertion will report the actual connection failure.
+    }
+    return candidates.stream().distinct().toList();
+  }
+
+  /**
+   * Posts JSON to candidate URLs and returns the first non-missing generated endpoint response.
+   *
+   * @param urlCandidates LocalStack URL candidates
+   * @param body JSON request body
+   * @return HTTP response
+   */
+  private HttpResponse<String> postJsonToFirstReachableUrl(List<String> urlCandidates, String body)
+      throws Exception {
+    HttpClient client = HttpClient.newHttpClient();
+    AssertionError lastFailure = null;
+    for (String urlCandidate : urlCandidates) {
+      try {
+        HttpRequest request =
+            HttpRequest.newBuilder(java.net.URI.create(urlCandidate))
+                .timeout(Duration.ofMinutes(1))
+                .header("content-type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 404 && response.statusCode() != 502) {
+          return response;
+        }
+        lastFailure =
+            new AssertionError(
+                "Generated HTTP endpoint returned "
+                    + response.statusCode()
+                    + " at "
+                    + urlCandidate
+                    + ": "
+                    + response.body());
+      } catch (IOException | InterruptedException | IllegalArgumentException ex) {
+        if (ex instanceof InterruptedException) {
+          Thread.currentThread().interrupt();
+        }
+        lastFailure =
+            new AssertionError("Generated HTTP endpoint was not reachable at " + urlCandidate, ex);
+      }
+    }
+    throw lastFailure == null
+        ? new AssertionError("No generated HTTP endpoint candidates were provided.")
+        : lastFailure;
+  }
+
+  /**
+   * Verifies a generated HTTP entrypoint response came from the Lambda handler.
+   *
+   * @param response HTTP response
+   * @param label entrypoint label
+   */
+  private void assertGeneratedHttpEntrypointResponse(HttpResponse<String> response, String label) {
+    assertTrue(
+        response.statusCode() >= 200 && response.statusCode() < 600,
+        () -> label + " returned invalid HTTP status " + response.statusCode());
+    assertTrue(
+        response.body().contains("NOT_IMPLEMENTED")
+            || response.body().contains("Business logic has not been implemented yet")
+            || response.body().contains("statusCode")
+            || (response.body().contains("code")
+                && response.body().contains("correlationId")
+                && response.body().contains("message")),
+        () ->
+            label
+                + " response did not come from the generated Lambda handler: HTTP "
+                + response.statusCode()
+                + "\n"
+                + response.body());
+  }
+
+  /**
+   * Returns the generated state machine ARN, creating it from the generated ASL artifact when
+   * LocalStack Community omits SAM state machines during CloudFormation deployment.
+   *
+   * @param outputDirectory generated project root
+   * @param awsExecutable AWS CLI executable
+   * @param environment AWS/LocalStack environment
+   * @return state machine ARN
+   * @throws Exception when lookup or fallback creation fails
+   */
+  private String ensureGeneratedStateMachineExecutesFromAsl(
+      Path outputDirectory, String awsExecutable, Map<String, String> environment)
+      throws Exception {
+    String existingArn = generatedStateMachineArn(outputDirectory, awsExecutable, environment);
+    if (existingArn != null) {
+      return existingArn;
+    }
+    Path aslFile = outputDirectory.resolve("asl/varka-localstack-workflow.asl.json");
+    assertTrue(
+        Files.isRegularFile(aslFile), "Generated ASL artifact should exist for live execution.");
+    JSON.readTree(aslFile.toFile());
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            environment.get("AWS_ENDPOINT_URL"),
+            "stepfunctions",
+            "create-state-machine",
+            "--name",
+            "varka-localstack-workflow",
+            "--definition",
+            "file://" + aslFile,
+            "--role-arn",
+            "arn:aws:iam::000000000000:role/varka-localstack-runtime-role",
+            "--type",
+            "STANDARD"),
+        Duration.ofMinutes(1),
+        "Generated ASL state machine creation on LocalStack");
+    String createdArn = generatedStateMachineArn(outputDirectory, awsExecutable, environment);
+    assertTrue(createdArn != null, "Generated ASL state machine should be visible after creation.");
+    return createdArn;
+  }
+
+  /**
+   * Looks up the generated state machine ARN.
+   *
+   * @param outputDirectory generated project root
+   * @param awsExecutable AWS CLI executable
+   * @param environment AWS/LocalStack environment
+   * @return ARN, or null when absent
+   * @throws Exception when AWS CLI lookup fails
+   */
+  private String generatedStateMachineArn(
+      Path outputDirectory, String awsExecutable, Map<String, String> environment)
+      throws Exception {
+    String machines =
+        runProcessForOutput(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                environment.get("AWS_ENDPOINT_URL"),
+                "stepfunctions",
+                "list-state-machines"),
+            Duration.ofMinutes(1),
+            "Generated Step Functions ARN lookup");
+    Matcher machineMatcher =
+        Pattern.compile("\"stateMachineArn\"\\s*:\\s*\"([^\"]*varka-localstack-workflow[^\"]*)\"")
+            .matcher(machines);
+    if (machineMatcher.find()) {
+      return machineMatcher.group(1);
+    }
+    return null;
+  }
+
+  /**
    * Creates the generated Lambda function directly in LocalStack from the generated executable zip.
    *
    * @param outputDirectory generated project root
@@ -1056,6 +1765,11 @@ final class EpsilonEgxGeneratorTest {
   private void createGeneratedLambdaOnLocalStack(
       Path outputDirectory, String awsExecutable, Map<String, String> environment)
       throws Exception {
+    if (generatedLambdaExists(outputDirectory, awsExecutable, environment)) {
+      refreshGeneratedLambdaCodeOnLocalStack(outputDirectory, awsExecutable, environment);
+      waitForGeneratedLambdaActive(outputDirectory, awsExecutable, environment);
+      return;
+    }
     ProcessResult result =
         runProcessCapturing(
             processBuilder(
@@ -1085,6 +1799,48 @@ final class EpsilonEgxGeneratorTest {
             "LocalStack Lambda is blocked by host Docker proxy configuration: " + result.output());
     assertTrue(result.finished(), "Generated Lambda create on LocalStack timed out.");
     assertEquals(0, result.exitCode(), result.output());
+    waitForGeneratedLambdaActive(outputDirectory, awsExecutable, environment);
+  }
+
+  /**
+   * Checks whether the generated Lambda function already exists, usually from CloudFormation.
+   *
+   * @param outputDirectory generated project root
+   * @param awsExecutable AWS CLI executable
+   * @param environment AWS/LocalStack environment
+   * @return true when the function exists
+   * @throws Exception when AWS CLI process execution is interrupted
+   */
+  private boolean generatedLambdaExists(
+      Path outputDirectory, String awsExecutable, Map<String, String> environment)
+      throws Exception {
+    ProcessResult result =
+        runProcessCapturing(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                environment.get("AWS_ENDPOINT_URL"),
+                "lambda",
+                "get-function",
+                "--function-name",
+                "varka-localstack-handler"),
+            Duration.ofMinutes(1));
+    return result.finished() && result.exitCode() == 0;
+  }
+
+  /**
+   * Waits for the generated Lambda function to become active.
+   *
+   * @param outputDirectory generated project root
+   * @param awsExecutable AWS CLI executable
+   * @param environment AWS/LocalStack environment
+   * @throws Exception when Lambda wait fails
+   */
+  private void waitForGeneratedLambdaActive(
+      Path outputDirectory, String awsExecutable, Map<String, String> environment)
+      throws Exception {
     runProcess(
         processBuilder(
             outputDirectory,
@@ -1268,7 +2024,7 @@ final class EpsilonEgxGeneratorTest {
    * @return container id
    * @throws Exception when Docker cannot start LocalStack
    */
-  private String startLocalStackContainer() throws Exception {
+  private String startLocalStackContainer(String image) throws Exception {
     Map<String, String> dotEnv = loadDotEnv();
     boolean localStackProxyEnabled =
         Boolean.parseBoolean(dotEnv.getOrDefault("LOCALSTACK_PROXY_ENABLED", "false"));
@@ -1344,7 +2100,7 @@ final class EpsilonEgxGeneratorTest {
     command.add("/var/run/docker.sock:/var/run/docker.sock");
     command.add("-p");
     command.add("127.0.0.1::4566");
-    command.add(LOCALSTACK_IMAGE);
+    command.add(image);
 
     Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
     boolean finished = process.waitFor(Duration.ofMinutes(5).toMillis(), TimeUnit.MILLISECONDS);
@@ -1397,16 +2153,32 @@ final class EpsilonEgxGeneratorTest {
    * @throws Exception when Docker cannot inspect the port
    */
   private int localStackHostPort(String containerId) throws Exception {
+    Integer port = localStackHostPortOrNull(containerId);
+    assertTrue(port != null, () -> "Could not parse LocalStack host port for " + containerId);
+    return port;
+  }
+
+  /**
+   * Resolves the published LocalStack edge port without failing, for compose fallback discovery.
+   *
+   * @param containerId Docker container id
+   * @return host port, or null when Docker reports no published 4566 mapping
+   * @throws Exception when process execution is interrupted
+   */
+  private Integer localStackHostPortOrNull(String containerId) throws Exception {
     Process process =
         new ProcessBuilder("docker", "port", containerId, "4566/tcp")
             .redirectErrorStream(true)
             .start();
     boolean finished = process.waitFor(Duration.ofSeconds(20).toMillis(), TimeUnit.MILLISECONDS);
     String outputText = new String(process.getInputStream().readAllBytes()).trim();
-    assertTrue(finished, "Docker port inspection timed out.");
-    assertEquals(0, process.exitValue(), outputText);
+    if (!finished || process.exitValue() != 0) {
+      return null;
+    }
     Matcher matcher = Pattern.compile(":(\\d+)").matcher(outputText);
-    assertTrue(matcher.find(), () -> "Could not parse LocalStack host port: " + outputText);
+    if (!matcher.find()) {
+      return null;
+    }
     return Integer.parseInt(matcher.group(1));
   }
 
@@ -1484,9 +2256,13 @@ final class EpsilonEgxGeneratorTest {
   /**
    * Stops a Docker container, ignoring cleanup failures.
    *
-   * @param containerId Docker container id
+   * @param localStack LocalStack runtime descriptor
    */
-  private void stopDockerContainer(String containerId) {
+  private void stopDockerContainer(LocalStackRuntime localStack) {
+    if (!localStack.ownedByTest()) {
+      return;
+    }
+    String containerId = localStack.containerId();
     try {
       new ProcessBuilder("docker", "stop", containerId)
           .redirectErrorStream(true)
@@ -1592,6 +2368,112 @@ final class EpsilonEgxGeneratorTest {
   /** Captured process result. */
   private record ProcessResult(boolean finished, int exitCode, String output) {}
 
+  /** LocalStack endpoint plus ownership metadata for cleanup. */
+  private record LocalStackRuntime(String containerId, String endpoint, boolean ownedByTest) {}
+
+  /**
+   * Reuses a running compose-managed LocalStack container when available, otherwise starts an
+   * isolated test container from the pinned image.
+   *
+   * @return LocalStack runtime descriptor
+   * @throws Exception when Docker inspection or startup fails
+   */
+  private LocalStackRuntime acquireLocalStackRuntime() throws Exception {
+    Map<String, String> dotEnv = loadDotEnv();
+    if (dotEnv.getOrDefault("LOCALSTACK_AUTH_TOKEN", "").isBlank() == false
+        && dockerImageIsAvailable(LOCALSTACK_PRO_IMAGE)) {
+      String containerId = startLocalStackContainer(LOCALSTACK_PRO_IMAGE);
+      return new LocalStackRuntime(containerId, localStackEndpoint(containerId), true);
+    }
+    String runningContainerId = runningLocalStackContainerId();
+    if (runningContainerId != null) {
+      String endpoint = localStackEndpoint(runningContainerId);
+      if (localStackHealthResponds(endpoint)) {
+        return new LocalStackRuntime(runningContainerId, endpoint, false);
+      }
+    }
+    Assumptions.assumeTrue(
+        dockerImageIsAvailable(LOCALSTACK_IMAGE),
+        () ->
+            "No running LocalStack container was found and the pinned image is not available"
+                + " locally: "
+                + LOCALSTACK_IMAGE);
+    String containerId = startLocalStackContainer(LOCALSTACK_IMAGE);
+    return new LocalStackRuntime(containerId, localStackEndpoint(containerId), true);
+  }
+
+  /**
+   * Resolves the endpoint for either compose-managed or test-owned LocalStack.
+   *
+   * @param containerId Docker container id
+   * @return LocalStack edge endpoint URL
+   * @throws Exception when Docker inspection fails unexpectedly
+   */
+  private String localStackEndpoint(String containerId) throws Exception {
+    Map<String, String> dotEnv = loadDotEnv();
+    String configuredEndpoint = dotEnv.get("LOCALSTACK_ENDPOINT_URL");
+    if (configuredEndpoint != null && !configuredEndpoint.isBlank()) {
+      return configuredEndpoint;
+    }
+    Integer publishedPort = localStackHostPortOrNull(containerId);
+    if (publishedPort != null) {
+      return "http://127.0.0.1:" + publishedPort;
+    }
+    return "http://127.0.0.1:" + dotEnv.getOrDefault("LOCALSTACK_GATEWAY_PORT", "4566");
+  }
+
+  /**
+   * Finds a running Docker container whose image or name identifies LocalStack.
+   *
+   * @return container id, or null when none is running
+   * @throws IOException when Docker cannot be launched
+   * @throws InterruptedException when Docker inspection is interrupted
+   */
+  private String runningLocalStackContainerId() throws IOException, InterruptedException {
+    Process process =
+        new ProcessBuilder(
+                "docker",
+                "ps",
+                "--filter",
+                "status=running",
+                "--format",
+                "{{.ID}} {{.Image}} {{.Names}}")
+            .redirectErrorStream(true)
+            .start();
+    boolean finished = process.waitFor(Duration.ofSeconds(20).toMillis(), TimeUnit.MILLISECONDS);
+    String outputText = new String(process.getInputStream().readAllBytes()).trim();
+    if (!finished || process.exitValue() != 0) {
+      return null;
+    }
+    return outputText
+        .lines()
+        .filter(line -> line.toLowerCase(java.util.Locale.ROOT).contains("localstack"))
+        .map(line -> line.split("\\s+")[0])
+        .findFirst()
+        .orElse(null);
+  }
+
+  /**
+   * Performs a quick health check used only for runtime selection.
+   *
+   * @param endpoint candidate LocalStack endpoint
+   * @return true when the health endpoint responds with 2xx
+   */
+  private boolean localStackHealthResponds(String endpoint) {
+    try {
+      HttpRequest request =
+          HttpRequest.newBuilder(java.net.URI.create(endpoint + "/_localstack/health"))
+              .timeout(Duration.ofSeconds(2))
+              .GET()
+              .build();
+      HttpResponse<String> response =
+          HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+      return response.statusCode() >= 200 && response.statusCode() < 300;
+    } catch (Exception ignored) {
+      return false;
+    }
+  }
+
   /**
    * Creates a process builder with a working directory and environment overlay.
    *
@@ -1683,6 +2565,13 @@ final class EpsilonEgxGeneratorTest {
         .getResourceFactoryRegistry()
         .getExtensionToFactoryMap()
         .put("xmi", new XMIResourceFactoryImpl());
+    Resource metamodelResource =
+        resourceSet.getResource(
+            URI.createFileURI(
+                REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore").toString()),
+            true);
+    EcoreUtil.resolveAll(resourceSet);
+    registerPackages(metamodelResource);
     Resource resource = resourceSet.getResource(URI.createFileURI(sourceModel.toString()), true);
     assertTrue(resource.getErrors().isEmpty(), () -> resource.getErrors().toString());
   }
@@ -2452,6 +3341,32 @@ final class EpsilonEgxGeneratorTest {
     set(lambdaFunction, "role", lambdaRole);
     set(lambdaFunction, "logGroup", logGroup);
 
+    EObject functionUrl =
+        awsResource(
+            metamodelResource,
+            "LambdaFunctionUrl",
+            "url_runtime_handler",
+            "Runtime Handler Function URL",
+            "RuntimeHandlerUrl");
+    set(functionUrl, "authType", enumValue(metamodelResource, "LambdaFunctionUrlAuthType", "NONE"));
+    set(functionUrl, "invokeMode", enumValue(metamodelResource, "LambdaInvokeMode", "BUFFERED"));
+    set(lambdaFunction, "functionUrl", functionUrl);
+
+    EObject functionUrlPermission =
+        awsResource(
+            metamodelResource,
+            "LambdaPermission",
+            "permission_runtime_function_url",
+            "Runtime Function URL Permission",
+            "RuntimeFunctionUrlPermission");
+    set(functionUrlPermission, "action", "lambda:InvokeFunctionUrl");
+    set(functionUrlPermission, "principal", "*");
+    set(
+        functionUrlPermission,
+        "functionUrlAuthType",
+        enumValue(metamodelResource, "LambdaFunctionUrlAuthType", "NONE"));
+    add(lambdaFunction, "permissions", functionUrlPermission);
+
     EObject queue =
         awsResource(
             metamodelResource, "SqsQueue", "queue_runtime", "Runtime Queue", "RuntimeQueue");
@@ -2497,6 +3412,139 @@ final class EpsilonEgxGeneratorTest {
         "publicAccessMode",
         enumValue(metamodelResource, "S3BlockPublicAccessMode", "STRICT_BLOCK_ALL"));
 
+    EObject parameter =
+        awsResource(
+            metamodelResource,
+            "SsmParameter",
+            "parameter_runtime_mode",
+            "Runtime Mode Parameter",
+            "RuntimeModeParameter");
+    set(parameter, "parameterName", "/varka/localstack/mode");
+    set(parameter, "parameterType", enumValue(metamodelResource, "ParameterType", "STRING"));
+    set(parameter, "tier", enumValue(metamodelResource, "SsmParameterTier", "STANDARD"));
+    set(parameter, "dataType", "text");
+    set(parameter, "descriptionText", "LocalStack generated fixture mode.");
+    set(parameter, "value", plaintextValue(metamodelResource, "value_runtime_mode", "e2e"));
+
+    EObject secret =
+        awsResource(
+            metamodelResource,
+            "SecretsManagerSecret",
+            "secret_runtime",
+            "Runtime Secret",
+            "RuntimeSecret");
+    set(secret, "secretName", "varka/localstack/secret");
+    set(secret, "descriptionText", "LocalStack generated fixture secret.");
+    set(
+        secret,
+        "generateSecretStringJson",
+        "{\"SecretStringTemplate\":\"{\\\"mode\\\":\\\"generated\\\"}\",\"GenerateStringKey\":\"token\"}");
+
+    EObject eventBus =
+        awsResource(
+            metamodelResource,
+            "EventBridgeBus",
+            "bus_runtime",
+            "Runtime Event Bus",
+            "RuntimeEventBus");
+    set(eventBus, "busName", "varka-localstack-bus");
+    EObject eventTarget = create(metamodelResource, "EventBridgeTarget");
+    set(eventTarget, "id", "target_runtime_queue");
+    set(eventTarget, "name", "Runtime Queue Target");
+    set(eventTarget, "targetId", "RuntimeQueueTarget");
+    set(eventTarget, "targetKind", enumValue(metamodelResource, "EventBridgeTargetKind", "SQS"));
+    set(eventTarget, "targetResource", queue);
+    EObject eventRule =
+        awsResource(
+            metamodelResource,
+            "EventBridgeRule",
+            "rule_runtime",
+            "Runtime Event Rule",
+            "RuntimeEventRule");
+    set(eventRule, "ruleName", "varka-localstack-rule");
+    set(eventRule, "eventPatternJson", "{\"source\":[\"varka.e2e\"]}");
+    set(eventRule, "state", "ENABLED");
+    set(eventRule, "bus", eventBus);
+    add(eventRule, "targets", eventTarget);
+
+    EObject workflowDone =
+        createAslState(metamodelResource, "state_runtime_done", "Done", "SUCCEED");
+    EObject workflowStart =
+        createAslState(metamodelResource, "state_runtime_start", "Start", "PASS");
+    set(workflowStart, "nextState", workflowDone);
+    EObject workflowDocument = create(metamodelResource, "AslDocument");
+    set(workflowDocument, "id", "document_runtime_workflow");
+    set(workflowDocument, "name", "Runtime Workflow ASL");
+    set(workflowDocument, "comment", "LocalStack generated fixture workflow.");
+    set(workflowDocument, "startAt", "Start");
+    add(workflowDocument, "states", workflowStart);
+    add(workflowDocument, "states", workflowDone);
+    EObject stateMachine =
+        awsResource(
+            metamodelResource,
+            "StepFunctionStateMachine",
+            "state_machine_runtime",
+            "Runtime Workflow",
+            "RuntimeWorkflow");
+    set(stateMachine, "stateMachineName", "varka-localstack-workflow");
+    set(
+        stateMachine,
+        "stateMachineType",
+        enumValue(metamodelResource, "StepFunctionType", "STANDARD"));
+    set(stateMachine, "role", lambdaRole);
+    set(stateMachine, "aslDocument", workflowDocument);
+
+    EObject apiIntegration = create(metamodelResource, "ApiGatewayIntegration");
+    set(apiIntegration, "id", "integration_runtime_http");
+    set(apiIntegration, "name", "Runtime HTTP Integration");
+    set(apiIntegration, "logicalId", "RuntimeHttpIntegration");
+    set(
+        apiIntegration,
+        "integrationType",
+        enumValue(metamodelResource, "ApiGatewayIntegrationType", "AWS_PROXY"));
+    set(apiIntegration, "integrationMethod", "POST");
+    set(apiIntegration, "payloadFormatVersion", "2.0");
+    set(apiIntegration, "lambdaTarget", lambdaFunction);
+    EObject apiRoute =
+        awsResource(
+            metamodelResource,
+            "HttpApiRoute",
+            "route_runtime_submit",
+            "Runtime Submit Route",
+            "RuntimeSubmitRoute");
+    set(apiRoute, "path", "/runtime");
+    set(apiRoute, "routeKey", "POST /runtime");
+    set(apiRoute, "operationName", "submit-runtime");
+    set(apiRoute, "method", enumValue(metamodelResource, "ApiGatewayHttpMethod", "POST"));
+    set(
+        apiRoute,
+        "authorizationType",
+        enumValue(metamodelResource, "ApiGatewayAuthorizationType", "NONE"));
+    set(apiRoute, "integration", apiIntegration);
+    EObject httpApi =
+        awsResource(
+            metamodelResource, "HttpApi", "api_runtime_http", "Runtime HTTP API", "RuntimeHttpApi");
+    set(httpApi, "apiName", "Runtime HTTP API");
+    set(httpApi, "descriptionText", "LocalStack generated fixture HTTP API.");
+    set(httpApi, "protocolType", "HTTP");
+    set(httpApi, "openApiVersion", "3.0.3");
+    add(httpApi, "routes", apiRoute);
+
+    EObject apiPermission =
+        awsResource(
+            metamodelResource,
+            "LambdaPermission",
+            "permission_runtime_http_api",
+            "Runtime HTTP API Permission",
+            "RuntimeHttpApiPermission");
+    set(apiPermission, "action", "lambda:InvokeFunction");
+    set(apiPermission, "principal", "apigateway.amazonaws.com");
+    set(
+        apiPermission,
+        "sourceArn",
+        "!Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/POST/runtime'");
+    add(lambdaFunction, "permissions", apiPermission);
+
     EObject stack = create(metamodelResource, "SamStack");
     set(stack, "id", "stack_runtime");
     set(stack, "name", "Runtime Stack");
@@ -2514,7 +3562,15 @@ final class EpsilonEgxGeneratorTest {
         lambdaFunction,
         queue,
         topic,
-        table);
+        table,
+        bucket,
+        parameter,
+        secret,
+        eventBus,
+        eventRule,
+        stateMachine,
+        httpApi,
+        apiIntegration);
 
     EObject stage = create(metamodelResource, "AwsStage");
     set(stage, "id", "stage_runtime");
@@ -2546,7 +3602,15 @@ final class EpsilonEgxGeneratorTest {
         lambdaFunction,
         queue,
         topic,
-        table);
+        table,
+        bucket,
+        parameter,
+        secret,
+        eventBus,
+        eventRule,
+        stateMachine,
+        httpApi,
+        apiIntegration);
 
     Resource modelResource = resourceSet.createResource(URI.createFileURI(modelFile.toString()));
     modelResource.getContents().add(model);
