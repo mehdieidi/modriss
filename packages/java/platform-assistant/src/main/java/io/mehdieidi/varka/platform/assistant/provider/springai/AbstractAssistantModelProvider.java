@@ -62,6 +62,12 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
   }
 
   @Override
+  public ProviderCapabilityProfile capabilities() {
+    return properties.providerProfile(
+        providerKey, modelFor(AssistantModelRole.RESPONDER), baseUrl());
+  }
+
+  @Override
   public boolean available() {
     return properties.enabled()
         && apiKeyConfigured()
@@ -225,6 +231,7 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
     String action =
         switch (call.name()) {
           case "respond_to_user" -> "answer_user";
+          case "plan_model_edit" -> "plan_model_edit";
           case "plan_source_model" -> "plan_source_model";
           case "inspect_model" -> "inspect_model";
           case "describe_types" -> "describe_types";

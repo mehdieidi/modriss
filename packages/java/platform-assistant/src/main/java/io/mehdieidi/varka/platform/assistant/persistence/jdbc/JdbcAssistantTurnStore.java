@@ -290,7 +290,13 @@ FROM candidate WHERE t.id = candidate.id RETURNING t.*
     appendEvent(
         turnId,
         "turn.resumed",
-        Map.of("expectedRevision", expectedRevision == null ? "" : expectedRevision));
+        Map.of(
+            "expectedRevision",
+            expectedRevision == null ? "" : expectedRevision,
+            "message",
+            expectedRevision == null
+                ? "Continuing from the latest committed checkpoint."
+                : "Continuing from saved revision " + expectedRevision + "."));
   }
 
   @Override

@@ -35,6 +35,11 @@ public final class ConfiguredAssistantModelProvider implements AssistantModelPro
   }
 
   @Override
+  public ProviderCapabilityProfile capabilities() {
+    return primary().capabilities();
+  }
+
+  @Override
   public AssistantReply complete(AssistantPrompt prompt) {
     return withFallback(provider -> provider.complete(prompt));
   }

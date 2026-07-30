@@ -212,6 +212,7 @@ public final class AgenticTurnService {
         turn.promptTokens(),
         turn.completionTokens(),
         turn.providerCallDetails(),
+        turn.modelingPlan(),
         turn.sourceBlueprint());
   }
 
@@ -258,5 +259,6 @@ public final class AgenticTurnService {
       long completionTokens,
       List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
           providerCallDetails,
+      tools.jackson.databind.JsonNode modelingPlan,
       tools.jackson.databind.JsonNode sourceBlueprint) {}
 }

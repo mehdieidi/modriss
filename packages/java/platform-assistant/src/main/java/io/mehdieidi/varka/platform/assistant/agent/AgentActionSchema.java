@@ -25,6 +25,7 @@ public final class AgentActionSchema {
       var variants = mapper.createArrayNode();
       for (String[] action :
           new String[][] {
+            {"plan_model_edit", "plan_model_edit"},
             {"commit_model_batch", "apply_draft_patch"},
             {"plan_source_model", "plan_source_model"},
             {"inspect_model", "inspect_model"},
@@ -61,6 +62,7 @@ public final class AgentActionSchema {
     }
     return switch (toolName) {
       case "respond_to_user" -> object(Map.of("message", stringSchema()), List.of("message"));
+      case "plan_model_edit" -> planModelEditSchema();
       case "inspect_model" -> inspectModelSchema();
       case "describe_types" ->
           object(Map.of("names", array(stringSchema(), null)), List.of("names"));
@@ -139,6 +141,35 @@ public final class AgentActionSchema {
             "evidence",
             "planSummary",
             "turnComplete"));
+  }
+
+  private static Map<String, Object> planModelEditSchema() {
+    Map<String, Object> slice =
+        object(
+            Map.of(
+                "label",
+                stringSchema(),
+                "purpose",
+                stringSchema(),
+                "requiredContracts",
+                array(stringSchema(), null)),
+            List.of("label", "purpose", "requiredContracts"));
+    return object(
+        Map.of(
+            "intent",
+            enumStringSchema(List.of("CREATE_MODEL", "ADD_FEATURES", "EDIT_MODEL", "EXPLAIN")),
+            "features",
+            array(stringSchema(), null),
+            "reuseTargets",
+            array(stringSchema(), null),
+            "newElements",
+            array(stringSchema(), null),
+            "requiredContracts",
+            array(stringSchema(), null),
+            "slices",
+            array(slice, 8)),
+        List.of(
+            "intent", "features", "reuseTargets", "newElements", "requiredContracts", "slices"));
   }
 
   private static Map<String, Object> inspectModelSchema() {
@@ -286,6 +317,7 @@ public final class AgentActionSchema {
 
   public static List<String> toolNames() {
     return List.of(
+        "plan_model_edit",
         "inspect_model",
         "plan_source_model",
         "search_language",

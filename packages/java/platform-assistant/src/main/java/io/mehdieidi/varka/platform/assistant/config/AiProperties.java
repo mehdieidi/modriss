@@ -2,10 +2,18 @@ package io.mehdieidi.varka.platform.assistant.config;
 
 import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantSettings;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -78,6 +86,8 @@ public record AiProperties(
     int maxCimModelingPasses,
     boolean preferLlmSourceExtraction)
     implements AssistantSettings {
+  private static final String PROVIDER_PROFILES_RESOURCE = "assistant-provider-profiles.properties";
+  private static volatile ProviderProfileConfig providerProfileConfig;
 
   /** Applies conservative defaults for local development. */
   public AiProperties {
@@ -179,6 +189,182 @@ public record AiProperties(
    */
   public String modelFor(AssistantModelRole role) {
     return models.forRole(providerKind(), role);
+  }
+
+  /** Resolves provider behavior limits without weakening capable providers. */
+  public io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider
+          .ProviderCapabilityProfile
+      providerProfile(String providerKey, String model, String baseUrl) {
+    String fingerprint =
+        ((providerKey == null ? "" : providerKey)
+                + " "
+                + (model == null ? "" : model)
+                + " "
+                + (baseUrl == null ? "" : baseUrl))
+            .toLowerCase(Locale.ROOT);
+    boolean nativeTools =
+        openaiCompatible != null && openaiCompatible.protocol() == OpenAiProtocol.TOOLS;
+    return providerProfileConfig().resolve(fingerprint, nativeTools);
+  }
+
+  private static ProviderProfileConfig providerProfileConfig() {
+    ProviderProfileConfig local = providerProfileConfig;
+    if (local != null) return local;
+    synchronized (AiProperties.class) {
+      local = providerProfileConfig;
+      if (local == null) {
+        local = ProviderProfileConfig.load();
+        providerProfileConfig = local;
+      }
+      return local;
+    }
+  }
+
+  private record ProviderProfileConfig(
+      Map<String, ProviderProfileSpec> profiles, List<ProviderProfileRule> rules) {
+    private static ProviderProfileConfig load() {
+      Properties properties = new Properties();
+      try (InputStream input = profileConfigInput()) {
+        if (input != null) properties.load(input);
+      } catch (IOException ex) {
+        properties.clear();
+      }
+      Map<String, ProviderProfileSpec> loadedProfiles =
+          Map.of(
+              "standard", profile(properties, "standard", standardSpec()),
+              "conservative", profile(properties, "conservative", conservativeSpec()));
+      return new ProviderProfileConfig(loadedProfiles, rules(properties));
+    }
+
+    private io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider
+            .ProviderCapabilityProfile
+        resolve(String fingerprint, boolean nativeToolsActive) {
+      for (ProviderProfileRule rule : rules) {
+        if (rule.matches(fingerprint)) {
+          ProviderProfileSpec profile = profiles.getOrDefault(rule.profile(), conservativeSpec());
+          return profile.toCapabilityProfile(nativeToolsActive);
+        }
+      }
+      return profiles
+          .getOrDefault("standard", standardSpec())
+          .toCapabilityProfile(nativeToolsActive);
+    }
+
+    private static InputStream profileConfigInput() throws IOException {
+      String external = System.getenv("VARKA_AI_PROVIDER_PROFILES_FILE");
+      if (external != null && !external.isBlank()) {
+        Path path = Path.of(external.trim());
+        if (Files.isRegularFile(path)) return Files.newInputStream(path);
+      }
+      ClassLoader loader = Thread.currentThread().getContextClassLoader();
+      InputStream input =
+          loader == null ? null : loader.getResourceAsStream(PROVIDER_PROFILES_RESOURCE);
+      return input == null
+          ? AiProperties.class.getClassLoader().getResourceAsStream(PROVIDER_PROFILES_RESOURCE)
+          : input;
+    }
+
+    private static ProviderProfileSpec profile(
+        Properties properties, String name, ProviderProfileSpec defaults) {
+      String prefix = "profiles." + name + ".";
+      return new ProviderProfileSpec(
+          intValue(properties, prefix + "max-completion-tokens", defaults.maxCompletionTokens()),
+          intValue(properties, prefix + "max-patch-creates", defaults.maxPatchCreates()),
+          intValue(properties, prefix + "max-patch-connections", defaults.maxPatchConnections()),
+          intValue(properties, prefix + "max-patch-evidence", defaults.maxPatchEvidence()),
+          intValue(properties, prefix + "max-contract-count", defaults.maxContractCount()),
+          stringValue(
+              properties, prefix + "native-tools-preferred", defaults.nativeToolsPreferred()),
+          booleanValue(
+              properties,
+              prefix + "forced-tool-choice-reliable",
+              defaults.forcedToolChoiceReliable()));
+    }
+
+    private static List<ProviderProfileRule> rules(Properties properties) {
+      List<ProviderProfileRule> result = new ArrayList<>();
+      for (int index = 0; ; index++) {
+        String match = properties.getProperty("provider-rules." + index + ".match");
+        if (match == null) break;
+        String profile = properties.getProperty("provider-rules." + index + ".profile");
+        List<String> needles =
+            java.util.Arrays.stream(match.split(","))
+                .map(value -> value.trim().toLowerCase(Locale.ROOT))
+                .filter(value -> !value.isBlank())
+                .toList();
+        if (!needles.isEmpty() && profile != null && !profile.isBlank()) {
+          result.add(new ProviderProfileRule(needles, profile.trim().toLowerCase(Locale.ROOT)));
+        }
+      }
+      return List.copyOf(result);
+    }
+
+    private static int intValue(Properties properties, String key, int defaultValue) {
+      String value = properties.getProperty(key);
+      if (value == null || value.isBlank()) return defaultValue;
+      try {
+        return Integer.parseInt(value.trim());
+      } catch (NumberFormatException ex) {
+        return defaultValue;
+      }
+    }
+
+    private static boolean booleanValue(Properties properties, String key, boolean defaultValue) {
+      String value = properties.getProperty(key);
+      return value == null || value.isBlank() ? defaultValue : Boolean.parseBoolean(value.trim());
+    }
+
+    private static String stringValue(Properties properties, String key, String defaultValue) {
+      String value = properties.getProperty(key);
+      return value == null || value.isBlank() ? defaultValue : value.trim();
+    }
+  }
+
+  private record ProviderProfileRule(List<String> matches, String profile) {
+    private boolean matches(String fingerprint) {
+      return matches.stream().anyMatch(fingerprint::contains);
+    }
+  }
+
+  private record ProviderProfileSpec(
+      int maxCompletionTokens,
+      int maxPatchCreates,
+      int maxPatchConnections,
+      int maxPatchEvidence,
+      int maxContractCount,
+      String nativeToolsPreferred,
+      boolean forcedToolChoiceReliable) {
+    private io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider
+            .ProviderCapabilityProfile
+        toCapabilityProfile(boolean nativeToolsActive) {
+      return new io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider
+          .ProviderCapabilityProfile(
+          maxCompletionTokens,
+          maxPatchCreates,
+          maxPatchConnections,
+          maxPatchEvidence,
+          maxContractCount,
+          nativeTools(nativeToolsActive),
+          forcedToolChoiceReliable);
+    }
+
+    private boolean nativeTools(boolean nativeToolsActive) {
+      String normalized =
+          nativeToolsPreferred == null ? "auto" : nativeToolsPreferred.toLowerCase(Locale.ROOT);
+      return switch (normalized) {
+        case "true", "yes", "tools" -> true;
+        case "false", "no", "json_schema", "json-schema" -> false;
+        default -> nativeToolsActive;
+      };
+    }
+  }
+
+  private static ProviderProfileSpec standardSpec() {
+    return new ProviderProfileSpec(4096, 12, 18, 12, 8, "auto", true);
+  }
+
+  private static ProviderProfileSpec conservativeSpec() {
+    return new ProviderProfileSpec(2048, 3, 4, 3, 2, "true", false);
   }
 
   private static String blankToDefault(String value, String defaultValue) {

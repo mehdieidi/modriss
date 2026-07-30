@@ -99,10 +99,6 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
         .temperature(0.2)
         .responseMimeType("application/json")
         .responseSchema(AgentActionSchema.json(prompt.patchContracts()))
-        .maxOutputTokens(Math.min(properties.tokenBudget(), completionLimit(role)));
-  }
-
-  private int completionLimit(AssistantModelRole role) {
-    return 3000;
+        .maxOutputTokens(Math.min(properties.tokenBudget(), capabilities().maxCompletionTokens()));
   }
 }

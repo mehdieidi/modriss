@@ -21,6 +21,8 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -28,6 +30,8 @@ import org.springframework.stereotype.Component;
 /** Claims queued assistant turns and executes them outside the request thread. */
 @Component
 public final class DurableAssistantTurnWorker {
+  private static final Logger log = LoggerFactory.getLogger(DurableAssistantTurnWorker.class);
+
   /** Server-written marker used only by the confirmation endpoint, never shown to providers. */
   public static final String CONFIRMED_DESTRUCTION_PREFIX = "[durable-confirmed-destruction] ";
 
@@ -230,6 +234,23 @@ public final class DurableAssistantTurnWorker {
       turns.recordValidationAttempt(
           new AssistantTurnStore.ValidationAttempt(turn.id(), null, 1, true, null, Instant.now()));
       turns.appendEvent(turn.id(), "turn.validation.completed", java.util.Map.of("valid", true));
+      if (result.modelingPlan() != null && result.modelingPlan().isObject()) {
+        var planItems =
+            modelingPlanWorkItems(
+                turn.id(), result.modelingPlan(), result.inversePatch().isEmpty());
+        turns.saveWorkItems(turn.id(), planItems);
+        turns.saveWorkflow(
+            new AssistantTurnStore.Workflow(
+                turn.id(),
+                "MODELING_PLAN",
+                "EXECUTING",
+                planItems.isEmpty() ? null : planItems.get(0).id(),
+                result.modelingPlan()));
+        turns.appendEvent(
+            turn.id(),
+            "turn.plan.ready",
+            java.util.Map.of("workflowKind", "MODELING_PLAN", "workItems", planItems.size()));
+      }
       if (!result.inversePatch().isEmpty()) {
         turns.finalizeCheckpoint(
             turn.id(),
@@ -238,10 +259,20 @@ public final class DurableAssistantTurnWorker {
             result.inversePatch(),
             java.util.Map.of("valid", true));
         metrics.recordAssistantCheckpoint("saved");
+        int sliceCount =
+            result.modelingPlan() == null ? 0 : result.modelingPlan().path("slices").size();
         turns.appendEvent(
             turn.id(),
             "model.checkpoint.committed",
-            java.util.Map.of("modelId", result.modelId(), "revision", result.revision()));
+            java.util.Map.of(
+                "modelId",
+                result.modelId(),
+                "revision",
+                result.revision(),
+                "checkpointOrdinal",
+                turn.checkpointCount() + 1,
+                "sliceCount",
+                Math.max(sliceCount, turn.checkpointCount() + 1)));
         turns.audit(
             turn.id(),
             "CHECKPOINT_SAVED",
@@ -432,7 +463,7 @@ public final class DurableAssistantTurnWorker {
           turn,
           state,
           state == AssistantTurn.State.CANCELLED
-              ? "Assistant turn was cancelled."
+              ? cancellationMessage(turn, result.revision())
               : result.message(),
           result.revision(),
           remainingWork);
@@ -472,15 +503,23 @@ public final class DurableAssistantTurnWorker {
             case 422 -> AssistantTurn.State.PARTIAL;
             default -> AssistantTurn.State.FAILED;
           };
-      complete(turn, state, ex.getMessage(), null, null);
+      complete(
+          turn,
+          state,
+          state == AssistantTurn.State.CANCELLED
+              ? cancellationMessage(turn, null)
+              : ex.getMessage(),
+          null,
+          null);
     } catch (RuntimeException ex) {
+      log.error("Assistant durable turn failed unexpectedly turnId={}", turn.id(), ex);
       complete(
           turn,
           turns.cancellationRequested(turn.id())
               ? AssistantTurn.State.CANCELLED
               : AssistantTurn.State.FAILED,
           turns.cancellationRequested(turn.id())
-              ? "Assistant turn was cancelled."
+              ? cancellationMessage(turn, null)
               : "Assistant processing failed.",
           null,
           null);
@@ -529,6 +568,42 @@ public final class DurableAssistantTurnWorker {
     metrics.recordAssistantPhaseDuration(
         "durable_turn",
         Math.max(0L, java.time.Duration.between(turn.acceptedAt(), Instant.now()).toMillis()));
+  }
+
+  private java.util.List<AssistantTurnStore.WorkItem> modelingPlanWorkItems(
+      String turnId, tools.jackson.databind.JsonNode plan, boolean noCheckpointSaved) {
+    java.util.List<AssistantTurnStore.WorkItem> items = new java.util.ArrayList<>();
+    int ordinal = 1;
+    for (tools.jackson.databind.JsonNode slice : plan.path("slices")) {
+      String id = turnId + ":slice:" + ordinal;
+      String status =
+          ordinal == 1 && !noCheckpointSaved
+              ? "committed"
+              : ordinal == 1 ? "running" : slice.path("status").asText("pending");
+      items.add(
+          new AssistantTurnStore.WorkItem(
+              id,
+              ordinal,
+              slice.path("label").asText("Checkpoint " + ordinal),
+              status,
+              "modeling-plan-slice-" + ordinal,
+              slice));
+      ordinal++;
+    }
+    return items;
+  }
+
+  private String cancellationMessage(AssistantTurn turn, Long revision) {
+    var latest = turns.latestCheckpoint(turn.id());
+    if (latest.isPresent()) {
+      long savedRevision = revision == null ? latest.get().revision() : revision;
+      return "Stopped after checkpoint "
+          + latest.get().ordinal()
+          + ". Revision "
+          + savedRevision
+          + " is saved. Remaining work can be continued.";
+    }
+    return "Assistant turn was cancelled before a model checkpoint was saved.";
   }
 
   private java.util.List<AssistantTurnStore.SourceUnit> selectCachedSourceUnits(

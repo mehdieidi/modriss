@@ -14,6 +14,11 @@ public interface AssistantModelProvider {
    */
   AssistantProviderMetadata metadata();
 
+  /** Returns provider capability limits used by the agent loop and provider transport. */
+  default ProviderCapabilityProfile capabilities() {
+    return ProviderCapabilityProfile.standard();
+  }
+
   /**
    * Returns whether the provider is locally callable.
    *
@@ -133,4 +138,30 @@ public interface AssistantModelProvider {
    * @param proxy proxy description
    */
   record AssistantProviderMetadata(String provider, String baseUrl, String proxy) {}
+
+  /** Conservative provider-specific limits. */
+  record ProviderCapabilityProfile(
+      int maxCompletionTokens,
+      int maxPatchCreates,
+      int maxPatchConnections,
+      int maxPatchEvidence,
+      int maxContractCount,
+      boolean nativeToolsPreferred,
+      boolean forcedToolChoiceReliable) {
+    public ProviderCapabilityProfile {
+      maxCompletionTokens = maxCompletionTokens <= 0 ? 4096 : maxCompletionTokens;
+      maxPatchCreates = maxPatchCreates <= 0 ? 12 : maxPatchCreates;
+      maxPatchConnections = maxPatchConnections <= 0 ? 18 : maxPatchConnections;
+      maxPatchEvidence = maxPatchEvidence <= 0 ? 12 : maxPatchEvidence;
+      maxContractCount = maxContractCount <= 0 ? 8 : maxContractCount;
+    }
+
+    public static ProviderCapabilityProfile standard() {
+      return new ProviderCapabilityProfile(4096, 12, 18, 12, 8, false, true);
+    }
+
+    public static ProviderCapabilityProfile conservative() {
+      return new ProviderCapabilityProfile(2048, 3, 4, 3, 2, true, false);
+    }
+  }
 }

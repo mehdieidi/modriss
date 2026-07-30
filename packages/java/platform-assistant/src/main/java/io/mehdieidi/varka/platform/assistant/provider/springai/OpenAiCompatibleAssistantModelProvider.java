@@ -109,9 +109,11 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
         OpenAiChatOptions.builder()
             .model(model)
             .temperature(0.2)
-            .maxCompletionTokens(Math.min(properties.tokenBudget(), completionLimit(role)));
+            .maxCompletionTokens(
+                Math.min(properties.tokenBudget(), capabilities().maxCompletionTokens()));
     boolean useNativeTools =
-        properties.openaiCompatible().protocol() == AiProperties.OpenAiProtocol.TOOLS;
+        properties.openaiCompatible().protocol() == AiProperties.OpenAiProtocol.TOOLS
+            && capabilities().nativeToolsPreferred();
     if (useNativeTools) {
       // These callbacks deliberately only echo the model's structured arguments. The workflow
       // consumes the resulting tool call and is the sole authority that executes model tools.
@@ -139,7 +141,8 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt prompt,
       String model,
       boolean toolsRequested) {
-    if (properties.openaiCompatible().protocol() != AiProperties.OpenAiProtocol.TOOLS) {
+    if (properties.openaiCompatible().protocol() != AiProperties.OpenAiProtocol.TOOLS
+        || !capabilities().nativeToolsPreferred()) {
       return super.callModel(prompt, model, toolsRequested);
     }
     try {
@@ -159,10 +162,15 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                   + " or prose. Call exactly one supplied function. For an explanation, answer,"
                   + " or necessary clarification, you MUST call respond_to_user with a non-empty"
                   + " message. Use inspect_model or describe_types only for the corresponding"
-                  + " read step; use apply_draft_patch only for a validated model mutation.");
+                  + " read step; use plan_model_edit for a structured edit plan; use"
+                  + " apply_draft_patch only for a validated model mutation.");
       messages.addObject().put("role", "user").put("content", userWithContext(prompt));
       var tools = body.putArray("tools");
+      boolean patchOnlyTool = shouldForcePatchTool(prompt.user());
       for (String name : AgentActionSchema.toolNames()) {
+        if (patchOnlyTool && !"apply_draft_patch".equals(name)) {
+          continue;
+        }
         var tool = tools.addObject();
         tool.put("type", "function");
         var function = tool.putObject("function");
@@ -176,7 +184,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       // returned, the executor permits only a terminal mutation; leaving every read tool
       // selectable lets compatible providers repeatedly call describe_types despite the
       // explicit state-machine instruction in the prompt.
-      boolean forcePatchTool = shouldForcePatchTool(prompt.user());
+      boolean forcePatchTool = capabilities().forcedToolChoiceReliable() && patchOnlyTool;
       if (forcePatchTool) {
         putForcedPatchToolChoice(body, false);
       } else {
@@ -286,6 +294,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     String action =
         switch (name) {
           case "respond_to_user" -> "answer_user";
+          case "plan_model_edit" -> "plan_model_edit";
           case "plan_source_model" -> "plan_source_model";
           case "inspect_model", "describe_types" -> name;
           case "apply_draft_patch" -> "commit_model_batch";
@@ -325,6 +334,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   private static String toolDescription(String name) {
     return switch (name) {
       case "respond_to_user" -> "Return the final user-facing answer in message.";
+      case "plan_model_edit" -> "Return a compact structured plan for a CIM/PIM create or edit.";
       case "plan_source_model" -> "Plan source document spans into coherent CIM modeling slices.";
       case "inspect_model" -> "Read a model element or inventory using id.";
       case "describe_types" -> "Retrieve exact Ecore contracts for names.";
@@ -347,9 +357,5 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
       throw new IllegalStateException("Unable to encode native assistant tool schema", ex);
     }
-  }
-
-  private int completionLimit(AssistantModelRole role) {
-    return role == AssistantModelRole.SUMMARIZER ? 2048 : 4096;
   }
 }

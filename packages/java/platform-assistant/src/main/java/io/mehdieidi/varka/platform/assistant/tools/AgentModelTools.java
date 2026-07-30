@@ -81,9 +81,84 @@ public final class AgentModelTools {
     return contracts.requiredContainmentClosure(active().level(), names);
   }
 
+  public List<TypeContract> describeExactTypes(List<String> names) {
+    return contracts.describe(active().level(), names);
+  }
+
   public JsonNode readModel(String id) {
     JsonNode model = active().workspace().snapshot();
     return id == null || id.isBlank() ? model : find(model, id);
+  }
+
+  /** Returns root, type counts, and top-level owned elements for enforced edit inspection. */
+  public JsonNode inspectSummary() {
+    JsonNode root = active().workspace().snapshot();
+    List<InspectedElement> elements = new ArrayList<>();
+    collectInspected(root, null, null, elements);
+    Map<String, Integer> typeCounts = new TreeMap<>();
+    elements.forEach(item -> typeCounts.merge(item.eClass(), 1, Integer::sum));
+    ObjectNode result = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+    result.put("rootId", root.path("id").asText(""));
+    result.put("rootType", root.path("eClass").asText(""));
+    ObjectNode counts = result.putObject("typeCounts");
+    typeCounts.forEach(counts::put);
+    ArrayNode owned = result.putArray("topLevelOwnedElements");
+    String rootId = root.path("id").asText("");
+    elements.stream()
+        .filter(item -> rootId.equals(item.ownerId()))
+        .limit(80)
+        .forEach(
+            item -> {
+              ObjectNode record = owned.addObject();
+              record.put("id", item.id());
+              record.put("eClass", item.eClass());
+              if (item.name() != null && !item.name().isBlank()) record.put("name", item.name());
+              if (item.ownerFeature() != null) record.put("ownerFeature", item.ownerFeature());
+            });
+    return result;
+  }
+
+  /** Returns owner, children, and references near already selected/edit-relevant elements. */
+  public JsonNode inspectNeighborhoods(List<String> ids) {
+    JsonNode root = active().workspace().snapshot();
+    List<InspectedElement> elements = new ArrayList<>();
+    collectInspected(root, null, null, elements);
+    Map<String, InspectedElement> byId = new LinkedHashMap<>();
+    elements.forEach(item -> byId.put(item.id(), item));
+    ObjectNode result = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+    ArrayNode neighborhoods = result.putArray("neighborhoods");
+    for (String id : ids == null ? List.<String>of() : ids) {
+      if (id == null || id.isBlank() || !byId.containsKey(id)) continue;
+      InspectedElement center = byId.get(id);
+      ObjectNode record = neighborhoods.addObject();
+      appendInspectionRecord(record.putObject("center"), center, root);
+      if (center.ownerId() != null && byId.containsKey(center.ownerId())) {
+        appendInspectionRecord(record.putObject("owner"), byId.get(center.ownerId()), root);
+      }
+      ArrayNode children = record.putArray("containedChildren");
+      elements.stream()
+          .filter(item -> id.equals(item.ownerId()))
+          .limit(40)
+          .forEach(item -> appendInspectionRecord(children.addObject(), item, root));
+      ArrayNode inbound = record.putArray("inboundReferences");
+      elements.stream()
+          .filter(
+              item -> item.outgoingReferences().stream().anyMatch(ref -> ref.endsWith("=" + id)))
+          .limit(40)
+          .forEach(item -> appendInspectionRecord(inbound.addObject(), item, root));
+    }
+    return result;
+  }
+
+  private void appendInspectionRecord(ObjectNode record, InspectedElement item, JsonNode root) {
+    record.put("id", item.id());
+    record.put("eClass", item.eClass());
+    if (item.name() != null && !item.name().isBlank()) record.put("name", item.name());
+    if (item.ownerId() != null) record.put("ownerId", item.ownerId());
+    if (item.ownerFeature() != null) record.put("ownerFeature", item.ownerFeature());
+    record.put("preconditionHash", elementHash(find(root, item.id())));
+    ArrayNode outgoing = record.putArray("outgoingReferences");
+    item.outgoingReferences().forEach(outgoing::add);
   }
 
   /**

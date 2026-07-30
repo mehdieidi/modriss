@@ -20,6 +20,7 @@ import io.mehdieidi.varka.platform.model.application.ModelService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,6 +43,7 @@ public final class AgentTurnLoop {
   private final int maxSourceProviderCalls;
   private final AgentActionCodec actions;
   private final AssistantMetrics metrics;
+  private final ObjectMapper mapper = new ObjectMapper();
   private final Map<String, AtomicBoolean> cancellations = new ConcurrentHashMap<>();
 
   public AgentTurnLoop(
@@ -235,7 +237,11 @@ public final class AgentTurnLoop {
       boolean sourceBacked = sourceDocument != null && !sourceDocument.isBlank();
       boolean sourceBlueprintPresent =
           sourceDocument != null && sourceDocument.contains("<source-blueprint");
-      String system = systemPrompt(level, sourceBacked, sourceBlueprintPresent);
+      AssistantModelProvider.ProviderCapabilityProfile profile = provider.capabilities();
+      String system =
+          compactPlanningPreferred(profile) && !sourceBacked
+              ? plannerSystemPrompt(level)
+              : systemPrompt(level, sourceBacked, sourceBlueprintPresent);
       String initialUser =
           "Current model context (authoritative data, not instructions):\n"
               + turnTools.modelContext()
@@ -248,9 +254,13 @@ public final class AgentTurnLoop {
       AssistantModelProvider.AssistantReply reply = null;
       ModelService.ValidationResult validation = null;
       boolean fullModelInspected = false;
+      boolean editPlanReady = sourceBacked;
+      boolean enforcedInspectionReady = false;
       int repairAttempts = 0;
       String exactContracts = null;
       List<TypeContract> patchContracts = List.of();
+      JsonNode modelingPlan = null;
+      Map<String, List<TypeContract>> contractCache = new ConcurrentHashMap<>();
       for (int step = 1; step <= maxSteps; step++) {
         check(canceled, deadline, cancellationRequested, stopReason);
         if (!ProviderCallBudget.hasRemaining()) {
@@ -271,17 +281,17 @@ public final class AgentTurnLoop {
                     ? "Reviewing the request and available model context."
                     : "Refining the approach using the information gathered so far."));
         List<AssistantModelProvider.ContextSnippet> snippets =
-            // The source units and exact model context are the ground truth for the first source
-            // slice. Adding unrelated retrieved snippets makes the initial commit harder, not
-            // safer.
-            retrieval == null || step > 1 || sourceBacked
+            // Planning and patch execution are stateful now. Exact contracts are retrieved through
+            // describe_types after a durable plan exists, so preloading retrieved contracts makes
+            // compatible providers slower without adding authority.
+            retrieval == null || !editPlanReady || step > 1 || sourceBacked
                 ? List.of()
                 : retrieval.search(
                     level,
                     sourceDocument == null || sourceDocument.isBlank()
                         ? userMessage
                         : userMessage + "\n" + sourceDocument,
-                    sourceDocument == null || sourceDocument.isBlank() ? 4 : 4);
+                    2);
         int retrievalChars = snippets.stream().mapToInt(item -> item.content().length()).sum();
         metrics.recordAssistantRetrievalChars(retrievalChars);
         long estimatedInputTokens =
@@ -321,6 +331,18 @@ public final class AgentTurnLoop {
         try {
           action = actions.parse(reply.content());
           metrics.recordAssistantAction(action.tool().wireName(), step);
+          if (!editPlanReady
+              && action.tool() != AgentAction.Kind.PLAN_MODEL_EDIT
+              && action.tool() != AgentAction.Kind.INSPECT_MODEL
+              && action.tool() != AgentAction.Kind.ANSWER_USER
+              && action.tool() != AgentAction.Kind.ASK_USER) {
+            user =
+                followUpContext(userMessage, sourceDocument)
+                    + "\n\nBefore inspection, contract retrieval, or patch generation, return"
+                    + " plan_model_edit with a compact structured plan for this request. If the"
+                    + " request is only a question or explanation, answer_user is allowed.";
+            continue;
+          }
           publish(sessionId, "tool.started", toolProgress(action.tool(), false, null));
           if (action.tool() == AgentAction.Kind.ANSWER_USER
               || action.tool() == AgentAction.Kind.ASK_USER) {
@@ -330,6 +352,23 @@ public final class AgentTurnLoop {
                   422,
                   action.tool().wireName()
                       + " must include a non-empty user-facing message in arguments.message.");
+            }
+            if (mutatingPlanWithoutCheckpoint(modelingPlan, turnTools)) {
+              if (ProviderCallBudget.hasRemaining()) {
+                user =
+                    followUpContext(userMessage, sourceDocument)
+                        + "\n\nYour previous "
+                        + action.tool().wireName()
+                        + " action was rejected by backend workflow state: this turn has a"
+                        + " durable mutating ModelingPlan and no checkpoint has been committed."
+                        + " The exact contracts and current slice have already been supplied."
+                        + " The next action must be commit_model_batch. Create one compact,"
+                        + " structurally valid checkpoint slice using only those contracts."
+                        + " Do not inspect, describe types, answer, or ask the user.";
+                continue;
+              }
+              throw new PlatformException(
+                  422, "Mutating modeling plans must commit a checkpoint before answering.");
             }
             if (sourceBacked && !sourceUnitIds(sourceDocument).isEmpty()) {
               if (ProviderCallBudget.hasRemaining()) {
@@ -392,10 +431,70 @@ public final class AgentTurnLoop {
                 promptTokens,
                 completionTokens,
                 providerCallDetails,
+                modelingPlan,
                 null);
           }
           switch (action.tool()) {
+            case PLAN_MODEL_EDIT -> {
+              modelingPlan = normalizeModelingPlan(action.arguments(), profile);
+              system = executorSystemPrompt(level, sourceBacked, sourceBlueprintPresent);
+              editPlanReady = true;
+              enforcedInspectionReady = hasNoModelElements(workspace);
+              publish(
+                  sessionId,
+                  "assistant.modeling_plan.ready",
+                  Map.of(
+                      "slices",
+                      modelingPlan.path("slices").size(),
+                      "intent",
+                      modelingPlan.path("intent").asText("")));
+              if (!enforcedInspectionReady) {
+                JsonNode summary = turnTools.inspectSummary();
+                List<String> relevantIds =
+                    relevantElementIds(
+                        turnTools, modelingPlan, Math.max(1, profile.maxPatchCreates()));
+                JsonNode selected =
+                    relevantIds.isEmpty()
+                        ? mapper.createObjectNode().put("total", 0)
+                        : turnTools.inspectModel(
+                            new AgentModelTools.InspectionSelector(
+                                relevantIds, List.of(), List.of(), null, 0, 50));
+                JsonNode neighborhoods = turnTools.inspectNeighborhoods(relevantIds);
+                fullModelInspected = true;
+                user =
+                    followUpContext(userMessage, sourceDocument)
+                        + "\n\nCurrent durable modeling checkpoint:\n"
+                        + currentSlicePlan(modelingPlan)
+                        + "\n\nEnforced model inspection sequence completed by backend."
+                        + "\n1. Summary:\n"
+                        + summary
+                        + "\n2. Relevant existing elements:\n"
+                        + selected
+                        + "\n3. Neighborhoods:\n"
+                        + neighborhoods
+                        + "\n\nNow retrieve exact metamodel contracts for only the current"
+                        + " planned slice using describe_types. Prefer the requiredContracts"
+                        + " listed in the plan. Do not patch until contracts are returned.";
+              } else {
+                user =
+                    followUpContext(userMessage, sourceDocument)
+                        + "\n\nCurrent durable modeling checkpoint:\n"
+                        + currentSlicePlan(modelingPlan)
+                        + "\n\nThe current model has no user-created elements. Retrieve exact"
+                        + " metamodel contracts for the first planned slice using describe_types,"
+                        + " then create root-contained elements against rootId.";
+              }
+              continue;
+            }
             case COMMIT_MODEL_BATCH -> {
+              if (!sourceBacked && !enforcedInspectionReady && !hasNoModelElements(workspace)) {
+                user =
+                    followUpContext(userMessage, sourceDocument)
+                        + "\n\nPatch rejected by workflow state: non-empty edit requests must use"
+                        + " the enforced inspection sequence after plan_model_edit and before"
+                        + " commit_model_batch.";
+                continue;
+              }
               check(canceled, deadline, cancellationRequested, stopReason);
               ModelCommandBatch batch = normalizeSourceEvidence(command(action), sourceDocument);
               validateSourceEvidence(batch, sourceDocument);
@@ -422,6 +521,7 @@ public final class AgentTurnLoop {
                     promptTokens,
                     completionTokens,
                     providerCallDetails,
+                    modelingPlan,
                     null);
               }
             }
@@ -447,6 +547,7 @@ public final class AgentTurnLoop {
                   promptTokens,
                   completionTokens,
                   providerCallDetails,
+                  null,
                   blueprint);
             }
             case INSPECT_MODEL -> {
@@ -500,9 +601,19 @@ public final class AgentTurnLoop {
                 continue;
               }
               List<String> selectedNames = new ArrayList<>();
+              int selectedContractLimit =
+                  Math.max(
+                      2, sourceBacked ? profile.maxContractCount() : profile.maxContractCount());
               String rootType = workspace.snapshot().path("eClass").asText("").trim();
               if (!rootType.isBlank()) selectedNames.add(rootType);
-              int selectedContractLimit = sourceBacked ? 8 : 4;
+              for (String preferred : emptyModelFirstSliceTypes(level, workspace)) {
+                if (selectedNames.size() >= selectedContractLimit) break;
+                if (!selectedNames.contains(preferred)) selectedNames.add(preferred);
+              }
+              for (String planned : currentSliceContractNames(modelingPlan)) {
+                if (selectedNames.size() >= selectedContractLimit) break;
+                if (!selectedNames.contains(planned)) selectedNames.add(planned);
+              }
               for (String name : names) {
                 // Ordinary edits stay compact. Source-to-CIM generation needs enough exact
                 // contracts for a meaningful first slice without making the structured schema so
@@ -510,10 +621,26 @@ public final class AgentTurnLoop {
                 if (selectedNames.size() >= selectedContractLimit) break;
                 if (!selectedNames.contains(name)) selectedNames.add(name);
               }
-              patchContracts = turnTools.describeTypes(selectedNames);
-              exactContracts = compactContracts(patchContracts);
+              String cacheKey = level.name() + ":" + String.join(",", selectedNames);
+              patchContracts =
+                  contractCache.computeIfAbsent(
+                      cacheKey,
+                      ignored ->
+                          profile.maxContractCount() <= 2
+                              ? turnTools.describeExactTypes(selectedNames)
+                              : turnTools.describeTypes(selectedNames));
+              exactContracts =
+                  compactContracts(
+                      patchContracts,
+                      profile.maxContractCount() <= 2
+                          ? new java.util.LinkedHashSet<>(selectedNames)
+                          : java.util.Set.of());
               user =
                   followUpContext(userMessage, sourceDocument)
+                      + (modelingPlan == null
+                          ? ""
+                          : "\n\nCurrent durable modeling checkpoint:\n"
+                              + currentSlicePlan(modelingPlan))
                       + "\n\nExact type contracts:\n"
                       + exactContracts
                       + "\n\n"
@@ -521,8 +648,13 @@ public final class AgentTurnLoop {
                       + " The next action must be commit_model_batch; do not answer or ask the"
                       + " user. Submit one structurally complete checkpoint slice using only"
                       + " these contracts. For a complex create or feature-add request, keep the"
-                      + " slice compact enough to validate quickly: at most 12 creates, 18"
-                      + " connections, and 12 evidence items. Set turnComplete:false and put the"
+                      + " slice compact enough to validate quickly: at most "
+                      + profile.maxPatchCreates()
+                      + " creates, "
+                      + profile.maxPatchConnections()
+                      + " connections, and "
+                      + profile.maxPatchEvidence()
+                      + " evidence items. Set turnComplete:false and put the"
                       + " next concrete slice in planSummary when requested work remains."
                       + " Before submitting, audit every create against its contract: every"
                       + " attribute or reference marked with ! is mandatory. Required attributes"
@@ -552,9 +684,10 @@ public final class AgentTurnLoop {
                     + (exactContracts == null
                         ? ""
                         : "\n\nExact type contracts already retrieved:\n" + exactContracts)
-                    + "\n\nYour previous JSON/tool call failed backend validation: "
-                    + toolFailure.getMessage()
-                    + "\nReturn only one corrected tool call. Do not describe types, inspect the"
+                    + "\n\nRepair diagnostic JSON:\n"
+                    + repairDiagnostic(toolFailure, turnTools)
+                    + "\nThe next action must be commit_model_batch. Return only one corrected"
+                    + " tool call. Do not describe types, inspect the"
                     + " model, repeat the rejected patch, or add unrelated elements. For"
                     + " apply_draft_patch, creates must be an array of create objects, never an"
                     + " array of clientRef strings. Every create object needs a unique non-empty"
@@ -617,6 +750,7 @@ public final class AgentTurnLoop {
           promptTokens,
           completionTokens,
           providerCallDetails,
+          modelingPlan,
           null);
     } catch (PlatformException ex) {
       throw new TurnExecutionException(
@@ -627,9 +761,154 @@ public final class AgentTurnLoop {
     }
   }
 
+  private boolean mutatingPlanWithoutCheckpoint(JsonNode modelingPlan, AgentModelTools turnTools) {
+    if (modelingPlan == null || modelingPlan.isMissingNode() || modelingPlan.isNull()) return false;
+    String intent = modelingPlan.path("intent").asText("").trim();
+    boolean mutating =
+        intent.equalsIgnoreCase("CREATE_MODEL")
+            || intent.equalsIgnoreCase("ADD_FEATURES")
+            || intent.equalsIgnoreCase("EDIT_MODEL");
+    return mutating && turnTools.committedBatch() == null;
+  }
+
   public boolean cancel(String sessionId) {
     AtomicBoolean active = cancellations.get(sessionId);
     return active != null && !active.getAndSet(true);
+  }
+
+  private JsonNode normalizeModelingPlan(
+      JsonNode raw, AssistantModelProvider.ProviderCapabilityProfile profile) {
+    var plan = mapper.createObjectNode();
+    String intent = raw.path("intent").asText("ADD_FEATURES").trim();
+    if (intent.isBlank()) intent = "ADD_FEATURES";
+    plan.put("intent", intent);
+    copyStringArray(raw.path("features"), plan.putArray("features"), 12);
+    copyStringArray(raw.path("reuseTargets"), plan.putArray("reuseTargets"), 12);
+    copyStringArray(raw.path("newElements"), plan.putArray("newElements"), 12);
+    copyStringArray(
+        raw.path("requiredContracts"),
+        plan.putArray("requiredContracts"),
+        profile.maxContractCount());
+    var slices = plan.putArray("slices");
+    int maxSlices = Math.max(1, Math.min(8, raw.path("slices").size()));
+    if (raw.path("slices").isArray()) {
+      int ordinal = 1;
+      for (JsonNode slice : raw.path("slices")) {
+        if (ordinal > maxSlices) break;
+        var item = slices.addObject();
+        item.put("ordinal", ordinal++);
+        item.put("label", nonBlank(slice.path("label").asText(""), "Checkpoint " + (ordinal - 1)));
+        item.put(
+            "purpose",
+            nonBlank(slice.path("purpose").asText(""), "Model a coherent request slice."));
+        copyStringArray(
+            slice.path("requiredContracts"),
+            item.putArray("requiredContracts"),
+            profile.maxContractCount());
+        item.put("status", ordinal == 2 ? "running" : "pending");
+      }
+    }
+    if (slices.isEmpty()) {
+      var item = slices.addObject();
+      item.put("ordinal", 1);
+      item.put("label", "Core architecture");
+      item.put("purpose", "Create or update the central modeling elements requested by the user.");
+      copyStringArray(
+          raw.path("requiredContracts"),
+          item.putArray("requiredContracts"),
+          profile.maxContractCount());
+      item.put("status", "running");
+    }
+    return plan;
+  }
+
+  private void copyStringArray(
+      JsonNode source, tools.jackson.databind.node.ArrayNode target, int max) {
+    if (source == null || !source.isArray()) return;
+    LinkedHashSet<String> seen = new LinkedHashSet<>();
+    for (JsonNode value : source) {
+      String text = value.asText("").trim();
+      if (!text.isBlank()) seen.add(text);
+      if (seen.size() >= max) break;
+    }
+    seen.forEach(target::add);
+  }
+
+  private String nonBlank(String value, String fallback) {
+    return value == null || value.isBlank() ? fallback : value.trim();
+  }
+
+  private List<String> relevantElementIds(AgentModelTools turnTools, JsonNode plan, int limit) {
+    LinkedHashSet<String> ids = new LinkedHashSet<>();
+    List<String> queries = new ArrayList<>();
+    plan.path("reuseTargets").forEach(value -> queries.add(value.asText("")));
+    plan.path("features").forEach(value -> queries.add(value.asText("")));
+    for (String query : queries) {
+      if (query == null || query.isBlank()) continue;
+      JsonNode result =
+          turnTools.inspectModel(
+              new AgentModelTools.InspectionSelector(
+                  List.of(), List.of(), List.of(), query, 0, 10));
+      result
+          .path("elements")
+          .forEach(
+              item -> {
+                String id = item.path("id").asText("");
+                if (!id.isBlank()) ids.add(id);
+              });
+      if (ids.size() >= limit) break;
+    }
+    return ids.stream().limit(limit).toList();
+  }
+
+  private List<String> currentSliceContractNames(JsonNode modelingPlan) {
+    LinkedHashSet<String> names = new LinkedHashSet<>();
+    if (modelingPlan == null || modelingPlan.isMissingNode() || modelingPlan.isNull()) {
+      return List.of();
+    }
+    JsonNode firstSlice = modelingPlan.path("slices").path(0);
+    firstSlice
+        .path("requiredContracts")
+        .forEach(
+            value -> {
+              String name = value.asText("").trim();
+              if (!name.isBlank()) names.add(name);
+            });
+    modelingPlan
+        .path("requiredContracts")
+        .forEach(
+            value -> {
+              String name = value.asText("").trim();
+              if (!name.isBlank()) names.add(name);
+            });
+    return List.copyOf(names);
+  }
+
+  private List<String> emptyModelFirstSliceTypes(ModelLevel level, ModelWorkspace workspace) {
+    if (!hasNoModelElements(workspace)) return List.of();
+    return switch (level) {
+      case PIM -> List.of("ServerlessService");
+      case CIM -> List.of("Capability");
+      case PSM -> List.of();
+    };
+  }
+
+  private JsonNode currentSlicePlan(JsonNode modelingPlan) {
+    var scoped = mapper.createObjectNode();
+    if (modelingPlan == null || modelingPlan.isMissingNode() || modelingPlan.isNull()) {
+      return scoped;
+    }
+    scoped.put("intent", modelingPlan.path("intent").asText(""));
+    scoped.set("features", modelingPlan.path("features").deepCopy());
+    scoped.set("reuseTargets", modelingPlan.path("reuseTargets").deepCopy());
+    scoped.set("newElements", modelingPlan.path("newElements").deepCopy());
+    JsonNode slices = modelingPlan.path("slices");
+    JsonNode current =
+        slices.isArray() && !slices.isEmpty() ? slices.get(0) : mapper.createObjectNode();
+    scoped.set("currentSlice", current.deepCopy());
+    scoped.put("checkpoint", current.path("ordinal").asInt(1));
+    scoped.put("checkpointCount", slices.isArray() ? slices.size() : 1);
+    return scoped;
   }
 
   private boolean hasNoModelElements(ModelWorkspace workspace) {
@@ -680,12 +959,21 @@ public final class AgentTurnLoop {
       ModelLevel level, boolean sourceBacked, boolean sourceBlueprintPresent) {
     String language = guides.index(level);
     return """
-You are a modeling agent. Return exactly one JSON object: {"action":"commit_model_batch"|
-"plan_source_model"|"inspect_model"|"describe_types"|"answer_user"|"ask_user", "arguments":{...}}. Never
+You are a modeling agent. Return exactly one JSON object: {"action":"plan_model_edit"|
+"commit_model_batch"|"plan_source_model"|"inspect_model"|"describe_types"|"answer_user"|"ask_user",
+"arguments":{...}}. Never
 return prose outside that object. The action field is data, not a provider function/tool call.
 commit_model_batch, answer_user, and ask_user are terminal.
 answer_user arguments must be {"message":"a complete, non-empty answer for the user"}.
 ask_user arguments must be {"message":"a complete, non-empty clarification question"}.
+For ordinary create/edit/add-feature requests, first return plan_model_edit before any
+inspection, type contract retrieval, or patch generation. Its arguments must be:
+{"intent":"CREATE_MODEL|ADD_FEATURES|EDIT_MODEL|EXPLAIN","features":["..."],
+"reuseTargets":["existing names to inspect or reuse"],"newElements":["planned new element names"],
+"requiredContracts":["ExactType"],"slices":[{"label":"Core architecture",
+"purpose":"...","requiredContracts":["ExactType"]}]}. The plan is durable backend state:
+use small coherent slices such as core architecture, events, data stores, security, and
+observability when the request is broad.
 plan_source_model arguments must be {"domain":"...","slices":[{"focus":"...",
 "sourceUnitIds":["src-id"]}]}. It is only for a source-backed request before a source
 blueprint exists. It is terminal for that planning increment: the backend persists the plan
@@ -802,11 +1090,100 @@ relationships when supported by the returned contracts.\
         + language;
   }
 
+  private boolean compactPlanningPreferred(
+      AssistantModelProvider.ProviderCapabilityProfile profile) {
+    return profile.maxPatchCreates() <= 3
+        || profile.maxContractCount() <= 2
+        || !profile.forcedToolChoiceReliable();
+  }
+
+  private String plannerSystemPrompt(ModelLevel level) {
+    return """
+You are a %s modeling planner. Return exactly one JSON object and no prose:
+{"action":"plan_model_edit","arguments":{...}}.
+
+Use the user's request and current model summary to make a compact durable ModelingPlan.
+Arguments must be:
+{"intent":"CREATE_MODEL|ADD_FEATURES|EDIT_MODEL|EXPLAIN","features":["..."],
+"reuseTargets":["existing names to inspect or reuse"],"newElements":["planned element names"],
+"requiredContracts":["ExactType"],"slices":[{"label":"Core architecture",
+"purpose":"...","requiredContracts":["ExactType"]}]}.
+
+For broad create or add-feature requests, split work into small coherent slices such as core
+architecture, events, data stores, security, observability, and operations. Put only the exact
+metamodel type names likely needed by the current slice in each slice.requiredContracts. For an
+empty PIM serverless model, start with root-contained ServerlessService elements. For an empty CIM
+model, start with root-contained capabilities or requirements. Do not generate model patches in
+this planning step.
+"""
+        .formatted(level.name());
+  }
+
+  private String executorSystemPrompt(
+      ModelLevel level, boolean sourceBacked, boolean sourceBlueprintPresent) {
+    return """
+You are a modeling executor for a %s model. Return exactly one JSON object or one native tool call
+matching the supplied action schema. The backend already accepted a durable modeling plan for this
+turn. Follow only the current checkpoint slice, the backend inspection facts, and exact contracts
+returned by describe_types.
+
+Use describe_types once when exact contracts are missing. After exact contracts are supplied, the
+next action must be commit_model_batch. Never invent EClasses, attributes, containment features,
+reference names, ids, or enum values. Every create needs owner and containment reference; direct
+root containment uses owner:"rootId". Every required attribute and required writable reference in
+the exact contract must be satisfied in the same batch.
+
+Relationships are first-class model content. Add connections only for writable non-containment
+references listed on the source EClass contract, and use exact created clientRefs or inspected ids
+as endpoints. Create one coherent validated checkpoint, not the whole broad request at once. Set
+turnComplete:false when later checkpoint slices remain.
+
+Validation boundary: generated assistant changes are checked only for structural Ecore/EMF
+conformance by the backend.
+"""
+        .formatted(level.name());
+  }
+
   private boolean repairableToolFailure(PlatformException failure) {
     // A provider can echo an EMF resource URI or an invented stable id in a connection/update.
     // It is a model-action error, not a missing HTTP resource, so let the bounded repair pass
     // correct it from the compact inventory rather than failing the complete turn.
     return failure.status() == 400 || failure.status() == 404 || failure.status() == 422;
+  }
+
+  private JsonNode repairDiagnostic(PlatformException failure, AgentModelTools turnTools) {
+    var diagnostic = mapper.createObjectNode();
+    diagnostic.put("status", failure.status());
+    diagnostic.put("category", actionFailureReason(failure));
+    diagnostic.put("message", failure.getMessage() == null ? "" : failure.getMessage());
+    diagnostic.put(
+        "requiredAction",
+        "Return one corrected tool call using only inspected ids, described contracts, and valid"
+            + " features.");
+    String message = failure.getMessage() == null ? "" : failure.getMessage().toLowerCase();
+    var hints = diagnostic.putArray("hints");
+    if (message.contains("required") && message.contains("attribute")) {
+      hints.add(
+          "Add the missing required attribute with a valid JSON value or remove that create.");
+    }
+    if (message.contains("containment") || message.contains("owner")) {
+      hints.add(
+          "Use a containment listed on the owner type contract; direct root ownership uses"
+              + " rootId.");
+    }
+    if (message.contains("reference") || message.contains("target")) {
+      hints.add("Use only writable non-containment references whose target type is compatible.");
+    }
+    if (message.contains("unknown") || message.contains("not found")) {
+      hints.add(
+          "Use exact clientRefs from this batch or inspected existing ids; do not invent ids.");
+    }
+    try {
+      diagnostic.set("currentModelSummary", turnTools.inspectSummary());
+    } catch (RuntimeException ignored) {
+      diagnostic.put("currentModelSummaryUnavailable", true);
+    }
+    return diagnostic;
   }
 
   private long estimateTokens(int chars) {
@@ -838,19 +1215,51 @@ relationships when supported by the returned contracts.\
   }
 
   /** Serializes the exact selected contracts compactly without cutting arbitrary text mid-value. */
-  private String compactContracts(List<TypeContract> contracts) {
+  private String compactContracts(
+      List<TypeContract> contracts, java.util.Set<String> selectedTypes) {
+    boolean focused = selectedTypes != null && !selectedTypes.isEmpty();
     StringBuilder result = new StringBuilder();
+    result.append(
+        "Legend: ! required, ? optional. Containments create owned children; references create"
+            + " connections only when writable.\n");
     for (TypeContract type : contracts) {
-      result.append("type ").append(type.eClass()).append("; creatable=").append(type.creatable());
+      result.append("TYPE|").append(type.eClass()).append("|creatable=").append(type.creatable());
       if (!type.attributes().isEmpty()) {
-        result.append("; attributes=");
+        result.append("\nATTR|");
         appendAttributes(result, type.attributes());
       }
-      if (!type.references().isEmpty()) {
-        result.append("; references=");
-        appendReferences(result, type.references());
+      List<ReferenceContract> containments =
+          type.references().stream()
+              .filter(ReferenceContract::containment)
+              .filter(reference -> !focused || selectedTypes.contains(reference.targetType()))
+              .toList();
+      if (!containments.isEmpty()) {
+        result.append("\nCONTAINS|");
+        appendReferences(result, containments);
       }
-      result.append('\n');
+      List<ReferenceContract> references =
+          type.references().stream()
+              .filter(reference -> !reference.containment())
+              .filter(
+                  reference ->
+                      !focused
+                          || reference.required()
+                          || selectedTypes.contains(reference.targetType()))
+              .toList();
+      if (!references.isEmpty()) {
+        result.append("\nREFS|");
+        appendReferences(result, references);
+      }
+      if (type.creatable()) {
+        result
+            .append("\nEXAMPLE|{\"clientRef\":\"")
+            .append(type.eClass().toLowerCase(java.util.Locale.ROOT))
+            .append("_1\",\"eClass\":\"")
+            .append(type.eClass())
+            .append(
+                "\",\"attributes\":{},\"owner\":\"rootId\",\"reference\":\"exactContainment\"}");
+      }
+      result.append("\n\n");
     }
     return result.toString();
   }
@@ -934,6 +1343,13 @@ relationships when supported by the returned contracts.\
             completed
                 ? "Source blueprint is ready."
                 : "Mapping the source into coherent model slices.";
+      }
+      case PLAN_MODEL_EDIT -> {
+        stage = "PLANNING";
+        message =
+            completed
+                ? "Modeling plan is ready."
+                : "Breaking the request into durable model checkpoints.";
       }
       case ANSWER_USER -> {
         stage = "COMPLETING";
@@ -1219,6 +1635,7 @@ relationships when supported by the returned contracts.\
       long completionTokens,
       List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
           providerCallDetails,
+      JsonNode modelingPlan,
       JsonNode sourceBlueprint) {}
 
   /**

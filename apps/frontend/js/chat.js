@@ -493,9 +493,22 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
           try {
             const event = JSON.parse(raw);
             if (eventName === "turn.plan.ready") {
-              updateThinkingStatus("Durable work plan is ready.", "PLANNING");
+              const count =
+                Number(event?.payload?.workItems) || Number(event?.payload?.slices) || 0;
+              updateThinkingStatus(
+                count
+                  ? `Modeling plan ready: checkpoint 1 of ${count}.`
+                  : "Durable modeling plan is ready.",
+                "PLANNING",
+                count ? { index: 1, count } : null,
+              );
             } else if (eventName === "turn.work_item.started") {
               updateThinkingStatus("Modeling the next planned work item.", "PLANNING");
+            } else if (eventName === "turn.resumed") {
+              updateThinkingStatus(
+                event?.payload?.message || "Continuing from the latest committed checkpoint.",
+                "PLANNING",
+              );
             } else if (eventName === "turn.validation.completed") {
               updateThinkingStatus("Validation completed for the current draft.", "VALIDATING");
             } else if (eventName === "turn.coverage.updated") {
@@ -520,7 +533,15 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
               eventName === "model.checkpoint" ||
               eventName === "model.checkpoint.committed"
             ) {
-              updateThinkingStatus("Model checkpoint saved.", "APPLYING");
+              const ordinal = Number(event?.payload?.checkpointOrdinal) || 0;
+              const total = Number(event?.payload?.sliceCount) || 0;
+              updateThinkingStatus(
+                ordinal && total
+                  ? `Model checkpoint ${ordinal} of ${total} saved.`
+                  : "Model checkpoint saved.",
+                "APPLYING",
+                ordinal && total ? { index: ordinal, count: total } : null,
+              );
               if (event?.payload?.modelId) {
                 void applyAssistantModelResponse(typeKey, event.payload).catch(() => {
                   setStatus("Checkpoint saved; model refresh will retry with turn polling.");
