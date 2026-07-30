@@ -2,6 +2,10 @@
 
 import (
 	"context"
+	"net"
+	"os"
+	"strings"
+	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
 
@@ -99,5 +103,26 @@ func mapKnownError(err error, correlationID string) GeneratedResult {
 }
 
 func main() {
+	waitForLambdaRuntimeAPI()
 	lambda.Start(Handler)
+}
+
+func waitForLambdaRuntimeAPI() {
+	runtimeAPI := os.Getenv("AWS_LAMBDA_RUNTIME_API")
+	if runtimeAPI == "" {
+		return
+	}
+	if !strings.HasPrefix(runtimeAPI, "127.0.0.1:") && !strings.HasPrefix(runtimeAPI, "localhost:") {
+		return
+	}
+
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		conn, err := net.DialTimeout("tcp", runtimeAPI, 250*time.Millisecond)
+		if err == nil {
+			_ = conn.Close()
+			return
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
 }

@@ -50,6 +50,22 @@
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <artifactId>jackson-databind</artifactId>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+      <groupId>tools.jackson.dataformat</groupId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <artifactId>commons-compress</artifactId>
+      <groupId>org.apache.commons</groupId>
+      <version>1.28.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <description>Reusable Java API for executing Eclipse Epsilon EGX/EGL model-to-text generations
     with diagnostics.

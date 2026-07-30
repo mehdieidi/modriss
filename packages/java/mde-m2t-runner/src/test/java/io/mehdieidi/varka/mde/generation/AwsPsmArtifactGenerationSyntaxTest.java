@@ -3,8 +3,11 @@ package io.mehdieidi.varka.mde.generation;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -22,6 +25,10 @@ final class AwsPsmArtifactGenerationSyntaxTest {
   /** Root directory containing the EGX coordinator and EGL templates. */
   private static final Path GENERATOR_ROOT =
       REPOSITORY_ROOT.resolve("mde/generation/awspsm-to-artifacts");
+
+  /** Coverage report that inventories the generator surface. */
+  private static final Path COVERAGE_REPORT =
+      REPOSITORY_ROOT.resolve("docs/internal/artifacts/aws-psm-code-generator-coverage.md");
 
   /**
    * Formats EGL parse problems into an assertion message tied to the template file being parsed.
@@ -102,5 +109,86 @@ final class AwsPsmArtifactGenerationSyntaxTest {
             () -> describeProblems(templateFile, module.getParseProblems()));
       }
     }
+  }
+
+  /**
+   * Fails when a new EGL template is added without being inventoried in the coverage report.
+   *
+   * @throws Exception when template discovery or report reading fails
+   */
+  @Test
+  void coverageReportListsEveryEglTemplate() throws Exception {
+    String coverageText = Files.readString(COVERAGE_REPORT);
+    for (String templatePath : eglTemplatePaths()) {
+      assertTrue(
+          coverageText.contains("`" + templatePath + "`"),
+          () -> "Coverage report missing EGL template " + templatePath);
+    }
+  }
+
+  /**
+   * Fails when a new EOL operation/helper is added without being inventoried in the coverage
+   * report.
+   *
+   * @throws Exception when EOL discovery or report reading fails
+   */
+  @Test
+  void coverageReportListsEveryEolOperation() throws Exception {
+    String coverageText = Files.readString(COVERAGE_REPORT);
+    for (String operationId : eolOperationIds()) {
+      assertTrue(
+          coverageText.contains("`" + operationId + "`"),
+          () -> "Coverage report missing EOL operation " + operationId);
+    }
+  }
+
+  /**
+   * Returns generator-relative EGL template paths.
+   *
+   * @return sorted template paths using slash separators
+   * @throws IOException when template discovery fails
+   */
+  private List<String> eglTemplatePaths() throws IOException {
+    try (Stream<Path> templateFiles = Files.walk(GENERATOR_ROOT.resolve("templates"))) {
+      return templateFiles
+          .filter(path -> path.getFileName().toString().endsWith(".egl"))
+          .map(path -> GENERATOR_ROOT.resolve("templates").relativize(path))
+          .map(path -> path.toString().replace('\\', '/'))
+          .sorted()
+          .toList();
+    }
+  }
+
+  /**
+   * Returns stable ids for every EOL operation declaration.
+   *
+   * @return sorted operation ids in {@code file.eol:Context.operation} form
+   * @throws IOException when helper discovery fails
+   */
+  private List<String> eolOperationIds() throws IOException {
+    Pattern operationPattern = Pattern.compile("^operation\\s+(?:(\\S+)\\s+)?(\\w+)\\s*\\(");
+    List<String> operationIds = new ArrayList<>();
+    try (Stream<Path> eolFiles = Files.walk(GENERATOR_ROOT.resolve("lib"))) {
+      for (Path eolFile :
+          eolFiles
+              .filter(path -> path.getFileName().toString().endsWith(".eol"))
+              .sorted()
+              .toList()) {
+        String libraryName = GENERATOR_ROOT.resolve("lib").relativize(eolFile).toString();
+        for (String line : Files.readAllLines(eolFile)) {
+          Matcher matcher = operationPattern.matcher(line);
+          if (matcher.find()) {
+            String context = matcher.group(1);
+            String operationName = matcher.group(2);
+            operationIds.add(
+                libraryName.replace('\\', '/')
+                    + ":"
+                    + (context == null ? "" : context + ".")
+                    + operationName);
+          }
+        }
+      }
+    }
+    return operationIds.stream().sorted().toList();
   }
 }

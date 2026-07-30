@@ -334,6 +334,21 @@ operation AWSPSMCOMPUTE!LambdaEventSourceMapping cfnTypeText(emitCtx : Map) : St
   return "AWS::Lambda::EventSourceMapping";
 }
 
+/** Dispatches event-source mapping type rendering for a concrete SQS mapping. */
+operation AWSPSMCOMPUTE!SqsLambdaEventSourceMapping cfnTypeText(emitCtx : Map) : String {
+  return "AWS::Lambda::EventSourceMapping";
+}
+
+/** Dispatches event-source mapping type rendering for a concrete DynamoDB mapping. */
+operation AWSPSMCOMPUTE!DynamoDbStreamLambdaEventSourceMapping cfnTypeText(emitCtx : Map) : String {
+  return "AWS::Lambda::EventSourceMapping";
+}
+
+/** Dispatches event-source mapping type rendering for a concrete generic mapping. */
+operation AWSPSMCOMPUTE!GenericLambdaEventSourceMapping cfnTypeText(emitCtx : Map) : String {
+  return "AWS::Lambda::EventSourceMapping";
+}
+
 /** Renders emit cfn properties yaml. */
 operation AWSPSMCOMPUTE!LambdaEventSourceMapping emitLambdaEventSourceMappingPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
@@ -1610,6 +1625,21 @@ operation AWSPSMAPI!ApiGatewayStage cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGatewayV2::Stage";
 }
 
+/** Dispatches stage type rendering for a concrete HTTP API stage. */
+operation AWSPSMAPI!HttpApiStage cfnTypeText(emitCtx : Map) : String {
+  return "AWS::ApiGatewayV2::Stage";
+}
+
+/** Dispatches stage type rendering for a concrete REST API stage. */
+operation AWSPSMAPI!RestApiStage cfnTypeText(emitCtx : Map) : String {
+  return "AWS::ApiGateway::Stage";
+}
+
+/** Dispatches stage type rendering for a concrete WebSocket API stage. */
+operation AWSPSMAPI!WebSocketStage cfnTypeText(emitCtx : Map) : String {
+  return "AWS::ApiGatewayV2::Stage";
+}
+
 /** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!ApiGatewayStage emitApiGatewayStagePropertiesYaml(emitCtx : Map) : String {
   var outText = "";
@@ -1666,6 +1696,30 @@ operation AWSPSMAPI!WebSocketStage emitCfnPropertiesYaml(emitCtx : Map) : String
 
 /** Computes cfn type text. */
 operation AWSPSMAPI!ApiGatewayAuthorizer cfnTypeText(emitCtx : Map) : String {
+  if (self.api.eClass().getName() = "RestApi") {
+    return "AWS::ApiGateway::Authorizer";
+  }
+  return "AWS::ApiGatewayV2::Authorizer";
+}
+
+/** Dispatches authorizer type rendering for a concrete JWT authorizer. */
+operation AWSPSMAPI!JwtAuthorizer cfnTypeText(emitCtx : Map) : String {
+  if (self.api.eClass().getName() = "RestApi") {
+    return "AWS::ApiGateway::Authorizer";
+  }
+  return "AWS::ApiGatewayV2::Authorizer";
+}
+
+/** Dispatches authorizer type rendering for a concrete Cognito authorizer. */
+operation AWSPSMAPI!CognitoAuthorizer cfnTypeText(emitCtx : Map) : String {
+  if (self.api.eClass().getName() = "RestApi") {
+    return "AWS::ApiGateway::Authorizer";
+  }
+  return "AWS::ApiGatewayV2::Authorizer";
+}
+
+/** Dispatches authorizer type rendering for a concrete Lambda authorizer. */
+operation AWSPSMAPI!LambdaAuthorizer cfnTypeText(emitCtx : Map) : String {
   if (self.api.eClass().getName() = "RestApi") {
     return "AWS::ApiGateway::Authorizer";
   }

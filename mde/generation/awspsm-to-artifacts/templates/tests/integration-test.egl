@@ -1,7 +1,10 @@
 [% /* Generates the integration test artifact. */ %]package integration
 
 import (
+	"encoding/json"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 )
 
@@ -10,10 +13,50 @@ func Test[%= awsFn.cfnLogicalId() %]IntegrationContract(t *testing.T) {
 	if os.Getenv("AWS_REGION") == "" {
 		t.Skip("AWS_REGION is required for deployed integration tests")
 	}
+	if os.Getenv("AWS_ENDPOINT_URL") == "" {
+		t.Skip("AWS_ENDPOINT_URL is required for local deployed integration tests")
+	}
+	if _, err := exec.LookPath("aws"); err != nil {
+		t.Skip("AWS CLI is required for deployed integration tests")
+	}
+	if os.Getenv("GENERATED_LAMBDA_FUNCTION_NAME") == "" {
+		t.Skip("GENERATED_LAMBDA_FUNCTION_NAME is required for deployed integration tests")
+	}
 [%=out.stopPreserve()%]
 [%=out.startPreserve("/*", "*/", awsFn.manualRegionId("integration-assertions"), true)%]
-	if os.Getenv("AWS_REGION") == "" {
-		t.Fatal("AWS_REGION should be set after setup")
+	functionName := os.Getenv("GENERATED_LAMBDA_FUNCTION_NAME")
+	tempDir := t.TempDir()
+	payloadPath := filepath.Join(tempDir, "lambda-payload.json")
+	responsePath := filepath.Join(tempDir, "lambda-response.json")
+	if err := os.WriteFile(payloadPath, []byte(`{"payload":{"source":"generated-integration-test"}}`), 0600); err != nil {
+		t.Fatalf("lambda invoke payload should be writable: %v", err)
+	}
+	cmd := exec.Command(
+		"aws",
+		"lambda",
+		"invoke",
+		"--function-name",
+		functionName,
+		"--payload",
+		"file://"+payloadPath,
+		"--cli-binary-format",
+		"raw-in-base64-out",
+		responsePath,
+	)
+	cmd.Env = os.Environ()
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("lambda invoke failed: %v\n%s", err, string(output))
+	}
+	responseBytes, err := os.ReadFile(responsePath)
+	if err != nil {
+		t.Fatalf("lambda invoke response should be readable: %v", err)
+	}
+	var responseObj map[string]any
+	if err := json.Unmarshal(responseBytes, &responseObj); err != nil {
+		t.Fatalf("lambda invoke response should be JSON: %v\n%s", err, string(responseBytes))
+	}
+	if _, ok := responseObj["statusCode"]; !ok {
+		t.Fatalf("lambda invoke response should include statusCode: %#v", responseObj)
 	}
 [%=out.stopPreserve()%]
 [%=out.startPreserve("/*", "*/", awsFn.manualRegionId("integration-cleanup"), true)%]

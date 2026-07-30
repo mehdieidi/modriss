@@ -28,9 +28,20 @@ local-invoke:
 
 [% for (awsFn in AWSPSMCOMPUTE!AwsLambdaFunction.all.sortBy(awsFn | awsFn.cfnLogicalId())) { %]
 build-[%= awsFn.cfnLogicalId() %]:
-	GOFLAGS=-mod=mod GOOS=linux GOARCH=[%= awsFn.architecture.lambdaArchitectureText() %] go build -o "$(ARTIFACTS_DIR)/[%= awsFn.generatedHandlerName(emitCtx) %]" "./src/functions/[%= awsFn.functionPathSegment(emitCtx) %]"
+	GOFLAGS=-mod=mod GOOS=linux GOARCH=[%= awsFn.goBuildArchitectureText() %] go build -o "$(ARTIFACTS_DIR)/[%= awsFn.generatedHandlerName(emitCtx) %]" "./src/functions/[%= awsFn.functionPathSegment(emitCtx) %]"
 
 [% } %]
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("makefile-customizations"), true)%]
 # Add project-specific make targets here.
 [%=out.stopPreserve()%]
+
+[%
+@template
+/** Computes the Go build architecture for a Lambda function. */
+operation AWSPSMCOMPUTE!AwsLambdaFunction goBuildArchitectureText() : String {
+  if (self.architecture.isDefined() and self.architecture.asString() = "ARM64") {
+    return "arm64";
+  }
+  return "amd64";
+}
+%]
