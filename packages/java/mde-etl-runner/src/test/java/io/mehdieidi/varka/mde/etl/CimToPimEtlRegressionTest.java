@@ -335,6 +335,300 @@ final class CimToPimEtlRegressionTest {
   }
 
   /**
+   * Verifies that the transformation remains useful for an underspecified CIM by generating an
+   * explicit placeholder service, manual completion function, deployment unit, and blocking
+   * readiness decisions instead of silently producing an empty PIM.
+   *
+   * @throws Exception when fixture creation, ETL execution, or model loading fails
+   */
+  @Test
+  void createsReviewablePlaceholderArtifactsForCimWithoutServiceBoundaries() throws Exception {
+    Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
+    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
+    Path cimModel = tempDir.resolve("minimal-cim.xmi");
+    Path pimModel = tempDir.resolve("minimal-pim.xmi");
+
+    createMinimalCimModel(cimMetamodel, cimModel);
+
+    executeOrFail(CimToPimDefaults.request(REPOSITORY_ROOT, cimModel, pimModel, true, true));
+
+    EObject root = loadModel(pimMetamodel, pimModel).getContents().get(0);
+    assertEquals(1, values(root, "services").size(), "Expected one generated placeholder service.");
+    EObject service = values(root, "services").get(0);
+    assertEquals("svc_default_review_required", get(service, "id"));
+    assertEquals("CAPABILITY_BASED", enumLabel(get(service, "boundaryType")));
+    assertEquals("INCOMPLETE", enumLabel(get(service, "lifecycleStatus")));
+
+    List<EObject> functions = serviceDeployables(root, "functions");
+    assertEquals(1, functions.size(), "Expected the manual completion function.");
+    assertEquals("fn_tbd_manual_completion", get(functions.get(0), "id"));
+    assertEquals("MAINTENANCE_TASK", enumLabel(get(functions.get(0), "functionKind")));
+
+    assertEquals(1, values(root, "deploymentUnits").size());
+    assertTrue(
+        values(values(root, "deploymentUnits").get(0), "contains").contains(functions.get(0)),
+        "The deployment unit should contain the manual completion function.");
+
+    EObject readiness = reference(root, "readiness");
+    assertTrue(
+        values(readiness, "manualDecisions").stream()
+            .anyMatch(
+                decision ->
+                    Boolean.TRUE.equals(get(decision, "blocking"))
+                        && get(decision, "question")
+                            .toString()
+                            .contains("Define service boundaries")),
+        "Missing service boundaries should be a blocking manual decision.");
+    assertTrue(
+        values(readiness, "manualDecisions").stream()
+            .anyMatch(
+                decision ->
+                    Boolean.TRUE.equals(get(decision, "blocking"))
+                        && get(decision, "question")
+                            .toString()
+                            .contains("Add at least one executable")),
+        "Missing executable behavior should be a blocking manual decision.");
+  }
+
+  /**
+   * Uses the canonical sample and the synthetic branch fixture as rule-family sentinels. The test
+   * asserts that every CIM-to-PIM TR family has trace/readiness evidence and that the generated PIM
+   * contains the semantic target classes produced by the ETL rule set.
+   *
+   * @throws Exception when ETL execution or model loading fails
+   */
+  @Test
+  void generatedOutputsCoverEveryCimToPimTransformationRuleFamily() throws Exception {
+    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
+    Path samplePim = tempDir.resolve("sample-rule-family-coverage.pim.xmi");
+    executeOrFail(
+        CimToPimDefaults.request(
+            REPOSITORY_ROOT,
+            REPOSITORY_ROOT.resolve("mde/samples/cim.xmi"),
+            samplePim,
+            true,
+            true));
+
+    Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
+    Path branchCim = tempDir.resolve("branch-rule-family-coverage.cim.xmi");
+    Path branchPim = tempDir.resolve("branch-rule-family-coverage.pim.xmi");
+    createCoverageCimModel(cimMetamodel, branchCim);
+    executeOrFail(CimToPimDefaults.request(REPOSITORY_ROOT, branchCim, branchPim, true, true));
+
+    EObject sampleRoot = loadModel(pimMetamodel, samplePim).getContents().get(0);
+    EObject branchRoot = loadModel(pimMetamodel, branchPim).getContents().get(0);
+    List<EObject> generated = new ArrayList<>();
+    generated.addAll(allObjects(sampleRoot));
+    generated.addAll(allObjects(branchRoot));
+
+    for (String ruleId :
+        List.of(
+            "TR-001", "TR-003", "TR-004", "TR-010", "TR-020", "TR-030", "TR-040", "TR-050",
+            "TR-060", "TR-070", "TR-080", "TR-090", "TR-100", "TR-110", "TR-120", "TR-130",
+            "TR-140", "TR-150", "TR-160", "TR-170")) {
+      assertTrue(
+          generated.stream().anyMatch(element -> hasRuleEvidence(element, ruleId)),
+          "Expected generated trace/readiness evidence for " + ruleId);
+    }
+
+    for (String className :
+        List.of(
+            "PIMModel",
+            "Environment",
+            "ImplementationProfile",
+            "BusinessRule",
+            "ReadinessCheck",
+            "ManualDecision",
+            "ServerlessService",
+            "Principal",
+            "IdentityProvider",
+            "ExternalAdapter",
+            "ExternalEndpoint",
+            "Schema",
+            "SchemaField",
+            "SchemaEnumLiteral",
+            "DataStore",
+            "DataModel",
+            "DataField",
+            "AccessPattern",
+            "IndexCandidate",
+            "DataProtectionPolicy",
+            "RetentionPolicy",
+            "BackupPolicy",
+            "CompliancePolicy",
+            "EventType",
+            "EventEnvelope",
+            "Function",
+            "FunctionContract",
+            "Api",
+            "ApiRoute",
+            "Workflow",
+            "StartStep",
+            "SuccessEndStep",
+            "TaskStep",
+            "WorkflowTransition",
+            "TimeoutPolicy",
+            "OrderingPolicy",
+            "ResiliencePolicy",
+            "ConcurrencyPolicy",
+            "RateLimitPolicy",
+            "CachePolicy",
+            "ObservabilityConfig",
+            "RequestResponseFlow",
+            "MessageFlow",
+            "ExternalIntegrationFlow",
+            "DeploymentUnit",
+            "ConfigurationSet",
+            "ServiceElementMembership",
+            "ReadinessFinding",
+            "TraceLink")) {
+      assertTrue(
+          generated.stream().anyMatch(element -> className.equals(element.eClass().getName())),
+          "Expected generated PIM class " + className);
+    }
+  }
+
+  /**
+   * Verifies the shared EOL helper libraries through their observable generated PIM semantics:
+   * naming, type mapping, schema builders, trace/readiness evidence, service resolution, ownership,
+   * idempotency, observability, resilience, and deployment/configuration helpers.
+   *
+   * @throws Exception when fixture creation, ETL execution, or model loading fails
+   */
+  @Test
+  void eolHelperLibrariesProduceExpectedSemanticArtifacts() throws Exception {
+    Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
+    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
+    Path cimModel = tempDir.resolve("helper-semantics-cim.xmi");
+    Path pimModel = tempDir.resolve("helper-semantics-pim.xmi");
+
+    createRepresentativeCimModel(cimMetamodel, cimModel);
+    executeOrFail(CimToPimDefaults.request(REPOSITORY_ROOT, cimModel, pimModel, true, true));
+
+    EObject root = loadModel(pimMetamodel, pimModel).getContents().get(0);
+    List<EObject> generated = allObjects(root);
+
+    EObject service = single(root, "services", "ServerlessService", "Order Management Service");
+    assertEquals("cap_order_management", get(service, "businessCapabilityRef"));
+    assertTrue(Boolean.TRUE.equals(get(service, "externallyExposed")));
+    assertTrue(Boolean.TRUE.equals(get(service, "ownsData")));
+
+    EObject commandFunction = first(generated, "Function", "Place Order Handler");
+    assertEquals("PlaceOrderHandler", get(commandFunction, "sourceNameSuggestion"));
+    assertEquals("COMMAND_HANDLER", enumLabel(get(commandFunction, "functionKind")));
+    assertEquals("REQUEST_RESPONSE", enumLabel(get(commandFunction, "executionModel")));
+    assertEquals("LIGHTWEIGHT", enumLabel(get(commandFunction, "computeProfile")));
+    assertTrue(Boolean.TRUE.equals(get(commandFunction, "requiresIdempotency")));
+    assertTrue(values(service, "functions").contains(commandFunction));
+
+    EObject commandContract = reference(commandFunction, "contract");
+    EObject commandRequest = reference(commandContract, "inputSchema");
+    assertTrue(fieldNames(commandRequest).containsAll(List.of("customerId", "cartId")));
+    assertTrue(fieldNames(commandRequest).containsAll(List.of("correlationId", "causationId")));
+    assertTrue(fieldNames(commandRequest).contains("idempotencyKey"));
+    assertEquals("idempotencyKey", get(commandContract, "idempotencyKeyField"));
+
+    EObject idempotency = reference(commandFunction, "idempotency");
+    assertEquals("IdempotencyPolicy", idempotency.eClass().getName());
+    assertEquals("idempotencyKey", get(idempotency, "keySource"));
+    assertTrue(Boolean.TRUE.equals(get(idempotency, "storeRequired")));
+
+    EObject commandRoute = first(generated, "ApiRoute", "Place Order Route");
+    assertEquals("POST", enumLabel(get(commandRoute, "method")));
+    assertEquals("/orders/place-order", get(commandRoute, "pathTemplate"));
+    assertEquals("placeOrder", get(commandRoute, "operationId"));
+    assertEquals(Integer.valueOf(200), get(commandRoute, "expectedSuccessStatus"));
+    assertEquals(commandFunction, reference(commandRoute, "functionIntegration"));
+    assertTrue(Boolean.TRUE.equals(get(commandRoute, "authRequired")));
+
+    EObject queryFunction = first(generated, "Function", "Get Order Status Query Handler");
+    EObject queryRoute = first(generated, "ApiRoute", "Get Order Status Route");
+    assertEquals("GET", enumLabel(get(queryRoute, "method")));
+    assertEquals("/orders/{id}", get(queryRoute, "pathTemplate"));
+    assertEquals(queryFunction, reference(queryRoute, "functionIntegration"));
+
+    EObject orderSchema = first(generated, "Schema", "Order Schema");
+    EObject orderIdField = field(orderSchema, "orderId");
+    assertEquals("UUID", enumLabel(get(orderIdField, "fieldType")));
+    assertEquals("uuid", get(orderIdField, "format"));
+
+    EObject eventType = first(generated, "EventType", "OrderPlaced");
+    assertEquals("OrderPlaced", get(eventType, "semanticName"));
+    assertEquals("customerId", get(eventType, "subjectExpression"));
+    assertTrue(Boolean.TRUE.equals(get(eventType, "replayable")));
+    assertTrue(
+        fieldNames(reference(eventType, "schema"))
+            .containsAll(
+                List.of(
+                    "eventId",
+                    "eventType",
+                    "source",
+                    "time",
+                    "version",
+                    "correlationId",
+                    "causationId",
+                    "subject")));
+
+    EObject store = first(generated, "DataStore", "Order Aggregate Store");
+    assertTrue(values(service, "stores").contains(store));
+    EObject dataModel = values(store, "ownedDataModels").get(0);
+    EObject orderIdDataField = first(values(dataModel, "storageFields"), "DataField", "orderId");
+    assertEquals("UUID", enumLabel(get(orderIdDataField, "fieldType")));
+    assertTrue(Boolean.TRUE.equals(get(orderIdDataField, "identifier")));
+    assertTrue(Boolean.TRUE.equals(get(orderIdDataField, "partitionKeyCandidate")));
+    assertTrue(
+        values(store, "accessPatterns").stream()
+            .anyMatch(ap -> "orderId".equals(get(ap, "queryBy"))));
+    assertTrue(
+        values(store, "indexCandidates").stream()
+            .anyMatch(ix -> "orderId".equals(get(ix, "partitionKeyField"))));
+    assertTrue(reference(store, "retentionPolicy") != null);
+    assertTrue(reference(store, "backupPolicy") != null);
+
+    EObject api = values(service, "apis").get(0);
+    assertEquals("/order-management", get(api, "basePath"));
+    assertTrue(values(api, "routes").contains(commandRoute));
+    assertTrue(values(api, "routes").contains(queryRoute));
+
+    EObject deploymentUnit = values(root, "deploymentUnits").get(0);
+    assertTrue(values(deploymentUnit, "contains").contains(commandFunction));
+    assertTrue(values(deploymentUnit, "contains").contains(api));
+    assertTrue(values(deploymentUnit, "contains").contains(store));
+
+    EObject configuration =
+        first(generated, "ConfigurationSet", "Order Management Service Configuration");
+    assertTrue(
+        configParameterNames(configuration)
+            .containsAll(List.of("LOG_LEVEL", "CORRELATION_ID_NAME")));
+
+    EObject traceModel = reference(root, "traceModel");
+    assertTrue(
+        values(traceModel, "links").stream()
+            .anyMatch(link -> "TR-070".equals(get(link, "transformationRule"))));
+    assertTrue(
+        values(traceModel, "links").stream()
+            .anyMatch(link -> commandFunction.equals(reference(link, "target"))));
+
+    EObject readiness = reference(root, "readiness");
+    assertTrue(
+        values(readiness, "checks").stream()
+            .anyMatch(check -> "CIM_HAS_AT_LEAST_ONE_BEHAVIOR".equals(get(check, "checkId"))));
+    assertTrue(
+        generated.stream()
+            .filter(element -> "ObservabilityConfig".equals(element.eClass().getName()))
+            .anyMatch(config -> "correlationId".equals(get(config, "correlationIdField"))));
+    assertTrue(
+        generated.stream()
+            .anyMatch(element -> "ResiliencePolicy".equals(element.eClass().getName())));
+    assertTrue(
+        generated.stream()
+            .anyMatch(element -> "RequestResponseFlow".equals(element.eClass().getName())));
+    assertTrue(
+        values(root, "serviceMemberships").stream()
+            .anyMatch(membership -> commandFunction.equals(reference(membership, "element"))));
+  }
+
+  /**
    * Verifies malformed ETL input yields structured validation or parse diagnostics instead of an
    * unreported runner failure.
    *
@@ -884,6 +1178,39 @@ final class CimToPimEtlRegressionTest {
   }
 
   /**
+   * Creates a deliberately underspecified CIM root with no boundaries or executable behavior.
+   *
+   * @param metamodel combined CIM metamodel path
+   * @param modelFile output XMI path
+   * @throws IOException when the model cannot be saved
+   */
+  private void createMinimalCimModel(Path metamodel, Path modelFile) throws IOException {
+    ResourceSet resourceSet = new ResourceSetImpl();
+    resourceSet
+        .getResourceFactoryRegistry()
+        .getExtensionToFactoryMap()
+        .put("ecore", new EcoreResourceFactoryImpl());
+    resourceSet
+        .getResourceFactoryRegistry()
+        .getExtensionToFactoryMap()
+        .put("xmi", new XMIResourceFactoryImpl());
+    Resource metamodelResource =
+        resourceSet.getResource(URI.createFileURI(metamodel.toString()), true);
+    EcoreUtil.resolveAll(resourceSet);
+    registerPackages(metamodelResource);
+
+    EObject model = create(metamodelResource, "CIMModel");
+    set(model, "id", "cim_minimal_model");
+    set(model, "name", "Minimal CIM");
+    set(model, "domainName", "Minimal Domain");
+    set(model, "businessScope", "No boundaries or behavior yet.");
+
+    Resource modelResource = resourceSet.createResource(URI.createFileURI(modelFile.toString()));
+    modelResource.getContents().add(model);
+    modelResource.save(null);
+  }
+
+  /**
    * Creates an information item with the common required attributes used by the synthetic CIM
    * fixtures.
    *
@@ -1101,6 +1428,86 @@ final class CimToPimEtlRegressionTest {
   }
 
   /**
+   * Returns a root object and all nested contained objects.
+   *
+   * @param root model root
+   * @return flattened containment tree
+   */
+  private List<EObject> allObjects(EObject root) {
+    List<EObject> objects = new ArrayList<>();
+    objects.add(root);
+    for (var iterator = root.eAllContents(); iterator.hasNext(); ) {
+      objects.add(iterator.next());
+    }
+    return objects;
+  }
+
+  /**
+   * Finds the first element by class and name in a list.
+   *
+   * @param objects search space
+   * @param className expected EClass name
+   * @param name expected name
+   * @return matching object
+   */
+  private EObject first(List<EObject> objects, String className, String name) {
+    return objects.stream()
+        .filter(object -> className.equals(object.eClass().getName()))
+        .filter(object -> name.equals(featureText(object, "name")))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("Missing " + className + " named " + name));
+  }
+
+  /**
+   * Finds a named child under a direct many-valued root feature.
+   *
+   * @param root owner root
+   * @param featureName many-valued feature name
+   * @param className expected EClass name
+   * @param name expected name
+   * @return matching child
+   */
+  private EObject single(EObject root, String featureName, String className, String name) {
+    return first(values(root, featureName), className, name);
+  }
+
+  /**
+   * Finds a schema field by name.
+   *
+   * @param schema owner schema
+   * @param name field name
+   * @return matching field
+   */
+  private EObject field(EObject schema, String name) {
+    return values(schema, "fields").stream()
+        .filter(field -> name.equals(get(field, "name")))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("Missing field " + name));
+  }
+
+  /**
+   * Collects schema field names.
+   *
+   * @param schema owner schema
+   * @return field names
+   */
+  private List<String> fieldNames(EObject schema) {
+    return values(schema, "fields").stream().map(field -> get(field, "name").toString()).toList();
+  }
+
+  /**
+   * Collects configuration parameter names.
+   *
+   * @param configuration configuration set
+   * @return parameter names
+   */
+  private List<String> configParameterNames(EObject configuration) {
+    return values(configuration, "parameters").stream()
+        .map(parameter -> get(parameter, "name").toString())
+        .toList();
+  }
+
+  /**
    * Reads a many-valued EMF feature as a list of model objects.
    *
    * @param object owner object
@@ -1132,6 +1539,45 @@ final class CimToPimEtlRegressionTest {
    */
   private Object get(EObject object, String featureName) {
     return object.eGet(feature(object, featureName));
+  }
+
+  /**
+   * Reads an optional feature as text without failing when the feature is not present.
+   *
+   * @param object owner object
+   * @param featureName optional feature name
+   * @return textual feature value, or an empty string
+   */
+  private String featureText(EObject object, String featureName) {
+    EStructuralFeature feature = object.eClass().getEStructuralFeature(featureName);
+    if (feature == null) {
+      return "";
+    }
+    Object value = object.eGet(feature);
+    return value == null ? "" : value.toString();
+  }
+
+  /**
+   * Checks the rule identifier features used by generated target elements, trace links, and
+   * readiness evidence.
+   *
+   * @param object generated object
+   * @param ruleId expected transformation rule family
+   * @return true when the object carries evidence for the rule family
+   */
+  private boolean hasRuleEvidence(EObject object, String ruleId) {
+    return ruleId.equals(featureText(object, "ruleId"))
+        || ruleId.equals(featureText(object, "transformationRule"));
+  }
+
+  /**
+   * Returns an EMF enum's user-facing label where available.
+   *
+   * @param value enum instance
+   * @return enum label
+   */
+  private String enumLabel(Object value) {
+    return String.valueOf(value);
   }
 
   /**

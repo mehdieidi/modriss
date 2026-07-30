@@ -65,4 +65,15 @@ final class EpsilonEtlExecutorTest {
     assertTrue(json.contains("\"phaseTiming\""));
     assertTrue(json.contains("\"parseMs\": 2"));
   }
+
+  /** Verifies naming helpers preserve semantic lower-camel identifiers used by generated models. */
+  @Test
+  void textHelpersPreserveLowerCamelIdentifiers() {
+    EtlTextChecks checks = new EtlTextChecks();
+
+    assertEquals("customerId", checks.camelCase("customerId"));
+    assertEquals("customerId", checks.camelCase("Customer Id"));
+    assertEquals("orderStatus", checks.camelCase("order-status"));
+    assertEquals("PlaceOrderHandler", checks.pascalCase("Place Order Handler"));
+  }
 }

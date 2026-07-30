@@ -122,10 +122,18 @@ public final class EtlTextChecks {
     return camelCaseValues.computeIfAbsent(
         text,
         ignored -> {
-          String[] parts = slug(text).split("_");
-          StringBuilder result = new StringBuilder(parts[0]);
+          String normalized =
+              text.trim()
+                  .replaceAll("([a-z0-9])([A-Z])", "$1 $2")
+                  .replaceAll("[^A-Za-z0-9]+", " ")
+                  .trim();
+          if (normalized.isEmpty()) {
+            return "unnamed";
+          }
+          String[] parts = normalized.split("\\s+");
+          StringBuilder result = new StringBuilder(parts[0].toLowerCase(Locale.ROOT));
           for (int index = 1; index < parts.length; index++) {
-            String part = parts[index];
+            String part = parts[index].toLowerCase(Locale.ROOT);
             if (!part.isEmpty()) {
               result.append(Character.toUpperCase(part.charAt(0))).append(part, 1, part.length());
             }

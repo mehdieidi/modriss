@@ -1322,7 +1322,13 @@ post ValidationAndReadinessClosure {
     contract.correlationIdField = "correlationId";
     fn.contract = contract;
     fn.lifecycleStatus = KERNEL!LifecycleStatus#INCOMPLETE;
-    pimRoot().services.first().functions.add(fn);
+    var service = pimRoot().services.first();
+    service.functions.add(fn);
+    addServiceMembership(service, fn);
+    var deploymentUnit = pimRoot().deploymentUnits.selectOne(du | du.services.includes(service));
+    if (deploymentUnit.isDefined() and not deploymentUnit.contains.includes(fn)) {
+      deploymentUnit.contains.add(fn);
+    }
     manualDecision("TR-170", "Add at least one executable command, query, process, policy, or event consumer to complete the PIM.", KERNEL!Severity#BLOCKER, true, Sequence{fn});
   }
 
