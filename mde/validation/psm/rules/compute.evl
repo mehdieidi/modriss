@@ -219,7 +219,7 @@ context AWSPSM!DynamoDbStreamLambdaEventSourceMapping {
 
   /** Checks that dynamo stream mapping has starting position. */
   constraint DynamoStreamMappingHasStartingPosition {
-    check : self.startingPosition.isDefined()
+    check : self.eIsSet(self.eClass().getEStructuralFeature('startingPosition'))
     message : 'DynamoDB stream event source mapping ' + self.resourceLabel() + ' has no startingPosition. Fix: set startingPosition to LATEST, TRIM_HORIZON, or AT_TIMESTAMP.'
   }
 }

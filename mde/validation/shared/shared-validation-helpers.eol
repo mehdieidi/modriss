@@ -1,7 +1,7 @@
 /** Provides reusable shared validation helpers operations. */
 /** Returns whether the receiver contains a non-empty textual value. */
 operation Any hasText() : Boolean {
-  return self.isDefined() and self.asString().trim().size() > 0;
+  return self.isDefined() and self.asString().trim().length() > 0;
 }
 
 /** Computes first text. */

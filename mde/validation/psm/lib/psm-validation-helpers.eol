@@ -4,7 +4,7 @@ operation Any hasText() : Boolean {
   if (self.isUndefined()) {
     return false;
   }
-  return self.asString().trim().size() > 0;
+  return self.asString().trim().length() > 0;
 }
 
 /** Returns whether the receiver is true value. */
