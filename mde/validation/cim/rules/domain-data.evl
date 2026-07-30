@@ -16,14 +16,6 @@ context CIM!DomainConcept {
 /** Validates Domain Entity elements. */
 context CIM!DomainEntity {
 
-  /** Checks that entity has primary identity attribute. */
-  constraint EntityHasPrimaryIdentityAttribute {
-    check : self.primaryIdentityAttribute.isDefined()
-    message :
-      "Error [CIM-ENTITY-001] DomainEntity '" + self.labelText() + "' has no primaryIdentityAttribute. " +
-      "Suggestion: select or create the InformationItem that uniquely identifies the entity in business terms."
-  }
-
   /** Checks that identity attributes are owned attributes. */
   constraint IdentityAttributesAreOwnedAttributes {
     guard : self.primaryIdentityAttribute.isDefined()
@@ -187,14 +179,6 @@ context CIM!BusinessInvariant {
 
 /** Validates Information Item elements. */
 context CIM!InformationItem {
-
-  /** Checks that acyclic sub items. */
-  constraint AcyclicSubItems {
-    check : not self.hasSubItemCycle()
-    message :
-      "Error [CIM-INFO-000A] InformationItem '" + self.labelText() + "' has cyclic subItems. " +
-      "Suggestion: remove the recursive containment/reference cycle."
-  }
 
   /** Checks that structured items use object or list. */
   constraint StructuredItemsUseObjectOrList {

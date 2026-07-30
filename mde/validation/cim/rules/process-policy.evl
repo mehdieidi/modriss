@@ -255,14 +255,6 @@ context CIM!ProcessTransition {
 /** Validates Decision Table elements. */
 context CIM!DecisionTable {
 
-  /** Checks that decision table has rules. */
-  constraint DecisionTableHasRules {
-    check : self.rules.notEmpty()
-    message :
-      "Error [CIM-DT-001] DecisionTable '" + self.labelText() + "' has no rules. " +
-      "Suggestion: add at least one DecisionRule with a condition and outcome."
-  }
-
   /** Checks that decision table rules have unique priority. */
   constraint DecisionTableRulesHaveUniquePriority {
     check {

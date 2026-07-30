@@ -92,14 +92,6 @@ context CIM!Command {
 /** Validates Query elements. */
 context CIM!Query {
 
-  /** Checks that query must have output. */
-  constraint QueryMustHaveOutput {
-    check : self.output.notEmpty()
-    message :
-      "Error [CIM-QRY-001] Query '" + self.labelText() + "' has no output. " +
-      "Suggestion: link at least one InformationItem that the query returns."
-  }
-
   /** Checks that personal query must declare authorization. */
   constraint PersonalQueryMustDeclareAuthorization {
     guard : (self.containsPersonalData = true) or self.outputsPersonalData()

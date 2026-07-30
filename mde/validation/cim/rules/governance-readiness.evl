@@ -12,14 +12,6 @@ context CIM!NonFunctionalRequirement {
       "Suggestion: define the measurable quality metric and target threshold."
   }
 
-  /** Checks that nfr constrains elements. */
-  constraint NFRConstrainsElements {
-    check : self.constrainedElements.notEmpty()
-    message :
-      "Error [CIM-NFR-002] NonFunctionalRequirement '" + self.labelText() + "' does not constrain any elements. " +
-      "Suggestion: link the commands, queries, capabilities, information items, processes, or other elements affected by this NFR."
-  }
-
   /** Advises that production blocking nfr has scenario. */
   critique ProductionBlockingNFRHasScenario {
     guard : self.productionBlocking = true
@@ -244,13 +236,6 @@ context CIM!TransformationProfile {
       "Suggestion: make each manual decision explicit and assign an owner."
   }
 
-  /** Advises that required decisions are referenced not contained readiness decisions. */
-  critique RequiredDecisionsAreReferencedNotContainedReadinessDecisions {
-    check : self.requiredDecisions.forAll(decisionItem | decisionItem.eContainer().isUndefined() or decisionItem.eContainer().isKindOf(KERNEL!ProductionReadinessAssessment))
-    message :
-      "Warning [CIM-TP-003] TransformationProfile.requiredDecisions should reference readiness decisions rather than contain separate decision instances. " +
-      "Suggestion: keep ManualDecision ownership under ProductionReadinessAssessment and reference it from the profile."
-  }
 }
 
 /** Validates Production Readiness Assessment elements. */

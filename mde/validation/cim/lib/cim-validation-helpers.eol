@@ -42,30 +42,6 @@ operation collectionHasUniqueNames(items) : Boolean {
   return true;
 }
 
-/** Returns whether the receiver has sub item cycle. */
-operation CIM!InformationItem hasSubItemCycle() : Boolean {
-  return self.hasSubItemCycle(Set{}, Set{});
-}
-
-/** Returns whether the receiver has sub item cycle. */
-operation CIM!InformationItem hasSubItemCycle(visited : Set, active : Set) : Boolean {
-  if (active.includes(self)) {
-    return true;
-  }
-  if (visited.includes(self)) {
-    return false;
-  }
-  visited.add(self);
-  active.add(self);
-  for (child in self.subItems) {
-    if (child.hasSubItemCycle(visited, active)) {
-      return true;
-    }
-  }
-  active.remove(self);
-  return false;
-}
-
 @cached
 /** Computes cim outgoing transition count by source id. */
 operation cimOutgoingTransitionCountBySourceId() : Map {
