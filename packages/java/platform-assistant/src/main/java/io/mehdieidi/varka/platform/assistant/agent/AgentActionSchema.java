@@ -61,7 +61,7 @@ public final class AgentActionSchema {
     }
     return switch (toolName) {
       case "respond_to_user" -> object(Map.of("message", stringSchema()), List.of("message"));
-      case "inspect_model" -> object(Map.of("id", stringSchema()), List.of("id"));
+      case "inspect_model" -> inspectModelSchema();
       case "describe_types" ->
           object(Map.of("names", array(stringSchema(), null)), List.of("names"));
       case "plan_source_model" ->
@@ -124,11 +124,11 @@ public final class AgentActionSchema {
             List.of("elementRef", "sourceUnitId", "requirementId", "kind", "assumption"));
     return object(
         Map.of(
-            "creates", array(createItem, null),
+            "creates", array(createItem, 12),
             "updates", array(update, 0),
-            "connections", array(connection, null),
+            "connections", array(connection, 18),
             "deletions", array(deletion, null),
-            "evidence", array(evidence, null),
+            "evidence", array(evidence, 12),
             "planSummary", stringSchema(),
             "turnComplete", Map.of("type", "boolean")),
         List.of(
@@ -139,6 +139,26 @@ public final class AgentActionSchema {
             "evidence",
             "planSummary",
             "turnComplete"));
+  }
+
+  private static Map<String, Object> inspectModelSchema() {
+    return object(
+        Map.of(
+            "id",
+            stringSchema(),
+            "ids",
+            array(stringSchema(), null),
+            "eClasses",
+            array(stringSchema(), null),
+            "ownerIds",
+            array(stringSchema(), null),
+            "query",
+            stringSchema(),
+            "page",
+            integerSchema(0, null),
+            "pageSize",
+            integerSchema(1, 100)),
+        List.of("id", "ids", "eClasses", "ownerIds", "query", "page", "pageSize"));
   }
 
   private static Map<String, Object> createSchema(List<TypeContract> contracts) {
@@ -226,6 +246,14 @@ public final class AgentActionSchema {
 
   private static Map<String, Object> stringSchema() {
     return Map.of("type", "string");
+  }
+
+  private static Map<String, Object> integerSchema(Integer minimum, Integer maximum) {
+    Map<String, Object> schema = new LinkedHashMap<>();
+    schema.put("type", "integer");
+    if (minimum != null) schema.put("minimum", minimum);
+    if (maximum != null) schema.put("maximum", maximum);
+    return schema;
   }
 
   private static Map<String, Object> enumStringSchema(List<String> values) {

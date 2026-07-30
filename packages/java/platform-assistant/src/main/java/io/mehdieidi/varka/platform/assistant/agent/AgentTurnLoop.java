@@ -459,14 +459,30 @@ public final class AgentTurnLoop {
                   && selector.ownerIds().isEmpty()
                   && (selector.query() == null || selector.query().isBlank()))
                 fullModelInspected = true;
+              JsonNode inspection =
+                  id.isBlank() ? turnTools.inspectModel(selector) : turnTools.readModel(id);
+              String inspectionGuidance =
+                  "You now have the required model facts. Do not inspect or describe types"
+                      + " again; return one terminal action (commit_model_batch, answer_user, or"
+                      + " ask_user).";
+              if (id.isBlank()
+                  && inspection.path("total").asInt(-1) == 0
+                  && !hasNoModelElements(workspace)) {
+                fullModelInspected = true;
+                inspection = turnTools.inspectModel(AgentModelTools.InspectionSelector.all());
+                inspectionGuidance =
+                    "Your selected inspection matched zero elements, but the model is not empty."
+                        + " The fallback inspection above is authoritative current-model"
+                        + " context. Do not conclude that the PIM/CIM has no elements. Extend the"
+                        + " compatible existing elements when possible; otherwise create the"
+                        + " missing feature slice with structurally valid nodes and edges.";
+              }
               user =
                   followUpContext(userMessage, sourceDocument)
                       + "\n\nInspection result:\n"
-                      + (id.isBlank() ? turnTools.inspectModel(selector) : turnTools.readModel(id))
+                      + inspection
                       + "\n\n"
-                      + "You now have the required model facts. Do not inspect or describe types"
-                      + " again; return one terminal action (commit_model_batch, answer_user, or"
-                      + " ask_user).";
+                      + inspectionGuidance;
               continue;
             }
             case DESCRIBE_TYPES -> {
@@ -486,7 +502,7 @@ public final class AgentTurnLoop {
               List<String> selectedNames = new ArrayList<>();
               String rootType = workspace.snapshot().path("eClass").asText("").trim();
               if (!rootType.isBlank()) selectedNames.add(rootType);
-              int selectedContractLimit = sourceBacked ? 10 : 6;
+              int selectedContractLimit = sourceBacked ? 8 : 4;
               for (String name : names) {
                 // Ordinary edits stay compact. Source-to-CIM generation needs enough exact
                 // contracts for a meaningful first slice without making the structured schema so
@@ -503,7 +519,11 @@ public final class AgentTurnLoop {
                       + "\n\n"
                       + "You now have the exact contracts. Do not inspect or describe types again."
                       + " The next action must be commit_model_batch; do not answer or ask the"
-                      + " user. Submit one complete candidate batch using only these contracts."
+                      + " user. Submit one structurally complete checkpoint slice using only"
+                      + " these contracts. For a complex create or feature-add request, keep the"
+                      + " slice compact enough to validate quickly: at most 12 creates, 18"
+                      + " connections, and 12 evidence items. Set turnComplete:false and put the"
+                      + " next concrete slice in planSummary when requested work remains."
                       + " Before submitting, audit every create against its contract: every"
                       + " attribute or reference marked with ! is mandatory. Required attributes"
                       + " must appear in attributes with a valid JSON value; enum attributes must"
@@ -682,10 +702,11 @@ commit_model_batch arguments must match this shape:
 creates, updates, connections, deletions, and evidence are always arrays of JSON objects. Never
 put a bare clientRef, id, or string in any of those arrays. A clientRef is only a field inside
 a create object or a value used by owner/source/target inside another object.
-For a complex or source-backed generation, prefer one coherent validated slice over a giant
-batch. Set turnComplete:false and state the next slice in planSummary whenever additional
-requested work remains. The backend saves that slice atomically and the user can continue
-from its durable checkpoint. Set turnComplete:true only when the whole request is complete.
+For a complex or source-backed generation, create one coherent validated slice rather than a
+giant batch. One patch may contain at most 12 creates, 18 connections, and 12 evidence items.
+Set turnComplete:false and state the next slice in planSummary whenever additional requested
+work remains. The backend saves that slice atomically and the user can continue from its
+durable checkpoint. Set turnComplete:true only when the whole request is complete.
 Every create needs an owner and containment feature. For an element directly contained by the
 model root, use owner:"rootId" (a deterministic alias for the authoritative current root id)
 with the exact root containment feature. Do not use model type names such as
@@ -866,9 +887,11 @@ relationships when supported by the returned contracts.\
       java.util.function.BooleanSupplier cancellationRequested,
       java.util.function.Supplier<PlatformException> stopReason) {
     if (canceled.get())
-      throw new PlatformException(499, "Assistant turn was canceled. Your model is unchanged.");
+      throw new PlatformException(
+          499, "Assistant turn was canceled before the current step completed.");
     if (cancellationRequested != null && cancellationRequested.getAsBoolean())
-      throw new PlatformException(499, "Assistant turn was canceled. Your model is unchanged.");
+      throw new PlatformException(
+          499, "Assistant turn was canceled before the current step completed.");
     PlatformException durableStop = stopReason == null ? null : stopReason.get();
     if (durableStop != null) throw durableStop;
     if (Instant.now().isAfter(deadline))

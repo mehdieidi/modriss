@@ -5,10 +5,12 @@ import io.mehdieidi.varka.platform.assistant.spi.AssistantMetrics;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantSettings;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import java.net.SocketTimeoutException;
+import java.net.http.HttpTimeoutException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -245,7 +247,9 @@ public class AssistantHardeningService {
             "AI provider rejected the configured tool/schema protocol. Check "
                 + "VARKA_AI_OPENAI_PROTOCOL, the selected model, and endpoint capabilities.");
       }
-      if (current instanceof SocketTimeoutException) {
+      if (current instanceof SocketTimeoutException
+          || current instanceof HttpTimeoutException
+          || current instanceof TimeoutException) {
         return new PlatformException(
             504,
             "AI provider returned no response within "

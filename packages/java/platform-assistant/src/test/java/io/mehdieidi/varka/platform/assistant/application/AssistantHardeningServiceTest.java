@@ -9,6 +9,8 @@ import io.mehdieidi.varka.platform.assistant.support.AssistantSettingsFixtures;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -170,6 +172,28 @@ class AssistantHardeningServiceTest {
             + "too slow; try again shortly.",
         ex.getMessage());
     assertEquals(3, attempts.get());
+  }
+
+  @Test
+  void classifiesWrappedAsyncTimeoutAsProviderTimeout() {
+    AssistantSettings properties =
+        AssistantSettingsFixtures.withHardening(
+            30, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 0, Duration.ZERO, 12);
+    AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
+
+    PlatformException ex =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                hardening.providerCall(
+                    AssistantModelRole.RESPONDER,
+                    "openai",
+                    "model",
+                    () -> {
+                      throw new CompletionException(new TimeoutException("request timed out"));
+                    }));
+
+    assertEquals(504, ex.status());
   }
 
   @Test

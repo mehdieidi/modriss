@@ -14,7 +14,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -258,11 +257,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     if (proxy.enabled() && proxy.type() != AiProperties.ProxyType.DIRECT) {
       httpClient.proxy(java.net.ProxySelector.of(proxy.address()));
     }
-    return httpClient
-        .build()
-        .sendAsync(request, HttpResponse.BodyHandlers.ofString())
-        .orTimeout(properties.requestTimeout().toMillis(), TimeUnit.MILLISECONDS)
-        .join();
+    return httpClient.build().send(request, HttpResponse.BodyHandlers.ofString());
   }
 
   private static String providerErrorSnippet(String body) {
@@ -355,6 +350,6 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   }
 
   private int completionLimit(AssistantModelRole role) {
-    return Math.max(256, properties.tokenBudget());
+    return role == AssistantModelRole.SUMMARIZER ? 2048 : 4096;
   }
 }

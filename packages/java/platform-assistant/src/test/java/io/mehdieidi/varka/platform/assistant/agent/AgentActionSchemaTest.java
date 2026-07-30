@@ -69,6 +69,42 @@ class AgentActionSchemaTest {
   }
 
   @Test
+  void exposesStructuredInspectSelectorsInToolSchema() throws Exception {
+    var schema =
+        new ObjectMapper().valueToTree(AgentActionSchema.toolSchema("inspect_model", List.of()));
+    var properties = schema.path("properties");
+
+    assertTrue(properties.has("id"));
+    assertEquals("array", properties.path("ids").path("type").asText());
+    assertEquals("array", properties.path("eClasses").path("type").asText());
+    assertEquals("array", properties.path("ownerIds").path("type").asText());
+    assertEquals("string", properties.path("query").path("type").asText());
+    assertEquals("integer", properties.path("page").path("type").asText());
+    assertEquals("integer", properties.path("pageSize").path("type").asText());
+    assertEquals(100, properties.path("pageSize").path("maximum").asInt());
+  }
+
+  @Test
+  void boundsOnePatchToolCallToADurableCheckpointSlice() throws Exception {
+    var contract =
+        new TypeContract(
+            ModelLevel.PIM,
+            "Function",
+            true,
+            List.of(),
+            List.of(new AttributeContract("name", "EString", true, List.of())),
+            List.of());
+    var schema =
+        new ObjectMapper()
+            .valueToTree(AgentActionSchema.toolSchema("apply_draft_patch", List.of(contract)));
+    var properties = schema.path("properties");
+
+    assertEquals(12, properties.path("creates").path("maxItems").asInt());
+    assertEquals(18, properties.path("connections").path("maxItems").asInt());
+    assertEquals(12, properties.path("evidence").path("maxItems").asInt());
+  }
+
+  @Test
   void excludesRootModelTypesFromCreatablePatchVariants() throws Exception {
     var root =
         new TypeContract(

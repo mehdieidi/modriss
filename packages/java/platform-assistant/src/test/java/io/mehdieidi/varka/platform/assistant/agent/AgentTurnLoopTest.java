@@ -134,6 +134,37 @@ class AgentTurnLoopTest {
   }
 
   @Test
+  void fallsBackToFullInspectionWhenNarrowInspectMissesExistingElements() throws Exception {
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(any(), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    InspectMissThenAnswerProvider provider = new InspectMissThenAnswerProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            3);
+    var json =
+        new ObjectMapper()
+            .readTree(
+                """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","services":[{"id":"svc-1","eClass":"ServerlessService","name":"Ticket Commerce Service"}]}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.PIM, "m", 1, json, new AssistantPatchCompiler(), null);
+
+    loop.run("s", ModelLevel.PIM, "Add waitlist support", null, workspace);
+
+    assertEquals(2, provider.prompts.size());
+    assertTrue(provider.prompts.get(1).contains("Your selected inspection matched zero elements"));
+    assertTrue(provider.prompts.get(1).contains("Ticket Commerce Service"));
+  }
+
+  @Test
   void durableCancellationStopsBeforeTheProviderBoundary() throws Exception {
     ModelService models = mock(ModelService.class);
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
@@ -375,6 +406,34 @@ class AgentTurnLoopTest {
               + " intake\",\"sourceUnitIds\":[\"src-1\"]}]}}",
           "fake",
           "fake");
+    }
+  }
+
+  private static final class InspectMissThenAnswerProvider implements AssistantModelProvider {
+    final List<String> prompts = new ArrayList<>();
+
+    @Override
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    @Override
+    public boolean available() {
+      return true;
+    }
+
+    @Override
+    public AssistantReply complete(AssistantPrompt prompt) {
+      prompts.add(prompt.user());
+      ProviderCallBudget.consume(prompt.role());
+      if (prompts.size() == 1) {
+        return new AssistantReply(
+            "{\"tool\":\"inspect_model\",\"arguments\":{\"query\":\"does-not-exist\"}}",
+            "fake",
+            "fake");
+      }
+      return new AssistantReply(
+          "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"Inspected\"}}", "fake", "fake");
     }
   }
 
