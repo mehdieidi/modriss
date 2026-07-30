@@ -57,7 +57,7 @@ context PIM!Schema {
   /** Advises that external schema should state compatibility. */
   critique ExternalSchemaShouldStateCompatibility {
     guard : self.externalSchemaUri.hasText()
-    check : self.compatibility.isDefined()
+    check : self.eIsSet(self.eClass().getEStructuralFeature("compatibility"))
     message : "[PIM-SCHEMA-003] External schema '" + self.displayName() + "' does not state compatibility. Suggested fix: set compatibility to BACKWARD, FORWARD, FULL or NONE based on the evolution contract."
   }
 }
