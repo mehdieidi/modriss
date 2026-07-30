@@ -667,7 +667,11 @@ operation physicalName(source, awsKind : String, stage) {
   if (index.isUndefined()) index = 2;
   while (usedAwsPhysicalNames.includes(candidate)) {
     var suffix = "-" + index.asString();
-    candidate = seed.substring(0, 64 - suffix.length()) + suffix;
+    var baseLength = 64 - suffix.length();
+    if (baseLength > seed.length()) {
+      baseLength = seed.length();
+    }
+    candidate = seed.substring(0, baseLength) + suffix;
     index = index + 1;
   }
   cachedNextPhysicalNameIndexBySeed.put(seed, index);

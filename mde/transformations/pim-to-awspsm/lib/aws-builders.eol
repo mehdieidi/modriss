@@ -263,7 +263,7 @@ operation createLambdaCodeConfig(f, profile) {
     var img = new AWSPSMCOMPUTE!LambdaImageCodeConfig;
     img.id = generatedId("lambda_code", f, "image");
     img.name = firstText(f.name, "Function") + " Image Code";
-    img.imageUri = annotationValue(f.modelTags, "lambda.imageUri");
+    img.imageUri = modelTagValue(f, "lambda.imageUri");
     if (not hasText(img.imageUri)) {
       img.imageUri = "REVIEW_REQUIRED_IMAGE_URI";
       manualDecision("LAMBDA_IMAGE_URI_MISSING",
@@ -277,7 +277,12 @@ operation createLambdaCodeConfig(f, profile) {
   var zip = new AWSPSMCOMPUTE!LambdaZipCodeConfig;
   zip.id = generatedId("lambda_code", f, "zip");
   zip.name = firstText(f.name, "Function") + " Code";
-  zip.codeUri = firstText(profile.sourceLayout, "src/functions/" + kebab(f.name));
+  if (profile.isDefined()) {
+    zip.codeUri = firstText(profile.sourceLayout, "src/functions/" + kebab(f.name));
+  }
+  else {
+    zip.codeUri = "src/functions/" + kebab(f.name);
+  }
   zip.runtimeIdentifier = defaultRuntime(profile);
   zip.handler = inferHandler(f);
   zip.generatedByTransformation = true;
@@ -312,6 +317,20 @@ operation annotationValue(text, key : String) {
     var kv = part.split("=");
     if (kv.size() >= 2 and kv.first().trim().toLowerCase() = key.toLowerCase()) {
       return kv.at(1).trim();
+    }
+  }
+  return "";
+}
+
+/** Returns a semicolon-delimited metadata value from the receiver's multi-valued model tags. */
+operation modelTagValue(element, key : String) {
+  if (element.isUndefined() or element.eClass().getEStructuralFeature("modelTags").isUndefined()) {
+    return "";
+  }
+  for (tagText in element.modelTags) {
+    var value = annotationValue(tagText, key);
+    if (hasText(value)) {
+      return value;
     }
   }
   return "";
@@ -916,8 +935,8 @@ operation applyCostPolicies() {
 /** Resolves resolve triggers. */
 operation resolveTriggers() {
   for (t in COMPUTE!Trigger.all) {
-    if (t.invokesFunction.isDefined() and t.source.isDefined()) {
-      var fn = awsEquivalent(t.invokesFunction);
+    if (t.`function`.isDefined() and t.source.isDefined()) {
+      var fn = awsEquivalent(t.`function`);
       if (t.source.eClass().getName() = "Queue") {
         createSqsLambdaMapping(t, awsEquivalent(t.source), fn, t.batchPolicy, t.resilience);
       }
@@ -938,8 +957,12 @@ operation resolveTriggers() {
               addS3LambdaNotification(t, awsEquivalent(t.source), fn);
             }
             else {
-              if (t.source.eClass().getName() = "DataStore") {
-                createDynamoLambdaMapping(t, awsEquivalent(t.source), fn, t.batchPolicy, t.resilience);
+              if (t.source.eClass().getName() = "DataStore" or t.source.eClass().getName() = "DataChangeStream") {
+                var dataSource = t.source;
+                if (t.source.eClass().getName() = "DataChangeStream") {
+                  dataSource = t.source.dataStore;
+                }
+                createDynamoLambdaMapping(t, awsEquivalent(dataSource), fn, t.batchPolicy, t.resilience);
               }
               else {
               if (t.source.eClass().getName() = "ApiRoute") {
