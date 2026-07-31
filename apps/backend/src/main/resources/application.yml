@@ -74,25 +74,25 @@ varka:
     enabled: ${VARKA_AI_ENABLED:false}
     workflow-engine-v2: ${VARKA_AI_WORKFLOW_ENGINE_V2:true}
     provider: ${VARKA_AI_PROVIDER:openai}
-    request-timeout: ${VARKA_AI_REQUEST_TIMEOUT:60s}
-    turn-timeout: ${VARKA_AI_TURN_TIMEOUT:5m}
-    max-agent-steps: ${VARKA_AI_MAX_AGENT_STEPS:4}
+    request-timeout: ${VARKA_AI_REQUEST_TIMEOUT:180s}
+    turn-timeout: ${VARKA_AI_TURN_TIMEOUT:10m}
+    max-agent-steps: ${VARKA_AI_MAX_AGENT_STEPS:8}
     token-budget: ${VARKA_AI_TOKEN_BUDGET:16000}
     max-prompt-tokens: ${VARKA_AI_MAX_PROMPT_TOKENS:24000}
     max-system-chars: ${VARKA_AI_MAX_SYSTEM_CHARS:14000}
     max-source-chunk-tokens: ${VARKA_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
     max-source-chunks-per-turn: ${VARKA_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
-    max-provider-calls-per-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN:2}
-    max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:6}
-    source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:5m}
+    max-provider-calls-per-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN:18}
+    max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:30}
+    source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:10m}
     fallback-provider: ${VARKA_AI_FALLBACK_PROVIDER:}
     hardening:
       per-user-requests-per-window: ${VARKA_AI_RATE_LIMIT_REQUESTS:30}
       rate-limit-window: ${VARKA_AI_RATE_LIMIT_WINDOW:1m}
       circuit-failure-threshold: ${VARKA_AI_CIRCUIT_FAILURE_THRESHOLD:3}
       circuit-open-duration: ${VARKA_AI_CIRCUIT_OPEN_DURATION:1m}
-      provider-retry-attempts: ${VARKA_AI_PROVIDER_RETRY_ATTEMPTS:1}
-      retry-backoff: ${VARKA_AI_RETRY_BACKOFF:250ms}
+      provider-retry-attempts: ${VARKA_AI_PROVIDER_RETRY_ATTEMPTS:6}
+      retry-backoff: ${VARKA_AI_RETRY_BACKOFF:500ms}
       recent-message-window: ${VARKA_AI_RECENT_MESSAGE_WINDOW:24}
     proxy:
       enabled: ${VARKA_AI_PROXY_ENABLED:false}

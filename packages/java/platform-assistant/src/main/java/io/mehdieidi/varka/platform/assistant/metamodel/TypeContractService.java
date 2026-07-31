@@ -5,6 +5,7 @@ import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 /** Resolves live Ecore contracts and produces actionable close-match errors. */
 public final class TypeContractService {
@@ -17,10 +18,13 @@ public final class TypeContractService {
 
   public TypeContract require(ModelLevel level, String requestedName) {
     String name = requestedName == null ? "" : requestedName.trim();
-    return knowledge.typeContracts(level).stream()
-        .filter(type -> type.eClass().equals(name))
-        .findFirst()
-        .orElseThrow(() -> unknown(level, name));
+    java.util.Optional<TypeContract> exact =
+        knowledge.typeContracts(level).stream()
+            .filter(type -> type.eClass().equals(name))
+            .findFirst();
+    if (exact.isPresent()) return exact.get();
+    java.util.Optional<TypeContract> resolved = resolveProviderTypeName(level, name);
+    return resolved.orElseThrow(() -> unknown(level, name));
   }
 
   public List<TypeContract> describe(ModelLevel level, List<String> names) {
@@ -74,12 +78,49 @@ public final class TypeContractService {
   }
 
   public List<String> suggestions(ModelLevel level, String requestedName) {
-    String requested = requestedName == null ? "" : requestedName.toLowerCase();
+    String requested = requestedName == null ? "" : requestedName.toLowerCase(Locale.ROOT);
     return knowledge.typeContracts(level).stream()
         .map(TypeContract::eClass)
-        .sorted(Comparator.comparingInt(name -> distance(requested, name.toLowerCase())))
+        .sorted(Comparator.comparingInt(name -> distance(requested, name.toLowerCase(Locale.ROOT))))
         .limit(3)
         .toList();
+  }
+
+  private java.util.Optional<TypeContract> resolveProviderTypeName(ModelLevel level, String name) {
+    String normalized = normalizedName(name);
+    if (normalized.isBlank()) return java.util.Optional.empty();
+    List<TypeContract> contracts = knowledge.typeContracts(level);
+    java.util.Optional<TypeContract> caseInsensitive =
+        contracts.stream().filter(type -> type.eClass().equalsIgnoreCase(name)).findFirst();
+    if (caseInsensitive.isPresent()) return caseInsensitive;
+    java.util.Optional<TypeContract> normalizedExact =
+        contracts.stream()
+            .filter(type -> normalizedName(type.eClass()).equals(normalized))
+            .findFirst();
+    if (normalizedExact.isPresent()) return normalizedExact;
+    List<TypeContract> embedded =
+        contracts.stream()
+            .filter(type -> normalized.contains(normalizedName(type.eClass())))
+            .sorted(
+                Comparator.<TypeContract>comparingInt(
+                        type -> normalizedName(type.eClass()).length())
+                    .reversed()
+                    .thenComparing(TypeContract::eClass))
+            .toList();
+    return embedded.size() == 1 || (embedded.size() > 1 && distinctBestEmbedded(embedded))
+        ? java.util.Optional.of(embedded.get(0))
+        : java.util.Optional.empty();
+  }
+
+  private boolean distinctBestEmbedded(List<TypeContract> embedded) {
+    int best = normalizedName(embedded.get(0).eClass()).length();
+    int next = normalizedName(embedded.get(1).eClass()).length();
+    return best > next;
+  }
+
+  private String normalizedName(String value) {
+    if (value == null) return "";
+    return value.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
   }
 
   private PlatformException unknown(ModelLevel level, String name) {

@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.platform.assistant.metamodel;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,5 +34,16 @@ class MetamodelGuideGeneratorTest {
         assertThrows(PlatformException.class, () -> contracts.require(ModelLevel.CIM, misspelled));
 
     assertTrue(error.getMessage().contains(known));
+  }
+
+  @Test
+  void resolvesProviderPhrasesToExactContracts() {
+    TypeContractService contracts = new TypeContractService(knowledge);
+
+    assertEquals(
+        "BusinessProcess", contracts.require(ModelLevel.CIM, "Business process EClass").eClass());
+    assertEquals(
+        "ServerlessService",
+        contracts.require(ModelLevel.PIM, "serverless/service root contract").eClass());
   }
 }

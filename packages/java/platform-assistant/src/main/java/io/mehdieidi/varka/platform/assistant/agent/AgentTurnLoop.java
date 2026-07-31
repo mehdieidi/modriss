@@ -691,6 +691,10 @@ public final class AgentTurnLoop {
                     + " array of clientRef strings. Every create object needs a unique non-empty"
                     + " clientRef, eClass, attributes, owner, and containment reference."
                     + " connections and evidence must also be arrays of objects, not strings."
+                    + " Evidence cannot create a checkpoint by itself. If the diagnostic says"
+                    + " the batch needs at least one create, update, connection, or deletion,"
+                    + " keep the same intended modeling slice and add concrete mutations using"
+                    + " the exact contracts already supplied."
                     + " If backend validation reports RequiredAttribute, keep the intended"
                     + " source-grounded element and add the missing required attribute using the"
                     + " exact returned contract; for enum attributes choose exactly one allowed"
@@ -886,7 +890,7 @@ public final class AgentTurnLoop {
     if (!hasNoModelElements(workspace)) return List.of();
     return switch (level) {
       case PIM -> List.of("ServerlessService");
-      case CIM -> List.of("Capability");
+      case CIM -> List.of();
       case PSM -> List.of();
     };
   }
@@ -1175,6 +1179,12 @@ conformance by the backend.
     if (message.contains("unknown") || message.contains("not found")) {
       hints.add(
           "Use exact clientRefs from this batch or inspected existing ids; do not invent ids.");
+    }
+    if (message.contains("evidence alone") || message.contains("at least one create")) {
+      hints.add(
+          "Evidence is provenance only. Return concrete creates, updates, connections, or"
+              + " deletions for the current modeling slice; for an empty create request, create"
+              + " root-contained aggregate elements with owner rootId.");
     }
     try {
       diagnostic.set("currentModelSummary", turnTools.inspectSummary());
