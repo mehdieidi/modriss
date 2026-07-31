@@ -31,7 +31,8 @@ Useful optional knobs:
 ```bash
 VARKA_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_BASE_URL=https://api.openai.com
-VARKA_AI_RESPONDER_MODEL=gpt-4o-mini
+VARKA_AI_MODEL=gpt-4o-mini
+VARKA_AI_TEST_MODEL=gpt-4o-mini
 VARKA_AI_MAX_TOOL_CALLS=24
 VARKA_AI_MAX_AGENT_STEPS=8
 VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=8
@@ -49,10 +50,9 @@ provider may still be processing the original request.
 
 For another OpenAI-compatible provider, keep `VARKA_AI_PROVIDER=openai` or use the accepted aliases
 `openai-compatible` / `openai_compatible`, then set `OPENAI_COMPATIBLE_BASE_URL`,
-`OPENAI_COMPATIBLE_API_KEY`, and role model variables to provider-specific values. Current role
-keys are `VARKA_AI_DIRECTOR_MODEL`, `VARKA_AI_MODELER_MODEL`, `VARKA_AI_CRITIC_MODEL`,
-`VARKA_AI_SUMMARIZER_MODEL`, and `VARKA_AI_RESPONDER_MODEL`; the older planner/responder/summarizer
-triple is still accepted for compatibility.
+`OPENAI_COMPATIBLE_API_KEY`, and `VARKA_AI_MODEL` to provider-specific values. Use
+`VARKA_AI_TEST_MODEL` only for tests or evaluations that intentionally run against a different
+model than production.
 
 `VARKA_AI_OPENAI_PROTOCOL=tools` selects the native OpenAI-compatible tool-call path. The provider
 adapter also accepts strict JSON action content when a compatible endpoint returns a JSON object in
@@ -63,7 +63,8 @@ For Gemini:
 ```bash
 VARKA_AI_PROVIDER=gemini
 GEMINI_API_KEY=your_gemini_api_key
-VARKA_AI_RESPONDER_MODEL=gemini-2.0-flash
+VARKA_AI_MODEL=gemini-2.0-flash
+VARKA_AI_TEST_MODEL=gemini-2.0-flash
 ```
 
 If you do not want provider calls or assistant model changes, set:

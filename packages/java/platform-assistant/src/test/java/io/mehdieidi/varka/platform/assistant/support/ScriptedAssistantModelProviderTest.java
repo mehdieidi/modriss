@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.mehdieidi.varka.platform.assistant.application.ProviderCallBudget;
-import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import java.util.List;
@@ -25,7 +24,7 @@ class ScriptedAssistantModelProviderTest {
                 ScriptedAssistantModelProvider.reply("first", 11, 7),
                 ScriptedAssistantModelProvider.failure(new PlatformException(502, "restart"))));
     ProviderCallBudget.bind(2);
-    var prompt = new AssistantPrompt(AssistantModelRole.RESPONDER, "system", "user", List.of());
+    var prompt = new AssistantPrompt("system", "user", List.of());
 
     var reply = provider.complete(prompt);
 

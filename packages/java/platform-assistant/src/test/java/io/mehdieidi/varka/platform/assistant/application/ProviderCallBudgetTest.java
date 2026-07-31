@@ -3,7 +3,6 @@ package io.mehdieidi.varka.platform.assistant.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -19,22 +18,20 @@ class ProviderCallBudgetTest {
   void tracksConsumedCallsUntilBudgetIsExceeded() {
     ProviderCallBudget.bind(2);
 
-    ProviderCallBudget.consume(AssistantModelRole.RESPONDER);
-    ProviderCallBudget.consume(AssistantModelRole.RESPONDER);
+    ProviderCallBudget.consume();
+    ProviderCallBudget.consume();
 
     assertEquals(2, ProviderCallBudget.count());
-    assertThrows(
-        PlatformException.class, () -> ProviderCallBudget.consume(AssistantModelRole.RESPONDER));
+    assertThrows(PlatformException.class, ProviderCallBudget::consume);
   }
 
   @Test
   void countsEveryConfiguredAgentCall() {
     ProviderCallBudget.bind(1);
 
-    ProviderCallBudget.consume(AssistantModelRole.RESPONDER);
+    ProviderCallBudget.consume();
 
     assertEquals(1, ProviderCallBudget.count());
-    assertThrows(
-        PlatformException.class, () -> ProviderCallBudget.consume(AssistantModelRole.RESPONDER));
+    assertThrows(PlatformException.class, ProviderCallBudget::consume);
   }
 }

@@ -1,6 +1,5 @@
 package io.mehdieidi.varka.platform.assistant.application;
 
-import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 
 /** Per-turn provider call budget enforced across assistant LLM invocations. */
@@ -33,11 +32,11 @@ public final class ProviderCallBudget {
   }
 
   /**
-   * Reserves one provider call for the given role.
+   * Reserves one provider call.
    *
    * @throws PlatformException when the turn budget is exhausted
    */
-  public static void consume(AssistantModelRole role) {
+  public static void consume() {
     State state = CURRENT.get();
     if (state == null) {
       return;

@@ -1,6 +1,5 @@
 package io.mehdieidi.varka.platform.assistant.application;
 
-import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantMetrics;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantSettings;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
@@ -65,15 +64,13 @@ public class AssistantHardeningService {
   /**
    * Executes one provider call behind the circuit breaker and metrics.
    *
-   * @param role model role
    * @param provider provider key
    * @param model model name
    * @param call provider call
    * @param <T> return type
    * @return provider result
    */
-  public <T> T providerCall(
-      AssistantModelRole role, String provider, String model, Supplier<T> call) {
+  public <T> T providerCall(String provider, String model, Supplier<T> call) {
     long providerStarted = System.nanoTime();
     Instant now = clock.instant();
     String circuitKey = provider + "/" + (model == null ? "" : model);
@@ -81,10 +78,9 @@ public class AssistantHardeningService {
     if (now.isBefore(snapshot.openUntil())) {
       metrics.recordAssistantCircuitRejected(provider);
       log.warn(
-          "AI provider circuit open provider={} role={} model={} assistantTurnId={} sessionId={} "
+          "AI provider circuit open provider={} model={} assistantTurnId={} sessionId={} "
               + "requestId={} openUntil={}",
           provider,
-          role,
           model,
           mdc("assistantTurnId"),
           mdc("assistantSessionId"),
@@ -100,13 +96,12 @@ public class AssistantHardeningService {
         try {
           // Reserve at the actual HTTP-provider boundary. A configured retry is another API
           // request and must not be invisible to the durable turn's call budget.
-          ProviderCallBudget.consume(role);
+          ProviderCallBudget.consume();
           T result = call.get();
           log.info(
-              "AI provider call succeeded provider={} role={} model={} assistantTurnId={} "
+              "AI provider call succeeded provider={} model={} assistantTurnId={} "
                   + "sessionId={} requestId={} attempt={} elapsedMs={}",
               provider,
-              role,
               model,
               mdc("assistantTurnId"),
               mdc("assistantSessionId"),
@@ -114,7 +109,7 @@ public class AssistantHardeningService {
               attempt,
               elapsedMillis(attemptStarted));
           circuits.remove(circuitKey);
-          metrics.recordAssistantProviderSuccess(provider, role.name(), model);
+          metrics.recordAssistantProviderSuccess(provider, model);
           return result;
         } catch (RuntimeException ex) {
           // A budget/circuit/platform decision is already user-safe and actionable. Retrying it
@@ -135,11 +130,10 @@ public class AssistantHardeningService {
           PlatformException providerFailure = classifyProviderFailure(ex);
           if (providerFailure != null) {
             log.warn(
-                "AI provider call failed provider={} role={} model={} attempt={} elapsedMs={} "
+                "AI provider call failed provider={} model={} attempt={} elapsedMs={} "
                     + "configuredTimeoutMs={} assistantTurnId={} sessionId={} requestId={} "
                     + "status={} rootCause={}: {}",
                 provider,
-                role,
                 model,
                 attempt,
                 elapsedMillis(attemptStarted),

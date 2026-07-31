@@ -39,10 +39,9 @@ public interface AssistantMetrics {
    * Records a successful provider call.
    *
    * @param provider provider key
-   * @param role model role
    * @param model model name
    */
-  default void recordAssistantProviderSuccess(String provider, String role, String model) {}
+  default void recordAssistantProviderSuccess(String provider, String model) {}
 
   /**
    * Records a failed provider call.

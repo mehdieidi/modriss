@@ -43,6 +43,25 @@ npm run test:frontend
 
 Use the `onnx-embeddings` Maven profile only when testing the native ONNX embedding path.
 
+## LLM Provider Tests
+
+Provider-dependent tests must be tagged with JUnit `@Tag("llm-provider")`. The default Maven test
+run excludes that tag, so this command stays local and deterministic:
+
+```powershell
+mvn clean test
+```
+
+Run live provider tests explicitly when a compatible provider is configured:
+
+```powershell
+mvn test -Pllm-provider-tests -Dgroups=llm-provider
+```
+
+For local FreeModel/FreeLLM-style OpenAI-compatible endpoints, keep the normal assistant provider
+configuration in `.env`, for example `VARKA_AI_PROVIDER=openai`,
+`OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`, and `VARKA_AI_TEST_MODEL`.
+
 ## PostgreSQL integration tests
 
 Storage and backend integration tests use **Testcontainers** with the `pgvector/pgvector:pg16`

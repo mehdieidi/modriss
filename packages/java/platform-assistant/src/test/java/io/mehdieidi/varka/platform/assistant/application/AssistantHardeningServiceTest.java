@@ -3,7 +3,6 @@ package io.mehdieidi.varka.platform.assistant.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantSettings;
 import io.mehdieidi.varka.platform.assistant.support.AssistantSettingsFixtures;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
@@ -47,7 +46,6 @@ class AssistantHardeningServiceTest {
     ProviderCallBudget.bind(2);
     String result =
         hardening.providerCall(
-            AssistantModelRole.RESPONDER,
             "test",
             "model",
             () -> {
@@ -76,7 +74,6 @@ class AssistantHardeningServiceTest {
             PlatformException.class,
             () ->
                 hardening.providerCall(
-                    AssistantModelRole.RESPONDER,
                     "test",
                     "model",
                     () -> {
@@ -101,7 +98,6 @@ class AssistantHardeningServiceTest {
             PlatformException.class,
             () ->
                 hardening.providerCall(
-                    AssistantModelRole.RESPONDER,
                     "test",
                     "model",
                     () -> {
@@ -111,10 +107,7 @@ class AssistantHardeningServiceTest {
 
     PlatformException ex =
         assertThrows(
-            PlatformException.class,
-            () ->
-                hardening.providerCall(
-                    AssistantModelRole.RESPONDER, "test", "model", () -> "never"));
+            PlatformException.class, () -> hardening.providerCall("test", "model", () -> "never"));
     assertEquals(503, ex.status());
   }
 
@@ -131,7 +124,6 @@ class AssistantHardeningServiceTest {
             PlatformException.class,
             () ->
                 hardening.providerCall(
-                    AssistantModelRole.RESPONDER,
                     "openai",
                     "model",
                     () -> {
@@ -158,7 +150,6 @@ class AssistantHardeningServiceTest {
             PlatformException.class,
             () ->
                 hardening.providerCall(
-                    AssistantModelRole.RESPONDER,
                     "openai",
                     "model",
                     () -> {
@@ -186,7 +177,6 @@ class AssistantHardeningServiceTest {
             PlatformException.class,
             () ->
                 hardening.providerCall(
-                    AssistantModelRole.RESPONDER,
                     "openai",
                     "model",
                     () -> {
@@ -208,7 +198,6 @@ class AssistantHardeningServiceTest {
             PlatformException.class,
             () ->
                 hardening.providerCall(
-                    AssistantModelRole.MODELER,
                     "openai",
                     "configured-model",
                     () -> {
@@ -216,9 +205,6 @@ class AssistantHardeningServiceTest {
                     }));
 
     assertEquals(400, schemaFailure.status());
-    assertEquals(
-        "ok",
-        hardening.providerCall(
-            AssistantModelRole.MODELER, "openai", "configured-model", () -> "ok"));
+    assertEquals("ok", hardening.providerCall("openai", "configured-model", () -> "ok"));
   }
 }

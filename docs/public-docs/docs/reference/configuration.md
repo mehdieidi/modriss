@@ -2,7 +2,7 @@
 
 Varka reads configuration from Spring Boot, Docker Compose, the frontend runtime bootstrap, and
 the PostgreSQL/LocalStack helper scripts. The root `.env` and `.env.example` files contain the same
-90 active keys. `.env.example` is safe to copy; keep real credentials only in the untracked `.env`.
+active keys. `.env.example` is safe to copy; keep real credentials only in the untracked `.env`.
 
 For the complete field-by-field reference, including accepted values and behavior, see the
 [internal environment-variable reference](../../../internal/environment-variables.md).
@@ -70,11 +70,10 @@ Increasing them allows more complex documents; lowering them makes failures fast
 assistant message submission currently requires an `idempotencyKey` in the request body so retries
 cannot apply duplicate work.
 
-Model selection is role-aware. Use `VARKA_AI_DIRECTOR_MODEL`, `VARKA_AI_MODELER_MODEL`,
-`VARKA_AI_CRITIC_MODEL`, `VARKA_AI_SUMMARIZER_MODEL`, and `VARKA_AI_RESPONDER_MODEL` when you need
-role-specific models. The older `VARKA_AI_PLANNER_MODEL`, `VARKA_AI_RESPONDER_MODEL`, and
-`VARKA_AI_SUMMARIZER_MODEL` triple is still accepted for compatibility. Empty values use provider
-defaults: `gpt-4o-mini` for OpenAI-compatible providers and `gemini-2.0-flash` for Gemini.
+Model selection uses one production model: `VARKA_AI_MODEL`. Tests and evaluations that need a
+different model can use `VARKA_AI_TEST_MODEL`; when it is empty, they fall back to
+`VARKA_AI_MODEL`. Empty production model values use provider defaults: `gpt-4o-mini` for
+OpenAI-compatible providers and `gemini-2.0-flash` for Gemini.
 
 For OpenAI-compatible providers, `VARKA_AI_OPENAI_PROTOCOL` accepts `auto`, `tools`, or the legacy
 JSON action mode. `tools` uses native Chat Completions tool calls and is preferred for providers

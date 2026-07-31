@@ -52,7 +52,7 @@ public class AssistantPromptGuard {
             ? Math.max(properties.maxSystemChars(), 32000)
             : properties.maxSystemChars();
     return new AssistantModelProvider.AssistantPrompt(
-        prompt.role(), bound(redact(prompt.system()), maxSystemChars), user, snippets);
+        bound(redact(prompt.system()), maxSystemChars), user, snippets);
   }
 
   /**

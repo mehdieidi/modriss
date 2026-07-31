@@ -3,7 +3,6 @@ package io.mehdieidi.varka.platform.assistant.provider.springai;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
-import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.varka.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
@@ -63,8 +62,7 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
 
   @Override
   public ProviderCapabilityProfile capabilities() {
-    return properties.providerProfile(
-        providerKey, modelFor(AssistantModelRole.RESPONDER), baseUrl());
+    return properties.providerProfile(providerKey, model(), baseUrl());
   }
 
   @Override
@@ -94,15 +92,14 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
   public AssistantReply complete(AssistantPrompt rawPrompt) {
     requireAvailable();
     AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
-    String model = modelFor(prompt.role());
+    String model = model();
     String providerCallId = providerCallId();
     logRequest(prompt, model, providerCallId);
     long providerStarted = System.nanoTime();
     org.springframework.ai.chat.model.ChatResponse response =
-        hardening.providerCall(
-            prompt.role(), providerKey, model, () -> callModel(prompt, model, false));
+        hardening.providerCall(providerKey, model, () -> callModel(prompt, model, false));
     String content = response.getResult().getOutput().getText();
-    logResponse(prompt.role(), model, content, providerCallId, providerStarted);
+    logResponse(model, content, providerCallId, providerStarted);
     return reply(content, model, response, prompt);
   }
 
@@ -110,15 +107,14 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
   public AssistantReply completeWithTools(AssistantPrompt rawPrompt) {
     requireAvailable();
     AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
-    String model = modelFor(prompt.role());
+    String model = model();
     String providerCallId = providerCallId();
     logRequest(prompt, model, providerCallId);
     long providerStarted = System.nanoTime();
     org.springframework.ai.chat.model.ChatResponse response =
-        hardening.providerCall(
-            prompt.role(), providerKey, model, () -> callModel(prompt, model, true));
+        hardening.providerCall(providerKey, model, () -> callModel(prompt, model, true));
     String content = response.getResult().getOutput().getText();
-    logResponse(prompt.role(), model, content, providerCallId, providerStarted);
+    logResponse(model, content, providerCallId, providerStarted);
     return reply(content, model, response, prompt);
   }
 
@@ -126,15 +122,14 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
   public AssistantReply completeStructured(AssistantPrompt rawPrompt) {
     requireAvailable();
     AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
-    String model = modelFor(prompt.role());
+    String model = model();
     String providerCallId = providerCallId();
     logRequest(prompt, model, providerCallId);
     long providerStarted = System.nanoTime();
     org.springframework.ai.chat.model.ChatResponse response =
-        hardening.providerCall(
-            prompt.role(), providerKey, model, () -> callModel(prompt, model, false));
+        hardening.providerCall(providerKey, model, () -> callModel(prompt, model, false));
     String content = response.getResult().getOutput().getText();
-    logResponse(prompt.role(), model, content, providerCallId, providerStarted);
+    logResponse(model, content, providerCallId, providerStarted);
     return reply(content, model, response, prompt);
   }
 
@@ -142,10 +137,10 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
 
   protected abstract boolean apiKeyConfigured();
 
-  protected abstract String modelFor(AssistantModelRole role);
+  protected abstract String model();
 
   protected abstract ChatOptions.Builder<?> options(
-      String model, AssistantModelRole role, boolean toolsRequested, AssistantPrompt prompt);
+      String model, boolean toolsRequested, AssistantPrompt prompt);
 
   /**
    * Calls the provider model directly so ChatClient never tries to execute an LLM action as a tool.
@@ -158,7 +153,7 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
                 java.util.List.of(
                     new SystemMessage(SYSTEM_GUARDRAIL + "\n" + prompt.system()),
                     new UserMessage(userWithContext(prompt))),
-                options(model, prompt.role(), toolsRequested, prompt).build()));
+                options(model, toolsRequested, prompt).build()));
   }
 
   private ChatModel chatModel() {
@@ -274,11 +269,10 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
                         + snippet.content().length())
             .sum();
     log.info(
-        "AI provider request started provider={} role={} model={} providerCallId={} "
+        "AI provider request started provider={} model={} providerCallId={} "
             + "assistantTurnId={} sessionId={} requestId={} systemChars={} userChars={} "
             + "snippets={} snippetChars={} timeoutMs={} proxy={}",
         providerKey,
-        prompt.role(),
         model,
         providerCallId,
         mdc("assistantTurnId"),
@@ -292,17 +286,11 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
         proxyDescription());
   }
 
-  private void logResponse(
-      AssistantModelRole role,
-      String model,
-      String content,
-      String providerCallId,
-      long startedNanos) {
+  private void logResponse(String model, String content, String providerCallId, long startedNanos) {
     log.info(
-        "AI provider response received provider={} role={} model={} providerCallId={} "
+        "AI provider response received provider={} model={} providerCallId={} "
             + "assistantTurnId={} sessionId={} requestId={} providerElapsedMs={} outputChars={}",
         providerKey,
-        role,
         model,
         providerCallId,
         mdc("assistantTurnId"),

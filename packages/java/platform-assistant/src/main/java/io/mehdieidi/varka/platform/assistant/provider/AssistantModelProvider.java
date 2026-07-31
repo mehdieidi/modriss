@@ -1,6 +1,5 @@
 package io.mehdieidi.varka.platform.assistant.provider;
 
-import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.TypeContract;
 import java.util.List;
 
@@ -58,26 +57,22 @@ public interface AssistantModelProvider {
   /**
    * Structured assistant prompt.
    *
-   * @param role model role to use
    * @param system compact system instructions
    * @param user user message
    * @param snippets compact retrieved context snippets
    */
   record AssistantPrompt(
-      AssistantModelRole role,
       String system,
       String user,
       List<ContextSnippet> snippets,
       List<TypeContract> patchContracts) {
 
-    public AssistantPrompt(
-        AssistantModelRole role, String system, String user, List<ContextSnippet> snippets) {
-      this(role, system, user, snippets, List.of());
+    public AssistantPrompt(String system, String user, List<ContextSnippet> snippets) {
+      this(system, user, snippets, List.of());
     }
 
     /** Applies immutable collection semantics. */
     public AssistantPrompt {
-      role = role == null ? AssistantModelRole.RESPONDER : role;
       system = system == null ? "" : system;
       user = user == null ? "" : user;
       snippets = snippets == null ? List.of() : List.copyOf(snippets);

@@ -24,4 +24,19 @@ class AiPropertiesTest {
                 "https://api.example.test/v1", "key", AiProperties.OpenAiProtocol.JSON_SCHEMA)
             .protocol());
   }
+
+  @Test
+  void resolvesProductionAndTestModelsSeparately() {
+    AiProperties.Models models = new AiProperties.Models("production-model", "test-model");
+
+    assertEquals("production-model", models.model(AiProperties.Provider.OPENAI));
+    assertEquals("test-model", models.testModel(AiProperties.Provider.OPENAI));
+  }
+
+  @Test
+  void testModelFallsBackToProductionModel() {
+    AiProperties.Models models = new AiProperties.Models("production-model", "");
+
+    assertEquals("production-model", models.testModel(AiProperties.Provider.OPENAI));
+  }
 }

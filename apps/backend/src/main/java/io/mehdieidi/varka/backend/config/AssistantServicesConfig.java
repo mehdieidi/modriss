@@ -165,8 +165,8 @@ public class AssistantServicesConfig {
     }
 
     @Override
-    public void recordAssistantProviderSuccess(String provider, String role, String model) {
-      metrics.recordAssistantProviderSuccess(provider, role, model);
+    public void recordAssistantProviderSuccess(String provider, String model) {
+      metrics.recordAssistantProviderSuccess(provider, model);
     }
 
     @Override

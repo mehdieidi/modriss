@@ -5,7 +5,6 @@ import io.mehdieidi.varka.platform.assistant.agent.AgentActionSchema;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
-import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import java.net.URI;
@@ -63,10 +62,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
         .openAiClient(client.build())
         .options(
             OpenAiChatOptions.builder()
-                .model(
-                    properties
-                        .models()
-                        .forRole(AiProperties.Provider.OPENAI, AssistantModelRole.RESPONDER))
+                .model(properties.models().model(AiProperties.Provider.OPENAI))
                 .temperature(0.2)
                 .build())
         .build();
@@ -94,14 +90,13 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   }
 
   @Override
-  protected String modelFor(AssistantModelRole role) {
-    return properties.models().forRole(AiProperties.Provider.OPENAI, role);
+  protected String model() {
+    return properties.models().model(AiProperties.Provider.OPENAI);
   }
 
   @Override
   protected OpenAiChatOptions.Builder options(
       String model,
-      AssistantModelRole role,
       boolean toolsRequested,
       io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt
           prompt) {

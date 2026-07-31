@@ -19,11 +19,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** Smoke tests for critical REST flows against a real PostgreSQL-backed application context. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
 @ActiveProfiles("test")
+@Testcontainers(disabledWithoutDocker = true)
 class ApiSmokeContractTest {
 
   @DynamicPropertySource

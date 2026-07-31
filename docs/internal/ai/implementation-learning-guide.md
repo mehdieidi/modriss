@@ -41,9 +41,8 @@ Varka uses one durable assistant-turn runtime:
 
 Provider calls are optional and disabled by default with `VARKA_AI_ENABLED=false`. The active
 provider is `openai` or `gemini`; `openai-compatible` and `openai_compatible` normalize to the
-OpenAI-compatible path. `VARKA_AI_RESPONDER_MODEL` is the active model selector. Planner and
-summarizer model variables are accepted for compatibility, but the current resolver uses the
-responder model for assistant roles.
+OpenAI-compatible path. `VARKA_AI_MODEL` is the single production model selector. Tests and
+evaluations may use `VARKA_AI_TEST_MODEL` when they intentionally need a different model.
 
 `AssistantHardeningService` handles rate limits, retries, circuit breaking, timeouts, and optional
 AI-only proxy routing. Provider token streaming is not exposed; progress is represented as durable

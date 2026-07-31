@@ -41,7 +41,7 @@ public final class ScriptedAssistantModelProvider implements AssistantModelProvi
   @Override
   public AssistantReply complete(AssistantPrompt prompt) {
     prompts.add(prompt);
-    ProviderCallBudget.consume(prompt.role());
+    ProviderCallBudget.consume();
     Step step = script.pollFirst();
     if (step == null) throw new IllegalStateException("Scripted provider has no remaining step.");
     return step.execute();

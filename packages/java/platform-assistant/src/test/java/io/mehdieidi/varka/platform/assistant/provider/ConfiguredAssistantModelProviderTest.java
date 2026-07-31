@@ -33,8 +33,7 @@ class ConfiguredAssistantModelProviderTest {
     PlatformException failure =
         assertThrows(
             PlatformException.class,
-            () ->
-                provider.complete(new AssistantModelProvider.AssistantPrompt(null, "", "", null)));
+            () -> provider.complete(new AssistantModelProvider.AssistantPrompt("", "", null)));
 
     assertEquals("OpenAI unavailable", failure.getMessage());
     verify(gemini, never()).complete(any());

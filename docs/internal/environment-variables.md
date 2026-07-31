@@ -1,7 +1,7 @@
 # Environment Variables
 
 This file explains every active key in the root `.env` and `.env.example` files. The two files are
-kept at the same 90-key set; `.env` contains local values while `.env.example` contains safe
+kept at the same active key set; `.env` contains local values while `.env.example` contains safe
 defaults. The list below is derived from the Spring configuration, Docker Compose file, frontend
 runtime wiring, and database/LocalStack helper scripts.
 
@@ -155,17 +155,13 @@ allowed to do.
 
 These are secrets or provider-specific names. Keep real keys in `.env`, not `.env.example`.
 
-| Variable                     | Possible values                                                            | What it means                                                                                                         |
-| ---------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `OPENAI_COMPATIBLE_BASE_URL` | URL like `https://api.openai.com/v1` or another OpenAI-compatible base URL | Base URL for OpenAI-style providers. Use the provider's API root expected by the OpenAI SDK, usually including `/v1`. |
-| `OPENAI_COMPATIBLE_API_KEY`  | Provider API key or empty                                                  | API key for OpenAI-compatible providers.                                                                              |
-| `GEMINI_API_KEY`             | Gemini API key or empty                                                    | API key for Google Gemini.                                                                                            |
-| `VARKA_AI_DIRECTOR_MODEL`    | Empty, `auto`, or a provider model name                                    | Model for request-director/planning work when role-specific selection is enabled.                                     |
-| `VARKA_AI_MODELER_MODEL`     | Empty, `auto`, or a provider model name                                    | Model for model-changing executor work.                                                                               |
-| `VARKA_AI_CRITIC_MODEL`      | Empty, `auto`, or a provider model name                                    | Model for critic/coverage-style checks when used.                                                                     |
-| `VARKA_AI_RESPONDER_MODEL`   | Empty, `auto`, or a provider model name                                    | Model for user-facing answers. Empty uses provider defaults.                                                          |
-| `VARKA_AI_SUMMARIZER_MODEL`  | Empty, `auto`, or a provider model name                                    | Model for rolling summaries.                                                                                          |
-| `VARKA_AI_PLANNER_MODEL`     | Empty, `auto`, or a provider model name                                    | Backward-compatible alias that seeds director/modeler/critic defaults when the newer role keys are not set.           |
+| Variable                     | Possible values                                                            | What it means                                                                                                                    |
+| ---------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `OPENAI_COMPATIBLE_BASE_URL` | URL like `https://api.openai.com/v1` or another OpenAI-compatible base URL | Base URL for OpenAI-style providers. Use the provider's API root expected by the OpenAI SDK, usually including `/v1`.            |
+| `OPENAI_COMPATIBLE_API_KEY`  | Provider API key or empty                                                  | API key for OpenAI-compatible providers.                                                                                         |
+| `GEMINI_API_KEY`             | Gemini API key or empty                                                    | API key for Google Gemini.                                                                                                       |
+| `VARKA_AI_MODEL`             | Empty, `auto`, or a provider model name                                    | Single model used by production assistant provider calls. Empty uses provider defaults.                                          |
+| `VARKA_AI_TEST_MODEL`        | Empty, `auto`, or a provider model name                                    | Optional model used by tests/evaluations that intentionally run against a different model. Empty falls back to `VARKA_AI_MODEL`. |
 
 ## AI Proxy
 

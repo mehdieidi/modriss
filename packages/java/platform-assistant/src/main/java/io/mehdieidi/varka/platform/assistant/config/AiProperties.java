@@ -1,6 +1,5 @@
 package io.mehdieidi.varka.platform.assistant.config;
 
-import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantSettings;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +38,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param providerProxies optional provider-specific proxy overrides (for example openai or gemini)
  * @param openaiCompatible OpenAI-compatible endpoint settings
  * @param gemini Google Gemini Developer API settings
- * @param models role-specific model names
+ * @param models production and test model names
  * @param maxRepairAttempts preferred maximum repair attempts; overrides validationRepairAttempts
  * @param maxPromptTokens maximum prompt budget per provider call
  * @param maxSourceChunkTokens maximum source chunk token budget
@@ -121,7 +120,7 @@ public record AiProperties(
     openaiCompatible =
         openaiCompatible == null ? new OpenAiCompatible(null, null) : openaiCompatible;
     gemini = gemini == null ? new Gemini(null) : gemini;
-    models = models == null ? new Models(null, null, null) : models;
+    models = models == null ? new Models(null, null) : models;
     maxProviderCallsPerTurn = maxProviderCallsPerTurn <= 0 ? 2 : maxProviderCallsPerTurn;
     maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 6 : maxProviderCallsSourceTurn;
     sourceTurnTimeout = sourceTurnTimeout == null ? Duration.ofMinutes(5) : sourceTurnTimeout;
@@ -182,13 +181,12 @@ public record AiProperties(
   }
 
   /**
-   * Resolves the configured model for the currently selected provider.
+   * Resolves the configured production model for the currently selected provider.
    *
-   * @param role assistant model role
    * @return configured or provider-default model name
    */
-  public String modelFor(AssistantModelRole role) {
-    return models.forRole(providerKind(), role);
+  public String model() {
+    return models.model(providerKind());
   }
 
   /** Resolves provider behavior limits without weakening capable providers. */
@@ -552,62 +550,51 @@ public record AiProperties(
   }
 
   /**
-   * Role-specific model settings.
+   * Assistant model settings.
    *
-   * @param planner model used for planning
-   * @param responder model used for user-facing answers
-   * @param summarizer model used for rolling summaries
+   * @param model model used by production assistant calls
+   * @param testModel model used by tests or evaluations that intentionally override production
    */
-  public record Models(
-      String director, String modeler, String critic, String summarizer, String responder) {
-
-    /** Retains compatibility with the original planner/responder/summarizer configuration. */
-    public Models(String planner, String responder, String summarizer) {
-      this(planner, planner, planner, summarizer, responder);
-    }
+  public record Models(String model, String testModel) {
 
     /** Normalizes configured model names. */
     public Models {
-      director = director == null ? "" : director.trim();
-      modeler = modeler == null ? "" : modeler.trim();
-      critic = critic == null ? "" : critic.trim();
-      responder = responder == null ? "" : responder.trim();
-      summarizer = summarizer == null ? "" : summarizer.trim();
+      model = model == null ? "" : model.trim();
+      testModel = testModel == null ? "" : testModel.trim();
     }
 
     /**
-     * Resolves a model by assistant role.
+     * Resolves the production assistant model.
      *
-     * @param role assistant model role
      * @return configured model name
      */
-    public String forRole(AssistantModelRole role) {
-      return forRole(Provider.OPENAI, role);
+    public String model() {
+      return model(Provider.OPENAI);
     }
 
     /**
-     * Resolves a model by assistant role and provider.
+     * Resolves the production assistant model for the provider.
      *
      * @param provider assistant provider
-     * @param role assistant model role
      * @return configured or provider-default model name
      */
-    public String forRole(Provider provider, AssistantModelRole role) {
+    public String model(Provider provider) {
       Provider resolvedProvider = provider == null ? Provider.OPENAI : provider;
-      String selected =
-          switch (role == null ? AssistantModelRole.RESPONDER : role) {
-            case DIRECTOR -> director;
-            case MODELER -> modeler;
-            case CRITIC -> critic;
-            case SUMMARIZER -> summarizer;
-            case RESPONDER -> responder;
-          };
-      if (selected == null || selected.isBlank()) {
-        String environmentKey =
-            "VARKA_AI_" + (role == null ? AssistantModelRole.RESPONDER : role).name() + "_MODEL";
-        selected = System.getenv(environmentKey);
-      }
+      String selected = model;
+      if (selected == null || selected.isBlank()) selected = System.getenv("VARKA_AI_MODEL");
       return blankToDefault(selected, defaultModel(resolvedProvider));
+    }
+
+    /**
+     * Resolves the test/evaluation assistant model for the provider.
+     *
+     * @param provider assistant provider
+     * @return configured test model, or the production model when no test override is configured
+     */
+    public String testModel(Provider provider) {
+      String selected = testModel;
+      if (selected == null || selected.isBlank()) selected = System.getenv("VARKA_AI_TEST_MODEL");
+      return blankToDefault(selected, model(provider));
     }
 
     private static String defaultModel(Provider provider) {

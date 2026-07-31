@@ -8,7 +8,6 @@ import io.mehdieidi.varka.platform.assistant.agent.AgentActionSchema;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
-import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.provider.ProxyAvailability;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
@@ -46,10 +45,7 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
         .genAiClient(client)
         .options(
             GoogleGenAiChatOptions.builder()
-                .model(
-                    properties
-                        .models()
-                        .forRole(AiProperties.Provider.GEMINI, AssistantModelRole.RESPONDER))
+                .model(properties.models().model(AiProperties.Provider.GEMINI))
                 .temperature(0.2)
                 .build())
         .build();
@@ -83,14 +79,13 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
   }
 
   @Override
-  protected String modelFor(AssistantModelRole role) {
-    return properties.models().forRole(AiProperties.Provider.GEMINI, role);
+  protected String model() {
+    return properties.models().model(AiProperties.Provider.GEMINI);
   }
 
   @Override
   protected GoogleGenAiChatOptions.Builder options(
       String model,
-      AssistantModelRole role,
       boolean toolsRequested,
       io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt
           prompt) {

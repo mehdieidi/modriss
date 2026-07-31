@@ -79,22 +79,36 @@ Globals:
 [% } %]
 [% }
 
-@template
 /** Computes sam globals body. */
-operation AWSPSMCORE!SamGlobals samGlobalsBody() { %]
-[% if (self.functionGlobals.notEmpty()) { %]  Function:
-[% for (globalObj in self.functionGlobals) { %]
-[% if (globalObj.propertyName = "RuntimeManagementConfig") { %]    RuntimeManagementConfig:
-      UpdateRuntimeOn: [%= globalObj.value.cfnInlineYaml() %]
-[% } else { %][%= globalObj.emitNativePropertyYaml(4) %][% } %]
-[% } %][% } %]
-[% if (self.apiGlobals.notEmpty()) { %]  Api:
-[%= self.apiGlobals.emitNativePropertiesYaml(4) %][% } %]
-[% if (self.httpApiGlobals.notEmpty()) { %]  HttpApi:
-[%= self.httpApiGlobals.emitNativePropertiesYaml(4) %][% } %]
-[% if (self.stateMachineGlobals.notEmpty()) { %]  StateMachine:
-[%= self.stateMachineGlobals.emitNativePropertiesYaml(4) %][% } %]
-[% }
+operation AWSPSMCORE!SamGlobals samGlobalsBody() : String {
+  var outText = "";
+  if (self.functionGlobals.notEmpty()) {
+    outText = outText + "  Function:\n";
+    for (globalObj in self.functionGlobals) {
+      if (globalObj.propertyName = "RuntimeManagementConfig") {
+        outText =
+          outText
+          + "    RuntimeManagementConfig:\n"
+          + "      UpdateRuntimeOn: "
+          + globalObj.value.cfnInlineYaml()
+          + "\n";
+      }
+      else {
+        outText = outText + globalObj.emitNativePropertyYaml(4);
+      }
+    }
+  }
+  if (self.apiGlobals.notEmpty()) {
+    outText = outText + "  Api:\n" + self.apiGlobals.emitNativePropertiesYaml(4);
+  }
+  if (self.httpApiGlobals.notEmpty()) {
+    outText = outText + "  HttpApi:\n" + self.httpApiGlobals.emitNativePropertiesYaml(4);
+  }
+  if (self.stateMachineGlobals.notEmpty()) {
+    outText = outText + "  StateMachine:\n" + self.stateMachineGlobals.emitNativePropertiesYaml(4);
+  }
+  return outText;
+}
 
 @template
 /** Computes resources section. */

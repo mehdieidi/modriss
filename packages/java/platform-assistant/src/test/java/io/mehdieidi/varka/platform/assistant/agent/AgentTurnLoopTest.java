@@ -176,7 +176,7 @@ class AgentTurnLoopTest {
             new MetamodelGuideGenerator(knowledge),
             null,
             Duration.ofSeconds(5),
-            2);
+            3);
     var json =
         new ObjectMapper()
             .readTree(
@@ -285,7 +285,7 @@ class AgentTurnLoopTest {
             new MetamodelGuideGenerator(knowledge),
             null,
             Duration.ofSeconds(5),
-            2);
+            3);
     var json =
         new ObjectMapper()
             .readTree(
@@ -298,7 +298,7 @@ class AgentTurnLoopTest {
     var result = loop.run("s", ModelLevel.CIM, "Create a goal", null, workspace);
 
     assertEquals("Model checkpoint saved.", result.message());
-    assertEquals(1, result.providerCalls());
+    assertEquals(3, result.providerCalls());
     assertTrue(!result.patch().isEmpty());
     verify(models).validateStructural(any(), any());
     verify(models, never()).validate(any(ModelLevel.class), any());
@@ -381,7 +381,7 @@ class AgentTurnLoopTest {
     @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       calls++;
-      ProviderCallBudget.consume(prompt.role());
+      ProviderCallBudget.consume();
       return new AssistantReply(
           "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"Done\"}}", "fake", "fake");
     }
@@ -400,7 +400,7 @@ class AgentTurnLoopTest {
 
     @Override
     public AssistantReply complete(AssistantPrompt prompt) {
-      ProviderCallBudget.consume(prompt.role());
+      ProviderCallBudget.consume();
       return new AssistantReply(
           "{\"tool\":\"plan_source_model\",\"arguments\":{\"domain\":\"Commerce\",\"slices\":[{\"focus\":\"Order"
               + " intake\",\"sourceUnitIds\":[\"src-1\"]}]}}",
@@ -425,7 +425,7 @@ class AgentTurnLoopTest {
     @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       prompts.add(prompt.user());
-      ProviderCallBudget.consume(prompt.role());
+      ProviderCallBudget.consume();
       if (prompts.size() == 1) {
         return new AssistantReply(
             "{\"tool\":\"inspect_model\",\"arguments\":{\"query\":\"does-not-exist\"}}",
@@ -453,7 +453,7 @@ class AgentTurnLoopTest {
     @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       calls++;
-      ProviderCallBudget.consume(prompt.role());
+      ProviderCallBudget.consume();
       throw new PlatformException(502, "Provider failed");
     }
   }
@@ -474,7 +474,7 @@ class AgentTurnLoopTest {
     @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       calls++;
-      ProviderCallBudget.consume(prompt.role());
+      ProviderCallBudget.consume();
       if (calls == 1) {
         return new AssistantReply(
             "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"eClass\":\"Goal\"}]}}",
@@ -502,7 +502,7 @@ class AgentTurnLoopTest {
     @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       calls++;
-      ProviderCallBudget.consume(prompt.role());
+      ProviderCallBudget.consume();
       return new AssistantReply(
           calls == 1
               ? "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"\"}}"
@@ -513,6 +513,8 @@ class AgentTurnLoopTest {
   }
 
   private static final class StringEncodedPatchProvider implements AssistantModelProvider {
+    int calls;
+
     @Override
     public AssistantProviderMetadata metadata() {
       return new AssistantProviderMetadata("fake", "", "");
@@ -525,7 +527,22 @@ class AgentTurnLoopTest {
 
     @Override
     public AssistantReply complete(AssistantPrompt prompt) {
-      ProviderCallBudget.consume(prompt.role());
+      calls++;
+      ProviderCallBudget.consume();
+      if (calls == 1) {
+        return new AssistantReply(
+            "{\"tool\":\"plan_model_edit\",\"arguments\":{\"intent\":\"Create online scheduling"
+                + " goal\",\"slices\":[{\"goal\":\"Create"
+                + " goal\",\"requiredContracts\":[\"BusinessGoal\"]}]}}",
+            "fake",
+            "fake");
+      }
+      if (calls == 2) {
+        return new AssistantReply(
+            "{\"tool\":\"describe_types\",\"arguments\":{\"names\":[\"BusinessGoal\"]}}",
+            "fake",
+            "fake");
+      }
       return new AssistantReply(
           """
 {"tool":"commit_model_batch","arguments":{"creates":["{\\"clientRef\\":\\"goal_online_scheduling\\",\\"eClass\\":\\"BusinessGoal\\",\\"attributes\\":{\\"name\\":\\"Online Scheduling\\"},\\"owner\\":\\"rootId\\",\\"reference\\":\\"goals\\"}"],"updates":[],"connections":[],"deletions":[],"evidence":[],"planSummary":"Created goal","turnComplete":true}}
@@ -552,7 +569,7 @@ class AgentTurnLoopTest {
     @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       calls++;
-      ProviderCallBudget.consume(prompt.role());
+      ProviderCallBudget.consume();
       if (calls == 1) {
         return new AssistantReply(
             "{\"tool\":\"ask_user\",\"arguments\":{\"message\":\"Which existing service should own"

@@ -1,7 +1,6 @@
 package io.mehdieidi.varka.platform.assistant.agent;
 
 import io.mehdieidi.varka.platform.assistant.application.ProviderCallBudget;
-import io.mehdieidi.varka.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.varka.platform.assistant.domain.ModelCommandBatch;
 import io.mehdieidi.varka.platform.assistant.metamodel.LexicalRetrievalIndex;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelGuideGenerator;
@@ -299,8 +298,7 @@ public final class AgentTurnLoop {
         long providerStarted = System.nanoTime();
         reply =
             provider.completeStructured(
-                new AssistantPrompt(
-                    AssistantModelRole.RESPONDER, system, user, snippets, patchContracts));
+                new AssistantPrompt(system, user, snippets, patchContracts));
         long providerLatency =
             java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - providerStarted);
         metrics.recordAssistantPhaseDuration("provider", providerLatency);

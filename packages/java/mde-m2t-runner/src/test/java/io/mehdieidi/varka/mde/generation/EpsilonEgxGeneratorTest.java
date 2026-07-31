@@ -757,15 +757,45 @@ final class EpsilonEgxGeneratorTest {
    */
   private void runGeneratedGoTests(
       Path outputDirectory, String goExecutable, Map<String, String> environment) throws Exception {
-    runProcess(
-        new ProcessBuilder(goExecutable, "mod", "tidy").directory(outputDirectory.toFile()),
-        Duration.ofMinutes(2),
-        "Generated Go dependency resolution");
+    Map<String, String> goEnvironment = writableGoCacheEnvironment(outputDirectory, environment);
+    ProcessResult tidyResult =
+        runProcessCapturing(
+            processBuilder(outputDirectory, goEnvironment, goExecutable, "mod", "tidy"),
+            Duration.ofMinutes(2));
+    Assumptions.assumeTrue(tidyResult.finished(), "Generated Go dependency resolution timed out.");
+    Assumptions.assumeFalse(
+        tidyResult.exitCode() != 0 && looksLikeGoModuleNetworkFailure(tidyResult.output()),
+        () -> "Generated Go module dependencies are not reachable: " + tidyResult.output());
+    assertEquals(0, tidyResult.exitCode(), tidyResult.output());
 
     ProcessBuilder testBuilder =
-        new ProcessBuilder(goExecutable, "test", "./...").directory(outputDirectory.toFile());
-    testBuilder.environment().putAll(environment);
+        processBuilder(outputDirectory, goEnvironment, goExecutable, "test", "./...");
     runProcess(testBuilder, Duration.ofMinutes(2), "Generated Go test run");
+  }
+
+  private Map<String, String> writableGoCacheEnvironment(
+      Path outputDirectory, Map<String, String> environment) throws IOException {
+    Path goCache = outputDirectory.resolve(".gocache");
+    Path goModCache = outputDirectory.resolve(".gomodcache");
+    Files.createDirectories(goCache);
+    Files.createDirectories(goModCache);
+    Map<String, String> result = new HashMap<>(environment);
+    result.putIfAbsent("GOCACHE", goCache.toString());
+    result.putIfAbsent("GOMODCACHE", goModCache.toString());
+    return result;
+  }
+
+  private boolean looksLikeGoModuleNetworkFailure(String outputText) {
+    return outputText.contains("git ls-remote")
+        || outputText.contains("unable to access 'https://")
+        || outputText.contains("no such host")
+        || outputText.contains("i/o timeout")
+        || outputText.contains("TLS handshake timeout")
+        || outputText.contains("connection refused")
+        || outputText.contains("proxyconnect tcp")
+        || outputText.contains("The requested URL returned error")
+        || outputText.contains("Proxy Error")
+        || outputText.contains("unrecognized import path");
   }
 
   /**
@@ -2359,8 +2389,14 @@ final class EpsilonEgxGeneratorTest {
     boolean finished = process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS);
     if (!finished) {
       process.destroyForcibly();
+      process.waitFor(Duration.ofSeconds(5).toMillis(), TimeUnit.MILLISECONDS);
     }
-    String outputText = new String(process.getInputStream().readAllBytes());
+    String outputText;
+    try {
+      outputText = new String(process.getInputStream().readAllBytes());
+    } catch (IOException ex) {
+      outputText = "Process output unavailable after termination: " + ex.getMessage();
+    }
     int exitCode = finished ? process.exitValue() : -1;
     return new ProcessResult(finished, exitCode, outputText);
   }

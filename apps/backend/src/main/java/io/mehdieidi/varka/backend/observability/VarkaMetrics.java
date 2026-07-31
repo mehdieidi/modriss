@@ -80,14 +80,12 @@ public class VarkaMetrics {
   }
 
   /** Records a successful assistant provider call. */
-  public void recordAssistantProviderSuccess(String provider, String role, String model) {
+  public void recordAssistantProviderSuccess(String provider, String model) {
     registry
         .counter(
             "varka.assistant.provider.calls",
             "provider",
             safeTag(provider),
-            "role",
-            safeTag(role),
             "model",
             safeTag(model),
             "result",
@@ -102,8 +100,6 @@ public class VarkaMetrics {
             "varka.assistant.provider.calls",
             "provider",
             safeTag(provider),
-            "role",
-            "unknown",
             "model",
             "unknown",
             "result",

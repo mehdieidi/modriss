@@ -22,6 +22,8 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
+            <argLine>${surefire.argLine}</argLine>
+            <excludedGroups>${test.excluded.groups}</excludedGroups>
             <properties>
               <configurationParameters>
                 junit.jupiter.execution.parallel.enabled=true
@@ -258,14 +260,26 @@
     <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
     <maven.compiler.release>${java.version}</maven.compiler.release>
     <maven.pmd.plugin.version>3.26.0</maven.pmd.plugin.version>
+    <mockito.version>5.23.0</mockito.version>
     <maven.surefire.version>3.5.4</maven.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <spotbugs.maven.plugin.version>4.8.6.6</spotbugs.maven.plugin.version>
     <spotless.version>2.44.3</spotless.version>
     <spring.ai.version>2.0.0</spring.ai.version>
     <spring.boot.version>4.1.0</spring.boot.version>
+    <surefire.argLine>-javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</surefire.argLine>
+    <test.excluded.groups>llm-provider</test.excluded.groups>
     <testcontainers.version>2.0.5</testcontainers.version>
   </properties>
+
+  <profiles>
+    <profile>
+      <id>llm-provider-tests</id>
+      <properties>
+        <test.excluded.groups></test.excluded.groups>
+      </properties>
+    </profile>
+  </profiles>
 
   <version>0.0.1-SNAPSHOT</version>
 </project>
