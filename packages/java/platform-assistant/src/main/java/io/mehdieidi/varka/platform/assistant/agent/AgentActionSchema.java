@@ -152,7 +152,9 @@ public final class AgentActionSchema {
                 "purpose",
                 stringSchema(),
                 "requiredContracts",
-                array(stringSchema(), null)),
+                array(stringSchema(), null),
+                "sourceUnitIds",
+                array(stringSchema(), 8)),
             List.of("label", "purpose", "requiredContracts"));
     return object(
         Map.of(

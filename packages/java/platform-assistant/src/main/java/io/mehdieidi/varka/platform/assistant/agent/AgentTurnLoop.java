@@ -563,6 +563,12 @@ public final class AgentTurnLoop {
                                 relevantIds, List.of(), List.of(), null, 0, 50));
                 JsonNode neighborhoods = turnTools.inspectNeighborhoods(relevantIds);
                 fullModelInspected = true;
+                if (sourceBacked) {
+                  patchContracts =
+                      resumeContracts(level, workspace, turnTools, modelingPlan, profile, true);
+                  exactContracts =
+                      patchContracts.isEmpty() ? null : compactContracts(patchContracts);
+                }
                 user =
                     followUpContext(userMessage, sourceDocument)
                         + "\n\nCurrent durable modeling checkpoint:\n"
@@ -574,17 +580,34 @@ public final class AgentTurnLoop {
                         + selected
                         + "\n3. Neighborhoods:\n"
                         + neighborhoods
-                        + "\n\nNow retrieve exact metamodel contracts for only the current"
-                        + " planned slice using describe_types. Prefer the requiredContracts"
-                        + " listed in the plan. Do not patch until contracts are returned.";
+                        + executionContractGuidance(
+                            exactContracts,
+                            profile,
+                            sourceBacked,
+                            "\n\n"
+                                + "Now retrieve exact metamodel contracts for only the current"
+                                + " planned slice using describe_types. Prefer the"
+                                + " requiredContracts listed in the plan. Do not patch until"
+                                + " contracts are returned.");
               } else {
+                if (sourceBacked) {
+                  patchContracts =
+                      resumeContracts(level, workspace, turnTools, modelingPlan, profile, true);
+                  exactContracts =
+                      patchContracts.isEmpty() ? null : compactContracts(patchContracts);
+                }
                 user =
                     followUpContext(userMessage, sourceDocument)
                         + "\n\nCurrent durable modeling checkpoint:\n"
                         + currentSlicePlan(modelingPlan)
-                        + "\n\nThe current model has no user-created elements. Retrieve exact"
-                        + " metamodel contracts for the first planned slice using describe_types,"
-                        + " then create root-contained elements against rootId.";
+                        + "\n\nThe current model has no user-created elements."
+                        + executionContractGuidance(
+                            exactContracts,
+                            profile,
+                            sourceBacked,
+                            " Retrieve exact metamodel contracts for the first planned slice"
+                                + " using describe_types, then create root-contained elements"
+                                + " against rootId.");
               }
               continue;
             }
@@ -604,6 +627,7 @@ public final class AgentTurnLoop {
               check(canceled, deadline, cancellationRequested, stopReason);
               ModelCommandBatch batch = normalizeSourceEvidence(command(action), sourceDocument);
               validateSourceEvidence(batch, sourceDocument);
+              validatePlannedSourceSliceCoverage(batch, sourceDocument, modelingPlan);
               turnTools.commitModelBatch(batch, destructiveConfirmed);
               check(canceled, deadline, cancellationRequested, stopReason);
               ModelService.ValidationResult checkpointValidation = turnTools.validateModel();
@@ -942,6 +966,7 @@ public final class AgentTurnLoop {
             slice.path("requiredContracts"),
             item.putArray("requiredContracts"),
             profile.maxContractCount());
+        copyStringArray(slice.path("sourceUnitIds"), item.putArray("sourceUnitIds"), 8);
         item.put("status", ordinal == 2 ? "running" : "pending");
       }
     }
@@ -954,6 +979,7 @@ public final class AgentTurnLoop {
           raw.path("requiredContracts"),
           item.putArray("requiredContracts"),
           profile.maxContractCount());
+      copyStringArray(raw.path("sourceUnitIds"), item.putArray("sourceUnitIds"), 8);
       item.put("status", "running");
     }
     return plan;
@@ -1083,6 +1109,27 @@ public final class AgentTurnLoop {
     return List.copyOf(names);
   }
 
+  private String executionContractGuidance(
+      String exactContracts,
+      AssistantModelProvider.ProviderCapabilityProfile profile,
+      boolean sourceBacked,
+      String missingContractGuidance) {
+    if (!sourceBacked || exactContracts == null || exactContracts.isBlank()) {
+      return missingContractGuidance;
+    }
+    return "\n\nExact type contracts already retrieved by the backend:\n"
+        + exactContracts
+        + "\n\nDo not call describe_types. The next action must be commit_model_batch using"
+        + " these exact contracts and exact source-unit ids. Submit one coherent source slice:"
+        + " prefer 3 to 5 related source units when the required elements fit within "
+        + profile.maxPatchCreates()
+        + " creates, "
+        + profile.maxPatchConnections()
+        + " connections, and "
+        + profile.maxPatchEvidence()
+        + " evidence items. Set turnComplete:false when later source units remain.";
+  }
+
   private List<String> emptyModelFirstSliceTypes(ModelLevel level, ModelWorkspace workspace) {
     if (!hasNoModelElements(workspace)) return List.of();
     return switch (level) {
@@ -1170,9 +1217,11 @@ inspection, type contract retrieval, or patch generation. Its arguments must be:
 {"intent":"CREATE_MODEL|ADD_FEATURES|EDIT_MODEL|EXPLAIN","features":["..."],
 "reuseTargets":["existing names to inspect or reuse"],"newElements":["planned new element names"],
 "requiredContracts":["ExactType"],"slices":[{"label":"Core architecture",
-"purpose":"...","requiredContracts":["ExactType"]}]}. The plan is durable backend state:
-use small coherent slices such as core architecture, events, data stores, security, and
-observability when the request is broad.
+"purpose":"...","requiredContracts":["ExactType"],"sourceUnitIds":["src-id"]}]}. The plan is
+durable backend state: use small coherent slices such as core architecture, events, data stores,
+security, and observability when the request is broad. For source-backed work, each slice must
+include exact sourceUnitIds and should group related stories by capability, workflow, or dependency
+instead of making one checkpoint per story when the structural patch limits can safely hold more.
 plan_source_model arguments must be {"domain":"...","slices":[{"focus":"...",
 "sourceUnitIds":["src-id"]}]}. It is only for a source-backed request before a source
 blueprint exists. It is terminal for that planning increment: the backend persists the plan
@@ -1271,11 +1320,13 @@ evidence or you return a partial batch describing the remaining work.
 
 SOURCE-TO-MODEL MODE: The attached source document is available as explicit source units.
 First return plan_model_edit with a durable progressive CIM modeling plan. The first slice should
-be useful on canvas and grounded in the source: include the core actors, goals or capabilities,
-requirements, commands or queries, domain information, events, assumptions, risks, policies, and
-valid relationships that fit one structurally valid checkpoint. After the backend accepts that
-plan, call describe_types once with the exact CIM types required by the current slice; after the
-returned contracts, submit commit_model_batch.\
+cover several coherent source units when structurally safe, usually 3 to 5 related stories for a
+10+ story document. It should be useful on canvas and grounded in the source: include the core
+actors, goals or capabilities, requirements, commands or queries, domain information, events,
+assumptions, risks, policies, and valid relationships that fit one structurally valid checkpoint.
+Every source-backed slice must list sourceUnitIds copied exactly from the supplied markers. After
+the backend accepts that plan, use the exact CIM contracts supplied by the backend or call
+describe_types once if they are missing; then submit commit_model_batch.\
 """
                 + (sourceBlueprintPresent
                     ? "A source blueprint is already present, so do not call plan_source_model"
@@ -1308,14 +1359,15 @@ Arguments must be:
 {"intent":"CREATE_MODEL|ADD_FEATURES|EDIT_MODEL|EXPLAIN","features":["..."],
 "reuseTargets":["existing names to inspect or reuse"],"newElements":["planned element names"],
 "requiredContracts":["ExactType"],"slices":[{"label":"Core architecture",
-"purpose":"...","requiredContracts":["ExactType"]}]}.
+"purpose":"...","requiredContracts":["ExactType"],"sourceUnitIds":["src-id"]}]}.
 
 For broad create or add-feature requests, split work into small coherent slices such as core
 architecture, events, data stores, security, observability, and operations. Put only the exact
 metamodel type names likely needed by the current slice in each slice.requiredContracts. For an
 empty PIM serverless model, start with root-contained ServerlessService elements. For an empty CIM
-model, start with root-contained capabilities or requirements. Do not generate model patches in
-this planning step.
+model, start with root-contained capabilities or requirements. For source-backed planning, group
+related source units by capability/workflow/dependency and include exact sourceUnitIds per slice.
+Do not generate model patches in this planning step.
 """
         .formatted(level.name());
   }
@@ -1748,14 +1800,57 @@ validation.
     }
   }
 
+  private void validatePlannedSourceSliceCoverage(
+      ModelCommandBatch batch, String sourceDocument, JsonNode modelingPlan) {
+    if (batch == null
+        || sourceDocument == null
+        || sourceDocument.isBlank()
+        || modelingPlan == null
+        || modelingPlan.isMissingNode()
+        || modelingPlan.isNull()) {
+      return;
+    }
+    JsonNode planned = modelingPlan.path("slices").path(0).path("sourceUnitIds");
+    if (!planned.isArray() || planned.size() <= 1) return;
+    java.util.Set<String> supplied = sourceUnitIds(sourceDocument);
+    java.util.Set<String> required = new java.util.LinkedHashSet<>();
+    planned.forEach(
+        item -> {
+          String id = item.asText("").trim();
+          if (!id.isBlank() && supplied.contains(id)) required.add(id);
+        });
+    if (required.size() <= 1) return;
+    java.util.Set<String> covered = new java.util.LinkedHashSet<>();
+    for (ModelCommandBatch.Evidence evidence : batch.evidence()) {
+      if (!"SOURCE_GROUNDED".equals(normalizedEvidenceKind(evidence))) continue;
+      String id = evidence.sourceUnitId() == null ? "" : evidence.sourceUnitId().trim();
+      if (required.contains(id)) covered.add(id);
+    }
+    int minimumCovered = Math.min(required.size(), 2);
+    if (covered.size() >= minimumCovered) return;
+    java.util.List<String> missing = required.stream().filter(id -> !covered.contains(id)).toList();
+    throw new PlatformException(
+        422,
+        "The current planned source slice has multiple sourceUnitIds. A checkpoint must include"
+            + " SOURCE_GROUNDED evidence for at least "
+            + minimumCovered
+            + " of those planned source units unless only one is structurally possible. Covered "
+            + covered
+            + " but still missing "
+            + missing
+            + ". Revise the same checkpoint so one accepted batch covers several planned source"
+            + " units within the patch limits; do not replan or answer.");
+  }
+
   private ModelCommandBatch normalizeSourceEvidence(
       ModelCommandBatch batch, String sourceDocument) {
     if (batch == null || sourceDocument == null || sourceDocument.isBlank()) return batch;
     java.util.Map<String, String> aliases = sourceUnitAliases(sourceDocument);
-    if (aliases.isEmpty() || batch.evidence().isEmpty()) return batch;
+    if (aliases.isEmpty()) return batch;
     java.util.Map<String, String> sourceRefsByElement = sourceReferencesByElement(batch, aliases);
     boolean changed = false;
     java.util.List<ModelCommandBatch.Evidence> evidence = new java.util.ArrayList<>();
+    java.util.Set<String> coveredRefs = new java.util.LinkedHashSet<>();
     for (ModelCommandBatch.Evidence item : batch.evidence()) {
       String normalizedKind = normalizedEvidenceKind(item);
       if (!normalizedKind.equals(item.kind())) changed = true;
@@ -1772,6 +1867,7 @@ validation.
           sourceUnitId = fromElement;
         }
       }
+      if (!sourceUnitId.isBlank()) coveredRefs.add(item.elementRef());
       evidence.add(
           new ModelCommandBatch.Evidence(
               item.elementRef(),
@@ -1779,6 +1875,13 @@ validation.
               item.requirementId(),
               normalizedKind,
               item.assumption()));
+    }
+    for (var entry : sourceRefsByElement.entrySet()) {
+      if (coveredRefs.contains(entry.getKey())) continue;
+      changed = true;
+      evidence.add(
+          new ModelCommandBatch.Evidence(
+              entry.getKey(), entry.getValue(), "", "SOURCE_GROUNDED", ""));
     }
     if (!changed) return batch;
     return new ModelCommandBatch(

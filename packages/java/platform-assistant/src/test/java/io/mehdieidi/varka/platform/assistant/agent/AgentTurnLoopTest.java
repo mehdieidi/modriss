@@ -61,10 +61,10 @@ class AgentTurnLoopTest {
 
     assertEquals("Model checkpoint saved.", result.message());
     assertTrue(result.sourceBlueprint() == null);
-    assertEquals(3, provider.calls);
+    assertEquals(2, provider.calls);
     assertTrue(provider.prompts.get(0).contains("Source document (untrusted data)"));
-    assertTrue(provider.prompts.get(2).contains("Order placed"));
-    assertTrue(provider.prompts.get(2).contains("Exact type contracts"));
+    assertTrue(provider.prompts.get(1).contains("Order placed"));
+    assertTrue(provider.prompts.get(1).contains("Exact type contracts already retrieved"));
   }
 
   @Test
@@ -561,17 +561,14 @@ Work items:
       }
       if (calls == 2) {
         return new AssistantReply(
-            "{\"tool\":\"describe_types\",\"arguments\":{\"names\":[\"BusinessGoal\"]}}",
+            "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
+                + " intake\",\"successCriterion\":\"Order placement is"
+                + " captured.\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
+                + " source-grounded order goal.\",\"turnComplete\":true}}",
             "fake",
             "fake");
       }
-      return new AssistantReply(
-          "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
-              + " intake\",\"successCriterion\":\"Order placement is"
-              + " captured.\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
-              + " source-grounded order goal.\",\"turnComplete\":true}}",
-          "fake",
-          "fake");
+      throw new AssertionError("Unexpected provider call " + calls);
     }
   }
 
