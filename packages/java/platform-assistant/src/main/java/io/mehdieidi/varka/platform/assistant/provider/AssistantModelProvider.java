@@ -13,9 +13,9 @@ public interface AssistantModelProvider {
    */
   AssistantProviderMetadata metadata();
 
-  /** Returns provider capability limits used by the agent loop and provider transport. */
-  default ProviderCapabilityProfile capabilities() {
-    return ProviderCapabilityProfile.standard();
+  /** Returns the configured capability limits used by the agent loop and provider transport. */
+  default ProviderCapabilities capabilities() {
+    return ProviderCapabilities.defaults();
   }
 
   /**
@@ -134,8 +134,8 @@ public interface AssistantModelProvider {
    */
   record AssistantProviderMetadata(String provider, String baseUrl, String proxy) {}
 
-  /** Conservative provider-specific limits. */
-  record ProviderCapabilityProfile(
+  /** Single provider capability configuration. */
+  record ProviderCapabilities(
       int maxCompletionTokens,
       int maxPatchCreates,
       int maxPatchConnections,
@@ -143,7 +143,7 @@ public interface AssistantModelProvider {
       int maxContractCount,
       boolean nativeToolsPreferred,
       boolean forcedToolChoiceReliable) {
-    public ProviderCapabilityProfile {
+    public ProviderCapabilities {
       maxCompletionTokens = maxCompletionTokens <= 0 ? 4096 : maxCompletionTokens;
       maxPatchCreates = maxPatchCreates <= 0 ? 12 : maxPatchCreates;
       maxPatchConnections = maxPatchConnections <= 0 ? 18 : maxPatchConnections;
@@ -151,12 +151,8 @@ public interface AssistantModelProvider {
       maxContractCount = maxContractCount <= 0 ? 8 : maxContractCount;
     }
 
-    public static ProviderCapabilityProfile standard() {
-      return new ProviderCapabilityProfile(4096, 12, 18, 12, 8, false, true);
-    }
-
-    public static ProviderCapabilityProfile conservative() {
-      return new ProviderCapabilityProfile(2048, 3, 4, 3, 2, true, false);
+    public static ProviderCapabilities defaults() {
+      return new ProviderCapabilities(4096, 12, 18, 12, 8, true, true);
     }
   }
 }

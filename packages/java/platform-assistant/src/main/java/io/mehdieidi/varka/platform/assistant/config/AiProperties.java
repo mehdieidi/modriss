@@ -1,18 +1,10 @@
 package io.mehdieidi.varka.platform.assistant.config;
 
 import io.mehdieidi.varka.platform.assistant.spi.AssistantSettings;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -46,6 +38,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param requireIdempotencyKey whether client turn idempotency keys are required
  * @param maxProviderCallsPerTurn maximum provider calls for a standard turn
  * @param maxProviderCallsSourceTurn maximum provider calls when source analysis runs
+ * @param maxCompletionTokens maximum completion tokens requested from the LLM
+ * @param maxPatchCreates maximum create operations requested per model patch
+ * @param maxPatchConnections maximum relationship operations requested per model patch
+ * @param maxPatchEvidence maximum evidence items requested per model patch
+ * @param maxContractCount maximum exact metamodel contracts passed into one LLM patch prompt
+ * @param nativeToolsPreferred whether the OpenAI-compatible transport should use native tools
+ * @param forcedToolChoiceReliable whether the selected endpoint supports named forced tool choice
  * @param llmContractRerankEnabled whether hybrid retrieval may invoke LLM reranking
  * @param sourceTurnTimeout overall assistant turn timeout when a source attachment is present
  * @param maxCimModelingPasses maximum incremental CIM modeling passes per source-backed turn
@@ -80,15 +79,19 @@ public record AiProperties(
     boolean requireIdempotencyKey,
     int maxProviderCallsPerTurn,
     int maxProviderCallsSourceTurn,
+    int maxCompletionTokens,
+    int maxPatchCreates,
+    int maxPatchConnections,
+    int maxPatchEvidence,
+    int maxContractCount,
+    Boolean nativeToolsPreferred,
+    Boolean forcedToolChoiceReliable,
     boolean llmContractRerankEnabled,
     Duration sourceTurnTimeout,
     int maxCimModelingPasses,
     boolean preferLlmSourceExtraction)
     implements AssistantSettings {
-  private static final String PROVIDER_PROFILES_RESOURCE = "assistant-provider-profiles.properties";
-  private static volatile ProviderProfileConfig providerProfileConfig;
-
-  /** Applies conservative defaults for local development. */
+  /** Applies production defaults when an environment-backed setting is omitted. */
   public AiProperties {
     provider = Provider.from(provider).key();
     requestTimeout = requestTimeout == null ? Duration.ofSeconds(90) : requestTimeout;
@@ -123,6 +126,13 @@ public record AiProperties(
     models = models == null ? new Models(null, null) : models;
     maxProviderCallsPerTurn = maxProviderCallsPerTurn <= 0 ? 2 : maxProviderCallsPerTurn;
     maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 6 : maxProviderCallsSourceTurn;
+    maxCompletionTokens = maxCompletionTokens <= 0 ? 4096 : maxCompletionTokens;
+    maxPatchCreates = maxPatchCreates <= 0 ? 12 : maxPatchCreates;
+    maxPatchConnections = maxPatchConnections <= 0 ? 18 : maxPatchConnections;
+    maxPatchEvidence = maxPatchEvidence <= 0 ? 12 : maxPatchEvidence;
+    maxContractCount = maxContractCount <= 0 ? 8 : maxContractCount;
+    nativeToolsPreferred = nativeToolsPreferred == null ? true : nativeToolsPreferred;
+    forcedToolChoiceReliable = forcedToolChoiceReliable == null ? true : forcedToolChoiceReliable;
     sourceTurnTimeout = sourceTurnTimeout == null ? Duration.ofMinutes(5) : sourceTurnTimeout;
     maxCimModelingPasses = maxCimModelingPasses <= 0 ? 4 : maxCimModelingPasses;
   }
@@ -189,180 +199,18 @@ public record AiProperties(
     return models.model(providerKind());
   }
 
-  /** Resolves provider behavior limits without weakening capable providers. */
-  public io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider
-          .ProviderCapabilityProfile
-      providerProfile(String providerKey, String model, String baseUrl) {
-    String fingerprint =
-        ((providerKey == null ? "" : providerKey)
-                + " "
-                + (model == null ? "" : model)
-                + " "
-                + (baseUrl == null ? "" : baseUrl))
-            .toLowerCase(Locale.ROOT);
-    boolean nativeTools =
-        openaiCompatible != null && openaiCompatible.protocol() == OpenAiProtocol.TOOLS;
-    return providerProfileConfig().resolve(fingerprint, nativeTools);
-  }
-
-  private static ProviderProfileConfig providerProfileConfig() {
-    ProviderProfileConfig local = providerProfileConfig;
-    if (local != null) return local;
-    synchronized (AiProperties.class) {
-      local = providerProfileConfig;
-      if (local == null) {
-        local = ProviderProfileConfig.load();
-        providerProfileConfig = local;
-      }
-      return local;
-    }
-  }
-
-  private record ProviderProfileConfig(
-      Map<String, ProviderProfileSpec> profiles, List<ProviderProfileRule> rules) {
-    private static ProviderProfileConfig load() {
-      Properties properties = new Properties();
-      try (InputStream input = profileConfigInput()) {
-        if (input != null) properties.load(input);
-      } catch (IOException ex) {
-        properties.clear();
-      }
-      Map<String, ProviderProfileSpec> loadedProfiles =
-          Map.of(
-              "standard", profile(properties, "standard", standardSpec()),
-              "conservative", profile(properties, "conservative", conservativeSpec()));
-      return new ProviderProfileConfig(loadedProfiles, rules(properties));
-    }
-
-    private io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider
-            .ProviderCapabilityProfile
-        resolve(String fingerprint, boolean nativeToolsActive) {
-      for (ProviderProfileRule rule : rules) {
-        if (rule.matches(fingerprint)) {
-          ProviderProfileSpec profile = profiles.getOrDefault(rule.profile(), conservativeSpec());
-          return profile.toCapabilityProfile(nativeToolsActive);
-        }
-      }
-      return profiles
-          .getOrDefault("standard", standardSpec())
-          .toCapabilityProfile(nativeToolsActive);
-    }
-
-    private static InputStream profileConfigInput() throws IOException {
-      String external = System.getenv("VARKA_AI_PROVIDER_PROFILES_FILE");
-      if (external != null && !external.isBlank()) {
-        Path path = Path.of(external.trim());
-        if (Files.isRegularFile(path)) return Files.newInputStream(path);
-      }
-      ClassLoader loader = Thread.currentThread().getContextClassLoader();
-      InputStream input =
-          loader == null ? null : loader.getResourceAsStream(PROVIDER_PROFILES_RESOURCE);
-      return input == null
-          ? AiProperties.class.getClassLoader().getResourceAsStream(PROVIDER_PROFILES_RESOURCE)
-          : input;
-    }
-
-    private static ProviderProfileSpec profile(
-        Properties properties, String name, ProviderProfileSpec defaults) {
-      String prefix = "profiles." + name + ".";
-      return new ProviderProfileSpec(
-          intValue(properties, prefix + "max-completion-tokens", defaults.maxCompletionTokens()),
-          intValue(properties, prefix + "max-patch-creates", defaults.maxPatchCreates()),
-          intValue(properties, prefix + "max-patch-connections", defaults.maxPatchConnections()),
-          intValue(properties, prefix + "max-patch-evidence", defaults.maxPatchEvidence()),
-          intValue(properties, prefix + "max-contract-count", defaults.maxContractCount()),
-          stringValue(
-              properties, prefix + "native-tools-preferred", defaults.nativeToolsPreferred()),
-          booleanValue(
-              properties,
-              prefix + "forced-tool-choice-reliable",
-              defaults.forcedToolChoiceReliable()));
-    }
-
-    private static List<ProviderProfileRule> rules(Properties properties) {
-      List<ProviderProfileRule> result = new ArrayList<>();
-      for (int index = 0; ; index++) {
-        String match = properties.getProperty("provider-rules." + index + ".match");
-        if (match == null) break;
-        String profile = properties.getProperty("provider-rules." + index + ".profile");
-        List<String> needles =
-            java.util.Arrays.stream(match.split(","))
-                .map(value -> value.trim().toLowerCase(Locale.ROOT))
-                .filter(value -> !value.isBlank())
-                .toList();
-        if (!needles.isEmpty() && profile != null && !profile.isBlank()) {
-          result.add(new ProviderProfileRule(needles, profile.trim().toLowerCase(Locale.ROOT)));
-        }
-      }
-      return List.copyOf(result);
-    }
-
-    private static int intValue(Properties properties, String key, int defaultValue) {
-      String value = properties.getProperty(key);
-      if (value == null || value.isBlank()) return defaultValue;
-      try {
-        return Integer.parseInt(value.trim());
-      } catch (NumberFormatException ex) {
-        return defaultValue;
-      }
-    }
-
-    private static boolean booleanValue(Properties properties, String key, boolean defaultValue) {
-      String value = properties.getProperty(key);
-      return value == null || value.isBlank() ? defaultValue : Boolean.parseBoolean(value.trim());
-    }
-
-    private static String stringValue(Properties properties, String key, String defaultValue) {
-      String value = properties.getProperty(key);
-      return value == null || value.isBlank() ? defaultValue : value.trim();
-    }
-  }
-
-  private record ProviderProfileRule(List<String> matches, String profile) {
-    private boolean matches(String fingerprint) {
-      return matches.stream().anyMatch(fingerprint::contains);
-    }
-  }
-
-  private record ProviderProfileSpec(
-      int maxCompletionTokens,
-      int maxPatchCreates,
-      int maxPatchConnections,
-      int maxPatchEvidence,
-      int maxContractCount,
-      String nativeToolsPreferred,
-      boolean forcedToolChoiceReliable) {
-    private io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider
-            .ProviderCapabilityProfile
-        toCapabilityProfile(boolean nativeToolsActive) {
-      return new io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider
-          .ProviderCapabilityProfile(
-          maxCompletionTokens,
-          maxPatchCreates,
-          maxPatchConnections,
-          maxPatchEvidence,
-          maxContractCount,
-          nativeTools(nativeToolsActive),
-          forcedToolChoiceReliable);
-    }
-
-    private boolean nativeTools(boolean nativeToolsActive) {
-      String normalized =
-          nativeToolsPreferred == null ? "auto" : nativeToolsPreferred.toLowerCase(Locale.ROOT);
-      return switch (normalized) {
-        case "true", "yes", "tools" -> true;
-        case "false", "no", "json_schema", "json-schema" -> false;
-        default -> nativeToolsActive;
-      };
-    }
-  }
-
-  private static ProviderProfileSpec standardSpec() {
-    return new ProviderProfileSpec(4096, 12, 18, 12, 8, "auto", true);
-  }
-
-  private static ProviderProfileSpec conservativeSpec() {
-    return new ProviderProfileSpec(2048, 3, 4, 3, 2, "true", false);
+  /** Returns the single configured provider capability set used by every LLM provider. */
+  public io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.ProviderCapabilities
+      providerCapabilities() {
+    return new io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider
+        .ProviderCapabilities(
+        maxCompletionTokens,
+        maxPatchCreates,
+        maxPatchConnections,
+        maxPatchEvidence,
+        maxContractCount,
+        nativeToolsPreferred,
+        forcedToolChoiceReliable);
   }
 
   private static String blankToDefault(String value, String defaultValue) {
@@ -481,7 +329,7 @@ public record AiProperties(
       int recentMessageWindow)
       implements AssistantSettings.Hardening {
 
-    /** Applies conservative defaults. */
+    /** Applies operational defaults. */
     public Hardening {
       perUserRequestsPerWindow = perUserRequestsPerWindow <= 0 ? 30 : perUserRequestsPerWindow;
       rateLimitWindow = rateLimitWindow == null ? Duration.ofMinutes(1) : rateLimitWindow;
@@ -525,7 +373,7 @@ public record AiProperties(
 
     /** Binds the documented environment values safely. */
     public static OpenAiProtocol from(String value) {
-      if (value == null || value.isBlank()) return AUTO;
+      if (value == null || value.isBlank()) return TOOLS;
       return switch (value.trim().toLowerCase(java.util.Locale.ROOT)) {
         case "auto" -> AUTO;
         case "tools" -> TOOLS;

@@ -458,8 +458,8 @@ public final class DurableAssistantTurnWorker {
                       + ".";
           updateConceptCoverageAndQuality(turn.id(), accounted, result.commandBatch());
           // Structural validity plus evidence for every source unit is the durable completion
-          // contract. Do not keep resuming merely because the provider conservatively returned
-          // turnComplete=false after it already covered the entire supplied document.
+          // contract. Do not keep resuming merely because the provider returned turnComplete=false
+          // after it already covered the entire supplied document.
           if (accounted.size() == units.size()) {
             state = AssistantTurn.State.SUCCEEDED;
           }

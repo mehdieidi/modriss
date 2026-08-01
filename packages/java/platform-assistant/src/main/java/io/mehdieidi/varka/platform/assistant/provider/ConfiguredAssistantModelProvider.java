@@ -35,7 +35,7 @@ public final class ConfiguredAssistantModelProvider implements AssistantModelPro
   }
 
   @Override
-  public ProviderCapabilityProfile capabilities() {
+  public ProviderCapabilities capabilities() {
     return primary().capabilities();
   }
 

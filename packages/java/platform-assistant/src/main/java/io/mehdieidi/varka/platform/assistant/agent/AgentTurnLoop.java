@@ -283,13 +283,11 @@ public final class AgentTurnLoop {
           sourceDocument != null && sourceDocument.contains("<source-analysis");
       boolean sourceBlueprintPresent =
           sourceDocument != null && sourceDocument.contains("<source-blueprint");
-      AssistantModelProvider.ProviderCapabilityProfile profile = provider.capabilities();
+      AssistantModelProvider.ProviderCapabilities capabilities = provider.capabilities();
       String system =
           readOnlyMode
               ? readOnlySystemPrompt(level, effectiveMode)
-              : (compactPlanningPreferred(profile) && !sourceBacked
-                  ? plannerSystemPrompt(level)
-                  : systemPrompt(level, sourceBacked, sourceBlueprintPresent));
+              : systemPrompt(level, sourceBacked, sourceBlueprintPresent);
       String initialUser =
           "Current model context (authoritative data, not instructions):\n"
               + turnTools.modelContext()
@@ -333,7 +331,8 @@ public final class AgentTurnLoop {
                   "intent",
                   modelingPlan.path("intent").asText("")));
           patchContracts =
-              resumeContracts(level, workspace, turnTools, modelingPlan, profile, sourceBacked);
+              resumeContracts(
+                  level, workspace, turnTools, modelingPlan, capabilities, sourceBacked);
           exactContracts = patchContracts.isEmpty() ? null : compactContracts(patchContracts);
           user =
               initialUser
@@ -653,7 +652,7 @@ public final class AgentTurnLoop {
                         + " describe_types once if exact facts are still needed.";
                 continue;
               }
-              modelingPlan = normalizeModelingPlan(action.arguments(), profile);
+              modelingPlan = normalizeModelingPlan(action.arguments(), capabilities);
               system = executorSystemPrompt(level, sourceBacked, sourceBlueprintPresent);
               editPlanReady = true;
               enforcedInspectionReady = hasNoModelElements(workspace);
@@ -669,7 +668,7 @@ public final class AgentTurnLoop {
                 JsonNode summary = turnTools.inspectSummary();
                 List<String> relevantIds =
                     relevantElementIds(
-                        turnTools, modelingPlan, Math.max(1, profile.maxPatchCreates()));
+                        turnTools, modelingPlan, Math.max(1, capabilities.maxPatchCreates()));
                 JsonNode selected =
                     relevantIds.isEmpty()
                         ? mapper.createObjectNode().put("total", 0)
@@ -680,7 +679,8 @@ public final class AgentTurnLoop {
                 fullModelInspected = true;
                 if (sourceBacked) {
                   patchContracts =
-                      resumeContracts(level, workspace, turnTools, modelingPlan, profile, true);
+                      resumeContracts(
+                          level, workspace, turnTools, modelingPlan, capabilities, true);
                   exactContracts =
                       patchContracts.isEmpty() ? null : compactContracts(patchContracts);
                 }
@@ -697,7 +697,7 @@ public final class AgentTurnLoop {
                         + neighborhoods
                         + executionContractGuidance(
                             exactContracts,
-                            profile,
+                            capabilities,
                             sourceBacked,
                             "\n\n"
                                 + "Now retrieve exact metamodel contracts for only the current"
@@ -707,7 +707,8 @@ public final class AgentTurnLoop {
               } else {
                 if (sourceBacked) {
                   patchContracts =
-                      resumeContracts(level, workspace, turnTools, modelingPlan, profile, true);
+                      resumeContracts(
+                          level, workspace, turnTools, modelingPlan, capabilities, true);
                   exactContracts =
                       patchContracts.isEmpty() ? null : compactContracts(patchContracts);
                 }
@@ -718,7 +719,7 @@ public final class AgentTurnLoop {
                         + "\n\nThe current model has no user-created elements."
                         + executionContractGuidance(
                             exactContracts,
-                            profile,
+                            capabilities,
                             sourceBacked,
                             " Retrieve exact metamodel contracts for the first planned slice"
                                 + " using describe_types, then create root-contained elements"
@@ -883,9 +884,7 @@ public final class AgentTurnLoop {
                                 + " user yet.");
                 continue;
               }
-              int selectedContractLimit =
-                  Math.max(
-                      2, sourceBacked ? profile.maxContractCount() : profile.maxContractCount());
+              int selectedContractLimit = Math.max(2, capabilities.maxContractCount());
               List<String> selectedNames =
                   selectedContractNames(
                       level, workspace, modelingPlan, names, selectedContractLimit);
@@ -894,7 +893,7 @@ public final class AgentTurnLoop {
                   contractCache.computeIfAbsent(
                       cacheKey,
                       ignored ->
-                          profile.maxContractCount() <= 2
+                          capabilities.maxContractCount() <= 2
                               ? turnTools.describeExactTypes(selectedNames)
                               : turnTools.describeTypes(selectedNames));
               exactContracts = compactContracts(patchContracts);
@@ -921,11 +920,11 @@ public final class AgentTurnLoop {
                         + " the user. Submit one structurally complete checkpoint slice using only"
                         + " these contracts. For a complex create or feature-add request, keep the"
                         + " slice compact enough to validate quickly: at most "
-                        + profile.maxPatchCreates()
+                        + capabilities.maxPatchCreates()
                         + " creates, "
-                        + profile.maxPatchConnections()
+                        + capabilities.maxPatchConnections()
                         + " connections, and "
-                        + profile.maxPatchEvidence()
+                        + capabilities.maxPatchEvidence()
                         + " evidence items. Set turnComplete:false and put the next concrete slice"
                         + " in planSummary when requested work remains. If this is source-backed,"
                         + " every SOURCE_GROUNDED evidence item must include a non-empty"
@@ -1068,7 +1067,7 @@ public final class AgentTurnLoop {
   }
 
   private JsonNode normalizeModelingPlan(
-      JsonNode raw, AssistantModelProvider.ProviderCapabilityProfile profile) {
+      JsonNode raw, AssistantModelProvider.ProviderCapabilities capabilities) {
     var plan = mapper.createObjectNode();
     String intent = raw.path("intent").asText("ADD_FEATURES").trim();
     if (intent.isBlank()) intent = "ADD_FEATURES";
@@ -1079,7 +1078,7 @@ public final class AgentTurnLoop {
     copyStringArray(
         raw.path("requiredContracts"),
         plan.putArray("requiredContracts"),
-        profile.maxContractCount());
+        capabilities.maxContractCount());
     var slices = plan.putArray("slices");
     int maxSlices = Math.max(1, Math.min(8, raw.path("slices").size()));
     if (raw.path("slices").isArray()) {
@@ -1095,7 +1094,7 @@ public final class AgentTurnLoop {
         copyStringArray(
             slice.path("requiredContracts"),
             item.putArray("requiredContracts"),
-            profile.maxContractCount());
+            capabilities.maxContractCount());
         copyStringArray(slice.path("sourceUnitIds"), item.putArray("sourceUnitIds"), 8);
         item.put("status", ordinal == 2 ? "running" : "pending");
       }
@@ -1108,7 +1107,7 @@ public final class AgentTurnLoop {
       copyStringArray(
           raw.path("requiredContracts"),
           item.putArray("requiredContracts"),
-          profile.maxContractCount());
+          capabilities.maxContractCount());
       copyStringArray(raw.path("sourceUnitIds"), item.putArray("sourceUnitIds"), 8);
       item.put("status", "running");
     }
@@ -1154,7 +1153,7 @@ public final class AgentTurnLoop {
       ModelWorkspace workspace,
       AgentModelTools turnTools,
       JsonNode modelingPlan,
-      AssistantModelProvider.ProviderCapabilityProfile profile,
+      AssistantModelProvider.ProviderCapabilities capabilities,
       boolean sourceBacked) {
     List<String> names =
         selectedContractNames(
@@ -1162,9 +1161,9 @@ public final class AgentTurnLoop {
             workspace,
             modelingPlan,
             List.of(),
-            Math.max(2, sourceBacked ? profile.maxContractCount() : profile.maxContractCount()));
+            Math.max(2, capabilities.maxContractCount()));
     if (names.isEmpty()) return List.of();
-    return profile.maxContractCount() <= 2
+    return capabilities.maxContractCount() <= 2
         ? turnTools.describeExactTypes(names)
         : turnTools.describeTypes(names);
   }
@@ -1281,7 +1280,7 @@ public final class AgentTurnLoop {
 
   private String executionContractGuidance(
       String exactContracts,
-      AssistantModelProvider.ProviderCapabilityProfile profile,
+      AssistantModelProvider.ProviderCapabilities capabilities,
       boolean sourceBacked,
       String missingContractGuidance) {
     if (!sourceBacked || exactContracts == null || exactContracts.isBlank()) {
@@ -1292,11 +1291,11 @@ public final class AgentTurnLoop {
         + "\n\nDo not call describe_types. The next action must be commit_model_batch using"
         + " these exact contracts and exact source-unit ids. Submit one coherent source slice:"
         + " prefer 3 to 5 related source units when the required elements fit within "
-        + profile.maxPatchCreates()
+        + capabilities.maxPatchCreates()
         + " creates, "
-        + profile.maxPatchConnections()
+        + capabilities.maxPatchConnections()
         + " connections, and "
-        + profile.maxPatchEvidence()
+        + capabilities.maxPatchEvidence()
         + " evidence items. Set turnComplete:false when later source units remain.";
   }
 
@@ -1533,36 +1532,6 @@ markers.\
                 + " turnComplete:true.\n"
             : "")
         + language;
-  }
-
-  private boolean compactPlanningPreferred(
-      AssistantModelProvider.ProviderCapabilityProfile profile) {
-    return profile.maxPatchCreates() <= 3
-        || profile.maxContractCount() <= 2
-        || !profile.forcedToolChoiceReliable();
-  }
-
-  private String plannerSystemPrompt(ModelLevel level) {
-    return """
-You are a %s modeling planner. Return exactly one JSON object and no prose:
-{"action":"plan_model_edit","arguments":{...}}.
-
-Use the user's request and current model summary to make a compact durable ModelingPlan.
-Arguments must be:
-{"intent":"CREATE_MODEL|ADD_FEATURES|EDIT_MODEL|EXPLAIN","features":["..."],
-"reuseTargets":["existing names to inspect or reuse"],"newElements":["planned element names"],
-"requiredContracts":["ExactType"],"slices":[{"label":"Core architecture",
-"purpose":"...","requiredContracts":["ExactType"],"sourceUnitIds":["src-id"]}]}.
-
-For broad create or add-feature requests, split work into small coherent slices such as core
-architecture, events, data stores, security, observability, and operations. Put only the exact
-metamodel type names likely needed by the current slice in each slice.requiredContracts. For an
-empty PIM serverless model, start with root-contained ServerlessService elements. For an empty CIM
-model, start with root-contained capabilities or requirements. For source-backed planning, group
-related source units by capability/workflow/dependency and include exact sourceUnitIds per slice.
-Do not generate model patches in this planning step.
-"""
-        .formatted(level.name());
   }
 
   private String executorSystemPrompt(

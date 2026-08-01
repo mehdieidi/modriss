@@ -33,7 +33,7 @@ public class ProxyAvailability {
     return check(properties.provider());
   }
 
-  /** Checks the proxy profile used by the specified provider. */
+  /** Checks the proxy settings used by the specified provider. */
   public ProxyCheck check(String provider) {
     String key = provider == null || provider.isBlank() ? "default" : provider;
     AiProperties.Proxy proxy = properties.proxyFor(provider);

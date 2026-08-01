@@ -61,8 +61,8 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
   }
 
   @Override
-  public ProviderCapabilityProfile capabilities() {
-    return properties.providerProfile(providerKey, model(), baseUrl());
+  public ProviderCapabilities capabilities() {
+    return properties.providerCapabilities();
   }
 
   @Override

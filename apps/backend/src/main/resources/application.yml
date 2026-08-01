@@ -84,6 +84,13 @@ varka:
     max-source-chunks-per-turn: ${VARKA_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
     max-provider-calls-per-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN:18}
     max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:30}
+    max-completion-tokens: ${VARKA_AI_MAX_COMPLETION_TOKENS:4096}
+    max-patch-creates: ${VARKA_AI_MAX_PATCH_CREATES:12}
+    max-patch-connections: ${VARKA_AI_MAX_PATCH_CONNECTIONS:18}
+    max-patch-evidence: ${VARKA_AI_MAX_PATCH_EVIDENCE:12}
+    max-contract-count: ${VARKA_AI_MAX_CONTRACT_COUNT:8}
+    native-tools-preferred: ${VARKA_AI_NATIVE_TOOLS_PREFERRED:true}
+    forced-tool-choice-reliable: ${VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE:true}
     source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:30m}
     fallback-provider: ${VARKA_AI_FALLBACK_PROVIDER:}
     hardening:
@@ -100,8 +107,7 @@ varka:
       host: ${VARKA_AI_PROXY_HOST:127.0.0.1}
       port: ${VARKA_AI_PROXY_PORT:2081}
       connect-timeout: ${VARKA_AI_PROXY_CONNECT_TIMEOUT:2s}
-    # Provider profiles allow FreeLLM to stay direct while providers such as Freemodel use a
-    # separate proxy/TLS route. Omitted fields retain the global proxy settings.
+    # Optional provider-specific proxy overrides. Omitted fields retain the global proxy settings.
     provider-proxies:
       openai:
         enabled: ${VARKA_AI_OPENAI_PROXY_ENABLED:${VARKA_AI_PROXY_ENABLED:false}}
@@ -118,7 +124,7 @@ varka:
     openai-compatible:
       base-url: ${OPENAI_COMPATIBLE_BASE_URL:https://api.openai.com}
       api-key: ${OPENAI_COMPATIBLE_API_KEY:}
-      protocol: ${VARKA_AI_OPENAI_PROTOCOL:auto}
+      protocol: ${VARKA_AI_OPENAI_PROTOCOL:tools}
     gemini:
       api-key: ${GEMINI_API_KEY:}
     models:
