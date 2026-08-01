@@ -177,6 +177,10 @@ public final class DurableAssistantTurnWorker {
                   + blueprint.get().blueprint()
                   + "\n</source-blueprint>\n";
         }
+        var analysis = sourceAnalysis(turn.id());
+        if (analysis.isPresent()) {
+          sourceForAgent += "\n<source-analysis>\n" + analysis.get() + "\n</source-analysis>\n";
+        }
         turns.appendEvent(
             turn.id(),
             "turn.stage",
@@ -217,7 +221,16 @@ public final class DurableAssistantTurnWorker {
       }
       message = appendPersistedWorkflowContext(turn.id(), message);
       String checkpointKey = turn.id() + "-checkpoint-" + (turn.checkpointCount() + 1);
-      if (!route.readOnly()) {
+      boolean modelCheckpointExpected =
+          !route.readOnly()
+              && (turn.sourceText() == null
+                  || turn.sourceText().isBlank()
+                  || turns.sourceBlueprint(turn.id()).isPresent()
+                  || turns
+                      .workflow(turn.id())
+                      .filter(workflow -> "MODELING_PLAN".equals(workflow.workflowKind()))
+                      .isPresent());
+      if (modelCheckpointExpected) {
         // Persist the intent before invoking code which can mutate the model. A restarted worker
         // finalizes the same key, never creates a second canvas change.
         turns.beginCheckpoint(
@@ -246,12 +259,6 @@ public final class DurableAssistantTurnWorker {
                           504, "Assistant turn exceeded its configured deadline.")
                       : null,
               route);
-      if (!route.readOnly()) {
-        turns.recordValidationAttempt(
-            new AssistantTurnStore.ValidationAttempt(
-                turn.id(), null, 1, true, null, Instant.now()));
-        turns.appendEvent(turn.id(), "turn.validation.completed", java.util.Map.of("valid", true));
-      }
       boolean checkpointSaved = !result.inversePatch().isEmpty();
       var existingModelingWorkflow = turns.workflow(turn.id());
       boolean persistedModelingPlanPresent =
@@ -278,6 +285,10 @@ public final class DurableAssistantTurnWorker {
             java.util.Map.of("workflowKind", "MODELING_PLAN", "workItems", planItems.size()));
       }
       if (checkpointSaved) {
+        turns.recordValidationAttempt(
+            new AssistantTurnStore.ValidationAttempt(
+                turn.id(), null, 1, true, null, Instant.now()));
+        turns.appendEvent(turn.id(), "turn.validation.completed", java.util.Map.of("valid", true));
         turns.finalizeCheckpoint(
             turn.id(),
             checkpointKey,
@@ -306,6 +317,19 @@ public final class DurableAssistantTurnWorker {
         if (persistedModelingPlanPresent) {
           advanceModelingPlanWorkItems(turn.id(), turn.checkpointCount() + 1);
         }
+      }
+      if (result.sourceAnalysis() != null) {
+        saveSourceAnalysis(turn.id(), result.sourceAnalysis());
+        turns.saveWorkflow(
+            new AssistantTurnStore.Workflow(
+                turn.id(), "DOCUMENT_TO_CIM", "ANALYZED", null, result.sourceAnalysis()));
+        turns.appendEvent(
+            turn.id(),
+            "turn.source_analysis.ready",
+            java.util.Map.of(
+                "sourceUnits", result.sourceAnalysis().path("sourceUnits").size(),
+                "concepts", result.sourceAnalysis().path("concepts").size()));
+        remainingWork = "Source analysis is ready; resume this turn to plan the CIM blueprint.";
       }
       if (result.sourceBlueprint() != null) {
         turns.saveSourceBlueprint(turn.id(), result.sourceBlueprint(), 0);
@@ -359,7 +383,8 @@ public final class DurableAssistantTurnWorker {
             "model.slice",
             java.util.Map.of("complete", false, "remainingWork", remainingWork));
       }
-      if (state == AssistantTurn.State.SUCCEEDED && result.sourceBlueprint() != null) {
+      if (state == AssistantTurn.State.SUCCEEDED
+          && (result.sourceBlueprint() != null || result.sourceAnalysis() != null)) {
         state = AssistantTurn.State.PARTIAL;
       }
       if (turn.sourceText() != null && !turn.sourceText().isBlank()) {
@@ -416,38 +441,39 @@ public final class DurableAssistantTurnWorker {
                                       fact.assumption()))));
             }
           }
+          // Coverage is durable across resumed checkpoints.  Counting only the evidence produced
+          // by this increment made every later slice appear to lose the spans modeled by earlier
+          // slices, so a two-checkpoint source workflow could remain PARTIAL forever.
+          turns.provenance(turn.id()).stream()
+              .map(AssistantTurnStore.Provenance::sourceUnitId)
+              .filter(spanId -> spanId != null && !spanId.isBlank())
+              .map(spanId -> sourceAliases.getOrDefault(spanId.trim(), spanId.trim()))
+              .forEach(accounted::add);
+          int coverage = units.isEmpty() ? 100 : (accounted.size() * 100 / units.size());
+          remainingWork =
+              accounted.size() == units.size()
+                  ? null
+                  : "Source spans still need explicit modeling evidence: "
+                      + (units.size() - accounted.size())
+                      + ".";
+          updateConceptCoverageAndQuality(turn.id(), accounted, result.commandBatch());
+          // Structural validity plus evidence for every source unit is the durable completion
+          // contract. Do not keep resuming merely because the provider conservatively returned
+          // turnComplete=false after it already covered the entire supplied document.
+          if (accounted.size() == units.size()) {
+            state = AssistantTurn.State.SUCCEEDED;
+          }
+          turns.setSourceCoverage(turn.id(), coverage, remainingWork);
+          turns.appendEvent(
+              turn.id(),
+              "turn.coverage.updated",
+              java.util.Map.of(
+                  "coveragePercent", coverage, "unresolvedSpans", units.size() - accounted.size()));
+          if (state == AssistantTurn.State.SUCCEEDED && remainingWork != null)
+            state = AssistantTurn.State.PARTIAL;
+          if (state != AssistantTurn.State.SUCCEEDED && state != AssistantTurn.State.PARTIAL)
+            turns.markSourceUnits(turn.id(), "DEFERRED", "Turn did not complete.");
         }
-        // Coverage is durable across resumed checkpoints.  Counting only the evidence produced
-        // by this increment made every later slice appear to lose the spans modeled by earlier
-        // slices, so a two-checkpoint source workflow could remain PARTIAL forever.
-        turns.provenance(turn.id()).stream()
-            .map(AssistantTurnStore.Provenance::sourceUnitId)
-            .filter(spanId -> spanId != null && !spanId.isBlank())
-            .map(spanId -> sourceAliases.getOrDefault(spanId.trim(), spanId.trim()))
-            .forEach(accounted::add);
-        int coverage = units.isEmpty() ? 100 : (accounted.size() * 100 / units.size());
-        remainingWork =
-            accounted.size() == units.size()
-                ? null
-                : "Source spans still need explicit modeling evidence: "
-                    + (units.size() - accounted.size())
-                    + ".";
-        // Structural validity plus evidence for every source unit is the durable completion
-        // contract. Do not keep resuming merely because the provider conservatively returned
-        // turnComplete=false after it already covered the entire supplied document.
-        if (accounted.size() == units.size()) {
-          state = AssistantTurn.State.SUCCEEDED;
-        }
-        turns.setSourceCoverage(turn.id(), coverage, remainingWork);
-        turns.appendEvent(
-            turn.id(),
-            "turn.coverage.updated",
-            java.util.Map.of(
-                "coveragePercent", coverage, "unresolvedSpans", units.size() - accounted.size()));
-        if (state == AssistantTurn.State.SUCCEEDED && remainingWork != null)
-          state = AssistantTurn.State.PARTIAL;
-        if (state != AssistantTurn.State.SUCCEEDED && state != AssistantTurn.State.PARTIAL)
-          turns.markSourceUnits(turn.id(), "DEFERRED", "Turn did not complete.");
       }
       var sourceBlueprint = turns.sourceBlueprint(turn.id());
       if (sourceBlueprint.isPresent()
@@ -706,7 +732,8 @@ public final class DurableAssistantTurnWorker {
     boolean hasDurableWorkflow =
         turn.checkpointCount() > 0
             || durablePlanPresent
-            || turns.sourceBlueprint(turn.id()).isPresent();
+            || turns.sourceBlueprint(turn.id()).isPresent()
+            || sourceAnalysis(turn.id()).isPresent();
     AgentTurnLoop.WorkflowMode mode;
     if (hasDurableWorkflow) {
       mode = AgentTurnLoop.WorkflowMode.RESUME_REPAIR;
@@ -829,6 +856,103 @@ public final class DurableAssistantTurnWorker {
 
   private boolean transientProviderFailure(int status) {
     return status == 500 || status == 502 || status == 503 || status == 504;
+  }
+
+  private java.util.Optional<tools.jackson.databind.JsonNode> sourceAnalysis(String turnId) {
+    return turns.sourceFacts(turnId).stream()
+        .filter(fact -> "SOURCE_ANALYSIS".equals(fact.kind()))
+        .map(AssistantTurnStore.SourceFact::payload)
+        .findFirst();
+  }
+
+  private void saveSourceAnalysis(String turnId, tools.jackson.databind.JsonNode analysis) {
+    turns.saveSourceFacts(
+        turnId,
+        java.util.List.of(
+            new AssistantTurnStore.SourceFact(
+                turnId + ":source-analysis", "SOURCE_ANALYSIS", "ACCEPTED", analysis, null)));
+    java.util.List<AssistantTurnStore.SourceFact> conceptFacts = new java.util.ArrayList<>();
+    int ordinal = 1;
+    for (tools.jackson.databind.JsonNode concept : analysis.path("concepts")) {
+      String key = concept.path("key").asText("").trim();
+      if (key.isBlank()) key = "concept-" + ordinal;
+      conceptFacts.add(
+          new AssistantTurnStore.SourceFact(
+              turnId + ":concept:" + key, "SOURCE_CONCEPT", "PLANNED", concept, null));
+      ordinal++;
+    }
+    if (!conceptFacts.isEmpty()) turns.saveSourceFacts(turnId, conceptFacts);
+  }
+
+  private void updateConceptCoverageAndQuality(
+      String turnId,
+      java.util.Set<String> modeledSourceUnitIds,
+      io.mehdieidi.varka.platform.assistant.domain.ModelCommandBatch batch) {
+    java.util.List<AssistantTurnStore.SourceFact> updated = new java.util.ArrayList<>();
+    int total = 0;
+    int modeled = 0;
+    for (AssistantTurnStore.SourceFact fact : turns.sourceFacts(turnId)) {
+      if (!"SOURCE_CONCEPT".equals(fact.kind())) continue;
+      total++;
+      java.util.Set<String> conceptSourceIds = new java.util.LinkedHashSet<>();
+      fact.payload()
+          .path("sourceUnitIds")
+          .forEach(id -> conceptSourceIds.add(id.asText("").trim()));
+      boolean covered =
+          !conceptSourceIds.isEmpty()
+              && conceptSourceIds.stream().anyMatch(modeledSourceUnitIds::contains);
+      if (covered) modeled++;
+      updated.add(
+          new AssistantTurnStore.SourceFact(
+              fact.id(),
+              fact.kind(),
+              covered ? "MODELED" : fact.status(),
+              fact.payload(),
+              fact.assumption()));
+    }
+    if (!updated.isEmpty()) turns.saveSourceFacts(turnId, updated);
+    int relationshipCount = batch == null ? 0 : batch.connections().size();
+    int richCreates =
+        batch == null
+            ? 0
+            : (int)
+                batch.creates().stream()
+                    .map(create -> create.eClass() == null ? "" : create.eClass())
+                    .filter(
+                        eClass ->
+                            java.util.Set.of(
+                                    "Command",
+                                    "Query",
+                                    "BusinessEvent",
+                                    "DomainEntity",
+                                    "InformationItem",
+                                    "Policy",
+                                    "DecisionModel",
+                                    "DecisionRule")
+                                .contains(eClass))
+                    .count();
+    int score =
+        total == 0
+            ? 0
+            : Math.min(
+                100,
+                (modeled * 70 / total)
+                    + Math.min(20, relationshipCount * 5)
+                    + Math.min(10, richCreates * 2));
+    turns.appendEvent(
+        turnId,
+        "turn.quality.updated",
+        java.util.Map.of(
+            "qualityScore",
+            score,
+            "conceptsModeled",
+            modeled,
+            "conceptsTotal",
+            total,
+            "relationshipsInLastBatch",
+            relationshipCount,
+            "richCimCreatesInLastBatch",
+            richCreates));
   }
 
   private java.util.Map<String, String> sourceUnitAliases(

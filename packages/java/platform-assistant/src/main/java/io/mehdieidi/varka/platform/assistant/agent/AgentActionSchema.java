@@ -25,6 +25,8 @@ public final class AgentActionSchema {
       var variants = mapper.createArrayNode();
       for (String[] action :
           new String[][] {
+            {"analyze_source_units", "analyze_source_units"},
+            {"plan_cim_blueprint", "plan_cim_blueprint"},
             {"plan_model_edit", "plan_model_edit"},
             {"commit_model_batch", "apply_draft_patch"},
             {"plan_source_model", "plan_source_model"},
@@ -62,6 +64,8 @@ public final class AgentActionSchema {
     }
     return switch (toolName) {
       case "respond_to_user" -> object(Map.of("message", stringSchema()), List.of("message"));
+      case "analyze_source_units" -> sourceAnalysisSchema();
+      case "plan_cim_blueprint" -> cimBlueprintSchema();
       case "plan_model_edit" -> planModelEditSchema();
       case "inspect_model" -> inspectModelSchema();
       case "describe_types" ->
@@ -141,6 +145,170 @@ public final class AgentActionSchema {
             "evidence",
             "planSummary",
             "turnComplete"));
+  }
+
+  private static Map<String, Object> sourceAnalysisSchema() {
+    Map<String, Object> concept =
+        object(
+            Map.of(
+                "key",
+                stringSchema(),
+                "kind",
+                enumStringSchema(
+                    List.of(
+                        "actor",
+                        "goal",
+                        "capability",
+                        "requirement",
+                        "command",
+                        "query",
+                        "domain_entity",
+                        "information_item",
+                        "domain_event",
+                        "policy",
+                        "business_rule",
+                        "relationship",
+                        "interaction",
+                        "dependency")),
+                "name",
+                stringSchema(),
+                "summary",
+                stringSchema(),
+                "sourceUnitIds",
+                array(stringSchema(), 6)),
+            List.of("key", "kind", "name", "summary", "sourceUnitIds"));
+    Map<String, Object> sourceUnitProperties = new LinkedHashMap<>();
+    sourceUnitProperties.put("sourceUnitId", stringSchema());
+    sourceUnitProperties.put("actors", array(stringSchema(), 8));
+    sourceUnitProperties.put("goals", array(stringSchema(), 8));
+    sourceUnitProperties.put("capabilities", array(stringSchema(), 8));
+    sourceUnitProperties.put("requirements", array(stringSchema(), 12));
+    sourceUnitProperties.put("commands", array(stringSchema(), 8));
+    sourceUnitProperties.put("queries", array(stringSchema(), 8));
+    sourceUnitProperties.put("domainEntities", array(stringSchema(), 8));
+    sourceUnitProperties.put("informationItems", array(stringSchema(), 12));
+    sourceUnitProperties.put("domainEvents", array(stringSchema(), 8));
+    sourceUnitProperties.put("policies", array(stringSchema(), 8));
+    sourceUnitProperties.put("relationships", array(stringSchema(), 12));
+    Map<String, Object> sourceUnit =
+        object(
+            sourceUnitProperties,
+            List.of(
+                "sourceUnitId",
+                "actors",
+                "goals",
+                "capabilities",
+                "requirements",
+                "commands",
+                "queries",
+                "domainEntities",
+                "informationItems",
+                "domainEvents",
+                "policies",
+                "relationships"));
+    return object(
+        Map.of(
+            "domain",
+            stringSchema(),
+            "sourceUnits",
+            array(sourceUnit, 40),
+            "concepts",
+            array(concept, 160),
+            "crossUnitRelationships",
+            array(concept, 80)),
+        List.of("domain", "sourceUnits", "concepts", "crossUnitRelationships"));
+  }
+
+  private static Map<String, Object> cimBlueprintSchema() {
+    Map<String, Object> candidate =
+        object(
+            Map.of(
+                "logicalKey",
+                stringSchema(),
+                "reuseKey",
+                stringSchema(),
+                "eClass",
+                stringSchema(),
+                "name",
+                stringSchema(),
+                "sourceUnitIds",
+                array(stringSchema(), 6),
+                "conceptKeys",
+                array(stringSchema(), 12),
+                "owner",
+                stringSchema(),
+                "containment",
+                stringSchema(),
+                "requiredContracts",
+                array(stringSchema(), 12),
+                "slice",
+                integerSchema(1, 24)),
+            List.of(
+                "logicalKey",
+                "reuseKey",
+                "eClass",
+                "name",
+                "sourceUnitIds",
+                "conceptKeys",
+                "owner",
+                "containment",
+                "requiredContracts",
+                "slice"));
+    Map<String, Object> relationship =
+        object(
+            Map.of(
+                "sourceKey",
+                stringSchema(),
+                "targetKey",
+                stringSchema(),
+                "reference",
+                stringSchema(),
+                "relationshipEClass",
+                stringSchema(),
+                "sourceUnitIds",
+                array(stringSchema(), 6),
+                "conceptKeys",
+                array(stringSchema(), 12),
+                "slice",
+                integerSchema(1, 24)),
+            List.of(
+                "sourceKey",
+                "targetKey",
+                "reference",
+                "relationshipEClass",
+                "sourceUnitIds",
+                "conceptKeys",
+                "slice"));
+    Map<String, Object> slice =
+        object(
+            Map.of(
+                "focus",
+                stringSchema(),
+                "sourceUnitIds",
+                array(stringSchema(), 8),
+                "requiredContracts",
+                array(stringSchema(), 16),
+                "candidateKeys",
+                array(stringSchema(), 24),
+                "relationshipKeys",
+                array(stringSchema(), 24)),
+            List.of(
+                "focus",
+                "sourceUnitIds",
+                "requiredContracts",
+                "candidateKeys",
+                "relationshipKeys"));
+    return object(
+        Map.of(
+            "domain",
+            stringSchema(),
+            "candidates",
+            array(candidate, 220),
+            "relationships",
+            array(relationship, 160),
+            "slices",
+            array(slice, 24)),
+        List.of("domain", "candidates", "relationships", "slices"));
   }
 
   private static Map<String, Object> planModelEditSchema() {
@@ -319,6 +487,8 @@ public final class AgentActionSchema {
 
   public static List<String> toolNames() {
     return List.of(
+        "analyze_source_units",
+        "plan_cim_blueprint",
         "plan_model_edit",
         "inspect_model",
         "plan_source_model",

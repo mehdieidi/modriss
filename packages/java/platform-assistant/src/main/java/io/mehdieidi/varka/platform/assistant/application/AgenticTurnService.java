@@ -270,7 +270,8 @@ public final class AgenticTurnService {
         turn.completionTokens(),
         turn.providerCallDetails(),
         turn.modelingPlan(),
-        turn.sourceBlueprint());
+        turn.sourceBlueprint(),
+        turn.sourceAnalysis());
   }
 
   public boolean cancel(String sessionId) {
@@ -317,5 +318,6 @@ public final class AgenticTurnService {
       List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
           providerCallDetails,
       tools.jackson.databind.JsonNode modelingPlan,
-      tools.jackson.databind.JsonNode sourceBlueprint) {}
+      tools.jackson.databind.JsonNode sourceBlueprint,
+      tools.jackson.databind.JsonNode sourceAnalysis) {}
 }

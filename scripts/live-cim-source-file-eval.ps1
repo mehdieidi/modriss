@@ -62,7 +62,7 @@ function Wait-Turn {
     Start-Sleep -Seconds 3
     $turn = Invoke-Api -Method GET -Path "/chatbot/turns/$TurnId" -Headers @{ "X-Auth-Token" = $Token }
     if (@("SUCCEEDED", "PARTIAL", "NEEDS_INPUT", "NEEDS_CONFIRMATION", "CONFLICTED", "CANCELLED", "TIMED_OUT", "FAILED") -contains [string]$turn.state) {
-      if ($turn.state -eq "PARTIAL" -and $turn.remainingWork -and (Count-Items $turn.checkpoints) -gt 0 -and $continues -lt $MaxContinues) {
+      if ($turn.state -eq "PARTIAL" -and $turn.remainingWork -and $continues -lt $MaxContinues) {
         Invoke-Api -Method POST -Path "/chatbot/turns/$TurnId/continue" -Headers @{ "X-Auth-Token" = $Token } | Out-Null
         $continues++
         continue

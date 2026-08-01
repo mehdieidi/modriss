@@ -279,6 +279,8 @@ public final class AgentTurnLoop {
       boolean sourceBacked = sourceDocument != null && !sourceDocument.isBlank();
       WorkflowMode effectiveMode = mode == null ? WorkflowMode.AUTO : mode;
       boolean readOnlyMode = effectiveMode.readOnly();
+      boolean sourceAnalysisPresent =
+          sourceDocument != null && sourceDocument.contains("<source-analysis");
       boolean sourceBlueprintPresent =
           sourceDocument != null && sourceDocument.contains("<source-blueprint");
       AssistantModelProvider.ProviderCapabilityProfile profile = provider.capabilities();
@@ -295,7 +297,16 @@ public final class AgentTurnLoop {
               + userMessage
               + (sourceDocument == null || sourceDocument.isBlank()
                   ? ""
-                  : "\n\nSource document (untrusted data):\n" + sourceDocument);
+                  : "\n\nSource document (untrusted data):\n"
+                      + sourceDocument
+                      + (sourceAnalysisPresent
+                          ? sourceBlueprintPresent
+                              ? "\n\nDurable source analysis and blueprint are already present;"
+                                  + " execute the current blueprint slice."
+                              : "\n\nThe next action must be plan_cim_blueprint using the"
+                                  + " persisted <source-analysis>."
+                          : "\n\nFirst return analyze_source_units; do not patch before source"
+                              + " analysis and CIM blueprint are persisted."));
       String user = initialUser;
       AssistantModelProvider.AssistantReply reply = null;
       ModelService.ValidationResult validation = null;
@@ -303,9 +314,11 @@ public final class AgentTurnLoop {
       boolean editPlanReady = false;
       boolean enforcedInspectionReady = false;
       int repairAttempts = 0;
+      String lastRejectedBatchSummary = "";
       String exactContracts = null;
       List<TypeContract> patchContracts = List.of();
       JsonNode modelingPlan = null;
+      JsonNode sourceAnalysis = null;
       if (effectiveMode == WorkflowMode.RESUME_REPAIR) {
         modelingPlan = persistedModelingPlan(userMessage);
         if (modelingPlan != null) {
@@ -334,6 +347,14 @@ public final class AgentTurnLoop {
                   + " plan_model_edit or regenerate the plan. Exact metamodel contracts for the"
                   + " current slice are already supplied. Inspect only if current model ids are"
                   + " needed; otherwise commit one corrected checkpoint now.";
+        } else if (sourceBacked && sourceAnalysisPresent && !sourceBlueprintPresent) {
+          user =
+              initialUser
+                  + "\n\nPersisted source analysis is already available. Do not regenerate it."
+                  + " The next action must be plan_cim_blueprint. Convert that analysis into"
+                  + " LLM-authored CIM element candidates, stable logical keys, exact intended"
+                  + " eClasses, sourceUnitIds, required contract names, relationships, and"
+                  + " coherent slices.";
         }
       }
       Map<String, List<TypeContract>> contractCache = new ConcurrentHashMap<>();
@@ -406,9 +427,36 @@ public final class AgentTurnLoop {
         try {
           action = actions.parse(reply.content());
           metrics.recordAssistantAction(action.tool().wireName(), step);
+          if (sourceBacked
+              && !readOnlyMode
+              && !sourceAnalysisPresent
+              && modelingPlan == null
+              && action.tool() != AgentAction.Kind.ANALYZE_SOURCE_UNITS) {
+            user =
+                followUpContext(userMessage, sourceDocument)
+                    + "\n\nSource-backed CIM creation is gated by durable source analysis. First"
+                    + " return analyze_source_units. Do not plan a blueprint, retrieve"
+                    + " contracts, patch, answer, or ask unless the source units are unreadable.";
+            continue;
+          }
+          if (sourceBacked
+              && !readOnlyMode
+              && sourceAnalysisPresent
+              && !sourceBlueprintPresent
+              && modelingPlan == null
+              && action.tool() != AgentAction.Kind.PLAN_CIM_BLUEPRINT) {
+            user =
+                followUpContext(userMessage, sourceDocument)
+                    + "\n\nPersisted source analysis exists but no durable CIM blueprint exists."
+                    + " The next action must be plan_cim_blueprint. Do not patch or call"
+                    + " describe_types before the blueprint is accepted.";
+            continue;
+          }
           if (!readOnlyMode
               && !editPlanReady
               && action.tool() != AgentAction.Kind.PLAN_MODEL_EDIT
+              && (!sourceBacked || action.tool() != AgentAction.Kind.ANALYZE_SOURCE_UNITS)
+              && (!sourceBacked || action.tool() != AgentAction.Kind.PLAN_CIM_BLUEPRINT)
               && (!sourceBacked || action.tool() != AgentAction.Kind.PLAN_SOURCE_MODEL)
               && action.tool() != AgentAction.Kind.INSPECT_MODEL
               && action.tool() != AgentAction.Kind.ANSWER_USER
@@ -526,9 +574,76 @@ public final class AgentTurnLoop {
                 completionTokens,
                 providerCallDetails,
                 modelingPlan,
+                null,
                 null);
           }
           switch (action.tool()) {
+            case ANALYZE_SOURCE_UNITS -> {
+              if (readOnlyMode) {
+                throw new PlatformException(
+                    422, "Read-only explanation workflows must not call analyze_source_units.");
+              }
+              if (!sourceBacked || sourceAnalysisPresent) {
+                throw new PlatformException(
+                    422, "analyze_source_units is only valid before persisted analysis exists.");
+              }
+              sourceAnalysis = validatedSourceAnalysis(action.arguments(), sourceDocument);
+              publish(
+                  sessionId,
+                  "assistant.source.analysis",
+                  Map.of(
+                      "sourceUnits",
+                      sourceAnalysis.path("sourceUnits").size(),
+                      "concepts",
+                      sourceAnalysis.path("concepts").size()));
+              return new TurnResult(
+                  "Source analysis prepared; planning the CIM blueprint next.",
+                  workspace.patch(),
+                  workspace.inversePatch(),
+                  null,
+                  reply.provider(),
+                  reply.model(),
+                  null,
+                  ProviderCallBudget.count(),
+                  promptTokens,
+                  completionTokens,
+                  providerCallDetails,
+                  null,
+                  null,
+                  sourceAnalysis);
+            }
+            case PLAN_CIM_BLUEPRINT -> {
+              if (readOnlyMode) {
+                throw new PlatformException(
+                    422, "Read-only explanation workflows must not call plan_cim_blueprint.");
+              }
+              if (!sourceBacked || !sourceAnalysisPresent || sourceBlueprintPresent) {
+                throw new PlatformException(
+                    422,
+                    "plan_cim_blueprint is only valid after source analysis and before a"
+                        + " blueprint exists.");
+              }
+              JsonNode blueprint = validatedCimBlueprint(action.arguments(), sourceDocument, level);
+              publish(
+                  sessionId,
+                  "assistant.source.blueprint",
+                  Map.of("slices", blueprint.path("slices").size()));
+              return new TurnResult(
+                  "CIM blueprint prepared; applying its first model slice next.",
+                  workspace.patch(),
+                  workspace.inversePatch(),
+                  null,
+                  reply.provider(),
+                  reply.model(),
+                  null,
+                  ProviderCallBudget.count(),
+                  promptTokens,
+                  completionTokens,
+                  providerCallDetails,
+                  null,
+                  blueprint,
+                  null);
+            }
             case PLAN_MODEL_EDIT -> {
               if (readOnlyMode) {
                 user =
@@ -626,8 +741,11 @@ public final class AgentTurnLoop {
               }
               check(canceled, deadline, cancellationRequested, stopReason);
               ModelCommandBatch batch = normalizeSourceEvidence(command(action), sourceDocument);
+              lastRejectedBatchSummary = batchSummary(batch);
               validateSourceEvidence(batch, sourceDocument);
               validatePlannedSourceSliceCoverage(batch, sourceDocument, modelingPlan);
+              validateSourceCheckpointUsefulness(
+                  batch, sourceDocument, modelingPlan, patchContracts);
               turnTools.commitModelBatch(batch, destructiveConfirmed);
               check(canceled, deadline, cancellationRequested, stopReason);
               ModelService.ValidationResult checkpointValidation = turnTools.validateModel();
@@ -652,6 +770,7 @@ public final class AgentTurnLoop {
                     completionTokens,
                     providerCallDetails,
                     modelingPlan,
+                    null,
                     null);
               }
             }
@@ -691,7 +810,8 @@ public final class AgentTurnLoop {
                   completionTokens,
                   providerCallDetails,
                   null,
-                  blueprint);
+                  blueprint,
+                  null);
             }
             case INSPECT_MODEL -> {
               check(canceled, deadline, cancellationRequested, stopReason);
@@ -841,10 +961,19 @@ public final class AgentTurnLoop {
                     + (exactContracts == null
                         ? ""
                         : "\n\nExact type contracts already retrieved:\n" + exactContracts)
+                    + (lastRejectedBatchSummary.isBlank()
+                        ? ""
+                        : "\n\nRejected draft summary to preserve additively when valid:\n"
+                            + lastRejectedBatchSummary)
                     + "\n\nRepair diagnostic JSON:\n"
                     + repairDiagnostic(toolFailure, turnTools)
                     + "\nThe next action must be commit_model_batch. Return only one corrected"
-                    + " tool call. Do not describe types, inspect the"
+                    + " tool call. Keep already-valid planned elements and evidence from the"
+                    + " rejected draft. Add or correct only missing planned source units,"
+                    + " concepts, required attributes, required references, and invalid"
+                    + " relationships. Do not replan, do not replace previously covered"
+                    + " sourceUnitIds unless the diagnostic says they are invalid, and preserve"
+                    + " exact clientRefs when possible. Do not describe types, inspect the"
                     + " model, repeat the rejected patch, or add unrelated elements. For"
                     + " apply_draft_patch, creates must be an array of create objects, never an"
                     + " array of clientRef strings. Every create object needs a unique non-empty"
@@ -912,6 +1041,7 @@ public final class AgentTurnLoop {
           completionTokens,
           providerCallDetails,
           modelingPlan,
+          null,
           null);
     } catch (PlatformException ex) {
       throw new TurnExecutionException(
@@ -1099,6 +1229,46 @@ public final class AgentTurnLoop {
               String name = value.asText("").trim();
               if (!name.isBlank()) names.add(name);
             });
+    java.util.Set<Integer> currentOrdinals = new java.util.LinkedHashSet<>();
+    currentOrdinals.add(firstSlice.path("ordinal").asInt(firstSlice.path("slice").asInt(1)));
+    firstSlice
+        .path("candidateKeys")
+        .forEach(
+            key -> {
+              String logicalKey = key.asText("").trim();
+              if (logicalKey.isBlank()) return;
+              modelingPlan
+                  .path("candidates")
+                  .forEach(
+                      candidate -> {
+                        if (logicalKey.equals(candidate.path("logicalKey").asText(""))) {
+                          String eClass = candidate.path("eClass").asText("").trim();
+                          if (!eClass.isBlank()) names.add(eClass);
+                          candidate
+                              .path("requiredContracts")
+                              .forEach(
+                                  value -> {
+                                    String name = value.asText("").trim();
+                                    if (!name.isBlank()) names.add(name);
+                                  });
+                        }
+                      });
+            });
+    modelingPlan
+        .path("candidates")
+        .forEach(
+            candidate -> {
+              if (!currentOrdinals.contains(candidate.path("slice").asInt(-1))) return;
+              String eClass = candidate.path("eClass").asText("").trim();
+              if (!eClass.isBlank()) names.add(eClass);
+              candidate
+                  .path("requiredContracts")
+                  .forEach(
+                      value -> {
+                        String name = value.asText("").trim();
+                        if (!name.isBlank()) names.add(name);
+                      });
+            });
     modelingPlan
         .path("requiredContracts")
         .forEach(
@@ -1206,12 +1376,34 @@ public final class AgentTurnLoop {
     String language = guides.index(level);
     return """
 You are a modeling agent. Return exactly one JSON object: {"action":"plan_model_edit"|
-"commit_model_batch"|"plan_source_model"|"inspect_model"|"describe_types"|"answer_user"|"ask_user",
+"commit_model_batch"|"analyze_source_units"|"plan_cim_blueprint"|"plan_source_model"|
+"inspect_model"|"describe_types"|"answer_user"|"ask_user",
 "arguments":{...}}. Never
 return prose outside that object. The action field is data, not a provider function/tool call.
 commit_model_batch, answer_user, and ask_user are terminal.
 answer_user arguments must be {"message":"a complete, non-empty answer for the user"}.
 ask_user arguments must be {"message":"a complete, non-empty clarification question"}.
+For source-backed CIM creation, first return analyze_source_units. Its arguments are compact,
+LLM-authored source analysis:
+{"domain":"...","sourceUnits":[{"sourceUnitId":"src-id","actors":[],"goals":[],
+"capabilities":[],"requirements":[],"commands":[],"queries":[],"domainEntities":[],
+"informationItems":[],"domainEvents":[],"policies":[],"relationships":[]}],"concepts":
+[{"key":"stable-logical-key","kind":"actor|goal|capability|requirement|command|query|
+domain_entity|information_item|domain_event|policy|business_rule|relationship|interaction|
+dependency","name":"...","summary":"...","sourceUnitIds":["src-id"]}],
+"crossUnitRelationships":[same concept shape]}. This analysis is persisted and reused; do not
+regenerate it when <source-analysis> is already present.
+After persisted source analysis exists, return plan_cim_blueprint before any contract retrieval or
+patch. Its arguments are LLM-authored execution blueprint:
+{"domain":"...","candidates":[{"logicalKey":"stable-key","reuseKey":"name-or-empty",
+"eClass":"ExactType","name":"...","sourceUnitIds":["src-id"],"conceptKeys":["..."],
+"owner":"rootId-or-logicalKey-if-known","containment":"root containment if known",
+"requiredContracts":["ExactType"],"slice":1}],"relationships":[{"sourceKey":"...",
+"targetKey":"...","reference":"exact reference if known","relationshipEClass":"",
+"sourceUnitIds":["src-id"],"conceptKeys":["..."],"slice":1}],"slices":[{"focus":"...",
+"sourceUnitIds":["src-id"],"requiredContracts":["ExactType"],"candidateKeys":["..."],
+"relationshipKeys":["..."]}]}. The blueprint is persisted and reused; execution patches must
+follow the current blueprint slice instead of reasoning from raw source again.
 For ordinary create/edit/add-feature requests, first return plan_model_edit before any
 inspection, type contract retrieval, or patch generation. Its arguments must be:
 {"intent":"CREATE_MODEL|ADD_FEATURES|EDIT_MODEL|EXPLAIN","features":["..."],
@@ -1319,14 +1511,15 @@ evidence or you return a partial batch describing the remaining work.
             ? """
 
 SOURCE-TO-MODEL MODE: The attached source document is available as explicit source units.
-First return plan_model_edit with a durable progressive CIM modeling plan. The first slice should
-cover several coherent source units when structurally safe, usually 3 to 5 related stories for a
-10+ story document. It should be useful on canvas and grounded in the source: include the core
-actors, goals or capabilities, requirements, commands or queries, domain information, events,
-assumptions, risks, policies, and valid relationships that fit one structurally valid checkpoint.
-Every source-backed slice must list sourceUnitIds copied exactly from the supplied markers. After
-the backend accepts that plan, use the exact CIM contracts supplied by the backend or call
-describe_types once if they are missing; then submit commit_model_batch.\
+First return analyze_source_units unless a <source-analysis> block is already present. Then return
+plan_cim_blueprint unless a <source-blueprint> block is already present. Only after both durable
+artifacts exist may you use exact CIM contracts and submit commit_model_batch. The first execution
+slice should cover several coherent source units when structurally safe, usually 3 to 5 related
+stories for a 10+ story document. It should be useful on canvas and grounded in the source:
+include actors, goals or capabilities, requirements, commands or queries, domain information,
+events, assumptions, risks, policies, and valid relationships that fit one structurally valid
+checkpoint. Every source-backed slice must list sourceUnitIds copied exactly from the supplied
+markers.\
 """
                 + (sourceBlueprintPresent
                     ? "A source blueprint is already present, so do not call plan_source_model"
@@ -1466,6 +1659,32 @@ validation.
     return diagnostic;
   }
 
+  private String batchSummary(ModelCommandBatch batch) {
+    if (batch == null) return "";
+    java.util.LinkedHashSet<String> sourceIds = new java.util.LinkedHashSet<>();
+    batch.evidence().stream()
+        .map(ModelCommandBatch.Evidence::sourceUnitId)
+        .filter(id -> id != null && !id.isBlank())
+        .forEach(sourceIds::add);
+    java.util.LinkedHashSet<String> creates = new java.util.LinkedHashSet<>();
+    batch.creates().stream()
+        .limit(20)
+        .forEach(
+            create ->
+                creates.add(
+                    (create.clientRef() == null ? "" : create.clientRef())
+                        + ":"
+                        + (create.eClass() == null ? "" : create.eClass())));
+    return "creates="
+        + creates
+        + ", connections="
+        + batch.connections().size()
+        + ", evidenceSourceUnitIds="
+        + sourceIds
+        + ", planSummary="
+        + batch.planSummary();
+  }
+
   private long estimateTokens(int chars) {
     return Math.max(1L, Math.round(Math.max(0, chars) / 4.0d));
   }
@@ -1599,6 +1818,20 @@ validation.
     String stage;
     String message;
     switch (tool) {
+      case ANALYZE_SOURCE_UNITS -> {
+        stage = completed ? "ANALYZING_SOURCE" : "ANALYZING_SOURCE";
+        message =
+            completed
+                ? "Source analysis is ready."
+                : "Reading the source units and extracting modeling concepts.";
+      }
+      case PLAN_CIM_BLUEPRINT -> {
+        stage = completed ? "PLANNING" : "PLANNING";
+        message =
+            completed
+                ? "CIM blueprint is ready."
+                : "Turning the source analysis into model slices and contract needs.";
+      }
       case INSPECT_MODEL -> {
         stage = "READING_MODEL";
         message =
@@ -1744,6 +1977,132 @@ validation.
     arguments.set(field, normalized);
   }
 
+  private JsonNode validatedSourceAnalysis(JsonNode analysis, String sourceDocument) {
+    if (analysis == null
+        || !analysis.isObject()
+        || !analysis.path("domain").isTextual()
+        || analysis.path("domain").asText().isBlank()) {
+      throw new PlatformException(
+          422, "analyze_source_units must include a non-empty domain and object payload.");
+    }
+    JsonNode units = analysis.path("sourceUnits");
+    JsonNode concepts = analysis.path("concepts");
+    if (!units.isArray() || units.isEmpty() || units.size() > 40) {
+      throw new PlatformException(
+          422, "analyze_source_units must include 1 to 40 sourceUnits records.");
+    }
+    if (!concepts.isArray()) {
+      throw new PlatformException(422, "analyze_source_units must include concepts array.");
+    }
+    java.util.Set<String> expectedSourceIds = sourceUnitIds(sourceDocument);
+    java.util.Set<String> representedSourceIds = new java.util.LinkedHashSet<>();
+    for (JsonNode unit : units) {
+      String id = unit.path("sourceUnitId").asText("").trim();
+      if (!expectedSourceIds.contains(id)) {
+        throw new PlatformException(422, "Source analysis references an unknown source unit.");
+      }
+      representedSourceIds.add(id);
+    }
+    for (JsonNode concept : concepts) {
+      validateConceptRecord(concept, expectedSourceIds, "Source analysis concept");
+    }
+    for (JsonNode concept : analysis.path("crossUnitRelationships")) {
+      validateConceptRecord(concept, expectedSourceIds, "Source analysis relationship");
+    }
+    if (!representedSourceIds.containsAll(expectedSourceIds)) {
+      throw new PlatformException(
+          422, "Source analysis must account for every supplied source unit.");
+    }
+    return analysis;
+  }
+
+  private void validateConceptRecord(
+      JsonNode concept, java.util.Set<String> expectedSourceIds, String label) {
+    if (!concept.isObject()
+        || concept.path("key").asText("").isBlank()
+        || concept.path("kind").asText("").isBlank()
+        || concept.path("name").asText("").isBlank()
+        || !concept.path("sourceUnitIds").isArray()
+        || concept.path("sourceUnitIds").isEmpty()) {
+      throw new PlatformException(422, label + " needs key, kind, name, and sourceUnitIds.");
+    }
+    for (JsonNode id : concept.path("sourceUnitIds")) {
+      if (!expectedSourceIds.contains(id.asText("").trim())) {
+        throw new PlatformException(422, label + " references an unknown source unit.");
+      }
+    }
+  }
+
+  private JsonNode validatedCimBlueprint(
+      JsonNode blueprint, String sourceDocument, ModelLevel level) {
+    if (blueprint == null
+        || !blueprint.isObject()
+        || !blueprint.path("domain").isTextual()
+        || blueprint.path("domain").asText().isBlank()) {
+      throw new PlatformException(422, "plan_cim_blueprint must include a non-empty domain.");
+    }
+    JsonNode slices = blueprint.path("slices");
+    if (!slices.isArray() || slices.isEmpty() || slices.size() > 24) {
+      throw new PlatformException(422, "plan_cim_blueprint must include 1 to 24 slices.");
+    }
+    java.util.Set<String> expectedSourceIds = sourceUnitIds(sourceDocument);
+    java.util.Set<String> representedSourceIds = new java.util.LinkedHashSet<>();
+    for (JsonNode candidate : blueprint.path("candidates")) {
+      String eClass = candidate.path("eClass").asText("").trim();
+      if (!eClass.isBlank() && !typeNameSane(eClass)) {
+        throw new PlatformException(422, "Blueprint candidate has an invalid eClass name.");
+      }
+      validateBlueprintSourceIds(candidate.path("sourceUnitIds"), expectedSourceIds);
+      candidate.path("sourceUnitIds").forEach(id -> representedSourceIds.add(id.asText("")));
+      candidate
+          .path("requiredContracts")
+          .forEach(
+              value -> {
+                String name = value.asText("").trim();
+                if (!name.isBlank() && !typeNameSane(name)) {
+                  throw new PlatformException(
+                      422, "Blueprint requiredContracts contain an invalid type name.");
+                }
+              });
+    }
+    for (JsonNode relationship : blueprint.path("relationships")) {
+      validateBlueprintSourceIds(relationship.path("sourceUnitIds"), expectedSourceIds);
+    }
+    int ordinal = 1;
+    for (JsonNode slice : slices) {
+      if (!slice.path("focus").isTextual()
+          || slice.path("focus").asText().isBlank()
+          || !slice.path("sourceUnitIds").isArray()
+          || slice.path("sourceUnitIds").isEmpty()) {
+        throw new PlatformException(422, "Each CIM blueprint slice needs focus and sourceUnitIds.");
+      }
+      ((tools.jackson.databind.node.ObjectNode) slice).put("ordinal", ordinal++);
+      validateBlueprintSourceIds(slice.path("sourceUnitIds"), expectedSourceIds);
+      slice.path("sourceUnitIds").forEach(id -> representedSourceIds.add(id.asText("")));
+    }
+    if (level == ModelLevel.CIM && !representedSourceIds.containsAll(expectedSourceIds)) {
+      throw new PlatformException(
+          422, "CIM blueprint must account for every supplied source unit.");
+    }
+    return blueprint;
+  }
+
+  private void validateBlueprintSourceIds(
+      JsonNode sourceIds, java.util.Set<String> expectedSourceIds) {
+    if (!sourceIds.isArray()) {
+      throw new PlatformException(422, "Blueprint sourceUnitIds must be arrays.");
+    }
+    for (JsonNode id : sourceIds) {
+      if (!expectedSourceIds.contains(id.asText("").trim())) {
+        throw new PlatformException(422, "Blueprint references an unknown source unit.");
+      }
+    }
+  }
+
+  private boolean typeNameSane(String name) {
+    return name != null && name.matches("[A-Z][A-Za-z0-9_]{1,80}");
+  }
+
   private JsonNode validatedSourceBlueprint(JsonNode blueprint, String sourceDocument) {
     if (blueprint == null
         || !blueprint.path("domain").isTextual()
@@ -1840,6 +2199,85 @@ validation.
             + missing
             + ". Revise the same checkpoint so one accepted batch covers several planned source"
             + " units within the patch limits; do not replan or answer.");
+  }
+
+  private void validateSourceCheckpointUsefulness(
+      ModelCommandBatch batch,
+      String sourceDocument,
+      JsonNode modelingPlan,
+      List<TypeContract> patchContracts) {
+    if (batch == null
+        || sourceDocument == null
+        || sourceDocument.isBlank()
+        || modelingPlan == null
+        || modelingPlan.isMissingNode()
+        || modelingPlan.isNull()) {
+      return;
+    }
+    JsonNode current = modelingPlan.path("slices").path(0);
+    boolean plannedRelationships =
+        current.path("relationshipKeys").isArray() && !current.path("relationshipKeys").isEmpty();
+    if (plannedRelationships && batch.connections().isEmpty()) {
+      throw new PlatformException(
+          422,
+          "The current blueprint slice includes planned relationships/interactions, but the patch"
+              + " has no valid connections. Add at least one structurally valid relationship using"
+              + " exact described references, or remove only the invalid relationship while keeping"
+              + " the slice additive.");
+    }
+    java.util.Set<String> availableContracts =
+        patchContracts == null
+            ? java.util.Set.of()
+            : patchContracts.stream()
+                .map(TypeContract::eClass)
+                .collect(java.util.stream.Collectors.toSet());
+    java.util.Set<String> plannedRichTypes = new java.util.LinkedHashSet<>();
+    modelingPlan
+        .path("candidates")
+        .forEach(
+            candidate -> {
+              if (candidate.path("slice").asInt(-1) != current.path("ordinal").asInt(1)) return;
+              String eClass = candidate.path("eClass").asText("");
+              if (richCimType(eClass) && availableContracts.contains(eClass)) {
+                plannedRichTypes.add(eClass);
+              }
+            });
+    if (plannedRichTypes.isEmpty()) return;
+    boolean createdRich =
+        batch.creates().stream().anyMatch(create -> plannedRichTypes.contains(create.eClass()));
+    if (createdRich) return;
+    boolean onlyGeneric =
+        batch.creates().stream()
+            .map(create -> create.eClass() == null ? "" : create.eClass())
+            .allMatch(
+                eClass ->
+                    eClass.equals("Actor")
+                        || eClass.equals("BusinessGoal")
+                        || eClass.equals("BusinessCapability")
+                        || eClass.equals("Requirement"));
+    if (onlyGeneric) {
+      throw new PlatformException(
+          422,
+          "The source analysis and blueprint planned richer CIM concepts "
+              + plannedRichTypes
+              + " and their exact contracts are available, but the patch only creates generic"
+              + " actors/goals/capabilities/requirements. Add structurally satisfiable rich"
+              + " elements for the same slice, such as commands, queries, events, domain data, or"
+              + " policies, while preserving valid existing draft content.");
+    }
+  }
+
+  private boolean richCimType(String eClass) {
+    return java.util.Set.of(
+            "Command",
+            "Query",
+            "BusinessEvent",
+            "DomainEntity",
+            "InformationItem",
+            "Policy",
+            "DecisionModel",
+            "DecisionRule")
+        .contains(eClass);
   }
 
   private ModelCommandBatch normalizeSourceEvidence(
@@ -2051,7 +2489,8 @@ validation.
       List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
           providerCallDetails,
       JsonNode modelingPlan,
-      JsonNode sourceBlueprint) {}
+      JsonNode sourceBlueprint,
+      JsonNode sourceAnalysis) {}
 
   /** Durable router mode. Read-only modes never mutate, checkpoint, validate, or repair. */
   public enum WorkflowMode {

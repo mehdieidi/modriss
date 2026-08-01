@@ -29,12 +29,12 @@ import tools.jackson.databind.ObjectMapper;
 
 class AgentTurnLoopTest {
   @Test
-  void sourceAttachmentsPlanThenApplyAModelCheckpoint() throws Exception {
+  void sourceAttachmentsAnalyzeBeforePlanningOrCheckpointing() throws Exception {
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(any(), any()))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
-    SourcePlanThenPatchProvider provider = new SourcePlanThenPatchProvider();
+    SourceAnalysisProvider provider = new SourceAnalysisProvider();
     AgentTurnLoop loop =
         new AgentTurnLoop(
             provider,
@@ -59,12 +59,12 @@ class AgentTurnLoopTest {
             "<source-unit id=\"src-1\">Order placed</source-unit>",
             workspace);
 
-    assertEquals("Model checkpoint saved.", result.message());
+    assertEquals("Source analysis prepared; planning the CIM blueprint next.", result.message());
     assertTrue(result.sourceBlueprint() == null);
-    assertEquals(2, provider.calls);
+    assertTrue(result.sourceAnalysis() != null);
+    assertEquals(1, provider.calls);
     assertTrue(provider.prompts.get(0).contains("Source document (untrusted data)"));
-    assertTrue(provider.prompts.get(1).contains("Order placed"));
-    assertTrue(provider.prompts.get(1).contains("Exact type contracts already retrieved"));
+    assertTrue(provider.prompts.get(0).contains("First return analyze_source_units"));
   }
 
   @Test
@@ -530,7 +530,7 @@ Work items:
     }
   }
 
-  private static final class SourcePlanThenPatchProvider implements AssistantModelProvider {
+  private static final class SourceAnalysisProvider implements AssistantModelProvider {
     final List<String> prompts = new ArrayList<>();
     int calls;
 
@@ -549,26 +549,14 @@ Work items:
       prompts.add(prompt.user());
       ProviderCallBudget.consume();
       calls++;
-      if (calls == 1) {
-        return new AssistantReply(
-            "{\"tool\":\"plan_model_edit\",\"arguments\":{\"intent\":\"CREATE_MODEL\",\"features\":[\"Order"
-                + " intake\"],\"reuseTargets\":[],\"newElements\":[\"Order"
-                + " goal\"],\"requiredContracts\":[\"BusinessGoal\"],\"slices\":[{\"label\":\"Core"
-                + " source model\",\"purpose\":\"Model order"
-                + " intake\",\"requiredContracts\":[\"BusinessGoal\"]}]}}",
-            "fake",
-            "fake");
-      }
-      if (calls == 2) {
-        return new AssistantReply(
-            "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
-                + " intake\",\"successCriterion\":\"Order placement is"
-                + " captured.\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
-                + " source-grounded order goal.\",\"turnComplete\":true}}",
-            "fake",
-            "fake");
-      }
-      throw new AssertionError("Unexpected provider call " + calls);
+      return new AssistantReply(
+          "{\"tool\":\"analyze_source_units\",\"arguments\":{\"domain\":\"Orders\",\"sourceUnits\":[{\"sourceUnitId\":\"src-1\",\"actors\":[],\"goals\":[\"Order"
+              + " intake\"],\"capabilities\":[],\"requirements\":[\"Order"
+              + " placed\"],\"commands\":[],\"queries\":[],\"domainEntities\":[],\"informationItems\":[],\"domainEvents\":[],\"policies\":[],\"relationships\":[]}],\"concepts\":[{\"key\":\"order-placed\",\"kind\":\"requirement\",\"name\":\"Order"
+              + " placed\",\"summary\":\"Order placement is"
+              + " captured.\",\"sourceUnitIds\":[\"src-1\"]}],\"crossUnitRelationships\":[]}}",
+          "fake",
+          "fake");
     }
   }
 

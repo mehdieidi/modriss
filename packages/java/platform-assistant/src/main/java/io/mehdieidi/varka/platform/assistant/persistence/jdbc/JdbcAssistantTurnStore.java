@@ -385,19 +385,32 @@ FROM candidate WHERE t.id = candidate.id RETURNING t.*
 
   @Override
   public void saveWorkItems(String turnId, List<WorkItem> items) {
-    for (WorkItem item : items)
-      jdbc.update(
-          "INSERT INTO assistant_work_items(id, turn_id, ordinal, label, status, idempotency_key,"
-              + " payload) VALUES (?, ?, ?, ?, ?, ?, ?::jsonb) ON CONFLICT (turn_id,"
-              + " idempotency_key) DO UPDATE SET status = EXCLUDED.status, payload ="
-              + " EXCLUDED.payload, label = EXCLUDED.label",
-          item.id(),
-          turnId,
-          item.ordinal(),
-          item.label(),
-          item.status(),
-          item.idempotencyKey(),
-          item.payload() == null ? "{}" : item.payload().toString());
+    for (WorkItem item : items) {
+      int updated =
+          jdbc.update(
+              "UPDATE assistant_work_items SET label = ?, status = ?, idempotency_key = ?,"
+                  + " payload = ?::jsonb WHERE turn_id = ? AND ordinal = ?",
+              item.label(),
+              item.status(),
+              item.idempotencyKey(),
+              item.payload() == null ? "{}" : item.payload().toString(),
+              turnId,
+              item.ordinal());
+      if (updated == 0) {
+        jdbc.update(
+            "INSERT INTO assistant_work_items(id, turn_id, ordinal, label, status,"
+                + " idempotency_key, payload) VALUES (?, ?, ?, ?, ?, ?, ?::jsonb) ON CONFLICT"
+                + " (turn_id, idempotency_key) DO UPDATE SET ordinal = EXCLUDED.ordinal, status ="
+                + " EXCLUDED.status, payload = EXCLUDED.payload, label = EXCLUDED.label",
+            item.id(),
+            turnId,
+            item.ordinal(),
+            item.label(),
+            item.status(),
+            item.idempotencyKey(),
+            item.payload() == null ? "{}" : item.payload().toString());
+      }
+    }
   }
 
   @Override

@@ -157,8 +157,10 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                   + " or prose. Call exactly one supplied function. For an explanation, answer,"
                   + " or necessary clarification, you MUST call respond_to_user with a non-empty"
                   + " message. Use inspect_model or describe_types only for the corresponding"
-                  + " read step; use plan_model_edit for a structured edit plan; use"
-                  + " apply_draft_patch only for a validated model mutation.");
+                  + " read step; use analyze_source_units for source analysis,"
+                  + " plan_cim_blueprint for CIM blueprint planning, plan_model_edit for a"
+                  + " structured edit plan; use apply_draft_patch only for a validated model"
+                  + " mutation.");
       messages.addObject().put("role", "user").put("content", userWithContext(prompt));
       var tools = body.putArray("tools");
       String forcedTool = forcedToolName(prompt);
@@ -238,6 +240,19 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                 "Return plan_model_edit with a durable progressive CIM modeling plan"));
   }
 
+  static boolean shouldForceSourceAnalysisTool(String userPrompt) {
+    return userPrompt != null
+        && !userPrompt.contains("A persisted ModelingPlan is already available")
+        && (userPrompt.contains("The next action must be analyze_source_units")
+            || userPrompt.contains("First return analyze_source_units"));
+  }
+
+  static boolean shouldForceCimBlueprintTool(String userPrompt) {
+    return userPrompt != null
+        && (userPrompt.contains("The next action must be plan_cim_blueprint")
+            || userPrompt.contains("Return plan_cim_blueprint"));
+  }
+
   static boolean shouldForceDescribeTypesTool(String userPrompt) {
     return userPrompt != null
         && userPrompt.contains("Current durable modeling checkpoint")
@@ -251,6 +266,8 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     String userPrompt = prompt == null ? null : prompt.user();
     if (shouldForcePatchTool(userPrompt)) return "apply_draft_patch";
     if (shouldForceDescribeTypesTool(userPrompt)) return "describe_types";
+    if (shouldForceCimBlueprintTool(userPrompt)) return "plan_cim_blueprint";
+    if (shouldForceSourceAnalysisTool(userPrompt)) return "analyze_source_units";
     if (shouldForcePlanTool(userPrompt)) return "plan_model_edit";
     return null;
   }
@@ -315,6 +332,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     String action =
         switch (name) {
           case "respond_to_user" -> "answer_user";
+          case "analyze_source_units", "plan_cim_blueprint" -> name;
           case "plan_model_edit" -> "plan_model_edit";
           case "plan_source_model" -> "plan_source_model";
           case "inspect_model", "describe_types" -> name;
@@ -355,6 +373,10 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   private static String toolDescription(String name) {
     return switch (name) {
       case "respond_to_user" -> "Return the final user-facing answer in message.";
+      case "analyze_source_units" ->
+          "Analyze source units into compact LLM-authored modeling concepts with source ids.";
+      case "plan_cim_blueprint" ->
+          "Plan CIM element candidates, contracts, relationships, and slices from source analysis.";
       case "plan_model_edit" -> "Return a compact structured plan for a CIM/PIM create or edit.";
       case "plan_source_model" -> "Plan source document spans into coherent CIM modeling slices.";
       case "inspect_model" -> "Read a model element or inventory using id.";
