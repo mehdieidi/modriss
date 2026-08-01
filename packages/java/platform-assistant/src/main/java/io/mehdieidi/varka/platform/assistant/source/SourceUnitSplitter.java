@@ -54,6 +54,7 @@ public final class SourceUnitSplitter {
               && source.charAt(cursor) == '\n'
               && source.charAt(cursor + 1) == '\n';
       if (!heading && !blankLine) continue;
+      if (blankLine && startsWithSubsectionHeading(source, start)) continue;
       // A heading is context for the content which follows it, not independently modelable
       // evidence.  Do not turn a document title followed by a blank line into a dead source
       // unit: it cannot ground a meaningful model element and leaves a coverage obligation that
@@ -92,6 +93,15 @@ public final class SourceUnitSplitter {
       if (!trimmed.isEmpty() && !trimmed.startsWith("#")) return true;
     }
     return false;
+  }
+
+  private boolean startsWithSubsectionHeading(String source, int start) {
+    int cursor = start;
+    while (cursor < source.length() && Character.isWhitespace(source.charAt(cursor))) cursor++;
+    return cursor + 2 < source.length()
+        && source.charAt(cursor) == '#'
+        && source.charAt(cursor + 1) == '#'
+        && source.charAt(cursor + 2) != '#';
   }
 
   private boolean isSectionLabelOnly(String value) {

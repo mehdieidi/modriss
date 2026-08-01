@@ -186,7 +186,17 @@ public final class DurableAssistantTurnWorker {
                 "selectedSourceUnits", selected.size()));
       }
       if (turns.cancellationRequested(turn.id())) {
-        complete(turn, AssistantTurn.State.CANCELLED, "Assistant turn was cancelled.", null, null);
+        Long savedRevision =
+            turns
+                .latestCheckpoint(turn.id())
+                .map(AssistantTurnStore.Checkpoint::revision)
+                .orElse(turn.revision());
+        complete(
+            turn,
+            AssistantTurn.State.CANCELLED,
+            cancellationMessage(turn, savedRevision),
+            savedRevision,
+            turn.remainingWork());
         return;
       }
       UserRecord user =
@@ -197,6 +207,7 @@ public final class DurableAssistantTurnWorker {
           destructiveConfirmed
               ? turn.message().substring(CONFIRMED_DESTRUCTION_PREFIX.length())
               : turn.message();
+      AgentTurnLoop.WorkflowMode route = route(turn, message);
       if (!turn.selectedElementIds().isEmpty()) {
         message +=
             "\n\nSelected canvas elements are focus context only: "
@@ -204,18 +215,21 @@ public final class DurableAssistantTurnWorker {
                 + ". Inspect these ids first, then inspect related ownership and references before"
                 + " editing.";
       }
+      message = appendPersistedWorkflowContext(turn.id(), message);
       String checkpointKey = turn.id() + "-checkpoint-" + (turn.checkpointCount() + 1);
-      // Persist the intent before invoking code which can mutate the model. A restarted worker
-      // finalizes the same key, never creates a second canvas change.
-      turns.beginCheckpoint(
-          turn.id(),
-          turn.modelId(),
-          turn.revision() != null
-              ? turn.revision()
-              : turn.expectedRevision() == null ? 0L : turn.expectedRevision(),
-          checkpointKey,
-          "Checkpoint " + (turn.checkpointCount() + 1),
-          null);
+      if (!route.readOnly()) {
+        // Persist the intent before invoking code which can mutate the model. A restarted worker
+        // finalizes the same key, never creates a second canvas change.
+        turns.beginCheckpoint(
+            turn.id(),
+            turn.modelId(),
+            turn.revision() != null
+                ? turn.revision()
+                : turn.expectedRevision() == null ? 0L : turn.expectedRevision(),
+            checkpointKey,
+            "Checkpoint " + (turn.checkpointCount() + 1),
+            null);
+      }
       var result =
           assistant.durableMessage(
               user,
@@ -230,14 +244,26 @@ public final class DurableAssistantTurnWorker {
                   Instant.now().isAfter(turn.deadlineAt())
                       ? new io.mehdieidi.varka.platform.kernel.PlatformException(
                           504, "Assistant turn exceeded its configured deadline.")
-                      : null);
-      turns.recordValidationAttempt(
-          new AssistantTurnStore.ValidationAttempt(turn.id(), null, 1, true, null, Instant.now()));
-      turns.appendEvent(turn.id(), "turn.validation.completed", java.util.Map.of("valid", true));
-      if (result.modelingPlan() != null && result.modelingPlan().isObject()) {
-        var planItems =
-            modelingPlanWorkItems(
-                turn.id(), result.modelingPlan(), result.inversePatch().isEmpty());
+                      : null,
+              route);
+      if (!route.readOnly()) {
+        turns.recordValidationAttempt(
+            new AssistantTurnStore.ValidationAttempt(
+                turn.id(), null, 1, true, null, Instant.now()));
+        turns.appendEvent(turn.id(), "turn.validation.completed", java.util.Map.of("valid", true));
+      }
+      boolean checkpointSaved = !result.inversePatch().isEmpty();
+      var existingModelingWorkflow = turns.workflow(turn.id());
+      boolean persistedModelingPlanPresent =
+          existingModelingWorkflow
+              .filter(workflow -> "MODELING_PLAN".equals(workflow.workflowKind()))
+              .map(AssistantTurnStore.Workflow::plan)
+              .filter(this::durablePlan)
+              .isPresent();
+      if (result.modelingPlan() != null
+          && result.modelingPlan().isObject()
+          && !persistedModelingPlanPresent) {
+        var planItems = modelingPlanWorkItems(turn.id(), result.modelingPlan(), !checkpointSaved);
         turns.saveWorkItems(turn.id(), planItems);
         turns.saveWorkflow(
             new AssistantTurnStore.Workflow(
@@ -251,7 +277,7 @@ public final class DurableAssistantTurnWorker {
             "turn.plan.ready",
             java.util.Map.of("workflowKind", "MODELING_PLAN", "workItems", planItems.size()));
       }
-      if (!result.inversePatch().isEmpty()) {
+      if (checkpointSaved) {
         turns.finalizeCheckpoint(
             turn.id(),
             checkpointKey,
@@ -277,6 +303,9 @@ public final class DurableAssistantTurnWorker {
             turn.id(),
             "CHECKPOINT_SAVED",
             java.util.Map.of("modelId", result.modelId(), "revision", result.revision()));
+        if (persistedModelingPlanPresent) {
+          advanceModelingPlanWorkItems(turn.id(), turn.checkpointCount() + 1);
+        }
       }
       if (result.sourceBlueprint() != null) {
         turns.saveSourceBlueprint(turn.id(), result.sourceBlueprint(), 0);
@@ -300,9 +329,14 @@ public final class DurableAssistantTurnWorker {
                 ? "The source plan is ready; resume this turn to model the source."
                 : "The source plan is ready; resume this turn with " + plan.get(0).label() + ".";
       }
-      turns.setSavedElementCount(turn.id(), result.affectedElementIds().size());
-      turns.setProviderCallCount(turn.id(), result.providerCalls());
-      turns.setTokenUsage(turn.id(), result.promptTokens(), result.completionTokens());
+      turns.setSavedElementCount(
+          turn.id(), Math.max(0, turn.savedElementCount()) + result.affectedElementIds().size());
+      turns.setProviderCallCount(
+          turn.id(), Math.max(0, turn.providerCalls()) + result.providerCalls());
+      turns.setTokenUsage(
+          turn.id(),
+          Math.max(0L, turn.promptTokens()) + result.promptTokens(),
+          Math.max(0L, turn.completionTokens()) + result.completionTokens());
       turns.recordProviderCalls(turn.id(), result.providerCallDetails());
       AssistantTurn.State state =
           turns.cancellationRequested(turn.id())
@@ -338,10 +372,7 @@ public final class DurableAssistantTurnWorker {
         var batch = result.commandBatch();
         if (batch != null) {
           for (var evidence : batch.evidence()) {
-            String kind =
-                evidence.kind() == null
-                    ? "INFERRED"
-                    : evidence.kind().trim().toUpperCase(java.util.Locale.ROOT);
+            String kind = normalizedEvidenceKind(evidence.kind());
             String sourceUnitId =
                 evidence.sourceUnitId() == null ? "" : evidence.sourceUnitId().trim();
             sourceUnitId = sourceAliases.getOrDefault(sourceUnitId, sourceUnitId);
@@ -475,8 +506,12 @@ public final class DurableAssistantTurnWorker {
       // checkpoint; no child turn or string-encoded continuation is created.
     } catch (io.mehdieidi.varka.platform.kernel.PlatformException ex) {
       if (ex instanceof AgentTurnLoop.TurnExecutionException turnFailure) {
-        turns.setProviderCallCount(turn.id(), turnFailure.providerCalls());
-        turns.setTokenUsage(turn.id(), turnFailure.promptTokens(), turnFailure.completionTokens());
+        turns.setProviderCallCount(
+            turn.id(), Math.max(0, turn.providerCalls()) + turnFailure.providerCalls());
+        turns.setTokenUsage(
+            turn.id(),
+            Math.max(0L, turn.promptTokens()) + turnFailure.promptTokens(),
+            Math.max(0L, turn.completionTokens()) + turnFailure.completionTokens());
         turns.recordProviderCalls(turn.id(), turnFailure.providerCallDetails());
       }
       // Bounded in-turn repair is exhausted. Preserve the validated checkpoint, expose the
@@ -512,21 +547,32 @@ public final class DurableAssistantTurnWorker {
           turn,
           state,
           state == AssistantTurn.State.CANCELLED
-              ? cancellationMessage(turn, null)
+              ? cancellationMessage(
+                  turn,
+                  latestCheckpoint
+                      .map(AssistantTurnStore.Checkpoint::revision)
+                      .orElse(turn.revision()))
               : ex.getMessage(),
-          null,
+          state == AssistantTurn.State.CANCELLED
+              ? latestCheckpoint
+                  .map(AssistantTurnStore.Checkpoint::revision)
+                  .orElse(turn.revision())
+              : null,
           null);
     } catch (RuntimeException ex) {
       log.error("Assistant durable turn failed unexpectedly turnId={}", turn.id(), ex);
+      var latestCheckpoint = turns.latestCheckpoint(turn.id());
+      Long savedRevision =
+          latestCheckpoint.map(AssistantTurnStore.Checkpoint::revision).orElse(turn.revision());
       complete(
           turn,
           turns.cancellationRequested(turn.id())
               ? AssistantTurn.State.CANCELLED
               : AssistantTurn.State.FAILED,
           turns.cancellationRequested(turn.id())
-              ? cancellationMessage(turn, null)
+              ? cancellationMessage(turn, savedRevision)
               : "Assistant processing failed.",
-          null,
+          turns.cancellationRequested(turn.id()) ? savedRevision : null,
           null);
     } finally {
       heartbeat.cancel(false);
@@ -598,6 +644,189 @@ public final class DurableAssistantTurnWorker {
     return items;
   }
 
+  private String normalizedEvidenceKind(String kind) {
+    if (kind == null || kind.isBlank()) return "INFERRED";
+    String normalized =
+        kind.trim().toUpperCase(java.util.Locale.ROOT).replace('-', '_').replace(' ', '_');
+    if (normalized.equals("SOURCE_GROUNDING")
+        || normalized.startsWith("SOURCE_GROUNDED")
+        || normalized.contains("USER_STORY")
+        || normalized.contains("ACCEPTANCE")) {
+      return "SOURCE_GROUNDED";
+    }
+    return normalized;
+  }
+
+  private void advanceModelingPlanWorkItems(String turnId, int completedOrdinal) {
+    var workflow = turns.workflow(turnId);
+    if (workflow.isEmpty()
+        || !"MODELING_PLAN".equals(workflow.get().workflowKind())
+        || workflow.get().plan() == null) {
+      return;
+    }
+    var existing = turns.workItems(turnId);
+    if (existing.isEmpty()) return;
+    java.util.List<AssistantTurnStore.WorkItem> updated = new java.util.ArrayList<>();
+    String nextWorkItemId = null;
+    for (AssistantTurnStore.WorkItem item : existing) {
+      String status;
+      if (item.ordinal() <= completedOrdinal) {
+        status = "committed";
+      } else if (item.ordinal() == completedOrdinal + 1) {
+        status = "running";
+        nextWorkItemId = item.id();
+      } else {
+        status = "pending";
+      }
+      updated.add(
+          new AssistantTurnStore.WorkItem(
+              item.id(),
+              item.ordinal(),
+              item.label(),
+              status,
+              item.idempotencyKey(),
+              item.payload()));
+    }
+    turns.saveWorkItems(turnId, updated);
+    var saved = workflow.get();
+    turns.saveWorkflow(
+        new AssistantTurnStore.Workflow(
+            saved.turnId(), saved.workflowKind(), "EXECUTING", nextWorkItemId, saved.plan()));
+  }
+
+  private AgentTurnLoop.WorkflowMode route(AssistantTurn turn, String message) {
+    String text = message == null ? "" : message.toLowerCase(java.util.Locale.ROOT);
+    boolean sourceBacked = turn.sourceText() != null && !turn.sourceText().isBlank();
+    var existingWorkflow = turns.workflow(turn.id());
+    boolean durablePlanPresent =
+        existingWorkflow
+            .map(AssistantTurnStore.Workflow::plan)
+            .filter(this::durablePlan)
+            .isPresent();
+    boolean hasDurableWorkflow =
+        turn.checkpointCount() > 0
+            || durablePlanPresent
+            || turns.sourceBlueprint(turn.id()).isPresent();
+    AgentTurnLoop.WorkflowMode mode;
+    if (hasDurableWorkflow) {
+      mode = AgentTurnLoop.WorkflowMode.RESUME_REPAIR;
+    } else if (isMetamodelExplanation(text)) {
+      mode = AgentTurnLoop.WorkflowMode.EXPLAIN_METAMODEL;
+    } else if (!sourceBacked && isModelExplanation(text)) {
+      mode = AgentTurnLoop.WorkflowMode.EXPLAIN_MODEL;
+    } else if (sourceBacked) {
+      mode = AgentTurnLoop.WorkflowMode.SOURCE_TO_MODEL;
+    } else if (text.isBlank()) {
+      mode = AgentTurnLoop.WorkflowMode.CLARIFY;
+    } else {
+      mode = AgentTurnLoop.WorkflowMode.FEATURE_UPDATE;
+    }
+    if (existingWorkflow.isEmpty() || !durablePlanPresent) {
+      turns.saveWorkflow(
+          new AssistantTurnStore.Workflow(
+              turn.id(), mode.name(), mode.readOnly() ? "READING" : "ROUTED", null, null));
+    }
+    turns.appendEvent(
+        turn.id(),
+        "turn.workflow.routed",
+        java.util.Map.of("workflowKind", mode.name(), "readOnly", mode.readOnly()));
+    return mode;
+  }
+
+  private boolean isModelExplanation(String text) {
+    if (text == null || text.isBlank()) return false;
+    boolean asks =
+        text.contains("explain")
+            || text.contains("describe")
+            || text.contains("what does")
+            || text.contains("what is")
+            || text.contains("what are")
+            || text.contains("summarize")
+            || text.contains("how do");
+    boolean modelSubject =
+        text.contains("current model")
+            || text.contains("this model")
+            || text.contains("model contain")
+            || text.contains("elements")
+            || text.contains("relate")
+            || text.contains("relationship");
+    boolean mutating =
+        text.contains("add ")
+            || text.contains("create ")
+            || text.contains("update ")
+            || text.contains("change ")
+            || text.contains("delete ")
+            || text.contains("remove ");
+    return asks && modelSubject && !mutating;
+  }
+
+  private boolean isMetamodelExplanation(String text) {
+    if (text == null || text.isBlank()) return false;
+    boolean asks =
+        text.contains("explain")
+            || text.contains("describe")
+            || text.contains("what does")
+            || text.contains("what is")
+            || text.contains("what are")
+            || text.contains("can be modeled");
+    boolean metamodelSubject =
+        text.contains("metamodel")
+            || text.contains("eclass")
+            || text.contains("type ")
+            || text.contains("attribute")
+            || text.contains("reference")
+            || text.contains("containment")
+            || text.contains("feature means")
+            || text.contains("enum");
+    boolean mutating =
+        text.contains("add ")
+            || text.contains("create ")
+            || text.contains("update ")
+            || text.contains("change ")
+            || text.contains("delete ")
+            || text.contains("remove ");
+    return asks && metamodelSubject && !mutating;
+  }
+
+  private String appendPersistedWorkflowContext(String turnId, String message) {
+    var workflow = turns.workflow(turnId);
+    if (workflow.isEmpty() || !durablePlan(workflow.get().plan())) return message;
+    var workItems = turns.workItems(turnId);
+    StringBuilder result = new StringBuilder(message == null ? "" : message);
+    result
+        .append("\n\nPersisted workflow state (authoritative; continue, do not replan):\n")
+        .append("workflowKind=")
+        .append(workflow.get().workflowKind())
+        .append(", phase=")
+        .append(workflow.get().phase() == null ? "" : workflow.get().phase())
+        .append(", currentWorkItemId=")
+        .append(
+            workflow.get().currentWorkItemId() == null ? "" : workflow.get().currentWorkItemId())
+        .append("\nPlan:\n")
+        .append(workflow.get().plan());
+    if (!workItems.isEmpty()) {
+      result.append("\nWork items:");
+      workItems.forEach(
+          item ->
+              result
+                  .append("\n- ")
+                  .append(item.id())
+                  .append(" #")
+                  .append(item.ordinal())
+                  .append(" ")
+                  .append(item.status())
+                  .append(" ")
+                  .append(item.label()));
+    }
+    return result.toString();
+  }
+
+  private boolean durablePlan(tools.jackson.databind.JsonNode plan) {
+    if (plan == null || plan.isNull() || plan.isMissingNode() || !plan.isObject()) return false;
+    if (plan.path("slices").isArray() && !plan.path("slices").isEmpty()) return true;
+    return plan.path("sourceUnitIds").isArray() && !plan.path("sourceUnitIds").isEmpty();
+  }
+
   private boolean transientProviderFailure(int status) {
     return status == 500 || status == 502 || status == 503 || status == 504;
   }
@@ -642,7 +871,10 @@ public final class DurableAssistantTurnWorker {
             .collect(java.util.stream.Collectors.toSet());
     java.util.List<AssistantTurnStore.SourceUnit> remaining =
         units.stream().filter(unit -> !alreadyModeled.contains(unit.id())).toList();
-    if (!remaining.isEmpty()) return remaining;
+    if (!remaining.isEmpty()) {
+      int sourceWindow = turn.checkpointCount() > 0 ? 6 : remaining.size();
+      return remaining.stream().limit(sourceWindow).toList();
+    }
     java.util.Set<String> cached =
         turns
             .contextCache(turn.id())

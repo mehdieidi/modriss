@@ -82,4 +82,27 @@ class SourceUnitSplitterTest {
     assertTrue(units.get(1).content().startsWith("Acceptance notes:"));
     assertTrue(units.get(1).content().contains("- The cyclist enters contact details."));
   }
+
+  @Test
+  void keepsUserStorySectionWithAcceptanceNotes() {
+    String source =
+        "# Bike Repair Shop Scheduling\n\n"
+            + "## Story 1: Request repair appointment\n\n"
+            + "As a cyclist, I want to request a repair appointment online.\n"
+            + "Acceptance notes:\n\n"
+            + "- The cyclist enters contact details.\n"
+            + "- The system confirms the request.\n\n"
+            + "## Story 2: Mechanic work queue\n\n"
+            + "As a mechanic, I want to see confirmed appointment requests.\n"
+            + "Acceptance notes:\n\n"
+            + "- The mechanic can filter the queue by bicycle type.\n";
+
+    var units = new SourceUnitSplitter(6000).split(source);
+
+    assertEquals(2, units.size());
+    assertTrue(units.get(0).content().contains("Story 1"));
+    assertTrue(units.get(0).content().contains("- The system confirms the request."));
+    assertTrue(units.get(1).content().contains("Story 2"));
+    assertTrue(units.get(1).content().contains("- The mechanic can filter the queue"));
+  }
 }

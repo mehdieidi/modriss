@@ -94,7 +94,12 @@ function Wait-Turn {
       }
     }
   } while (((Get-Date) - $started).TotalSeconds -lt $TimeoutSeconds)
-  throw "Assistant turn timed out: $TurnId"
+  try {
+    Invoke-Api -Method POST -Path "/api/chatbot/turns/$TurnId/cancel" -Token $Token | Out-Null
+  } catch {
+    Write-Warning "Timed out and failed to request cancellation for ${TurnId}: $($_.Exception.Message)"
+  }
+  throw "Assistant turn timed out and cancellation was requested: $TurnId"
 }
 
 function Count-Array {
@@ -109,22 +114,33 @@ function Count-Checkpoint {
   return Count-Array $Turn.checkpoints
 }
 
-function Count-StructuralNodes {
-  param($Value)
-  if ($null -eq $Value) { return 0 }
-  $count = 0
-  if ($Value.PSObject.Properties["eClass"]) { $count++ }
-  if ($Value -is [System.Collections.IDictionary] -or $Value.PSObject.Properties.Count -gt 0) {
-    foreach ($property in $Value.PSObject.Properties) {
-      $count += Count-StructuralNodes $property.Value
+  function Count-StructuralNodes {
+    param($Value)
+    if ($null -eq $Value) { return 0 }
+    $count = 0
+    $stack = [System.Collections.Generic.Stack[object]]::new()
+    $visited = [System.Collections.Generic.HashSet[int]]::new()
+    $stack.Push($Value)
+    while ($stack.Count -gt 0) {
+      $current = $stack.Pop()
+      if ($null -eq $current -or $current -is [string] -or $current.GetType().IsValueType) { continue }
+      $identity = [System.Runtime.CompilerServices.RuntimeHelpers]::GetHashCode($current)
+      if (-not $visited.Add($identity)) { continue }
+      if ($current.PSObject.Properties["eClass"]) { $count++ }
+      if ($current -is [System.Collections.IDictionary]) {
+        foreach ($item in $current.Values) { $stack.Push($item) }
+      } elseif ($current -is [System.Collections.IEnumerable]) {
+        foreach ($item in $current) { $stack.Push($item) }
+      } else {
+        foreach ($property in $current.PSObject.Properties) {
+          if ($property.MemberType -eq "NoteProperty" -or $property.MemberType -eq "Property") {
+            $stack.Push($property.Value)
+          }
+        }
+      }
     }
-  } elseif ($Value -is [System.Collections.IEnumerable] -and -not ($Value -is [string])) {
-    foreach ($item in $Value) {
-      $count += Count-StructuralNodes $item
-    }
+    return $count
   }
-  return $count
-}
 
 function Inspect-Model {
   param([string]$Token, [string]$Level, [string]$ModelId)

@@ -72,14 +72,40 @@ function Wait-Turn {
       return $turn
     }
   } while (((Get-Date) - $started).TotalSeconds -lt $TimeoutSeconds)
-  throw "Assistant turn timed out: $TurnId"
+  try {
+    Invoke-Api -Method POST -Path "/chatbot/turns/$TurnId/cancel" -Headers @{ "X-Auth-Token" = $Token } | Out-Null
+  } catch {
+    Write-Warning "Timed out and failed to request cancellation for ${TurnId}: $($_.Exception.Message)"
+  }
+  throw "Assistant turn timed out and cancellation was requested: $TurnId"
 }
 
 function Count-StructuralNodes {
   param($Value)
   if ($null -eq $Value) { return 0 }
-  $json = $Value | ConvertTo-Json -Depth 100 -Compress
-  return ([regex]::Matches($json, '"eClass"\s*:')).Count
+  $count = 0
+  $stack = [System.Collections.Generic.Stack[object]]::new()
+  $visited = [System.Collections.Generic.HashSet[int]]::new()
+  $stack.Push($Value)
+  while ($stack.Count -gt 0) {
+    $current = $stack.Pop()
+    if ($null -eq $current -or $current -is [string] -or $current.GetType().IsValueType) { continue }
+    $identity = [System.Runtime.CompilerServices.RuntimeHelpers]::GetHashCode($current)
+    if (-not $visited.Add($identity)) { continue }
+    if ($current.PSObject.Properties["eClass"]) { $count++ }
+    if ($current -is [System.Collections.IDictionary]) {
+      foreach ($item in $current.Values) { $stack.Push($item) }
+    } elseif ($current -is [System.Collections.IEnumerable]) {
+      foreach ($item in $current) { $stack.Push($item) }
+    } else {
+      foreach ($property in $current.PSObject.Properties) {
+        if ($property.MemberType -eq "NoteProperty" -or $property.MemberType -eq "Property") {
+          $stack.Push($property.Value)
+        }
+      }
+    }
+  }
+  return $count
 }
 
 function Resolve-TurnId {

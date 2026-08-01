@@ -524,11 +524,39 @@ public final class AgentModelTools {
                           && !ref.readonly())
               .findFirst()
               .orElse(null);
-      if (reference == null) continue;
+      if (reference == null) {
+        throw new PlatformException(
+            422,
+            "Connection reference '"
+                + connection.reference()
+                + "' is not writable on "
+                + sourceType.eClass()
+                + ". Valid writable references: "
+                + writableReferenceAlternatives(sourceType)
+                + ".");
+      }
       String targetType = createdTypes.get(target);
       if (targetType == null)
         targetType = find(active.workspace().snapshot(), target).path("eClass").asText();
-      if (!contracts.assignable(active.level(), targetType, reference.targetType())) continue;
+      if (!contracts.assignable(active.level(), targetType, reference.targetType())) {
+        throw new PlatformException(
+            422,
+            "Connection "
+                + sourceType.eClass()
+                + "."
+                + reference.name()
+                + " requires target "
+                + reference.targetType()
+                + " but "
+                + target
+                + " is "
+                + targetType
+                + ". Valid writable references on "
+                + sourceType.eClass()
+                + ": "
+                + writableReferenceAlternatives(sourceType)
+                + ".");
+      }
       operations.add(
           new Operation(
               OperationType.CONNECT_ELEMENTS,
@@ -564,6 +592,20 @@ public final class AgentModelTools {
             : mutateAtomically(active.workspace(), semantic);
     committedBatch = batch;
     return result;
+  }
+
+  private List<String> writableReferenceAlternatives(TypeContract sourceType) {
+    return sourceType.references().stream()
+        .filter(reference -> !reference.containment() && !reference.readonly())
+        .map(
+            reference ->
+                reference.name()
+                    + "->"
+                    + reference.targetType()
+                    + (reference.required() ? " required" : " optional")
+                    + (reference.many() ? " many" : " one"))
+        .sorted()
+        .toList();
   }
 
   public ModelWorkspace.MutationResult updateElements(List<UpdateElement> items) {

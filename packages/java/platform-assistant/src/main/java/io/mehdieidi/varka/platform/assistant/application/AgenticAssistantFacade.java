@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.platform.assistant.application;
 
+import io.mehdieidi.varka.platform.assistant.agent.AgentTurnLoop;
 import io.mehdieidi.varka.platform.assistant.domain.AssistantProposal;
 import io.mehdieidi.varka.platform.assistant.domain.AssistantWorkflowState;
 import io.mehdieidi.varka.platform.assistant.domain.memory.AssistantMemoryRecords.ConversationSummary;
@@ -199,6 +200,31 @@ public final class AgenticAssistantFacade {
       java.util.function.BooleanSupplier cancellationRequested,
       java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException>
           stopReason) {
+    return durableMessage(
+        user,
+        sessionId,
+        modelId,
+        revision,
+        message,
+        source,
+        destructiveConfirmed,
+        cancellationRequested,
+        stopReason,
+        AgentTurnLoop.WorkflowMode.AUTO);
+  }
+
+  /** Executes a queued durable worker turn with a pre-agent workflow route. */
+  public AgenticTurnService.Result durableMessage(
+      UserRecord user,
+      String sessionId,
+      String modelId,
+      Long revision,
+      String message,
+      String source,
+      boolean destructiveConfirmed,
+      java.util.function.BooleanSupplier cancellationRequested,
+      java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException> stopReason,
+      AgentTurnLoop.WorkflowMode mode) {
     var session = session(user, sessionId);
     requireSupportedLevel(session.level());
     ModelRecord model = ensureModel(user, sessionId, modelId);
@@ -212,7 +238,8 @@ public final class AgenticAssistantFacade {
         source,
         destructiveConfirmed,
         cancellationRequested,
-        stopReason);
+        stopReason,
+        mode);
   }
 
   /** Records accepted user input before a queued durable worker claims it. */

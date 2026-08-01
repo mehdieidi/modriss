@@ -161,9 +161,9 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                   + " apply_draft_patch only for a validated model mutation.");
       messages.addObject().put("role", "user").put("content", userWithContext(prompt));
       var tools = body.putArray("tools");
-      boolean patchOnlyTool = shouldForcePatchTool(prompt.user());
+      String forcedTool = forcedToolName(prompt);
       for (String name : AgentActionSchema.toolNames()) {
-        if (patchOnlyTool && !"apply_draft_patch".equals(name)) {
+        if (forcedTool != null && !forcedTool.equals(name)) {
           continue;
         }
         var tool = tools.addObject();
@@ -179,9 +179,9 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       // returned, the executor permits only a terminal mutation; leaving every read tool
       // selectable lets compatible providers repeatedly call describe_types despite the
       // explicit state-machine instruction in the prompt.
-      boolean forcePatchTool = capabilities().forcedToolChoiceReliable() && patchOnlyTool;
-      if (forcePatchTool) {
-        putForcedPatchToolChoice(body, false);
+      boolean forceSingleTool = capabilities().forcedToolChoiceReliable() && forcedTool != null;
+      if (forceSingleTool) {
+        putForcedToolChoice(body, forcedTool, false);
       } else {
         // Requiring a tool call avoids prose that would otherwise be mistaken for structured
         // output.
@@ -192,11 +192,11 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       // advertised timeout response. HttpRequest.timeout alone did not reliably interrupt that
       // condition, which left durable turns RUNNING forever. Bound the future itself as well.
       var response = sendChatRequest(mapper, body);
-      if (forcePatchTool
+      if (forceSingleTool
           && response.statusCode() / 100 != 2
           && response.body() != null
           && response.body().contains("tool_choice.name")) {
-        putForcedPatchToolChoice(body, true);
+        putForcedToolChoice(body, forcedTool, true);
         response = sendChatRequest(mapper, body);
       }
       if (response.statusCode() / 100 != 2) {
@@ -229,15 +229,41 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
             || userPrompt.contains("Return one corrected JSON object."));
   }
 
-  private static void putForcedPatchToolChoice(
-      com.fasterxml.jackson.databind.node.ObjectNode body, boolean flatName) {
+  static boolean shouldForcePlanTool(String userPrompt) {
+    return userPrompt != null
+        && (userPrompt.contains("First return plan_model_edit")
+            || userPrompt.contains("return plan_model_edit with a compact structured plan")
+            || userPrompt.contains("Return plan_model_edit with a progressive CIM plan")
+            || userPrompt.contains(
+                "Return plan_model_edit with a durable progressive CIM modeling plan"));
+  }
+
+  static boolean shouldForceDescribeTypesTool(String userPrompt) {
+    return userPrompt != null
+        && userPrompt.contains("Current durable modeling checkpoint")
+        && userPrompt.contains("using describe_types")
+        && !userPrompt.contains("Exact type contracts already retrieved by the backend");
+  }
+
+  static String forcedToolName(
+      io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt
+          prompt) {
+    String userPrompt = prompt == null ? null : prompt.user();
+    if (shouldForcePatchTool(userPrompt)) return "apply_draft_patch";
+    if (shouldForceDescribeTypesTool(userPrompt)) return "describe_types";
+    if (shouldForcePlanTool(userPrompt)) return "plan_model_edit";
+    return null;
+  }
+
+  private static void putForcedToolChoice(
+      com.fasterxml.jackson.databind.node.ObjectNode body, String toolName, boolean flatName) {
     body.remove("tool_choice");
     var toolChoice = body.putObject("tool_choice");
     toolChoice.put("type", "function");
     if (flatName) {
-      toolChoice.put("name", "apply_draft_patch");
+      toolChoice.put("name", toolName);
     } else {
-      toolChoice.putObject("function").put("name", "apply_draft_patch");
+      toolChoice.putObject("function").put("name", toolName);
     }
   }
 

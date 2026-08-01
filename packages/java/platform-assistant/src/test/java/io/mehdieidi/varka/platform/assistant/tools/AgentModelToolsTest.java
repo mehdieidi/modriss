@@ -262,6 +262,47 @@ class AgentModelToolsTest {
   }
 
   @Test
+  void rejectsInvalidConnectionReferenceWithWritableAlternatives() throws Exception {
+    AgentModelTools tools = cimTools();
+    tools.bind(ModelLevel.CIM, workspace());
+
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(
+                            new ModelCommandBatch.Create(
+                                "submit_request",
+                                "Command",
+                                Map.of("name", text("Submit request")),
+                                "rootId",
+                                "commands",
+                                null),
+                            new ModelCommandBatch.Create(
+                                "request_payload",
+                                "InformationItem",
+                                Map.of("name", text("Request payload"), "type", text("OBJECT")),
+                                "rootId",
+                                "informationItems",
+                                null)),
+                        List.of(),
+                        List.of(
+                            new ModelCommandBatch.Connection(
+                                "submit_request", "dependsOn", "request_payload")),
+                        List.of(),
+                        List.of(),
+                        "draft command",
+                        true)));
+
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("dependsOn"));
+    assertTrue(error.getMessage().contains("Valid writable references"));
+    assertTrue(error.getMessage().contains("input"));
+  }
+
+  @Test
   void inspectsSelectedModelRecordsWithTypeAndOwnershipContext() throws Exception {
     AgentModelTools tools = cimTools();
     JsonNode model =

@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class OpenAiCompatibleAssistantModelProviderTest {
@@ -69,5 +71,36 @@ class OpenAiCompatibleAssistantModelProviderTest {
     assertFalse(
         OpenAiCompatibleAssistantModelProvider.shouldForcePatchTool(
             "Choose the exact types needed for the request."));
+  }
+
+  @Test
+  void forcesOnlyTheValidNextNativeToolAtWorkflowGates() {
+    assertEquals(
+        "plan_model_edit",
+        OpenAiCompatibleAssistantModelProvider.forcedToolName(
+            new AssistantPrompt(
+                "system",
+                "SOURCE-TO-MODEL MODE: First return plan_model_edit with a durable progressive CIM"
+                    + " modeling plan.",
+                List.of(),
+                List.of())));
+    assertEquals(
+        "describe_types",
+        OpenAiCompatibleAssistantModelProvider.forcedToolName(
+            new AssistantPrompt(
+                "system",
+                "Current durable modeling checkpoint:\n"
+                    + "{}\n"
+                    + "Now retrieve exact metamodel contracts using describe_types.",
+                List.of(),
+                List.of())));
+    assertEquals(
+        "apply_draft_patch",
+        OpenAiCompatibleAssistantModelProvider.forcedToolName(
+            new AssistantPrompt(
+                "system",
+                "The next action must be commit_model_batch using these exact contracts.",
+                List.of(),
+                List.of())));
   }
 }

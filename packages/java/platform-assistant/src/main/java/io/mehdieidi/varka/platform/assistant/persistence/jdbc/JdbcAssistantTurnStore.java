@@ -241,6 +241,41 @@ FROM candidate WHERE t.id = candidate.id RETURNING t.*
 
   @Override
   public void expireTimedOut(Instant now) {
+    List<Cancellation> staleCancelled =
+        jdbc.query(
+            """
+            UPDATE assistant_turns turn
+            SET state = 'CANCELLED',
+                lease_until = NULL,
+                worker_id = NULL,
+                completed_at = ?,
+                revision = COALESCE((
+                  SELECT checkpoint.revision
+                  FROM assistant_checkpoints checkpoint
+                  WHERE checkpoint.turn_id = turn.id AND checkpoint.status = 'COMMITTED'
+                  ORDER BY checkpoint.id DESC
+                  LIMIT 1
+                ), turn.revision),
+                final_message = COALESCE(final_message, (
+                  SELECT 'Stopped after checkpoint ' || checkpoint.ordinal || '. Revision '
+                    || checkpoint.revision || ' is saved. Remaining work can be continued.'
+                  FROM assistant_checkpoints checkpoint
+                  WHERE checkpoint.turn_id = turn.id AND checkpoint.status = 'COMMITTED'
+                  ORDER BY checkpoint.id DESC
+                  LIMIT 1
+                ), 'Assistant turn was cancelled before a model checkpoint was saved.')
+            WHERE state = 'RUNNING'
+              AND cancellation_requested = true
+              AND lease_until <= ?
+            RETURNING id, final_message
+            """,
+            (rs, row) -> new Cancellation(rs.getString("id"), rs.getString("final_message")),
+            timestamp(now),
+            timestamp(now));
+    for (Cancellation item : staleCancelled) {
+      appendEvent(
+          item.id(), "turn.completed", Map.of("state", "CANCELLED", "message", item.state()));
+    }
     List<String> expired =
         jdbc.query(
             "UPDATE assistant_turns SET state = 'TIMED_OUT', lease_until = NULL, completed_at = ?,"

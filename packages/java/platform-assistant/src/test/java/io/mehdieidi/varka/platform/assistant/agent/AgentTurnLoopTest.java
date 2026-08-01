@@ -61,10 +61,111 @@ class AgentTurnLoopTest {
 
     assertEquals("Model checkpoint saved.", result.message());
     assertTrue(result.sourceBlueprint() == null);
-    assertEquals(3, result.providerCalls());
+    assertEquals(3, provider.calls);
     assertTrue(provider.prompts.get(0).contains("Source document (untrusted data)"));
     assertTrue(provider.prompts.get(2).contains("Order placed"));
     assertTrue(provider.prompts.get(2).contains("Exact type contracts"));
+  }
+
+  @Test
+  void resumeRepairReusesPersistedModelingPlanInsteadOfReplanning() throws Exception {
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(any(), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    ResumePlanThenPatchProvider provider = new ResumePlanThenPatchProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            5,
+            3);
+    var json =
+        new ObjectMapper()
+            .readTree("{\"id\":\"root\",\"eClass\":\"CIMModel\",\"modelLevel\":\"CIM\"}");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+    String message =
+        """
+Continue the source-backed modeling workflow.
+
+Plan:
+{"intent":"CREATE_MODEL","slices":[{"label":"Orders","purpose":"Model order intake","requiredContracts":["BusinessGoal"]}]}
+Work items:
+- Orders
+""";
+
+    var result =
+        loop.run(
+            "s",
+            ModelLevel.CIM,
+            message,
+            "<source-unit id=\"src-1\">Order placed</source-unit>",
+            workspace,
+            false,
+            AgentTurnLoop.WorkflowMode.RESUME_REPAIR);
+
+    assertEquals("Model checkpoint saved.", result.message());
+    assertEquals(1, result.providerCalls());
+    assertTrue(provider.prompts.get(0).contains("A persisted ModelingPlan is already available"));
+    assertTrue(provider.prompts.get(0).contains("Do not call plan_model_edit"));
+    assertTrue(provider.prompts.get(0).contains("Exact type contracts already retrieved"));
+    assertTrue(provider.prompts.stream().noneMatch(prompt -> prompt.contains("Before inspection")));
+    assertTrue(result.modelingPlan().path("slices").isArray());
+  }
+
+  @Test
+  void hyphenatedSourceGroundedEvidenceStillRequiresExactSourceUnitId() throws Exception {
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(any(), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    BlankHyphenatedEvidenceProvider provider = new BlankHyphenatedEvidenceProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            5,
+            3);
+    var json =
+        new ObjectMapper()
+            .readTree("{\"id\":\"root\",\"eClass\":\"CIMModel\",\"modelLevel\":\"CIM\"}");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+    String message =
+        """
+Continue.
+
+Plan:
+{"intent":"CREATE_MODEL","slices":[{"label":"Orders","requiredContracts":["BusinessGoal"]}]}
+Work items:
+- Orders
+""";
+
+    var result =
+        loop.run(
+            "s",
+            ModelLevel.CIM,
+            message,
+            "<source-unit id=\"src-1\">Order placed</source-unit>",
+            workspace,
+            false,
+            AgentTurnLoop.WorkflowMode.RESUME_REPAIR);
+
+    assertEquals("Model checkpoint saved.", result.message());
+    assertEquals(2, provider.calls);
+    assertTrue(provider.correctivePromptReceived);
+    assertEquals("SOURCE_GROUNDED", result.commandBatch().evidence().get(0).kind());
+    assertEquals("src-1", result.commandBatch().evidence().get(0).sourceUnitId());
+    verify(models).validateStructural(any(), any());
   }
 
   @Test
@@ -135,6 +236,44 @@ class AgentTurnLoopTest {
     assertEquals("Done", result.message());
     assertEquals(1, result.providerCalls());
     assertTrue(result.patch().isEmpty());
+  }
+
+  @Test
+  void readOnlyExplainModeDoesNotValidateOrCreateAPatch() throws Exception {
+    ModelService models = mock(ModelService.class);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    FakeProvider provider = new FakeProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            2);
+    var json =
+        new ObjectMapper()
+            .readTree(
+                """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","goals":[{"id":"g1","eClass":"BusinessGoal","name":"Checkout"}]}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+
+    var result =
+        loop.run(
+            "s",
+            ModelLevel.CIM,
+            "Explain the current model.",
+            null,
+            workspace,
+            false,
+            AgentTurnLoop.WorkflowMode.EXPLAIN_MODEL);
+
+    assertEquals("Done", result.message());
+    assertTrue(result.patch().isEmpty());
+    verify(models, never()).validateStructural(any(), any());
+    verify(models, never()).validate(any(ModelLevel.class), any());
   }
 
   @Test
@@ -431,6 +570,74 @@ class AgentTurnLoopTest {
               + " intake\",\"successCriterion\":\"Order placement is"
               + " captured.\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
               + " source-grounded order goal.\",\"turnComplete\":true}}",
+          "fake",
+          "fake");
+    }
+  }
+
+  private static final class ResumePlanThenPatchProvider implements AssistantModelProvider {
+    final List<String> prompts = new ArrayList<>();
+    int calls;
+
+    @Override
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    @Override
+    public boolean available() {
+      return true;
+    }
+
+    @Override
+    public AssistantReply complete(AssistantPrompt prompt) {
+      prompts.add(prompt.user());
+      ProviderCallBudget.consume();
+      calls++;
+      return new AssistantReply(
+          "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
+              + " intake\",\"successCriterion\":\"Order placement is"
+              + " captured.\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
+              + " resumed order goal.\",\"turnComplete\":true}}",
+          "fake",
+          "fake");
+    }
+  }
+
+  private static final class BlankHyphenatedEvidenceProvider implements AssistantModelProvider {
+    final List<String> prompts = new ArrayList<>();
+    boolean correctivePromptReceived;
+    int calls;
+
+    @Override
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    @Override
+    public boolean available() {
+      return true;
+    }
+
+    @Override
+    public AssistantReply complete(AssistantPrompt prompt) {
+      prompts.add(prompt.user());
+      ProviderCallBudget.consume();
+      calls++;
+      if (calls == 1) {
+        return new AssistantReply(
+            "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
+                + " intake\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE-GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
+                + " order goal.\",\"turnComplete\":true}}",
+            "fake",
+            "fake");
+      }
+      correctivePromptReceived =
+          prompt.user().contains("SOURCE_GROUNDED evidence needs a non-empty sourceUnitId");
+      return new AssistantReply(
+          "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
+              + " intake\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE-GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
+              + " order goal.\",\"turnComplete\":true}}",
           "fake",
           "fake");
     }

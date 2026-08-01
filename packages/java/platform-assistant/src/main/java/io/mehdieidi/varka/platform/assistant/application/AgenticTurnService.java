@@ -131,6 +131,33 @@ public final class AgenticTurnService {
       java.util.function.BooleanSupplier cancellationRequested,
       java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException>
           stopReason) {
+    return runDurable(
+        user,
+        sessionId,
+        level,
+        modelId,
+        revision,
+        message,
+        sourceDocument,
+        destructiveConfirmed,
+        cancellationRequested,
+        stopReason,
+        AgentTurnLoop.WorkflowMode.AUTO);
+  }
+
+  /** Runs a durable turn with the workflow route chosen before the agent loop starts. */
+  public Result runDurable(
+      UserRecord user,
+      String sessionId,
+      ModelLevel level,
+      String modelId,
+      Long revision,
+      String message,
+      String sourceDocument,
+      boolean destructiveConfirmed,
+      java.util.function.BooleanSupplier cancellationRequested,
+      java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException> stopReason,
+      AgentTurnLoop.WorkflowMode mode) {
     return run(
         user,
         sessionId,
@@ -142,7 +169,8 @@ public final class AgenticTurnService {
         destructiveConfirmed,
         cancellationRequested,
         stopReason,
-        false);
+        false,
+        mode);
   }
 
   private Result run(
@@ -157,6 +185,34 @@ public final class AgenticTurnService {
       java.util.function.BooleanSupplier cancellationRequested,
       java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException> stopReason,
       boolean persistConversation) {
+    return run(
+        user,
+        sessionId,
+        level,
+        modelId,
+        revision,
+        message,
+        sourceDocument,
+        destructiveConfirmed,
+        cancellationRequested,
+        stopReason,
+        persistConversation,
+        AgentTurnLoop.WorkflowMode.AUTO);
+  }
+
+  private Result run(
+      UserRecord user,
+      String sessionId,
+      ModelLevel level,
+      String modelId,
+      Long revision,
+      String message,
+      String sourceDocument,
+      boolean destructiveConfirmed,
+      java.util.function.BooleanSupplier cancellationRequested,
+      java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException> stopReason,
+      boolean persistConversation,
+      AgentTurnLoop.WorkflowMode mode) {
     ModelRecord current = models.get(user, level, modelId);
     if (persistConversation && memory != null)
       memory.appendMessage(sessionId, "USER", message, Map.of());
@@ -185,6 +241,7 @@ public final class AgenticTurnService {
             extracted,
             workspace,
             destructiveConfirmed,
+            mode,
             cancellationRequested == null ? () -> false : cancellationRequested,
             stopReason == null ? () -> null : stopReason);
     if (cancellationRequested != null && cancellationRequested.getAsBoolean())
