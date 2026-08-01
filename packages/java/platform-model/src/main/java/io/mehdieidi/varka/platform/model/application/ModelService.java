@@ -718,6 +718,20 @@ public final class ModelService {
   }
 
   /**
+   * Validates a stored model against the Ecore metamodel without executing EVL semantic
+   * constraints.
+   *
+   * @param user requesting user
+   * @param level model level
+   * @param id model identifier
+   * @return structural validation result
+   */
+  public ValidationResult validateStructural(UserRecord user, ModelLevel level, String id) {
+    ModelRecord model = get(user, level, id);
+    return validateStructural(level, model.modelJson());
+  }
+
+  /**
    * Validates a stored model using its source XMI sidecar when available.
    *
    * @param user requesting user

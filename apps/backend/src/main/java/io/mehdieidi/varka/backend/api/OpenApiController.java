@@ -33,7 +33,13 @@ public class OpenApiController {
     add(paths, "/api/{level}/{id}", "put", "Update model");
     add(paths, "/api/{level}/{id}", "patch", "Patch model with small change operations");
     add(paths, "/api/{level}/validate", "post", "Validate model");
+    add(paths, "/api/{level}/validate/structural", "post", "Structurally validate model");
     add(paths, "/api/{level}/{id}/validate", "post", "Validate stored model");
+    add(
+        paths,
+        "/api/{level}/{id}/validate/structural",
+        "post",
+        "Structurally validate stored model");
     add(paths, "/api/{level}/import", "post", "Import model");
     add(paths, "/api/{level}/export", "post", "Export model");
     add(paths, "/api/{level}/{id}/export", "post", "Export stored model");

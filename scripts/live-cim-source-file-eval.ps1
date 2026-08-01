@@ -194,7 +194,7 @@ $turn = Wait-Turn -Token $auth.token -TurnId $acceptedTurnId
 $turnId = Get-Prop $turn "turnId"
 $modelId = Get-Prop $turn "modelId"
 $updated = if ($modelId) { Invoke-Api -Path "/cim/$modelId" -Headers $headers } else { $null }
-$validation = if ($modelId) { Invoke-Api -Method POST -Path "/cim/$modelId/validate" -Headers $headers -Body @{} } else { $null }
+$structuralValidation = if ($modelId) { Invoke-Api -Method POST -Path "/cim/$modelId/validate/structural" -Headers $headers -Body @{} } else { $null }
 $modelPayload = Resolve-ModelPayload $updated
 
 [pscustomobject]@{
@@ -208,8 +208,8 @@ $modelPayload = Resolve-ModelPayload $updated
   repairAttempts = $turn.repairAttempts
   continues = $turn.continues
   elapsedSeconds = $turn.elapsedSeconds
-  validationValid = if ($validation) { Get-Prop $validation "valid" } else { $null }
-  validationIssues = if ($validation) { Get-Prop $validation "issues" } else { $null }
+  structuralValidationValid = if ($structuralValidation) { Get-Prop $structuralValidation "valid" } else { $null }
+  structuralValidationIssues = if ($structuralValidation) { Get-Prop $structuralValidation "issues" } else { $null }
   structuralNodes = Count-StructuralNodes $modelPayload
   modelId = $modelId
   revision = $turn.revision

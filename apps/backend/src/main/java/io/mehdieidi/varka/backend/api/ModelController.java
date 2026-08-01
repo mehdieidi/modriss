@@ -215,6 +215,23 @@ public class ModelController {
   }
 
   /**
+   * Validates an ad hoc model payload for Ecore/EMF structural conformance only.
+   *
+   * @param token session token
+   * @param level model level API name
+   * @param request model payload
+   * @return structural validation result
+   */
+  @PostMapping("/api/{level:cim|pim|psm}/validate/structural")
+  ModelService.ValidationResult validateStructural(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("level") String level,
+      @RequestBody SaveModelRequest request) {
+    auth.user(token);
+    return models.validateStructural(ModelLevel.fromApiName(level), request.model());
+  }
+
+  /**
    * Validates a stored model.
    *
    * @param token session token
@@ -228,6 +245,22 @@ public class ModelController {
       @PathVariable("level") String level,
       @PathVariable("id") String id) {
     return models.validate(auth.user(token), ModelLevel.fromApiName(level), id);
+  }
+
+  /**
+   * Validates a stored model for Ecore/EMF structural conformance only.
+   *
+   * @param token session token
+   * @param level model level API name
+   * @param id model identifier
+   * @return structural validation result
+   */
+  @PostMapping("/api/{level:cim|pim|psm}/{id}/validate/structural")
+  ModelService.ValidationResult validateStoredStructural(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("level") String level,
+      @PathVariable("id") String id) {
+    return models.validateStructural(auth.user(token), ModelLevel.fromApiName(level), id);
   }
 
   /**
