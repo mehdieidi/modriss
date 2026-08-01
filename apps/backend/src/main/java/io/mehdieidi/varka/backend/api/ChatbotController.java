@@ -454,7 +454,8 @@ public class ChatbotController {
             .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
     if (!previous.userId().equals(user.id()))
       throw new PlatformException(404, "Assistant turn not found.");
-    turns.resume(previous.id(), previous.revision());
+    turns.resume(
+        previous.id(), previous.revision(), Instant.now().plus(turnTimeout(previous.sourceText())));
     AssistantTurn resumed = turns.find(turnId).orElseThrow();
     return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(resumed));
   }

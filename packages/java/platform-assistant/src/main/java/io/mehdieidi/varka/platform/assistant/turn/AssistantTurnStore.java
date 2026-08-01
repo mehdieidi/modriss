@@ -52,7 +52,12 @@ public interface AssistantTurnStore {
       String remainingWork);
 
   /** Requeues the same durable request from its last committed checkpoint. */
-  void resume(String turnId, Long expectedRevision);
+  default void resume(String turnId, Long expectedRevision) {
+    resume(turnId, expectedRevision, null);
+  }
+
+  /** Requeues the same durable request and optionally refreshes its absolute deadline. */
+  void resume(String turnId, Long expectedRevision, Instant deadlineAt);
 
   /** Records a user-approved rebase before resuming a conflicted request. */
   void rebase(String turnId, long expectedRevision);

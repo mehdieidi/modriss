@@ -124,6 +124,21 @@ class JdbcAssistantTurnStorePostgresIntegrationTest {
   }
 
   @Test
+  void resumeRefreshesDeadlineForProgressiveTurns() {
+    AssistantTurn turn = turn("turn-resume-deadline");
+    Instant refreshedDeadline = Instant.now().plusSeconds(600);
+    turns.create(turn);
+    turns.complete(turn.id(), AssistantTurn.State.PARTIAL, "checkpoint saved", 3L, "continue");
+
+    turns.resume(turn.id(), 3L, refreshedDeadline);
+
+    AssistantTurn resumed = turns.find(turn.id()).orElseThrow();
+    assertEquals(AssistantTurn.State.QUEUED, resumed.state());
+    assertEquals(3L, resumed.expectedRevision());
+    assertTrue(!resumed.deadlineAt().isBefore(refreshedDeadline.minusSeconds(1)));
+  }
+
+  @Test
   void cancellationCancelsQueuedTurnsInTheContinuationTree() {
     AssistantTurn parent = turn("turn-cancel-parent");
     AssistantTurn child = turn("turn-cancel-child");

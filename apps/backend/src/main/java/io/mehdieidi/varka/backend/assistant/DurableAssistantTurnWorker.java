@@ -333,6 +333,7 @@ public final class DurableAssistantTurnWorker {
             units.stream()
                 .map(AssistantTurnStore.SourceUnit::id)
                 .collect(java.util.stream.Collectors.toSet());
+        java.util.Map<String, String> sourceAliases = sourceUnitAliases(units);
         java.util.Set<String> accounted = new java.util.HashSet<>();
         var batch = result.commandBatch();
         if (batch != null) {
@@ -341,7 +342,9 @@ public final class DurableAssistantTurnWorker {
                 evidence.kind() == null
                     ? "INFERRED"
                     : evidence.kind().trim().toUpperCase(java.util.Locale.ROOT);
-            String sourceUnitId = evidence.sourceUnitId();
+            String sourceUnitId =
+                evidence.sourceUnitId() == null ? "" : evidence.sourceUnitId().trim();
+            sourceUnitId = sourceAliases.getOrDefault(sourceUnitId, sourceUnitId);
             if ("SOURCE_GROUNDED".equals(kind) && !knownUnits.contains(sourceUnitId))
               throw new io.mehdieidi.varka.platform.kernel.PlatformException(
                   422, "Evidence references an unknown source unit.");
@@ -389,6 +392,7 @@ public final class DurableAssistantTurnWorker {
         turns.provenance(turn.id()).stream()
             .map(AssistantTurnStore.Provenance::sourceUnitId)
             .filter(spanId -> spanId != null && !spanId.isBlank())
+            .map(spanId -> sourceAliases.getOrDefault(spanId.trim(), spanId.trim()))
             .forEach(accounted::add);
         int coverage = units.isEmpty() ? 100 : (accounted.size() * 100 / units.size());
         remainingWork =
@@ -477,15 +481,16 @@ public final class DurableAssistantTurnWorker {
       }
       // Bounded in-turn repair is exhausted. Preserve the validated checkpoint, expose the
       // exact remaining work, and let the user explicitly resume the same durable run.
-      if ((ex.status() == 422 || ex.status() == 502 || ex.status() == 504)
-          && turn.checkpointCount() > 0
+      var latestCheckpoint = turns.latestCheckpoint(turn.id());
+      if ((ex.status() == 422 || transientProviderFailure(ex.status()))
+          && (turn.checkpointCount() > 0 || latestCheckpoint.isPresent())
           && !turns.cancellationRequested(turn.id())) {
         complete(
             turn,
             AssistantTurn.State.PARTIAL,
             "This work item could not be applied. Saved checkpoints remain available; resume this"
                 + " turn when ready.",
-            turn.revision(),
+            latestCheckpoint.map(AssistantTurnStore.Checkpoint::revision).orElse(turn.revision()),
             ex.getMessage());
         return;
       }
@@ -591,6 +596,28 @@ public final class DurableAssistantTurnWorker {
       ordinal++;
     }
     return items;
+  }
+
+  private boolean transientProviderFailure(int status) {
+    return status == 500 || status == 502 || status == 503 || status == 504;
+  }
+
+  private java.util.Map<String, String> sourceUnitAliases(
+      java.util.List<AssistantTurnStore.SourceUnit> units) {
+    java.util.Map<String, String> aliases = new java.util.LinkedHashMap<>();
+    for (var unit : units) {
+      String id = unit.id();
+      aliases.put(id, id);
+      int scope = id.indexOf(':');
+      if (scope >= 0 && scope + 1 < id.length()) {
+        aliases.putIfAbsent(id.substring(scope + 1), id);
+      }
+      String ordinal = Integer.toString(unit.ordinal());
+      aliases.putIfAbsent(ordinal, id);
+      aliases.putIfAbsent("source-" + ordinal, id);
+      aliases.putIfAbsent("src-" + ordinal, id);
+    }
+    return aliases;
   }
 
   private String cancellationMessage(AssistantTurn turn, Long revision) {

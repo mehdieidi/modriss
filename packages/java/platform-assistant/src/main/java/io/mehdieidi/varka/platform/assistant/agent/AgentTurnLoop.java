@@ -253,7 +253,7 @@ public final class AgentTurnLoop {
       AssistantModelProvider.AssistantReply reply = null;
       ModelService.ValidationResult validation = null;
       boolean fullModelInspected = false;
-      boolean editPlanReady = sourceBacked;
+      boolean editPlanReady = false;
       boolean enforcedInspectionReady = false;
       int repairAttempts = 0;
       String exactContracts = null;
@@ -331,6 +331,7 @@ public final class AgentTurnLoop {
           metrics.recordAssistantAction(action.tool().wireName(), step);
           if (!editPlanReady
               && action.tool() != AgentAction.Kind.PLAN_MODEL_EDIT
+              && (!sourceBacked || action.tool() != AgentAction.Kind.PLAN_SOURCE_MODEL)
               && action.tool() != AgentAction.Kind.INSPECT_MODEL
               && action.tool() != AgentAction.Kind.ANSWER_USER
               && action.tool() != AgentAction.Kind.ASK_USER) {
@@ -350,6 +351,21 @@ public final class AgentTurnLoop {
                   422,
                   action.tool().wireName()
                       + " must include a non-empty user-facing message in arguments.message.");
+            }
+            if (sourceBacked && !editPlanReady && !sourceUnitIds(sourceDocument).isEmpty()) {
+              if (ProviderCallBudget.hasRemaining()) {
+                user =
+                    followUpContext(userMessage, sourceDocument)
+                        + "\n\nYour previous "
+                        + action.tool().wireName()
+                        + " action was rejected: this is a source-to-CIM modeling request and no"
+                        + " durable ModelingPlan exists yet. Return plan_model_edit with a"
+                        + " progressive CIM plan grounded in the supplied source units. Do not"
+                        + " answer or ask the user unless the source itself is unreadable.";
+                continue;
+              }
+              throw new PlatformException(
+                  422, "Source-backed modeling requires a durable plan before completion.");
             }
             if (mutatingPlanWithoutCheckpoint(modelingPlan, turnTools)) {
               if (ProviderCallBudget.hasRemaining()) {
@@ -378,6 +394,8 @@ public final class AgentTurnLoop {
                         + " evidence is still in scope. Do not ask the user whether to model"
                         + " source facts that are already present. Return commit_model_batch with"
                         + " a structurally valid CIM slice grounded in the supplied source ids."
+                        + " Every SOURCE_GROUNDED evidence item must include a non-empty"
+                        + " sourceUnitId copied from a <source-unit id=\"...\"> marker."
                         + " Use INFERRED evidence only for concise assumptions not directly stated"
                         + " in the source.";
                 continue;
@@ -528,6 +546,15 @@ public final class AgentTurnLoop {
                   || (sourceDocument != null && sourceDocument.contains("<source-blueprint")))
                 throw new PlatformException(
                     422, "plan_source_model is only valid before a source blueprint exists.");
+              if (sourceDocument == null || !sourceDocument.contains("<source-document-map")) {
+                user =
+                    followUpContext(userMessage, sourceDocument)
+                        + "\n\nplan_source_model was rejected by backend workflow state: normal"
+                        + " source attachments are already supplied as complete source units."
+                        + " Return plan_model_edit with a durable progressive CIM modeling plan"
+                        + " for these units. Do not answer or ask the user.";
+                continue;
+              }
               JsonNode blueprint = validatedSourceBlueprint(action.arguments(), sourceDocument);
               publish(
                   sessionId,
@@ -627,12 +654,7 @@ public final class AgentTurnLoop {
                           profile.maxContractCount() <= 2
                               ? turnTools.describeExactTypes(selectedNames)
                               : turnTools.describeTypes(selectedNames));
-              exactContracts =
-                  compactContracts(
-                      patchContracts,
-                      profile.maxContractCount() <= 2
-                          ? new java.util.LinkedHashSet<>(selectedNames)
-                          : java.util.Set.of());
+              exactContracts = compactContracts(patchContracts);
               user =
                   followUpContext(userMessage, sourceDocument)
                       + (modelingPlan == null
@@ -654,6 +676,10 @@ public final class AgentTurnLoop {
                       + profile.maxPatchEvidence()
                       + " evidence items. Set turnComplete:false and put the"
                       + " next concrete slice in planSummary when requested work remains."
+                      + " If this is source-backed, every SOURCE_GROUNDED evidence item must"
+                      + " include a non-empty sourceUnitId copied from a supplied"
+                      + " <source-unit id=\"...\"> marker. Use INFERRED only for assumptions"
+                      + " that are not directly stated in the source."
                       + " Before submitting, audit every create against its contract: every"
                       + " attribute or reference marked with ! is mandatory. Required attributes"
                       + " must appear in attributes with a valid JSON value; enum attributes must"
@@ -1062,7 +1088,9 @@ Never invent types, features, ids, or enum values. Batch independent edits. Ask 
 safe progress is impossible. commit_model_batch arguments use creates, updates, connections,
 deletions, evidence, planSummary, and turnComplete. Every source-backed created or inferred
 element must have one evidence item: use kind SOURCE_GROUNDED with the exact <source-unit>
-id when the text supports it, or kind INFERRED with a concise assumption and no source id.
+id when the text supports it. SOURCE_GROUNDED with a blank sourceUnitId is invalid. Use
+kind INFERRED with a concise assumption and no source id only when the source does not directly
+state the fact.
 Do not claim completion for a source document unless every relevant source unit has explicit
 evidence or you return a partial batch describing the remaining work.
 
@@ -1071,12 +1099,12 @@ evidence or you return a partial batch describing the remaining work.
             ? """
 
 SOURCE-TO-MODEL MODE: The attached source document is available as explicit source units.
-Create a coherent, structurally valid CIM draft slice grounded in those units. First call
-describe_types once with the exact CIM types selected from the supplied language index; after
-the returned contracts, submit commit_model_batch. For small and medium source documents, make
-the first checkpoint useful on canvas: include multiple actors, requirements/capabilities,
-commands or queries, domain information, events, policies, assumptions, and valid
-relationships when supported by the returned contracts.\
+First return plan_model_edit with a durable progressive CIM modeling plan. The first slice should
+be useful on canvas and grounded in the source: include the core actors, goals or capabilities,
+requirements, commands or queries, domain information, events, assumptions, risks, policies, and
+valid relationships that fit one structurally valid checkpoint. After the backend accepts that
+plan, call describe_types once with the exact CIM types required by the current slice; after the
+returned contracts, submit commit_model_batch.\
 """
                 + (sourceBlueprintPresent
                     ? "A source blueprint is already present, so do not call plan_source_model"
@@ -1216,44 +1244,50 @@ conformance by the backend.
   }
 
   private String compactSourceEvidence(String sourceDocument) {
-    int limit = 6000;
+    int limit = 30000;
     if (sourceDocument.length() <= limit) return sourceDocument;
-    return sourceDocument.substring(0, limit)
-        + "\n[source evidence truncated for this repair; preserve only represented units]";
+    StringBuilder selected = new StringBuilder(limit + 512);
+    int from = 0;
+    while ((from = sourceDocument.indexOf("<source-unit", from)) >= 0) {
+      int end = sourceDocument.indexOf("</source-unit>", from);
+      if (end < 0) break;
+      end += "</source-unit>".length();
+      String unit = sourceDocument.substring(from, end);
+      if (selected.length() + unit.length() + 1 > limit) break;
+      selected.append(unit).append('\n');
+      from = end;
+    }
+    if (selected.isEmpty()) {
+      selected.append(sourceDocument, 0, Math.min(sourceDocument.length(), limit));
+    }
+    return selected
+        + "\n[source evidence truncated at whole source-unit boundaries for this repair; keep"
+        + " represented units exact and set turnComplete:false when unrepresented units remain]";
   }
 
-  /** Serializes the exact selected contracts compactly without cutting arbitrary text mid-value. */
-  private String compactContracts(
-      List<TypeContract> contracts, java.util.Set<String> selectedTypes) {
-    boolean focused = selectedTypes != null && !selectedTypes.isEmpty();
+  /** Serializes the exact selected contracts without dropping legal features. */
+  private String compactContracts(List<TypeContract> contracts) {
     StringBuilder result = new StringBuilder();
     result.append(
         "Legend: ! required, ? optional. Containments create owned children; references create"
             + " connections only when writable.\n");
     for (TypeContract type : contracts) {
       result.append("TYPE|").append(type.eClass()).append("|creatable=").append(type.creatable());
+      if (!type.supertypes().isEmpty()) {
+        result.append("|supertypes=").append(type.supertypes());
+      }
       if (!type.attributes().isEmpty()) {
         result.append("\nATTR|");
         appendAttributes(result, type.attributes());
       }
       List<ReferenceContract> containments =
-          type.references().stream()
-              .filter(ReferenceContract::containment)
-              .filter(reference -> !focused || selectedTypes.contains(reference.targetType()))
-              .toList();
+          type.references().stream().filter(ReferenceContract::containment).toList();
       if (!containments.isEmpty()) {
         result.append("\nCONTAINS|");
         appendReferences(result, containments);
       }
       List<ReferenceContract> references =
-          type.references().stream()
-              .filter(reference -> !reference.containment())
-              .filter(
-                  reference ->
-                      !focused
-                          || reference.required()
-                          || selectedTypes.contains(reference.targetType()))
-              .toList();
+          type.references().stream().filter(reference -> !reference.containment()).toList();
       if (!references.isEmpty()) {
         result.append("\nREFS|");
         appendReferences(result, references);
@@ -1507,6 +1541,13 @@ conformance by the backend.
               : evidence.kind().trim().toUpperCase(java.util.Locale.ROOT);
       if (!"SOURCE_GROUNDED".equals(kind)) continue;
       String id = evidence.sourceUnitId() == null ? "" : evidence.sourceUnitId().trim();
+      if (id.isBlank()) {
+        throw new PlatformException(
+            422,
+            "SOURCE_GROUNDED evidence needs a non-empty sourceUnitId copied from a supplied"
+                + " <source-unit id=\"...\"> marker. Use INFERRED only for concise assumptions"
+                + " not directly stated in the source.");
+      }
       if (!expectedSourceIds.contains(id)) {
         throw new PlatformException(
             422,
@@ -1523,6 +1564,7 @@ conformance by the backend.
     if (batch == null || sourceDocument == null || sourceDocument.isBlank()) return batch;
     java.util.Map<String, String> aliases = sourceUnitAliases(sourceDocument);
     if (aliases.isEmpty() || batch.evidence().isEmpty()) return batch;
+    java.util.Map<String, String> sourceRefsByElement = sourceReferencesByElement(batch, aliases);
     boolean changed = false;
     java.util.List<ModelCommandBatch.Evidence> evidence = new java.util.ArrayList<>();
     for (ModelCommandBatch.Evidence item : batch.evidence()) {
@@ -1531,6 +1573,13 @@ conformance by the backend.
       if (normalized != null && !normalized.equals(sourceUnitId)) {
         changed = true;
         sourceUnitId = normalized;
+      }
+      if (sourceUnitId.isBlank() && "SOURCE_GROUNDED".equals(normalizedEvidenceKind(item))) {
+        String fromElement = sourceRefsByElement.get(item.elementRef());
+        if (fromElement != null && !fromElement.isBlank()) {
+          changed = true;
+          sourceUnitId = fromElement;
+        }
       }
       evidence.add(
           new ModelCommandBatch.Evidence(
@@ -1549,6 +1598,58 @@ conformance by the backend.
         evidence,
         batch.planSummary(),
         batch.turnComplete());
+  }
+
+  private java.util.Map<String, String> sourceReferencesByElement(
+      ModelCommandBatch batch, java.util.Map<String, String> aliases) {
+    java.util.Map<String, String> sourceRefs = new java.util.LinkedHashMap<>();
+    for (ModelCommandBatch.Create create : batch.creates()) {
+      String sourceUnitId = sourceReferenceFromAttributes(create.attributes(), aliases);
+      if (sourceUnitId != null && create.clientRef() != null && !create.clientRef().isBlank()) {
+        sourceRefs.put(create.clientRef(), sourceUnitId);
+      }
+    }
+    for (ModelCommandBatch.Update update : batch.updates()) {
+      String sourceUnitId = sourceReferenceFromAttributes(update.attributes(), aliases);
+      if (sourceUnitId != null && update.elementId() != null && !update.elementId().isBlank()) {
+        sourceRefs.put(update.elementId(), sourceUnitId);
+      }
+    }
+    return sourceRefs;
+  }
+
+  private String sourceReferenceFromAttributes(
+      java.util.Map<String, JsonNode> attributes, java.util.Map<String, String> aliases) {
+    if (attributes == null || attributes.isEmpty()) return null;
+    for (String key :
+        java.util.List.of("sourceUnitId", "sourceSpanId", "sourceReference", "sourceReferences")) {
+      JsonNode value = attributes.get(key);
+      String sourceUnitId = sourceReferenceFromText(value == null ? "" : value.asText(""), aliases);
+      if (sourceUnitId != null) return sourceUnitId;
+    }
+    return null;
+  }
+
+  private String sourceReferenceFromText(String text, java.util.Map<String, String> aliases) {
+    if (text == null || text.isBlank()) return null;
+    String trimmed = text.trim();
+    String exact = aliases.get(trimmed);
+    if (exact != null) return exact;
+    java.util.LinkedHashSet<String> knownIds = new java.util.LinkedHashSet<>(aliases.values());
+    for (String knownId : knownIds) {
+      if (trimmed.contains(knownId)) return knownId;
+    }
+    for (var alias : aliases.entrySet()) {
+      String key = alias.getKey();
+      if (key.length() > 4 && trimmed.contains(key)) return alias.getValue();
+    }
+    return null;
+  }
+
+  private String normalizedEvidenceKind(ModelCommandBatch.Evidence evidence) {
+    return evidence.kind() == null
+        ? "INFERRED"
+        : evidence.kind().trim().toUpperCase(java.util.Locale.ROOT);
   }
 
   /**

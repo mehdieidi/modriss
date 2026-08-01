@@ -78,22 +78,8 @@ function Wait-Turn {
 function Count-StructuralNodes {
   param($Value)
   if ($null -eq $Value) { return 0 }
-  $count = 0
-  if ($Value -is [array]) {
-    foreach ($item in $Value) {
-      $count += Count-StructuralNodes $item
-    }
-  } elseif ($Value -is [System.Collections.IEnumerable] -and -not ($Value -is [string]) -and -not ($Value -is [System.Collections.IDictionary]) -and $Value.GetType().Name -ne "PSCustomObject") {
-    foreach ($item in $Value) {
-      $count += Count-StructuralNodes $item
-    }
-  } elseif ($Value -is [System.Collections.IDictionary] -or $Value.PSObject.Properties.Count -gt 0) {
-    if ($Value.PSObject.Properties["eClass"]) { $count++ }
-    foreach ($property in $Value.PSObject.Properties) {
-      $count += Count-StructuralNodes $property.Value
-    }
-  }
-  return $count
+  $json = $Value | ConvertTo-Json -Depth 100 -Compress
+  return ([regex]::Matches($json, '"eClass"\s*:')).Count
 }
 
 function Resolve-TurnId {

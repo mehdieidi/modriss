@@ -102,6 +102,46 @@ class AgentModelToolsTest {
   }
 
   @Test
+  void rejectsDuplicateNamedCreateSoAgentReusesExistingElements() throws Exception {
+    AgentModelTools tools = cimTools();
+    JsonNode model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","actors":[
+  {"id":"actor-existing","eClass":"Actor","name":"Cyclist","actorType":"HUMAN"}],
+ "diagram":{"elements":[],"relationships":[]}}
+""");
+    tools.bind(
+        ModelLevel.CIM,
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, model, new AssistantPatchCompiler(), null));
+
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(
+                            new ModelCommandBatch.Create(
+                                "actor_new",
+                                "Actor",
+                                Map.of("name", text("Cyclist"), "actorType", text("HUMAN")),
+                                "rootId",
+                                "actors",
+                                null)),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        "duplicate actor",
+                        true)));
+
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("duplicates existing Actor named 'Cyclist'"));
+    assertTrue(error.getMessage().contains("actor-existing"));
+  }
+
+  @Test
   void resolvesSameBatchClientRefsToBackendGeneratedUuids() throws Exception {
     AgentModelTools tools = cimTools();
     ModelWorkspace workspace = workspace();
@@ -144,7 +184,7 @@ class AgentModelToolsTest {
   }
 
   @Test
-  void synthesizesMinimumCimSemanticCoreWhenBatchOmitsIt() throws Exception {
+  void doesNotSynthesizeCimSemanticContentWhenBatchOmitsIt() throws Exception {
     AgentModelTools tools = cimTools();
     ModelWorkspace workspace = workspace();
     tools.bind(ModelLevel.CIM, workspace);
@@ -172,12 +212,10 @@ class AgentModelToolsTest {
                 true));
 
     JsonNode model = result.model();
-    assertEquals("BusinessGoal", model.at("/goals/0/eClass").asText());
-    assertTrue(model.at("/goals/0/successCriterion").asText().contains("user outcome"));
-    assertEquals("Actor", model.at("/actors/0/eClass").asText());
-    assertEquals("BusinessCapability", model.at("/capabilities/0/eClass").asText());
-    assertEquals(model.at("/goals/0/id").asText(), model.at("/capabilities/0/supports/0").asText());
-    assertEquals(model.at("/actors/0/id").asText(), model.at("/capabilities/0/owner").asText());
+    assertEquals("Requirement", model.at("/requirements/0/eClass").asText());
+    assertTrue(model.path("goals").isMissingNode() || model.path("goals").isEmpty());
+    assertTrue(model.path("actors").isMissingNode() || model.path("actors").isEmpty());
+    assertTrue(model.path("capabilities").isMissingNode() || model.path("capabilities").isEmpty());
   }
 
   @Test

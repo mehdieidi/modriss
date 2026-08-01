@@ -29,20 +29,21 @@ import tools.jackson.databind.ObjectMapper;
 
 class AgentTurnLoopTest {
   @Test
-  void createsValidatedSourceBlueprintBeforeModelApplication() throws Exception {
+  void sourceAttachmentsPlanThenApplyAModelCheckpoint() throws Exception {
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(any(), any()))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    SourcePlanThenPatchProvider provider = new SourcePlanThenPatchProvider();
     AgentTurnLoop loop =
         new AgentTurnLoop(
-            new SourcePlanProvider(),
+            provider,
             new AgentModelTools(new TypeContractService(knowledge), models),
             new MetamodelGuideGenerator(knowledge),
             null,
             Duration.ofSeconds(5),
             Duration.ofSeconds(5),
-            3,
+            5,
             3);
     var json =
         new ObjectMapper()
@@ -58,9 +59,12 @@ class AgentTurnLoopTest {
             "<source-unit id=\"src-1\">Order placed</source-unit>",
             workspace);
 
-    assertTrue(result.sourceBlueprint() != null);
-    assertEquals("Commerce", result.sourceBlueprint().path("domain").asText());
-    assertEquals(1, result.sourceBlueprint().path("slices").size());
+    assertEquals("Model checkpoint saved.", result.message());
+    assertTrue(result.sourceBlueprint() == null);
+    assertEquals(3, result.providerCalls());
+    assertTrue(provider.prompts.get(0).contains("Source document (untrusted data)"));
+    assertTrue(provider.prompts.get(2).contains("Order placed"));
+    assertTrue(provider.prompts.get(2).contains("Exact type contracts"));
   }
 
   @Test
@@ -387,7 +391,10 @@ class AgentTurnLoopTest {
     }
   }
 
-  private static final class SourcePlanProvider implements AssistantModelProvider {
+  private static final class SourcePlanThenPatchProvider implements AssistantModelProvider {
+    final List<String> prompts = new ArrayList<>();
+    int calls;
+
     @Override
     public AssistantProviderMetadata metadata() {
       return new AssistantProviderMetadata("fake", "", "");
@@ -400,10 +407,30 @@ class AgentTurnLoopTest {
 
     @Override
     public AssistantReply complete(AssistantPrompt prompt) {
+      prompts.add(prompt.user());
       ProviderCallBudget.consume();
+      calls++;
+      if (calls == 1) {
+        return new AssistantReply(
+            "{\"tool\":\"plan_model_edit\",\"arguments\":{\"intent\":\"CREATE_MODEL\",\"features\":[\"Order"
+                + " intake\"],\"reuseTargets\":[],\"newElements\":[\"Order"
+                + " goal\"],\"requiredContracts\":[\"BusinessGoal\"],\"slices\":[{\"label\":\"Core"
+                + " source model\",\"purpose\":\"Model order"
+                + " intake\",\"requiredContracts\":[\"BusinessGoal\"]}]}}",
+            "fake",
+            "fake");
+      }
+      if (calls == 2) {
+        return new AssistantReply(
+            "{\"tool\":\"describe_types\",\"arguments\":{\"names\":[\"BusinessGoal\"]}}",
+            "fake",
+            "fake");
+      }
       return new AssistantReply(
-          "{\"tool\":\"plan_source_model\",\"arguments\":{\"domain\":\"Commerce\",\"slices\":[{\"focus\":\"Order"
-              + " intake\",\"sourceUnitIds\":[\"src-1\"]}]}}",
+          "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
+              + " intake\",\"successCriterion\":\"Order placement is"
+              + " captured.\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
+              + " source-grounded order goal.\",\"turnComplete\":true}}",
           "fake",
           "fake");
     }

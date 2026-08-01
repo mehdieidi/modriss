@@ -277,14 +277,16 @@ FROM candidate WHERE t.id = candidate.id RETURNING t.*
   }
 
   @Override
-  public void resume(String turnId, Long expectedRevision) {
+  public void resume(String turnId, Long expectedRevision, Instant deadlineAt) {
     int changed =
         jdbc.update(
             "UPDATE assistant_turns SET state = 'QUEUED', expected_revision = COALESCE(?,"
                 + " revision), cancellation_requested = false, worker_id = NULL, lease_until ="
-                + " NULL, completed_at = NULL, final_message = NULL WHERE id = ? AND state IN"
+                + " NULL, completed_at = NULL, final_message = NULL, deadline_at = COALESCE(?,"
+                + " deadline_at) WHERE id = ? AND state IN"
                 + " ('PARTIAL','TIMED_OUT','FAILED','CANCELLED','CONFLICTED','NEEDS_INPUT')",
             expectedRevision,
+            timestamp(deadlineAt),
             turnId);
     if (changed != 1) throw new PlatformException(409, "This turn cannot be resumed.");
     appendEvent(
