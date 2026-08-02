@@ -95,7 +95,7 @@ class OpenAiCompatibleAssistantModelProviderTest {
                 List.of(),
                 List.of())));
     assertEquals(
-        "apply_draft_patch",
+        "commit_model_batch",
         OpenAiCompatibleAssistantModelProvider.forcedToolName(
             new AssistantPrompt(
                 "system",

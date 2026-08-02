@@ -144,6 +144,12 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
       var body = mapper.createObjectNode();
       body.put("model", model);
+      if (isQwenModel(model)) {
+        var reasoning = body.putObject("reasoning");
+        reasoning.put("effort", "none");
+        reasoning.put("exclude", true);
+        body.put("enable_thinking", false);
+      }
       var messages = body.putArray("messages");
       messages
           .addObject()
@@ -159,7 +165,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                   + " message. Use inspect_model or describe_types only for the corresponding"
                   + " read step; use analyze_source_units for source analysis,"
                   + " plan_cim_blueprint for CIM blueprint planning, plan_model_edit for a"
-                  + " structured edit plan; use apply_draft_patch only for a validated model"
+                  + " structured edit plan; use commit_model_batch only for a validated model"
                   + " mutation.");
       messages.addObject().put("role", "user").put("content", userWithContext(prompt));
       var tools = body.putArray("tools");
@@ -264,7 +270,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt
           prompt) {
     String userPrompt = prompt == null ? null : prompt.user();
-    if (shouldForcePatchTool(userPrompt)) return "apply_draft_patch";
+    if (shouldForcePatchTool(userPrompt)) return "commit_model_batch";
     if (shouldForceDescribeTypesTool(userPrompt)) return "describe_types";
     if (shouldForceCimBlueprintTool(userPrompt)) return "plan_cim_blueprint";
     if (shouldForceSourceAnalysisTool(userPrompt)) return "analyze_source_units";
@@ -290,6 +296,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       throws java.io.IOException, InterruptedException {
     var request =
         HttpRequest.newBuilder(URI.create(baseUrl() + "/chat/completions"))
+            .version(HttpClient.Version.HTTP_1_1)
             .timeout(properties.requestTimeout())
             .header("Authorization", "Bearer " + configuredApiKey(properties))
             .header("Content-Type", "application/json")
@@ -304,6 +311,10 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       httpClient.proxy(java.net.ProxySelector.of(proxy.address()));
     }
     return httpClient.build().send(request, HttpResponse.BodyHandlers.ofString());
+  }
+
+  private static boolean isQwenModel(String model) {
+    return model != null && model.trim().toLowerCase(java.util.Locale.ROOT).startsWith("qwen/");
   }
 
   private static String providerErrorSnippet(String body) {
@@ -336,7 +347,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
           case "plan_model_edit" -> "plan_model_edit";
           case "plan_source_model" -> "plan_source_model";
           case "inspect_model", "describe_types" -> name;
-          case "apply_draft_patch" -> "commit_model_batch";
+          case "commit_model_batch", "apply_draft_patch" -> "commit_model_batch";
           // These tools are included in the V2 provider contract, but the current bounded
           // executor has no separate action state for them. A model must use the executable
           // patch action after its lookup steps; rejecting an early completion is actionable.
@@ -381,7 +392,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       case "plan_source_model" -> "Plan source document spans into coherent CIM modeling slices.";
       case "inspect_model" -> "Read a model element or inventory using id.";
       case "describe_types" -> "Retrieve exact Ecore contracts for names.";
-      case "apply_draft_patch" -> "Submit one complete candidate model patch.";
+      case "commit_model_batch" -> "Submit one complete candidate model patch.";
       case "complete_checkpoint" -> "Commit a structurally valid candidate checkpoint.";
       case "search_language" -> "Search modeling-language concepts and methodology.";
       default -> throw new IllegalArgumentException("Unknown native assistant tool: " + name);

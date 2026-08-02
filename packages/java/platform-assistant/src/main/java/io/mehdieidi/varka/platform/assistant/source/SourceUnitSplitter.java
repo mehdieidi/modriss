@@ -19,8 +19,9 @@ public final class SourceUnitSplitter {
   public List<SourceUnit> split(String text) {
     String source = text == null ? "" : text.replace("\r\n", "\n");
     if (source.isEmpty()) return List.of();
+    List<SourceUnit> structural = structuralSpans(source);
+    if (source.length() <= limit || structural.size() > 1) return structural;
     List<SourceUnit> result = new ArrayList<>();
-    if (source.length() <= limit) return structuralSpans(source);
     for (int start = 0, ordinal = 1; start < source.length(); ordinal++) {
       int end = Math.min(source.length(), start + limit);
       if (end < source.length()) {

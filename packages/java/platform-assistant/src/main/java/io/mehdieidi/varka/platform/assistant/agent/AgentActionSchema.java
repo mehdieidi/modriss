@@ -28,7 +28,7 @@ public final class AgentActionSchema {
             {"analyze_source_units", "analyze_source_units"},
             {"plan_cim_blueprint", "plan_cim_blueprint"},
             {"plan_model_edit", "plan_model_edit"},
-            {"commit_model_batch", "apply_draft_patch"},
+            {"commit_model_batch", "commit_model_batch"},
             {"plan_source_model", "plan_source_model"},
             {"inspect_model", "inspect_model"},
             {"describe_types", "describe_types"},
@@ -59,7 +59,7 @@ public final class AgentActionSchema {
 
   /** Returns a closed schema for one tool, constrained by the described Ecore contracts. */
   public static Map<String, Object> toolSchema(String toolName, List<TypeContract> patchContracts) {
-    if (!toolNames().contains(toolName)) {
+    if (!toolNames().contains(toolName) && !"apply_draft_patch".equals(toolName)) {
       throw new IllegalArgumentException("Unknown assistant tool: " + toolName);
     }
     return switch (toolName) {
@@ -86,7 +86,7 @@ public final class AgentActionSchema {
                           List.of("focus", "sourceUnitIds")),
                       null)),
               List.of("domain", "slices"));
-      case "apply_draft_patch" -> patchSchema(patchContracts);
+      case "commit_model_batch", "apply_draft_patch" -> patchSchema(patchContracts);
       // V2 names are advertised for capability parity; this legacy executor deliberately rejects
       // them with an actionable response until their independent workflow states are enabled.
       case "search_language", "complete_checkpoint" -> object(Map.of(), List.of());
@@ -130,11 +130,11 @@ public final class AgentActionSchema {
             List.of("elementRef", "sourceUnitId", "requirementId", "kind", "assumption"));
     return object(
         Map.of(
-            "creates", array(createItem, 12),
+            "creates", array(createItem, 48),
             "updates", array(update, 0),
-            "connections", array(connection, 18),
+            "connections", array(connection, 96),
             "deletions", array(deletion, null),
-            "evidence", array(evidence, 12),
+            "evidence", array(evidence, 64),
             "planSummary", stringSchema(),
             "turnComplete", Map.of("type", "boolean")),
         List.of(
@@ -494,7 +494,7 @@ public final class AgentActionSchema {
         "plan_source_model",
         "search_language",
         "describe_types",
-        "apply_draft_patch",
+        "commit_model_batch",
         "complete_checkpoint",
         "respond_to_user");
   }

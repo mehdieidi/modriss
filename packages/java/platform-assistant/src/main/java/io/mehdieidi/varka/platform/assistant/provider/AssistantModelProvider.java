@@ -144,15 +144,15 @@ public interface AssistantModelProvider {
       boolean nativeToolsPreferred,
       boolean forcedToolChoiceReliable) {
     public ProviderCapabilities {
-      maxCompletionTokens = maxCompletionTokens <= 0 ? 4096 : maxCompletionTokens;
-      maxPatchCreates = maxPatchCreates <= 0 ? 12 : maxPatchCreates;
-      maxPatchConnections = maxPatchConnections <= 0 ? 18 : maxPatchConnections;
-      maxPatchEvidence = maxPatchEvidence <= 0 ? 12 : maxPatchEvidence;
-      maxContractCount = maxContractCount <= 0 ? 8 : maxContractCount;
+      maxCompletionTokens = maxCompletionTokens <= 0 ? 12000 : maxCompletionTokens;
+      maxPatchCreates = maxPatchCreates <= 0 ? 48 : maxPatchCreates;
+      maxPatchConnections = maxPatchConnections <= 0 ? 96 : maxPatchConnections;
+      maxPatchEvidence = maxPatchEvidence <= 0 ? 64 : maxPatchEvidence;
+      maxContractCount = maxContractCount <= 0 ? 24 : maxContractCount;
     }
 
     public static ProviderCapabilities defaults() {
-      return new ProviderCapabilities(4096, 12, 18, 12, 8, true, true);
+      return new ProviderCapabilities(12000, 48, 96, 64, 24, true, true);
     }
   }
 }

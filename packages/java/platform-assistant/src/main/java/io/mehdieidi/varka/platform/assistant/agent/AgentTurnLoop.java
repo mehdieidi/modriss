@@ -303,8 +303,9 @@ public final class AgentTurnLoop {
                                   + " execute the current blueprint slice."
                               : "\n\nThe next action must be plan_cim_blueprint using the"
                                   + " persisted <source-analysis>."
-                          : "\n\nFirst return analyze_source_units; do not patch before source"
-                              + " analysis and CIM blueprint are persisted."));
+                          : "\n\nFirst return plan_model_edit with a compact, source-grounded"
+                              + " CIM modeling plan. Do not analyze or blueprint normal attached"
+                              + " source units before planning the first validated checkpoint."));
       String user = initialUser;
       AssistantModelProvider.AssistantReply reply = null;
       ModelService.ValidationResult validation = null;
@@ -429,13 +430,14 @@ public final class AgentTurnLoop {
           if (sourceBacked
               && !readOnlyMode
               && !sourceAnalysisPresent
-              && modelingPlan == null
-              && action.tool() != AgentAction.Kind.ANALYZE_SOURCE_UNITS) {
+              && action.tool() == AgentAction.Kind.ANALYZE_SOURCE_UNITS) {
             user =
                 followUpContext(userMessage, sourceDocument)
-                    + "\n\nSource-backed CIM creation is gated by durable source analysis. First"
-                    + " return analyze_source_units. Do not plan a blueprint, retrieve"
-                    + " contracts, patch, answer, or ask unless the source units are unreadable.";
+                    + "\n\nanalyze_source_units was rejected by backend workflow state: normal"
+                    + " attached source units must go directly to a durable CIM modeling plan."
+                    + " Return plan_model_edit with sourceUnitIds copied from the supplied"
+                    + " markers. Do not analyze, blueprint, answer, or ask unless the source"
+                    + " units are unreadable.";
             continue;
           }
           if (sourceBacked
@@ -454,7 +456,9 @@ public final class AgentTurnLoop {
           if (!readOnlyMode
               && !editPlanReady
               && action.tool() != AgentAction.Kind.PLAN_MODEL_EDIT
-              && (!sourceBacked || action.tool() != AgentAction.Kind.ANALYZE_SOURCE_UNITS)
+              && (!sourceBacked
+                  || sourceAnalysisPresent
+                  || action.tool() != AgentAction.Kind.ANALYZE_SOURCE_UNITS)
               && (!sourceBacked || action.tool() != AgentAction.Kind.PLAN_CIM_BLUEPRINT)
               && (!sourceBacked || action.tool() != AgentAction.Kind.PLAN_SOURCE_MODEL)
               && action.tool() != AgentAction.Kind.INSPECT_MODEL
@@ -743,10 +747,14 @@ public final class AgentTurnLoop {
               check(canceled, deadline, cancellationRequested, stopReason);
               ModelCommandBatch batch = normalizeSourceEvidence(command(action), sourceDocument);
               lastRejectedBatchSummary = batchSummary(batch);
-              validateSourceEvidence(batch, sourceDocument);
-              validatePlannedSourceSliceCoverage(batch, sourceDocument, modelingPlan);
-              validateSourceCheckpointUsefulness(
-                  batch, sourceDocument, modelingPlan, patchContracts);
+              if (sourceBacked && !batch.deletions().isEmpty()) {
+                throw new PlatformException(
+                    422,
+                    "Source-backed document-to-CIM generation must be additive. Do not delete"
+                        + " starter scaffold or existing model content during source import;"
+                        + " create and connect the source-grounded CIM elements instead. Deletions"
+                        + " are available only as explicit user-requested edit actions.");
+              }
               turnTools.commitModelBatch(batch, destructiveConfirmed);
               check(canceled, deadline, cancellationRequested, stopReason);
               ModelService.ValidationResult checkpointValidation = turnTools.validateModel();
@@ -1072,15 +1080,15 @@ public final class AgentTurnLoop {
     String intent = raw.path("intent").asText("ADD_FEATURES").trim();
     if (intent.isBlank()) intent = "ADD_FEATURES";
     plan.put("intent", intent);
-    copyStringArray(raw.path("features"), plan.putArray("features"), 12);
-    copyStringArray(raw.path("reuseTargets"), plan.putArray("reuseTargets"), 12);
-    copyStringArray(raw.path("newElements"), plan.putArray("newElements"), 12);
+    copyStringArray(raw.path("features"), plan.putArray("features"), 40);
+    copyStringArray(raw.path("reuseTargets"), plan.putArray("reuseTargets"), 32);
+    copyStringArray(raw.path("newElements"), plan.putArray("newElements"), 80);
     copyStringArray(
         raw.path("requiredContracts"),
         plan.putArray("requiredContracts"),
         capabilities.maxContractCount());
     var slices = plan.putArray("slices");
-    int maxSlices = Math.max(1, Math.min(8, raw.path("slices").size()));
+    int maxSlices = Math.max(1, Math.min(12, raw.path("slices").size()));
     if (raw.path("slices").isArray()) {
       int ordinal = 1;
       for (JsonNode slice : raw.path("slices")) {
@@ -1095,7 +1103,7 @@ public final class AgentTurnLoop {
             slice.path("requiredContracts"),
             item.putArray("requiredContracts"),
             capabilities.maxContractCount());
-        copyStringArray(slice.path("sourceUnitIds"), item.putArray("sourceUnitIds"), 8);
+        copyStringArray(slice.path("sourceUnitIds"), item.putArray("sourceUnitIds"), 24);
         item.put("status", ordinal == 2 ? "running" : "pending");
       }
     }
@@ -1108,7 +1116,7 @@ public final class AgentTurnLoop {
           raw.path("requiredContracts"),
           item.putArray("requiredContracts"),
           capabilities.maxContractCount());
-      copyStringArray(raw.path("sourceUnitIds"), item.putArray("sourceUnitIds"), 8);
+      copyStringArray(raw.path("sourceUnitIds"), item.putArray("sourceUnitIds"), 24);
       item.put("status", "running");
     }
     return plan;
@@ -1290,7 +1298,9 @@ public final class AgentTurnLoop {
         + exactContracts
         + "\n\nDo not call describe_types. The next action must be commit_model_batch using"
         + " these exact contracts and exact source-unit ids. Submit one coherent source slice:"
-        + " prefer 3 to 5 related source units when the required elements fit within "
+        + " when the current prompt supplies 20 or fewer source units and the evidence fits the"
+        + " cap, cover every supplied source unit in this checkpoint. Otherwise prefer 8 to 12"
+        + " related source units when the required elements fit within "
         + capabilities.maxPatchCreates()
         + " creates, "
         + capabilities.maxPatchConnections()
@@ -1303,7 +1313,15 @@ public final class AgentTurnLoop {
     if (!hasNoModelElements(workspace)) return List.of();
     return switch (level) {
       case PIM -> List.of("ServerlessService");
-      case CIM -> List.of();
+      case CIM ->
+          List.of(
+              "BusinessGoal",
+              "Actor",
+              "BusinessCapability",
+              "Requirement",
+              "InformationItem",
+              "BusinessProcess",
+              "Policy");
       case PSM -> List.of();
     };
   }
@@ -1382,7 +1400,9 @@ return prose outside that object. The action field is data, not a provider funct
 commit_model_batch, answer_user, and ask_user are terminal.
 answer_user arguments must be {"message":"a complete, non-empty answer for the user"}.
 ask_user arguments must be {"message":"a complete, non-empty clarification question"}.
-For source-backed CIM creation, first return analyze_source_units. Its arguments are compact,
+Legacy action analyze_source_units is accepted only when the backend resumes an older durable
+source-analysis workflow. For normal attached source units, do not use it. First return
+plan_model_edit. Legacy analyze_source_units arguments are compact,
 LLM-authored source analysis:
 {"domain":"...","sourceUnits":[{"sourceUnitId":"src-id","actors":[],"goals":[],
 "capabilities":[],"requirements":[],"commands":[],"queries":[],"domainEntities":[],
@@ -1403,7 +1423,8 @@ patch. Its arguments are LLM-authored execution blueprint:
 "sourceUnitIds":["src-id"],"requiredContracts":["ExactType"],"candidateKeys":["..."],
 "relationshipKeys":["..."]}]}. The blueprint is persisted and reused; execution patches must
 follow the current blueprint slice instead of reasoning from raw source again.
-For ordinary create/edit/add-feature requests, first return plan_model_edit before any
+For ordinary create/edit/add-feature requests and normal source-backed document-to-CIM requests,
+first return plan_model_edit before any
 inspection, type contract retrieval, or patch generation. Its arguments must be:
 {"intent":"CREATE_MODEL|ADD_FEATURES|EDIT_MODEL|EXPLAIN","features":["..."],
 "reuseTargets":["existing names to inspect or reuse"],"newElements":["planned new element names"],
@@ -1412,7 +1433,8 @@ inspection, type contract retrieval, or patch generation. Its arguments must be:
 durable backend state: use small coherent slices such as core architecture, events, data stores,
 security, and observability when the request is broad. For source-backed work, each slice must
 include exact sourceUnitIds and should group related stories by capability, workflow, or dependency
-instead of making one checkpoint per story when the structural patch limits can safely hold more.
+instead of making one checkpoint per story. When the prompt supplies 20 or fewer source units,
+make the first slice include all supplied sourceUnitIds unless doing so would exceed patch caps.
 plan_source_model arguments must be {"domain":"...","slices":[{"focus":"...",
 "sourceUnitIds":["src-id"]}]}. It is only for a source-backed request before a source
 blueprint exists. It is terminal for that planning increment: the backend persists the plan
@@ -1429,8 +1451,8 @@ commit_model_batch arguments must match this shape:
 creates, updates, connections, deletions, and evidence are always arrays of JSON objects. Never
 put a bare clientRef, id, or string in any of those arrays. A clientRef is only a field inside
 a create object or a value used by owner/source/target inside another object.
-For a complex or source-backed generation, create one coherent validated slice rather than a
-giant batch. One patch may contain at most 12 creates, 18 connections, and 12 evidence items.
+For a complex or source-backed generation, create one coherent validated slice. One patch may
+contain at most 48 creates, 96 connections, and 64 evidence items.
 Set turnComplete:false and state the next slice in planSummary whenever additional requested
 work remains. The backend saves that slice atomically and the user can continue from its
 durable checkpoint. Set turnComplete:true only when the whole request is complete.
@@ -1471,10 +1493,10 @@ same batch. Ask only for a genuinely unspecified business decision, never for ba
 Every connection source and target must be either an exact clientRef from creates in the same
 batch, rootId, or an existing inspected element id. Do not invent connection endpoint aliases,
 prefixes, or variants such as info_<clientRef>; use the exact clientRef you created.
-Starter models can include generic example elements. For a request to create a model from
-requirements, treat those examples as replaceable scaffolding: create the requested model
-content and, if needed, update or delete the examples through the normal confirmation flow.
-Never ask whether to discard starter scaffolding before making non-destructive progress.
+Assistant-created CIM models start with an authoritative root only. If an existing model contains
+starter examples, source imports must stay additive: leave existing content in place and create
+source-grounded CIM elements and relationships. Delete starter or existing content only when the
+user explicitly asks for deletion in a non-source editing turn.
 The prompt includes a compact current-model inventory. Use it directly for ordinary questions
 and explanations. Call inspect_model with an empty id only when the inventory lacks facts
 needed to answer; its result contains the complete current model. Do not inspect the same
@@ -1510,15 +1532,16 @@ evidence or you return a partial batch describing the remaining work.
             ? """
 
 SOURCE-TO-MODEL MODE: The attached source document is available as explicit source units.
-First return analyze_source_units unless a <source-analysis> block is already present. Then return
-plan_cim_blueprint unless a <source-blueprint> block is already present. Only after both durable
-artifacts exist may you use exact CIM contracts and submit commit_model_batch. The first execution
-slice should cover several coherent source units when structurally safe, usually 3 to 5 related
-stories for a 10+ story document. It should be useful on canvas and grounded in the source:
-include actors, goals or capabilities, requirements, commands or queries, domain information,
-events, assumptions, risks, policies, and valid relationships that fit one structurally valid
-checkpoint. Every source-backed slice must list sourceUnitIds copied exactly from the supplied
-markers.\
+For normal attached source units, first return plan_model_edit with a durable plan grouped by
+capability, workflow, or dependency. Do not call analyze_source_units or plan_cim_blueprint unless
+the prompt already contains a persisted <source-analysis> block from an older run. For a supplied
+20-story document, the first execution slice should cover all 20 source units when they fit the
+48-create and 64-evidence caps. It should be useful on canvas and grounded in the source: include
+the shared actors, goals, business capabilities, one requirement per story, key information items,
+business processes, policies, and only valid relationships that fit one structurally valid
+checkpoint. Add commands, queries, events, and domain entities only in a later slice after their
+exact required-reference contracts are selected. Every source-backed slice must list sourceUnitIds
+copied exactly from the supplied markers.\
 """
                 + (sourceBlueprintPresent
                     ? "A source blueprint is already present, so do not call plan_source_model"
@@ -1550,13 +1573,25 @@ the exact contract must be satisfied in the same batch.
 
 Relationships are first-class model content. Add connections only for writable non-containment
 references listed on the source EClass contract, and use exact created clientRefs or inspected ids
-as endpoints. Create one coherent validated checkpoint, not the whole broad request at once. Set
-turnComplete:false when later checkpoint slices remain.
+as endpoints. Create one coherent validated checkpoint. Set turnComplete:false when later
+checkpoint slices remain.
+
+%s
 
 Validation boundary: generated assistant changes are checked only for structural Ecore/EMF
 conformance by the backend.
 """
-        .formatted(level.name());
+        .formatted(
+            level.name(),
+            sourceBacked
+                ? "For source-backed CIM conversion, cover every supplied source-unit in the"
+                    + " current prompt when the sourceUnitId count is within the evidence cap."
+                    + " For each story create at least one source-grounded Requirement, reuse"
+                    + " shared Actors and BusinessCapabilities across stories, and add compact"
+                    + " BusinessProcess, InformationItem, Policy, and valid connections where"
+                    + " the exact contracts support them. Do not shrink to only the first few"
+                    + " stories unless the source-unit count exceeds the caps."
+                : "");
   }
 
   private String readOnlySystemPrompt(ModelLevel level, WorkflowMode mode) {
@@ -1897,6 +1932,9 @@ validation.
     normalizeCommandArray(mapper, normalized, "connections");
     normalizeCommandArray(mapper, normalized, "deletions");
     normalizeCommandArray(mapper, normalized, "evidence");
+    if (!normalized.has("turnComplete") || normalized.path("turnComplete").isNull()) {
+      normalized.put("turnComplete", false);
+    }
     return normalized;
   }
 
@@ -2201,6 +2239,24 @@ validation.
                 .map(TypeContract::eClass)
                 .collect(java.util.stream.Collectors.toSet());
     java.util.Set<String> plannedRichTypes = new java.util.LinkedHashSet<>();
+    current
+        .path("requiredContracts")
+        .forEach(
+            value -> {
+              String eClass = value.asText("").trim();
+              if (richCimType(eClass) && availableContracts.contains(eClass)) {
+                plannedRichTypes.add(eClass);
+              }
+            });
+    modelingPlan
+        .path("requiredContracts")
+        .forEach(
+            value -> {
+              String eClass = value.asText("").trim();
+              if (richCimType(eClass) && availableContracts.contains(eClass)) {
+                plannedRichTypes.add(eClass);
+              }
+            });
     modelingPlan
         .path("candidates")
         .forEach(
@@ -2211,7 +2267,12 @@ validation.
                 plannedRichTypes.add(eClass);
               }
             });
-    if (plannedRichTypes.isEmpty()) return;
+    if (plannedRichTypes.isEmpty()
+        && sourceUnitIds(sourceDocument).size() >= 4
+        && availableContracts.stream().anyMatch(this::richCimType)) {
+      availableContracts.stream().filter(this::richCimType).forEach(plannedRichTypes::add);
+    }
+    if (plannedRichTypes.isEmpty() || batch.creates().isEmpty()) return;
     boolean createdRich =
         batch.creates().stream().anyMatch(create -> plannedRichTypes.contains(create.eClass()));
     if (createdRich) return;

@@ -99,9 +99,9 @@ class AgentActionSchemaTest {
             .valueToTree(AgentActionSchema.toolSchema("apply_draft_patch", List.of(contract)));
     var properties = schema.path("properties");
 
-    assertEquals(12, properties.path("creates").path("maxItems").asInt());
-    assertEquals(18, properties.path("connections").path("maxItems").asInt());
-    assertEquals(12, properties.path("evidence").path("maxItems").asInt());
+    assertEquals(48, properties.path("creates").path("maxItems").asInt());
+    assertEquals(96, properties.path("connections").path("maxItems").asInt());
+    assertEquals(64, properties.path("evidence").path("maxItems").asInt());
   }
 
   @Test

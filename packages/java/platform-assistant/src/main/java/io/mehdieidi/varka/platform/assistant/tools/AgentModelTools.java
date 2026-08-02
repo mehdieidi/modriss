@@ -566,13 +566,6 @@ public final class AgentModelTools {
               source,
               connection.reference()));
     }
-    synthesizeRequiredClosure(
-        active.level(),
-        active.workspace().snapshot(),
-        operations,
-        refs,
-        createdTypes,
-        createdAttributes);
     for (ModelCommandBatch.Deletion deletion : batch.deletions()) {
       String id = resolveRef(deletion.elementId(), refs);
       JsonNode element = find(active.workspace().snapshot(), id);
@@ -983,16 +976,6 @@ public final class AgentModelTools {
               }
               normalized.set(name, value);
             });
-    for (AttributeContract contract : type.attributes()) {
-      if (!contract.required()
-          || normalized.has(contract.name())
-          || contract.enumLiterals().isEmpty()) {
-        continue;
-      }
-      String defaultLiteral =
-          contract.enumLiterals().contains("UNKNOWN") ? "UNKNOWN" : contract.enumLiterals().get(0);
-      normalized.put(contract.name(), defaultLiteral);
-    }
     return normalized;
   }
 

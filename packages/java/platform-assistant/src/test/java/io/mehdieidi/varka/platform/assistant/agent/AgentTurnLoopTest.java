@@ -29,12 +29,12 @@ import tools.jackson.databind.ObjectMapper;
 
 class AgentTurnLoopTest {
   @Test
-  void sourceAttachmentsAnalyzeBeforePlanningOrCheckpointing() throws Exception {
+  void sourceAttachmentsPlanAndCheckpointWithoutSeparateAnalysis() throws Exception {
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(any(), any()))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
-    SourceAnalysisProvider provider = new SourceAnalysisProvider();
+    SourcePlanThenPatchProvider provider = new SourcePlanThenPatchProvider();
     AgentTurnLoop loop =
         new AgentTurnLoop(
             provider,
@@ -59,12 +59,15 @@ class AgentTurnLoopTest {
             "<source-unit id=\"src-1\">Order placed</source-unit>",
             workspace);
 
-    assertEquals("Source analysis prepared; planning the CIM blueprint next.", result.message());
+    assertEquals("Model checkpoint saved.", result.message());
     assertTrue(result.sourceBlueprint() == null);
-    assertTrue(result.sourceAnalysis() != null);
-    assertEquals(1, provider.calls);
+    assertTrue(result.sourceAnalysis() == null);
+    assertTrue(result.modelingPlan() != null);
+    assertEquals(2, provider.calls);
+    assertTrue(!result.patch().isEmpty());
     assertTrue(provider.prompts.get(0).contains("Source document (untrusted data)"));
-    assertTrue(provider.prompts.get(0).contains("First return analyze_source_units"));
+    assertTrue(provider.prompts.get(0).contains("First return plan_model_edit"));
+    assertTrue(provider.prompts.get(1).contains("Exact type contracts already retrieved"));
   }
 
   @Test
@@ -119,7 +122,7 @@ Work items:
   }
 
   @Test
-  void hyphenatedSourceGroundedEvidenceStillRequiresExactSourceUnitId() throws Exception {
+  void sourceEvidenceIsNormalizedButNotACommitGate() throws Exception {
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(any(), any()))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
@@ -161,11 +164,63 @@ Work items:
             AgentTurnLoop.WorkflowMode.RESUME_REPAIR);
 
     assertEquals("Model checkpoint saved.", result.message());
+    assertEquals(1, provider.calls);
+    assertEquals(false, provider.correctivePromptReceived);
+    assertEquals("SOURCE_GROUNDED", result.commandBatch().evidence().get(0).kind());
+    assertEquals("", result.commandBatch().evidence().get(0).sourceUnitId());
+    verify(models).validateStructural(any(), any());
+  }
+
+  @Test
+  void sourceBackedDeletionAttemptRepairsToAdditiveCheckpoint() throws Exception {
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(any(), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    DeleteThenAdditiveSourceProvider provider = new DeleteThenAdditiveSourceProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            5,
+            3);
+    var json =
+        new ObjectMapper()
+            .readTree(
+                """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","goals":[{"id":"starter-goal","eClass":"BusinessGoal","name":"Deliver Business Value"}]}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+    String message =
+        """
+Continue.
+
+Plan:
+{"intent":"CREATE_MODEL","slices":[{"label":"Orders","requiredContracts":["BusinessGoal"]}]}
+Work items:
+- Orders
+""";
+
+    var result =
+        loop.run(
+            "s",
+            ModelLevel.CIM,
+            message,
+            "<source-unit id=\"src-1\">Order placed</source-unit>",
+            workspace,
+            false,
+            AgentTurnLoop.WorkflowMode.RESUME_REPAIR);
+
+    assertEquals("Model checkpoint saved.", result.message());
     assertEquals(2, provider.calls);
     assertTrue(provider.correctivePromptReceived);
-    assertEquals("SOURCE_GROUNDED", result.commandBatch().evidence().get(0).kind());
-    assertEquals("src-1", result.commandBatch().evidence().get(0).sourceUnitId());
-    verify(models).validateStructural(any(), any());
+    assertTrue(result.commandBatch().deletions().isEmpty());
+    assertTrue(!result.patch().isEmpty());
   }
 
   @Test
@@ -448,6 +503,52 @@ Work items:
   }
 
   @Test
+  void defaultsNullTurnCompleteToPartialCheckpoint() throws Exception {
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(any(), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            new NullTurnCompletePatchProvider(),
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            3,
+            2);
+    var json =
+        new ObjectMapper()
+            .readTree("{\"id\":\"root\",\"eClass\":\"CIMModel\",\"modelLevel\":\"CIM\"}");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+    String message =
+        """
+Continue.
+
+Plan:
+{"intent":"CREATE_MODEL","slices":[{"label":"Orders","requiredContracts":["BusinessGoal"]}]}
+Work items:
+- Orders
+""";
+
+    var result =
+        loop.run(
+            "s",
+            ModelLevel.CIM,
+            message,
+            "<source-unit id=\"src-1\">Order placed</source-unit>",
+            workspace,
+            false,
+            AgentTurnLoop.WorkflowMode.RESUME_REPAIR);
+
+    assertEquals("Model checkpoint saved.", result.message());
+    assertEquals(false, result.commandBatch().turnComplete());
+    verify(models).validateStructural(any(), any());
+  }
+
+  @Test
   void repairsAnEmptyTerminalAnswerWithinBudget() throws Exception {
     ModelService models = mock(ModelService.class);
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
@@ -530,7 +631,7 @@ Work items:
     }
   }
 
-  private static final class SourceAnalysisProvider implements AssistantModelProvider {
+  private static final class SourcePlanThenPatchProvider implements AssistantModelProvider {
     final List<String> prompts = new ArrayList<>();
     int calls;
 
@@ -549,12 +650,21 @@ Work items:
       prompts.add(prompt.user());
       ProviderCallBudget.consume();
       calls++;
+      if (calls == 1) {
+        return new AssistantReply(
+            "{\"tool\":\"plan_model_edit\",\"arguments\":{\"intent\":\"CREATE_MODEL\",\"features\":[\"Order"
+                + " intake\"],\"reuseTargets\":[],\"newElements\":[\"Order intake"
+                + " goal\"],\"requiredContracts\":[\"BusinessGoal\"],\"slices\":[{\"label\":\"Order"
+                + " intake\",\"purpose\":\"Model order intake from the source"
+                + " story.\",\"requiredContracts\":[\"BusinessGoal\"],\"sourceUnitIds\":[\"src-1\"]}]}}",
+            "fake",
+            "fake");
+      }
       return new AssistantReply(
-          "{\"tool\":\"analyze_source_units\",\"arguments\":{\"domain\":\"Orders\",\"sourceUnits\":[{\"sourceUnitId\":\"src-1\",\"actors\":[],\"goals\":[\"Order"
-              + " intake\"],\"capabilities\":[],\"requirements\":[\"Order"
-              + " placed\"],\"commands\":[],\"queries\":[],\"domainEntities\":[],\"informationItems\":[],\"domainEvents\":[],\"policies\":[],\"relationships\":[]}],\"concepts\":[{\"key\":\"order-placed\",\"kind\":\"requirement\",\"name\":\"Order"
-              + " placed\",\"summary\":\"Order placement is"
-              + " captured.\",\"sourceUnitIds\":[\"src-1\"]}],\"crossUnitRelationships\":[]}}",
+          "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
+              + " intake\",\"successCriterion\":\"Order placement is"
+              + " captured.\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
+              + " order intake checkpoint.\",\"turnComplete\":true}}",
           "fake",
           "fake");
     }
@@ -623,6 +733,42 @@ Work items:
           "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
               + " intake\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE-GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
               + " order goal.\",\"turnComplete\":true}}",
+          "fake",
+          "fake");
+    }
+  }
+
+  private static final class DeleteThenAdditiveSourceProvider implements AssistantModelProvider {
+    boolean correctivePromptReceived;
+    int calls;
+
+    @Override
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    @Override
+    public boolean available() {
+      return true;
+    }
+
+    @Override
+    public AssistantReply complete(AssistantPrompt prompt) {
+      ProviderCallBudget.consume();
+      calls++;
+      if (calls == 1) {
+        return new AssistantReply(
+            "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
+                + " intake\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[{\"elementId\":\"starter-goal\",\"preconditionHash\":\"hash\"}],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
+                + " order goal.\",\"turnComplete\":true}}",
+            "fake",
+            "fake");
+      }
+      correctivePromptReceived = prompt.user().contains("must be additive");
+      return new AssistantReply(
+          "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
+              + " intake\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
+              + " additive order goal.\",\"turnComplete\":true}}",
           "fake",
           "fake");
     }
@@ -766,6 +912,29 @@ Work items:
           """
 {"tool":"commit_model_batch","arguments":{"creates":["{\\"clientRef\\":\\"goal_online_scheduling\\",\\"eClass\\":\\"BusinessGoal\\",\\"attributes\\":{\\"name\\":\\"Online Scheduling\\"},\\"owner\\":\\"rootId\\",\\"reference\\":\\"goals\\"}"],"updates":[],"connections":[],"deletions":[],"evidence":[],"planSummary":"Created goal","turnComplete":true}}
 """,
+          "fake",
+          "fake");
+    }
+  }
+
+  private static final class NullTurnCompletePatchProvider implements AssistantModelProvider {
+    @Override
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    @Override
+    public boolean available() {
+      return true;
+    }
+
+    @Override
+    public AssistantReply complete(AssistantPrompt prompt) {
+      ProviderCallBudget.consume();
+      return new AssistantReply(
+          "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
+              + " intake\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
+              + " order goal.\",\"turnComplete\":null}}",
           "fake",
           "fake");
     }

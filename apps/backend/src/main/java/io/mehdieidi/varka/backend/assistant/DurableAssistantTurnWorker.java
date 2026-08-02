@@ -40,6 +40,7 @@ public final class DurableAssistantTurnWorker {
   private final PlatformStore store;
   private final VarkaMetrics metrics;
   private final boolean workflowEngineV2;
+  private final int maxSourceChunksPerTurn;
   private final String workerId = "assistant-" + UUID.randomUUID();
   // Documents up to 24k characters remain whole. Larger documents are segmented only at semantic
   // boundaries; each incremental slice also receives a map of the complete source below.
@@ -77,12 +78,14 @@ public final class DurableAssistantTurnWorker {
       AgenticAssistantFacade assistant,
       PlatformStore store,
       VarkaMetrics metrics,
-      @Value("${varka.ai.workflow-engine-v2:true}") boolean workflowEngineV2) {
+      @Value("${varka.ai.workflow-engine-v2:true}") boolean workflowEngineV2,
+      @Value("${varka.ai.max-source-chunks-per-turn:24}") int maxSourceChunksPerTurn) {
     this.turns = turns;
     this.assistant = assistant;
     this.store = store;
     this.metrics = metrics;
     this.workflowEngineV2 = workflowEngineV2;
+    this.maxSourceChunksPerTurn = Math.max(1, maxSourceChunksPerTurn);
   }
 
   @Scheduled(fixedDelayString = "${varka.ai.worker-poll-interval:PT0.5S}")
@@ -221,15 +224,7 @@ public final class DurableAssistantTurnWorker {
       }
       message = appendPersistedWorkflowContext(turn.id(), message);
       String checkpointKey = turn.id() + "-checkpoint-" + (turn.checkpointCount() + 1);
-      boolean modelCheckpointExpected =
-          !route.readOnly()
-              && (turn.sourceText() == null
-                  || turn.sourceText().isBlank()
-                  || turns.sourceBlueprint(turn.id()).isPresent()
-                  || turns
-                      .workflow(turn.id())
-                      .filter(workflow -> "MODELING_PLAN".equals(workflow.workflowKind()))
-                      .isPresent());
+      boolean modelCheckpointExpected = !route.readOnly();
       if (modelCheckpointExpected) {
         // Persist the intent before invoking code which can mutate the model. A restarted worker
         // finalizes the same key, never creates a second canvas change.
@@ -610,16 +605,7 @@ public final class DurableAssistantTurnWorker {
   private java.util.List<AssistantTurnStore.SourceUnit> turnScopedSourceUnits(
       String turnId, java.util.List<AssistantTurnStore.SourceUnit> units) {
     if (units == null || units.isEmpty()) return java.util.List.of();
-    return units.stream()
-        .map(
-            unit ->
-                new AssistantTurnStore.SourceUnit(
-                    turnId + ":" + unit.id(),
-                    unit.ordinal(),
-                    unit.startOffset(),
-                    unit.endOffset(),
-                    unit.content()))
-        .toList();
+    return units;
   }
 
   private void complete(
@@ -996,7 +982,7 @@ public final class DurableAssistantTurnWorker {
     java.util.List<AssistantTurnStore.SourceUnit> remaining =
         units.stream().filter(unit -> !alreadyModeled.contains(unit.id())).toList();
     if (!remaining.isEmpty()) {
-      int sourceWindow = turn.checkpointCount() > 0 ? 6 : remaining.size();
+      int sourceWindow = Math.min(maxSourceChunksPerTurn, remaining.size());
       return remaining.stream().limit(sourceWindow).toList();
     }
     java.util.Set<String> cached =

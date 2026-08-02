@@ -74,24 +74,24 @@ varka:
     enabled: ${VARKA_AI_ENABLED:false}
     workflow-engine-v2: ${VARKA_AI_WORKFLOW_ENGINE_V2:true}
     provider: ${VARKA_AI_PROVIDER:openai}
-    request-timeout: ${VARKA_AI_REQUEST_TIMEOUT:180s}
-    turn-timeout: ${VARKA_AI_TURN_TIMEOUT:10m}
+    request-timeout: ${VARKA_AI_REQUEST_TIMEOUT:60s}
+    turn-timeout: ${VARKA_AI_TURN_TIMEOUT:3m}
     max-agent-steps: ${VARKA_AI_MAX_AGENT_STEPS:8}
     token-budget: ${VARKA_AI_TOKEN_BUDGET:16000}
     max-prompt-tokens: ${VARKA_AI_MAX_PROMPT_TOKENS:24000}
     max-system-chars: ${VARKA_AI_MAX_SYSTEM_CHARS:14000}
     max-source-chunk-tokens: ${VARKA_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
     max-source-chunks-per-turn: ${VARKA_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
-    max-provider-calls-per-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN:18}
-    max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:30}
-    max-completion-tokens: ${VARKA_AI_MAX_COMPLETION_TOKENS:4096}
-    max-patch-creates: ${VARKA_AI_MAX_PATCH_CREATES:12}
-    max-patch-connections: ${VARKA_AI_MAX_PATCH_CONNECTIONS:18}
-    max-patch-evidence: ${VARKA_AI_MAX_PATCH_EVIDENCE:12}
-    max-contract-count: ${VARKA_AI_MAX_CONTRACT_COUNT:8}
+    max-provider-calls-per-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN:6}
+    max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:6}
+    max-completion-tokens: ${VARKA_AI_MAX_COMPLETION_TOKENS:6000}
+    max-patch-creates: ${VARKA_AI_MAX_PATCH_CREATES:48}
+    max-patch-connections: ${VARKA_AI_MAX_PATCH_CONNECTIONS:96}
+    max-patch-evidence: ${VARKA_AI_MAX_PATCH_EVIDENCE:64}
+    max-contract-count: ${VARKA_AI_MAX_CONTRACT_COUNT:12}
     native-tools-preferred: ${VARKA_AI_NATIVE_TOOLS_PREFERRED:true}
     forced-tool-choice-reliable: ${VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE:true}
-    source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:30m}
+    source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:5m}
     fallback-provider: ${VARKA_AI_FALLBACK_PROVIDER:}
     hardening:
       per-user-requests-per-window: ${VARKA_AI_RATE_LIMIT_REQUESTS:30}

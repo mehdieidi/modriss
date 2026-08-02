@@ -314,7 +314,44 @@ public final class AgenticAssistantFacade {
   }
 
   private ObjectNode emptyModel(AssistantSessionStore.AssistantSession session) {
-    return modelingConfig.starterModel(session.level(), session.title());
+    ObjectNode model = modelingConfig.starterModel(session.level(), session.title());
+    if (session.level() == ModelLevel.CIM) {
+      // The UI starter template contains three semantic sample nodes. For assistant-created CIM
+      // workspaces those nodes bias source-to-model generation and invite destructive cleanup
+      // before useful modeling. Keep the structurally required root metadata only.
+      for (String containment :
+          List.of(
+              "requirements",
+              "requirementRelationships",
+              "goals",
+              "kpis",
+              "stakeholders",
+              "actors",
+              "roles",
+              "capabilities",
+              "capabilityDependencies",
+              "boundedContexts",
+              "entities",
+              "valueObjects",
+              "relationships",
+              "aggregates",
+              "informationItems",
+              "classifications",
+              "commands",
+              "queries",
+              "events",
+              "businessErrors",
+              "conditions",
+              "processes",
+              "policies",
+              "decisionTables",
+              "risks",
+              "assumptions",
+              "hotspots")) {
+        model.remove(containment);
+      }
+    }
+    return model;
   }
 
   /** AI modeling is intentionally limited to the conceptual and platform-independent levels. */

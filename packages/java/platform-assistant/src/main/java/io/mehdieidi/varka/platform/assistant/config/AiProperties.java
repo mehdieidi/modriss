@@ -94,8 +94,8 @@ public record AiProperties(
   /** Applies production defaults when an environment-backed setting is omitted. */
   public AiProperties {
     provider = Provider.from(provider).key();
-    requestTimeout = requestTimeout == null ? Duration.ofSeconds(90) : requestTimeout;
-    turnTimeout = turnTimeout == null ? Duration.ofMinutes(5) : turnTimeout;
+    requestTimeout = requestTimeout == null ? Duration.ofSeconds(60) : requestTimeout;
+    turnTimeout = turnTimeout == null ? Duration.ofMinutes(3) : turnTimeout;
     maxToolCalls = maxToolCalls <= 0 ? 24 : maxToolCalls;
     validationRepairAttempts =
         maxRepairAttempts > 0
@@ -124,13 +124,13 @@ public record AiProperties(
         openaiCompatible == null ? new OpenAiCompatible(null, null) : openaiCompatible;
     gemini = gemini == null ? new Gemini(null) : gemini;
     models = models == null ? new Models(null, null) : models;
-    maxProviderCallsPerTurn = maxProviderCallsPerTurn <= 0 ? 2 : maxProviderCallsPerTurn;
+    maxProviderCallsPerTurn = maxProviderCallsPerTurn <= 0 ? 6 : maxProviderCallsPerTurn;
     maxProviderCallsSourceTurn = maxProviderCallsSourceTurn <= 0 ? 6 : maxProviderCallsSourceTurn;
-    maxCompletionTokens = maxCompletionTokens <= 0 ? 4096 : maxCompletionTokens;
-    maxPatchCreates = maxPatchCreates <= 0 ? 12 : maxPatchCreates;
-    maxPatchConnections = maxPatchConnections <= 0 ? 18 : maxPatchConnections;
-    maxPatchEvidence = maxPatchEvidence <= 0 ? 12 : maxPatchEvidence;
-    maxContractCount = maxContractCount <= 0 ? 8 : maxContractCount;
+    maxCompletionTokens = maxCompletionTokens <= 0 ? 6000 : maxCompletionTokens;
+    maxPatchCreates = maxPatchCreates <= 0 ? 48 : maxPatchCreates;
+    maxPatchConnections = maxPatchConnections <= 0 ? 96 : maxPatchConnections;
+    maxPatchEvidence = maxPatchEvidence <= 0 ? 64 : maxPatchEvidence;
+    maxContractCount = maxContractCount <= 0 ? 12 : maxContractCount;
     nativeToolsPreferred = nativeToolsPreferred == null ? true : nativeToolsPreferred;
     forcedToolChoiceReliable = forcedToolChoiceReliable == null ? true : forcedToolChoiceReliable;
     sourceTurnTimeout = sourceTurnTimeout == null ? Duration.ofMinutes(5) : sourceTurnTimeout;
