@@ -71,8 +71,7 @@
           containment="true"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="cimbehavior" nsURI="https://varka.org/cim/behavior/1.0"
-      nsPrefix="cimbehavior">
+  <ecore:EPackage name="cimbehavior" nsURI="https://varka.org/cim/behavior/1.0" nsPrefix="cimbehavior">
     <eClassifiers xsi:type="ecore:EClass" name="Command" eSuperTypes="#/8/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="intent" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="userInitiated" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
@@ -207,8 +206,7 @@
           eType="#/2/DomainConcept"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="cimdomain" nsURI="https://varka.org/cim/domain-data/1.0"
-      nsPrefix="cimdomain">
+  <ecore:EPackage name="cimdomain" nsURI="https://varka.org/cim/domain-data/1.0" nsPrefix="cimdomain">
     <eClassifiers xsi:type="ecore:EClass" name="DomainConcept" abstract="true" eSuperTypes="#/8/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="glossaryDefinition" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="examples" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

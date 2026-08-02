@@ -845,8 +845,7 @@
           eType="#/6/AccessPattern"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="deployment" nsURI="https://varka.org/pim/deployment/1.0"
-      nsPrefix="deployment">
+  <ecore:EPackage name="deployment" nsURI="https://varka.org/pim/deployment/1.0" nsPrefix="deployment">
     <eClassifiers xsi:type="ecore:EClass" name="ServerlessService" eSuperTypes="#/1/TraceableElement #/1/PolicyTarget #/1/ConfigurableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="responsibility" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="ownerTeam" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

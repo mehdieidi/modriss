@@ -822,8 +822,7 @@
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="awspsmenums" nsURI="https://varka.org/awspsm/enums/1.0"
-      nsPrefix="awspsmenums">
+  <ecore:EPackage name="awspsmenums" nsURI="https://varka.org/awspsm/enums/1.0" nsPrefix="awspsmenums">
     <eClassifiers xsi:type="ecore:EEnum" name="AwsEnvironmentClass">
       <eLiterals name="DEV"/>
       <eLiterals name="TEST" value="1"/>
