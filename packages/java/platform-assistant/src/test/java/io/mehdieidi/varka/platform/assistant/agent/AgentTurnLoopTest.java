@@ -88,7 +88,8 @@ class AgentTurnLoopTest {
             4,
             3);
     var json =
-        new ObjectMapper().readTree("{\"id\":\"root\",\"eClass\":\"PIMModel\",\"modelLevel\":\"PIM\"}");
+        new ObjectMapper()
+            .readTree("{\"id\":\"root\",\"eClass\":\"PIMModel\",\"modelLevel\":\"PIM\"}");
     var workspace =
         new ModelWorkspace(ModelLevel.PIM, "m", 1, json, new AssistantPatchCompiler(), null);
 
@@ -726,14 +727,21 @@ Work items:
       calls++;
       if (calls == 1) {
         return new AssistantReply(
-            "{\"tool\":\"plan_model_edit\",\"arguments\":{\"intent\":\"CREATE_MODEL\",\"features\":[\"Vending machine backend\"],\"reuseTargets\":[],\"newElements\":[\"Vending machine service\"],\"requiredContracts\":[\"ServerlessService\"],\"slices\":[{\"label\":\"Core service\",\"purpose\":\"Create the backend service.\",\"requiredContracts\":[\"ServerlessService\"],\"sourceUnitIds\":[]}]}}",
+            "{\"tool\":\"plan_model_edit\",\"arguments\":{\"intent\":\"CREATE_MODEL\",\"features\":[\"Vending"
+                + " machine backend\"],\"reuseTargets\":[],\"newElements\":[\"Vending machine"
+                + " service\"],\"requiredContracts\":[\"ServerlessService\"],\"slices\":[{\"label\":\"Core"
+                + " service\",\"purpose\":\"Create the backend"
+                + " service.\",\"requiredContracts\":[\"ServerlessService\"],\"sourceUnitIds\":[]}]}}",
             "fake",
             "fake");
       }
       secondPrompt = prompt.user();
       secondPromptContracts = prompt.patchContracts();
       return new AssistantReply(
-          "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"vending_service\",\"eClass\":\"ServerlessService\",\"attributes\":{\"name\":\"Vending Machine Backend\",\"boundaryType\":\"CAPABILITY_BASED\"},\"owner\":\"rootId\",\"reference\":\"services\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[],\"planSummary\":\"Created vending machine service.\",\"turnComplete\":true}}",
+          "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"vending_service\",\"eClass\":\"ServerlessService\",\"attributes\":{\"name\":\"Vending"
+              + " Machine"
+              + " Backend\",\"boundaryType\":\"CAPABILITY_BASED\"},\"owner\":\"rootId\",\"reference\":\"services\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[],\"planSummary\":\"Created"
+              + " vending machine service.\",\"turnComplete\":true}}",
           "fake",
           "fake");
     }

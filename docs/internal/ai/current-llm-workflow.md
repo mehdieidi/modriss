@@ -35,14 +35,14 @@ instead of `tool_calls`.
 
 Runtime actions are normalized to the internal action names:
 
-| Internal action      | Purpose                                                           |
-| -------------------- | ----------------------------------------------------------------- |
-| `plan_model_edit`    | Create a durable CIM/PIM modeling plan before one checkpoint.     |
-| `inspect_model`      | Read a focused element or model inventory.                        |
-| `describe_types`     | Retrieve exact Ecore-derived type contracts.                      |
-| `commit_model_batch` | Submit creates, updates, connections, deletions, and evidence.    |
-| `answer_user`        | Finish an informational turn without mutation.                    |
-| `ask_user`           | Ask for required input when safe progress is impossible.          |
+| Internal action      | Purpose                                                        |
+| -------------------- | -------------------------------------------------------------- |
+| `plan_model_edit`    | Create a durable CIM/PIM modeling plan before one checkpoint.  |
+| `inspect_model`      | Read a focused element or model inventory.                     |
+| `describe_types`     | Retrieve exact Ecore-derived type contracts.                   |
+| `commit_model_batch` | Submit creates, updates, connections, deletions, and evidence. |
+| `answer_user`        | Finish an informational turn without mutation.                 |
+| `ask_user`           | Ask for required input when safe progress is impossible.       |
 
 The OpenAI-compatible native tool schema exposes `apply_draft_patch` for the mutation tool and maps
 it back to `commit_model_batch` internally. Documentation and prompts should use

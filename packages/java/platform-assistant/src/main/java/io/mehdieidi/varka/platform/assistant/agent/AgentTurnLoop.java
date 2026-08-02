@@ -331,8 +331,7 @@ public final class AgentTurnLoop {
                   modelingPlan.path("slices").size(),
                   "intent",
                   modelingPlan.path("intent").asText("")));
-          patchContracts =
-              resumeContracts(level, workspace, turnTools, modelingPlan, capabilities);
+          patchContracts = resumeContracts(level, workspace, turnTools, modelingPlan, capabilities);
           exactContracts = patchContracts.isEmpty() ? null : compactContracts(patchContracts);
           user =
               initialUser

@@ -741,7 +741,6 @@ public final class DurableAssistantTurnWorker {
     return mode;
   }
 
-
   private String appendPersistedWorkflowContext(String turnId, String message) {
     var workflow = turns.workflow(turnId);
     if (workflow.isEmpty() || !durablePlan(workflow.get().plan())) return message;
