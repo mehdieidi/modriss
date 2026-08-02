@@ -37,7 +37,7 @@ Runtime actions are normalized to the internal action names:
 
 | Internal action      | Purpose                                                           |
 | -------------------- | ----------------------------------------------------------------- |
-| `plan_source_model`  | Create a source-document blueprint for large source-backed turns. |
+| `plan_model_edit`    | Create a durable CIM/PIM modeling plan before one checkpoint.     |
 | `inspect_model`      | Read a focused element or model inventory.                        |
 | `describe_types`     | Retrieve exact Ecore-derived type contracts.                      |
 | `commit_model_batch` | Submit creates, updates, connections, deletions, and evidence.    |
@@ -57,8 +57,8 @@ When a user uploads a `.md`, `.txt`, or `.json` file and asks the chatbot to cre
    `turnId`.
 3. The worker extracts text, splits it into bounded source units, and persists
    `assistant_source_units`.
-4. Small and medium source documents are modeled directly from supplied source units. Larger source
-   maps may trigger `plan_source_model`, which creates ordered slices.
+4. Source documents are modeled from supplied source units through `plan_model_edit`; the same
+   bounded agent turn retrieves exact contracts and commits the first structurally valid slice.
 5. The agent must ground model changes in source evidence. Evidence IDs accept current source unit
    IDs and mapped source-section aliases.
 6. Source-backed turns reject premature `answer_user` and `ask_user` actions while source evidence

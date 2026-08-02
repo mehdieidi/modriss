@@ -345,7 +345,6 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
           case "respond_to_user" -> "answer_user";
           case "analyze_source_units", "plan_cim_blueprint" -> name;
           case "plan_model_edit" -> "plan_model_edit";
-          case "plan_source_model" -> "plan_source_model";
           case "inspect_model", "describe_types" -> name;
           case "commit_model_batch", "apply_draft_patch" -> "commit_model_batch";
           // These tools are included in the V2 provider contract, but the current bounded
@@ -389,7 +388,6 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       case "plan_cim_blueprint" ->
           "Plan CIM element candidates, contracts, relationships, and slices from source analysis.";
       case "plan_model_edit" -> "Return a compact structured plan for a CIM/PIM create or edit.";
-      case "plan_source_model" -> "Plan source document spans into coherent CIM modeling slices.";
       case "inspect_model" -> "Read a model element or inventory using id.";
       case "describe_types" -> "Retrieve exact Ecore contracts for names.";
       case "commit_model_batch" -> "Submit one complete candidate model patch.";

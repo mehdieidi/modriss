@@ -71,6 +71,41 @@ class AgentTurnLoopTest {
   }
 
   @Test
+  void nonSourcePimPlansReceiveBackendContractsBeforeTheFirstCommit() throws Exception {
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(any(), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    PimPlanThenPatchProvider provider = new PimPlanThenPatchProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            4,
+            3);
+    var json =
+        new ObjectMapper().readTree("{\"id\":\"root\",\"eClass\":\"PIMModel\",\"modelLevel\":\"PIM\"}");
+    var workspace =
+        new ModelWorkspace(ModelLevel.PIM, "m", 1, json, new AssistantPatchCompiler(), null);
+
+    var result = loop.run("s", ModelLevel.PIM, "Create a vending machine backend", null, workspace);
+
+    assertEquals("Model checkpoint saved.", result.message());
+    assertEquals(2, provider.calls);
+    assertTrue(
+        provider.secondPromptContracts.stream()
+            .anyMatch(contract -> contract.eClass().equals("PIMModel")));
+    assertTrue(
+        provider.secondPromptContracts.stream()
+            .anyMatch(contract -> contract.eClass().equals("ServerlessService")));
+    assertTrue(provider.secondPrompt.contains("Do not call describe_types"));
+  }
+
+  @Test
   void resumeRepairReusesPersistedModelingPlanInsteadOfReplanning() throws Exception {
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(any(), any()))
@@ -665,6 +700,40 @@ Work items:
               + " intake\",\"successCriterion\":\"Order placement is"
               + " captured.\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
               + " order intake checkpoint.\",\"turnComplete\":true}}",
+          "fake",
+          "fake");
+    }
+  }
+
+  private static final class PimPlanThenPatchProvider implements AssistantModelProvider {
+    int calls;
+    String secondPrompt = "";
+    List<MetamodelKnowledgeService.TypeContract> secondPromptContracts = List.of();
+
+    @Override
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    @Override
+    public boolean available() {
+      return true;
+    }
+
+    @Override
+    public AssistantReply complete(AssistantPrompt prompt) {
+      ProviderCallBudget.consume();
+      calls++;
+      if (calls == 1) {
+        return new AssistantReply(
+            "{\"tool\":\"plan_model_edit\",\"arguments\":{\"intent\":\"CREATE_MODEL\",\"features\":[\"Vending machine backend\"],\"reuseTargets\":[],\"newElements\":[\"Vending machine service\"],\"requiredContracts\":[\"ServerlessService\"],\"slices\":[{\"label\":\"Core service\",\"purpose\":\"Create the backend service.\",\"requiredContracts\":[\"ServerlessService\"],\"sourceUnitIds\":[]}]}}",
+            "fake",
+            "fake");
+      }
+      secondPrompt = prompt.user();
+      secondPromptContracts = prompt.patchContracts();
+      return new AssistantReply(
+          "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"vending_service\",\"eClass\":\"ServerlessService\",\"attributes\":{\"name\":\"Vending Machine Backend\",\"boundaryType\":\"CAPABILITY_BASED\"},\"owner\":\"rootId\",\"reference\":\"services\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[],\"planSummary\":\"Created vending machine service.\",\"turnComplete\":true}}",
           "fake",
           "fake");
     }

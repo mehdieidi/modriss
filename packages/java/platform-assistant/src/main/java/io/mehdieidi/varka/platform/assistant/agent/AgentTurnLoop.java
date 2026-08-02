@@ -332,8 +332,7 @@ public final class AgentTurnLoop {
                   "intent",
                   modelingPlan.path("intent").asText("")));
           patchContracts =
-              resumeContracts(
-                  level, workspace, turnTools, modelingPlan, capabilities, sourceBacked);
+              resumeContracts(level, workspace, turnTools, modelingPlan, capabilities);
           exactContracts = patchContracts.isEmpty() ? null : compactContracts(patchContracts);
           user =
               initialUser
@@ -460,7 +459,6 @@ public final class AgentTurnLoop {
                   || sourceAnalysisPresent
                   || action.tool() != AgentAction.Kind.ANALYZE_SOURCE_UNITS)
               && (!sourceBacked || action.tool() != AgentAction.Kind.PLAN_CIM_BLUEPRINT)
-              && (!sourceBacked || action.tool() != AgentAction.Kind.PLAN_SOURCE_MODEL)
               && action.tool() != AgentAction.Kind.INSPECT_MODEL
               && action.tool() != AgentAction.Kind.ANSWER_USER
               && action.tool() != AgentAction.Kind.ASK_USER) {
@@ -681,13 +679,9 @@ public final class AgentTurnLoop {
                                 relevantIds, List.of(), List.of(), null, 0, 50));
                 JsonNode neighborhoods = turnTools.inspectNeighborhoods(relevantIds);
                 fullModelInspected = true;
-                if (sourceBacked) {
-                  patchContracts =
-                      resumeContracts(
-                          level, workspace, turnTools, modelingPlan, capabilities, true);
-                  exactContracts =
-                      patchContracts.isEmpty() ? null : compactContracts(patchContracts);
-                }
+                patchContracts =
+                    resumeContracts(level, workspace, turnTools, modelingPlan, capabilities);
+                exactContracts = patchContracts.isEmpty() ? null : compactContracts(patchContracts);
                 user =
                     followUpContext(userMessage, sourceDocument)
                         + "\n\nCurrent durable modeling checkpoint:\n"
@@ -709,13 +703,9 @@ public final class AgentTurnLoop {
                                 + " requiredContracts listed in the plan. Do not patch until"
                                 + " contracts are returned.");
               } else {
-                if (sourceBacked) {
-                  patchContracts =
-                      resumeContracts(
-                          level, workspace, turnTools, modelingPlan, capabilities, true);
-                  exactContracts =
-                      patchContracts.isEmpty() ? null : compactContracts(patchContracts);
-                }
+                patchContracts =
+                    resumeContracts(level, workspace, turnTools, modelingPlan, capabilities);
+                exactContracts = patchContracts.isEmpty() ? null : compactContracts(patchContracts);
                 user =
                     followUpContext(userMessage, sourceDocument)
                         + "\n\nCurrent durable modeling checkpoint:\n"
@@ -1161,8 +1151,7 @@ public final class AgentTurnLoop {
       ModelWorkspace workspace,
       AgentModelTools turnTools,
       JsonNode modelingPlan,
-      AssistantModelProvider.ProviderCapabilities capabilities,
-      boolean sourceBacked) {
+      AssistantModelProvider.ProviderCapabilities capabilities) {
     List<String> names =
         selectedContractNames(
             level,
@@ -1291,22 +1280,29 @@ public final class AgentTurnLoop {
       AssistantModelProvider.ProviderCapabilities capabilities,
       boolean sourceBacked,
       String missingContractGuidance) {
-    if (!sourceBacked || exactContracts == null || exactContracts.isBlank()) {
+    if (exactContracts == null || exactContracts.isBlank()) {
       return missingContractGuidance;
     }
     return "\n\nExact type contracts already retrieved by the backend:\n"
         + exactContracts
         + "\n\nDo not call describe_types. The next action must be commit_model_batch using"
-        + " these exact contracts and exact source-unit ids. Submit one coherent source slice:"
-        + " when the current prompt supplies 20 or fewer source units and the evidence fits the"
-        + " cap, cover every supplied source unit in this checkpoint. Otherwise prefer 8 to 12"
-        + " related source units when the required elements fit within "
+        + " these exact contracts. "
+        + (sourceBacked
+            ? "Submit one coherent source slice: when the current prompt supplies 20 or fewer"
+                + " source units and the evidence fits the cap, cover every supplied source unit"
+                + " in this checkpoint. Otherwise prefer 8 to 12 related source units when the"
+                + " required elements fit within "
+            : "Submit one compact, structurally complete model slice using only these PIM/CIM"
+                + " types and their listed containment and reference features. Keep the scope"
+                + " within ")
         + capabilities.maxPatchCreates()
         + " creates, "
         + capabilities.maxPatchConnections()
         + " connections, and "
         + capabilities.maxPatchEvidence()
-        + " evidence items. Set turnComplete:false when later source units remain.";
+        + (sourceBacked
+            ? " evidence items. Set turnComplete:false when later source units remain."
+            : " evidence items. Set turnComplete:false only when requested work remains.");
   }
 
   private List<String> emptyModelFirstSliceTypes(ModelLevel level, ModelWorkspace workspace) {
@@ -1393,7 +1389,7 @@ public final class AgentTurnLoop {
     String language = guides.index(level);
     return """
 You are a modeling agent. Return exactly one JSON object: {"action":"plan_model_edit"|
-"commit_model_batch"|"analyze_source_units"|"plan_cim_blueprint"|"plan_source_model"|
+"commit_model_batch"|"analyze_source_units"|"plan_cim_blueprint"|
 "inspect_model"|"describe_types"|"answer_user"|"ask_user",
 "arguments":{...}}. Never
 return prose outside that object. The action field is data, not a provider function/tool call.
@@ -1435,10 +1431,6 @@ security, and observability when the request is broad. For source-backed work, e
 include exact sourceUnitIds and should group related stories by capability, workflow, or dependency
 instead of making one checkpoint per story. When the prompt supplies 20 or fewer source units,
 make the first slice include all supplied sourceUnitIds unless doing so would exceed patch caps.
-plan_source_model arguments must be {"domain":"...","slices":[{"focus":"...",
-"sourceUnitIds":["src-id"]}]}. It is only for a source-backed request before a source
-blueprint exists. It is terminal for that planning increment: the backend persists the plan
-and resumes the same durable turn with its first source slice.
 commit_model_batch arguments must match this shape:
 {"creates":[{"clientRef":"tmp_stable_name","eClass":"ExactType","attributes":{},
 "owner":"existingIdOrPriorClientRef","reference":"containmentFeature"}],"updates":
@@ -1544,12 +1536,10 @@ exact required-reference contracts are selected. Every source-backed slice must 
 copied exactly from the supplied markers.\
 """
                 + (sourceBlueprintPresent
-                    ? "A source blueprint is already present, so do not call plan_source_model"
-                        + " again; model the supplied current slice."
-                    : "If the prompt has no <source-document-map>, do not call"
-                        + " plan_source_model; model the supplied source units directly in this"
-                        + " turn. Use plan_source_model only when a <source-document-map> shows"
-                        + " that the source is larger than the currently supplied units.")
+                    ? "A source blueprint is already present; model the supplied current slice."
+                    : "Model the supplied source units directly in this turn. Use the durable"
+                        + " modeling plan and a checkpoint instead of a separate source-planning"
+                        + " action.")
                 + " Set turnComplete:false\n"
                 + "only when concrete source units still need a later checkpoint; otherwise set"
                 + " turnComplete:true.\n"
@@ -1605,7 +1595,7 @@ questions, call inspect_model only for exact elements, neighborhoods, or full in
 that are missing from the prompt. For metamodel questions, call describe_types with exact type
 names; call describe_types with an empty names array only when the exact type name is unknown.
 
-Do not call plan_model_edit, plan_source_model, or commit_model_batch. Do not mutate the model.
+Do not call plan_model_edit or commit_model_batch. Do not mutate the model.
 Do not ask the backend to validate or repair generated model output. Do not create checkpoints.
 Answer using only authoritative model inspection results and exact Ecore/metamodel contracts.
 Validation boundary: assistant-generated changes, when they exist in other workflows, are gated

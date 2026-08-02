@@ -29,7 +29,6 @@ public final class AgentActionSchema {
             {"plan_cim_blueprint", "plan_cim_blueprint"},
             {"plan_model_edit", "plan_model_edit"},
             {"commit_model_batch", "commit_model_batch"},
-            {"plan_source_model", "plan_source_model"},
             {"inspect_model", "inspect_model"},
             {"describe_types", "describe_types"},
             {"answer_user", "respond_to_user"},
@@ -70,22 +69,6 @@ public final class AgentActionSchema {
       case "inspect_model" -> inspectModelSchema();
       case "describe_types" ->
           object(Map.of("names", array(stringSchema(), null)), List.of("names"));
-      case "plan_source_model" ->
-          object(
-              Map.of(
-                  "domain",
-                  stringSchema(),
-                  "slices",
-                  array(
-                      object(
-                          Map.of(
-                              "focus",
-                              stringSchema(),
-                              "sourceUnitIds",
-                              array(stringSchema(), null)),
-                          List.of("focus", "sourceUnitIds")),
-                      null)),
-              List.of("domain", "slices"));
       case "commit_model_batch", "apply_draft_patch" -> patchSchema(patchContracts);
       // V2 names are advertised for capability parity; this legacy executor deliberately rejects
       // them with an actionable response until their independent workflow states are enabled.
@@ -491,7 +474,6 @@ public final class AgentActionSchema {
         "plan_cim_blueprint",
         "plan_model_edit",
         "inspect_model",
-        "plan_source_model",
         "search_language",
         "describe_types",
         "commit_model_batch",

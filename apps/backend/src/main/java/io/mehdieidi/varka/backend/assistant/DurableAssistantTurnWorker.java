@@ -707,7 +707,6 @@ public final class DurableAssistantTurnWorker {
   }
 
   private AgentTurnLoop.WorkflowMode route(AssistantTurn turn, String message) {
-    String text = message == null ? "" : message.toLowerCase(java.util.Locale.ROOT);
     boolean sourceBacked = turn.sourceText() != null && !turn.sourceText().isBlank();
     var existingWorkflow = turns.workflow(turn.id());
     boolean durablePlanPresent =
@@ -723,16 +722,12 @@ public final class DurableAssistantTurnWorker {
     AgentTurnLoop.WorkflowMode mode;
     if (hasDurableWorkflow) {
       mode = AgentTurnLoop.WorkflowMode.RESUME_REPAIR;
-    } else if (isMetamodelExplanation(text)) {
-      mode = AgentTurnLoop.WorkflowMode.EXPLAIN_METAMODEL;
-    } else if (!sourceBacked && isModelExplanation(text)) {
-      mode = AgentTurnLoop.WorkflowMode.EXPLAIN_MODEL;
     } else if (sourceBacked) {
       mode = AgentTurnLoop.WorkflowMode.SOURCE_TO_MODEL;
-    } else if (text.isBlank()) {
-      mode = AgentTurnLoop.WorkflowMode.CLARIFY;
     } else {
-      mode = AgentTurnLoop.WorkflowMode.FEATURE_UPDATE;
+      // The constrained agent selects intent. Keyword routing made normal explanations and
+      // model mutations brittle, and could bypass the ordinary planning/execution workflow.
+      mode = AgentTurnLoop.WorkflowMode.AUTO;
     }
     if (existingWorkflow.isEmpty() || !durablePlanPresent) {
       turns.saveWorkflow(
@@ -746,60 +741,6 @@ public final class DurableAssistantTurnWorker {
     return mode;
   }
 
-  private boolean isModelExplanation(String text) {
-    if (text == null || text.isBlank()) return false;
-    boolean asks =
-        text.contains("explain")
-            || text.contains("describe")
-            || text.contains("what does")
-            || text.contains("what is")
-            || text.contains("what are")
-            || text.contains("summarize")
-            || text.contains("how do");
-    boolean modelSubject =
-        text.contains("current model")
-            || text.contains("this model")
-            || text.contains("model contain")
-            || text.contains("elements")
-            || text.contains("relate")
-            || text.contains("relationship");
-    boolean mutating =
-        text.contains("add ")
-            || text.contains("create ")
-            || text.contains("update ")
-            || text.contains("change ")
-            || text.contains("delete ")
-            || text.contains("remove ");
-    return asks && modelSubject && !mutating;
-  }
-
-  private boolean isMetamodelExplanation(String text) {
-    if (text == null || text.isBlank()) return false;
-    boolean asks =
-        text.contains("explain")
-            || text.contains("describe")
-            || text.contains("what does")
-            || text.contains("what is")
-            || text.contains("what are")
-            || text.contains("can be modeled");
-    boolean metamodelSubject =
-        text.contains("metamodel")
-            || text.contains("eclass")
-            || text.contains("type ")
-            || text.contains("attribute")
-            || text.contains("reference")
-            || text.contains("containment")
-            || text.contains("feature means")
-            || text.contains("enum");
-    boolean mutating =
-        text.contains("add ")
-            || text.contains("create ")
-            || text.contains("update ")
-            || text.contains("change ")
-            || text.contains("delete ")
-            || text.contains("remove ");
-    return asks && metamodelSubject && !mutating;
-  }
 
   private String appendPersistedWorkflowContext(String turnId, String message) {
     var workflow = turns.workflow(turnId);

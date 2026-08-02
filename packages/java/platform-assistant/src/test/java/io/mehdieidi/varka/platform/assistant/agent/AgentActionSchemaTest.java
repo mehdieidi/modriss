@@ -31,6 +31,14 @@ class AgentActionSchemaTest {
   }
 
   @Test
+  void doesNotExposeDeprecatedSourcePlanningAction() throws Exception {
+    var schema = new ObjectMapper().readTree(AgentActionSchema.json());
+
+    assertFalse(AgentActionSchema.toolNames().contains("plan_source_model"));
+    assertFalse(schema.toString().contains("plan_source_model"));
+  }
+
+  @Test
   void keepsCreateSchemaFlatForStructuredOutputProviders() throws Exception {
     var contract =
         new TypeContract(
