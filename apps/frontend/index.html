@@ -127,6 +127,26 @@
                 Artifacts
               </button>
             </div>
+
+            <div class="modeling-context-bar hidden" id="topbarModelingRow">
+              <div class="model-workbench-strip" id="modelWorkbenchPanel"></div>
+              <button
+                class="validation-status-chip validation-state-ok"
+                id="validationFab"
+                title="Validation issues"
+                type="button"
+              >
+                <span class="validation-status-content">
+                  <span class="validation-status-dot" id="validationFabDot"></span>
+                  <span class="validation-status-text" id="validationFabText">No Issues</span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  class="validation-status-progress hidden"
+                  id="validationFabProgress"
+                ></span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -705,25 +725,6 @@
           </div>
 
           <div class="workspace-editor-column">
-            <div class="modeling-context-bar hidden" id="topbarModelingRow">
-              <div class="model-workbench-strip" id="modelWorkbenchPanel"></div>
-              <button
-                class="validation-status-chip validation-state-ok"
-                id="validationFab"
-                title="Validation issues"
-                type="button"
-              >
-                <span class="validation-status-content">
-                  <span class="validation-status-dot" id="validationFabDot"></span>
-                  <span class="validation-status-text" id="validationFabText">No Issues</span>
-                </span>
-                <span
-                  aria-hidden="true"
-                  class="validation-status-progress hidden"
-                  id="validationFabProgress"
-                ></span>
-              </button>
-            </div>
             <aside class="validation-drawer hidden" id="validationDrawer">
               <div class="validation-drawer-header">
                 <div class="validation-drawer-title" id="validationDrawerTitle">

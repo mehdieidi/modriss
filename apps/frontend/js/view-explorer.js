@@ -73,7 +73,6 @@ function ensureHost() {
 
 function syncTopbarModelingState(isModeling) {
   const modelingRow = document.getElementById("topbarModelingRow");
-  el.workspace?.classList.toggle("has-modeling-bar", isModeling);
   modelingRow?.classList.toggle("hidden", !isModeling);
 }
 
