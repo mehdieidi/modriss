@@ -729,44 +729,6 @@ html.light .tab.active {
   min-width: 0;
 }
 
-.root-model-attributes-btn {
-  flex: 0 0 auto;
-  align-self: center;
-  min-height: 28px;
-  padding: 0 10px;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--surface-3) 88%, var(--surface) 12%);
-  color: var(--text);
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  cursor: pointer;
-  transition:
-    border-color var(--transition),
-    background var(--transition),
-    color var(--transition);
-}
-
-.root-model-attributes-btn:hover {
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--border) 58%);
-  background: color-mix(in srgb, var(--surface-high) 82%, var(--surface-3) 18%);
-  color: var(--text-strong);
-}
-
-.root-model-attributes-icon {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 auto;
-  background: currentColor;
-}
-
-.root-model-attributes-label {
-  font: 700 9px/1.1 var(--font-display);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
 .validation-status-chip {
   flex: 0 0 auto;
   align-self: center;

@@ -30,7 +30,6 @@ import {
   bindConnectionDrawStateListener,
   closeAttributePanel,
   deleteSelection,
-  openRootModelAttributePanel,
 } from "./attr-panel.js";
 import { closeImpactPanel, toggleImpactMode } from "./impact.js";
 import {
@@ -1116,7 +1115,6 @@ function bindEvents() {
   bindConnectionDrawStateListener();
   el.attrPanelApplyBtn?.addEventListener("click", applyAttributePanel);
   el.attrPanelDeleteBtn?.addEventListener("click", deleteSelection);
-  el.rootModelAttributesBtn?.addEventListener("click", openRootModelAttributePanel);
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Delete" && event.key !== "Backspace") {
       return;

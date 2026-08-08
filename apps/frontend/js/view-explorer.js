@@ -21,7 +21,11 @@ import {
   modelingLevelConfig,
 } from "./modeling-config-data.js";
 import { syncMobileDockState } from "./mobile-ui.js";
-import { openAttributePanel, openConnectionPanel } from "./attr-panel.js";
+import {
+  openAttributePanel,
+  openConnectionPanel,
+  openRootModelAttributePanel,
+} from "./attr-panel.js";
 import {
   activeCanvasFocus,
   canvasFocusLabel,
@@ -604,6 +608,9 @@ export function renderViewWorkbench() {
         <div class="workbench-tool-cluster" aria-label="Inspect model structure">
           <span class="workbench-control-label">Inspect</span>
           <div class="workbench-btn-group">
+            <button class="sidebar-inline-action" id="rootModelAttributesBtn"
+                    type="button" aria-label="Edit root model attributes"
+                    title="Edit root model attributes">Root</button>
             <button class="sidebar-inline-action${
               modelTreeMode === "elements" && !el.modelTreePanel?.classList.contains("hidden")
                 ? " is-active"
@@ -613,7 +620,7 @@ export function renderViewWorkbench() {
               modelTreeMode === "relationships" && !el.modelTreePanel?.classList.contains("hidden")
                 ? " is-active"
                 : ""
-            }" id="relationshipTreeToggleBtn" type="button">Relations</button>
+            }" id="relationshipTreeToggleBtn" type="button">Relationships</button>
           </div>
         </div>
         <div class="workbench-tool-cluster workbench-arrange-cluster" aria-label="Arrange active view">
@@ -953,6 +960,10 @@ function bindWorkbenchEvents() {
     }
     if (target?.closest("#workbenchAutoLayoutBtn")) {
       runManualAutoLayout();
+      return;
+    }
+    if (target?.closest("#rootModelAttributesBtn")) {
+      openRootModelAttributePanel();
       return;
     }
     if (target?.closest("#modelTreeToggleBtn")) {

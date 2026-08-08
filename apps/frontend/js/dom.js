@@ -102,7 +102,6 @@ export const el = {
   topbarMenuToggleBtn: document.getElementById("topbarMenuToggleBtn"),
   topbarCollapse: document.getElementById("topbarCollapse"),
   paletteSearchInput: document.getElementById("paletteSearchInput"),
-  rootModelAttributesBtn: document.getElementById("rootModelAttributesBtn"),
   modelWorkbenchPanel: document.getElementById("modelWorkbenchPanel"),
   modelTreePanel: document.getElementById("modelTreePanel"),
   modelTreeTitle: document.getElementById("modelTreeTitle"),
