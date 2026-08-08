@@ -4,7 +4,7 @@
   align-items: stretch;
   min-height: var(--topbar-h);
   background: transparent;
-  border-bottom: var(--glass-pane-border);
+  border-bottom: none;
   box-shadow: var(--glass-pane-highlight);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -25,6 +25,19 @@
   -webkit-backdrop-filter: var(--glass-pane-blur);
   pointer-events: none;
   z-index: 0;
+}
+
+/* The topbar and workspace rail share one rounded, border-free junction. */
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--rail-w) + var(--radius-md));
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--workspace-bar-border-color);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .topbar > * {
@@ -336,17 +349,6 @@ html.light .app-logo-img {
   display: flex;
 }
 
-.user-menu .ide-menu-items {
-  position: absolute;
-  left: 0;
-  top: calc(100% + 8px);
-  border: var(--glass-pane-border) !important;
-  background: var(--glass-pane-bg) !important;
-  box-shadow: var(--glass-pane-highlight), var(--shadow-sm) !important;
-  backdrop-filter: var(--glass-pane-blur) !important;
-  -webkit-backdrop-filter: var(--glass-pane-blur) !important;
-}
-
 .ide-menu-item,
 .ide-menu-select {
   width: 100%;
@@ -469,40 +471,6 @@ html.light .tab.active {
   border-bottom-color: color-mix(in srgb, var(--accent) 74%, transparent);
 }
 
-.project-name-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: 0 0 auto;
-  min-width: 0;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 86%, var(--surface) 14%);
-  padding: 2px 10px;
-  width: auto;
-  max-width: min(26vw, 220px);
-  margin-left: 6px;
-}
-
-.project-name-badge-label {
-  font: 700 9px/1.2 var(--font-display);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.project-name-label {
-  font: var(--font-display);
-  text-transform: uppercase;
-  min-width: 0;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 9px;
-  color: var(--accent-select);
-}
-
 .topbar-right {
   display: flex;
   align-items: center;
@@ -511,69 +479,8 @@ html.light .tab.active {
   min-width: 0;
 }
 
-.topbar-strip-actions {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-.topbar-strip-actions .user-menu-trigger {
-  min-height: 34px;
-  padding-inline: 8px;
-}
-
-.topbar-strip-actions .mobile-dock-profile-trigger {
-  display: none;
-}
-
-.user-menu-trigger {
-  display: inline-flex;
-  align-items: center;
-  text-transform: none;
-  letter-spacing: 0;
-  font: 600 12px/1.2 var(--font-ui);
-}
-
-.user-menu-trigger {
-  gap: 6px;
-  min-height: 30px;
-  padding-inline: 8px;
-  max-width: 220px;
-}
-
-.user-menu-icon {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  color: var(--accent);
-}
-
-.user-display-name {
-  min-width: 0;
-  max-width: 140px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 @media (max-width: 1260px) {
   .model-lifecycle-heading {
-    display: none;
-  }
-
-  .project-name-badge {
-    max-width: 160px;
-  }
-
-  .project-name-badge-label {
-    display: none;
-  }
-}
-
-@media (max-width: 1120px) {
-  .project-name-badge {
     display: none;
   }
 }
@@ -655,6 +562,10 @@ html.light .tab.active {
     padding-top: var(--safe-area-top);
   }
 
+  .topbar::after {
+    left: 0;
+  }
+
   .topbar-menu-strip {
     display: flex;
     align-items: center;
@@ -686,28 +597,6 @@ html.light .tab.active {
     bottom: calc(var(--mobile-dock-h, 0px) + 10px);
     max-height: none;
     z-index: 95;
-  }
-
-  .topbar-strip-actions {
-    margin-left: auto;
-  }
-
-  .topbar-strip-actions .user-display-name {
-    display: none;
-  }
-
-  .topbar-strip-actions .user-menu-trigger {
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
-    padding: 0;
-    justify-content: center;
-    border-radius: var(--radius-sm);
-  }
-
-  .topbar-strip-actions .user-menu .ide-menu-items {
-    right: 0;
-    left: auto;
   }
 
   .app-brand {
@@ -752,8 +641,7 @@ html.light .tab.active {
     margin-left: auto;
   }
 
-  .app-brand-subtitle,
-  .project-name-badge {
+  .app-brand-subtitle {
     display: none;
   }
 
@@ -810,6 +698,21 @@ html.light .tab.active {
   -webkit-backdrop-filter: var(--glass-pane-blur);
   pointer-events: none;
   z-index: 0;
+}
+
+/* Keep the rail's rounded border above the toolbar when the palette is hidden. */
+.workspace.palette-hidden .modeling-context-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--radius-md);
+  height: var(--radius-md);
+  border-top: 1px solid var(--workspace-bar-border-color);
+  border-left: 1px solid var(--workspace-bar-border-color);
+  border-top-left-radius: 100%;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .modeling-context-bar > * {

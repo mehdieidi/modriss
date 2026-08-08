@@ -253,9 +253,9 @@ function showProfileDialog() {
   el.profileDisplayNameInput.addEventListener("keydown", onKeyDown);
 }
 
-function bindUserMenuActions() {
-  el.userMenuEditProfileBtn?.addEventListener("click", showProfileDialog);
-  el.userMenuLogoutBtn?.addEventListener("click", async () => {
+function bindProfileMenuActions() {
+  el.profileEditBtn?.addEventListener("click", showProfileDialog);
+  el.profileLogoutBtn?.addEventListener("click", async () => {
     try {
       await logout();
     } finally {
@@ -280,7 +280,7 @@ function bindCriticalActions() {
   el.switchProjectBtn?.addEventListener("click", showProjectDialog);
   el.manageProjectMembersBtn?.addEventListener("click", showProjectMembersDialog);
   el.deleteProjectBtn?.addEventListener("click", deleteCurrentProject);
-  bindUserMenuActions();
+  bindProfileMenuActions();
 }
 
 function setupIdeMenus() {
@@ -301,18 +301,6 @@ function setupIdeMenus() {
     menuItems.style.top = "calc(100% + 6px)";
     menuItems.style.bottom = "auto";
     menuItems.style.transform = "translateX(0)";
-
-    if (isMobileViewport() && menu.classList.contains("user-menu") && el.mobileDockProfileBtn) {
-      const anchor = el.mobileDockProfileBtn.getBoundingClientRect();
-      menuItems.style.position = "fixed";
-      menuItems.style.left = "auto";
-      menuItems.style.right = `${Math.max(8, window.innerWidth - anchor.right)}px`;
-      menuItems.style.bottom = `${Math.max(8, window.innerHeight - anchor.top + 8)}px`;
-      menuItems.style.top = "auto";
-      menuItems.style.transform = "none";
-      menuItems.style.zIndex = "110";
-      return;
-    }
 
     const triggerRect = menu.getBoundingClientRect();
     if (triggerRect.left > window.innerWidth / 2) {
@@ -364,7 +352,7 @@ function setupIdeMenus() {
     const openMenu = (event) => {
       event.stopPropagation();
       const willOpen = !menu.classList.contains("is-open");
-      if (willOpen && menu.classList.contains("user-menu")) {
+      if (willOpen) {
         closeMobilePanels();
       }
       closeMenus();
@@ -543,14 +531,14 @@ function toggleMethodologyRail() {
 function closeRailMenus() {
   el.fileRailMenu?.classList.add("hidden");
   el.projectRailMenu?.classList.add("hidden");
-  el.helpRailPanel?.classList.add("hidden");
+  el.profileRailMenu?.classList.add("hidden");
   el.exportModelSubmenu?.classList.add("hidden");
   el.importModelSubmenu?.classList.add("hidden");
   el.exportModelBtn?.setAttribute("aria-expanded", "false");
   el.importModelBtn?.setAttribute("aria-expanded", "false");
   el.fileBtn?.classList.remove("active");
   el.settingsRailBtn?.classList.remove("active");
-  el.helpRailBtn?.classList.remove("active");
+  el.profileRailBtn?.classList.remove("active");
 }
 
 function toggleFileSubmenu(kind) {
@@ -575,7 +563,7 @@ function toggleRailMenu(kind) {
   const menus = {
     file: { menu: el.fileRailMenu, button: el.fileBtn },
     project: { menu: el.projectRailMenu, button: el.settingsRailBtn },
-    help: { menu: el.helpRailPanel, button: el.helpRailBtn },
+    profile: { menu: el.profileRailMenu, button: el.profileRailBtn },
   };
   const targetMenu = menus[kind]?.menu;
   const targetBtn = menus[kind]?.button;
@@ -617,7 +605,6 @@ function renderConfiguredModelTabs() {
   if (!el.modelTabs) {
     return;
   }
-  const projectBadge = el.modelTabs.querySelector(".project-name-badge");
   el.modelTabs.querySelectorAll(".tab").forEach((tab) => tab.remove());
   const fragment = document.createDocumentFragment();
   for (const typeKey of modelingLevelKeys()) {
@@ -638,7 +625,7 @@ function renderConfiguredModelTabs() {
   artifactButton.type = "button";
   artifactButton.textContent = "Artifacts";
   fragment.appendChild(artifactButton);
-  el.modelTabs.insertBefore(fragment, projectBadge || null);
+  el.modelTabs.appendChild(fragment);
 }
 
 // ── Bind all DOM event handlers ───────────────────────────────────────────────
@@ -677,10 +664,10 @@ function bindEvents() {
       toggleRailMenu("project");
     });
   }
-  if (el.helpRailBtn) {
-    el.helpRailBtn.addEventListener("click", (event) => {
+  if (el.profileRailBtn) {
+    el.profileRailBtn.addEventListener("click", (event) => {
       event.stopPropagation();
-      toggleRailMenu("help");
+      toggleRailMenu("profile");
     });
   }
   if (el.fileRailMenu) {
@@ -695,6 +682,13 @@ function bindEvents() {
   }
   if (el.projectRailMenu) {
     el.projectRailMenu.addEventListener("click", (event) => {
+      if (getElementTarget(event)?.closest("button")) {
+        closeRailMenus();
+      }
+    });
+  }
+  if (el.profileRailMenu) {
+    el.profileRailMenu.addEventListener("click", (event) => {
       if (getElementTarget(event)?.closest("button")) {
         closeRailMenus();
       }

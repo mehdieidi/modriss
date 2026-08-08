@@ -173,11 +173,38 @@ select[multiple] option {
   gap: 2px;
   padding: 8px 0;
   background: var(--glass-pane-bg);
-  border-right: var(--glass-pane-border);
-  box-shadow: var(--glass-pane-highlight);
+  border-right: none;
+  border-top-right-radius: var(--radius-md);
+  box-shadow: none;
   backdrop-filter: var(--glass-pane-blur);
   -webkit-backdrop-filter: var(--glass-pane-blur);
   z-index: 5;
+}
+
+.workspace-rail::after {
+  content: "";
+  position: absolute;
+  top: var(--radius-md);
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  border-radius: 0 0 var(--radius-md) 0;
+  background: var(--workspace-bar-border-color);
+  pointer-events: none;
+}
+
+/* Continue the matching border around the rounded inside corner. */
+.workspace-rail::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: var(--radius-md);
+  height: var(--radius-md);
+  border-top: 1px solid var(--workspace-bar-border-color);
+  border-left: 1px solid var(--workspace-bar-border-color);
+  border-top-left-radius: 100%;
+  pointer-events: none;
 }
 
 .workspace-rail-item {
@@ -212,7 +239,6 @@ select[multiple] option {
   color: var(--accent-light);
   border-left-width: 4px;
   border-left-color: color-mix(in srgb, var(--accent) 100%, transparent);
-  background: color-mix(in srgb, var(--accent-glow) 34%, var(--surface-3) 66%);
 }
 
 .workspace-rail-item-bottom {
@@ -248,6 +274,126 @@ select[multiple] option {
 
 .rail-menu-panel .ide-menu-select {
   background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
+}
+
+.project-menu-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border) 72%);
+  border-radius: 7px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent-glow) 32%, transparent),
+      transparent 68%
+    ),
+    color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
+}
+
+.project-menu-current-icon {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  color: var(--accent-light);
+}
+
+.project-menu-current-copy {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.project-menu-current-label {
+  color: var(--muted);
+  font: 700 8px/1.1 var(--font-display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.project-menu-current-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-strong);
+  font: 600 12px/1.2 var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-menu-current-dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-glow) 35%, transparent);
+}
+
+.project-menu-separator {
+  height: 1px;
+  margin: 3px 2px;
+  background: color-mix(in srgb, var(--border) 76%, transparent);
+}
+
+.profile-menu-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border) 72%);
+  border-radius: 7px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent-glow) 32%, transparent),
+      transparent 68%
+    ),
+    color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
+}
+
+.profile-menu-current-icon {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  color: var(--accent-light);
+}
+
+.profile-menu-current-copy {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.profile-menu-current-label {
+  color: var(--muted);
+  font: 700 8px/1.1 var(--font-display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.profile-menu-current-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-strong);
+  font: 600 12px/1.2 var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-menu-current-dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-glow) 35%, transparent);
 }
 
 .rail-submenu-group {
@@ -288,82 +434,6 @@ select[multiple] option {
 
 .rail-submenu-item {
   min-width: 100%;
-}
-
-.help-rail-panel {
-  width: min(360px, calc(100vw - 72px));
-  gap: 12px;
-  padding: 14px;
-}
-
-.help-panel-kicker {
-  color: var(--accent-light);
-  font: 800 10px/1.2 var(--font-display);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.help-panel-title {
-  color: var(--text-strong);
-  font: 800 17px/1.2 var(--font-display);
-}
-
-.help-panel-copy,
-.help-panel-note {
-  margin: 0;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.help-panel-steps {
-  display: grid;
-  gap: 7px;
-}
-
-.help-panel-step {
-  display: grid;
-  grid-template-columns: 24px minmax(0, 58px) minmax(0, 1fr);
-  gap: 8px;
-  align-items: center;
-  min-height: 46px;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 82%, transparent);
-}
-
-.help-panel-step span {
-  width: 22px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--accent-glow) 72%, transparent);
-  color: var(--accent-light);
-  font: 800 10px/1 var(--font-display);
-}
-
-.help-panel-step strong {
-  color: var(--text-strong);
-  font: 800 11px/1.1 var(--font-display);
-  letter-spacing: 0.08em;
-}
-
-.help-panel-step em {
-  min-width: 0;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.35;
-  font-style: normal;
-}
-
-.help-panel-note {
-  padding: 9px 10px;
-  border-left: 3px solid color-mix(in srgb, var(--accent) 78%, transparent);
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--accent-glow) 22%, transparent);
 }
 
 .toast-host {

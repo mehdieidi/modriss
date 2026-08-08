@@ -15,41 +15,6 @@
     padding-bottom: 0;
   }
 
-  .topbar-strip-actions {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-
-  .topbar-strip-actions .mobile-dock-profile-trigger {
-    display: none;
-  }
-
-  .mobile-dock-profile-slot {
-    display: flex;
-    min-width: 0;
-  }
-
-  .mobile-dock-profile-slot .user-menu {
-    display: flex;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .mobile-dock-profile-slot .topbar-user-trigger {
-    display: none !important;
-  }
-
-  .mobile-dock-profile-slot .mobile-dock-profile-trigger {
-    display: flex;
-    width: 100%;
-  }
-
-  .mobile-dock-profile-slot .ide-menu-items {
-    z-index: 110;
-  }
-
   .modeling-context-bar #validationFab {
     display: none !important;
   }
@@ -61,7 +26,7 @@
     bottom: 0;
     z-index: 90;
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0;
     min-height: var(--mobile-dock-h);
     padding: 6px max(4px, var(--safe-area-left)) calc(6px + var(--safe-area-bottom))
