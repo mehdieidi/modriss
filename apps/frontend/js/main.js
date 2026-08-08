@@ -848,7 +848,7 @@ function bindEvents() {
       closeRailMenus();
     }
   });
-  document.addEventListener("keydown", async (event) => {
+  document.addEventListener("keydown", (event) => {
     if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey) {
       return;
     }
@@ -865,26 +865,16 @@ function bindEvents() {
       return;
     }
     event.preventDefault();
-    try {
-      if (key === "s") {
-        if (!isModelingLevel(state.activeType) || isModelSaveInFlight()) {
-          return;
-        }
-        if (state.modelId && !hasUnsavedModelChanges()) {
-          setStatus("Model is up to date.");
-          return;
-        }
-        beginModelSave();
-        setBusy("Saving…");
-        await saveCurrentModel({ rethrow: true, skipBeginSave: true });
-      } else {
-        await undoLastEdit();
-      }
-    } catch (error) {
-      if (key === "z") {
-        setError(error, { prefix: "Undo failed." });
-      }
+    if (key === "s") {
+      // The model Save button is rendered by the workbench, so resolve it at
+      // shortcut time and let its click handler own all save behavior.
+      document.getElementById("saveModelBtn")?.click();
+      return;
     }
+
+    // Reuse the same action as the visible Undo button, including its error
+    // handling and any future changes to the button behavior.
+    el.undoModelReplaceBtn?.click();
   });
 
   // Canvas interaction
