@@ -110,6 +110,15 @@ class AgentActionSchemaTest {
     assertEquals(48, properties.path("creates").path("maxItems").asInt());
     assertEquals(96, properties.path("connections").path("maxItems").asInt());
     assertEquals(64, properties.path("evidence").path("maxItems").asInt());
+    assertEquals(48, properties.path("updates").path("maxItems").asInt());
+    assertTrue(
+        properties
+            .path("updates")
+            .path("items")
+            .path("properties")
+            .path("attributes")
+            .path("properties")
+            .has("name"));
   }
 
   @Test

@@ -102,7 +102,7 @@ class AgentModelToolsTest {
   }
 
   @Test
-  void rejectsDuplicateNamedCreateSoAgentReusesExistingElements() throws Exception {
+  void aliasesDuplicateNamedCreateToExistingElementWithinBatch() throws Exception {
     AgentModelTools tools = cimTools();
     JsonNode model =
         mapper.readTree(
@@ -115,30 +115,77 @@ class AgentModelToolsTest {
         ModelLevel.CIM,
         new ModelWorkspace(ModelLevel.CIM, "m", 1, model, new AssistantPatchCompiler(), null));
 
-    PlatformException error =
-        assertThrows(
-            PlatformException.class,
-            () ->
-                tools.commitModelBatch(
-                    new ModelCommandBatch(
-                        List.of(
-                            new ModelCommandBatch.Create(
-                                "actor_new",
-                                "Actor",
-                                Map.of("name", text("Cyclist"), "actorType", text("HUMAN")),
-                                "rootId",
-                                "actors",
-                                null)),
-                        List.of(),
-                        List.of(),
-                        List.of(),
-                        List.of(),
-                        "duplicate actor",
-                        true)));
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        "actor_new",
+                        "Actor",
+                        Map.of("name", text("Cyclist"), "actorType", text("HUMAN")),
+                        "rootId",
+                        "actors",
+                        null),
+                    new ModelCommandBatch.Create(
+                        "command_new",
+                        "Command",
+                        Map.of("name", text("Book appointment")),
+                        "rootId",
+                        "commands",
+                        null)),
+                List.of(),
+                List.of(
+                    new ModelCommandBatch.Connection("actor_new", "issuesCommands", "command_new")),
+                List.of(),
+                List.of(),
+                "duplicate actor",
+                true));
 
-    assertEquals(422, error.status());
-    assertTrue(error.getMessage().contains("duplicates existing Actor named 'Cyclist'"));
-    assertTrue(error.getMessage().contains("actor-existing"));
+    JsonNode actor = result.model().at("/actors/0");
+    assertEquals("actor-existing", actor.path("id").asText());
+    assertEquals(
+        result.model().at("/commands/0/id").asText(),
+        actor.path("issuesCommands").path(0).asText());
+  }
+
+  @Test
+  void resolvesTypePrefixedClientRefOnlyWhenPrefixMatchesCreatedType() throws Exception {
+    AgentModelTools tools = cimTools();
+    ModelWorkspace workspace = workspace();
+    tools.bind(ModelLevel.CIM, workspace);
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        "RequestAppointment",
+                        "Requirement",
+                        Map.of("name", text("Request appointment")),
+                        "rootId",
+                        "requirements",
+                        null),
+                    new ModelCommandBatch.Create(
+                        "ScheduleAppointment",
+                        "BusinessGoal",
+                        Map.of("name", text("Schedule appointment")),
+                        "rootId",
+                        "goals",
+                        null)),
+                List.of(),
+                List.of(
+                    new ModelCommandBatch.Connection(
+                        "Requirement_RequestAppointment",
+                        "supportsGoals",
+                        "BusinessGoal_ScheduleAppointment")),
+                List.of(),
+                List.of(),
+                "type-prefixed refs",
+                true));
+
+    assertEquals(
+        result.model().at("/goals/0/id").asText(),
+        result.model().at("/requirements/0/supportsGoals/0").asText());
   }
 
   @Test
@@ -352,7 +399,344 @@ class AgentModelToolsTest {
                     true)));
   }
 
+  @Test
+  void treatsUpdatePreconditionHashAsAdvisoryForCurrentRevisionEdits() throws Exception {
+    AgentModelTools tools = cimTools();
+    JsonNode model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","goals":[
+  {"id":"goal-1","eClass":"BusinessGoal","name":"Original"}],
+ "diagram":{"elements":[],"relationships":[]}}
+""");
+    tools.bind(
+        ModelLevel.CIM,
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, model, new AssistantPatchCompiler(), null));
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(),
+                List.of(
+                    new ModelCommandBatch.Update(
+                        "goal-1", Map.of("name", text("Updated")), "provider-stale-hash")),
+                List.of(),
+                List.of(),
+                List.of(),
+                "rename goal",
+                true));
+
+    assertEquals("Updated", result.model().at("/goals/0/name").asText());
+  }
+
+  @Test
+  void generatesMissingClientRefForStandaloneCreate() throws Exception {
+    AgentModelTools tools = cimTools();
+    tools.bind(ModelLevel.CIM, workspace());
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        null,
+                        "BusinessGoal",
+                        Map.of("name", text("Library borrowing")),
+                        "rootId",
+                        "goals",
+                        null)),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                "create goal",
+                true));
+
+    assertEquals("Library borrowing", result.model().at("/goals/0/name").asText());
+  }
+
+  @Test
+  void rehomesRootPimElementsWhenProviderUsesImplementationProfileAsOwner() throws Exception {
+    AgentModelTools tools = pimTools();
+    JsonNode model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","architectureStyle":"SERVERLESS",
+ "implementationProfile":{"id":"profile","eClass":"ImplementationProfile","name":"AWS"},
+ "diagram":{"elements":[],"relationships":[]}}
+""");
+    tools.bind(
+        ModelLevel.PIM,
+        new ModelWorkspace(ModelLevel.PIM, "m", 1, model, new AssistantPatchCompiler(), null));
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        "duplicate-rule",
+                        "BusinessRule",
+                        Map.of("name", text("Reject duplicate commands")),
+                        "profile",
+                        "businessRules",
+                        null)),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                "add idempotency rule",
+                true));
+
+    assertEquals("BusinessRule", result.model().at("/businessRules/0/eClass").asText());
+  }
+
+  @Test
+  void rehomesCachePolicyWhenProviderUsesImplementationProfileAsOwner() throws Exception {
+    AgentModelTools tools = pimTools();
+    JsonNode model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","architectureStyle":"SERVERLESS",
+ "implementationProfile":{"id":"profile","eClass":"ImplementationProfile","name":"AWS"},
+ "diagram":{"elements":[],"relationships":[]}}
+""");
+    tools.bind(
+        ModelLevel.PIM,
+        new ModelWorkspace(ModelLevel.PIM, "m", 1, model, new AssistantPatchCompiler(), null));
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        "cache-policy",
+                        "CachePolicy",
+                        Map.of(
+                            "name",
+                            text("Read cache"),
+                            "cacheRequired",
+                            mapper.getNodeFactory().booleanNode(true)),
+                        "profile",
+                        "policies",
+                        null)),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                "add cache policy",
+                true));
+
+    assertEquals("CachePolicy", result.model().at("/policies/0/eClass").asText());
+    assertEquals("Read cache", result.model().at("/policies/0/name").asText());
+  }
+
+  @Test
+  void aliasesDuplicateRootSingletonProfileCreateToExistingProfile() throws Exception {
+    AgentModelTools tools = pimTools();
+    JsonNode model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","architectureStyle":"SERVERLESS",
+ "implementationProfile":{"id":"profile","eClass":"ImplementationProfile","name":"AWS"},
+ "diagram":{"elements":[],"relationships":[]}}
+""");
+    tools.bind(
+        ModelLevel.PIM,
+        new ModelWorkspace(ModelLevel.PIM, "m", 1, model, new AssistantPatchCompiler(), null));
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        "profile_duplicate",
+                        "ImplementationProfile",
+                        Map.of("name", text("OpenRouter deployment")),
+                        "rootId",
+                        "implementationProfile",
+                        null),
+                    new ModelCommandBatch.Create(
+                        "handler",
+                        "Function",
+                        Map.of(
+                            "name",
+                            text("Submit order handler"),
+                            "functionKind",
+                            text("COMMAND_HANDLER")),
+                        "profile_duplicate",
+                        "functions",
+                        null)),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                "add duplicate profile and handler",
+                true));
+
+    assertEquals("profile", result.model().at("/implementationProfile/id").asText());
+    assertEquals(
+        "OpenRouter deployment", result.model().at("/implementationProfile/name").asText());
+    assertEquals("Function", result.model().at("/services/0/functions/0/eClass").asText());
+  }
+
+  @Test
+  void treatsRootModelCreateAsRootAttributeUpdate() throws Exception {
+    AgentModelTools tools = cimTools();
+    tools.bind(ModelLevel.CIM, workspace());
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        "root_model",
+                        "CIMModel",
+                        Map.of("domainName", text("Community pantry")),
+                        "rootId",
+                        "exactContainment",
+                        null),
+                    new ModelCommandBatch.Create(
+                        "pantry_policy",
+                        "Policy",
+                        Map.of("name", text("Eligibility policy")),
+                        null,
+                        null,
+                        null)),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                "draft pantry",
+                true));
+
+    assertEquals("Community pantry", result.model().path("domainName").asText());
+    assertEquals("Policy", result.model().at("/policies/0/eClass").asText());
+  }
+
+  @Test
+  void convertsUnknownIdempotencyUpdateToRootPolicyCreate() throws Exception {
+    AgentModelTools tools = pimTools();
+    JsonNode model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","architectureStyle":"SERVERLESS",
+ "diagram":{"elements":[],"relationships":[]}}
+""");
+    tools.bind(
+        ModelLevel.PIM,
+        new ModelWorkspace(ModelLevel.PIM, "m", 1, model, new AssistantPatchCompiler(), null));
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(),
+                List.of(
+                    new ModelCommandBatch.Update(
+                        "IdempotencyPolicy_1",
+                        Map.of(
+                            "name",
+                            text("Command idempotency"),
+                            "storeRequired",
+                            mapper.getNodeFactory().booleanNode(true)),
+                        "")),
+                List.of(),
+                List.of(),
+                List.of(),
+                "add idempotency",
+                true));
+
+    assertEquals("IdempotencyPolicy", result.model().at("/policies/0/eClass").asText());
+    assertEquals("Command idempotency", result.model().at("/policies/0/name").asText());
+  }
+
+  @Test
+  void dropsUnknownAttributesWhenConvertingUnknownCacheUpdateToCreate() throws Exception {
+    AgentModelTools tools = pimTools();
+    JsonNode model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","architectureStyle":"SERVERLESS",
+ "diagram":{"elements":[],"relationships":[]}}
+""");
+    tools.bind(
+        ModelLevel.PIM,
+        new ModelWorkspace(ModelLevel.PIM, "m", 1, model, new AssistantPatchCompiler(), null));
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(),
+                List.of(
+                    new ModelCommandBatch.Update(
+                        "cache_component",
+                        Map.of(
+                            "name",
+                            text("Read-through cache"),
+                            "owner",
+                            text("application"),
+                            "cacheRequired",
+                            mapper.getNodeFactory().booleanNode(true)),
+                        "")),
+                List.of(),
+                List.of(),
+                List.of(),
+                "add cache",
+                true));
+
+    assertEquals("CachePolicy", result.model().at("/policies/0/eClass").asText());
+    assertEquals("Read-through cache", result.model().at("/policies/0/name").asText());
+    assertTrue(result.model().at("/policies/0/owner").isMissingNode());
+  }
+
+  @Test
+  void createsSyntheticServiceForMisownedFunction() throws Exception {
+    AgentModelTools tools = pimTools();
+    JsonNode model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","architectureStyle":"SERVERLESS",
+ "implementationProfile":{"id":"profile","eClass":"ImplementationProfile","name":"AWS"},
+ "diagram":{"elements":[],"relationships":[]}}
+""");
+    tools.bind(
+        ModelLevel.PIM,
+        new ModelWorkspace(ModelLevel.PIM, "m", 1, model, new AssistantPatchCompiler(), null));
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        "handler",
+                        "Function",
+                        Map.of(
+                            "name",
+                            text("Submit order handler"),
+                            "functionKind",
+                            text("COMMAND_HANDLER")),
+                        "profile",
+                        "exactContainment",
+                        null)),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                "add handler",
+                true));
+
+    assertEquals("ServerlessService", result.model().at("/services/0/eClass").asText());
+    assertEquals("Function", result.model().at("/services/0/functions/0/eClass").asText());
+  }
+
   private AgentModelTools cimTools() {
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    return new AgentModelTools(
+        new TypeContractService(knowledge),
+        mock(ModelService.class),
+        new ModelCommandCompiler(new AssistantPatchCompiler()));
+  }
+
+  private AgentModelTools pimTools() {
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     return new AgentModelTools(
         new TypeContractService(knowledge),

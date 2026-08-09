@@ -5,7 +5,7 @@ import { formatUserError } from "./errors.js";
 import { setError, setStatus } from "./status.js";
 import { apiUrl, MODEL_TYPES } from "./config.js";
 import { toDiagram } from "./diagram.js";
-import { renderDiagram } from "./canvas.js";
+import { renderDiagram, scrollToNodeAndHighlight } from "./canvas.js";
 import { renderMarkdown } from "./markdown.js";
 import { autoLayoutCurrentDiagram, loadModelById, saveCurrentModel } from "./model-ops.js";
 import { syncMobileDockState } from "./mobile-ui.js";
@@ -765,9 +765,12 @@ function renderDurableRun(turn, typeKey) {
   bubble.appendChild(title);
   const details = document.createElement("p");
   details.className = "chat-proposal-intro";
+  const activeItem = (Array.isArray(turn.workItems) ? turn.workItems : []).find(
+    (item) => String(item.id || "") === String(turn.currentWorkItemId || ""),
+  );
   details.textContent = [
-    turn.phase && `Phase: ${turn.phase}`,
-    turn.currentWorkItemId && `Current item: ${turn.currentWorkItemId}`,
+    turn.phase && `Phase: ${String(turn.phase).replaceAll("_", " ").toLowerCase()}`,
+    activeItem?.label && `Current work: ${activeItem.label}`,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -822,6 +825,66 @@ function renderDurableRun(turn, typeKey) {
     remaining.className = "chat-proposal-meta";
     remaining.textContent = `Remaining: ${turn.remainingWork}`;
     bubble.appendChild(remaining);
+  }
+  const provenance = Array.isArray(turn.provenance) ? turn.provenance : [];
+  const assumptions = [
+    ...new Set(provenance.map((item) => String(item.assumption || "").trim()).filter(Boolean)),
+  ];
+  if (assumptions.length) {
+    const assumptionList = document.createElement("div");
+    assumptionList.className = "chat-proposal-meta";
+    assumptionList.textContent = `Assumptions: ${assumptions.join(" · ")}`;
+    bubble.appendChild(assumptionList);
+  }
+  if (provenance.length) {
+    const evidence = document.createElement("div");
+    evidence.className = "chat-proposal-meta";
+    evidence.textContent = `Evidence linked to ${provenance.length} model element${provenance.length === 1 ? "" : "s"}.`;
+    bubble.appendChild(evidence);
+    const evidenceList = document.createElement("div");
+    evidenceList.className = "chat-proposal-actions";
+    for (const item of provenance) {
+      const elementId = String(item.elementId || "").trim();
+      if (!elementId) continue;
+      const element = document.createElement("button");
+      element.type = "button";
+      element.className = "chat-proposal-btn";
+      element.textContent = item.requirementId || item.sourceUnitId || "View evidence";
+      element.title = `Focus model element ${elementId}`;
+      element.addEventListener("click", () => scrollToNodeAndHighlight(elementId));
+      evidenceList.appendChild(element);
+    }
+    if (evidenceList.childElementCount) bubble.appendChild(evidenceList);
+  }
+  if (turn.state === "SUCCEEDED" || turn.state === "PARTIAL") {
+    const feedback = document.createElement("div");
+    feedback.className = "chat-proposal-actions";
+    for (const [accepted, label] of [
+      [true, "Accept"],
+      [false, "Needs changes"],
+    ]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "chat-proposal-btn";
+      button.textContent = label;
+      button.addEventListener("click", async () => {
+        try {
+          button.disabled = true;
+          await api(`/chatbot/turns/${turn.turnId}/feedback`, {
+            method: "POST",
+            body: JSON.stringify({ accepted }),
+          });
+          appendAssistantDeduped(
+            accepted ? "Model changes accepted." : "Marked for revision. Tell me what to change.",
+          );
+        } catch (error) {
+          button.disabled = false;
+          setError(error);
+        }
+      });
+      feedback.appendChild(button);
+    }
+    bubble.appendChild(feedback);
   }
   scrollChatToBottom();
 }

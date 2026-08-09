@@ -50,6 +50,20 @@ class OpenAiCompatibleAssistantModelProviderTest {
   }
 
   @Test
+  void treatsTruncatedNativeToolArgumentsAsRetryableProviderFailure() throws Exception {
+    var message =
+        mapper.readTree(
+            "{\"tool_calls\":[{\"function\":{\"name\":\"commit_model_batch\",\"arguments\":\"{\\\"creates\\\":[\"}}]}");
+
+    assertEquals(
+        502,
+        assertThrows(
+                PlatformException.class,
+                () -> OpenAiCompatibleAssistantModelProvider.nativeToolAction(mapper, message))
+            .status());
+  }
+
+  @Test
   void acceptsStrictActionJsonContentWhenCompatibleProviderSkipsToolCalls() throws Exception {
     var message =
         mapper.readTree(
@@ -102,5 +116,18 @@ class OpenAiCompatibleAssistantModelProviderTest {
                 "The next action must be commit_model_batch using these exact contracts.",
                 List.of(),
                 List.of())));
+  }
+
+  @Test
+  void usesTypedRequiredToolWithoutInspectingPromptText() {
+    assertEquals(
+        "commit_model_batch",
+        OpenAiCompatibleAssistantModelProvider.forcedToolName(
+            new AssistantPrompt(
+                "system",
+                "an ordinary explanation request",
+                List.of(),
+                List.of(),
+                "commit_model_batch")));
   }
 }

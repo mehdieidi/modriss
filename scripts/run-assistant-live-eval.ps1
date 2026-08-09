@@ -75,9 +75,9 @@ function Wait-Turn {
       $firstCheckpointSeconds = [int]((Get-Date) - $started).TotalSeconds
     }
     if (@("SUCCEEDED", "PARTIAL", "NEEDS_INPUT", "NEEDS_CONFIRMATION", "CONFLICTED", "CANCELLED", "TIMED_OUT", "FAILED") -contains [string]$turn.state) {
-      $providerCalls += [int]$turn.providerCalls
-      $promptTokens += [long]$turn.promptTokens
-      $completionTokens += [long]$turn.completionTokens
+      $providerCalls = [int]$turn.providerCalls
+      $promptTokens = [long]$turn.promptTokens
+      $completionTokens = [long]$turn.completionTokens
       if ($turn.state -eq "PARTIAL" -and $turn.remainingWork -and (Count-Checkpoint $turn) -gt 0 -and $resumeCount -lt $MaxDurableResumes) {
         Invoke-Api -Method POST -Path "/api/chatbot/turns/$TurnId/continue" -Token $Token | Out-Null
         $resumeCount++
@@ -148,7 +148,7 @@ function Inspect-Model {
     return [pscustomobject]@{ StructuralNodes = 0; Elements = 0; Relationships = 0; ValidationValid = $null }
   }
   $model = Invoke-Api -Method GET -Path "/api/$($Level.ToLowerInvariant())/$ModelId" -Token $Token
-  $validation = Invoke-Api -Method POST -Path "/api/$($Level.ToLowerInvariant())/$ModelId/validate" -Body @{} -Token $Token
+  $validation = Invoke-Api -Method POST -Path "/api/$($Level.ToLowerInvariant())/$ModelId/validate/structural" -Body @{} -Token $Token
   $visual = $model.model.diagram
   if ($null -eq $visual -or $null -eq $visual.elements) { $visual = $model.model.graph }
   [pscustomobject]@{
@@ -315,7 +315,7 @@ function Test-TransientProviderFailure {
   # of real workflow progress and must be resumed rather than replayed in a new scenario.
   return $Result -and @("FAILED", "PARTIAL", "TIMED_OUT") -contains [string]$Result.State -and
     [int]$Result.Checkpoints -eq 0 -and
-    ([string]$Result.Message -match "(?i)(provider.*(available|timeout|temporar)|request timed out|connection|transport)")
+    ([string]$Result.Message -match "(?i)(provider.*(available|timeout|temporar|truncated)|request timed out|connection|transport|unexpected end-of-input|malformed assistant tool arguments)")
 }
 
 function Run-FixtureWithProviderRetries {
@@ -337,10 +337,10 @@ function Test-ScenarioGate {
   $failures = @()
   $scenarioId = [string]$Result.Scenario
   $assertions = @($Fixture.assertions)
-  if ($assertions -contains "no_mutation") {
-    if ($Result.State -ne "SUCCEEDED" -or [int]$Result.SavedElements -ne 0 -or [int]$Result.Checkpoints -ne 0) { $failures += "answer mutated model or did not succeed" }
-  } elseif ($assertions -contains "conflict") {
+  if ($assertions -contains "conflict") {
     if ($Result.State -ne "CONFLICTED" -or [int]$Result.SavedElements -ne 0) { $failures += "expected stale-revision conflict without mutation, got $($Result.State)" }
+  } elseif ($assertions -contains "no_mutation") {
+    if ($Result.State -ne "SUCCEEDED" -or [int]$Result.SavedElements -ne 0 -or [int]$Result.Checkpoints -ne 0) { $failures += "answer mutated model or did not succeed" }
   } elseif ($assertions -contains "cancelled") {
     if ($Result.State -ne "CANCELLED" -or [int]$Result.Checkpoints -ne 0) { $failures += "expected cancellation without checkpoint, got $($Result.State)" }
   } elseif ($assertions -contains "needs_confirmation") {
@@ -352,7 +352,24 @@ function Test-ScenarioGate {
   }
   if (($assertions -contains "provenance") -and (Count-Array $Result.Provenance) -lt 1) { $failures += "missing provenance" }
   if (($assertions -contains "labelled_requirement_recall") -and [int]$Result.CoveragePercent -lt 100) { $failures += "requirement recall below 100%" }
+  if (($assertions -contains "requirement_recall") -and [int]$Result.CoveragePercent -lt 100) { $failures += "requirement recall below 100%" }
+  if (($assertions -contains "requirement_precision") -and [int]$Result.StructuralNodes -lt 4) { $failures += "too few model nodes for labelled requirement precision review" }
   if (($assertions -contains "durable_resume") -and [int]$Result.Resumes -lt 1) { $failures += "same durable turn was not resumed" }
+  switch ([string]$Fixture.id) {
+    "source-to-cim-pantry" {
+      if ([int]$Result.StructuralNodes -lt 8) { $failures += "source CIM is too shallow" }
+      if ((Count-Array $Result.Provenance) -lt 3) { $failures += "source CIM has too little grounded evidence" }
+    }
+    "create-cim-library" {
+      if ([int]$Result.StructuralNodes -lt 5) { $failures += "library CIM is too shallow" }
+    }
+    "create-pim-serverless" {
+      if ([int]$Result.StructuralNodes -lt 5) { $failures += "serverless PIM is too shallow" }
+    }
+    "edit-existing-pim-add-pattern" {
+      if ([int]$Result.StructuralNodes -lt 6) { $failures += "PIM edit did not produce enough model structure" }
+    }
+  }
   if ($null -eq $Fixture) { $failures += "missing versioned fixture" }
   $complex = $Fixture.route -eq "COMPLEX_EDIT"
   # Provider retry attempts are real HTTP calls and remain visible in the report.  They are

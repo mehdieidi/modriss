@@ -170,7 +170,8 @@ public final class AgenticTurnService {
         cancellationRequested,
         stopReason,
         false,
-        mode);
+        mode,
+        false);
   }
 
   private Result run(
@@ -213,6 +214,36 @@ public final class AgenticTurnService {
       java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException> stopReason,
       boolean persistConversation,
       AgentTurnLoop.WorkflowMode mode) {
+    return run(
+        user,
+        sessionId,
+        level,
+        modelId,
+        revision,
+        message,
+        sourceDocument,
+        destructiveConfirmed,
+        cancellationRequested,
+        stopReason,
+        persistConversation,
+        mode,
+        true);
+  }
+
+  private Result run(
+      UserRecord user,
+      String sessionId,
+      ModelLevel level,
+      String modelId,
+      Long revision,
+      String message,
+      String sourceDocument,
+      boolean destructiveConfirmed,
+      java.util.function.BooleanSupplier cancellationRequested,
+      java.util.function.Supplier<io.mehdieidi.varka.platform.kernel.PlatformException> stopReason,
+      boolean persistConversation,
+      AgentTurnLoop.WorkflowMode mode,
+      boolean persistModel) {
     ModelRecord current = models.get(user, level, modelId);
     if (persistConversation && memory != null)
       memory.appendMessage(sessionId, "USER", message, Map.of());
@@ -250,7 +281,8 @@ public final class AgenticTurnService {
     io.mehdieidi.varka.platform.kernel.PlatformException stop =
         stopReason == null ? null : stopReason.get();
     if (stop != null) throw stop;
-    ModelRecord updated = workspace.patch().isEmpty() ? current : workspace.apply(models, user);
+    ModelRecord updated =
+        persistModel && !workspace.patch().isEmpty() ? workspace.apply(models, user) : current;
     if (persistConversation && memory != null) {
       memory.appendMessage(
           sessionId, "ASSISTANT", turn.message(), Map.of("workflowState", "APPLIED"));
@@ -271,7 +303,18 @@ public final class AgenticTurnService {
         turn.providerCallDetails(),
         turn.modelingPlan(),
         turn.sourceBlueprint(),
-        turn.sourceAnalysis());
+        turn.sourceAnalysis(),
+        workspace.patch(),
+        workspace.snapshot(),
+        expectedRevision);
+  }
+
+  /** Persists a durable draft after the worker has opened its checkpoint transaction. */
+  public ModelRecord commitDraft(UserRecord user, ModelLevel level, Result draft) {
+    if (draft == null) throw new IllegalArgumentException("draft is required");
+    if (draft.modelPatch().isEmpty()) return models.get(user, level, draft.modelId());
+    return models.patchStructurallyValid(
+        user, level, draft.modelId(), null, draft.modelPatch(), draft.baseRevision());
   }
 
   public boolean cancel(String sessionId) {
@@ -319,5 +362,8 @@ public final class AgenticTurnService {
           providerCallDetails,
       tools.jackson.databind.JsonNode modelingPlan,
       tools.jackson.databind.JsonNode sourceBlueprint,
-      tools.jackson.databind.JsonNode sourceAnalysis) {}
+      tools.jackson.databind.JsonNode sourceAnalysis,
+      List<ModelService.ModelPatchOperation> modelPatch,
+      tools.jackson.databind.JsonNode candidateModel,
+      long baseRevision) {}
 }

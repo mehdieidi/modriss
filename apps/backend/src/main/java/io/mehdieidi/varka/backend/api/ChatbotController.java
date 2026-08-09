@@ -653,7 +653,7 @@ public class ChatbotController {
         request.attachmentIds(),
         request.attachmentName(),
         request.attachmentContent(),
-        true);
+        false);
   }
 
   private ResolvedRequestAttachment resolveRequestAttachments(

@@ -257,7 +257,11 @@ public class AssistantHardeningService {
 
   private void sleep() {
     try {
-      Thread.sleep(properties.hardening().retryBackoff().toMillis());
+      long backoff = Math.max(1L, properties.hardening().retryBackoff().toMillis());
+      // Small jitter prevents a burst of failed provider calls from being retried in lockstep.
+      long jitter =
+          java.util.concurrent.ThreadLocalRandom.current().nextLong(Math.max(1L, backoff / 4));
+      Thread.sleep(backoff + jitter);
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
       throw new PlatformException(503, "AI provider retry was interrupted.");

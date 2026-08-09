@@ -65,10 +65,19 @@ public interface AssistantModelProvider {
       String system,
       String user,
       List<ContextSnippet> snippets,
-      List<TypeContract> patchContracts) {
+      List<TypeContract> patchContracts,
+      String requiredTool) {
+
+    public AssistantPrompt(
+        String system,
+        String user,
+        List<ContextSnippet> snippets,
+        List<TypeContract> patchContracts) {
+      this(system, user, snippets, patchContracts, null);
+    }
 
     public AssistantPrompt(String system, String user, List<ContextSnippet> snippets) {
-      this(system, user, snippets, List.of());
+      this(system, user, snippets, List.of(), null);
     }
 
     /** Applies immutable collection semantics. */
@@ -77,6 +86,7 @@ public interface AssistantModelProvider {
       user = user == null ? "" : user;
       snippets = snippets == null ? List.of() : List.copyOf(snippets);
       patchContracts = patchContracts == null ? List.of() : List.copyOf(patchContracts);
+      requiredTool = requiredTool == null || requiredTool.isBlank() ? null : requiredTool.trim();
     }
   }
 

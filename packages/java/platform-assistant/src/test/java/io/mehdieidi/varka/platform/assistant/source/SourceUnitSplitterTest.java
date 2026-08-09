@@ -19,6 +19,7 @@ class SourceUnitSplitterTest {
         first.stream().map(unit -> unit.id()).toList(),
         second.stream().map(unit -> unit.id()).toList());
     assertTrue(first.stream().allMatch(unit -> unit.endOffset() > unit.startOffset()));
+    assertTrue(first.stream().allMatch(unit -> unit.content().length() <= 64));
   }
 
   @Test

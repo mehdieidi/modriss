@@ -1,12 +1,14 @@
 package io.mehdieidi.varka.platform.assistant.agent;
 
 import io.mehdieidi.varka.platform.assistant.application.ProviderCallBudget;
+import io.mehdieidi.varka.platform.assistant.application.ProviderRequestContext;
 import io.mehdieidi.varka.platform.assistant.domain.ModelCommandBatch;
 import io.mehdieidi.varka.platform.assistant.metamodel.LexicalRetrievalIndex;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelGuideGenerator;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.AttributeContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.ReferenceContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.TypeContract;
+import io.mehdieidi.varka.platform.assistant.prompt.PromptTemplates;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantMetrics;
@@ -379,7 +381,10 @@ public final class AgentTurnLoop {
             // Planning and patch execution are stateful now. Exact contracts are retrieved through
             // describe_types after a durable plan exists, so preloading retrieved contracts makes
             // compatible providers slower without adding authority.
-            retrieval == null || !editPlanReady || step > 1 || sourceBacked
+            // Discovery is useful before the plan exists and for source-backed turns.  Exact
+            // contracts remain authoritative for mutation; retrieved snippets only help the
+            // planner select which concepts to describe.
+            retrieval == null || step > 1
                 ? List.of()
                 : retrieval.search(
                     level,
@@ -392,9 +397,24 @@ public final class AgentTurnLoop {
         long estimatedInputTokens =
             estimateTokens(system.length() + user.length() + retrievalChars);
         long providerStarted = System.nanoTime();
+        AssistantPrompt providerPrompt =
+            new AssistantPrompt(
+                system,
+                user,
+                snippets,
+                patchContracts,
+                requiredTool(
+                    readOnlyMode,
+                    sourceBacked,
+                    sourceAnalysisPresent,
+                    sourceBlueprintPresent,
+                    editPlanReady,
+                    exactContracts));
         reply =
-            provider.completeStructured(
-                new AssistantPrompt(system, user, snippets, patchContracts));
+            ProviderRequestContext.with(
+                () -> canceled.get() || cancellationRequested.getAsBoolean(),
+                stopReason,
+                () -> provider.completeStructured(providerPrompt));
         long providerLatency =
             java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - providerStarted);
         metrics.recordAssistantPhaseDuration("provider", providerLatency);
@@ -678,6 +698,7 @@ public final class AgentTurnLoop {
                                 relevantIds, List.of(), List.of(), null, 0, 50));
                 JsonNode neighborhoods = turnTools.inspectNeighborhoods(relevantIds);
                 fullModelInspected = true;
+                enforcedInspectionReady = true;
                 patchContracts =
                     resumeContracts(level, workspace, turnTools, modelingPlan, capabilities);
                 exactContracts = patchContracts.isEmpty() ? null : compactContracts(patchContracts);
@@ -735,6 +756,11 @@ public final class AgentTurnLoop {
               }
               check(canceled, deadline, cancellationRequested, stopReason);
               ModelCommandBatch batch = normalizeSourceEvidence(command(action), sourceDocument);
+              validateSourceEvidence(batch, sourceDocument);
+              validateSourceEvidenceIds(batch, sourceDocument);
+              validatePlannedSourceSliceCoverage(batch, sourceDocument, modelingPlan);
+              validateSourceCheckpointUsefulness(
+                  batch, sourceDocument, modelingPlan, patchContracts);
               lastRejectedBatchSummary = batchSummary(batch);
               if (sourceBacked && !batch.deletions().isEmpty()) {
                 throw new PlatformException(
@@ -756,7 +782,7 @@ public final class AgentTurnLoop {
                   toolProgress(action.tool(), true, checkpointValidation.valid()));
               if (checkpointValidation.valid()) {
                 return new TurnResult(
-                    "Model checkpoint saved.",
+                    checkpointMessage(turnTools.committedBatch()),
                     workspace.patch(),
                     workspace.inversePatch(),
                     checkpointValidation,
@@ -1216,8 +1242,13 @@ public final class AgentTurnLoop {
     if (modelingPlan == null || modelingPlan.isMissingNode() || modelingPlan.isNull()) {
       return List.of();
     }
-    JsonNode firstSlice = modelingPlan.path("slices").path(0);
-    firstSlice
+    JsonNode slices = modelingPlan.path("slices");
+    int currentSliceIndex = modelingPlan.path("currentSliceIndex").asInt(0);
+    JsonNode currentSlice =
+        slices.isArray() && !slices.isEmpty()
+            ? slices.path(Math.max(0, Math.min(currentSliceIndex, slices.size() - 1)))
+            : mapper.createObjectNode();
+    currentSlice
         .path("requiredContracts")
         .forEach(
             value -> {
@@ -1225,8 +1256,8 @@ public final class AgentTurnLoop {
               if (!name.isBlank()) names.add(name);
             });
     java.util.Set<Integer> currentOrdinals = new java.util.LinkedHashSet<>();
-    currentOrdinals.add(firstSlice.path("ordinal").asInt(firstSlice.path("slice").asInt(1)));
-    firstSlice
+    currentOrdinals.add(currentSlice.path("ordinal").asInt(currentSlice.path("slice").asInt(1)));
+    currentSlice
         .path("candidateKeys")
         .forEach(
             key -> {
@@ -1305,20 +1336,9 @@ public final class AgentTurnLoop {
   }
 
   private List<String> emptyModelFirstSliceTypes(ModelLevel level, ModelWorkspace workspace) {
-    if (!hasNoModelElements(workspace)) return List.of();
-    return switch (level) {
-      case PIM -> List.of("ServerlessService");
-      case CIM ->
-          List.of(
-              "BusinessGoal",
-              "Actor",
-              "BusinessCapability",
-              "Requirement",
-              "InformationItem",
-              "BusinessProcess",
-              "Policy");
-      case PSM -> List.of();
-    };
+    // Type choice belongs to metamodel discovery and the typed plan.  A fixed starter list makes
+    // unrelated requests converge on generic CIM canvases or serverless PIM architectures.
+    return List.of();
   }
 
   private JsonNode currentSlicePlan(JsonNode modelingPlan) {
@@ -1331,12 +1351,22 @@ public final class AgentTurnLoop {
     scoped.set("reuseTargets", modelingPlan.path("reuseTargets").deepCopy());
     scoped.set("newElements", modelingPlan.path("newElements").deepCopy());
     JsonNode slices = modelingPlan.path("slices");
-    JsonNode current =
-        slices.isArray() && !slices.isEmpty() ? slices.get(0) : mapper.createObjectNode();
+    JsonNode current = currentSlice(modelingPlan);
     scoped.set("currentSlice", current.deepCopy());
     scoped.put("checkpoint", current.path("ordinal").asInt(1));
     scoped.put("checkpointCount", slices.isArray() ? slices.size() : 1);
     return scoped;
+  }
+
+  /** Returns the durable plan's active slice, never silently falling back to slice one. */
+  private JsonNode currentSlice(JsonNode modelingPlan) {
+    if (modelingPlan == null || modelingPlan.isMissingNode() || modelingPlan.isNull()) {
+      return mapper.createObjectNode();
+    }
+    JsonNode slices = modelingPlan.path("slices");
+    if (!slices.isArray() || slices.isEmpty()) return mapper.createObjectNode();
+    int index = modelingPlan.path("currentSliceIndex").asInt(0);
+    return slices.get(Math.max(0, Math.min(index, slices.size() - 1)));
   }
 
   private boolean hasNoModelElements(ModelWorkspace workspace) {
@@ -1386,7 +1416,9 @@ public final class AgentTurnLoop {
   private String systemPrompt(
       ModelLevel level, boolean sourceBacked, boolean sourceBlueprintPresent) {
     String language = guides.index(level);
-    return """
+    return promptTemplate("cim-pim-planner")
+        + "\n\n"
+        + """
 You are a modeling agent. Return exactly one JSON object: {"action":"plan_model_edit"|
 "commit_model_batch"|"analyze_source_units"|"plan_cim_blueprint"|
 "inspect_model"|"describe_types"|"answer_user"|"ask_user",
@@ -1548,7 +1580,9 @@ copied exactly from the supplied markers.\
 
   private String executorSystemPrompt(
       ModelLevel level, boolean sourceBacked, boolean sourceBlueprintPresent) {
-    return """
+    return promptTemplate("modeling-executor")
+        + "\n\n"
+        + """
 You are a modeling executor for a %s model. Return exactly one JSON object or one native tool call
 matching the supplied action schema. The backend already accepted a durable modeling plan for this
 turn. Follow only the current checkpoint slice, the backend inspection facts, and exact contracts
@@ -1570,21 +1604,23 @@ checkpoint slices remain.
 Validation boundary: generated assistant changes are checked only for structural Ecore/EMF
 conformance by the backend.
 """
-        .formatted(
-            level.name(),
-            sourceBacked
-                ? "For source-backed CIM conversion, cover every supplied source-unit in the"
-                    + " current prompt when the sourceUnitId count is within the evidence cap."
-                    + " For each story create at least one source-grounded Requirement, reuse"
-                    + " shared Actors and BusinessCapabilities across stories, and add compact"
-                    + " BusinessProcess, InformationItem, Policy, and valid connections where"
-                    + " the exact contracts support them. Do not shrink to only the first few"
-                    + " stories unless the source-unit count exceeds the caps."
-                : "");
+            .formatted(
+                level.name(),
+                sourceBacked
+                    ? "For source-backed CIM conversion, cover every supplied source-unit in the"
+                        + " current prompt when the sourceUnitId count is within the evidence cap."
+                        + " For each story create at least one source-grounded Requirement, reuse"
+                        + " shared Actors and BusinessCapabilities across stories, and add compact"
+                        + " BusinessProcess, InformationItem, Policy, and valid connections where"
+                        + " the exact contracts support them. Do not shrink to only the first few"
+                        + " stories unless the source-unit count exceeds the caps."
+                    : "");
   }
 
   private String readOnlySystemPrompt(ModelLevel level, WorkflowMode mode) {
-    return """
+    return promptTemplate("answer-explanation")
+        + "\n\n"
+        + """
 You are a read-only %s modeling explainer. Return exactly one JSON object:
 {"action":"inspect_model"|"describe_types"|"answer_user"|"ask_user","arguments":{...}}.
 Never return prose outside that object.
@@ -1601,7 +1637,7 @@ Validation boundary: assistant-generated changes, when they exist in other workf
 only by structural Ecore/EMF conformance; this read-only workflow performs no generated-change
 validation.
 """
-        .formatted(mode == WorkflowMode.EXPLAIN_METAMODEL ? "metamodel" : level.name());
+            .formatted(mode == WorkflowMode.EXPLAIN_METAMODEL ? "metamodel" : level.name());
   }
 
   private boolean repairableToolFailure(PlatformException failure) {
@@ -2095,8 +2131,70 @@ validation.
     }
   }
 
+  /** Reject invalid evidence before the private workspace is mutated or a checkpoint is saved. */
+  private void validateSourceEvidenceIds(ModelCommandBatch batch, String sourceDocument) {
+    if (sourceDocument == null || sourceDocument.isBlank()) return;
+    java.util.Set<String> expected = sourceUnitIds(sourceDocument);
+    for (ModelCommandBatch.Evidence evidence : batch.evidence()) {
+      if (!"SOURCE_GROUNDED".equals(normalizedEvidenceKind(evidence))) continue;
+      String sourceUnitId = evidence.sourceUnitId() == null ? "" : evidence.sourceUnitId().trim();
+      if (sourceUnitId.isBlank() || !expected.contains(sourceUnitId)) {
+        throw new PlatformException(422, "Evidence references an unknown source unit.");
+      }
+    }
+  }
+
   private boolean typeNameSane(String name) {
     return name != null && name.matches("[A-Z][A-Za-z0-9_]{1,80}");
+  }
+
+  private String checkpointMessage(ModelCommandBatch batch) {
+    if (batch == null) return "Model checkpoint saved.";
+    java.util.List<String> changes = new java.util.ArrayList<>();
+    if (!batch.creates().isEmpty()) changes.add(batch.creates().size() + " created");
+    if (!batch.updates().isEmpty()) changes.add(batch.updates().size() + " updated");
+    if (!batch.connections().isEmpty()) changes.add(batch.connections().size() + " connected");
+    if (!batch.deletions().isEmpty()) changes.add(batch.deletions().size() + " deleted");
+    String summary = batch.planSummary() == null ? "" : batch.planSummary().trim();
+    String changeSummary = changes.isEmpty() ? "" : " (" + String.join(", ", changes) + ").";
+    if (summary.isBlank()) return "Model checkpoint saved" + changeSummary;
+    return "Model checkpoint saved" + changeSummary + " " + summary;
+  }
+
+  /**
+   * Declares the only executable native tool for a persisted workflow state.
+   *
+   * <p>This is deliberately typed from loop state rather than inferred by provider adapters from
+   * incidental wording in a user prompt. The initial turn remains flexible so an explanation can
+   * answer without manufacturing a model plan; once a durable plan exists, the next transition is
+   * deterministic.
+   */
+  private String requiredTool(
+      boolean readOnlyMode,
+      boolean sourceBacked,
+      boolean sourceAnalysisPresent,
+      boolean sourceBlueprintPresent,
+      boolean editPlanReady,
+      String exactContracts) {
+    if (readOnlyMode) return null;
+    if (sourceBacked && sourceAnalysisPresent && !sourceBlueprintPresent && !editPlanReady) {
+      return "plan_cim_blueprint";
+    }
+    if (!editPlanReady) return null;
+    return exactContracts == null || exactContracts.isBlank()
+        ? "describe_types"
+        : "commit_model_batch";
+  }
+
+  /** Uses versioned resources at runtime so prompt revisions are not inert test-only artifacts. */
+  private String promptTemplate(String name) {
+    PromptTemplates.Template template = PromptTemplates.load(name);
+    return "Prompt template "
+        + template.name()
+        + "@"
+        + template.version()
+        + ":\n"
+        + template.body();
   }
 
   private JsonNode validatedSourceBlueprint(JsonNode blueprint, String sourceDocument) {
@@ -2165,7 +2263,7 @@ validation.
         || modelingPlan.isNull()) {
       return;
     }
-    JsonNode planned = modelingPlan.path("slices").path(0).path("sourceUnitIds");
+    JsonNode planned = currentSlice(modelingPlan).path("sourceUnitIds");
     if (!planned.isArray() || planned.size() <= 1) return;
     java.util.Set<String> supplied = sourceUnitIds(sourceDocument);
     java.util.Set<String> required = new java.util.LinkedHashSet<>();
@@ -2210,7 +2308,7 @@ validation.
         || modelingPlan.isNull()) {
       return;
     }
-    JsonNode current = modelingPlan.path("slices").path(0);
+    JsonNode current = currentSlice(modelingPlan);
     boolean plannedRelationships =
         current.path("relationshipKeys").isArray() && !current.path("relationshipKeys").isEmpty();
     if (plannedRelationships && batch.connections().isEmpty()) {

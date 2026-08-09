@@ -74,7 +74,7 @@ varka:
     enabled: ${VARKA_AI_ENABLED:false}
     workflow-engine-v2: ${VARKA_AI_WORKFLOW_ENGINE_V2:true}
     provider: ${VARKA_AI_PROVIDER:openai}
-    request-timeout: ${VARKA_AI_REQUEST_TIMEOUT:60s}
+    request-timeout: ${VARKA_AI_REQUEST_TIMEOUT:30s}
     turn-timeout: ${VARKA_AI_TURN_TIMEOUT:3m}
     max-agent-steps: ${VARKA_AI_MAX_AGENT_STEPS:8}
     token-budget: ${VARKA_AI_TOKEN_BUDGET:16000}
@@ -98,8 +98,8 @@ varka:
       rate-limit-window: ${VARKA_AI_RATE_LIMIT_WINDOW:1m}
       circuit-failure-threshold: ${VARKA_AI_CIRCUIT_FAILURE_THRESHOLD:3}
       circuit-open-duration: ${VARKA_AI_CIRCUIT_OPEN_DURATION:1m}
-      provider-retry-attempts: ${VARKA_AI_PROVIDER_RETRY_ATTEMPTS:5}
-      retry-backoff: ${VARKA_AI_RETRY_BACKOFF:60s}
+      provider-retry-attempts: ${VARKA_AI_PROVIDER_RETRY_ATTEMPTS:2}
+      retry-backoff: ${VARKA_AI_RETRY_BACKOFF:2s}
       recent-message-window: ${VARKA_AI_RECENT_MESSAGE_WINDOW:24}
     proxy:
       enabled: ${VARKA_AI_PROXY_ENABLED:false}

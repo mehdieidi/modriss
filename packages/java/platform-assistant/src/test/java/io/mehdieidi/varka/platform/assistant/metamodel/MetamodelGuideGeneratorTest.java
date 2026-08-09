@@ -46,4 +46,18 @@ class MetamodelGuideGeneratorTest {
         "ServerlessService",
         contracts.require(ModelLevel.PIM, "serverless/service root contract").eClass());
   }
+
+  @Test
+  void resolvesCommonProviderAliasesFromLiveToolsOutput() {
+    TypeContractService contracts = new TypeContractService(knowledge);
+
+    assertEquals("InformationItem", contracts.require(ModelLevel.CIM, "Concept").eClass());
+    assertEquals("BusinessProcess", contracts.require(ModelLevel.CIM, "Process").eClass());
+    assertEquals(
+        "Requirement", contracts.require(ModelLevel.CIM, "CommunityPantryRequest").eClass());
+    assertEquals("PlatformCapability", contracts.require(ModelLevel.PIM, "Requirement").eClass());
+    assertEquals(
+        "IdempotencyPolicy", contracts.require(ModelLevel.PIM, "IdempotencyPattern").eClass());
+    assertEquals("CachePolicy", contracts.require(ModelLevel.PIM, "CachingPolicy").eClass());
+  }
 }

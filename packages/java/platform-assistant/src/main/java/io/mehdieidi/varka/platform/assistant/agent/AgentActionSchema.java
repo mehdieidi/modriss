@@ -70,9 +70,6 @@ public final class AgentActionSchema {
       case "describe_types" ->
           object(Map.of("names", array(stringSchema(), null)), List.of("names"));
       case "commit_model_batch", "apply_draft_patch" -> patchSchema(patchContracts);
-      // V2 names are advertised for capability parity; this legacy executor deliberately rejects
-      // them with an actionable response until their independent workflow states are enabled.
-      case "search_language", "complete_checkpoint" -> object(Map.of(), List.of());
       default -> throw new IllegalArgumentException("Unknown assistant tool: " + toolName);
     };
   }
@@ -83,9 +80,10 @@ public final class AgentActionSchema {
         object(
             Map.of(
                 "elementId", stringSchema(),
-                // Updates are not safe without the inspected element's exact EClass contract.
-                // The executor will expose an update variant only when that data is available.
-                "attributes", object(Map.of(), List.of()),
+                // The executor checks the target element's exact EClass contract.  The provider
+                // schema deliberately exposes only attributes from the retrieved contracts so a
+                // valid edit is possible without reopening arbitrary JSON properties.
+                "attributes", updateAttributesSchema(contracts == null ? List.of() : contracts),
                 "preconditionHash", stringSchema()),
             List.of("elementId", "attributes", "preconditionHash"));
     Map<String, Object> connection =
@@ -114,7 +112,7 @@ public final class AgentActionSchema {
     return object(
         Map.of(
             "creates", array(createItem, 48),
-            "updates", array(update, 0),
+            "updates", array(update, 48),
             "connections", array(connection, 96),
             "deletions", array(deletion, null),
             "evidence", array(evidence, 64),
@@ -424,6 +422,17 @@ public final class AgentActionSchema {
     return names.isEmpty() ? stringSchema() : enumStringSchema(names);
   }
 
+  private static Map<String, Object> updateAttributesSchema(List<TypeContract> contracts) {
+    Map<String, Object> attributes = new LinkedHashMap<>();
+    for (TypeContract contract : contracts) {
+      contract.attributes().stream()
+          .forEach(attribute -> attributes.putIfAbsent(attribute.name(), openValueSchema()));
+    }
+    // Before contracts are known, do not make mutations schema-valid. This mirrors creates and
+    // ensures the agent must retrieve authoritative Ecore contracts first.
+    return attributes.isEmpty() ? object(Map.of(), List.of()) : object(attributes, List.of());
+  }
+
   private static boolean accepts(TypeContract createdType, String targetType) {
     return createdType.eClass().equals(targetType) || createdType.supertypes().contains(targetType);
   }
@@ -468,16 +477,18 @@ public final class AgentActionSchema {
     return schema;
   }
 
+  private static Map<String, Object> openValueSchema() {
+    return Map.of();
+  }
+
   public static List<String> toolNames() {
     return List.of(
         "analyze_source_units",
         "plan_cim_blueprint",
         "plan_model_edit",
         "inspect_model",
-        "search_language",
         "describe_types",
         "commit_model_batch",
-        "complete_checkpoint",
         "respond_to_user");
   }
 }

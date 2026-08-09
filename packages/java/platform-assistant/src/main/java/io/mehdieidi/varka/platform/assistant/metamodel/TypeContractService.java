@@ -109,7 +109,46 @@ public final class TypeContractService {
             .toList();
     return embedded.size() == 1 || (embedded.size() > 1 && distinctBestEmbedded(embedded))
         ? java.util.Optional.of(embedded.get(0))
-        : java.util.Optional.empty();
+        : resolveCommonProviderAlias(level, normalized, contracts);
+  }
+
+  private java.util.Optional<TypeContract> resolveCommonProviderAlias(
+      ModelLevel level, String normalized, List<TypeContract> contracts) {
+    String alias =
+        switch (level) {
+          case CIM -> cimAlias(normalized);
+          case PIM -> pimAlias(normalized);
+          case PSM -> null;
+        };
+    if (alias == null) return java.util.Optional.empty();
+    return contracts.stream().filter(type -> type.eClass().equals(alias)).findFirst();
+  }
+
+  private String cimAlias(String normalized) {
+    return switch (normalized) {
+      case "concept", "businessconcept", "domainconcept" -> "InformationItem";
+      case "process", "workflow", "businessworkflow" -> "BusinessProcess";
+      case "userstory", "story", "request", "businessrequirement" -> "Requirement";
+      case "capability", "feature" -> "BusinessCapability";
+      case "policy", "rule" -> "Policy";
+      default -> normalized.endsWith("request") ? "Requirement" : null;
+    };
+  }
+
+  private String pimAlias(String normalized) {
+    return switch (normalized) {
+      case "requirement", "userstory", "story", "feature", "capability" -> "PlatformCapability";
+      case "service", "application", "pimmodel" -> "ServerlessService";
+      case "function", "commandhandler", "queryhandler", "eventhandler", "handler" -> "Function";
+      case "api", "apicomponent", "httpapi", "restapi" -> "Api";
+      case "schedule", "scheduler", "scheduledtask" -> "Schedule";
+      case "idempotencypattern", "idempotency", "duplicatehandling" -> "IdempotencyPolicy";
+      case "cache", "caching", "cachepolicy", "cachingpolicy" -> "CachePolicy";
+      case "datastore", "storage", "database" -> "DataStore";
+      case "event", "message" -> "EventType";
+      case "security", "securitypolicy", "architecturepolicy", "policy" -> "ArchitecturePolicy";
+      default -> null;
+    };
   }
 
   private boolean distinctBestEmbedded(List<TypeContract> embedded) {

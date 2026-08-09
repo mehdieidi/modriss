@@ -4,6 +4,7 @@ import com.openai.client.okhttp.OpenAIOkHttpClient;
 import io.mehdieidi.varka.platform.assistant.agent.AgentActionSchema;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
+import io.mehdieidi.varka.platform.assistant.application.ProviderRequestContext;
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
 import io.mehdieidi.varka.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
@@ -144,6 +145,13 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
       var body = mapper.createObjectNode();
       body.put("model", model);
+      // Keep the native-tools transport subject to the same generation limits as the Spring AI
+      // transport.  Without these fields a compatible gateway can use its much larger defaults,
+      // making a single bounded workflow step exceed the turn's token and latency budget.
+      body.put("temperature", 0.2);
+      body.put(
+          "max_tokens",
+          Math.min(properties.maxCompletionTokens(), capabilities().maxCompletionTokens()));
       if (isQwenModel(model)) {
         var reasoning = body.putObject("reasoning");
         reasoning.put("effort", "none");
@@ -189,7 +197,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       // explicit state-machine instruction in the prompt.
       boolean forceSingleTool = capabilities().forcedToolChoiceReliable() && forcedTool != null;
       if (forceSingleTool) {
-        putForcedToolChoice(body, forcedTool, false);
+        putForcedToolChoice(body, forcedTool);
       } else {
         // Requiring a tool call avoids prose that would otherwise be mistaken for structured
         // output.
@@ -200,13 +208,6 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       // advertised timeout response. HttpRequest.timeout alone did not reliably interrupt that
       // condition, which left durable turns RUNNING forever. Bound the future itself as well.
       var response = sendChatRequest(mapper, body);
-      if (forceSingleTool
-          && response.statusCode() / 100 != 2
-          && response.body() != null
-          && response.body().contains("tool_choice.name")) {
-        putForcedToolChoice(body, forcedTool, true);
-        response = sendChatRequest(mapper, body);
-      }
       if (response.statusCode() / 100 != 2) {
         String errorBody = providerErrorSnippet(response.body());
         throw new PlatformException(
@@ -269,6 +270,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   static String forcedToolName(
       io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt
           prompt) {
+    if (prompt != null && prompt.requiredTool() != null) return prompt.requiredTool();
     String userPrompt = prompt == null ? null : prompt.user();
     if (shouldForcePatchTool(userPrompt)) return "commit_model_batch";
     if (shouldForceDescribeTypesTool(userPrompt)) return "describe_types";
@@ -279,15 +281,11 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   }
 
   private static void putForcedToolChoice(
-      com.fasterxml.jackson.databind.node.ObjectNode body, String toolName, boolean flatName) {
+      com.fasterxml.jackson.databind.node.ObjectNode body, String toolName) {
     body.remove("tool_choice");
     var toolChoice = body.putObject("tool_choice");
     toolChoice.put("type", "function");
-    if (flatName) {
-      toolChoice.put("name", toolName);
-    } else {
-      toolChoice.putObject("function").put("name", toolName);
-    }
+    toolChoice.putObject("function").put("name", toolName);
   }
 
   private HttpResponse<String> sendChatRequest(
@@ -310,7 +308,26 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     if (proxy.enabled() && proxy.type() != AiProperties.ProxyType.DIRECT) {
       httpClient.proxy(java.net.ProxySelector.of(proxy.address()));
     }
-    return httpClient.build().send(request, HttpResponse.BodyHandlers.ofString());
+    java.util.concurrent.CompletableFuture<HttpResponse<String>> response =
+        httpClient.build().sendAsync(request, HttpResponse.BodyHandlers.ofString());
+    try {
+      while (true) {
+        ProviderRequestContext.check();
+        try {
+          return response.get(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (java.util.concurrent.TimeoutException ignored) {
+          // Recheck durable cancellation and the absolute turn deadline while the HTTP call runs.
+        }
+      }
+    } catch (PlatformException ex) {
+      response.cancel(true);
+      throw ex;
+    } catch (java.util.concurrent.ExecutionException ex) {
+      Throwable cause = ex.getCause();
+      if (cause instanceof java.io.IOException io) throw io;
+      if (cause instanceof RuntimeException runtime) throw runtime;
+      throw new java.io.IOException("OpenAI-compatible HTTP request failed", cause);
+    }
   }
 
   private static boolean isQwenModel(String model) {
@@ -336,8 +353,25 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     var call = calls.get(0);
     String name = call.path("function").path("name").asText();
     String arguments = call.path("function").path("arguments").asText();
-    if (name.isBlank() || arguments.isBlank() || !mapper.readTree(arguments).isObject()) {
+    if (name.isBlank() || arguments.isBlank()) {
       throw new PlatformException(422, "Provider returned malformed assistant tool arguments.");
+    }
+    try {
+      if (!mapper.readTree(arguments).isObject()) {
+        throw new PlatformException(422, "Provider returned malformed assistant tool arguments.");
+      }
+    } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+      String diagnostic = ex.getOriginalMessage() == null ? "" : ex.getOriginalMessage();
+      boolean truncated =
+          diagnostic.toLowerCase(java.util.Locale.ROOT).contains("end-of-input")
+              || diagnostic.toLowerCase(java.util.Locale.ROOT).contains("unexpected end")
+              || diagnostic.toLowerCase(java.util.Locale.ROOT).contains("was expecting");
+      throw new PlatformException(
+          truncated ? 502 : 422,
+          truncated
+              ? "Provider returned truncated assistant tool arguments; retrying within the turn"
+                  + " budget may recover."
+              : "Provider returned malformed assistant tool arguments.");
     }
     log.info("Native assistant tool received name={} argumentChars={}", name, arguments.length());
     String action =
@@ -347,12 +381,6 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
           case "plan_model_edit" -> "plan_model_edit";
           case "inspect_model", "describe_types" -> name;
           case "commit_model_batch", "apply_draft_patch" -> "commit_model_batch";
-          // These tools are included in the V2 provider contract, but the current bounded
-          // executor has no separate action state for them. A model must use the executable
-          // patch action after its lookup steps; rejecting an early completion is actionable.
-          case "search_language", "complete_checkpoint" ->
-              throw new PlatformException(
-                  422, "Provider selected a tool not executable in the current workflow step.");
           default ->
               throw new PlatformException(422, "Provider returned an unsupported assistant tool.");
         };
@@ -391,8 +419,6 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       case "inspect_model" -> "Read a model element or inventory using id.";
       case "describe_types" -> "Retrieve exact Ecore contracts for names.";
       case "commit_model_batch" -> "Submit one complete candidate model patch.";
-      case "complete_checkpoint" -> "Commit a structurally valid candidate checkpoint.";
-      case "search_language" -> "Search modeling-language concepts and methodology.";
       default -> throw new IllegalArgumentException("Unknown native assistant tool: " + name);
     };
   }

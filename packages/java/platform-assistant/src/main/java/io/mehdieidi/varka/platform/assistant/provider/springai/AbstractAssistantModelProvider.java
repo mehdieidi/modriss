@@ -2,6 +2,7 @@ package io.mehdieidi.varka.platform.assistant.provider.springai;
 
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
+import io.mehdieidi.varka.platform.assistant.application.ProviderRequestContext;
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.varka.platform.assistant.provider.ProxyAvailability;
@@ -147,13 +148,50 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
    */
   protected org.springframework.ai.chat.model.ChatResponse callModel(
       AssistantPrompt prompt, String model, boolean toolsRequested) {
-    return chatModel()
-        .call(
-            new Prompt(
-                java.util.List.of(
-                    new SystemMessage(SYSTEM_GUARDRAIL + "\n" + prompt.system()),
-                    new UserMessage(userWithContext(prompt))),
-                options(model, toolsRequested, prompt).build()));
+    Prompt springPrompt =
+        new Prompt(
+            java.util.List.of(
+                new SystemMessage(SYSTEM_GUARDRAIL + "\n" + prompt.system()),
+                new UserMessage(userWithContext(prompt))),
+            options(model, toolsRequested, prompt).build());
+    return cancellableProviderCall(() -> chatModel().call(springPrompt));
+  }
+
+  private <T> T cancellableProviderCall(Supplier<T> call) {
+    ProviderRequestContext.check();
+    java.util.concurrent.ExecutorService executor =
+        java.util.concurrent.Executors.newSingleThreadExecutor(
+            runnable -> {
+              Thread thread = new Thread(runnable, "assistant-provider-call");
+              thread.setDaemon(true);
+              return thread;
+            });
+    java.util.concurrent.CompletableFuture<T> future =
+        java.util.concurrent.CompletableFuture.supplyAsync(call, executor);
+    try {
+      while (true) {
+        ProviderRequestContext.check();
+        try {
+          return future.get(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (java.util.concurrent.TimeoutException ignored) {
+          // Poll durable cancellation and deadline state while the SDK call is in flight.
+        }
+      }
+    } catch (PlatformException ex) {
+      future.cancel(true);
+      throw ex;
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      future.cancel(true);
+      throw new PlatformException(499, "Assistant provider request was interrupted.");
+    } catch (java.util.concurrent.ExecutionException ex) {
+      Throwable cause = ex.getCause();
+      if (cause instanceof RuntimeException runtime) throw runtime;
+      if (cause instanceof Error error) throw error;
+      throw new IllegalStateException("AI provider request failed", cause);
+    } finally {
+      executor.shutdownNow();
+    }
   }
 
   private ChatModel chatModel() {
@@ -229,7 +267,7 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
           case "plan_model_edit" -> "plan_model_edit";
           case "inspect_model" -> "inspect_model";
           case "describe_types" -> "describe_types";
-          case "apply_draft_patch", "complete_checkpoint" -> "commit_model_batch";
+          case "apply_draft_patch" -> "commit_model_batch";
           default ->
               throw new PlatformException(422, "Provider returned an unsupported assistant tool.");
         };

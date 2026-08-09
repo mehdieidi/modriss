@@ -20,22 +20,28 @@ public final class SourceUnitSplitter {
     String source = text == null ? "" : text.replace("\r\n", "\n");
     if (source.isEmpty()) return List.of();
     List<SourceUnit> structural = structuralSpans(source);
-    if (source.length() <= limit || structural.size() > 1) return structural;
+    if (source.length() <= limit) return structural;
+    // Structural boundaries are preferred, but they are not a licence to exceed the configured
+    // context limit. Split each oversized structural span while retaining absolute source offsets
+    // and deterministic provenance ids.
     List<SourceUnit> result = new ArrayList<>();
-    for (int start = 0, ordinal = 1; start < source.length(); ordinal++) {
-      int end = Math.min(source.length(), start + limit);
-      if (end < source.length()) {
-        // Preserve headings, paragraphs, and event-storming lanes/items as whole units whenever
-        // possible. A hard character cut is only the final fallback for one oversized paragraph.
-        int boundary =
-            Math.max(
-                Math.max(source.lastIndexOf("\n#", end), source.lastIndexOf("\n\n", end)),
-                Math.max(source.lastIndexOf("\n- ", end), source.lastIndexOf("\n* ", end)));
-        if (boundary > start + limit / 3) end = boundary;
+    int ordinal = 1;
+    for (SourceUnit span : structural) {
+      for (int start = span.startOffset(); start < span.endOffset(); ordinal++) {
+        int end = Math.min(span.endOffset(), start + limit);
+        if (end < span.endOffset()) {
+          // Preserve headings, paragraphs, and event-storming lanes/items as whole units whenever
+          // possible. A hard character cut is only the final fallback for one oversized paragraph.
+          int boundary =
+              Math.max(
+                  Math.max(source.lastIndexOf("\n#", end), source.lastIndexOf("\n\n", end)),
+                  Math.max(source.lastIndexOf("\n- ", end), source.lastIndexOf("\n* ", end)));
+          if (boundary > start + limit / 3) end = boundary;
+        }
+        String unit = source.substring(start, end);
+        result.add(new SourceUnit(id(ordinal, start, end, unit), ordinal, start, end, unit));
+        start = end;
       }
-      String unit = source.substring(start, end);
-      result.add(new SourceUnit(id(ordinal, start, end, unit), ordinal, start, end, unit));
-      start = end;
     }
     return result;
   }

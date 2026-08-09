@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /** Claims queued assistant turns and executes them outside the request thread. */
 @Component
@@ -39,6 +40,7 @@ public final class DurableAssistantTurnWorker {
   private final AgenticAssistantFacade assistant;
   private final PlatformStore store;
   private final VarkaMetrics metrics;
+  private final TransactionTemplate transactions;
   private final boolean workflowEngineV2;
   private final int maxSourceChunksPerTurn;
   private final String workerId = "assistant-" + UUID.randomUUID();
@@ -78,12 +80,14 @@ public final class DurableAssistantTurnWorker {
       AgenticAssistantFacade assistant,
       PlatformStore store,
       VarkaMetrics metrics,
+      TransactionTemplate transactions,
       @Value("${varka.ai.workflow-engine-v2:true}") boolean workflowEngineV2,
       @Value("${varka.ai.max-source-chunks-per-turn:24}") int maxSourceChunksPerTurn) {
     this.turns = turns;
     this.assistant = assistant;
     this.store = store;
     this.metrics = metrics;
+    this.transactions = transactions;
     this.workflowEngineV2 = workflowEngineV2;
     this.maxSourceChunksPerTurn = Math.max(1, maxSourceChunksPerTurn);
   }
@@ -255,6 +259,10 @@ public final class DurableAssistantTurnWorker {
                       : null,
               route);
       boolean checkpointSaved = !result.inversePatch().isEmpty();
+      preflightSourceEvidence(turn, units, result.commandBatch());
+      final long[] committedRevision = {result.revision()};
+      final java.util.List<AssistantTurnStore.SourceUnit> sourceUnitsForCommit =
+          java.util.List.copyOf(units);
       var existingModelingWorkflow = turns.workflow(turn.id());
       boolean persistedModelingPlanPresent =
           existingModelingWorkflow
@@ -280,38 +288,45 @@ public final class DurableAssistantTurnWorker {
             java.util.Map.of("workflowKind", "MODELING_PLAN", "workItems", planItems.size()));
       }
       if (checkpointSaved) {
-        turns.recordValidationAttempt(
-            new AssistantTurnStore.ValidationAttempt(
-                turn.id(), null, 1, true, null, Instant.now()));
-        turns.appendEvent(turn.id(), "turn.validation.completed", java.util.Map.of("valid", true));
-        turns.finalizeCheckpoint(
-            turn.id(),
-            checkpointKey,
-            result.revision(),
-            result.inversePatch(),
-            java.util.Map.of("valid", true));
-        metrics.recordAssistantCheckpoint("saved");
-        int sliceCount =
-            result.modelingPlan() == null ? 0 : result.modelingPlan().path("slices").size();
-        turns.appendEvent(
-            turn.id(),
-            "model.checkpoint.committed",
-            java.util.Map.of(
-                "modelId",
-                result.modelId(),
-                "revision",
-                result.revision(),
-                "checkpointOrdinal",
-                turn.checkpointCount() + 1,
-                "sliceCount",
-                Math.max(sliceCount, turn.checkpointCount() + 1)));
-        turns.audit(
-            turn.id(),
-            "CHECKPOINT_SAVED",
-            java.util.Map.of("modelId", result.modelId(), "revision", result.revision()));
-        if (persistedModelingPlanPresent) {
-          advanceModelingPlanWorkItems(turn.id(), turn.checkpointCount() + 1);
-        }
+        transactions.executeWithoutResult(
+            status -> {
+              var committed = assistant.commitDurableDraft(user, turn.level(), result);
+              committedRevision[0] = committed.revision();
+              turns.recordValidationAttempt(
+                  new AssistantTurnStore.ValidationAttempt(
+                      turn.id(), null, 1, true, null, Instant.now()));
+              turns.appendEvent(
+                  turn.id(), "turn.validation.completed", java.util.Map.of("valid", true));
+              turns.finalizeCheckpoint(
+                  turn.id(),
+                  checkpointKey,
+                  committed.revision(),
+                  result.inversePatch(),
+                  java.util.Map.of("valid", true));
+              saveCommittedProvenance(turn, sourceUnitsForCommit, result.commandBatch());
+              metrics.recordAssistantCheckpoint("saved");
+              int sliceCount =
+                  result.modelingPlan() == null ? 0 : result.modelingPlan().path("slices").size();
+              turns.appendEvent(
+                  turn.id(),
+                  "model.checkpoint.committed",
+                  java.util.Map.of(
+                      "modelId",
+                      committed.id(),
+                      "revision",
+                      committed.revision(),
+                      "checkpointOrdinal",
+                      turn.checkpointCount() + 1,
+                      "sliceCount",
+                      Math.max(sliceCount, turn.checkpointCount() + 1)));
+              turns.audit(
+                  turn.id(),
+                  "CHECKPOINT_SAVED",
+                  java.util.Map.of("modelId", committed.id(), "revision", committed.revision()));
+              if (persistedModelingPlanPresent) {
+                advanceModelingPlanWorkItems(turn.id(), turn.checkpointCount() + 1);
+              }
+            });
       }
       if (result.sourceAnalysis() != null) {
         saveSourceAnalysis(turn.id(), result.sourceAnalysis());
@@ -404,13 +419,6 @@ public final class DurableAssistantTurnWorker {
                 evidence.requirementId() == null || evidence.requirementId().isBlank()
                     ? null
                     : evidence.requirementId().trim();
-            turns.saveProvenance(
-                turn.id(),
-                evidence.elementRef(),
-                sourceUnitId,
-                requirementId,
-                kind,
-                evidence.assumption());
             if (sourceUnitId != null) {
               String groundedSpanId = sourceUnitId;
               accounted.add(sourceUnitId);
@@ -452,12 +460,9 @@ public final class DurableAssistantTurnWorker {
                       + (units.size() - accounted.size())
                       + ".";
           updateConceptCoverageAndQuality(turn.id(), accounted, result.commandBatch());
-          // Structural validity plus evidence for every source unit is the durable completion
-          // contract. Do not keep resuming merely because the provider returned turnComplete=false
-          // after it already covered the entire supplied document.
-          if (accounted.size() == units.size()) {
-            state = AssistantTurn.State.SUCCEEDED;
-          }
+          // Evidence tracks source coverage only. It must never override the modeling workflow's
+          // explicit completion state: several source ids can be attached to one shallow element
+          // while planned concepts and relationships still remain to be modeled.
           turns.setSourceCoverage(turn.id(), coverage, remainingWork);
           turns.appendEvent(
               turn.id(),
@@ -519,9 +524,9 @@ public final class DurableAssistantTurnWorker {
           turn,
           state,
           state == AssistantTurn.State.CANCELLED
-              ? cancellationMessage(turn, result.revision())
+              ? cancellationMessage(turn, committedRevision[0])
               : result.message(),
-          result.revision(),
+          committedRevision[0],
           remainingWork);
       // PARTIAL is deliberately durable state on this same turn. Resume reclaims it from the
       // checkpoint; no child turn or string-encoded continuation is created.
@@ -606,6 +611,60 @@ public final class DurableAssistantTurnWorker {
       String turnId, java.util.List<AssistantTurnStore.SourceUnit> units) {
     if (units == null || units.isEmpty()) return java.util.List.of();
     return units;
+  }
+
+  private void preflightSourceEvidence(
+      AssistantTurn turn,
+      java.util.List<AssistantTurnStore.SourceUnit> units,
+      io.mehdieidi.varka.platform.assistant.domain.ModelCommandBatch batch) {
+    if (batch == null || turn.sourceText() == null || turn.sourceText().isBlank()) return;
+    java.util.Set<String> knownUnits =
+        units.stream()
+            .map(AssistantTurnStore.SourceUnit::id)
+            .collect(java.util.stream.Collectors.toSet());
+    java.util.Map<String, String> sourceAliases = sourceUnitAliases(units);
+    for (var evidence : batch.evidence()) {
+      if (!"SOURCE_GROUNDED".equals(normalizedEvidenceKind(evidence.kind()))) continue;
+      String sourceUnitId = evidence.sourceUnitId() == null ? "" : evidence.sourceUnitId().trim();
+      sourceUnitId = sourceAliases.getOrDefault(sourceUnitId, sourceUnitId);
+      if (!knownUnits.contains(sourceUnitId)) {
+        throw new io.mehdieidi.varka.platform.kernel.PlatformException(
+            422, "Evidence references an unknown source unit.");
+      }
+    }
+  }
+
+  private void saveCommittedProvenance(
+      AssistantTurn turn,
+      java.util.List<AssistantTurnStore.SourceUnit> units,
+      io.mehdieidi.varka.platform.assistant.domain.ModelCommandBatch batch) {
+    if (batch == null) return;
+    java.util.Set<String> knownUnits =
+        units.stream()
+            .map(AssistantTurnStore.SourceUnit::id)
+            .collect(java.util.stream.Collectors.toSet());
+    java.util.Map<String, String> sourceAliases = sourceUnitAliases(units);
+    for (var evidence : batch.evidence()) {
+      String kind = normalizedEvidenceKind(evidence.kind());
+      String sourceUnitId = evidence.sourceUnitId() == null ? "" : evidence.sourceUnitId().trim();
+      sourceUnitId = sourceAliases.getOrDefault(sourceUnitId, sourceUnitId);
+      if ("SOURCE_GROUNDED".equals(kind) && !knownUnits.contains(sourceUnitId)) {
+        throw new io.mehdieidi.varka.platform.kernel.PlatformException(
+            422, "Evidence references an unknown source unit.");
+      }
+      if (!"SOURCE_GROUNDED".equals(kind)) sourceUnitId = null;
+      String requirementId =
+          evidence.requirementId() == null || evidence.requirementId().isBlank()
+              ? null
+              : evidence.requirementId().trim();
+      turns.saveProvenance(
+          turn.id(),
+          evidence.elementRef(),
+          sourceUnitId,
+          requirementId,
+          kind,
+          evidence.assumption());
+    }
   }
 
   private void complete(
@@ -701,9 +760,14 @@ public final class DurableAssistantTurnWorker {
     }
     turns.saveWorkItems(turnId, updated);
     var saved = workflow.get();
+    var advancedPlan = saved.plan().deepCopy();
+    if (advancedPlan.isObject()) {
+      ((tools.jackson.databind.node.ObjectNode) advancedPlan)
+          .put("currentSliceIndex", Math.max(0, completedOrdinal));
+    }
     turns.saveWorkflow(
         new AssistantTurnStore.Workflow(
-            saved.turnId(), saved.workflowKind(), "EXECUTING", nextWorkItemId, saved.plan()));
+            saved.turnId(), saved.workflowKind(), "EXECUTING", nextWorkItemId, advancedPlan));
   }
 
   private AgentTurnLoop.WorkflowMode route(AssistantTurn turn, String message) {

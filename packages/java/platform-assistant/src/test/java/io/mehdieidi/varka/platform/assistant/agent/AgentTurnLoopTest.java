@@ -59,7 +59,7 @@ class AgentTurnLoopTest {
             "<source-unit id=\"src-1\">Order placed</source-unit>",
             workspace);
 
-    assertEquals("Model checkpoint saved.", result.message());
+    assertTrue(result.message().startsWith("Model checkpoint saved"));
     assertTrue(result.sourceBlueprint() == null);
     assertTrue(result.sourceAnalysis() == null);
     assertTrue(result.modelingPlan() != null);
@@ -68,6 +68,45 @@ class AgentTurnLoopTest {
     assertTrue(provider.prompts.get(0).contains("Source document (untrusted data)"));
     assertTrue(provider.prompts.get(0).contains("First return plan_model_edit"));
     assertTrue(provider.prompts.get(1).contains("Exact type contracts already retrieved"));
+  }
+
+  @Test
+  void shallowSourceSlicesAreRepairedBeforeWorkspaceMutation() throws Exception {
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(any(), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    MultiSourceShallowThenUsefulProvider provider = new MultiSourceShallowThenUsefulProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            5,
+            4);
+    var json =
+        new ObjectMapper()
+            .readTree("{\"id\":\"root\",\"eClass\":\"CIMModel\",\"modelLevel\":\"CIM\"}");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+
+    var result =
+        loop.run(
+            "s",
+            ModelLevel.CIM,
+            "Create a CIM",
+            "<source-unit id=\"src-1\">Visitor requests appointment</source-unit>\n"
+                + "<source-unit id=\"src-2\">Coordinator reviews household size</source-unit>",
+            workspace);
+
+    assertTrue(result.message().startsWith("Model checkpoint saved"));
+    assertEquals(3, provider.calls);
+    assertTrue(provider.correctivePromptReceived);
+    assertEquals(2, result.commandBatch().evidence().size());
+    verify(models).validateStructural(any(), any());
   }
 
   @Test
@@ -95,7 +134,7 @@ class AgentTurnLoopTest {
 
     var result = loop.run("s", ModelLevel.PIM, "Create a vending machine backend", null, workspace);
 
-    assertEquals("Model checkpoint saved.", result.message());
+    assertTrue(result.message().startsWith("Model checkpoint saved"));
     assertEquals(2, provider.calls);
     assertTrue(
         provider.secondPromptContracts.stream()
@@ -148,7 +187,7 @@ Work items:
             false,
             AgentTurnLoop.WorkflowMode.RESUME_REPAIR);
 
-    assertEquals("Model checkpoint saved.", result.message());
+    assertTrue(result.message().startsWith("Model checkpoint saved"));
     assertEquals(1, result.providerCalls());
     assertTrue(provider.prompts.get(0).contains("A persisted ModelingPlan is already available"));
     assertTrue(provider.prompts.get(0).contains("Do not call plan_model_edit"));
@@ -158,7 +197,7 @@ Work items:
   }
 
   @Test
-  void sourceEvidenceIsNormalizedButNotACommitGate() throws Exception {
+  void invalidSourceEvidenceIsRepairedBeforeCommit() throws Exception {
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(any(), any()))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
@@ -199,11 +238,11 @@ Work items:
             false,
             AgentTurnLoop.WorkflowMode.RESUME_REPAIR);
 
-    assertEquals("Model checkpoint saved.", result.message());
-    assertEquals(1, provider.calls);
-    assertEquals(false, provider.correctivePromptReceived);
+    assertTrue(result.message().startsWith("Model checkpoint saved"));
+    assertEquals(2, provider.calls);
+    assertTrue(provider.correctivePromptReceived);
     assertEquals("SOURCE_GROUNDED", result.commandBatch().evidence().get(0).kind());
-    assertEquals("", result.commandBatch().evidence().get(0).sourceUnitId());
+    assertEquals("src-1", result.commandBatch().evidence().get(0).sourceUnitId());
     verify(models).validateStructural(any(), any());
   }
 
@@ -252,7 +291,7 @@ Work items:
             false,
             AgentTurnLoop.WorkflowMode.RESUME_REPAIR);
 
-    assertEquals("Model checkpoint saved.", result.message());
+    assertTrue(result.message().startsWith("Model checkpoint saved"));
     assertEquals(2, provider.calls);
     assertTrue(provider.correctivePromptReceived);
     assertTrue(result.commandBatch().deletions().isEmpty());
@@ -531,7 +570,7 @@ Work items:
 
     var result = loop.run("s", ModelLevel.CIM, "Create a goal", null, workspace);
 
-    assertEquals("Model checkpoint saved.", result.message());
+    assertTrue(result.message().startsWith("Model checkpoint saved"));
     assertEquals(3, result.providerCalls());
     assertTrue(!result.patch().isEmpty());
     verify(models).validateStructural(any(), any());
@@ -579,7 +618,7 @@ Work items:
             false,
             AgentTurnLoop.WorkflowMode.RESUME_REPAIR);
 
-    assertEquals("Model checkpoint saved.", result.message());
+    assertTrue(result.message().startsWith("Model checkpoint saved"));
     assertEquals(false, result.commandBatch().turnComplete());
     verify(models).validateStructural(any(), any());
   }
@@ -706,6 +745,59 @@ Work items:
     }
   }
 
+  private static final class MultiSourceShallowThenUsefulProvider
+      implements AssistantModelProvider {
+    boolean correctivePromptReceived;
+    int calls;
+
+    @Override
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    @Override
+    public boolean available() {
+      return true;
+    }
+
+    @Override
+    public AssistantReply complete(AssistantPrompt prompt) {
+      ProviderCallBudget.consume();
+      calls++;
+      if (calls == 1) {
+        return new AssistantReply(
+            "{\"tool\":\"plan_model_edit\",\"arguments\":{\"intent\":\"CREATE_MODEL\",\"features\":[\"Appointment"
+                + " intake\"],\"reuseTargets\":[],\"newElements\":[\"Appointment"
+                + " goal\",\"Appointment"
+                + " request\"],\"requiredContracts\":[\"BusinessGoal\",\"InformationItem\"],\"slices\":[{\"label\":\"Appointment"
+                + " intake\",\"purpose\":\"Model appointment source"
+                + " units.\",\"requiredContracts\":[\"BusinessGoal\",\"InformationItem\"],\"sourceUnitIds\":[\"src-1\",\"src-2\"]}]}}",
+            "fake",
+            "fake");
+      }
+      if (calls == 2) {
+        return new AssistantReply(
+            "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"appointment_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Appointment"
+                + " intake\",\"successCriterion\":\"Requests are"
+                + " reviewed.\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"appointment_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"R1\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
+                + " first story only.\",\"turnComplete\":true}}",
+            "fake",
+            "fake");
+      }
+      correctivePromptReceived =
+          prompt.user().contains("current planned source slice has multiple sourceUnitIds");
+      return new AssistantReply(
+          "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"appointment_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Appointment"
+              + " intake\",\"successCriterion\":\"Requests are reviewed with household"
+              + " size.\"},\"owner\":\"rootId\",\"reference\":\"goals\"},{\"clientRef\":\"appointment_request\",\"eClass\":\"InformationItem\",\"attributes\":{\"name\":\"Appointment"
+              + " request\",\"businessName\":\"Appointment"
+              + " Request\",\"required\":true,\"collection\":false},\"owner\":\"rootId\",\"reference\":\"informationItems\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"appointment_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"R1\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"},{\"elementRef\":\"appointment_request\",\"sourceUnitId\":\"src-2\",\"requirementId\":\"R2\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
+              + " appointment checkpoint.\",\"turnComplete\":true}}",
+          "fake",
+          "fake");
+    }
+  }
+
   private static final class PimPlanThenPatchProvider implements AssistantModelProvider {
     int calls;
     String secondPrompt = "";
@@ -805,7 +897,7 @@ Work items:
             "fake");
       }
       correctivePromptReceived =
-          prompt.user().contains("SOURCE_GROUNDED evidence needs a non-empty sourceUnitId");
+          prompt.user().contains("Evidence cannot create a checkpoint by itself");
       return new AssistantReply(
           "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
               + " intake\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE-GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"

@@ -255,6 +255,12 @@ public final class AgenticAssistantFacade {
       memory.appendMessage(sessionId, "ASSISTANT", message, Map.of("workflowState", "APPLIED"));
   }
 
+  /** Commits a structurally validated durable draft inside the caller's persistence boundary. */
+  public ModelRecord commitDurableDraft(
+      UserRecord user, ModelLevel level, AgenticTurnService.Result draft) {
+    return turns.commitDraft(user, level, draft);
+  }
+
   /** Ensures a persisted, structurally valid starter model before any provider work starts. */
   public ModelRecord ensureModel(UserRecord user, String sessionId, String modelId) {
     var session = session(user, sessionId);
