@@ -175,6 +175,13 @@ html.light .app-logo-img {
     0 1px 0 color-mix(in srgb, #000 14%, transparent);
 }
 
+/* The lifecycle controls are part of the topbar surface, not a separate
+ * tinted panel. A panel here creates the blue strip at the rail junction. */
+.topbar-collapse > .model-lifecycle {
+  background: transparent;
+  box-shadow: none;
+}
+
 .model-lifecycle-heading {
   display: grid;
   gap: 2px;
@@ -586,10 +593,36 @@ html.light .tab.active {
 
   .topbar-collapse {
     display: flex;
+    position: static;
+    left: auto;
+    right: auto;
+    top: auto;
+    z-index: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding: 0;
+    flex-direction: row;
+    align-items: center;
+    max-height: none;
     gap: 7px;
     overflow-x: auto;
     overflow-y: visible;
     scrollbar-width: none;
+  }
+
+  /* Do not carry the tablet menu panel's full-width card into the inline
+   * topbar layout. It otherwise paints a tinted layer over the rail junction. */
+  .topbar-collapse .model-lifecycle {
+    width: auto;
+    align-items: center;
+    padding: 3px;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
   }
 
   .topbar-collapse::-webkit-scrollbar {
@@ -605,6 +638,13 @@ html.light .tab.active {
     bottom: calc(var(--mobile-dock-h, 0px) + 10px);
     max-height: none;
     z-index: 95;
+    border: var(--glass-pane-border);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--glass-pane-bg) 96%, var(--surface-2) 4%);
+    box-shadow: var(--glass-pane-highlight);
+    backdrop-filter: var(--glass-pane-blur);
+    -webkit-backdrop-filter: var(--glass-pane-blur);
+    padding: 11px;
   }
 
   .app-brand {
@@ -706,11 +746,11 @@ html.light .tab.active {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
+  /* background: linear-gradient(
     90deg,
     color-mix(in srgb, var(--accent) 6%, transparent),
     transparent 42%
-  );
+  ); */
   opacity: 0.9;
   pointer-events: none;
   z-index: 0;
