@@ -55,7 +55,7 @@ Nested under non-service parents:
 
 - Top-level deployable resources → `val` under `awspsmcore.SamStack.resources`
 - Logical composites (`ApiGatewayApi`, `AwsLambdaFunction`, `RestApi`) → `val` child resources for routes, stages, permissions, event sources, etc.
-- Every `AwsResource` retains `readonly transient ref SamStack[1]#resources stack`
+- A top-level `AwsResource` may retain `readonly transient ref SamStack[?]#resources stack`; nested resources have no direct stack back-pointer
 - `AwsPsmModel.allResources` is a derived flattening of nested resources for CFN ordering
 
 ## Audit workflow

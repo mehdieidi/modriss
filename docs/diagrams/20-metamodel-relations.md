@@ -56,42 +56,64 @@ classDiagram
 classDiagram
     class CIMModel
     class Requirement
+    class RequirementRelationship
     class BusinessGoal
+    class KPI
+    class Stakeholder
     class Actor
+    class Role
     class BusinessCapability
+    class CapabilityDependency
     class BoundedContextCandidate
     class DomainEntity
     class ValueObject
     class DomainRelationship
     class AggregateCandidate
+    class InformationItem
+    class DataClassification
     class Command
     class Query
     class BusinessEvent
+    class BusinessError
+    class Condition
     class BusinessProcess
     class Policy
     class DecisionTable
     class Risk
     class Assumption
+    class Hotspot
+    class TransformationProfile
     class TraceModel
     class ProductionReadinessAssessment
 
     CIMModel *-- "*" Requirement
+    CIMModel *-- "*" RequirementRelationship
     CIMModel *-- "*" BusinessGoal
+    CIMModel *-- "*" KPI
+    CIMModel *-- "*" Stakeholder
     CIMModel *-- "*" Actor
+    CIMModel *-- "*" Role
     CIMModel *-- "*" BusinessCapability
+    CIMModel *-- "*" CapabilityDependency
     CIMModel *-- "*" BoundedContextCandidate
     CIMModel *-- "*" DomainEntity
     CIMModel *-- "*" ValueObject
     CIMModel *-- "*" DomainRelationship
     CIMModel *-- "*" AggregateCandidate
+    CIMModel *-- "*" InformationItem
+    CIMModel *-- "*" DataClassification
     CIMModel *-- "*" Command
     CIMModel *-- "*" Query
     CIMModel *-- "*" BusinessEvent
+    CIMModel *-- "*" BusinessError
+    CIMModel *-- "*" Condition
     CIMModel *-- "*" BusinessProcess
     CIMModel *-- "*" Policy
     CIMModel *-- "*" DecisionTable
     CIMModel *-- "*" Risk
     CIMModel *-- "*" Assumption
+    CIMModel *-- "*" Hotspot
+    CIMModel *-- "0..1" TransformationProfile
     CIMModel *-- "0..1" TraceModel
     CIMModel *-- "0..1" ProductionReadinessAssessment
 ```
@@ -102,9 +124,15 @@ classDiagram
 classDiagram
     class PIMModel
     class ServerlessService
+    class ServiceElementMembership
     class DeploymentUnit
     class Environment
+    class ImplementationProfile
+    class PlatformCapability
+    class PlatformMappingAssessment
     class Schema
+    class BusinessRule
+    class DecisionModel
     class Function
     class Api
     class ApiRoute
@@ -120,19 +148,31 @@ classDiagram
     class Principal
     class ArchitecturePolicy
     class Flow
+    class DataAccess
+    class HumanTask
+    class EscalationPolicy
     class ConfigurationSet
     class Secret
 
     PIMModel *-- "*" ServerlessService
+    PIMModel *-- "*" ServiceElementMembership
     PIMModel *-- "*" DeploymentUnit
     PIMModel *-- "*" Environment
+    PIMModel *-- "0..1" ImplementationProfile
+    PIMModel *-- "*" PlatformCapability
+    PIMModel *-- "*" PlatformMappingAssessment
     PIMModel *-- "*" Schema
     PIMModel *-- "*" EventType
+    PIMModel *-- "*" BusinessRule
+    PIMModel *-- "*" DecisionModel
     PIMModel *-- "*" ExternalEndpoint
     PIMModel *-- "*" IdentityProvider
     PIMModel *-- "*" Principal
     PIMModel *-- "*" ArchitecturePolicy
     PIMModel *-- "*" Flow
+    PIMModel *-- "*" DataAccess
+    PIMModel *-- "*" HumanTask
+    PIMModel *-- "*" EscalationPolicy
     PIMModel *-- "*" ConfigurationSet
     PIMModel *-- "*" Secret
     ServerlessService *-- "*" Function
@@ -168,9 +208,21 @@ classDiagram
     class CloudWatchLogGroup
     class AwsRelationshipView
     class StructuredDocument
+    class SamGlobals
+    class AwsNamingPolicy
+    class AwsTaggingPolicy
+    class AwsSecurityBaseline
+    class TraceModel
+    class ProductionReadinessAssessment
 
     AwsPsmModel *-- "1..*" AwsStage
     AwsPsmModel *-- "1..*" SamStack
+    AwsPsmModel *-- "0..1" SamGlobals
+    AwsPsmModel *-- "0..1" AwsNamingPolicy
+    AwsPsmModel *-- "0..1" AwsTaggingPolicy
+    AwsPsmModel *-- "0..1" AwsSecurityBaseline
+    AwsPsmModel *-- "0..1" TraceModel
+    AwsPsmModel *-- "0..1" ProductionReadinessAssessment
     AwsPsmModel *-- "*" AwsRelationshipView
     AwsPsmModel *-- "*" StructuredDocument
     AwsResource <|-- AwsLambdaFunction
@@ -185,7 +237,7 @@ classDiagram
     AwsResource <|-- KmsKey
     AwsResource <|-- CognitoUserPool
     AwsResource <|-- CloudWatchLogGroup
-    SamStack o-- "*" AwsResource
+    SamStack *-- "*" AwsResource
 ```
 
 ## Package Import Relations
