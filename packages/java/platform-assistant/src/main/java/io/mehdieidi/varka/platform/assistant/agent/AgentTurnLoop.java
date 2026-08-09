@@ -316,6 +316,9 @@ public final class AgentTurnLoop {
       boolean enforcedInspectionReady = false;
       int repairAttempts = 0;
       String lastRejectedBatchSummary = "";
+      String lastRejectedBatchJson = "";
+      String firstRejectedBatchJson = "";
+      JsonNode lastRejectedBatchArguments = null;
       String exactContracts = null;
       List<TypeContract> patchContracts = List.of();
       JsonNode modelingPlan = null;
@@ -762,6 +765,11 @@ public final class AgentTurnLoop {
               validateSourceCheckpointUsefulness(
                   batch, sourceDocument, modelingPlan, patchContracts);
               lastRejectedBatchSummary = batchSummary(batch);
+              lastRejectedBatchJson = boundedRejectedBatch(action.arguments());
+              lastRejectedBatchArguments = action.arguments().deepCopy();
+              if (firstRejectedBatchJson.isBlank()) {
+                firstRejectedBatchJson = lastRejectedBatchJson;
+              }
               if (sourceBacked && !batch.deletions().isEmpty()) {
                 throw new PlatformException(
                     422,
@@ -971,13 +979,13 @@ public final class AgentTurnLoop {
           metrics.recordAssistantMalformedAction(actionFailureReason(toolFailure));
           if (!readOnlyMode
               && repairableToolFailure(toolFailure)
-              && repairAttempts < 4
+              && repairAttempts < Math.max(4, maxProviderCalls - 2)
               && ProviderCallBudget.hasRemaining()) {
             repairAttempts++;
             metrics.recordAssistantRepairReason(actionFailureReason(toolFailure));
             // Rebuild a bounded repair request instead of recursively appending failed prompts.
-            // It carries the original work item, exact contracts, and diagnostics but never
-            // repeats prior source/model context or an already-invalid patch verbatim.
+            // It carries the original work item, exact contracts, rejected draft, and diagnostics
+            // without recursively appending prior repair prompts.
             user =
                 followUpContext(userMessage, sourceDocument)
                     + (exactContracts == null
@@ -987,11 +995,24 @@ public final class AgentTurnLoop {
                         ? ""
                         : "\n\nRejected draft summary to preserve additively when valid:\n"
                             + lastRejectedBatchSummary)
+                    + (lastRejectedBatchJson.isBlank()
+                        ? ""
+                        : "\n\nRejected commit_model_batch arguments (edit this draft in place):\n"
+                            + lastRejectedBatchJson)
+                    + (firstRejectedBatchJson.isBlank()
+                            || firstRejectedBatchJson.equals(lastRejectedBatchJson)
+                        ? ""
+                        : "\n\nOriginal atomic batch (restore any valid creates/connections that"
+                            + " a later repair accidentally dropped):\n"
+                            + firstRejectedBatchJson)
                     + "\n\nRepair diagnostic JSON:\n"
-                    + repairDiagnostic(toolFailure, turnTools)
+                    + repairDiagnostic(toolFailure, turnTools, lastRejectedBatchArguments)
                     + "\nThe next action must be commit_model_batch. Return only one corrected"
                     + " tool call. Keep already-valid planned elements and evidence from the"
-                    + " rejected draft. Add or correct only missing planned source units,"
+                    + " rejected draft. No element from a rejected draft has been saved: never"
+                    + " submit only the newly corrected element or refer to a dropped clientRef."
+                    + " Return the complete corrected atomic batch. Add or correct only missing"
+                    + " planned source units,"
                     + " concepts, required attributes, required references, and invalid"
                     + " relationships. Do not replan, do not replace previously covered"
                     + " sourceUnitIds unless the diagnostic says they are invalid, and preserve"
@@ -1008,7 +1029,11 @@ public final class AgentTurnLoop {
                     + " If backend validation reports RequiredAttribute, keep the intended"
                     + " source-grounded element and add the missing required attribute using the"
                     + " exact returned contract; for enum attributes choose exactly one allowed"
-                    + " literal and state any assumption in evidence. If backend validation"
+                    + " literal and state any assumption in evidence. If the diagnostic says an"
+                    + " attribute is not writable on an EClass, remove that exact attribute from"
+                    + " the affected create/update; never resubmit the unchanged invalid key or"
+                    + " move it to another element unless that element's exact contract lists it."
+                    + " If backend validation"
                     + " reports RequiredReference, add or create a compatible target and connect"
                     + " it through the exact required non-containment reference, or remove the"
                     + " element whose required link cannot be satisfied from the source. If"
@@ -1153,6 +1178,12 @@ public final class AgentTurnLoop {
     return value == null || value.isBlank() ? fallback : value.trim();
   }
 
+  private String boundedRejectedBatch(JsonNode arguments) {
+    if (arguments == null || !arguments.isObject()) return "";
+    String value = arguments.toString();
+    return value.length() <= 20000 ? value : value.substring(0, 20000);
+  }
+
   private JsonNode persistedModelingPlan(String userMessage) {
     if (userMessage == null || userMessage.isBlank()) return null;
     String marker = "\nPlan:\n";
@@ -1205,11 +1236,11 @@ public final class AgentTurnLoop {
     }
     for (String planned : currentSliceContractNames(modelingPlan)) {
       if (selectedNames.size() >= selectedContractLimit) break;
-      if (!planned.isBlank()) selectedNames.add(planned);
+      if (guides.isKnownType(level, planned)) selectedNames.add(planned);
     }
     for (String name : requestedNames) {
       if (selectedNames.size() >= selectedContractLimit) break;
-      if (name != null && !name.isBlank()) selectedNames.add(name);
+      if (guides.isKnownType(level, name)) selectedNames.add(name.trim());
     }
     return selectedNames.stream().limit(selectedContractLimit).toList();
   }
@@ -1462,6 +1493,10 @@ security, and observability when the request is broad. For source-backed work, e
 include exact sourceUnitIds and should group related stories by capability, workflow, or dependency
 instead of making one checkpoint per story. When the prompt supplies 20 or fewer source units,
 make the first slice include all supplied sourceUnitIds unless doing so would exceed patch caps.
+requiredContracts may contain only exact case-sensitive EClass names from the supplied metamodel
+type index, never conceptual categories such as Relationship, Storage, Security, or Observability.
+Include every concrete EClass needed for each requested feature; do not collapse a complete-system
+request to one aggregate contract. The backend will add Ecore-derived containment-owner contracts.
 commit_model_batch arguments must match this shape:
 {"creates":[{"clientRef":"tmp_stable_name","eClass":"ExactType","attributes":{},
 "owner":"existingIdOrPriorClientRef","reference":"containmentFeature"}],"updates":
@@ -1593,6 +1628,13 @@ next action must be commit_model_batch. Never invent EClasses, attributes, conta
 reference names, ids, or enum values. Every create needs owner and containment reference; direct
 root containment uses owner:"rootId". Every required attribute and required writable reference in
 the exact contract must be satisfied in the same batch.
+Create only TYPE contracts marked creatable=true. A creatable=false contract is supplied only to
+show an existing owner, an abstract target, or the authoritative model root. Follow the containment
+chain literally: if root contains an intermediate owner and that owner contains the requested
+element, create/use the intermediate owner and reference its exact clientRef from the child.
+OWNED_BY lines are authoritative construction recipes. An inspected existing element can be used
+as an owner only when its exact eClass appears on that child's OWNED_BY line; never substitute an
+element merely because its name sounds like a service, profile, container, or architecture.
 
 Relationships are first-class model content. Add connections only for writable non-containment
 references listed on the source EClass contract, and use exact created clientRefs or inspected ids
@@ -1647,7 +1689,8 @@ validation.
     return failure.status() == 400 || failure.status() == 404 || failure.status() == 422;
   }
 
-  private JsonNode repairDiagnostic(PlatformException failure, AgentModelTools turnTools) {
+  private JsonNode repairDiagnostic(
+      PlatformException failure, AgentModelTools turnTools, JsonNode rejectedArguments) {
     var diagnostic = mapper.createObjectNode();
     diagnostic.put("status", failure.status());
     diagnostic.put("category", actionFailureReason(failure));
@@ -1661,6 +1704,12 @@ validation.
     if (message.contains("required") && message.contains("attribute")) {
       hints.add(
           "Add the missing required attribute with a valid JSON value or remove that create.");
+    }
+    if (message.contains("attribute") && message.contains("not writable")) {
+      hints.add(
+          "Delete the rejected attribute key from that create/update. Keep only attributes listed"
+              + " in the affected EClass's valid exact attributes; do not repeat the unchanged"
+              + " batch.");
     }
     if (message.contains("containment") || message.contains("owner")) {
       hints.add(
@@ -1682,10 +1731,31 @@ validation.
     }
     try {
       diagnostic.set("currentModelSummary", turnTools.inspectSummary());
+      List<String> childTypes = rejectedCreateTypes(rejectedArguments);
+      if (!childTypes.isEmpty()) {
+        diagnostic.set("eligibleExistingOwners", turnTools.eligibleExistingOwners(childTypes));
+        hints.add(
+            "When reusing an existing owner, copy its exact id from eligibleExistingOwners; a"
+                + " display name is never an id. Use the listed exact containment feature.");
+      }
     } catch (RuntimeException ignored) {
       diagnostic.put("currentModelSummaryUnavailable", true);
     }
     return diagnostic;
+  }
+
+  private List<String> rejectedCreateTypes(JsonNode arguments) {
+    if (arguments == null || !arguments.isObject()) return List.of();
+    java.util.LinkedHashSet<String> result = new java.util.LinkedHashSet<>();
+    JsonNode creates = arguments.path("creates");
+    if (!creates.isArray()) return List.of();
+    creates.forEach(
+        create -> {
+          if (!create.isObject()) return;
+          String eClass = create.path("eClass").asText("").trim();
+          if (!eClass.isBlank()) result.add(eClass);
+        });
+    return List.copyOf(result);
   }
 
   private String batchSummary(ModelCommandBatch batch) {
@@ -1762,7 +1832,9 @@ validation.
     StringBuilder result = new StringBuilder();
     result.append(
         "Legend: ! required, ? optional. Containments create owned children; references create"
-            + " connections only when writable.\n");
+            + " connections only when writable. creatable=false types are context/owner contracts"
+            + " and must never appear in creates. The authoritative model root already exists and"
+            + " is updated through elementId rootId.\n");
     for (TypeContract type : contracts) {
       result.append("TYPE|").append(type.eClass()).append("|creatable=").append(type.creatable());
       if (!type.supertypes().isEmpty()) {
@@ -1785,13 +1857,24 @@ validation.
         appendReferences(result, references);
       }
       if (type.creatable()) {
-        result
-            .append("\nEXAMPLE|{\"clientRef\":\"")
-            .append(type.eClass().toLowerCase(java.util.Locale.ROOT))
-            .append("_1\",\"eClass\":\"")
-            .append(type.eClass())
-            .append(
-                "\",\"attributes\":{},\"owner\":\"rootId\",\"reference\":\"exactContainment\"}");
+        List<String> owners =
+            contracts.stream()
+                .flatMap(
+                    owner ->
+                        owner.references().stream()
+                            .filter(ReferenceContract::containment)
+                            .filter(reference -> acceptsContainmentTarget(type, reference))
+                            .map(reference -> owner.eClass() + "." + reference.name()))
+                .distinct()
+                .sorted()
+                .toList();
+        if (!owners.isEmpty()) {
+          result
+              .append("\nOWNED_BY|")
+              .append(type.eClass())
+              .append(" <- ")
+              .append(String.join(" | ", owners));
+        }
       }
       result.append("\n\n");
     }
@@ -1822,6 +1905,11 @@ validation.
       if (reference.readonly()) result.append(" readonly");
       result.append(' ');
     }
+  }
+
+  private boolean acceptsContainmentTarget(TypeContract child, ReferenceContract containment) {
+    return child.eClass().equals(containment.targetType())
+        || child.supertypes().contains(containment.targetType());
   }
 
   private void check(
@@ -1957,8 +2045,11 @@ validation.
     normalizeCommandArray(mapper, normalized, "connections");
     normalizeCommandArray(mapper, normalized, "deletions");
     normalizeCommandArray(mapper, normalized, "evidence");
-    if (!normalized.has("turnComplete") || normalized.path("turnComplete").isNull()) {
-      normalized.put("turnComplete", false);
+    if (!normalized.has("turnComplete") || !normalized.path("turnComplete").isBoolean()) {
+      throw new PlatformException(
+          422,
+          "commit_model_batch requires explicit boolean turnComplete. Use false only when"
+              + " concrete requested work remains for a later checkpoint; otherwise use true.");
     }
     return normalized;
   }

@@ -149,10 +149,11 @@ function Inspect-Model {
   }
   $model = Invoke-Api -Method GET -Path "/api/$($Level.ToLowerInvariant())/$ModelId" -Token $Token
   $validation = Invoke-Api -Method POST -Path "/api/$($Level.ToLowerInvariant())/$ModelId/validate/structural" -Body @{} -Token $Token
-  $visual = $model.model.diagram
-  if ($null -eq $visual -or $null -eq $visual.elements) { $visual = $model.model.graph }
+  $modelJson = $model.modelJson
+  $visual = $modelJson.diagram
+  if ($null -eq $visual -or $null -eq $visual.elements) { $visual = $modelJson.graph }
   [pscustomobject]@{
-    StructuralNodes = Count-StructuralNodes $model.model
+    StructuralNodes = Count-StructuralNodes $modelJson
     Elements = Count-Array $visual.elements
     Relationships = Count-Array $visual.relationships
     ValidationValid = $validation.valid

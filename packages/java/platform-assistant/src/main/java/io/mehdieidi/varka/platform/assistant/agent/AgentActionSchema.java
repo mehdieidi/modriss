@@ -344,10 +344,7 @@ public final class AgentActionSchema {
   }
 
   private static Map<String, Object> createSchema(List<TypeContract> contracts) {
-    List<TypeContract> creatable =
-        contracts.stream()
-            .filter(type -> type.creatable() && !isRootModelType(type.eClass()))
-            .toList();
+    List<TypeContract> creatable = contracts.stream().filter(TypeContract::creatable).toList();
     if (creatable.isEmpty()) {
       // Before describe_types no mutation shape is permitted. The provider can still choose a
       // read/answer action, then receives a regenerated schema after contracts are retrieved. Use
@@ -369,26 +366,51 @@ public final class AgentActionSchema {
               stringSchema()),
           List.of("clientRef", "eClass", "attributes", "owner", "reference", "provenance"));
     }
+    if (creatable.size() > 1) {
+      Map<String, Object> schema = new LinkedHashMap<>();
+      schema.put(
+          "oneOf",
+          creatable.stream()
+              .sorted(java.util.Comparator.comparing(TypeContract::eClass))
+              .map(type -> createVariant(type, contracts))
+              .toList());
+      return schema;
+    }
+    return createVariant(creatable.get(0), contracts);
+  }
+
+  private static Map<String, Object> createVariant(
+      TypeContract type, List<TypeContract> contracts) {
+    List<TypeContract> singleton = List.of(type);
     Map<String, Object> properties = new LinkedHashMap<>();
     properties.put("clientRef", stringSchema());
+    properties.put("eClass", Map.of("type", "string", "const", type.eClass()));
+    Map<String, Object> attributes = new LinkedHashMap<>();
+    type.attributes().stream()
+        .filter(attribute -> !"id".equals(attribute.name()))
+        .forEach(
+            attribute ->
+                attributes.put(
+                    attribute.name(),
+                    attribute.enumLiterals().isEmpty()
+                        ? openValueSchema()
+                        : enumStringSchema(attribute.enumLiterals())));
+    properties.put("attributes", object(attributes, List.of()));
+    String ownership = containmentOwnershipDescription(singleton, contracts);
     properties.put(
-        "eClass",
-        enumStringSchema(
-            creatable.stream().map(TypeContract::eClass).distinct().sorted().toList()));
-    // Attribute names and value types are validated by the EMF patch compiler against the exact
-    // described Ecore contracts. Keeping the provider-facing ACI flat avoids malformed oneOf output
-    // from OpenAI-compatible structured-output providers while preserving structural validation.
-    properties.put("attributes", openObjectSchema());
-    properties.put("owner", stringSchema());
-    properties.put("reference", containmentReferenceSchema(creatable, contracts));
+        "owner",
+        stringSchema(
+            "Exact existing id or prior clientRef of the owner EClass listed in: " + ownership));
+    Map<String, Object> reference =
+        new LinkedHashMap<>(containmentReferenceSchema(singleton, contracts));
+    reference.put(
+        "description",
+        "Exact containment for this create's EClass. Follow this Ecore mapping: " + ownership);
+    properties.put("reference", reference);
     properties.put("provenance", stringSchema());
     return object(
         properties,
         List.of("clientRef", "eClass", "attributes", "owner", "reference", "provenance"));
-  }
-
-  private static boolean isRootModelType(String eClass) {
-    return "CIMModel".equals(eClass) || "PIMModel".equals(eClass) || "AwsPsmModel".equals(eClass);
   }
 
   private static Map<String, Object> containmentReferenceSchema(
@@ -439,6 +461,33 @@ public final class AgentActionSchema {
 
   private static Map<String, Object> stringSchema() {
     return Map.of("type", "string");
+  }
+
+  private static Map<String, Object> stringSchema(String description) {
+    return Map.of("type", "string", "description", description);
+  }
+
+  private static String containmentOwnershipDescription(
+      List<TypeContract> createdTypes, List<TypeContract> owners) {
+    return createdTypes.stream()
+        .flatMap(
+            child ->
+                owners.stream()
+                    .flatMap(
+                        owner ->
+                            owner.references().stream()
+                                .filter(ReferenceContract::containment)
+                                .filter(reference -> accepts(child, reference.targetType()))
+                                .map(
+                                    reference ->
+                                        child.eClass()
+                                            + " <- "
+                                            + owner.eClass()
+                                            + "."
+                                            + reference.name())))
+        .distinct()
+        .sorted()
+        .collect(java.util.stream.Collectors.joining("; "));
   }
 
   private static Map<String, Object> integerSchema(Integer minimum, Integer maximum) {

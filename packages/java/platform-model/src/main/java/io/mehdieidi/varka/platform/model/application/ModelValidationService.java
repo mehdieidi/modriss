@@ -364,7 +364,8 @@ final class ModelValidationService {
               "ERROR",
               "XmiExport",
               "The model could not be prepared for structural validation. Review the affected model"
-                  + " data and try again."));
+                  + " data and try again.",
+              structuralExportGuidance(ex)));
     } catch (Exception ex) {
       return List.of(
           issue(
@@ -373,6 +374,15 @@ final class ModelValidationService {
               "Structural validation could not be completed. Review the affected model data and try"
                   + " again."));
     }
+  }
+
+  private String structuralExportGuidance(PlatformException failure) {
+    String detail = failure == null || failure.getMessage() == null ? "" : failure.getMessage();
+    detail = detail.replace('\r', ' ').replace('\n', ' ').trim();
+    if (detail.isBlank())
+      return "Inspect the rejected EClass, attribute, containment, or reference.";
+    if (detail.length() > 1000) detail = detail.substring(0, 1000);
+    return detail;
   }
 
   /**

@@ -259,6 +259,32 @@ class ModelServiceXmiImportTest {
     assertTrue(exception.getMessage().contains("Unresolved reference id 'missing-goal'"));
   }
 
+  @Test
+  void structuralValidationReturnsActionableXmiExportGuidance() {
+    TestPlatformStore store = new TestPlatformStore(tempDir);
+    store.initialize();
+    AuthService authService = new AuthService(store, Duration.ofHours(1));
+    ProjectService projectService = new ProjectService(store, authService);
+    ModelService service = new ModelService(store, projectService);
+    ObjectNode model = minimalCimModel(store);
+    ObjectNode capability = model.putArray("capabilities").addObject();
+    capability.put("eClass", "BusinessCapability");
+    capability.put("id", "cap-1");
+    capability.put("name", "Review applications");
+    capability.putArray("supports").add("missing-goal");
+
+    ModelService.ValidationResult validation = service.validateStructural(ModelLevel.CIM, model);
+
+    assertFalse(validation.valid());
+    assertTrue(
+        validation.issues().stream()
+            .anyMatch(
+                issue ->
+                    "XmiExport".equals(issue.constraint())
+                        && issue.guidance() != null
+                        && issue.guidance().contains("Unresolved reference id 'missing-goal'")));
+  }
+
   /** Verifies strict export diagnostics for containment type mismatches. */
   @Test
   void rejectsWrongContainedChildTypeDuringXmiExport() {

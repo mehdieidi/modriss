@@ -39,7 +39,7 @@ class AgentActionSchemaTest {
   }
 
   @Test
-  void keepsCreateSchemaFlatForStructuredOutputProviders() throws Exception {
+  void usesEClassSpecificCreateVariantsWhenMultipleContractsAreDescribed() throws Exception {
     var contract =
         new TypeContract(
             ModelLevel.PIM,
@@ -48,19 +48,21 @@ class AgentActionSchemaTest {
             List.of(),
             List.of(new AttributeContract("backoffSeconds", "EInt", false, List.of())),
             List.of());
+    var second =
+        new TypeContract(
+            ModelLevel.PIM,
+            "Function",
+            true,
+            List.of(),
+            List.of(new AttributeContract("stateless", "EBoolean", false, List.of())),
+            List.of());
     var schema =
         new ObjectMapper()
-            .valueToTree(AgentActionSchema.toolSchema("apply_draft_patch", List.of(contract)));
+            .valueToTree(
+                AgentActionSchema.toolSchema("apply_draft_patch", List.of(contract, second)));
     var create = schema.path("properties").path("creates").path("items");
-    var attributes =
-        schema
-            .path("properties")
-            .path("creates")
-            .path("items")
-            .path("properties")
-            .path("attributes");
-    assertFalse(create.has("oneOf"));
-    assertTrue(attributes.path("additionalProperties").asBoolean(false));
+    assertEquals(2, create.path("oneOf").size());
+    assertTrue(create.path("oneOf").get(0).path("properties").path("attributes").has("properties"));
   }
 
   @Test
@@ -122,12 +124,12 @@ class AgentActionSchemaTest {
   }
 
   @Test
-  void excludesRootModelTypesFromCreatablePatchVariants() throws Exception {
+  void excludesNonCreatableRootContractFromPatchTypesAndDescribesOwnership() throws Exception {
     var root =
         new TypeContract(
             ModelLevel.CIM,
             "CIMModel",
-            true,
+            false,
             List.of(),
             List.of(),
             List.of(
@@ -144,16 +146,23 @@ class AgentActionSchemaTest {
         new ObjectMapper()
             .valueToTree(
                 AgentActionSchema.toolSchema("apply_draft_patch", List.of(root, requirement)));
-    var eClasses =
-        schema
-            .path("properties")
-            .path("creates")
-            .path("items")
-            .path("properties")
-            .path("eClass")
-            .path("enum");
-    assertEquals(1, eClasses.size());
-    assertEquals("Requirement", eClasses.get(0).asText());
+    var eClass =
+        schema.path("properties").path("creates").path("items").path("properties").path("eClass");
+    assertEquals("Requirement", eClass.path("const").asText());
+    var createProperties =
+        schema.path("properties").path("creates").path("items").path("properties");
+    assertTrue(
+        createProperties
+            .path("owner")
+            .path("description")
+            .asText()
+            .contains("Requirement <- CIMModel.requirements"));
+    assertTrue(
+        createProperties
+            .path("reference")
+            .path("description")
+            .asText()
+            .contains("Requirement <- CIMModel.requirements"));
   }
 
   @Test

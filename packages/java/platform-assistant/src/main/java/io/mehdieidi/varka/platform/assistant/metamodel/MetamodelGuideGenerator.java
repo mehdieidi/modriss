@@ -35,6 +35,13 @@ public final class MetamodelGuideGenerator {
         .collect(Collectors.joining(", ", level.name() + " types: ", ""));
   }
 
+  /** Returns whether a name is an exact EClass in the authoritative level metamodel. */
+  public boolean isKnownType(ModelLevel level, String name) {
+    if (name == null || name.isBlank()) return false;
+    return knowledge.typeContracts(level).stream()
+        .anyMatch(type -> type.eClass().equals(name.trim()));
+  }
+
   private String render(ModelLevel level) {
     StringBuilder guide = new StringBuilder(4096);
     guide

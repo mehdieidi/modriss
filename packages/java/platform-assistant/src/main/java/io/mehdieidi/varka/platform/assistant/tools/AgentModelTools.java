@@ -17,13 +17,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import tools.jackson.databind.JsonNode;
@@ -203,28 +201,70 @@ public final class AgentModelTools {
     return result;
   }
 
+  /**
+   * Lists inspected existing elements that can legally contain any of the requested child types.
+   * This is repair context only: callers still have to choose and submit an exact stable id.
+   */
+  public JsonNode eligibleExistingOwners(List<String> childTypes) {
+    ObjectNode result = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+    ArrayNode groups = result.putArray("byChildType");
+    if (childTypes == null || childTypes.isEmpty()) return result;
+    JsonNode root = active().workspace().snapshot();
+    List<InspectedElement> elements = new ArrayList<>();
+    collectInspected(root, null, null, elements);
+    java.util.LinkedHashSet<String> exactChildTypes = new java.util.LinkedHashSet<>();
+    for (String childType : childTypes) {
+      if (childType == null || childType.isBlank()) continue;
+      try {
+        exactChildTypes.add(contracts.require(active().level(), childType.trim()).eClass());
+      } catch (PlatformException ignored) {
+        // The primary validation diagnostic already identifies an unknown EClass. Do not let
+        // optional repair context obscure it.
+      }
+    }
+    for (String childType : exactChildTypes) {
+      ObjectNode group = groups.addObject();
+      group.put("childType", childType);
+      ArrayNode candidates = group.putArray("candidates");
+      elements.stream()
+          .filter(element -> eligibleContainments(element.eClass(), childType).size() > 0)
+          .limit(80)
+          .forEach(
+              element -> {
+                ObjectNode candidate = candidates.addObject();
+                candidate.put("id", element.id());
+                candidate.put("eClass", element.eClass());
+                if (element.name() != null && !element.name().isBlank()) {
+                  candidate.put("name", element.name());
+                }
+                ArrayNode containments = candidate.putArray("containments");
+                eligibleContainments(element.eClass(), childType).forEach(containments::add);
+              });
+    }
+    return result;
+  }
+
+  private List<String> eligibleContainments(String ownerType, String childType) {
+    try {
+      return contracts.require(active().level(), ownerType).references().stream()
+          .filter(ReferenceContract::containment)
+          .filter(
+              reference ->
+                  contracts.assignable(active().level(), childType, reference.targetType()))
+          .map(ReferenceContract::name)
+          .sorted()
+          .toList();
+    } catch (PlatformException ignored) {
+      return List.of();
+    }
+  }
+
   private boolean matchesSelectorQuery(InspectedElement item, String query) {
     if (query == null || query.isBlank()) return true;
     String needle = query.trim().toLowerCase(Locale.ROOT);
     return item.id().toLowerCase(Locale.ROOT).contains(needle)
         || item.eClass().toLowerCase(Locale.ROOT).contains(needle)
         || (item.name() != null && item.name().toLowerCase(Locale.ROOT).contains(needle));
-  }
-
-  private Map<String, String> existingElementNames(JsonNode root) {
-    List<InspectedElement> elements = new ArrayList<>();
-    collectInspected(root, null, null, elements);
-    Map<String, String> names = new LinkedHashMap<>();
-    for (InspectedElement element : elements) {
-      String key = elementNameKey(element.eClass(), element.name());
-      if (key != null) names.putIfAbsent(key, element.id());
-    }
-    return names;
-  }
-
-  private String elementNameKey(String eClass, String name) {
-    if (eClass == null || eClass.isBlank() || name == null || name.isBlank()) return null;
-    return eClass.trim().toLowerCase(Locale.ROOT) + "\n" + name.trim().toLowerCase(Locale.ROOT);
   }
 
   private void collectInspected(
@@ -406,149 +446,44 @@ public final class AgentModelTools {
     refs.put("rootId", rootId.isBlank() ? "rootId" : rootId);
     Map<String, String> createdTypes = new LinkedHashMap<>();
     Map<String, ObjectNode> createdAttributes = new LinkedHashMap<>();
-    Map<String, String> existingNames = existingElementNames(active.workspace().snapshot());
-    Map<String, String> createdNames = new LinkedHashMap<>();
     for (ModelCommandBatch.Create create : batch.creates()) {
       String clientRef = blank(create.clientRef());
       TypeContract type = contracts.require(active.level(), create.eClass());
       if (clientRef == null)
-        clientRef = generatedClientRef(type.eClass(), create.attributes(), refs);
-      if (refs.containsKey(clientRef)
-          && !isRootModelType(type.eClass(), active.workspace().snapshot()))
+        throw new PlatformException(422, "Every create requires a non-empty clientRef.");
+      if (!type.creatable())
+        throw new PlatformException(422, "Type '" + type.eClass() + "' is not creatable.");
+      if (isRootModelType(type.eClass(), active.workspace().snapshot()))
+        throw new PlatformException(
+            422,
+            "The model root already exists. Update elementId 'rootId' instead of creating another "
+                + type.eClass()
+                + ".");
+      if (refs.containsKey(clientRef))
         throw new PlatformException(422, "Duplicate clientRef: " + clientRef);
-      if (isRootModelType(type.eClass(), active.workspace().snapshot())) {
-        refs.put(clientRef, refs.get("rootId"));
-        ObjectNode rootAttributes =
-            tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
-        if (create.attributes() != null) create.attributes().forEach(rootAttributes::set);
-        ObjectNode normalizedRootAttributes = normalizeAttributes(type, rootAttributes);
-        normalizedRootAttributes
-            .properties()
-            .forEach(
-                entry ->
-                    operations.add(
-                        new Operation(
-                            OperationType.SET_ATTRIBUTE,
-                            refs.get("rootId"),
-                            type.eClass(),
-                            entry.getValue(),
-                            null,
-                            entry.getKey())));
-        continue;
-      }
       String requestedOwner = blank(create.owner());
       String requestedReference = blank(create.reference());
       ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
       if (create.attributes() != null) create.attributes().forEach(attributes::set);
       attributes = normalizeAttributes(type, attributes);
-      String nameKey = elementNameKey(type.eClass(), attributes.path("name").asText(""));
-      if (nameKey != null && existingNames.containsKey(nameKey)) {
-        refs.put(clientRef, existingNames.get(nameKey));
-        continue;
-      }
-      if (nameKey != null && createdNames.containsKey(nameKey)) {
-        refs.put(clientRef, resolveRef(createdNames.get(nameKey), refs));
-        continue;
-      }
-      if (requestedOwner == null || requestedReference == null) {
-        String rootContainment =
-            rootOwnerInferenceAllowed(type.eClass())
-                ? rootContainment(active.level(), active.workspace().snapshot(), type.eClass())
-                : null;
-        if (rootContainment != null) {
-          requestedOwner = "rootId";
-          requestedReference = rootContainment;
-        }
-      }
-      String existingSingleton =
-          existingRootSingleton(
-              active.level(), active.workspace().snapshot(), type.eClass(), requestedReference);
-      if (existingSingleton != null) {
-        refs.put(clientRef, existingSingleton);
-        ObjectNode safeAttributes = normalizeAttributes(type, attributes, true);
-        safeAttributes
-            .properties()
-            .forEach(
-                entry ->
-                    operations.add(
-                        new Operation(
-                            OperationType.SET_ATTRIBUTE,
-                            existingSingleton,
-                            type.eClass(),
-                            entry.getValue(),
-                            null,
-                            entry.getKey())));
-        continue;
-      }
       if (requestedOwner == null || requestedReference == null) {
         throw new PlatformException(
             422, "Create '" + clientRef + "' requires explicit owner and containment feature.");
       }
       String elementId = UUID.randomUUID().toString();
       refs.put(clientRef, elementId);
-      if (nameKey != null) createdNames.put(nameKey, clientRef);
       createdTypes.put(elementId, type.eClass());
       createdAttributes.put(elementId, attributes);
-      String ownerId = resolveRef(requestedOwner, refs);
-      if (!rootId.equals(ownerId)
-          && !createdTypes.containsKey(ownerId)
-          && !exists(active.workspace().snapshot(), ownerId)
-          && canRehomeToRoot(active.level(), active.workspace().snapshot(), type.eClass())) {
-        ownerId = rootId;
-        requestedReference =
-            rootContainment(active.level(), active.workspace().snapshot(), type.eClass());
-      }
-      ServiceOwner nestedOwner =
-          nestedOwnerFor(
-              active.level(),
-              active.workspace().snapshot(),
-              operations,
-              refs,
-              createdTypes,
-              createdAttributes,
-              type.eClass(),
-              ownerId,
-              requestedReference);
-      if (nestedOwner != null) {
-        ownerId = nestedOwner.ownerId();
-        requestedReference = nestedOwner.reference();
-      }
-      ServiceOwner serviceOwner =
-          serviceOwnerFor(
-              active.level(),
-              active.workspace().snapshot(),
-              operations,
-              refs,
-              createdTypes,
-              createdAttributes,
-              type.eClass(),
-              ownerId,
-              requestedReference);
-      if (serviceOwner != null) {
-        ownerId = serviceOwner.ownerId();
-        requestedReference = serviceOwner.reference();
-      }
+      String ownerId = resolveExistingOrBatchRef(requestedOwner, refs, "Create owner");
       String ownerTypeName =
           rootId.equals(ownerId)
               ? active.workspace().snapshot().path("eClass").asText("")
               : createdTypes.get(ownerId);
       if (ownerTypeName == null || ownerTypeName.isBlank())
         ownerTypeName = find(active.workspace().snapshot(), ownerId).path("eClass").asText("");
-      String containment;
-      try {
-        containment =
-            normalizeContainmentReference(
-                active.level(), ownerTypeName, requestedReference, type.eClass());
-      } catch (PlatformException ex) {
-        String rootContainment =
-            canRehomeToRoot(active.level(), active.workspace().snapshot(), type.eClass())
-                ? rootContainment(active.level(), active.workspace().snapshot(), type.eClass())
-                : null;
-        if (rootContainment == null || rootId.equals(ownerId)) throw ex;
-        ownerId = rootId;
-        ownerTypeName = active.workspace().snapshot().path("eClass").asText("");
-        containment = rootContainment;
-      }
+      String containment =
+          requireContainmentReference(
+              active.level(), ownerTypeName, requestedReference, type.eClass());
       operations.add(
           new Operation(
               OperationType.ADD_ELEMENT,
@@ -559,28 +494,13 @@ public final class AgentModelTools {
               containment));
     }
     for (ModelCommandBatch.Update update : batch.updates()) {
-      String id;
-      try {
-        id = resolveExistingOrBatchRef(update.elementId(), refs, createdTypes, "Update element");
-      } catch (PlatformException ex) {
-        if (ex.status() != 422) throw ex;
-        id =
-            appendInferredCreateFromUnknownUpdate(
-                active.level(),
-                active.workspace().snapshot(),
-                operations,
-                refs,
-                createdTypes,
-                createdAttributes,
-                update);
-        if (id == null) throw ex;
-      }
+      String id = resolveExistingOrBatchRef(update.elementId(), refs, "Update element");
       if (createdTypes.containsKey(id)) {
         String createdId = id;
         TypeContract createdType = contracts.require(active.level(), createdTypes.get(id));
         ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
         if (update.attributes() != null) update.attributes().forEach(attributes::set);
-        ObjectNode normalized = normalizeAttributes(createdType, attributes, true);
+        ObjectNode normalized = normalizeAttributes(createdType, attributes);
         normalized
             .properties()
             .forEach(
@@ -595,7 +515,7 @@ public final class AgentModelTools {
       TypeContract type = contracts.require(active.level(), element.path("eClass").asText());
       ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
       if (update.attributes() != null) update.attributes().forEach(attributes::set);
-      attributes = normalizeAttributes(type, attributes, true);
+      attributes = normalizeAttributes(type, attributes);
       attributes
           .properties()
           .forEach(
@@ -610,10 +530,8 @@ public final class AgentModelTools {
                           entry.getKey())));
     }
     for (ModelCommandBatch.Connection connection : batch.connections()) {
-      String source =
-          resolveExistingOrBatchRef(connection.source(), refs, createdTypes, "Connection source");
-      String target =
-          resolveExistingOrBatchRef(connection.target(), refs, createdTypes, "Connection target");
+      String source = resolveExistingOrBatchRef(connection.source(), refs, "Connection source");
+      String target = resolveExistingOrBatchRef(connection.target(), refs, "Connection target");
       String sourceTypeName = createdTypes.get(source);
       if (sourceTypeName == null)
         sourceTypeName = find(active.workspace().snapshot(), source).path("eClass").asText();
@@ -659,8 +577,7 @@ public final class AgentModelTools {
               OperationType.CONNECT_ELEMENTS, target, targetType, null, source, reference.name()));
     }
     for (ModelCommandBatch.Deletion deletion : batch.deletions()) {
-      String id =
-          resolveExistingOrBatchRef(deletion.elementId(), refs, createdTypes, "Deletion element");
+      String id = resolveExistingOrBatchRef(deletion.elementId(), refs, "Deletion element");
       JsonNode element = find(active.workspace().snapshot(), id);
       if (deletion.preconditionHash() == null || deletion.preconditionHash().isBlank())
         throw new PlatformException(
@@ -671,14 +588,8 @@ public final class AgentModelTools {
           new Operation(
               OperationType.DELETE_ELEMENT, id, element.path("eClass").asText(), null, null, null));
     }
-    if (commandCompiler != null) {
-      synthesizeRequiredClosure(
-          active.level(),
-          active.workspace().snapshot(),
-          operations,
-          refs,
-          createdTypes,
-          createdAttributes);
+    for (ModelCommandBatch.Evidence evidence : batch.evidence()) {
+      resolveExistingOrBatchRef(evidence.elementRef(), refs, "Evidence elementRef");
     }
     SemanticModelPatch semantic = new SemanticModelPatch(operations);
     ModelWorkspace.MutationResult result =
@@ -768,106 +679,21 @@ public final class AgentModelTools {
     return active.workspace().mutate(new SemanticModelPatch(operations));
   }
 
-  private void synthesizeRequiredClosure(
-      ModelLevel level,
-      JsonNode snapshot,
-      List<Operation> operations,
-      Map<String, String> refs,
-      Map<String, String> createdTypes,
-      Map<String, ObjectNode> createdAttributes) {
-    List<String> initialIds = new ArrayList<>(createdTypes.keySet());
-    for (String id : initialIds) {
-      TypeContract type = contracts.require(level, createdTypes.get(id));
-      synthesizeRequiredContainments(
-          level, operations, refs, createdTypes, createdAttributes, id, type);
-    }
-    for (String id : new ArrayList<>(createdTypes.keySet())) {
-      TypeContract type = contracts.require(level, createdTypes.get(id));
-      synthesizeRequiredReferences(
-          level, snapshot, operations, refs, createdTypes, createdAttributes, id, type);
-    }
-  }
-
-  private void synthesizeRequiredContainments(
-      ModelLevel level,
-      List<Operation> operations,
-      Map<String, String> refs,
-      Map<String, String> createdTypes,
-      Map<String, ObjectNode> createdAttributes,
-      String ownerId,
-      TypeContract ownerType) {
-    for (ReferenceContract reference : ownerType.references()) {
-      if (!reference.required()
-          || !reference.containment()
-          || hasOwnedCreate(operations, ownerId, reference.name())) {
-        continue;
-      }
-      String childType = containmentDefaultType(level, reference);
-      if (childType == null) continue;
-      String childId = uniqueRef(createdTypes, ownerId + "-" + reference.name());
-      if (!contracts.require(level, childType).creatable()) continue;
-      ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
-      attributes.put("name", readableName(childType));
-      refs.put(childId, childId);
-      createdTypes.put(childId, childType);
-      createdAttributes.put(childId, attributes);
-      operations.add(
-          new Operation(
-              OperationType.ADD_ELEMENT,
-              childId,
-              childType,
-              attributes,
-              ownerId,
-              reference.name()));
-    }
-  }
-
-  private String containmentDefaultType(ModelLevel level, ReferenceContract reference) {
-    TypeContract exact = contracts.require(level, reference.targetType());
-    if (exact.creatable()) return exact.eClass();
-    if (level == ModelLevel.CIM && "ProcessStep".equals(reference.targetType())) return "StartStep";
-    return contracts.all(level).stream()
-        .filter(TypeContract::creatable)
-        .filter(type -> contracts.assignable(level, type.eClass(), reference.targetType()))
-        .map(TypeContract::eClass)
-        .sorted()
-        .findFirst()
-        .orElse(null);
-  }
-
-  private String normalizeContainmentReference(
+  private String requireContainmentReference(
       ModelLevel level, String ownerTypeName, String requestedReference, String childTypeName) {
     TypeContract ownerType = contracts.require(level, ownerTypeName);
-    if (requestedReference != null) {
-      boolean valid =
-          ownerType.references().stream()
-              .anyMatch(
-                  reference ->
-                      reference.containment()
-                          && reference.name().equals(requestedReference)
-                          && contracts.assignable(level, childTypeName, reference.targetType()));
-      if (valid) return requestedReference;
-    }
-    List<ReferenceContract> compatible =
+    ReferenceContract exact =
         ownerType.references().stream()
             .filter(ReferenceContract::containment)
+            .filter(reference -> reference.name().equals(requestedReference))
             .filter(reference -> contracts.assignable(level, childTypeName, reference.targetType()))
-            .sorted(
-                Comparator.comparing(ReferenceContract::many)
-                    .reversed()
-                    .thenComparing(
-                        reference -> reference.targetType().equals(childTypeName) ? 0 : 1)
-                    .thenComparing(ReferenceContract::name))
-            .toList();
-    if (compatible.size() == 1) return compatible.get(0).name();
-    if (compatible.size() > 1
-        && compatible.get(0).many() != compatible.get(1).many()
-        && compatible.get(0).targetType().equals(childTypeName)) {
-      return compatible.get(0).name();
-    }
+            .findFirst()
+            .orElse(null);
+    if (exact != null) return exact.name();
     String validContainments =
         ownerType.references().stream()
             .filter(ReferenceContract::containment)
+            .filter(reference -> contracts.assignable(level, childTypeName, reference.targetType()))
             .map(reference -> reference.name() + "->" + reference.targetType())
             .sorted()
             .toList()
@@ -875,116 +701,17 @@ public final class AgentModelTools {
     throw new PlatformException(
         422,
         "Containment '"
-            + (requestedReference == null ? "" : requestedReference)
+            + requestedReference
             + "' cannot create "
             + childTypeName
             + " under "
             + ownerTypeName
-            + ". Use one valid containment from the owner contract: "
+            + ". Valid exact containments for this child: "
             + validContainments
-            + ".");
-  }
-
-  private void synthesizeRequiredReferences(
-      ModelLevel level,
-      JsonNode snapshot,
-      List<Operation> operations,
-      Map<String, String> refs,
-      Map<String, String> createdTypes,
-      Map<String, ObjectNode> createdAttributes,
-      String sourceId,
-      TypeContract sourceType) {
-    for (ReferenceContract reference : sourceType.references()) {
-      if (!reference.required()
-          || reference.containment()
-          || reference.readonly()
-          || hasConnection(operations, sourceId, reference.name())) {
-        continue;
-      }
-      chooseReferenceTarget(level, snapshot, createdTypes, sourceId, reference)
-          .ifPresent(
-              target ->
-                  operations.add(
-                      new Operation(
-                          OperationType.CONNECT_ELEMENTS,
-                          target.id(),
-                          target.type(),
-                          null,
-                          sourceId,
-                          reference.name())));
-      if (!hasConnection(operations, sourceId, reference.name())) {
-        synthesizeReferenceTarget(
-                level, snapshot, operations, refs, createdTypes, createdAttributes, reference)
-            .ifPresent(
-                target ->
-                    operations.add(
-                        new Operation(
-                            OperationType.CONNECT_ELEMENTS,
-                            target.id(),
-                            target.type(),
-                            null,
-                            sourceId,
-                            reference.name())));
-      }
-    }
-  }
-
-  private java.util.Optional<TargetCandidate> synthesizeReferenceTarget(
-      ModelLevel level,
-      JsonNode snapshot,
-      List<Operation> operations,
-      Map<String, String> refs,
-      Map<String, String> createdTypes,
-      Map<String, ObjectNode> createdAttributes,
-      ReferenceContract requiredReference) {
-    String targetType = containmentDefaultType(level, requiredReference);
-    if (targetType == null) return java.util.Optional.empty();
-    String rootId = snapshot.path("id").asText("").trim();
-    String rootType = snapshot.path("eClass").asText("").trim();
-    if (rootId.isBlank() || rootType.isBlank()) return java.util.Optional.empty();
-    String containment = normalizeContainmentReference(level, rootType, null, targetType);
-    if (containment == null || containment.isBlank()) return java.util.Optional.empty();
-    String id = uniqueRef(createdTypes, rootId + "-" + requiredReference.name());
-    ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
-    attributes.put("name", readableName(requiredReference.name()));
-    attributes = normalizeAttributes(contracts.require(level, targetType), attributes);
-    refs.put(id, id);
-    createdTypes.put(id, targetType);
-    createdAttributes.put(id, attributes);
-    operations.add(
-        new Operation(OperationType.ADD_ELEMENT, id, targetType, attributes, rootId, containment));
-    return java.util.Optional.of(new TargetCandidate(id, targetType, 0));
-  }
-
-  private java.util.Optional<TargetCandidate> chooseReferenceTarget(
-      ModelLevel level,
-      JsonNode snapshot,
-      Map<String, String> createdTypes,
-      String sourceId,
-      ReferenceContract reference) {
-    List<TargetCandidate> candidates = new ArrayList<>();
-    createdTypes.forEach(
-        (id, type) -> {
-          if (!id.equals(sourceId) && contracts.assignable(level, type, reference.targetType())) {
-            candidates.add(new TargetCandidate(id, type, 0));
-          }
-        });
-    collect(
-        snapshot,
-        node -> {
-          if (!node.isObject()) return;
-          String id = node.path("id").asText("");
-          String type = node.path("eClass").asText("");
-          if (!id.isBlank()
-              && !id.equals(sourceId)
-              && !createdTypes.containsKey(id)
-              && contracts.assignable(level, type, reference.targetType())) {
-            candidates.add(new TargetCandidate(id, type, 1));
-          }
-        });
-    return candidates.stream()
-        .sorted(Comparator.comparingInt(TargetCandidate::rank).thenComparing(TargetCandidate::id))
-        .findFirst();
+            + ". Valid Ecore construction placements across the model: "
+            + contracts.containmentPlacements(level, childTypeName)
+            + ". Use rootId only when the listed owner is the model root; otherwise create or use"
+            + " an element of the listed owner EClass and pass its exact clientRef/id.");
   }
 
   public ModelWorkspace.MutationResult connectElements(List<Connection> items) {
@@ -1084,11 +811,6 @@ public final class AgentModelTools {
   }
 
   private ObjectNode normalizeAttributes(TypeContract type, ObjectNode attributes) {
-    return normalizeAttributes(type, attributes, false);
-  }
-
-  private ObjectNode normalizeAttributes(
-      TypeContract type, ObjectNode attributes, boolean ignoreUnknown) {
     Map<String, AttributeContract> legal = new LinkedHashMap<>();
     type.attributes().forEach(attribute -> legal.put(attribute.name(), attribute));
     ObjectNode normalized = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
@@ -1100,9 +822,15 @@ public final class AgentModelTools {
               JsonNode value = entry.getValue();
               AttributeContract contract = legal.get(name);
               if (contract == null) {
-                if (ignoreUnknown) return;
                 throw new PlatformException(
-                    422, "Attribute '" + name + "' is not writable on " + type.eClass() + ".");
+                    422,
+                    "Attribute '"
+                        + name
+                        + "' is not writable on "
+                        + type.eClass()
+                        + ". Valid exact attributes: "
+                        + legal.keySet()
+                        + ".");
               }
               if (!contract.enumLiterals().isEmpty()
                   && value != null
@@ -1119,37 +847,6 @@ public final class AgentModelTools {
               normalized.set(name, value);
             });
     return normalized;
-  }
-
-  private boolean hasConnection(List<Operation> operations, String sourceId, String reference) {
-    return operations.stream()
-        .anyMatch(
-            op ->
-                op.type() == OperationType.CONNECT_ELEMENTS
-                    && sourceId.equals(op.sourceElementId())
-                    && reference.equals(op.referenceName()));
-  }
-
-  private boolean hasOwnedCreate(List<Operation> operations, String sourceId, String reference) {
-    return operations.stream()
-        .anyMatch(
-            op ->
-                op.type() == OperationType.ADD_ELEMENT
-                    && sourceId.equals(op.sourceElementId())
-                    && reference.equals(op.referenceName()));
-  }
-
-  private String uniqueRef(Map<String, String> refs, String base) {
-    String candidate = base;
-    int suffix = 2;
-    while (refs.containsKey(candidate)) {
-      candidate = base + "-" + suffix++;
-    }
-    return candidate;
-  }
-
-  private String readableName(String type) {
-    return type.replaceAll("(?<!^)([A-Z])", " $1");
   }
 
   private ModelWorkspace.MutationResult mutateAtomically(
@@ -1169,19 +866,6 @@ public final class AgentModelTools {
         });
     if (found.isEmpty()) throw new PlatformException(404, "No model element has id '" + id + "'.");
     return found.get(0).deepCopy();
-  }
-
-  private JsonNode findIfExists(JsonNode root, String id) {
-    if (id == null || id.isBlank()) return tools.jackson.databind.node.MissingNode.getInstance();
-    if ("rootId".equals(id) && root != null && root.isObject()) return root;
-    List<JsonNode> found = new ArrayList<>(1);
-    collect(
-        root,
-        node -> {
-          if (found.isEmpty() && node.isObject() && id.equals(node.path("id").asText()))
-            found.add(node);
-        });
-    return found.isEmpty() ? tools.jackson.databind.node.MissingNode.getInstance() : found.get(0);
   }
 
   private void collect(JsonNode node, java.util.function.Consumer<JsonNode> visitor) {
@@ -1206,439 +890,15 @@ public final class AgentModelTools {
     return value == null || value.isBlank() ? null : value.trim();
   }
 
-  private String resolveRef(String value, Map<String, String> refs) {
-    String result = blank(value);
-    return result == null ? null : refs.getOrDefault(result, result);
-  }
-
-  private boolean rootAccepts(
-      ModelLevel level, JsonNode snapshot, String requestedReference, String childTypeName) {
-    return rootContainment(level, snapshot, childTypeName, requestedReference) != null;
-  }
-
   private boolean isRootModelType(String eClass, JsonNode snapshot) {
     String rootType = snapshot == null ? "" : snapshot.path("eClass").asText("");
     return eClass != null && !eClass.isBlank() && eClass.equals(rootType);
   }
 
-  private String existingRootSingleton(
-      ModelLevel level, JsonNode snapshot, String childTypeName, String requestedReference) {
-    String reference = rootContainment(level, snapshot, childTypeName, requestedReference);
-    if (reference == null || reference.isBlank()) return null;
-    try {
-      TypeContract rootType = contracts.require(level, snapshot.path("eClass").asText(""));
-      ReferenceContract rootReference =
-          rootType.references().stream()
-              .filter(ref -> reference.equals(ref.name()))
-              .findFirst()
-              .orElse(null);
-      if (rootReference == null || rootReference.many()) return null;
-    } catch (PlatformException ignored) {
-      return null;
-    }
-    JsonNode existing = snapshot.path(reference);
-    if (!existing.isObject() || !childTypeName.equals(existing.path("eClass").asText("")))
-      return null;
-    String id = existing.path("id").asText("");
-    return id.isBlank() ? null : id;
-  }
-
-  private boolean canRehomeToRoot(ModelLevel level, JsonNode snapshot, String childTypeName) {
-    return rootOwnerInferenceAllowed(childTypeName)
-        || rootAccepts(level, snapshot, null, childTypeName);
-  }
-
-  private String appendInferredCreateFromUnknownUpdate(
-      ModelLevel level,
-      JsonNode snapshot,
-      List<Operation> operations,
-      Map<String, String> refs,
-      Map<String, String> createdTypes,
-      Map<String, ObjectNode> createdAttributes,
-      ModelCommandBatch.Update update) {
-    String raw = blank(update.elementId());
-    if (raw == null) return null;
-    String inferredType = inferCreateTypeFromRef(level, raw);
-    if (inferredType == null) return null;
-    TypeContract type = contracts.require(level, inferredType);
-    if (!type.creatable()) return null;
-    ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
-    if (update.attributes() != null) update.attributes().forEach(attributes::set);
-    if (!attributes.hasNonNull("name")) attributes.put("name", readableName(raw));
-    attributes = normalizeAttributes(type, attributes, true);
-    String rootId = snapshot.path("id").asText("").trim();
-    String ownerId = rootId;
-    String containment = rootContainment(level, snapshot, type.eClass());
-    ServiceOwner nestedOwner =
-        nestedOwnerFor(
-            level,
-            snapshot,
-            operations,
-            refs,
-            createdTypes,
-            createdAttributes,
-            type.eClass(),
-            rootId,
-            containment);
-    if (nestedOwner != null) {
-      ownerId = nestedOwner.ownerId();
-      containment = nestedOwner.reference();
-    }
-    ServiceOwner serviceOwner =
-        serviceOwnerFor(
-            level,
-            snapshot,
-            operations,
-            refs,
-            createdTypes,
-            createdAttributes,
-            type.eClass(),
-            rootId,
-            containment);
-    if (serviceOwner != null) {
-      ownerId = serviceOwner.ownerId();
-      containment = serviceOwner.reference();
-    }
-    if (containment == null || containment.isBlank()) return null;
-    String id = UUID.randomUUID().toString();
-    refs.put(raw, id);
-    createdTypes.put(id, type.eClass());
-    createdAttributes.put(id, attributes);
-    operations.add(
-        new Operation(
-            OperationType.ADD_ELEMENT, id, type.eClass(), attributes, ownerId, containment));
-    return id;
-  }
-
-  private String inferCreateTypeFromRef(ModelLevel level, String raw) {
-    String normalized = normalizeRefToken(raw);
-    if (level == ModelLevel.CIM && normalized.startsWith("src")) return "Requirement";
-    if (level == ModelLevel.CIM && normalized.contains("requirement")) return "Requirement";
-    if (level == ModelLevel.PIM && normalized.contains("idempotency")) return "IdempotencyPolicy";
-    if (level == ModelLevel.PIM && normalized.contains("cache")) return "CachePolicy";
-    if (level == ModelLevel.PIM && normalized.contains("commandhandler")) return "Function";
-    if (level == ModelLevel.PIM && normalized.contains("queryhandler")) return "Function";
-    if (level == ModelLevel.PIM && normalized.contains("function")) return "Function";
-    if (level == ModelLevel.PIM && normalized.contains("component")) return "ServerlessService";
-    if (level == ModelLevel.PIM && normalized.contains("schedule")) return "Schedule";
-    if (level == ModelLevel.PIM && normalized.contains("api")) return "Api";
-    try {
-      return contracts.require(level, raw).eClass();
-    } catch (PlatformException ignored) {
-      return null;
-    }
-  }
-
-  private ServiceOwner nestedOwnerFor(
-      ModelLevel level,
-      JsonNode snapshot,
-      List<Operation> operations,
-      Map<String, String> refs,
-      Map<String, String> createdTypes,
-      Map<String, ObjectNode> createdAttributes,
-      String childTypeName,
-      String requestedOwnerId,
-      String requestedReference) {
-    if (level != ModelLevel.PIM) return null;
-    if ("FunctionContract".equals(childTypeName)) {
-      String ownerType =
-          createdTypes.getOrDefault(
-              requestedOwnerId, findIfExists(snapshot, requestedOwnerId).path("eClass").asText(""));
-      if ("Function".equals(ownerType)) {
-        String containment = containmentOn(level, "Function", childTypeName, requestedReference);
-        return containment == null ? null : new ServiceOwner(requestedOwnerId, containment);
-      }
-      String functionId =
-          firstElementId(
-              snapshot,
-              createdTypes,
-              "Function",
-              () ->
-                  createSyntheticFunction(
-                      level, snapshot, operations, refs, createdTypes, createdAttributes));
-      String containment = containmentOn(level, "Function", childTypeName, requestedReference);
-      return containment == null ? null : new ServiceOwner(functionId, containment);
-    }
-    if ("ApiRoute".equals(childTypeName)) {
-      String ownerType =
-          createdTypes.getOrDefault(
-              requestedOwnerId, findIfExists(snapshot, requestedOwnerId).path("eClass").asText(""));
-      if ("Api".equals(ownerType)) {
-        String containment = containmentOn(level, "Api", childTypeName, requestedReference);
-        return containment == null ? null : new ServiceOwner(requestedOwnerId, containment);
-      }
-      String apiId =
-          firstElementId(
-              snapshot,
-              createdTypes,
-              "Api",
-              () ->
-                  createSyntheticApi(
-                      level, snapshot, operations, refs, createdTypes, createdAttributes));
-      String containment = containmentOn(level, "Api", childTypeName, requestedReference);
-      return containment == null ? null : new ServiceOwner(apiId, containment);
-    }
-    return null;
-  }
-
-  private String containmentOn(
-      ModelLevel level, String ownerTypeName, String childTypeName, String requestedReference) {
-    try {
-      return normalizeContainmentReference(level, ownerTypeName, requestedReference, childTypeName);
-    } catch (PlatformException ignored) {
-      return null;
-    }
-  }
-
-  private String firstElementId(
-      JsonNode snapshot,
-      Map<String, String> createdTypes,
-      String eClass,
-      java.util.function.Supplier<String> fallback) {
-    for (var entry : createdTypes.entrySet()) {
-      if (eClass.equals(entry.getValue())) return entry.getKey();
-    }
-    List<JsonNode> found = new ArrayList<>(1);
-    collect(
-        snapshot,
-        node -> {
-          if (found.isEmpty() && node.isObject() && eClass.equals(node.path("eClass").asText(""))) {
-            found.add(node);
-          }
-        });
-    return found.isEmpty() ? fallback.get() : found.get(0).path("id").asText("");
-  }
-
-  private String createSyntheticFunction(
-      ModelLevel level,
-      JsonNode snapshot,
-      List<Operation> operations,
-      Map<String, String> refs,
-      Map<String, String> createdTypes,
-      Map<String, ObjectNode> createdAttributes) {
-    String serviceId = firstServiceId(snapshot, createdTypes);
-    if (serviceId == null) {
-      serviceId =
-          createSyntheticService(
-              level, snapshot, operations, refs, createdTypes, createdAttributes);
-    }
-    String id = UUID.randomUUID().toString();
-    ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
-    attributes.put("name", "Application Handler");
-    attributes.put("functionKind", "COMMAND_HANDLER");
-    attributes = normalizeAttributes(contracts.require(level, "Function"), attributes);
-    refs.put("application_handler", id);
-    createdTypes.put(id, "Function");
-    createdAttributes.put(id, attributes);
-    operations.add(
-        new Operation(
-            OperationType.ADD_ELEMENT,
-            id,
-            "Function",
-            attributes,
-            serviceId,
-            normalizeContainmentReference(level, "ServerlessService", "functions", "Function")));
-    return id;
-  }
-
-  private String createSyntheticApi(
-      ModelLevel level,
-      JsonNode snapshot,
-      List<Operation> operations,
-      Map<String, String> refs,
-      Map<String, String> createdTypes,
-      Map<String, ObjectNode> createdAttributes) {
-    String serviceId = firstServiceId(snapshot, createdTypes);
-    if (serviceId == null) {
-      serviceId =
-          createSyntheticService(
-              level, snapshot, operations, refs, createdTypes, createdAttributes);
-    }
-    String id = UUID.randomUUID().toString();
-    ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
-    attributes.put("name", "Application API");
-    attributes.put("apiStyle", "RESOURCE_ORIENTED_HTTP");
-    attributes = normalizeAttributes(contracts.require(level, "Api"), attributes);
-    refs.put("application_api", id);
-    createdTypes.put(id, "Api");
-    createdAttributes.put(id, attributes);
-    operations.add(
-        new Operation(
-            OperationType.ADD_ELEMENT,
-            id,
-            "Api",
-            attributes,
-            serviceId,
-            normalizeContainmentReference(level, "ServerlessService", "apis", "Api")));
-    return id;
-  }
-
-  private ServiceOwner serviceOwnerFor(
-      ModelLevel level,
-      JsonNode snapshot,
-      List<Operation> operations,
-      Map<String, String> refs,
-      Map<String, String> createdTypes,
-      Map<String, ObjectNode> createdAttributes,
-      String childTypeName,
-      String requestedOwnerId,
-      String requestedReference) {
-    if (level != ModelLevel.PIM || !serverlessServiceOwns(level, childTypeName)) return null;
-    String ownerType =
-        createdTypes.getOrDefault(
-            requestedOwnerId, findIfExists(snapshot, requestedOwnerId).path("eClass").asText(""));
-    if ("ServerlessService".equals(ownerType)
-        && serviceContainment(level, childTypeName, requestedReference) != null) {
-      return new ServiceOwner(
-          requestedOwnerId, serviceContainment(level, childTypeName, requestedReference));
-    }
-    String serviceId = firstServiceId(snapshot, createdTypes);
-    if (serviceId == null) {
-      serviceId =
-          createSyntheticService(
-              level, snapshot, operations, refs, createdTypes, createdAttributes);
-    }
-    String containment = serviceContainment(level, childTypeName, requestedReference);
-    return containment == null ? null : new ServiceOwner(serviceId, containment);
-  }
-
-  private boolean serverlessServiceOwns(ModelLevel level, String childTypeName) {
-    try {
-      normalizeContainmentReference(level, "ServerlessService", null, childTypeName);
-      return true;
-    } catch (PlatformException ignored) {
-      return false;
-    }
-  }
-
-  private String serviceContainment(
-      ModelLevel level, String childTypeName, String requestedReference) {
-    try {
-      return normalizeContainmentReference(
-          level, "ServerlessService", requestedReference, childTypeName);
-    } catch (PlatformException ignored) {
-      return null;
-    }
-  }
-
-  private String firstServiceId(JsonNode snapshot, Map<String, String> createdTypes) {
-    for (var entry : createdTypes.entrySet()) {
-      if ("ServerlessService".equals(entry.getValue())) return entry.getKey();
-    }
-    List<JsonNode> found = new ArrayList<>(1);
-    collect(
-        snapshot,
-        node -> {
-          if (found.isEmpty()
-              && node.isObject()
-              && "ServerlessService".equals(node.path("eClass").asText(""))) {
-            found.add(node);
-          }
-        });
-    return found.isEmpty() ? null : found.get(0).path("id").asText("");
-  }
-
-  private String createSyntheticService(
-      ModelLevel level,
-      JsonNode snapshot,
-      List<Operation> operations,
-      Map<String, String> refs,
-      Map<String, String> createdTypes,
-      Map<String, ObjectNode> createdAttributes) {
-    String rootId = snapshot.path("id").asText("").trim();
-    String serviceId = UUID.randomUUID().toString();
-    ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
-    attributes.put("name", "Application Service");
-    attributes.put("boundaryType", "CAPABILITY_BASED");
-    attributes = normalizeAttributes(contracts.require(level, "ServerlessService"), attributes);
-    refs.put("application_service", serviceId);
-    createdTypes.put(serviceId, "ServerlessService");
-    createdAttributes.put(serviceId, attributes);
-    operations.add(
-        new Operation(
-            OperationType.ADD_ELEMENT,
-            serviceId,
-            "ServerlessService",
-            attributes,
-            rootId,
-            rootContainment(level, snapshot, "ServerlessService")));
-    return serviceId;
-  }
-
-  private String rootContainment(ModelLevel level, JsonNode snapshot, String childTypeName) {
-    return rootContainment(level, snapshot, childTypeName, null);
-  }
-
-  private String rootContainment(
-      ModelLevel level, JsonNode snapshot, String childTypeName, String requestedReference) {
-    String rootType = snapshot == null ? "" : snapshot.path("eClass").asText("");
-    if (rootType.isBlank()) return null;
-    try {
-      return normalizeContainmentReference(
-          level, rootType, blank(requestedReference), childTypeName);
-    } catch (RuntimeException ignored) {
-      return null;
-    }
-  }
-
-  private boolean rootOwnerInferenceAllowed(String childTypeName) {
-    return Set.of(
-            "Actor",
-            "Requirement",
-            "BusinessGoal",
-            "BusinessCapability",
-            "BusinessEvent",
-            "InformationItem",
-            "Policy",
-            "BusinessRule",
-            "Flow",
-            "ExternalEndpoint",
-            "IdentityProvider",
-            "Principal",
-            "Environment",
-            "DeploymentUnit",
-            "ConfigurationSet",
-            "ServerlessService",
-            "ImplementationProfile",
-            "PlatformCapability",
-            "ArchitecturePolicy",
-            "IdempotencyPolicy",
-            "RetryPolicy",
-            "RateLimitPolicy",
-            "CircuitBreakerPolicy",
-            "DataAccess",
-            "DataStore",
-            "EventType",
-            "Schema")
-        .contains(childTypeName);
-  }
-
-  private String generatedClientRef(
-      String eClass, Map<String, JsonNode> attributes, Map<String, String> refs) {
-    String name = "";
-    if (attributes != null) {
-      JsonNode value = attributes.get("name");
-      if (value != null) name = value.asText("");
-    }
-    String base =
-        normalizeRefToken(
-            (eClass == null ? "element" : eClass) + "_" + (name.isBlank() ? "new" : name));
-    if (base.isBlank()) base = "element";
-    String candidate = base;
-    int suffix = 2;
-    while (refs.containsKey(candidate)) {
-      candidate = base + suffix++;
-    }
-    return candidate;
-  }
-
-  private String resolveExistingOrBatchRef(
-      String value, Map<String, String> refs, Map<String, String> createdTypes, String label) {
+  private String resolveExistingOrBatchRef(String value, Map<String, String> refs, String label) {
     String raw = blank(value);
     if (raw == null) throw new PlatformException(422, label + " is required.");
     String resolved = refs.get(raw);
-    if (resolved != null) return resolved;
-    resolved = resolveTypePrefixedBatchRef(raw, refs, createdTypes);
     if (resolved != null) return resolved;
     if (exists(active().workspace().snapshot(), raw)) return raw;
     throw new PlatformException(
@@ -1649,26 +909,6 @@ public final class AgentModelTools {
             + "' is not a known clientRef from this batch or an existing element id. Use the"
             + " exact clientRef from creates without prefixes or aliases. Known clientRefs: "
             + String.join(", ", refs.keySet()));
-  }
-
-  private String resolveTypePrefixedBatchRef(
-      String raw, Map<String, String> refs, Map<String, String> createdTypes) {
-    String normalizedRaw = normalizeRefToken(raw);
-    for (Map.Entry<String, String> entry : refs.entrySet()) {
-      String clientRef = entry.getKey();
-      if ("rootId".equals(clientRef)) continue;
-      String type = createdTypes.get(entry.getValue());
-      if (type == null || type.isBlank()) continue;
-      String normalizedType = normalizeRefToken(type);
-      String normalizedClientRef = normalizeRefToken(clientRef);
-      if (normalizedRaw.equals(normalizedType + normalizedClientRef)) return entry.getValue();
-    }
-    return null;
-  }
-
-  private String normalizeRefToken(String value) {
-    if (value == null) return "";
-    return value.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
   }
 
   private boolean exists(JsonNode root, String id) {
@@ -1728,10 +968,6 @@ public final class AgentModelTools {
   }
 
   private record Context(ModelLevel level, ModelWorkspace workspace, List<PlanItem> plan) {}
-
-  private record ServiceOwner(String ownerId, String reference) {}
-
-  private record TargetCandidate(String id, String type, int rank) {}
 
   private record InspectedElement(
       String id,

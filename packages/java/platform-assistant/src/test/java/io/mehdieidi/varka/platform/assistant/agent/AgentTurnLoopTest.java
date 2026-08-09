@@ -578,7 +578,7 @@ Work items:
   }
 
   @Test
-  void defaultsNullTurnCompleteToPartialCheckpoint() throws Exception {
+  void repairsNullTurnCompleteToAnExplicitCheckpointDecision() throws Exception {
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(any(), any()))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
@@ -620,6 +620,7 @@ Work items:
 
     assertTrue(result.message().startsWith("Model checkpoint saved"));
     assertEquals(false, result.commandBatch().turnComplete());
+    assertEquals(2, result.providerCalls());
     verify(models).validateStructural(any(), any());
   }
 
@@ -1087,6 +1088,8 @@ Work items:
   }
 
   private static final class NullTurnCompletePatchProvider implements AssistantModelProvider {
+    int calls;
+
     @Override
     public AssistantProviderMetadata metadata() {
       return new AssistantProviderMetadata("fake", "", "");
@@ -1100,10 +1103,13 @@ Work items:
     @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       ProviderCallBudget.consume();
+      calls++;
       return new AssistantReply(
           "{\"tool\":\"commit_model_batch\",\"arguments\":{\"creates\":[{\"clientRef\":\"order_goal\",\"eClass\":\"BusinessGoal\",\"attributes\":{\"name\":\"Order"
               + " intake\"},\"owner\":\"rootId\",\"reference\":\"goals\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"order_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"order-placed\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
-              + " order goal.\",\"turnComplete\":null}}",
+              + " order goal.\",\"turnComplete\":"
+              + (calls == 1 ? "null" : "false")
+              + "}}",
           "fake",
           "fake");
     }

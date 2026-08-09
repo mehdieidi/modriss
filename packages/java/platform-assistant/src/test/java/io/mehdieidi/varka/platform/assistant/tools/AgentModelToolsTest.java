@@ -102,7 +102,7 @@ class AgentModelToolsTest {
   }
 
   @Test
-  void aliasesDuplicateNamedCreateToExistingElementWithinBatch() throws Exception {
+  void keepsLlmAuthoredDuplicateNamedCreateInsteadOfSemanticallyMergingIt() throws Exception {
     AgentModelTools tools = cimTools();
     JsonNode model =
         mapper.readTree(
@@ -141,51 +141,53 @@ class AgentModelToolsTest {
                 "duplicate actor",
                 true));
 
-    JsonNode actor = result.model().at("/actors/0");
-    assertEquals("actor-existing", actor.path("id").asText());
+    JsonNode actor = result.model().at("/actors/1");
+    assertEquals(2, result.model().path("actors").size());
     assertEquals(
         result.model().at("/commands/0/id").asText(),
         actor.path("issuesCommands").path(0).asText());
   }
 
   @Test
-  void resolvesTypePrefixedClientRefOnlyWhenPrefixMatchesCreatedType() throws Exception {
+  void rejectsTypePrefixedClientRefAliases() throws Exception {
     AgentModelTools tools = cimTools();
     ModelWorkspace workspace = workspace();
     tools.bind(ModelLevel.CIM, workspace);
 
-    var result =
-        tools.commitModelBatch(
-            new ModelCommandBatch(
-                List.of(
-                    new ModelCommandBatch.Create(
-                        "RequestAppointment",
-                        "Requirement",
-                        Map.of("name", text("Request appointment")),
-                        "rootId",
-                        "requirements",
-                        null),
-                    new ModelCommandBatch.Create(
-                        "ScheduleAppointment",
-                        "BusinessGoal",
-                        Map.of("name", text("Schedule appointment")),
-                        "rootId",
-                        "goals",
-                        null)),
-                List.of(),
-                List.of(
-                    new ModelCommandBatch.Connection(
-                        "Requirement_RequestAppointment",
-                        "supportsGoals",
-                        "BusinessGoal_ScheduleAppointment")),
-                List.of(),
-                List.of(),
-                "type-prefixed refs",
-                true));
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(
+                            new ModelCommandBatch.Create(
+                                "RequestAppointment",
+                                "Requirement",
+                                Map.of("name", text("Request appointment")),
+                                "rootId",
+                                "requirements",
+                                null),
+                            new ModelCommandBatch.Create(
+                                "ScheduleAppointment",
+                                "BusinessGoal",
+                                Map.of("name", text("Schedule appointment")),
+                                "rootId",
+                                "goals",
+                                null)),
+                        List.of(),
+                        List.of(
+                            new ModelCommandBatch.Connection(
+                                "Requirement_RequestAppointment",
+                                "supportsGoals",
+                                "BusinessGoal_ScheduleAppointment")),
+                        List.of(),
+                        List.of(),
+                        "type-prefixed refs",
+                        true)));
 
-    assertEquals(
-        result.model().at("/goals/0/id").asText(),
-        result.model().at("/requirements/0/supportsGoals/0").asText());
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("exact clientRef"));
   }
 
   @Test
@@ -430,33 +432,37 @@ class AgentModelToolsTest {
   }
 
   @Test
-  void generatesMissingClientRefForStandaloneCreate() throws Exception {
+  void rejectsMissingClientRefForStandaloneCreate() throws Exception {
     AgentModelTools tools = cimTools();
     tools.bind(ModelLevel.CIM, workspace());
 
-    var result =
-        tools.commitModelBatch(
-            new ModelCommandBatch(
-                List.of(
-                    new ModelCommandBatch.Create(
-                        null,
-                        "BusinessGoal",
-                        Map.of("name", text("Library borrowing")),
-                        "rootId",
-                        "goals",
-                        null)),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                "create goal",
-                true));
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(
+                            new ModelCommandBatch.Create(
+                                null,
+                                "BusinessGoal",
+                                Map.of("name", text("Library borrowing")),
+                                "rootId",
+                                "goals",
+                                null)),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        "create goal",
+                        true)));
 
-    assertEquals("Library borrowing", result.model().at("/goals/0/name").asText());
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("non-empty clientRef"));
   }
 
   @Test
-  void rehomesRootPimElementsWhenProviderUsesImplementationProfileAsOwner() throws Exception {
+  void rejectsWrongOwnerForRootPimElement() throws Exception {
     AgentModelTools tools = pimTools();
     JsonNode model =
         mapper.readTree(
@@ -469,29 +475,33 @@ class AgentModelToolsTest {
         ModelLevel.PIM,
         new ModelWorkspace(ModelLevel.PIM, "m", 1, model, new AssistantPatchCompiler(), null));
 
-    var result =
-        tools.commitModelBatch(
-            new ModelCommandBatch(
-                List.of(
-                    new ModelCommandBatch.Create(
-                        "duplicate-rule",
-                        "BusinessRule",
-                        Map.of("name", text("Reject duplicate commands")),
-                        "profile",
-                        "businessRules",
-                        null)),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                "add idempotency rule",
-                true));
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(
+                            new ModelCommandBatch.Create(
+                                "duplicate-rule",
+                                "BusinessRule",
+                                Map.of("name", text("Reject duplicate commands")),
+                                "profile",
+                                "businessRules",
+                                null)),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        "add idempotency rule",
+                        true)));
 
-    assertEquals("BusinessRule", result.model().at("/businessRules/0/eClass").asText());
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("Valid exact containments"));
   }
 
   @Test
-  void rehomesCachePolicyWhenProviderUsesImplementationProfileAsOwner() throws Exception {
+  void rejectsWrongOwnerForCachePolicy() throws Exception {
     AgentModelTools tools = pimTools();
     JsonNode model =
         mapper.readTree(
@@ -504,34 +514,37 @@ class AgentModelToolsTest {
         ModelLevel.PIM,
         new ModelWorkspace(ModelLevel.PIM, "m", 1, model, new AssistantPatchCompiler(), null));
 
-    var result =
-        tools.commitModelBatch(
-            new ModelCommandBatch(
-                List.of(
-                    new ModelCommandBatch.Create(
-                        "cache-policy",
-                        "CachePolicy",
-                        Map.of(
-                            "name",
-                            text("Read cache"),
-                            "cacheRequired",
-                            mapper.getNodeFactory().booleanNode(true)),
-                        "profile",
-                        "policies",
-                        null)),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                "add cache policy",
-                true));
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(
+                            new ModelCommandBatch.Create(
+                                "cache-policy",
+                                "CachePolicy",
+                                Map.of(
+                                    "name",
+                                    text("Read cache"),
+                                    "cacheRequired",
+                                    mapper.getNodeFactory().booleanNode(true)),
+                                "profile",
+                                "policies",
+                                null)),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        "add cache policy",
+                        true)));
 
-    assertEquals("CachePolicy", result.model().at("/policies/0/eClass").asText());
-    assertEquals("Read cache", result.model().at("/policies/0/name").asText());
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("Valid exact containments"));
   }
 
   @Test
-  void aliasesDuplicateRootSingletonProfileCreateToExistingProfile() throws Exception {
+  void rejectsDuplicateRootSingletonProfileCreate() throws Exception {
     AgentModelTools tools = pimTools();
     JsonNode model =
         mapper.readTree(
@@ -544,77 +557,80 @@ class AgentModelToolsTest {
         ModelLevel.PIM,
         new ModelWorkspace(ModelLevel.PIM, "m", 1, model, new AssistantPatchCompiler(), null));
 
-    var result =
-        tools.commitModelBatch(
-            new ModelCommandBatch(
-                List.of(
-                    new ModelCommandBatch.Create(
-                        "profile_duplicate",
-                        "ImplementationProfile",
-                        Map.of("name", text("OpenRouter deployment")),
-                        "rootId",
-                        "implementationProfile",
-                        null),
-                    new ModelCommandBatch.Create(
-                        "handler",
-                        "Function",
-                        Map.of(
-                            "name",
-                            text("Submit order handler"),
-                            "functionKind",
-                            text("COMMAND_HANDLER")),
-                        "profile_duplicate",
-                        "functions",
-                        null)),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                "add duplicate profile and handler",
-                true));
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(
+                            new ModelCommandBatch.Create(
+                                "profile_duplicate",
+                                "ImplementationProfile",
+                                Map.of("name", text("OpenRouter deployment")),
+                                "rootId",
+                                "implementationProfile",
+                                null),
+                            new ModelCommandBatch.Create(
+                                "handler",
+                                "Function",
+                                Map.of(
+                                    "name",
+                                    text("Submit order handler"),
+                                    "functionKind",
+                                    text("COMMAND_HANDLER")),
+                                "profile_duplicate",
+                                "functions",
+                                null)),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        "add duplicate profile and handler",
+                        true)));
 
-    assertEquals("profile", result.model().at("/implementationProfile/id").asText());
-    assertEquals(
-        "OpenRouter deployment", result.model().at("/implementationProfile/name").asText());
-    assertEquals("Function", result.model().at("/services/0/functions/0/eClass").asText());
+    assertEquals(422, error.status());
   }
 
   @Test
-  void treatsRootModelCreateAsRootAttributeUpdate() throws Exception {
+  void rejectsRootModelCreateAndRequiresExplicitRootUpdate() throws Exception {
     AgentModelTools tools = cimTools();
     tools.bind(ModelLevel.CIM, workspace());
 
-    var result =
-        tools.commitModelBatch(
-            new ModelCommandBatch(
-                List.of(
-                    new ModelCommandBatch.Create(
-                        "root_model",
-                        "CIMModel",
-                        Map.of("domainName", text("Community pantry")),
-                        "rootId",
-                        "exactContainment",
-                        null),
-                    new ModelCommandBatch.Create(
-                        "pantry_policy",
-                        "Policy",
-                        Map.of("name", text("Eligibility policy")),
-                        null,
-                        null,
-                        null)),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                "draft pantry",
-                true));
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(
+                            new ModelCommandBatch.Create(
+                                "root_model",
+                                "CIMModel",
+                                Map.of("domainName", text("Community pantry")),
+                                "rootId",
+                                "exactContainment",
+                                null),
+                            new ModelCommandBatch.Create(
+                                "pantry_policy",
+                                "Policy",
+                                Map.of("name", text("Eligibility policy")),
+                                null,
+                                null,
+                                null)),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        "draft pantry",
+                        true)));
 
-    assertEquals("Community pantry", result.model().path("domainName").asText());
-    assertEquals("Policy", result.model().at("/policies/0/eClass").asText());
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("root already exists"));
   }
 
   @Test
-  void convertsUnknownIdempotencyUpdateToRootPolicyCreate() throws Exception {
+  void rejectsUnknownIdempotencyUpdateInsteadOfInventingCreate() throws Exception {
     AgentModelTools tools = pimTools();
     JsonNode model =
         mapper.readTree(
@@ -626,31 +642,34 @@ class AgentModelToolsTest {
         ModelLevel.PIM,
         new ModelWorkspace(ModelLevel.PIM, "m", 1, model, new AssistantPatchCompiler(), null));
 
-    var result =
-        tools.commitModelBatch(
-            new ModelCommandBatch(
-                List.of(),
-                List.of(
-                    new ModelCommandBatch.Update(
-                        "IdempotencyPolicy_1",
-                        Map.of(
-                            "name",
-                            text("Command idempotency"),
-                            "storeRequired",
-                            mapper.getNodeFactory().booleanNode(true)),
-                        "")),
-                List.of(),
-                List.of(),
-                List.of(),
-                "add idempotency",
-                true));
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(),
+                        List.of(
+                            new ModelCommandBatch.Update(
+                                "IdempotencyPolicy_1",
+                                Map.of(
+                                    "name",
+                                    text("Command idempotency"),
+                                    "storeRequired",
+                                    mapper.getNodeFactory().booleanNode(true)),
+                                "")),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        "add idempotency",
+                        true)));
 
-    assertEquals("IdempotencyPolicy", result.model().at("/policies/0/eClass").asText());
-    assertEquals("Command idempotency", result.model().at("/policies/0/name").asText());
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("not a known clientRef"));
   }
 
   @Test
-  void dropsUnknownAttributesWhenConvertingUnknownCacheUpdateToCreate() throws Exception {
+  void rejectsUnknownCacheUpdateInsteadOfInventingCreate() throws Exception {
     AgentModelTools tools = pimTools();
     JsonNode model =
         mapper.readTree(
@@ -662,34 +681,36 @@ class AgentModelToolsTest {
         ModelLevel.PIM,
         new ModelWorkspace(ModelLevel.PIM, "m", 1, model, new AssistantPatchCompiler(), null));
 
-    var result =
-        tools.commitModelBatch(
-            new ModelCommandBatch(
-                List.of(),
-                List.of(
-                    new ModelCommandBatch.Update(
-                        "cache_component",
-                        Map.of(
-                            "name",
-                            text("Read-through cache"),
-                            "owner",
-                            text("application"),
-                            "cacheRequired",
-                            mapper.getNodeFactory().booleanNode(true)),
-                        "")),
-                List.of(),
-                List.of(),
-                List.of(),
-                "add cache",
-                true));
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(),
+                        List.of(
+                            new ModelCommandBatch.Update(
+                                "cache_component",
+                                Map.of(
+                                    "name",
+                                    text("Read-through cache"),
+                                    "owner",
+                                    text("application"),
+                                    "cacheRequired",
+                                    mapper.getNodeFactory().booleanNode(true)),
+                                "")),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        "add cache",
+                        true)));
 
-    assertEquals("CachePolicy", result.model().at("/policies/0/eClass").asText());
-    assertEquals("Read-through cache", result.model().at("/policies/0/name").asText());
-    assertTrue(result.model().at("/policies/0/owner").isMissingNode());
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("not a known clientRef"));
   }
 
   @Test
-  void createsSyntheticServiceForMisownedFunction() throws Exception {
+  void rejectsMisownedFunctionInsteadOfCreatingSyntheticService() throws Exception {
     AgentModelTools tools = pimTools();
     JsonNode model =
         mapper.readTree(
@@ -702,30 +723,33 @@ class AgentModelToolsTest {
         ModelLevel.PIM,
         new ModelWorkspace(ModelLevel.PIM, "m", 1, model, new AssistantPatchCompiler(), null));
 
-    var result =
-        tools.commitModelBatch(
-            new ModelCommandBatch(
-                List.of(
-                    new ModelCommandBatch.Create(
-                        "handler",
-                        "Function",
-                        Map.of(
-                            "name",
-                            text("Submit order handler"),
-                            "functionKind",
-                            text("COMMAND_HANDLER")),
-                        "profile",
-                        "exactContainment",
-                        null)),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                "add handler",
-                true));
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(
+                            new ModelCommandBatch.Create(
+                                "handler",
+                                "Function",
+                                Map.of(
+                                    "name",
+                                    text("Submit order handler"),
+                                    "functionKind",
+                                    text("COMMAND_HANDLER")),
+                                "profile",
+                                "exactContainment",
+                                null)),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        "add handler",
+                        true)));
 
-    assertEquals("ServerlessService", result.model().at("/services/0/eClass").asText());
-    assertEquals("Function", result.model().at("/services/0/functions/0/eClass").asText());
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("Valid exact containments"));
   }
 
   private AgentModelTools cimTools() {
@@ -742,6 +766,28 @@ class AgentModelToolsTest {
         new TypeContractService(knowledge),
         mock(ModelService.class),
         new ModelCommandCompiler(new AssistantPatchCompiler()));
+  }
+
+  @Test
+  void listsExactCompatibleExistingOwnersForRepairWithoutResolvingNames() throws Exception {
+    AgentModelTools tools = pimTools();
+    JsonNode model =
+        mapper.readTree(
+            """
+{"id":"pim-root","eClass":"PIMModel","modelLevel":"PIM","services":[{"id":"svc-123","eClass":"ServerlessService","name":"OrderFulfillmentService","boundaryType":"CAPABILITY_BASED","functions":[]}],"diagram":{"elements":[],"relationships":[]}}
+""");
+    tools.bind(
+        ModelLevel.PIM,
+        new ModelWorkspace(ModelLevel.PIM, "pim", 1, model, new AssistantPatchCompiler(), null));
+
+    JsonNode owners = tools.eligibleExistingOwners(List.of("Function"));
+
+    JsonNode candidates = owners.path("byChildType").get(0).path("candidates");
+    assertEquals(1, candidates.size());
+    assertEquals("svc-123", candidates.get(0).path("id").asText());
+    assertEquals("OrderFulfillmentService", candidates.get(0).path("name").asText());
+    assertEquals("ServerlessService", candidates.get(0).path("eClass").asText());
+    assertEquals("functions", candidates.get(0).path("containments").get(0).asText());
   }
 
   private ModelWorkspace workspace() throws Exception {
