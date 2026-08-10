@@ -51,4 +51,20 @@ class TypeContractServiceTest {
         io.mehdieidi.varka.platform.kernel.PlatformException.class,
         () -> service.require(ModelLevel.PIM, "serverlessservice"));
   }
+
+  @Test
+  void includesTargetsNeededToSatisfyRequiredNonContainmentReferences() {
+    TypeContractService service =
+        new TypeContractService(
+            new MetamodelKnowledgeService(new AssistantMetamodelSchemaService()));
+
+    var names =
+        service.requiredContainmentClosure(ModelLevel.CIM, List.of("DomainEntity")).stream()
+            .map(contract -> contract.eClass())
+            .toList();
+
+    assertTrue(names.contains("CIMModel"));
+    assertTrue(names.contains("DomainEntity"));
+    assertTrue(names.contains("InformationItem"));
+  }
 }

@@ -157,6 +157,7 @@ function Inspect-Model {
     Elements = Count-Array $visual.elements
     Relationships = Count-Array $visual.relationships
     ValidationValid = $validation.valid
+    ModelText = ($modelJson | ConvertTo-Json -Depth 60 -Compress)
   }
 }
 
@@ -266,6 +267,51 @@ function Run-EditScenario {
   }
 }
 
+function Run-CimFeatureEvolutionScenario {
+  param([string]$Token, [string]$ProjectId)
+  $created = Run-Scenario -Token $Token -ProjectId $ProjectId -Name "cim-feature-evolution" -Level "cim" -Prompt "Model these feature requests in a new CIM: customers can place orders and track each order's status; support agents can review an order and update its status. Create the business-facing actors, goals, capabilities, domain concepts, requirements, and meaningful relationships needed to represent the requests."
+  if (-not $created.ModelId) { return $created }
+  $before = Inspect-Model -Token $Token -Level "cim" -ModelId $created.ModelId
+  if (@("SUCCEEDED", "PARTIAL") -notcontains [string]$created.State -or [int]$created.Checkpoints -lt 1 -or [int]$before.StructuralNodes -le 1) {
+    $created | Add-Member -NotePropertyName InitialStructuralNodes -NotePropertyValue $before.StructuralNodes
+    $created | Add-Member -NotePropertyName InitialFeaturePresent -NotePropertyValue $false
+    $created | Add-Member -NotePropertyName InitialFeaturePreserved -NotePropertyValue $false
+    $created | Add-Member -NotePropertyName AddedFeaturePresent -NotePropertyValue $false
+    return $created
+  }
+  $edit = Send-Turn -Token $Token -SessionId $created.SessionId -ModelId $created.ModelId -Revision $created.Revision -Message "Add this feature request to the existing CIM without removing or replacing the order placement and tracking features: customers can request a return for a delivered order, support agents approve or reject the return, and approved returns lead to a refund. Extend the existing business model with the needed concepts, requirements, capabilities, and relationships."
+  $turn = $edit.Turn
+  $after = Inspect-Model -Token $Token -Level "cim" -ModelId $turn.modelId
+  [pscustomobject]@{
+    Scenario = "cim-feature-evolution"
+    Level = "CIM"
+    State = $turn.state
+    Seconds = ([int]$created.Seconds + [int]$edit.ElapsedSeconds)
+    ProviderCalls = ([int]$created.ProviderCalls + [int]$edit.ProviderCalls)
+    PromptTokens = ([long]$created.PromptTokens + [long]$edit.PromptTokens)
+    CompletionTokens = ([long]$created.CompletionTokens + [long]$edit.CompletionTokens)
+    RepairAttempts = ([int]$created.RepairAttempts + [int]$turn.repairAttempts)
+    FirstCheckpointSeconds = $created.FirstCheckpointSeconds
+    Checkpoints = ([int]$created.Checkpoints + (Count-Checkpoint $turn))
+    SavedElements = ([int]$created.SavedElements + [int]$turn.savedElementCount)
+    CoveragePercent = $turn.coveragePercent
+    Provenance = $turn.provenance
+    Resumes = ([int]$created.Resumes + [int]$edit.ResumeCount)
+    InitialStructuralNodes = $before.StructuralNodes
+    StructuralNodes = $after.StructuralNodes
+    Elements = $after.Elements
+    Relationships = $after.Relationships
+    ValidationValid = $after.ValidationValid
+    InitialFeaturePresent = ($before.ModelText -match '(?i)order') -and ($before.ModelText -match '(?i)track|status')
+    InitialFeaturePreserved = ($after.ModelText -match '(?i)order') -and ($after.ModelText -match '(?i)track|status')
+    AddedFeaturePresent = ($after.ModelText -match '(?i)return') -and ($after.ModelText -match '(?i)refund')
+    ModelId = $turn.modelId
+    Revision = $turn.revision
+    Message = $turn.finalMessage
+    SessionId = $created.SessionId
+  }
+}
+
 # Every versioned fixture must enter here.  Scenarios which need an existing revision first create
 # an isolated base model, so one failure cannot contaminate the rest of the matrix.
 function Run-FixtureScenario {
@@ -275,6 +321,7 @@ function Run-FixtureScenario {
     "create-cim-library" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "cim" -Prompt "Create a compact complete CIM library model with actors, goals, capabilities, concepts, policies, and borrowing relationships." }
     "create-pim-serverless" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "pim" -Prompt "Create a complete PIM for serverless order processing with HTTP API, commands, events, persistent data, payment integration, observability, and security." }
     "edit-existing-pim-add-pattern" { return Run-EditScenario -Token $Token -ProjectId $ProjectId }
+    "cim-feature-evolution" { return Run-CimFeatureEvolutionScenario -Token $Token -ProjectId $ProjectId }
     "answer-only" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "cim" -Prompt "Explain what a CIM model contains. Do not create, edit, or delete a model." }
     "create-cim" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "cim" -Prompt "Create a compact CIM for an appointment booking service with actors, goals, concepts, and relationships." }
     "edit-pim" { $result = Run-EditScenario -Token $Token -ProjectId $ProjectId; $result.Scenario = $Fixture.id; return $result }
@@ -370,13 +417,21 @@ function Test-ScenarioGate {
     "edit-existing-pim-add-pattern" {
       if ([int]$Result.StructuralNodes -lt 6) { $failures += "PIM edit did not produce enough model structure" }
     }
+    "cim-feature-evolution" {
+      if ($Result.InitialFeaturePresent -ne $true) { $failures += "initial order-tracking feature was not modeled" }
+      if ($Result.InitialFeaturePreserved -ne $true) { $failures += "existing order-tracking feature was not preserved" }
+      if ($Result.AddedFeaturePresent -ne $true) { $failures += "return/refund feature was not added" }
+      if ([int]$Result.StructuralNodes -le [int]$Result.InitialStructuralNodes) { $failures += "second feature request did not extend model structure" }
+    }
   }
   if ($null -eq $Fixture) { $failures += "missing versioned fixture" }
   $complex = $Fixture.route -eq "COMPLEX_EDIT"
   # Provider retry attempts are real HTTP calls and remain visible in the report.  They are
   # allowed only for the Freemodel live-evaluation contingency; the logical workflow budget
   # still applies when no transient provider failure occurs.
-  $callBudget = if ($complex) { 4 } elseif ($Fixture.route -eq "EXPLANATION") { 1 } else { 2 }
+  # The evolution gate contains two independent modeling turns. Allow five calls per turn: plan,
+  # contract-bound draft, and up to three bounded structural repairs.
+  $callBudget = if ($scenarioId -eq "cim-feature-evolution") { 10 } elseif ($complex) { 4 } elseif ($Fixture.route -eq "EXPLANATION") { 1 } else { 2 }
   $callBudget += [int]$ProviderRetryCount
   if ([int]$Result.ProviderCalls -gt $callBudget) {
     $failures += "provider calls $($Result.ProviderCalls) exceed budget $callBudget"
@@ -437,13 +492,13 @@ $lines = @(
   "",
   "Generated: $(Get-Date -Format o)",
   "",
-  "| Scenario | Level | Final state | Total latency (s) | First checkpoint (s) | Provider calls | Prompt tokens | Completion tokens | Repairs | Provider retries | Coverage | Checkpoints | Structural status | Message |",
-  "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | --- | --- |"
+  "| Scenario | Level | Final state | Total latency (s) | First checkpoint (s) | Provider calls | Prompt tokens | Completion tokens | Checkpoint repairs | Provider retries | Coverage | Checkpoints | Initial nodes | Final nodes | Initial feature | Preserved | Added feature | Structural status | Message |",
+  "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | --- | --- | --- | --- |"
 )
 foreach ($result in $results) {
   $message = ([string]$result.Message).Replace("|", "\|").Replace("`r", " ").Replace("`n", " ")
   $repairs = if ($null -eq $result.RepairAttempts) { 0 } else { [int]$result.RepairAttempts }
-  $lines += "| $($result.Scenario) | $($result.Level) | $($result.State) | $($result.Seconds) | $($result.FirstCheckpointSeconds) | $($result.ProviderCalls) | $($result.PromptTokens) | $($result.CompletionTokens) | $repairs | $($result.ProviderRetryAttempts) | $($result.CoveragePercent) | $($result.Checkpoints) | $($result.ValidationValid) | $message |"
+  $lines += "| $($result.Scenario) | $($result.Level) | $($result.State) | $($result.Seconds) | $($result.FirstCheckpointSeconds) | $($result.ProviderCalls) | $($result.PromptTokens) | $($result.CompletionTokens) | $repairs | $($result.ProviderRetryAttempts) | $($result.CoveragePercent) | $($result.Checkpoints) | $($result.InitialStructuralNodes) | $($result.StructuralNodes) | $($result.InitialFeaturePresent) | $($result.InitialFeaturePreserved) | $($result.AddedFeaturePresent) | $($result.ValidationValid) | $message |"
 }
 # Windows PowerShell 5 does not support utf8NoBOM; UTF8 is portable across the developer and
 # CI shells used for this live gate.

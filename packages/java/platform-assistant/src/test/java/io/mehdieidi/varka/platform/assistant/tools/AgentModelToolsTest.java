@@ -311,44 +311,40 @@ class AgentModelToolsTest {
   }
 
   @Test
-  void rejectsInvalidConnectionReferenceWithWritableAlternatives() throws Exception {
+  void normalizesInvalidConnectionNameWhenEClassPairHasOneWritableAlternative() throws Exception {
     AgentModelTools tools = cimTools();
     tools.bind(ModelLevel.CIM, workspace());
 
-    PlatformException error =
-        assertThrows(
-            PlatformException.class,
-            () ->
-                tools.commitModelBatch(
-                    new ModelCommandBatch(
-                        List.of(
-                            new ModelCommandBatch.Create(
-                                "submit_request",
-                                "Command",
-                                Map.of("name", text("Submit request")),
-                                "rootId",
-                                "commands",
-                                null),
-                            new ModelCommandBatch.Create(
-                                "request_payload",
-                                "InformationItem",
-                                Map.of("name", text("Request payload"), "type", text("OBJECT")),
-                                "rootId",
-                                "informationItems",
-                                null)),
-                        List.of(),
-                        List.of(
-                            new ModelCommandBatch.Connection(
-                                "submit_request", "dependsOn", "request_payload")),
-                        List.of(),
-                        List.of(),
-                        "draft command",
-                        true)));
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        "submit_request",
+                        "Command",
+                        Map.of("name", text("Submit request")),
+                        "rootId",
+                        "commands",
+                        null),
+                    new ModelCommandBatch.Create(
+                        "request_payload",
+                        "InformationItem",
+                        Map.of("name", text("Request payload"), "type", text("OBJECT")),
+                        "rootId",
+                        "informationItems",
+                        null)),
+                List.of(),
+                List.of(
+                    new ModelCommandBatch.Connection(
+                        "submit_request", "dependsOn", "request_payload")),
+                List.of(),
+                List.of(),
+                "draft command",
+                true));
 
-    assertEquals(422, error.status());
-    assertTrue(error.getMessage().contains("dependsOn"));
-    assertTrue(error.getMessage().contains("Valid writable references"));
-    assertTrue(error.getMessage().contains("input"));
+    assertEquals(
+        result.model().at("/informationItems/0/id").asText(),
+        result.model().at("/commands/0/input/0").asText());
   }
 
   @Test
@@ -498,6 +494,75 @@ class AgentModelToolsTest {
 
     assertEquals(422, error.status());
     assertTrue(error.getMessage().contains("Valid exact containments"));
+  }
+
+  @Test
+  void normalizesAUniqueEClassCompatibleConnectionFromExactEcoreContracts() throws Exception {
+    AgentModelTools tools = cimTools();
+    tools.bind(ModelLevel.CIM, workspace());
+
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        "capability",
+                        "BusinessCapability",
+                        Map.of("name", text("Order management")),
+                        "rootId",
+                        "capabilities",
+                        null),
+                    new ModelCommandBatch.Create(
+                        "goal",
+                        "BusinessGoal",
+                        Map.of("name", text("Track orders")),
+                        "rootId",
+                        "goals",
+                        null)),
+                List.of(),
+                List.of(new ModelCommandBatch.Connection("capability", "supportsGoals", "goal")),
+                List.of(),
+                List.of(),
+                "connect capability to goal",
+                true));
+
+    assertEquals(
+        result.model().at("/goals/0/id").asText(),
+        result.model().at("/capabilities/0/supports/0").asText());
+  }
+
+  @Test
+  void reportsMissingRequiredReferencesBeforeStructuralExport() throws Exception {
+    AgentModelTools tools = cimTools();
+    tools.bind(ModelLevel.CIM, workspace());
+
+    PlatformException error =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                tools.commitModelBatch(
+                    new ModelCommandBatch(
+                        List.of(
+                            new ModelCommandBatch.Create(
+                                "order",
+                                "DomainEntity",
+                                Map.of(
+                                    "name", text("Order"),
+                                    "identityStrategy", text("NATURAL_KEY")),
+                                "rootId",
+                                "entities",
+                                null)),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        "create order entity",
+                        true)));
+
+    assertEquals(422, error.status());
+    assertTrue(error.getMessage().contains("order"));
+    assertTrue(error.getMessage().contains("identityAttributes"));
+    assertTrue(error.getMessage().contains("primaryIdentityAttribute"));
   }
 
   @Test

@@ -1,6 +1,6 @@
 # Current LLM Modeling Workflow
 
-Updated: 2026-07-29
+Updated: 2026-08-10
 
 This document describes the current implementation state for the chatbot-based AI modeling
 assistant. It is intentionally descriptive, not aspirational.
@@ -97,9 +97,17 @@ language user-story generator.
 
 Latest single-story live test through the real multipart/chatbot path:
 
-| Fixture              | State       | Coverage | Checkpoints | Saved elements | Provider calls | Validation |
-| -------------------- | ----------- | -------- | ----------- | -------------- | -------------- | ---------- |
-| `story-v1-single.md` | `SUCCEEDED` | `100%`   | `1`         | `16`           | `4`            | structural |
+| Fixture               | State       | Coverage | Checkpoints | Saved elements | Provider calls | Validation |
+| --------------------- | ----------- | -------- | ----------- | -------------- | -------------- | ---------- |
+| `story-v1-single.md`  | `SUCCEEDED` | `100%`   | `1`         | `16`           | `4`            | structural |
+| CIM feature creation  | `SUCCEEDED` | n/a      | `1`         | `44`           | `6`            | structural |
+| Same-CIM feature edit | `SUCCEEDED` | n/a      | `1`         | `30`           | `2`            | structural |
+
+The two CIM rows are one conversation against the real OpenAI-compatible provider: the first turn
+modeled order placement/tracking in an empty CIM and the second added returns/refunds to that saved
+model. The model grew from 37 to 63 structural nodes; the initial feature, its preservation, and
+the added feature all passed the live gate. Provider-reported token usage is preserved by the
+native tool transport. See `live-cim-feature-evolution-report.md` for the recorded run.
 
 The operational workflow now accepts the attachment, creates a checkpoint, persists model content,
 and reports complete source coverage. Assistant output is accepted only against structural
@@ -109,20 +117,24 @@ is available through explicit model validation endpoints for human-driven review
 The focused unit/regression set currently passes:
 
 ```text
-SourceUnitSplitterTest
+AgentActionSchemaTest
 OpenAiCompatibleAssistantModelProviderTest
 AgentTurnLoopTest
 AgentModelToolsTest
+TypeContractServiceTest
+ModelServiceXmiImportTest
 
-26 tests, 0 failures
+81 focused tests, 0 failures
 ```
 
 ## Known Issues
 
 - Larger source fixtures need to be rerun after the latest source-splitting and structural
   validation changes.
-- Freemodel has returned intermittent `503` responses in local live testing. FreeLLM currently
-  works better for the local workflow, but provider reliability remains an operational concern.
+- Smaller/cheaper models tested for the feature-evolution workflow were not sufficiently reliable:
+  Qwen's thinking variant rejected forced tools, its instruct variant exhausted repair budgets,
+  and `gpt-4.1-mini` was stochastic on required Ecore details. `gpt-4.1` is the current lowest-cost
+  tested model that completed both turns end to end.
 - The live eval script is useful for diagnosis but is not yet a CI-grade gate.
 - EVL validation responses can still be useful after assistant checkpoints, but they must remain
   user-initiated review feedback rather than assistant apply criteria.

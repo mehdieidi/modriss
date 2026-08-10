@@ -121,6 +121,16 @@ class AgentActionSchemaTest {
             .path("attributes")
             .path("properties")
             .has("name"));
+    assertEquals(
+        "name",
+        properties
+            .path("creates")
+            .path("items")
+            .path("properties")
+            .path("attributes")
+            .path("required")
+            .get(0)
+            .asText());
   }
 
   @Test

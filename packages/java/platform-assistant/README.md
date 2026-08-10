@@ -25,7 +25,7 @@ record source-grounded or inferred provenance, and compute source coverage. Mode
 backend-generated UUIDs; provider `clientRef` values are temporary same-batch references only.
 
 Current local live status is documented in
-`../../../docs/internal/ai/current-llm-workflow.md`. As of 2026-07-29, assistant-generated model
+`../../../docs/internal/ai/current-llm-workflow.md`. As of 2026-08-10, assistant-generated model
 changes are accepted only after structural Ecore/EMF conformance checks. The assistant apply path
 does not execute EVL or require semantic validation to pass; EVL remains available through explicit
 model validation endpoints outside the chatbot workflow.

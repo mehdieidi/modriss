@@ -792,7 +792,7 @@ Work items:
               + " intake\",\"successCriterion\":\"Requests are reviewed with household"
               + " size.\"},\"owner\":\"rootId\",\"reference\":\"goals\"},{\"clientRef\":\"appointment_request\",\"eClass\":\"InformationItem\",\"attributes\":{\"name\":\"Appointment"
               + " request\",\"businessName\":\"Appointment"
-              + " Request\",\"required\":true,\"collection\":false},\"owner\":\"rootId\",\"reference\":\"informationItems\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"appointment_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"R1\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"},{\"elementRef\":\"appointment_request\",\"sourceUnitId\":\"src-2\",\"requirementId\":\"R2\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
+              + " Request\",\"required\":true,\"collection\":false,\"type\":\"OBJECT\"},\"owner\":\"rootId\",\"reference\":\"informationItems\"}],\"updates\":[],\"connections\":[],\"deletions\":[],\"evidence\":[{\"elementRef\":\"appointment_goal\",\"sourceUnitId\":\"src-1\",\"requirementId\":\"R1\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"},{\"elementRef\":\"appointment_request\",\"sourceUnitId\":\"src-2\",\"requirementId\":\"R2\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}],\"planSummary\":\"Created"
               + " appointment checkpoint.\",\"turnComplete\":true}}",
           "fake",
           "fake");

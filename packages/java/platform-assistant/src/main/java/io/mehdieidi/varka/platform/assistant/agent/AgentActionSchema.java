@@ -1,6 +1,7 @@
 package io.mehdieidi.varka.platform.assistant.agent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.AttributeContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.ReferenceContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.TypeContract;
 import java.util.LinkedHashMap;
@@ -395,7 +396,13 @@ public final class AgentActionSchema {
                     attribute.enumLiterals().isEmpty()
                         ? openValueSchema()
                         : enumStringSchema(attribute.enumLiterals())));
-    properties.put("attributes", object(attributes, List.of()));
+    List<String> requiredAttributes =
+        type.attributes().stream()
+            .filter(AttributeContract::required)
+            .map(AttributeContract::name)
+            .filter(name -> !"id".equals(name))
+            .toList();
+    properties.put("attributes", object(attributes, requiredAttributes));
     String ownership = containmentOwnershipDescription(singleton, contracts);
     properties.put(
         "owner",

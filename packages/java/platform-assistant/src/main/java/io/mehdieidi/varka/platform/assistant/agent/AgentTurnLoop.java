@@ -1711,6 +1711,11 @@ validation.
               + " in the affected EClass's valid exact attributes; do not repeat the unchanged"
               + " batch.");
     }
+    if (message.contains("invalid enum value")) {
+      hints.add(
+          "Replace the rejected enum value on the named attribute with exactly one literal from"
+              + " the diagnostic's allowed-values list; do not repeat or paraphrase it.");
+    }
     if (message.contains("containment") || message.contains("owner")) {
       hints.add(
           "Use a containment listed on the owner type contract; direct root ownership uses"

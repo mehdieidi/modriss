@@ -19,6 +19,11 @@
     "route": "COMPLEX_EDIT",
     "assertions": ["checkpoint", "structural_validity"]
   },
+  {
+    "id": "cim-feature-evolution",
+    "route": "COMPLEX_EDIT",
+    "assertions": ["checkpoint", "structural_validity", "feature_preservation"]
+  },
   { "id": "answer-only", "route": "EXPLANATION", "assertions": ["one_call", "no_mutation"] },
   {
     "id": "create-cim",

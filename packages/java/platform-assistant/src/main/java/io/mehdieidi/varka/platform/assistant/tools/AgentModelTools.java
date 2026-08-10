@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import tools.jackson.databind.JsonNode;
@@ -446,6 +447,7 @@ public final class AgentModelTools {
     refs.put("rootId", rootId.isBlank() ? "rootId" : rootId);
     Map<String, String> createdTypes = new LinkedHashMap<>();
     Map<String, ObjectNode> createdAttributes = new LinkedHashMap<>();
+    Map<String, Set<String>> createdReferenceAssignments = new LinkedHashMap<>();
     for (ModelCommandBatch.Create create : batch.creates()) {
       String clientRef = blank(create.clientRef());
       TypeContract type = contracts.require(active.level(), create.eClass());
@@ -466,6 +468,7 @@ public final class AgentModelTools {
       ObjectNode attributes = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
       if (create.attributes() != null) create.attributes().forEach(attributes::set);
       attributes = normalizeAttributes(type, attributes);
+      requireCreateAttributes(clientRef, type, attributes);
       if (requestedOwner == null || requestedReference == null) {
         throw new PlatformException(
             422, "Create '" + clientRef + "' requires explicit owner and containment feature.");
@@ -474,6 +477,7 @@ public final class AgentModelTools {
       refs.put(clientRef, elementId);
       createdTypes.put(elementId, type.eClass());
       createdAttributes.put(elementId, attributes);
+      createdReferenceAssignments.put(elementId, new java.util.LinkedHashSet<>());
       String ownerId = resolveExistingOrBatchRef(requestedOwner, refs, "Create owner");
       String ownerTypeName =
           rootId.equals(ownerId)
@@ -484,6 +488,9 @@ public final class AgentModelTools {
       String containment =
           requireContainmentReference(
               active.level(), ownerTypeName, requestedReference, type.eClass());
+      if (createdReferenceAssignments.containsKey(ownerId)) {
+        createdReferenceAssignments.get(ownerId).add(containment);
+      }
       operations.add(
           new Operation(
               OperationType.ADD_ELEMENT,
@@ -575,7 +582,11 @@ public final class AgentModelTools {
       operations.add(
           new Operation(
               OperationType.CONNECT_ELEMENTS, target, targetType, null, source, reference.name()));
+      if (createdReferenceAssignments.containsKey(source)) {
+        createdReferenceAssignments.get(source).add(reference.name());
+      }
     }
+    requireCreateReferences(active.level(), refs, createdTypes, createdReferenceAssignments);
     for (ModelCommandBatch.Deletion deletion : batch.deletions()) {
       String id = resolveExistingOrBatchRef(deletion.elementId(), refs, "Deletion element");
       JsonNode element = find(active.workspace().snapshot(), id);
@@ -631,7 +642,79 @@ public final class AgentModelTools {
             .findFirst()
             .orElse(null);
     if (named != null && contracts.assignable(level, targetType, named.targetType())) return named;
-    return named;
+    List<ReferenceContract> compatible =
+        sourceType.references().stream()
+            .filter(reference -> !reference.containment() && !reference.readonly())
+            .filter(reference -> contracts.assignable(level, targetType, reference.targetType()))
+            .toList();
+    // This is Ecore-derived normalization, not a name alias: when the source and target types
+    // admit exactly one writable structural edge there is no ambiguous modeling choice.
+    return compatible.size() == 1 ? compatible.get(0) : named;
+  }
+
+  private void requireCreateAttributes(String clientRef, TypeContract type, ObjectNode attributes) {
+    List<String> missing =
+        type.attributes().stream()
+            .filter(AttributeContract::required)
+            .map(AttributeContract::name)
+            .filter(name -> !"id".equals(name))
+            .filter(name -> !attributes.hasNonNull(name))
+            .toList();
+    if (!missing.isEmpty()) {
+      throw new PlatformException(
+          422,
+          "Create '"
+              + clientRef
+              + "' of "
+              + type.eClass()
+              + " is missing required attributes "
+              + missing
+              + ". Add them using the exact Ecore contract or remove this create.");
+    }
+  }
+
+  private void requireCreateReferences(
+      ModelLevel level,
+      Map<String, String> refs,
+      Map<String, String> createdTypes,
+      Map<String, Set<String>> assignments) {
+    Map<String, String> clientRefsById = new LinkedHashMap<>();
+    refs.forEach((clientRef, id) -> clientRefsById.putIfAbsent(id, clientRef));
+    for (Map.Entry<String, String> created : createdTypes.entrySet()) {
+      TypeContract type = contracts.require(level, created.getValue());
+      Set<String> assigned = assignments.getOrDefault(created.getKey(), Set.of());
+      List<String> missing =
+          type.references().stream()
+              .filter(ReferenceContract::required)
+              .filter(reference -> !reference.readonly())
+              .map(ReferenceContract::name)
+              .filter(reference -> !assigned.contains(reference))
+              .toList();
+      if (!missing.isEmpty()) {
+        String clientRef = clientRefsById.getOrDefault(created.getKey(), created.getKey());
+        throw new PlatformException(
+            422,
+            "Create '"
+                + clientRef
+                + "' of "
+                + type.eClass()
+                + " is missing required Ecore references "
+                + missing
+                + ". Add compatible creates and connections/containments from this exact"
+                + " clientRef, or remove this create. Required reference contracts: "
+                + type.references().stream()
+                    .filter(ReferenceContract::required)
+                    .filter(reference -> !reference.readonly())
+                    .map(
+                        reference ->
+                            reference.name()
+                                + "->"
+                                + reference.targetType()
+                                + (reference.containment() ? " containment" : " connection"))
+                    .toList()
+                + ".");
+      }
+    }
   }
 
   private List<String> writableReferenceAlternatives(TypeContract sourceType) {
@@ -837,7 +920,9 @@ public final class AgentModelTools {
                   && !contract.enumLiterals().contains(value.asText())) {
                 throw new PlatformException(
                     422,
-                    "Invalid enum value for "
+                    "Invalid enum value '"
+                        + value.asText()
+                        + "' for "
                         + type.eClass()
                         + "."
                         + name

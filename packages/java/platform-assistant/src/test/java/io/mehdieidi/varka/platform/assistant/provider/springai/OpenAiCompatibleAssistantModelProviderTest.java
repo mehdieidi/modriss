@@ -130,4 +130,47 @@ class OpenAiCompatibleAssistantModelProviderTest {
                 List.of(),
                 "commit_model_batch")));
   }
+
+  @Test
+  void preservesUsageFromNativeOpenAiCompatibleResponses() throws Exception {
+    var response =
+        OpenAiCompatibleAssistantModelProvider.nativeChatResponse(
+            mapper,
+            """
+{
+  "id":"call-1",
+  "model":"provider/model",
+  "choices":[{"message":{"tool_calls":[{"function":{"name":"respond_to_user","arguments":"{\\"message\\":\\"Done.\\"}"}}]}}],
+  "usage":{"prompt_tokens":321,"completion_tokens":45,"total_tokens":366}
+}
+""",
+            "requested/model");
+
+    assertEquals(321, response.getMetadata().getUsage().getPromptTokens());
+    assertEquals(45, response.getMetadata().getUsage().getCompletionTokens());
+    assertEquals(366, response.getMetadata().getUsage().getTotalTokens());
+    assertEquals("provider/model", response.getMetadata().getModel());
+  }
+
+  @Test
+  void keepsNativeResponsesUsableWhenProviderOmitsUsage() throws Exception {
+    var response =
+        OpenAiCompatibleAssistantModelProvider.nativeChatResponse(
+            mapper,
+            """
+{"choices":[{"message":{"tool_calls":[{"function":{"name":"respond_to_user","arguments":"{\\"message\\":\\"Done.\\"}"}}]}}]}
+""",
+            "requested/model");
+
+    assertEquals(0, response.getMetadata().getUsage().getTotalTokens());
+    assertEquals("", response.getMetadata().getModel());
+  }
+
+  @Test
+  void recognizesProviderQualifiedAndBareQwenModelIds() {
+    assertTrue(OpenAiCompatibleAssistantModelProvider.isQwenModel("qwen3-235b-a22b"));
+    assertTrue(OpenAiCompatibleAssistantModelProvider.isQwenModel("Qwen/Qwen3.5-35B-A3B-FP8"));
+    assertTrue(OpenAiCompatibleAssistantModelProvider.isQwenModel("provider/qwen3-coder"));
+    assertFalse(OpenAiCompatibleAssistantModelProvider.isQwenModel("gpt-4.1-mini"));
+  }
 }

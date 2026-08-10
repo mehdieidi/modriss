@@ -354,7 +354,7 @@ final class ModelValidationService {
       phaseStarted = System.nanoTime();
       List<ModelService.ValidationIssue> issues =
           EvlModelResourceDiagnostics.validate(resource, null).stream()
-              .map(this::validationIssue)
+              .map(this::structuralValidationIssue)
               .toList();
       addValidationTiming("validation.structuralValidationMs", System.nanoTime() - phaseStarted);
       return issues;
@@ -523,6 +523,30 @@ final class ModelValidationService {
         severity,
         constraint,
         "EVL_DIAGNOSTIC",
+        text.message(),
+        guidance,
+        null,
+        diagnostic.file() == null ? null : diagnostic.file().toString());
+  }
+
+  /** Maps EMF resource diagnostics without implying that structural-only callers executed EVL. */
+  private ModelService.ValidationIssue structuralValidationIssue(EvlDiagnostic diagnostic) {
+    String severity = diagnostic.severity() == ValidationSeverity.ERROR ? "ERROR" : "WARNING";
+    String message =
+        !diagnostic.reason().isBlank()
+            ? diagnostic.reason()
+            : !diagnostic.whatWentWrong().isBlank()
+                ? diagnostic.whatWentWrong()
+                : "The model does not conform to its Ecore metamodel.";
+    UserFacingIssueText text = splitUserFacingIssueText(message);
+    String guidance =
+        text.guidance().isBlank()
+            ? "Satisfy the reported Ecore feature, type, multiplicity, or reference constraint."
+            : text.guidance();
+    return new ModelService.ValidationIssue(
+        severity,
+        "ECORE_" + diagnostic.phase().name(),
+        "ECORE_DIAGNOSTIC",
         text.message(),
         guidance,
         null,

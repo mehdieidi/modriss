@@ -37,11 +37,13 @@ public final class TypeContractService {
 
   /**
    * Returns requested contracts plus the Ecore-derived owner path needed to construct them and
-   * their complete required-containment closure.
+   * their complete required structural-reference closure.
    *
    * <p>This follows the live Ecore graph and is deliberately independent of prompt wording or
    * DSML-specific names. A provider that requests a nested type receives the shortest valid
-   * containment path from the authoritative root as well as every mandatory contained contract.
+   * containment path from the authoritative root as well as every mandatory containment or writable
+   * reference target contract. Without the latter, a provider can be told that a required reference
+   * exists while its closed patch schema makes the target impossible to create.
    */
   public List<TypeContract> requiredContainmentClosure(ModelLevel level, List<String> names) {
     if (names == null || names.isEmpty()) {
@@ -59,11 +61,11 @@ public final class TypeContractService {
       if (!visited.add(typeName)) continue;
       require(level, typeName).references().stream()
           .filter(MetamodelKnowledgeService.ReferenceContract::required)
-          .filter(MetamodelKnowledgeService.ReferenceContract::containment)
+          .filter(reference -> !reference.readonly())
           .map(MetamodelKnowledgeService.ReferenceContract::targetType)
           .map(target -> require(level, target).eClass())
           .filter(target -> !visited.contains(target))
-          .forEach(pending::add);
+          .forEach(target -> pending.addAll(constructionPath(level, target)));
     }
     return visited.stream().map(type -> assistantContract(level, type)).toList();
   }

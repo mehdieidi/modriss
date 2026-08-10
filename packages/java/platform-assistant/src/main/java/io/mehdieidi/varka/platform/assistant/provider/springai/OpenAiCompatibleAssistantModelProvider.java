@@ -218,17 +218,51 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                     + errorBody
                 : "AI provider returned HTTP " + response.statusCode() + "." + errorBody);
       }
-      var message = mapper.readTree(response.body()).path("choices").path(0).path("message");
-      String content = nativeToolAction(mapper, message);
-      return new org.springframework.ai.chat.model.ChatResponse(
-          List.of(
-              new org.springframework.ai.chat.model.Generation(
-                  new org.springframework.ai.chat.messages.AssistantMessage(content))));
+      return nativeChatResponse(mapper, response.body(), model);
     } catch (PlatformException ex) {
       throw ex;
     } catch (Exception ex) {
       throw new IllegalStateException("OpenAI-compatible native tool request failed", ex);
     }
+  }
+
+  /** Preserves native token usage instead of losing it while adapting a tool call to Spring AI. */
+  static org.springframework.ai.chat.model.ChatResponse nativeChatResponse(
+      com.fasterxml.jackson.databind.ObjectMapper mapper,
+      String responseBody,
+      String requestedModel)
+      throws com.fasterxml.jackson.core.JsonProcessingException {
+    var root = mapper.readTree(responseBody);
+    var message = root.path("choices").path(0).path("message");
+    String content = nativeToolAction(mapper, message);
+    var usage = root.path("usage");
+    Integer promptTokens = integerOrNull(usage.get("prompt_tokens"));
+    Integer completionTokens = integerOrNull(usage.get("completion_tokens"));
+    Integer totalTokens = integerOrNull(usage.get("total_tokens"));
+    var generations =
+        List.of(
+            new org.springframework.ai.chat.model.Generation(
+                new org.springframework.ai.chat.messages.AssistantMessage(content)));
+    if (promptTokens == null && completionTokens == null) {
+      return new org.springframework.ai.chat.model.ChatResponse(generations);
+    }
+    org.springframework.ai.chat.metadata.Usage springUsage =
+        new org.springframework.ai.chat.metadata.DefaultUsage(
+            promptTokens == null ? 0 : promptTokens,
+            completionTokens == null ? 0 : completionTokens,
+            totalTokens,
+            usage.deepCopy());
+    var metadata =
+        org.springframework.ai.chat.metadata.ChatResponseMetadata.builder()
+            .id(root.path("id").asText(""))
+            .model(root.path("model").asText(requestedModel == null ? "" : requestedModel))
+            .usage(springUsage)
+            .build();
+    return new org.springframework.ai.chat.model.ChatResponse(generations, metadata);
+  }
+
+  private static Integer integerOrNull(com.fasterxml.jackson.databind.JsonNode value) {
+    return value != null && value.canConvertToInt() ? value.intValue() : null;
   }
 
   static boolean shouldForcePatchTool(String userPrompt) {
@@ -330,8 +364,10 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     }
   }
 
-  private static boolean isQwenModel(String model) {
-    return model != null && model.trim().toLowerCase(java.util.Locale.ROOT).startsWith("qwen/");
+  static boolean isQwenModel(String model) {
+    if (model == null) return false;
+    String normalized = model.trim().toLowerCase(java.util.Locale.ROOT);
+    return normalized.startsWith("qwen") || normalized.contains("/qwen");
   }
 
   private static String providerErrorSnippet(String body) {
