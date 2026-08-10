@@ -143,6 +143,12 @@ class AgentTurnLoopTest {
         provider.secondPromptContracts.stream()
             .anyMatch(contract -> contract.eClass().equals("ServerlessService")));
     assertTrue(provider.secondPrompt.contains("Do not call describe_types"));
+    assertTrue(provider.systemPrompts.get(0).contains("name=\"plan-model-edit\""));
+    assertTrue(provider.systemPrompts.get(0).contains("name=\"model-pim-serverless\""));
+    assertTrue(provider.systemPrompts.get(1).contains("name=\"construct-valid-model\""));
+    assertTrue(
+        provider.systemPrompts.stream()
+            .noneMatch(prompt -> prompt.contains("evolve-existing-model")));
   }
 
   @Test
@@ -802,6 +808,7 @@ Work items:
   private static final class PimPlanThenPatchProvider implements AssistantModelProvider {
     int calls;
     String secondPrompt = "";
+    final List<String> systemPrompts = new ArrayList<>();
     List<MetamodelKnowledgeService.TypeContract> secondPromptContracts = List.of();
 
     @Override
@@ -817,6 +824,7 @@ Work items:
     @Override
     public AssistantReply complete(AssistantPrompt prompt) {
       ProviderCallBudget.consume();
+      systemPrompts.add(prompt.system());
       calls++;
       if (calls == 1) {
         return new AssistantReply(

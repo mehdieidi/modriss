@@ -1,0 +1,4 @@
+interface:
+  display_name: "Evolve Existing Model"
+  short_description: "Extend models without breaking prior design"
+  default_prompt: "Use $evolve-existing-model to add a feature to an existing model safely."

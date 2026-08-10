@@ -9,6 +9,7 @@ readers, and operators.
 | Document                                                                | Description                                         |
 | ----------------------------------------------------------------------- | --------------------------------------------------- |
 | [assistant.md](ai/assistant.md)                                         | Assistant architecture, modes, and guardrails       |
+| [assistant-skills.md](ai/assistant-skills.md)                           | Runtime assistant skills and selection rules        |
 | [current-llm-workflow.md](ai/current-llm-workflow.md)                   | Current LLM workflow, live status, and known issues |
 | [agents-pattern-assessment.md](ai/agents-pattern-assessment.md)         | Mapping of the implemented assistant to patterns    |
 | [live-eval-gate-report.md](ai/live-eval-gate-report.md)                 | Latest local live-eval result for source-to-CIM     |

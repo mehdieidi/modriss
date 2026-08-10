@@ -1,0 +1,4 @@
+interface:
+  display_name: "Explain Model"
+  short_description: "Explain models from authoritative facts"
+  default_prompt: "Use $explain-model to explain the current model accurately."

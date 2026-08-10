@@ -1,0 +1,4 @@
+interface:
+  display_name: "Construct Valid Model"
+  short_description: "Build structurally valid model checkpoints"
+  default_prompt: "Use $construct-valid-model to build a structurally valid model checkpoint."

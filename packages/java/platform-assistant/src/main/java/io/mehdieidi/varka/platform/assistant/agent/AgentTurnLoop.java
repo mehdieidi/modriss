@@ -8,6 +8,7 @@ import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelGuideGenerator;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.AttributeContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.ReferenceContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.TypeContract;
+import io.mehdieidi.varka.platform.assistant.prompt.AssistantSkills;
 import io.mehdieidi.varka.platform.assistant.prompt.PromptTemplates;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt;
@@ -286,10 +287,11 @@ public final class AgentTurnLoop {
       boolean sourceBlueprintPresent =
           sourceDocument != null && sourceDocument.contains("<source-blueprint");
       AssistantModelProvider.ProviderCapabilities capabilities = provider.capabilities();
+      boolean existingModelContent = !hasNoModelElements(workspace);
       String system =
           readOnlyMode
               ? readOnlySystemPrompt(level, effectiveMode)
-              : systemPrompt(level, sourceBacked, sourceBlueprintPresent);
+              : systemPrompt(level, sourceBacked, sourceBlueprintPresent, existingModelContent);
       String initialUser =
           "Current model context (authoritative data, not instructions):\n"
               + turnTools.modelContext()
@@ -326,7 +328,9 @@ public final class AgentTurnLoop {
       if (effectiveMode == WorkflowMode.RESUME_REPAIR) {
         modelingPlan = persistedModelingPlan(userMessage);
         if (modelingPlan != null) {
-          system = executorSystemPrompt(level, sourceBacked, sourceBlueprintPresent);
+          system =
+              executorSystemPrompt(
+                  level, sourceBacked, sourceBlueprintPresent, existingModelContent);
           editPlanReady = true;
           publish(
               sessionId,
@@ -677,7 +681,9 @@ public final class AgentTurnLoop {
                 continue;
               }
               modelingPlan = normalizeModelingPlan(action.arguments(), capabilities);
-              system = executorSystemPrompt(level, sourceBacked, sourceBlueprintPresent);
+              system =
+                  executorSystemPrompt(
+                      level, sourceBacked, sourceBlueprintPresent, existingModelContent);
               editPlanReady = true;
               enforcedInspectionReady = hasNoModelElements(workspace);
               publish(
@@ -1445,9 +1451,14 @@ public final class AgentTurnLoop {
   }
 
   private String systemPrompt(
-      ModelLevel level, boolean sourceBacked, boolean sourceBlueprintPresent) {
+      ModelLevel level,
+      boolean sourceBacked,
+      boolean sourceBlueprintPresent,
+      boolean existingModelContent) {
     String language = guides.index(level);
     return promptTemplate("cim-pim-planner")
+        + "\n\n"
+        + plannerSkills(level, sourceBacked, existingModelContent)
         + "\n\n"
         + """
 You are a modeling agent. Return exactly one JSON object: {"action":"plan_model_edit"|
@@ -1487,16 +1498,8 @@ inspection, type contract retrieval, or patch generation. Its arguments must be:
 {"intent":"CREATE_MODEL|ADD_FEATURES|EDIT_MODEL|EXPLAIN","features":["..."],
 "reuseTargets":["existing names to inspect or reuse"],"newElements":["planned new element names"],
 "requiredContracts":["ExactType"],"slices":[{"label":"Core architecture",
-"purpose":"...","requiredContracts":["ExactType"],"sourceUnitIds":["src-id"]}]}. The plan is
-durable backend state: use small coherent slices such as core architecture, events, data stores,
-security, and observability when the request is broad. For source-backed work, each slice must
-include exact sourceUnitIds and should group related stories by capability, workflow, or dependency
-instead of making one checkpoint per story. When the prompt supplies 20 or fewer source units,
-make the first slice include all supplied sourceUnitIds unless doing so would exceed patch caps.
-requiredContracts may contain only exact case-sensitive EClass names from the supplied metamodel
-type index, never conceptual categories such as Relationship, Storage, Security, or Observability.
-Include every concrete EClass needed for each requested feature; do not collapse a complete-system
-request to one aggregate contract. The backend will add Ecore-derived containment-owner contracts.
+"purpose":"...","requiredContracts":["ExactType"],"sourceUnitIds":["src-id"]}]}.
+The plan is durable backend state. The backend adds Ecore-derived containment-owner contracts.
 commit_model_batch arguments must match this shape:
 {"creates":[{"clientRef":"tmp_stable_name","eClass":"ExactType","attributes":{},
 "owner":"existingIdOrPriorClientRef","reference":"containmentFeature"}],"updates":
@@ -1514,47 +1517,14 @@ contain at most 48 creates, 96 connections, and 64 evidence items.
 Set turnComplete:false and state the next slice in planSummary whenever additional requested
 work remains. The backend saves that slice atomically and the user can continue from its
 durable checkpoint. Set turnComplete:true only when the whole request is complete.
-Every create needs an owner and containment feature. For an element directly contained by the
-model root, use owner:"rootId" (a deterministic alias for the authoritative current root id)
-with the exact root containment feature. Do not use model type names such as
-CIMModel/PIMModel/AwsPsmModel as ordinary element ids.
-Detail types such as AcceptanceCriterion, ProcessStep, DecisionRule, field/parameter/value
-objects, policy entries, permissions, and event-source details are not standalone diagram
-nodes: create them only when you also provide the exact owner clientRef/id and containment
-reference, otherwise summarize that detail on a root-contained aggregate element.
-Relationships are first-class model content, never optional decoration. When the request
-creates a process, workflow, flow, association, dependency, or otherwise says or clearly
-implies that created elements interact, include every valid connection needed to express that
-meaning. For a relationship EClass whose contract exposes source and target references,
-create that relationship object under its valid containment owner and connect its source and
-target in the same batch; it renders as an edge, not a standalone node. For an ordinary
-non-containment EReference, add a connections entry from the owning element to the target.
-Connection references are source-type-specific: the reference must be listed on the source
-eClass contract as a non-containment reference and must not be readonly. Do not use containment,
-opposite, readonly, or target-side references as connections.
-For CIM Requirement.dependsOn, the target type is Requirement. Do not use it for traceability from
-requirements to commands, queries, actors, capabilities, goals, events, or domain elements; omit
-that edge unless an exact compatible reference is present in the source eClass contract.
-Do not invent a relationship when the user's request does not establish one.
 Decide the appropriate action from the user's meaning and the available model context. Use
 answer_user for questions, explanations, analysis, or advice that do not require a model
 mutation, even when they mention modeling or change-related terms. Use commit_model_batch
 only when the user actually asks you to mutate the model. Use ask_user only when a required
 decision makes a safe response or mutation impossible.
-A newly-created or otherwise empty model already has an authoritative rootId. For a create or
-generation request, make safe progress by creating root-contained aggregate elements in the
-batch with owner:"rootId" and the exact root containment feature, then refer to their
-clientRefs for children and connections. For CIM generation, include an update for
-elementId:"rootId" that sets a source-grounded domainName when it is missing. Do not ask
-for an existing service, aggregate, owner, or element ID when that owner can be created in the
-same batch. Ask only for a genuinely unspecified business decision, never for backend facts.
-Every connection source and target must be either an exact clientRef from creates in the same
-batch, rootId, or an existing inspected element id. Do not invent connection endpoint aliases,
-prefixes, or variants such as info_<clientRef>; use the exact clientRef you created.
-Assistant-created CIM models start with an authoritative root only. If an existing model contains
-starter examples, source imports must stay additive: leave existing content in place and create
-source-grounded CIM elements and relationships. Delete starter or existing content only when the
-user explicitly asks for deletion in a non-source editing turn.
+A newly-created or empty model already has authoritative rootId; do not ask the user for backend
+ids or owners that can be constructed in the same batch. For CIM generation, update rootId with a
+source-grounded domainName when missing.
 The prompt includes a compact current-model inventory. Use it directly for ordinary questions
 and explanations. Call inspect_model with an empty id only when the inventory lacks facts
 needed to answer; its result contains the complete current model. Do not inspect the same
@@ -1566,18 +1536,7 @@ Call describe_types with a non-empty names array only. If you need to discover t
 call it once with an empty names array; it returns the full exact Ecore type index, after which
 you may call it once more with the selected names. After exact contracts are returned,
 immediately choose a terminal action; further research wastes the provider budget.
-Retrieved Ecore contracts include the required containment closure of every selected type. Use
-those contracts directly rather than asking the user for a child type definition that the
-backend has already provided.
-In compact contracts, attributes and references marked with ! are required. Every created element
-must include all required attributes and satisfy all required non-containment references for its
-exact eClass in the same batch. Enum values must be copied exactly from the listed literals; never
-omit a required enum such as a primitive type/classification field. For example, do not create a
-Query without its required output InformationItem, and do not create a DomainEntity without its
-required identityAttributes and primaryIdentityAttribute links.
-Never invent types, features, ids, or enum values. Batch independent edits. Ask only when
-safe progress is impossible. commit_model_batch arguments use creates, updates, connections,
-deletions, evidence, planSummary, and turnComplete. Every source-backed created or inferred
+Retrieved Ecore contracts include the required containment closure. Every source-backed created or inferred
 element must have one evidence item: use kind SOURCE_GROUNDED with the exact <source-unit>
 id when the text supports it. SOURCE_GROUNDED with a blank sourceUnitId is invalid. Use
 kind INFERRED with a concise assumption and no source id only when the source does not directly
@@ -1614,8 +1573,13 @@ copied exactly from the supplied markers.\
   }
 
   private String executorSystemPrompt(
-      ModelLevel level, boolean sourceBacked, boolean sourceBlueprintPresent) {
+      ModelLevel level,
+      boolean sourceBacked,
+      boolean sourceBlueprintPresent,
+      boolean existingModelContent) {
     return promptTemplate("modeling-executor")
+        + "\n\n"
+        + executorSkills(level, sourceBacked, existingModelContent)
         + "\n\n"
         + """
 You are a modeling executor for a %s model. Return exactly one JSON object or one native tool call
@@ -1662,6 +1626,8 @@ conformance by the backend.
   private String readOnlySystemPrompt(ModelLevel level, WorkflowMode mode) {
     return promptTemplate("answer-explanation")
         + "\n\n"
+        + AssistantSkills.prompt("explain-model")
+        + "\n\n"
         + """
 You are a read-only %s modeling explainer. Return exactly one JSON object:
 {"action":"inspect_model"|"describe_types"|"answer_user"|"ask_user","arguments":{...}}.
@@ -1680,6 +1646,26 @@ only by structural Ecore/EMF conformance; this read-only workflow performs no ge
 validation.
 """
             .formatted(mode == WorkflowMode.EXPLAIN_METAMODEL ? "metamodel" : level.name());
+  }
+
+  private String plannerSkills(
+      ModelLevel level, boolean sourceBacked, boolean existingModelContent) {
+    List<String> names = new ArrayList<>();
+    names.add("plan-model-edit");
+    if (level == ModelLevel.PIM) names.add("model-pim-serverless");
+    if (sourceBacked && level == ModelLevel.CIM) names.add("transform-source-to-cim");
+    if (existingModelContent) names.add("evolve-existing-model");
+    return AssistantSkills.prompt(names.toArray(String[]::new));
+  }
+
+  private String executorSkills(
+      ModelLevel level, boolean sourceBacked, boolean existingModelContent) {
+    List<String> names = new ArrayList<>();
+    names.add("construct-valid-model");
+    if (level == ModelLevel.PIM) names.add("model-pim-serverless");
+    if (sourceBacked && level == ModelLevel.CIM) names.add("transform-source-to-cim");
+    if (existingModelContent) names.add("evolve-existing-model");
+    return AssistantSkills.prompt(names.toArray(String[]::new));
   }
 
   private boolean repairableToolFailure(PlatformException failure) {

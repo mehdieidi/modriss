@@ -1,0 +1,4 @@
+interface:
+  display_name: "Model PIM Serverless"
+  short_description: "Model provider-neutral serverless systems"
+  default_prompt: "Use $model-pim-serverless to model a provider-neutral serverless architecture."

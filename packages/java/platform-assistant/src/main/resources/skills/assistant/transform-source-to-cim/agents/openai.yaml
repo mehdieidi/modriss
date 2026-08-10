@@ -1,0 +1,4 @@
+interface:
+  display_name: "Transform Source to CIM"
+  short_description: "Ground CIM models in source requirements"
+  default_prompt: "Use $transform-source-to-cim to turn source requirements into a grounded CIM model."

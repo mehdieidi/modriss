@@ -236,9 +236,10 @@ function Run-Scenario {
 
 function Run-EditScenario {
   param([string]$Token, [string]$ProjectId)
-  $created = Run-Scenario -Token $Token -ProjectId $ProjectId -Name "edit-base-pim" -Level "pim" -Prompt "Create a compact PIM model for an order fulfillment serverless application with API, command handlers, data stores, events, and notification capability."
+  $created = Run-Scenario -Token $Token -ProjectId $ProjectId -Name "edit-base-pim" -Level "pim" -Prompt "Create a complete provider-neutral PIM serverless architecture for online order intake. Model an HTTP API and route that accept and validate an order contract, function-based order processing, persistent order and idempotency data, an order-accepted event, asynchronous payment through a queue and external payment adapter, a workflow that coordinates payment and customer notification, authentication and authorization, retry and dead-letter behavior, and logging, metrics, tracing, and alerts. Connect the elements into meaningful end-to-end request and event flows; do not merely create isolated nodes."
   if (-not $created.ModelId) { return $created }
-  $edit = Send-Turn -Token $Token -SessionId $created.SessionId -ModelId $created.ModelId -Revision $created.Revision -Message "Edit this existing PIM model by adding an idempotency pattern for commands, including idempotency key storage, duplicate detection, and retry-safe event publishing."
+  $before = Inspect-Model -Token $Token -Level "pim" -ModelId $created.ModelId
+  $edit = Send-Turn -Token $Token -SessionId $created.SessionId -ModelId $created.ModelId -Revision $created.Revision -Message "Extend this existing PIM without removing or recreating the order-intake, payment, and notification architecture. Add an order-cancellation feature with an authenticated cancellation API route, state validation, a cancellation workflow, compensating refund through the existing payment integration, an order-cancelled event, and customer notification. Reuse existing service, data, integration, security, and observability elements where compatible, create only the missing concepts, and connect the new behavior into the existing flows."
   $turn = $edit.Turn
   $inspection = Inspect-Model -Token $Token -Level "pim" -ModelId $turn.modelId
   [pscustomobject]@{
@@ -256,10 +257,14 @@ function Run-EditScenario {
     CoveragePercent = $turn.coveragePercent
     Provenance = $turn.provenance
     Resumes = $edit.ResumeCount
+    InitialStructuralNodes = $before.StructuralNodes
     StructuralNodes = $inspection.StructuralNodes
     Elements = $inspection.Elements
     Relationships = $inspection.Relationships
     ValidationValid = $inspection.ValidationValid
+    InitialFeaturePresent = ($before.ModelText -match '(?i)order') -and ($before.ModelText -match '(?i)payment') -and ($before.ModelText -match '(?i)notif')
+    InitialFeaturePreserved = ($inspection.ModelText -match '(?i)order') -and ($inspection.ModelText -match '(?i)payment') -and ($inspection.ModelText -match '(?i)notif')
+    AddedFeaturePresent = ($inspection.ModelText -match '(?i)cancel') -and ($inspection.ModelText -match '(?i)refund')
     ModelId = $turn.modelId
     Revision = $turn.revision
     Message = $turn.finalMessage
@@ -363,7 +368,7 @@ function Test-TransientProviderFailure {
   # of real workflow progress and must be resumed rather than replayed in a new scenario.
   return $Result -and @("FAILED", "PARTIAL", "TIMED_OUT") -contains [string]$Result.State -and
     [int]$Result.Checkpoints -eq 0 -and
-    ([string]$Result.Message -match "(?i)(provider.*(available|timeout|temporar|truncated)|request timed out|connection|transport|unexpected end-of-input|malformed assistant tool arguments)")
+    ([string]$Result.Message -match "(?i)(provider.*(available|timeout|temporar|truncated|rate limit)|all models exhausted|request timed out|connection|transport|unexpected end-of-input|malformed assistant tool arguments)")
 }
 
 function Run-FixtureWithProviderRetries {
@@ -416,6 +421,10 @@ function Test-ScenarioGate {
     }
     "edit-existing-pim-add-pattern" {
       if ([int]$Result.StructuralNodes -lt 6) { $failures += "PIM edit did not produce enough model structure" }
+      if ($Result.InitialFeaturePresent -ne $true) { $failures += "initial order/payment/notification architecture was not modeled" }
+      if ($Result.InitialFeaturePreserved -ne $true) { $failures += "existing order/payment/notification architecture was not preserved" }
+      if ($Result.AddedFeaturePresent -ne $true) { $failures += "cancellation/refund feature was not added" }
+      if ([int]$Result.StructuralNodes -le [int]$Result.InitialStructuralNodes) { $failures += "second PIM feature request did not extend model structure" }
     }
     "cim-feature-evolution" {
       if ($Result.InitialFeaturePresent -ne $true) { $failures += "initial order-tracking feature was not modeled" }
@@ -431,7 +440,7 @@ function Test-ScenarioGate {
   # still applies when no transient provider failure occurs.
   # The evolution gate contains two independent modeling turns. Allow five calls per turn: plan,
   # contract-bound draft, and up to three bounded structural repairs.
-  $callBudget = if ($scenarioId -eq "cim-feature-evolution") { 10 } elseif ($complex) { 4 } elseif ($Fixture.route -eq "EXPLANATION") { 1 } else { 2 }
+  $callBudget = if ($scenarioId -in @("cim-feature-evolution", "edit-existing-pim-add-pattern")) { 10 } elseif ($complex) { 4 } elseif ($Fixture.route -eq "EXPLANATION") { 1 } else { 2 }
   $callBudget += [int]$ProviderRetryCount
   if ([int]$Result.ProviderCalls -gt $callBudget) {
     $failures += "provider calls $($Result.ProviderCalls) exceed budget $callBudget"

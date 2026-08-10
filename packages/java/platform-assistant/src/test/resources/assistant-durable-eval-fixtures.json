@@ -17,7 +17,7 @@
   {
     "id": "edit-existing-pim-add-pattern",
     "route": "COMPLEX_EDIT",
-    "assertions": ["checkpoint", "structural_validity"]
+    "assertions": ["checkpoint", "structural_validity", "feature_preservation"]
   },
   {
     "id": "cim-feature-evolution",

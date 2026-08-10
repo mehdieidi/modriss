@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan Model Edit"
+  short_description: "Plan precise CIM and PIM model changes"
+  default_prompt: "Use $plan-model-edit to plan a coherent metamodel-grounded model change."
