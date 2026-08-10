@@ -14,6 +14,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -25,6 +26,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
 
   private static final Logger log =
       LoggerFactory.getLogger(OpenAiCompatibleAssistantModelProvider.class);
+  private final AtomicReference<TokenWindow> tokenWindow = new AtomicReference<>();
 
   /** Creates the provider using the dedicated AI-only HTTP client. */
   public OpenAiCompatibleAssistantModelProvider(
@@ -114,13 +116,14 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       // These callbacks deliberately only echo the model's structured arguments. The workflow
       // consumes the resulting tool call and is the sole authority that executes model tools.
       builder.toolCallbacks(
-          AgentActionSchema.toolNames().stream()
+          availableToolNames(prompt).stream()
               .map(
                   name ->
                       (org.springframework.ai.tool.ToolCallback)
                           FunctionToolCallback.<String, String>builder(name, arguments -> arguments)
                               .description(
                                   "Varka assistant tool; backend validates and executes it.")
+                              .inputType(String.class)
                               .inputSchema(toolArgumentsSchema(name, prompt.patchContracts()))
                               .build())
               .toList());
@@ -178,7 +181,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       messages.addObject().put("role", "user").put("content", userWithContext(prompt));
       var tools = body.putArray("tools");
       String forcedTool = forcedToolName(prompt);
-      for (String name : AgentActionSchema.toolNames()) {
+      for (String name : availableToolNames(prompt)) {
         if (forcedTool != null && !forcedTool.equals(name)) {
           continue;
         }
@@ -314,6 +317,20 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     return null;
   }
 
+  /** Keeps legacy source tools out of ordinary turns unless durable workflow state requires one. */
+  static List<String> availableToolNames(
+      io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt
+          prompt) {
+    String required = forcedToolName(prompt);
+    if (required != null) return List.of(required);
+    return List.of(
+        "plan_model_edit",
+        "inspect_model",
+        "describe_types",
+        "commit_model_batch",
+        "respond_to_user");
+  }
+
   private static void putForcedToolChoice(
       com.fasterxml.jackson.databind.node.ObjectNode body, String toolName) {
     body.remove("tool_choice");
@@ -326,15 +343,15 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       com.fasterxml.jackson.databind.ObjectMapper mapper,
       com.fasterxml.jackson.databind.node.ObjectNode body)
       throws java.io.IOException, InterruptedException {
+    String requestBody = mapper.writeValueAsString(body);
+    awaitTokenCapacity(estimatedTokenDemand(requestBody, body.path("max_tokens").asInt(0)));
     var request =
         HttpRequest.newBuilder(URI.create(baseUrl() + "/chat/completions"))
             .version(HttpClient.Version.HTTP_1_1)
             .timeout(properties.requestTimeout())
             .header("Authorization", "Bearer " + configuredApiKey(properties))
             .header("Content-Type", "application/json")
-            .POST(
-                HttpRequest.BodyPublishers.ofString(
-                    mapper.writeValueAsString(body), StandardCharsets.UTF_8))
+            .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
             .build();
     HttpClient.Builder httpClient =
         HttpClient.newBuilder().connectTimeout(properties.requestTimeout());
@@ -348,7 +365,10 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       while (true) {
         ProviderRequestContext.check();
         try {
-          return response.get(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+          HttpResponse<String> completed =
+              response.get(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+          rememberTokenWindow(completed);
+          return completed;
         } catch (java.util.concurrent.TimeoutException ignored) {
           // Recheck durable cancellation and the absolute turn deadline while the HTTP call runs.
         }
@@ -363,6 +383,68 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       throw new java.io.IOException("OpenAI-compatible HTTP request failed", cause);
     }
   }
+
+  private int estimatedTokenDemand(String requestBody, int maxCompletionTokens) {
+    int promptEstimate = (requestBody == null ? 0 : (requestBody.length() + 3) / 4);
+    return Math.max(1, promptEstimate + Math.max(0, maxCompletionTokens) + 512);
+  }
+
+  private void awaitTokenCapacity(int estimatedTokens) {
+    while (true) {
+      ProviderRequestContext.check();
+      TokenWindow current = tokenWindow.get();
+      long now = System.currentTimeMillis();
+      if (current == null
+          || now >= current.resetAtMillis()
+          || current.remainingTokens() >= estimatedTokens) {
+        return;
+      }
+      try {
+        Thread.sleep(Math.min(100L, Math.max(1L, current.resetAtMillis() - now)));
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+        throw new PlatformException(503, "AI provider rate-limit wait was interrupted.");
+      }
+    }
+  }
+
+  private void rememberTokenWindow(HttpResponse<?> response) {
+    Integer remaining =
+        response
+            .headers()
+            .firstValue("x-ratelimit-remaining-tokens")
+            .flatMap(OpenAiCompatibleAssistantModelProvider::parseInteger)
+            .orElse(null);
+    if (remaining == null) return;
+    long resetMillis =
+        response
+            .headers()
+            .firstValue("x-ratelimit-reset-tokens")
+            .map(OpenAiCompatibleAssistantModelProvider::parseResetMillis)
+            .orElse(60_000L);
+    tokenWindow.set(new TokenWindow(remaining, System.currentTimeMillis() + resetMillis));
+  }
+
+  private static java.util.Optional<Integer> parseInteger(String value) {
+    try {
+      return java.util.Optional.of(Integer.parseInt(value.trim()));
+    } catch (RuntimeException ignored) {
+      return java.util.Optional.empty();
+    }
+  }
+
+  static long parseResetMillis(String value) {
+    if (value == null || value.isBlank()) return 60_000L;
+    var matcher =
+        java.util.regex.Pattern.compile("(?:(\\d+(?:\\.\\d+)?)m)?(?:(\\d+(?:\\.\\d+)?)s)?")
+            .matcher(value.trim());
+    if (!matcher.matches()) return 60_000L;
+    double minutes = matcher.group(1) == null ? 0 : Double.parseDouble(matcher.group(1));
+    double seconds = matcher.group(2) == null ? 0 : Double.parseDouble(matcher.group(2));
+    return Math.max(1L, (long) Math.ceil((minutes * 60 + seconds) * 1000));
+  }
+
+  private record TokenWindow(int remainingTokens, long resetAtMillis) {}
 
   static boolean isQwenModel(String model) {
     if (model == null) return false;

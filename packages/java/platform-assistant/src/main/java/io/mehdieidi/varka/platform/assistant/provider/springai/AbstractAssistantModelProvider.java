@@ -264,6 +264,7 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
     String action =
         switch (call.name()) {
           case "respond_to_user" -> "answer_user";
+          case "analyze_source_units", "plan_cim_blueprint" -> call.name();
           case "plan_model_edit" -> "plan_model_edit";
           case "inspect_model" -> "inspect_model";
           case "describe_types" -> "describe_types";

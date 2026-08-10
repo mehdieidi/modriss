@@ -13,6 +13,31 @@ import org.junit.jupiter.api.Test;
 
 class OpenAiCompatibleAssistantModelProviderTest {
 
+  @org.junit.jupiter.api.Test
+  void parsesProviderTokenResetDurations() {
+    org.junit.jupiter.api.Assertions.assertEquals(
+        26_380L, OpenAiCompatibleAssistantModelProvider.parseResetMillis("26.38s"));
+    org.junit.jupiter.api.Assertions.assertEquals(
+        62_500L, OpenAiCompatibleAssistantModelProvider.parseResetMillis("1m2.5s"));
+  }
+
+  @org.junit.jupiter.api.Test
+  void exposesLegacySourceToolOnlyWhenWorkflowRequiresIt() {
+    var ordinary =
+        new io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt(
+            "system", "user", java.util.List.of(), java.util.List.of());
+    var source =
+        new io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt(
+            "system", "user", java.util.List.of(), java.util.List.of(), "plan_cim_blueprint");
+
+    org.junit.jupiter.api.Assertions.assertFalse(
+        OpenAiCompatibleAssistantModelProvider.availableToolNames(ordinary)
+            .contains("plan_cim_blueprint"));
+    org.junit.jupiter.api.Assertions.assertEquals(
+        java.util.List.of("plan_cim_blueprint"),
+        OpenAiCompatibleAssistantModelProvider.availableToolNames(source));
+  }
+
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test

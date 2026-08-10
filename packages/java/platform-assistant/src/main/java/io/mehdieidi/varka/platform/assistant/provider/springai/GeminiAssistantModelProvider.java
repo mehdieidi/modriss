@@ -9,8 +9,11 @@ import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningServi
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
 import io.mehdieidi.varka.platform.assistant.provider.ProxyAvailability;
+import java.util.List;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.function.FunctionToolCallback;
 
 /** Google Gemini provider implemented through Spring AI's Google GenAI model. */
 public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider {
@@ -92,8 +95,64 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
     return GoogleGenAiChatOptions.builder()
         .model(model)
         .temperature(0.2)
-        .responseMimeType("application/json")
-        .responseSchema(AgentActionSchema.json(prompt.patchContracts()))
+        .toolCallbacks(toolCallbacks(prompt))
         .maxOutputTokens(Math.min(properties.tokenBudget(), capabilities().maxCompletionTokens()));
+  }
+
+  /**
+   * Exposes the agent action protocol as native Gemini functions. Gemini's structured-output schema
+   * accepts an object shape but does not reliably honor the action envelope's top-level {@code
+   * oneOf}; affected models return {@code null} instead of an action. Native functions keep each
+   * action's exact closed schema and let the workflow execute, validate, and audit the call.
+   */
+  static List<ToolCallback> toolCallbacks(
+      io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt
+          prompt) {
+    String required = OpenAiCompatibleAssistantModelProvider.forcedToolName(prompt);
+    return OpenAiCompatibleAssistantModelProvider.availableToolNames(prompt).stream()
+        .filter(name -> required == null || required.equals(name))
+        .map(
+            name ->
+                (ToolCallback)
+                    FunctionToolCallback.<String, String>builder(name, arguments -> arguments)
+                        .description("Varka assistant action; backend validates and executes it.")
+                        .inputType(String.class)
+                        .inputSchema(toolArgumentsSchema(name, prompt))
+                        .build())
+        .toList();
+  }
+
+  private static String toolArgumentsSchema(
+      String name,
+      io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt
+          prompt) {
+    try {
+      var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+      var schema = mapper.valueToTree(AgentActionSchema.toolSchema(name, prompt.patchContracts()));
+      normalizeSchemaForGemini(schema);
+      return mapper.writeValueAsString(schema);
+    } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+      throw new IllegalStateException("Unable to encode Gemini assistant tool schema", ex);
+    }
+  }
+
+  /** Converts equivalent JSON Schema keywords to the subset accepted by Gemini functions. */
+  static void normalizeSchemaForGemini(com.fasterxml.jackson.databind.JsonNode node) {
+    if (node == null) return;
+    if (node.isArray()) {
+      node.forEach(GeminiAssistantModelProvider::normalizeSchemaForGemini);
+      return;
+    }
+    if (!node.isObject()) return;
+    var object = (com.fasterxml.jackson.databind.node.ObjectNode) node;
+    if (object.has("oneOf")) {
+      object.set("anyOf", object.remove("oneOf"));
+    }
+    if (object.has("const")) {
+      var values = new com.fasterxml.jackson.databind.ObjectMapper().createArrayNode();
+      values.add(object.remove("const"));
+      object.set("enum", values);
+    }
+    object.properties().forEach(entry -> normalizeSchemaForGemini(entry.getValue()));
   }
 }

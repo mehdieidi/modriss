@@ -238,8 +238,8 @@ public class AssistantHardeningService {
                       || message.toLowerCase(java.util.Locale.ROOT).contains("tool"))))) {
         return new PlatformException(
             400,
-            "AI provider rejected the configured tool/schema protocol. Check "
-                + "VARKA_AI_OPENAI_PROTOCOL, the selected model, and endpoint capabilities.");
+            "AI provider rejected the configured tool/schema protocol. Check the selected model "
+                + "and endpoint capabilities.");
       }
       if (current instanceof SocketTimeoutException
           || current instanceof HttpTimeoutException
