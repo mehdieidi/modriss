@@ -14,7 +14,7 @@ public final class AgentActionCodec {
 
   public AgentAction parse(String response) {
     try {
-      JsonNode root = mapper.readTree(jsonObject(response));
+      JsonNode root = normalizeFlattenedEnvelope(mapper.readTree(jsonObject(response)));
       if (!root.isObject()
           || (!root.hasNonNull("action") && !root.hasNonNull("tool"))
           || !root.path("arguments").isObject()) {
@@ -27,6 +27,35 @@ public final class AgentActionCodec {
       throw new PlatformException(
           422, "Provider returned malformed AgentAction structured output.");
     }
+  }
+
+  /**
+   * Normalizes a compatible-provider envelope that emits action arguments beside {@code action}.
+   *
+   * <p>This changes protocol nesting only. It neither selects an action nor invents argument
+   * values; the action allowlist and every downstream Ecore/tool validation remain authoritative.
+   */
+  private JsonNode normalizeFlattenedEnvelope(JsonNode root) {
+    if (root == null
+        || !root.isObject()
+        || root.has("arguments")
+        || (!root.hasNonNull("action") && !root.hasNonNull("tool"))) {
+      return root;
+    }
+    var arguments = mapper.createObjectNode();
+    root.properties()
+        .forEach(
+            entry -> {
+              if (!"action".equals(entry.getKey()) && !"tool".equals(entry.getKey())) {
+                arguments.set(entry.getKey(), entry.getValue().deepCopy());
+              }
+            });
+    if (arguments.isEmpty()) return root;
+    var envelope = mapper.createObjectNode();
+    if (root.hasNonNull("action")) envelope.set("action", root.path("action").deepCopy());
+    if (root.hasNonNull("tool")) envelope.set("tool", root.path("tool").deepCopy());
+    envelope.set("arguments", arguments);
+    return envelope;
   }
 
   /**

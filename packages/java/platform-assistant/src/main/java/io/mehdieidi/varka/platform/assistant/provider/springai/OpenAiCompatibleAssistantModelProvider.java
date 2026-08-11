@@ -147,7 +147,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       boolean toolsRequested) {
     if (properties.openaiCompatible().protocol() != AiProperties.OpenAiProtocol.TOOLS
         || !capabilities().nativeToolsPreferred()) {
-      return super.callModel(prompt, model, toolsRequested);
+      return callJsonObjectModel(prompt, model);
     }
     try {
       var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -160,12 +160,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       body.put(
           "max_tokens",
           Math.min(properties.maxCompletionTokens(), capabilities().maxCompletionTokens()));
-      if (isQwenModel(model)) {
-        var reasoning = body.putObject("reasoning");
-        reasoning.put("effort", "none");
-        reasoning.put("exclude", true);
-        body.put("enable_thinking", false);
-      }
+      applyModelGenerationControls(body, model);
       var messages = body.putArray("messages");
       messages
           .addObject()
@@ -234,6 +229,83 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     }
   }
 
+  /**
+   * Calls compatible endpoints in JSON-object mode without depending on native function calling.
+   *
+   * <p>Several gateways advertise the OpenAI chat API but do not preserve {@code tool_calls}. The
+   * durable loop already owns a strict action envelope and validates it before execution, so JSON
+   * mode retains the same closed action boundary while remaining portable to those gateways.
+   */
+  private org.springframework.ai.chat.model.ChatResponse callJsonObjectModel(
+      io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider.AssistantPrompt prompt,
+      String model) {
+    try {
+      var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+      var body = mapper.createObjectNode();
+      body.put("model", model);
+      body.put("temperature", 0.0);
+      body.put(
+          "max_tokens",
+          Math.min(properties.maxCompletionTokens(), capabilities().maxCompletionTokens()));
+      applyModelGenerationControls(body, model);
+      var messages = body.putArray("messages");
+      String requiredAction =
+          prompt.requiredTool() == null
+              ? ""
+              : "\n\nWORKFLOW GATE: Return action '"
+                  + prompt.requiredTool()
+                  + "' in this response. Do not choose another action.";
+      messages
+          .addObject()
+          .put("role", "system")
+          .put(
+              "content",
+              SYSTEM_GUARDRAIL
+                  + "\n"
+                  + prompt.system()
+                  + "\n\nSTRICT JSON PROTOCOL: Return exactly one JSON object matching the"
+                  + " action envelope described above. Do not use markdown, prose, or provider"
+                  + " function calls."
+                  + requiredAction);
+      messages.addObject().put("role", "user").put("content", userWithContext(prompt));
+      body.putObject("response_format").put("type", "json_object");
+      var response = sendChatRequest(mapper, body);
+      if (response.statusCode() / 100 != 2) {
+        String errorBody = providerErrorSnippet(response.body());
+        throw new PlatformException(
+            response.statusCode(),
+            response.statusCode() >= 400 && response.statusCode() < 500
+                ? "AI provider rejected the configured JSON protocol. Check "
+                    + "VARKA_AI_OPENAI_PROTOCOL, the selected model, and endpoint capabilities."
+                    + errorBody
+                : "AI provider returned HTTP " + response.statusCode() + "." + errorBody);
+      }
+      return jsonChatResponse(mapper, response.body(), model, prompt.requiredTool());
+    } catch (PlatformException ex) {
+      throw ex;
+    } catch (Exception ex) {
+      throw new IllegalStateException("OpenAI-compatible JSON request failed", ex);
+    }
+  }
+
+  /** Applies model-family protocol controls only; modeling decisions remain entirely LLM-owned. */
+  static void applyModelGenerationControls(
+      com.fasterxml.jackson.databind.node.ObjectNode body, String model) {
+    if (isDeepSeekModel(model)) {
+      // DeepSeek V4 expects an object here. Boolean `thinking:false` is ignored by compatible
+      // gateways and can consume the whole completion budget in hidden reasoning, yielding
+      // finish_reason=length with empty final content.
+      body.putObject("thinking").put("type", "disabled");
+      return;
+    }
+    if (isQwenModel(model)) {
+      var reasoning = body.putObject("reasoning");
+      reasoning.put("effort", "none");
+      reasoning.put("exclude", true);
+      body.put("enable_thinking", false);
+    }
+  }
+
   /** Preserves native token usage instead of losing it while adapting a tool call to Spring AI. */
   static org.springframework.ai.chat.model.ChatResponse nativeChatResponse(
       com.fasterxml.jackson.databind.ObjectMapper mapper,
@@ -267,6 +339,88 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
             .usage(springUsage)
             .build();
     return new org.springframework.ai.chat.model.ChatResponse(generations, metadata);
+  }
+
+  /** Preserves raw JSON content so the shared action codec can handle harmless fences/preambles. */
+  static org.springframework.ai.chat.model.ChatResponse jsonChatResponse(
+      com.fasterxml.jackson.databind.ObjectMapper mapper,
+      String responseBody,
+      String requestedModel)
+      throws com.fasterxml.jackson.core.JsonProcessingException {
+    return jsonChatResponse(mapper, responseBody, requestedModel, null);
+  }
+
+  static org.springframework.ai.chat.model.ChatResponse jsonChatResponse(
+      com.fasterxml.jackson.databind.ObjectMapper mapper,
+      String responseBody,
+      String requestedModel,
+      String requiredAction)
+      throws com.fasterxml.jackson.core.JsonProcessingException {
+    var root = mapper.readTree(responseBody);
+    var choice = root.path("choices").path(0);
+    var message = choice.path("message");
+    String content = message.path("content").asText("");
+    if (content.isBlank()) {
+      String finishReason = choice.path("finish_reason").asText("unknown");
+      throw new PlatformException(
+          "length".equalsIgnoreCase(finishReason) ? 502 : 422,
+          "AI provider returned no structured JSON content (finish_reason=" + finishReason + ").");
+    }
+    content = normalizeRequiredJsonAction(mapper, content, requiredAction);
+    var usage = root.path("usage");
+    Integer promptTokens = integerOrNull(usage.get("prompt_tokens"));
+    Integer completionTokens = integerOrNull(usage.get("completion_tokens"));
+    Integer totalTokens = integerOrNull(usage.get("total_tokens"));
+    var generations =
+        List.of(
+            new org.springframework.ai.chat.model.Generation(
+                new org.springframework.ai.chat.messages.AssistantMessage(content)));
+    if (promptTokens == null && completionTokens == null) {
+      return new org.springframework.ai.chat.model.ChatResponse(generations);
+    }
+    org.springframework.ai.chat.metadata.Usage springUsage =
+        new org.springframework.ai.chat.metadata.DefaultUsage(
+            promptTokens == null ? 0 : promptTokens,
+            completionTokens == null ? 0 : completionTokens,
+            totalTokens,
+            usage.deepCopy());
+    var metadata =
+        org.springframework.ai.chat.metadata.ChatResponseMetadata.builder()
+            .id(root.path("id").asText(""))
+            .model(root.path("model").asText(requestedModel == null ? "" : requestedModel))
+            .usage(springUsage)
+            .build();
+    return new org.springframework.ai.chat.model.ChatResponse(generations, metadata);
+  }
+
+  /** Adds only the workflow-owned action envelope when a JSON provider returns bare arguments. */
+  private static String normalizeRequiredJsonAction(
+      com.fasterxml.jackson.databind.ObjectMapper mapper, String content, String requiredAction) {
+    if (requiredAction == null || requiredAction.isBlank()) return content;
+    String candidate = content == null ? "" : content.trim();
+    if (candidate.startsWith("```")) {
+      int firstNewline = candidate.indexOf('\n');
+      int closingFence = candidate.lastIndexOf("```");
+      if (firstNewline >= 0 && closingFence > firstNewline) {
+        candidate = candidate.substring(firstNewline + 1, closingFence).trim();
+      }
+    }
+    try {
+      var value = mapper.readTree(candidate);
+      if (!value.isObject() || value.hasNonNull("action") || value.hasNonNull("tool")) {
+        return content;
+      }
+      var envelope = mapper.createObjectNode();
+      envelope.put("action", requiredAction);
+      if (value.path("arguments").isObject() && value.size() == 1) {
+        envelope.set("arguments", value.path("arguments").deepCopy());
+      } else {
+        envelope.set("arguments", value.deepCopy());
+      }
+      return mapper.writeValueAsString(envelope);
+    } catch (com.fasterxml.jackson.core.JsonProcessingException ignored) {
+      return content;
+    }
   }
 
   private static Integer integerOrNull(com.fasterxml.jackson.databind.JsonNode value) {
@@ -455,6 +609,12 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     if (model == null) return false;
     String normalized = model.trim().toLowerCase(java.util.Locale.ROOT);
     return normalized.startsWith("qwen") || normalized.contains("/qwen");
+  }
+
+  static boolean isDeepSeekModel(String model) {
+    if (model == null) return false;
+    String normalized = model.trim().toLowerCase(java.util.Locale.ROOT);
+    return normalized.startsWith("deepseek") || normalized.contains("/deepseek");
   }
 
   private static String providerErrorSnippet(String body) {

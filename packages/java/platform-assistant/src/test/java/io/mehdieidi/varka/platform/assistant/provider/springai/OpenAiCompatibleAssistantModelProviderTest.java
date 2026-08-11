@@ -192,10 +192,73 @@ class OpenAiCompatibleAssistantModelProviderTest {
   }
 
   @Test
+  void preservesJsonModeContentForTheSharedActionCodec() throws Exception {
+    var response =
+        OpenAiCompatibleAssistantModelProvider.jsonChatResponse(
+            mapper,
+            """
+{"choices":[{"finish_reason":"stop","message":{"content":"```json\\n{\\\"action\\\":\\\"answer_user\\\",\\\"arguments\\\":{\\\"message\\\":\\\"Done.\\\"}}\\n```"}}],"usage":{"prompt_tokens":12,"completion_tokens":9,"total_tokens":21}}
+""",
+            "DeepSeek-V4-Flash");
+
+    assertTrue(response.getResult().getOutput().getText().startsWith("```json"));
+    assertEquals(12, response.getMetadata().getUsage().getPromptTokens());
+  }
+
+  @Test
+  void classifiesLengthLimitedEmptyContentAsTransient() {
+    PlatformException failure =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                OpenAiCompatibleAssistantModelProvider.jsonChatResponse(
+                    mapper,
+                    "{\"choices\":[{\"finish_reason\":\"length\",\"message\":{\"content\":null}}]}",
+                    "DeepSeek-V4-Flash"));
+
+    assertEquals(502, failure.status());
+    assertTrue(failure.getMessage().contains("finish_reason=length"));
+  }
+
+  @Test
+  void wrapsBareJsonArgumentsWithTheWorkflowRequiredAction() throws Exception {
+    var response =
+        OpenAiCompatibleAssistantModelProvider.jsonChatResponse(
+            mapper,
+            """
+{"choices":[{"finish_reason":"stop","message":{"content":"{\\\"creates\\\":[],\\\"turnComplete\\\":true}"}}]}
+""",
+            "DeepSeek-V4-Flash",
+            "commit_model_batch");
+    var content = mapper.readTree(response.getResult().getOutput().getText());
+
+    assertEquals("commit_model_batch", content.path("action").asText());
+    assertTrue(content.path("arguments").path("creates").isArray());
+  }
+
+  @Test
   void recognizesProviderQualifiedAndBareQwenModelIds() {
     assertTrue(OpenAiCompatibleAssistantModelProvider.isQwenModel("qwen3-235b-a22b"));
     assertTrue(OpenAiCompatibleAssistantModelProvider.isQwenModel("Qwen/Qwen3.5-35B-A3B-FP8"));
     assertTrue(OpenAiCompatibleAssistantModelProvider.isQwenModel("provider/qwen3-coder"));
     assertFalse(OpenAiCompatibleAssistantModelProvider.isQwenModel("gpt-4.1-mini"));
+  }
+
+  @Test
+  void appliesDeepSeekV4NonThinkingProtocolWithoutLegacyBooleanAliases() {
+    var body = mapper.createObjectNode();
+
+    OpenAiCompatibleAssistantModelProvider.applyModelGenerationControls(body, "DeepSeek-V4-Flash");
+
+    assertEquals("disabled", body.path("thinking").path("type").asText());
+    assertFalse(body.has("enable_thinking"));
+    assertFalse(body.has("reasoning"));
+  }
+
+  @Test
+  void recognizesProviderQualifiedAndBareDeepSeekModelIds() {
+    assertTrue(OpenAiCompatibleAssistantModelProvider.isDeepSeekModel("DeepSeek-V4-Flash"));
+    assertTrue(OpenAiCompatibleAssistantModelProvider.isDeepSeekModel("deepseek/deepseek-v4"));
+    assertFalse(OpenAiCompatibleAssistantModelProvider.isDeepSeekModel("gpt-4.1"));
   }
 }

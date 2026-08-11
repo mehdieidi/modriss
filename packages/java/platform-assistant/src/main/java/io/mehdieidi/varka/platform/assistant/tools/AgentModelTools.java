@@ -474,6 +474,18 @@ public final class AgentModelTools {
       if (create.attributes() != null) create.attributes().forEach(attributes::set);
       attributes = normalizeAttributes(type, attributes);
       requireCreateAttributes(clientRef, type, attributes);
+      if (requestedReference == null
+          && (requestedOwner == null || "rootId".equals(requestedOwner))) {
+        java.util.Optional<ReferenceContract> rootContainment =
+            contracts.rootContainment(active.level(), type.eClass());
+        if (rootContainment.isPresent()) {
+          // This is the paper's deterministic compiler stage: when Ecore provides one exact
+          // root containment, filling its mechanical owner/feature syntax cannot alter the
+          // LLM-authored business content or intent.
+          requestedOwner = "rootId";
+          requestedReference = rootContainment.get().name();
+        }
+      }
       if (requestedOwner == null || requestedReference == null) {
         throw new PlatformException(
             422, "Create '" + clientRef + "' requires explicit owner and containment feature.");

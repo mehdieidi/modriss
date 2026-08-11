@@ -42,4 +42,24 @@ class AgentActionCodecTest {
         PlatformException.class,
         () -> codec.parse("{\"tool\":\"describe_types\",\"arguments\":[]}"));
   }
+
+  @Test
+  void normalizesFlattenedCompatibleProviderArgumentsWithoutChangingTheirContent() {
+    AgentAction action =
+        codec.parse(
+            """
+            {"action":"commit_model_batch","creates":[],"updates":[],"connections":[],
+             "deletions":[],"evidence":[],"planSummary":"Library model","turnComplete":true}
+            """);
+
+    assertEquals(AgentAction.Kind.COMMIT_MODEL_BATCH, action.tool());
+    assertEquals("Library model", action.arguments().path("planSummary").asText());
+    assertEquals(0, action.arguments().path("creates").size());
+  }
+
+  @Test
+  void flattenedEnvelopeStillRejectsUnknownActions() {
+    assertThrows(
+        PlatformException.class, () -> codec.parse("{\"action\":\"invent_model\",\"creates\":[]}"));
+  }
 }

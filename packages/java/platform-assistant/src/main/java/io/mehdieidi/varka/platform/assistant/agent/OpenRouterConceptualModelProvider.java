@@ -10,7 +10,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -22,7 +21,8 @@ import tools.jackson.databind.ObjectMapper;
 
 /** Dedicated JSON-only OpenRouter transport for the isolated conceptual-instance mode. */
 public final class OpenRouterConceptualModelProvider implements AssistantModelProvider {
-  private static final Logger log = LoggerFactory.getLogger(OpenRouterConceptualModelProvider.class);
+  private static final Logger log =
+      LoggerFactory.getLogger(OpenRouterConceptualModelProvider.class);
   private final AiProperties properties;
   private final ObjectMapper mapper = new ObjectMapper();
 
@@ -30,92 +30,124 @@ public final class OpenRouterConceptualModelProvider implements AssistantModelPr
     this.properties = properties;
   }
 
-  @Override public AssistantProviderMetadata metadata() {
-    return new AssistantProviderMetadata("openrouter-conceptual", properties.openaiCompatible().baseUrl(), "configured");
+  @Override
+  public AssistantProviderMetadata metadata() {
+    return new AssistantProviderMetadata(
+        "openrouter-conceptual", properties.openaiCompatible().baseUrl(), "configured");
   }
 
-  @Override public boolean available() {
+  @Override
+  public boolean available() {
     return !key().isBlank();
   }
 
-  @Override public AssistantReply complete(AssistantPrompt prompt) {
+  @Override
+  public AssistantReply complete(AssistantPrompt prompt) {
     try {
       var body = mapper.createObjectNode();
       body.put("model", properties.model());
       body.put("temperature", 0.0);
       body.put("max_tokens", properties.maxCompletionTokens());
-      // DeepSeek gateways may ignore reasoning.exclude unless thinking is explicitly disabled.
-      // If reasoning consumes the whole completion budget, the gateway returns content=null and
-      // leaves the conceptual compiler with nothing to parse.
-      body.put("enable_thinking", false);
-      body.put("thinking_budget", 0);
-      body.put("thinking", false);
-      body.put("reasoning_effort", "none");
-      body.putObject("chat_template_kwargs").put("thinking", false);
-      var reasoning = body.putObject("reasoning");
-      reasoning.put("effort", "none");
-      reasoning.put("exclude", true);
+      // DeepSeek V4 uses an object-valued thinking switch. Boolean aliases are ignored by some
+      // compatible gateways and can exhaust max_tokens before any final JSON is emitted.
+      body.putObject("thinking").put("type", "disabled");
       var messages = body.putArray("messages");
       messages.addObject().put("role", "system").put("content", prompt.system());
       messages.addObject().put("role", "user").put("content", prompt.user());
       body.putObject("response_format").put("type", "json_object");
-      HttpClient.Builder client = HttpClient.newBuilder().connectTimeout(properties.requestTimeout());
+      HttpClient.Builder client =
+          HttpClient.newBuilder().connectTimeout(properties.requestTimeout());
       AiProperties.Proxy proxy = properties.proxyFor("openai");
       if (proxy.enabled() && proxy.type() != AiProperties.ProxyType.DIRECT)
         client.proxy(ProxySelector.of(proxy.address()));
-      HttpRequest request = HttpRequest.newBuilder()
-          .uri(URI.create(properties.openaiCompatible().baseUrl() + "/chat/completions"))
-          .version(HttpClient.Version.HTTP_1_1)
-          .timeout(properties.requestTimeout()).header("Authorization", "Bearer " + key())
-          .header("Content-Type", "application/json")
-          .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body), StandardCharsets.UTF_8)).build();
+      HttpRequest request =
+          HttpRequest.newBuilder()
+              .uri(URI.create(properties.openaiCompatible().baseUrl() + "/chat/completions"))
+              .version(HttpClient.Version.HTTP_1_1)
+              .timeout(properties.requestTimeout())
+              .header("Authorization", "Bearer " + key())
+              .header("Content-Type", "application/json")
+              .POST(
+                  HttpRequest.BodyPublishers.ofString(
+                      mapper.writeValueAsString(body), StandardCharsets.UTF_8))
+              .build();
       long started = System.nanoTime();
-      log.info("Conceptual provider call started provider=openrouter-conceptual model={} promptChars={} timeoutMs={}",
-          properties.model(), prompt.system().length() + prompt.user().length(), properties.requestTimeout().toMillis());
+      log.info(
+          "Conceptual provider call started provider=openrouter-conceptual model={} promptChars={}"
+              + " timeoutMs={}",
+          properties.model(),
+          prompt.system().length() + prompt.user().length(),
+          properties.requestTimeout().toMillis());
       CompletableFuture<HttpResponse<String>> pending =
           client.build().sendAsync(request, HttpResponse.BodyHandlers.ofString());
       HttpResponse<String> response;
       try {
-        response = pending.get(properties.requestTimeout().toMillis() + 1000L, TimeUnit.MILLISECONDS);
+        response =
+            pending.get(properties.requestTimeout().toMillis() + 1000L, TimeUnit.MILLISECONDS);
       } catch (TimeoutException ex) {
         pending.cancel(true);
-        throw new PlatformException(504, "Conceptual provider request timed out after "
-            + properties.requestTimeout().toSeconds() + " seconds.");
+        throw new PlatformException(
+            504,
+            "Conceptual provider request timed out after "
+                + properties.requestTimeout().toSeconds()
+                + " seconds.");
       } catch (InterruptedException ex) {
         pending.cancel(true);
         Thread.currentThread().interrupt();
         throw new PlatformException(499, "Conceptual provider request was interrupted.");
       } catch (ExecutionException ex) {
         Throwable cause = ex.getCause() == null ? ex : ex.getCause();
-        throw new PlatformException(502, "Conceptual provider request failed: " + cause.getMessage(), cause);
+        throw new PlatformException(
+            502, "Conceptual provider request failed: " + cause.getMessage(), cause);
       }
-      log.info("Conceptual provider call completed status={} elapsedMs={}", response.statusCode(),
+      log.info(
+          "Conceptual provider call completed status={} elapsedMs={}",
+          response.statusCode(),
           Duration.ofNanos(System.nanoTime() - started).toMillis());
       if (response.statusCode() / 100 != 2)
-        throw new PlatformException(response.statusCode(), "OpenRouter rejected conceptual-model request: " + snippet(response.body()));
+        throw new PlatformException(
+            response.statusCode(),
+            "OpenRouter rejected conceptual-model request: " + snippet(response.body()));
       JsonNode root = mapper.readTree(response.body());
       JsonNode contentNode = root.path("choices").path(0).path("message").path("content");
       String content = contentNode.isTextual() ? contentNode.asText() : contentParts(contentNode);
       if (content.isBlank()) {
         String finish = root.path("choices").path(0).path("finish_reason").asText("unknown");
-        throw new PlatformException(422, "Conceptual provider returned no structured content (finish_reason="
-            + finish + "). Thinking must be disabled and the response must contain JSON.");
+        throw new PlatformException(
+            422,
+            "Conceptual provider returned no structured content (finish_reason="
+                + finish
+                + "). Thinking must be disabled and the response must contain JSON.");
       }
       JsonNode usage = root.path("usage");
-      return new AssistantReply(content, "openrouter", properties.model(),
-          new TokenUsage(usage.path("prompt_tokens").asLong(-1), usage.path("completion_tokens").asLong(-1)),
-          prompt.system(), prompt.user());
-    } catch (PlatformException ex) { throw ex; }
-    catch (Exception ex) { throw new PlatformException(502, "OpenRouter conceptual-model request failed: " + ex.getMessage(), ex); }
+      return new AssistantReply(
+          content,
+          "openrouter",
+          properties.model(),
+          new TokenUsage(
+              usage.path("prompt_tokens").asLong(-1), usage.path("completion_tokens").asLong(-1)),
+          prompt.system(),
+          prompt.user());
+    } catch (PlatformException ex) {
+      throw ex;
+    } catch (Exception ex) {
+      throw new PlatformException(
+          502, "OpenRouter conceptual-model request failed: " + ex.getMessage(), ex);
+    }
   }
 
-  @Override public ProviderCapabilities capabilities() { return properties.providerCapabilities(); }
+  @Override
+  public ProviderCapabilities capabilities() {
+    return properties.providerCapabilities();
+  }
+
   private String key() {
     String configured = properties.openaiCompatible().apiKey();
     if (configured != null && !configured.isBlank()) return configured;
     String environment = System.getenv("OPENAI_COMPATIBLE_API_KEY");
     return environment == null ? "" : environment.trim();
   }
+
   private static String snippet(String value) {
     if (value == null) return "";
     return value.substring(0, Math.min(500, value.length()));

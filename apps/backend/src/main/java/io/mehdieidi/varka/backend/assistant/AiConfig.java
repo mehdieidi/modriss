@@ -59,18 +59,19 @@ public class AiConfig {
       AiProperties properties,
       io.mehdieidi.varka.platform.assistant.spi.AssistantMetrics metrics,
       ConceptualInstanceModelWorkflow conceptualWorkflow) {
-    AgentTurnLoop loop = new AgentTurnLoop(
-        provider,
-        tools,
-        guides,
-        retrieval,
-        realtime,
-        properties.turnTimeout(),
-        properties.sourceTurnTimeout(),
-        properties.maxAgentSteps(),
-        properties.maxProviderCallsPerTurn(),
-        properties.maxProviderCallsSourceTurn(),
-        metrics);
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            tools,
+            guides,
+            retrieval,
+            realtime,
+            properties.turnTimeout(),
+            properties.sourceTurnTimeout(),
+            properties.maxAgentSteps(),
+            properties.maxProviderCallsPerTurn(),
+            properties.maxProviderCallsSourceTurn(),
+            metrics);
     loop.setConceptualInstanceModelWorkflow(conceptualWorkflow);
     return loop;
   }

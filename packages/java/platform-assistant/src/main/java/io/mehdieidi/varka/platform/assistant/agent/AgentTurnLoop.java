@@ -266,13 +266,15 @@ public final class AgentTurnLoop {
     AgentModelTools turnTools = tools.scoped(level, workspace);
     if (mode == WorkflowMode.CONCEPTUAL_INSTANCE_GENERATION) {
       ConceptualInstanceModelWorkflow workflow = conceptualWorkflow;
-      if (workflow == null) throw new PlatformException(503, "Conceptual assistant mode is not configured.");
+      if (workflow == null)
+        throw new PlatformException(503, "Conceptual assistant mode is not configured.");
       String conceptualRequest = userMessage;
       if (sourceDocument != null && !sourceDocument.isBlank()) {
         conceptualRequest += "\n\nSOURCE SPECIFICATION (authoritative input):\n" + sourceDocument;
       }
       try {
-        return workflow.run(sessionId, level, conceptualRequest, workspace, turnTools, destructiveConfirmed);
+        return workflow.run(
+            sessionId, level, conceptualRequest, workspace, turnTools, destructiveConfirmed);
       } finally {
         // The conceptual route returns before the general loop's finally block. Always release
         // the per-session cancellation slot, including provider timeouts and repair failures.
@@ -2052,6 +2054,7 @@ validation.
       throw new PlatformException(422, "commit_model_batch arguments must be a JSON object.");
     }
     tools.jackson.databind.node.ObjectNode normalized = object.deepCopy();
+    normalizeConceptualCommandDialect(normalized);
     normalizeCommandArray(mapper, normalized, "creates");
     normalizeCommandArray(mapper, normalized, "updates");
     normalizeCommandArray(mapper, normalized, "connections");
@@ -2064,6 +2067,66 @@ validation.
               + " concrete requested work remains for a later checkpoint; otherwise use true.");
     }
     return normalized;
+  }
+
+  /**
+   * Accepts the equivalent conceptual-IR labels used in the instance-generation paper.
+   *
+   * <p>This is deliberately limited to schema vocabulary. It does not infer intent, create model
+   * content, select types, or repair values; the resulting canonical command still passes through
+   * the exact Ecore-derived compiler and structural validator.
+   */
+  static void normalizeConceptualCommandDialect(tools.jackson.databind.node.ObjectNode arguments) {
+    JsonNode wrappedBatch = arguments.path("batch");
+    if (wrappedBatch.isObject()) {
+      wrappedBatch
+          .properties()
+          .forEach(
+              entry -> {
+                if (!arguments.has(entry.getKey())) {
+                  arguments.set(entry.getKey(), entry.getValue().deepCopy());
+                }
+              });
+    }
+    if (!arguments.has("connections") && arguments.path("references").isArray()) {
+      arguments.set("connections", arguments.path("references").deepCopy());
+    }
+    JsonNode creates = arguments.path("creates");
+    if (creates.isArray()) {
+      creates.forEach(
+          value -> {
+            if (!(value instanceof tools.jackson.databind.node.ObjectNode create)) return;
+            copyAlias(create, "type", "eClass");
+            copyAlias(create, "containment", "reference");
+            copyAlias(create, "ownerFeature", "reference");
+            if (create.hasNonNull("name")) {
+              tools.jackson.databind.node.ObjectNode attributes =
+                  create.path("attributes")
+                          instanceof tools.jackson.databind.node.ObjectNode existing
+                      ? existing
+                      : create.putObject("attributes");
+              if (!attributes.has("name")) {
+                attributes.set("name", create.path("name").deepCopy());
+              }
+            }
+          });
+    }
+    JsonNode connections = arguments.path("connections");
+    if (connections.isArray()) {
+      connections.forEach(
+          value -> {
+            if (!(value instanceof tools.jackson.databind.node.ObjectNode connection)) return;
+            copyAlias(connection, "clientRef", "source");
+            copyAlias(connection, "feature", "reference");
+          });
+    }
+  }
+
+  private static void copyAlias(
+      tools.jackson.databind.node.ObjectNode object, String alias, String canonical) {
+    if (!object.has(canonical) && object.hasNonNull(alias)) {
+      object.set(canonical, object.path(alias).deepCopy());
+    }
   }
 
   private void normalizeCommandArray(

@@ -53,29 +53,29 @@ class AgentModelToolsTest {
   }
 
   @Test
-  void rejectsCreateWithoutExplicitContainmentInsteadOfInventingDefaults() throws Exception {
+  void compilesOmittedPlacementWhenEcoreDefinesOneExactRootContainment() throws Exception {
     AgentModelTools tools = cimTools();
     tools.bind(ModelLevel.CIM, workspace());
 
-    assertThrows(
-        PlatformException.class,
-        () ->
-            tools.commitModelBatch(
-                new ModelCommandBatch(
-                    List.of(
-                        new ModelCommandBatch.Create(
-                            "patient",
-                            "DomainEntity",
-                            Map.of("name", text("Patient")),
-                            null,
-                            null,
-                            null)),
-                    List.of(),
-                    List.of(),
-                    List.of(),
-                    List.of(),
-                    "draft entity",
-                    true)));
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(
+                    new ModelCommandBatch.Create(
+                        "patient",
+                        "Actor",
+                        Map.of("name", text("Patient"), "actorType", text("HUMAN")),
+                        null,
+                        null,
+                        null)),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                "draft entity",
+                true));
+
+    assertEquals("Patient", result.model().path("actors").get(0).path("name").asText());
   }
 
   @Test

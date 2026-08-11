@@ -30,23 +30,28 @@ Useful optional knobs:
 
 ```bash
 VARKA_AI_PROVIDER=openai
-OPENAI_COMPATIBLE_BASE_URL=https://api.openai.com
-VARKA_AI_MODEL=gpt-4o-mini
-VARKA_AI_TEST_MODEL=gpt-4o-mini
+OPENAI_COMPATIBLE_BASE_URL=your_arvan_openai_compatible_base_url
+VARKA_AI_MODEL=DeepSeek-V4-Flash
+VARKA_AI_TEST_MODEL=DeepSeek-V4-Flash
+VARKA_AI_MODE=agent
 VARKA_AI_MAX_TOOL_CALLS=24
 VARKA_AI_MAX_AGENT_STEPS=8
 VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=8
 VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=6
 VARKA_AI_TOKEN_BUDGET=16000
-VARKA_AI_REQUEST_TIMEOUT=5m
-VARKA_AI_TURN_TIMEOUT=5m
-VARKA_AI_SOURCE_TURN_TIMEOUT=5m
-VARKA_AI_OPENAI_PROTOCOL=tools
+VARKA_AI_MAX_COMPLETION_TOKENS=16000
+VARKA_AI_REQUEST_TIMEOUT=90s
+VARKA_AI_TURN_TIMEOUT=8m
+VARKA_AI_SOURCE_TURN_TIMEOUT=10m
+VARKA_AI_PROVIDER_RETRY_ATTEMPTS=2
+VARKA_AI_NATIVE_TOOLS_PREFERRED=false
+VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
+VARKA_AI_OPENAI_PROTOCOL=json_schema
 ```
 
-`VARKA_AI_REQUEST_TIMEOUT` and `VARKA_AI_TURN_TIMEOUT` default to 5 minutes. Connection
-establishment still fails after at most 10 seconds. A response timeout is not retried because the
-provider may still be processing the original request.
+The longer durable deadlines reflect observed Arvan latency; each HTTP request remains bounded by
+`VARKA_AI_REQUEST_TIMEOUT`. Empty length-limited completions and upstream failures may be retried
+within the explicit provider-call budget.
 
 For another OpenAI-compatible provider, keep `VARKA_AI_PROVIDER=openai` or use the accepted aliases
 `openai-compatible` / `openai_compatible`, then set `OPENAI_COMPATIBLE_BASE_URL`,
@@ -54,9 +59,10 @@ For another OpenAI-compatible provider, keep `VARKA_AI_PROVIDER=openai` or use t
 `VARKA_AI_TEST_MODEL` only for tests or evaluations that intentionally run against a different
 model than production.
 
-`VARKA_AI_OPENAI_PROTOCOL=tools` selects the native OpenAI-compatible tool-call path. The provider
-adapter also accepts strict JSON action content when a compatible endpoint returns a JSON object in
-`message.content` instead of native `tool_calls`.
+`VARKA_AI_OPENAI_PROTOCOL=json_schema` selects the JSON action path used by Arvan and
+`DeepSeek-V4-Flash`. Native tools remain available with `tools` for endpoints that return reliable
+`tool_calls`. DeepSeek requests use JSON object output, temperature zero, and its model-specific
+thinking-disable control.
 
 For Gemini:
 
@@ -82,10 +88,10 @@ that is not committed.
 
 ## Modeling protocol
 
-There is one assistant modeling mode. Model-changing turns run through `AgentTurnLoop` with
-tool-based access to an in-memory `ModelWorkspace`. Tool calls are checked against live Ecore
-contracts before they mutate the workspace. The final workspace is structurally validated and then
-committed atomically against the expected model revision.
+There is one assistant modeling mode. Model-changing turns run through `AgentTurnLoop` with access
+to an in-memory `ModelWorkspace`. Structured actions are checked against live Ecore contracts
+before they mutate the workspace. The final workspace is structurally validated and then committed
+atomically against the expected model revision.
 
 The LLM returns one action per step:
 
@@ -96,8 +102,9 @@ The LLM returns one action per step:
 - `answer_user` for non-mutating answers.
 - `ask_user` when required input is missing.
 
-The OpenAI-compatible native tool schema exposes the mutation action as `apply_draft_patch` and maps
-it back to `commit_model_batch` internally.
+The compiler accepts the equivalent conceptual JSON vocabulary used by the instance-generation
+paper, but only as structural schema normalization. It never generates business content or infers
+intent locally.
 
 ### Source-backed CIM flow
 
@@ -110,6 +117,10 @@ Committed element provenance is labelled source-grounded or inferred. The backen
 provider-facing `clientRef` values with UUID element IDs, validates source evidence IDs, normalizes
 safe containment/reference issues, and records checkpoint/source coverage details on the durable
 turn.
+
+Assistant-generated changes are gated only by structural Ecore/EMF conformance through
+`ModelService.validateStructural(...)`. EVL semantic validation is reserved for explicit
+user-initiated model validation workflows and is not part of assistant apply, repair, or commit.
 
 ## Docker Compose
 

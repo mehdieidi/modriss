@@ -29,6 +29,26 @@ import tools.jackson.databind.ObjectMapper;
 
 class AgentTurnLoopTest {
   @Test
+  void normalizesPaperStyleBatchWrapperWithoutInventingModelContent() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    var arguments =
+        (tools.jackson.databind.node.ObjectNode)
+            mapper.readTree(
+                """
+{"batch":{"creates":[{"clientRef":"refund","eClass":"BusinessGoal","name":"RefundGoal","owner":"rootId","ownerFeature":"goals","attributes":{"summary":"Issue refund"}}],"connections":[{"clientRef":"refund","reference":"refinedBy","target":"capability"}]},"turnComplete":true}
+""");
+
+    AgentTurnLoop.normalizeConceptualCommandDialect(arguments);
+
+    assertEquals(1, arguments.path("creates").size());
+    assertEquals("goals", arguments.path("creates").path(0).path("reference").asText());
+    assertEquals(
+        "RefundGoal", arguments.path("creates").path(0).path("attributes").path("name").asText());
+    assertEquals("refund", arguments.path("connections").path(0).path("source").asText());
+    assertTrue(arguments.path("turnComplete").asBoolean());
+  }
+
+  @Test
   void sourceAttachmentsPlanAndCheckpointWithoutSeparateAnalysis() throws Exception {
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(any(), any()))

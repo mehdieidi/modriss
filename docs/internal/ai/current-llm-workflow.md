@@ -1,6 +1,6 @@
 # Current LLM Modeling Workflow
 
-Updated: 2026-08-10
+Updated: 2026-08-11
 
 This document describes the current implementation state for the chatbot-based AI modeling
 assistant. It is intentionally descriptive, not aspirational.
@@ -28,10 +28,16 @@ adding more agent roles.
 
 ## Provider Protocol
 
-The assistant supports Gemini and OpenAI-compatible providers. For OpenAI-compatible providers,
-`VARKA_AI_OPENAI_PROTOCOL=tools` uses native Chat Completions tool calls. The native provider path
-also accepts strict JSON action content when a provider returns a JSON object in `message.content`
-instead of `tool_calls`.
+The assistant supports Gemini and OpenAI-compatible providers. Native Chat Completions tool calls
+remain available through `VARKA_AI_OPENAI_PROTOCOL=tools`. Arvan with `DeepSeek-V4-Flash` uses
+`VARKA_AI_OPENAI_PROTOCOL=json_schema`, because that gateway returns reliable JSON content but not
+reliable native `tool_calls`. The request uses JSON object response format, temperature zero, and
+DeepSeek's `thinking: {"type":"disabled"}` control.
+
+Compatible JSON responses are decoded as one allowlisted action. The compiler accepts equivalent
+paper-style structural labels and wrappers (`type`/`eClass`, `containment`/`reference`,
+`references`/`connections`, and a nested `batch`) without generating semantic content. All decoded
+values still pass through exact Ecore-derived type, attribute, containment, and reference checks.
 
 Runtime actions are normalized to the internal action names:
 
@@ -77,11 +83,13 @@ When a user uploads a `.md`, `.txt`, or `.json` file and asks the chatbot to cre
 Current hardening includes:
 
 - strict action envelope parsing;
-- native tool-call and strict JSON-content fallback for OpenAI-compatible providers;
+- native tool-call and strict JSON-content protocols for OpenAI-compatible providers;
+- bounded retry of transient Arvan completions that exhaust their budget without final JSON;
 - backend-generated UUID element IDs;
 - same-batch reference resolution;
 - invalid optional connection filtering;
-- containment-reference normalization when a unique compatible containment exists;
+- deterministic containment placement from the exact Ecore contract when the LLM omits mechanical
+  root placement;
 - required enum defaulting;
 - synthesis of required non-containment reference targets where Ecore demands them;
 - source evidence validation before model mutation;
@@ -95,26 +103,27 @@ language user-story generator.
 
 ## Live Status
 
-Latest single-story live test through the real multipart/chatbot path:
+Latest live tests through the real Arvan/DeepSeek-V4-Flash chatbot path:
 
-| Fixture               | State       | Coverage | Checkpoints | Saved elements | Provider calls | Validation |
-| --------------------- | ----------- | -------- | ----------- | -------------- | -------------- | ---------- |
-| `story-v1-single.md`  | `SUCCEEDED` | `100%`   | `1`         | `16`           | `4`            | structural |
-| CIM feature creation  | `SUCCEEDED` | n/a      | `1`         | `44`           | `6`            | structural |
-| Same-CIM feature edit | `SUCCEEDED` | n/a      | `1`         | `30`           | `2`            | structural |
+| Fixture                 | State       | Checkpoints | Provider calls | Validation |
+| ----------------------- | ----------- | ----------- | -------------- | ---------- |
+| `create-cim-library`    | `SUCCEEDED` | `1`         | `4`            | structural |
+| `cim-feature-evolution` | `SUCCEEDED` | `2`         | `8`            | structural |
+| `source-to-cim-pantry`  | `SUCCEEDED` | `1`         | `3`            | structural |
+| `create-pim-serverless` | `SUCCEEDED` | `1`         | `10`           | structural |
 
-The two CIM rows are one conversation against the real OpenAI-compatible provider: the first turn
-modeled order placement/tracking in an empty CIM and the second added returns/refunds to that saved
-model. The model grew from 37 to 63 structural nodes; the initial feature, its preservation, and
-the added feature all passed the live gate. Provider-reported token usage is preserved by the
-native tool transport. See `live-cim-feature-evolution-report.md` for the recorded run.
+The evolution fixture is one conversation: the first turn models order placement/tracking in an
+empty CIM and the second adds returns/refunds to the saved revision. Initial-feature creation,
+preservation, added-feature presence, model growth, and structural validity all passed. The source
+fixture imports the supplied multi-story document with grounded provenance.
 
 The operational workflow now accepts the attachment, creates a checkpoint, persists model content,
 and reports complete source coverage. Assistant output is accepted only against structural
 Ecore/EMF conformance. EVL semantic validation is intentionally outside the chatbot apply gate and
 is available through explicit model validation endpoints for human-driven review workflows.
 
-The focused unit/regression set currently passes:
+The focused assistant regression set currently passes, including provider controls, action
+normalization, durable turn behavior, and Ecore command compilation.
 
 ```text
 AgentActionSchemaTest
@@ -124,17 +133,13 @@ AgentModelToolsTest
 TypeContractServiceTest
 ModelServiceXmiImportTest
 
-81 focused tests, 0 failures
+66 focused tests, 0 failures
 ```
 
 ## Known Issues
 
-- Larger source fixtures need to be rerun after the latest source-splitting and structural
-  validation changes.
-- Smaller/cheaper models tested for the feature-evolution workflow were not sufficiently reliable:
-  Qwen's thinking variant rejected forced tools, its instruct variant exhausted repair budgets,
-  and `gpt-4.1-mini` was stochastic on required Ecore details. `gpt-4.1` is the current lowest-cost
-  tested model that completed both turns end to end.
+- Arvan latency varies substantially. Production defaults therefore allow an eight-minute normal
+  turn, a ten-minute source turn, 16k completion tokens, and two bounded transient retries.
 - The live eval script is useful for diagnosis but is not yet a CI-grade gate.
 - EVL validation responses can still be useful after assistant checkpoints, but they must remain
   user-initiated review feedback rather than assistant apply criteria.
