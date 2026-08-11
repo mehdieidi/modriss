@@ -524,9 +524,14 @@ export function activeCanvasFocus() {
   return current;
 }
 
-export function canvasFocusLabel() {
-  const focus = activeCanvasFocus();
-  return focus ? `${focus.label || focus.elementId}` : "";
+// Switching to a normal view abandons the temporary container-navigation state
+// without changing the selected view. The saved focus view itself is retained
+// so reopening the container can preserve its layout.
+export function clearCanvasFocus() {
+  const stack = focusStack();
+  const hadFocus = stack.length > 0;
+  stack.length = 0;
+  return hadFocus;
 }
 
 function collectContainedDescendantIds(elementId, into = new Set()) {
@@ -1039,7 +1044,7 @@ export function openNeighborhoodFocus(elementId, depth = 1) {
 export function closeCanvasFocus() {
   const focus = activeCanvasFocus();
   if (!focus) {
-    focusStack().length = 0;
+    clearCanvasFocus();
     return false;
   }
   focusStack().pop();
@@ -3238,7 +3243,10 @@ function renderContainerTargetPicker(source, container, choices, preferredKind) 
         return;
       }
       const targetId = button.getAttribute("data-contained-target-id");
-      connectToContainedTarget(source, container, targetId, preferredKind);
+      void connectToContainedTarget(source, container, targetId, preferredKind).catch((error) => {
+        console.error("Unable to connect to contained target", error);
+        setStatus("Unable to create the connection to the contained target");
+      });
     });
   });
   const outsideClick = (event) => {
@@ -3298,7 +3306,7 @@ function ensureInternalTargetSummaryEdge(source, container, containedTarget, kin
   }
 }
 
-function connectToContainedTarget(source, container, targetId, preferredKind = null) {
+async function connectToContainedTarget(source, container, targetId, preferredKind = null) {
   const targetElement = state.graph?.elementsById?.get(targetId);
   if (!targetElement) {
     setStatus("Contained target is no longer available");
@@ -3321,15 +3329,27 @@ function connectToContainedTarget(source, container, targetId, preferredKind = n
   }
   if (ensureFocusPortalNode(source.id, containedTarget.id)) {
     materializeActiveView();
-    void renderDiagramAsync({ full: true });
   }
+  // The focus transition rebuilds the canvas asynchronously. Wait until the
+  // portal source and contained target have been mounted before adding an edge;
+  // otherwise the incremental renderer discards the edge because its endpoints
+  // do not yet exist in the new canvas.
+  await renderDiagramAsync({ full: true });
   const created = addConnection(source.id, containedTarget.id, {
-    interactivePicker: true,
+    // Selecting a contained target is the final choice in the container picker.
+    // Do not reopen the relationship-kind picker after the focus view has opened:
+    // the resolved kind is already the one selected for this target.
+    interactivePicker: false,
     preferredKind: kind,
     allowContainedTargetPrompt: false,
   });
   if (created) {
     ensureInternalTargetSummaryEdge(source, container, containedTarget, kind);
+    // Opening a container schedules a full canvas render. Re-materialize after the
+    // relationship is stored so that render sees both the portal source and this
+    // new relationship in the focused view, rather than the pre-connection view.
+    materializeActiveView();
+    await syncCanvasFromState({ full: true });
     markModelDirty();
     setStatus(`Connected ${source.label || source.type} to ${containedTarget.label}.`);
   }

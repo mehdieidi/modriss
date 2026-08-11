@@ -608,24 +608,13 @@
 }
 
 .workbench-focus-actions {
-  max-width: 220px;
+  flex: 0 0 auto;
 }
 
 .workbench-context-actions .context-action-primary {
   border-color: color-mix(in srgb, var(--accent) 56%, var(--border) 44%);
   background: color-mix(in srgb, var(--accent) 18%, var(--surface-3) 82%);
   color: var(--text-strong);
-}
-
-.workbench-focus-label {
-  max-width: 150px;
-  overflow: hidden;
-  color: var(--muted);
-  font: 700 10px/1.1 var(--font-display);
-  letter-spacing: 0.05em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
 @media (max-width: 1200px) {
@@ -675,10 +664,6 @@
 
   .workbench-focus-actions {
     max-width: none;
-  }
-
-  .workbench-focus-label {
-    max-width: 100px;
   }
 
   .validation-drawer {

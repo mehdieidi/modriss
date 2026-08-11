@@ -28,7 +28,7 @@ import {
 } from "./attr-panel.js";
 import {
   activeCanvasFocus,
-  canvasFocusLabel,
+  clearCanvasFocus,
   closeCanvasFocus,
   fitViewportToDiagram,
   renderDiagramAsync,
@@ -183,7 +183,6 @@ function canvasFocusToolMarkup() {
   return `<div class="workbench-context-actions workbench-focus-actions">
       <button class="sidebar-inline-action context-action-primary"
               id="canvasFocusBackBtn" type="button">Back</button>
-      <span class="workbench-focus-label">${escapeHtml(canvasFocusLabel())}</span>
     </div>`;
 }
 
@@ -274,6 +273,10 @@ function levelViews() {
 }
 
 function activeViewLabel() {
+  const focus = activeCanvasFocus();
+  if (focus) {
+    return focus.label || focus.elementId;
+  }
   const view = activeView();
   if (!view) {
     return `No ${state.activeType.toUpperCase()} views`;
@@ -672,6 +675,9 @@ export function renderViewWorkbench() {
 
 export async function openWorkbenchView(viewId) {
   viewMenuOpen = false;
+  if (viewId !== state.views.activeViewId && state.views.byId.has(viewId)) {
+    clearCanvasFocus();
+  }
   if (setActiveViewId(viewId)) {
     materializeActiveView();
     renderPaletteCallback?.();
