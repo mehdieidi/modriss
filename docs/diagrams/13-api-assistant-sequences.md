@@ -29,6 +29,7 @@ sequenceDiagram
     participant T as AssistantTurnStore
     participant W as DurableAssistantTurnWorker
     participant S as SourceUnitSplitter
+    participant L as AgentTurnLoop
 
     Client->>C: message, modelId, expectedRevision/revision, selectedElementIds, attachmentIds, idempotencyKey
     C->>A: session(user, sessionId)
@@ -46,8 +47,18 @@ sequenceDiagram
         W-->>T: asynchronously claim and process queued turn
         W->>S: split source attachments when present
         W->>T: persist source units, coverage, provenance, provider calls
+        W->>L: route from durable structural state
+        alt fresh turn without selection/destruction
+            L->>L: strict LLM strategy decision
+            Note over L: Empty mutation -> conceptual<br/>Existing mutation -> inspect agent<br/>ANSWER intention -> ordinary AUTO loop
+        else resumed, selected, or destructive turn
+            Note over W,L: inspect/contract workflow
+        end
     end
 ```
+
+The request contains no internal strategy or mode field. Strategy decisions are backend-owned and
+do not change the public durable-turn contract.
 
 ## GET `/api/chatbot/turns/{turnId}/events`
 

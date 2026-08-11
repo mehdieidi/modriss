@@ -1,6 +1,6 @@
 # ADR 0001: Superseded Unified Delta Agent
 
-Status: superseded by durable tool-loop runtime
+Status: superseded by unified adaptive durable runtime
 
 Date: 2026-07-04
 
@@ -11,13 +11,14 @@ mutation strategies. That design is no longer current.
 
 ## Decision
 
-The current implementation uses `AgentTurnLoop` plus backend-validated `AgentModelTools` over
+The current implementation uses one durable runtime with a strict LLM strategy decision. It can run
+`ConceptualInstanceModelWorkflow` or `AgentTurnLoop` plus backend-validated `AgentModelTools` over a
 `ModelWorkspace`. Durable turns, checkpoints, provenance, and authenticated SSE event replay
 replace the old delta/proposal pipeline.
 
 ## Consequences
 
 - Configuration and docs expose one modeling mode only.
-- Provider output is constrained to tool actions that the backend validates against Ecore-derived
-  contracts.
+- Provider output is constrained either to the paper-style conceptual IR or allowlisted agent
+  actions, both compiled and validated against Ecore-derived contracts.
 - Turn execution is persisted in durable assistant tables rather than proposal-specific state.

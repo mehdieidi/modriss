@@ -13,7 +13,7 @@ flowchart TB
     MDE["MDE assets<br/>Emfatic, Ecore, EVL, ETL, EGX/EGL"]
     Observability["Prometheus, Grafana, Loki, Promtail<br/>metrics, dashboards, logs"]
     LocalStack["LocalStack<br/>AWS emulator for generated projects"]
-    AI["External AI provider"]
+    AI["Arvan OpenAI-compatible AI<br/>DeepSeek-V4-Flash"]
     CLIs["MDE CLI tools"]
 
     User --> Caddy
@@ -51,4 +51,6 @@ modeling configuration rather than maintaining a second independent metamodel.
 - The admin app is a separate browser app for operational control-plane workflows.
 - Prometheus, Grafana, Loki, Promtail, Caddy logs, and Dozzle provide the local DevOps/SRE surface.
 - AI provider calls are optional and isolated from normal platform traffic.
+- The backend exposes one durable assistant and automatically routes internally between conceptual
+  generation, inspect/contract editing, and non-mutating answers.
 - LocalStack is used to test generated AWS projects, not to run Varka itself.

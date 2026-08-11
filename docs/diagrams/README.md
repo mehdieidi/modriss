@@ -11,7 +11,7 @@ The diagrams were derived from:
 - Maven module POMs, `deploy/compose.yaml`, and backend configuration.
 - `PlatformStore`, `PostgresPlatformStore`, and Flyway migrations under
   `platform-storage-postgres` (V1 platform schema, V5 MDE job metadata) and `platform-assistant`
-  (V14 durable-turn baseline and later assistant migrations).
+  (V14 durable-turn baseline and later assistant migrations through V28).
 - Emfatic/Ecore metamodels, EVL entry modules, ETL entry modules, and EGX/EGL generation assets.
 
 ## Diagram Index
@@ -31,9 +31,9 @@ The diagrams were derived from:
 | APIs          | [11-api-transformation-artifact-sequences.md](11-api-transformation-artifact-sequences.md)       | Transformation, job, artifact sequences            |
 | APIs          | [12-api-modeling-system-sequences.md](12-api-modeling-system-sequences.md)                       | Layout, config, health, docs, future routes        |
 | APIs          | [13-api-assistant-sequences.md](13-api-assistant-sequences.md)                                   | Chatbot, durable turn, and authenticated SSE flows |
-| AI assistant  | [14-ai-assistant-architecture.md](14-ai-assistant-architecture.md)                               | Assistant components, providers, context, controls |
-| AI assistant  | [15-ai-assistant-turn-and-proposal.md](15-ai-assistant-turn-and-proposal.md)                     | Durable turn and checkpoint lifecycle              |
-| AI assistant  | [16-ai-assistant-rag-and-memory.md](16-ai-assistant-rag-and-memory.md)                           | Contracts, source units, provenance, memory        |
+| AI assistant  | [14-ai-assistant-architecture.md](14-ai-assistant-architecture.md)                               | Unified router, conceptual/compiler, agent, safety |
+| AI assistant  | [15-ai-assistant-turn-and-proposal.md](15-ai-assistant-turn-and-proposal.md)                     | Adaptive durable turn and checkpoint lifecycle     |
+| AI assistant  | [16-ai-assistant-rag-and-memory.md](16-ai-assistant-rag-and-memory.md)                           | Ecore contracts, source units, provenance, memory  |
 | MDE           | [17-mde-architecture.md](17-mde-architecture.md)                                                 | MDE assets, runners, services, and tools           |
 | MDE           | [18-mde-end-to-end-pipeline.md](18-mde-end-to-end-pipeline.md)                                   | CIM to PIM to AWS PSM to artifacts                 |
 | MDE           | [19-mde-validation-transformation-generation.md](19-mde-validation-transformation-generation.md) | EVL, ETL, and EGX execution internals              |
@@ -46,7 +46,7 @@ The diagrams were derived from:
 | Methodology   | [26-psm-methodology.md](26-psm-methodology.md)                                                   | PSM phase flow and SamStack hub                    |
 | Methodology   | [27-end-to-end-methodology.md](27-end-to-end-methodology.md)                                     | CIM→PIM→PSM pipeline with EVL/ETL gates            |
 | DevOps/SRE    | [28-devops-sre-runtime.md](28-devops-sre-runtime.md)                                             | Edge routing, workloads, observability, triage     |
-| AI assistant  | [29-agents-pattern-assessment.md](29-agents-pattern-assessment.md)                               | Pattern mapping and intentional exclusions         |
+| AI assistant  | [29-agents-pattern-assessment.md](29-agents-pattern-assessment.md)                               | Router/prompt-chain/agent pattern mapping          |
 
 ## API Coverage
 

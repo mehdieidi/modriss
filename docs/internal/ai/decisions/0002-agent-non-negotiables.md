@@ -4,8 +4,9 @@ Status: updated
 
 Date: 2026-07-04
 
-Current implementation note: rule 2 is implemented as backend-validated agent tool calls. Turn
-state is persisted in `assistant_turns` and related checkpoint/event/provenance tables.
+Current implementation note: rule 2 is implemented as backend-validated agent actions or the
+deterministic conceptual-IR compiler. Both produce the same checked command batch/workspace path.
+Turn state is persisted in `assistant_turns` and related checkpoint/event/provenance tables.
 
 ## Context
 
@@ -18,8 +19,8 @@ The assistant must obey these rules:
 
 1. **Ecore is canonical.** Metamodel contracts come from combined Ecore resources; UI metadata and
    examples may enrich prompts but cannot override structural contracts.
-2. **Backend tools are the only mutation path** exposed to providers; direct JSON/database mutation
-   is not allowed.
+2. **Backend compilation/tools are the only mutation paths** exposed to providers; conceptual JSON
+   is an intermediate representation compiled by the backend and never a direct database write.
 3. **Structural EMF validation only** gates AI apply. EVL is not executed on the assistant apply
    path.
 4. **Atomic, revision-guarded turns.** Model-changing turns acquire a short apply lock, recheck

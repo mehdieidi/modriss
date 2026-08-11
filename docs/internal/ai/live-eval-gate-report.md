@@ -1,10 +1,48 @@
-# Assistant Live Eval Gate Report
+# Assistant live-evaluation status
 
-Generated: 2026-08-09T17:00:34.6526745+03:30
+Updated: 2026-08-12
 
-| Scenario                      | Level | Final state | Total latency (s) | First checkpoint (s) | Provider calls | Prompt tokens | Completion tokens | Repairs | Provider retries | Coverage | Checkpoints | Structural status | Message                                                                                                                                                                                                   |
-| ----------------------------- | ----- | ----------- | ----------------: | -------------------: | -------------: | ------------: | ----------------: | ------: | ---------------: | -------- | ----------: | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| source-to-cim-pantry          | CIM   | SUCCEEDED   |                85 |                   21 |              7 |             0 |                 0 |       1 |                0 | 100      |           2 | True              | Model checkpoint saved (6 updated, 5 connected). Add core community pantry elements based on user stories.                                                                                                |
-| edit-existing-pim-add-pattern | PIM   | PARTIAL     |                57 |                      |              6 |             0 |                 0 |       0 |                0 |          |           0 | True              | Update element 'DuplicateDetectionService' is not a known clientRef from this batch or an existing element id. Use the exact clientRef from creates without prefixes or aliases. Known clientRefs: rootId |
-| edit-pim                      | PIM   | PARTIAL     |               109 |                   12 |             26 |             0 |                 0 |       0 |                0 |          |           1 | True              | This work item could not be applied. Saved checkpoints remain available; resume this turn when ready.                                                                                                     |
-| stale-revision                | PIM   | CONFLICTED  |                 9 |                      |              0 |             0 |                 0 |       0 |                0 |          |           0 | True              | Model was modified by another operation.                                                                                                                                                                  |
+This is a curated index of the latest acceptance evidence. Raw reports under `target/` remain the
+authoritative per-run record, including failed attempts.
+
+## Inspect/contract agent baseline
+
+| Fixture                 | Result | Latency | Calls | Prompt/completion tokens | Outcome                                                        |
+| ----------------------- | ------ | ------: | ----: | -----------------------: | -------------------------------------------------------------- |
+| `create-cim-library`    | Passed |   112 s |     4 |          22,193 / 15,748 | 46 nodes, structural validity                                  |
+| `cim-feature-evolution` | Passed |   233 s |     8 |          56,904 / 36,843 | 106 final nodes, original feature preserved, new feature added |
+| `source-to-cim-pantry`  | Passed |   118 s |     3 |          17,659 / 25,357 | 69 nodes, complete source coverage                             |
+| `create-pim-serverless` | Passed |   163 s |    10 |          52,161 / 22,652 | 28 nodes, structural validity                                  |
+
+## Conceptual strategy
+
+| Fixture                 | Result                  | Evidence                                                                                                   |
+| ----------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `create-cim-library`    | Passed in optimized run | 91 s, 2 calls, 4,439 / 14,895 tokens, 40 nodes                                                             |
+| `cim-feature-evolution` | Failed final acceptance | First feature checkpoint saved, but the second persisted-model update failed; earlier attempts also failed |
+| `source-to-cim-pantry`  | Passed                  | 145 s, 3 calls, 5,373 / 12,240 tokens, complete coverage                                                   |
+| `create-pim-serverless` | Passed                  | 124 s, 4 calls, 20,350 / 22,346 tokens, compiler repair then structural checkpoint                         |
+
+## Unified production strategy
+
+| Fixture                 | Result                | Evidence                                                                                                                                                                                             |
+| ----------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `create-cim-library`    | Not reliably accepted | A 243 s run succeeded and saved a structural checkpoint, but the then-current four-call gate rejected it. The final eight-call rerun failed after 398 s on length-limited output with no checkpoint. |
+| `cim-feature-evolution` | Passed                | 266 s, 9 calls, two checkpoints; prior feature preserved and new feature added through the agent path                                                                                                |
+| `source-to-cim-pantry`  | Passed                | 121 s, 4 calls, complete source coverage/provenance                                                                                                                                                  |
+| `create-pim-serverless` | Passed                | 85 s, 6 calls, structural checkpoint through conceptual generation                                                                                                                                   |
+
+## Interpretation
+
+- Provider connectivity alone is not acceptance.
+- A structurally valid checkpoint is not proof of semantic usefulness.
+- Source coverage is accounting, not EVL validity.
+- A successful stochastic attempt does not erase a later gated failure.
+- Current evidence justifies conceptual generation for bounded empty models and the inspect/contract
+  agent for persisted updates.
+
+Focused conceptual/compiler/provider/adaptive tests passed 25/25, and the strict backend mode test
+passed 1/1 after these runs. No formatter or linter was used.
+
+See [assistant-approach-comparison.md](assistant-approach-comparison.md) for the complete comparison
+and exact report filenames.

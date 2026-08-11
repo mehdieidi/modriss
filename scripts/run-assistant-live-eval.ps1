@@ -438,9 +438,10 @@ function Test-ScenarioGate {
   # Provider retry attempts are real HTTP calls and remain visible in the report.  They are
   # allowed only for the Freemodel live-evaluation contingency; the logical workflow budget
   # still applies when no transient provider failure occurs.
-  # The evolution gate contains two independent modeling turns. Allow five calls per turn: plan,
-  # contract-bound draft, and up to three bounded structural repairs.
-  $callBudget = if ($scenarioId -in @("cim-feature-evolution", "edit-existing-pim-add-pattern")) { 10 } elseif ($complex) { 4 } elseif ($Fixture.route -eq "EXPLANATION") { 1 } else { 2 }
+  # The evolution gate contains two independent modeling turns. Unified complex turns include a
+  # schema-bound strategy decision, focused Ecore contract selection, generation, and bounded
+  # complete-model repairs. All calls remain visible; this is a workflow budget, not a retry mask.
+  $callBudget = if ($scenarioId -in @("cim-feature-evolution", "edit-existing-pim-add-pattern")) { 10 } elseif ($complex) { 8 } elseif ($Fixture.route -eq "EXPLANATION") { 2 } else { 3 }
   $callBudget += [int]$ProviderRetryCount
   if ([int]$Result.ProviderCalls -gt $callBudget) {
     $failures += "provider calls $($Result.ProviderCalls) exceed budget $callBudget"

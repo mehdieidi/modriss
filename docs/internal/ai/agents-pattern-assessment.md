@@ -1,88 +1,101 @@
-# AI Modeling Assistant Pattern Assessment
+# AI modeling assistant pattern assessment
 
-**Reference:** Anthropic, [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents), 19 December 2024.  
-**Assessment date:** 29 July 2026.  
-**Scope:** the current Varka assistant runtime: `AgentTurnLoop`, `AgentModelTools`, `AgenticTurnService`, and `DurableAssistantTurnWorker`.
+Updated: 2026-08-12
 
-## Conclusion
-
-Varka is a **bounded, single autonomous agent** built from Anthropic's _augmented LLM_ building block. Its core is the article's agent loop: an LLM selects an action, receives ground truth from a tool result, and repeats until it returns a terminal action or the backend stops the turn.
-
-It is not an ad-hoc chat wrapper. It is a custom, domain-specific implementation of a recognizable pattern:
-
-`LLM -> strict AgentAction or native tool call -> backend-validated tool -> working-model observation -> LLM`
-
-The outer durable-turn lifecycle is a predefined **workflow**; its inner `AgentTurnLoop` is an **agent** because the model dynamically chooses its allowed action. This follows the article's distinction between code-orchestrated workflows and model-directed tool use.
-
-The companion diagram is [29-agents-pattern-assessment.md](../../diagrams/29-agents-pattern-assessment.md).
+Varka is now a **deterministic durable workflow with LLM routing between two bounded internal
+workflows**. It is not accurately described as only a single tool-calling agent.
 
 ## Pattern mapping
 
-| Anthropic pattern        | Varka status                                | Evidence and assessment                                                                                                                                                                                                                                           |
-| ------------------------ | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Augmented LLM            | **Used**                                    | `AgentTurnLoop` provides a compact model inventory, Ecore-derived contracts on demand, lexical retrieval snippets, recent conversation context, source units, and a defined action interface. This grounds the model in authoritative domain facts.               |
-| Autonomous agent loop    | **Used, bounded**                           | The loop calls the provider, strictly parses one `AgentAction`, executes it, feeds inspection/contract/error results back, and repeats up to configured step and provider-call limits. Tool results and structural validation are the environmental ground truth. |
-| Prompt chaining          | **Used only as deterministic control flow** | A mutation often follows inventory -> `describe_types` or `inspect_model` -> terminal batch. This is a small conditional chain inside the agent loop, not an independent multi-prompt pipeline.                                                                   |
-| Routing                  | **Not used**                                | There is one responder role and one loop. The prompt decides whether to inspect, describe, mutate, answer, or ask. Add routing only if distinct task classes need distinct prompts, models, or policies.                                                          |
-| Parallelization / voting | **Not used for LLM work**                   | ADR-004 excludes parallel planner, repair, source, and summarizer workers. `SourceDocumentWorkers` only splits and labels text locally; it makes no provider calls. Durable worker threads are execution capacity, not parallel reasoning.                        |
-| Orchestrator-workers     | **Not used**                                | No model creates subtasks or delegates to other model workers. The single agent produces one terminal `commit_model_batch`. This avoids shared-workspace merge, conflict, provenance, and cost complexity.                                                        |
-| Evaluator-optimizer      | **Partially, without a second LLM**         | Backend validation rejects invalid actions and repairable tool errors return to the same agent for correction. Final structural validation gates persistence. This is deterministic validator-and-repair feedback, not a generator/evaluator model pair.          |
+| Pattern               | Current status                        | Implementation                                                                                                                                                                                                        |
+| --------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Augmented LLM         | Used                                  | Current model inventory, Ecore-derived contracts, source units, recent memory, and tool/compiler diagnostics ground provider decisions.                                                                               |
+| Routing               | Used, bounded                         | `AgentTurnLoop.runAdaptive` requests one strict strategy enum. Structural safety facts constrain the legal strategy set; users do not select it.                                                                      |
+| Prompt chaining       | Used                                  | Conceptual generation chains semantic EClass selection, complete instance generation, deterministic compilation, and bounded complete-response repair. Agent mutation chains plan/inspect/contracts/commit as needed. |
+| Autonomous agent loop | Used for inspect/edit                 | The LLM selects one allowlisted action per step and receives backend facts until a terminal action or budget stop.                                                                                                    |
+| Evaluator/optimizer   | Deterministic validator feedback only | The conceptual compiler or model tools return structural diagnostics to the same LLM. There is no independent semantic reviewer LLM.                                                                                  |
+| Orchestrator/workers  | Durable code workflow only            | The worker persists plans and work items, but does not delegate semantic work to multiple LLM agents.                                                                                                                 |
+| Parallel LLM voting   | Not used                              | Provider calls within a turn are sequential and budgeted. Two backend worker threads provide execution capacity, not parallel reasoning.                                                                              |
 
-## Implemented workflow
+## Implemented topology
 
-1. The API persists a user request as a durable turn with expected model revision and deadline, then returns `202 Accepted`.
-2. `DurableAssistantTurnWorker` claims it from PostgreSQL and splits any attachment into labelled source units.
-3. `AgenticTurnService` loads the current model into an in-memory `ModelWorkspace` and supplies bounded recent history.
-4. `AgentTurnLoop` provides the model with system instructions, current-model inventory, request, optional source evidence, and optional retrieval snippets.
-5. The model returns exactly one action: `plan_source_model`, `inspect_model`, `describe_types`, `commit_model_batch`, `answer_user`, or `ask_user`. OpenAI-compatible native tool calls may expose the mutation action as `apply_draft_patch`, which is normalized back to `commit_model_batch`.
-6. Inspection and schema results become the next model input. A model batch is checked against Ecore types, attributes, references, containment, enums, preconditions, evidence IDs, and deletion confirmation.
-7. Structural validation gates an atomic, revision-checked commit. Checkpoints, inverse patches, source coverage, provenance, provider-call audits, and replayable events are persisted.
-8. The worker reports success, partial, needs input/confirmation, conflict, cancellation, timeout, or failure; the UI can follow SSE events, continue, confirm, or undo.
+```text
+durable worker
+  -> structured LLM strategy router
+     -> conceptual generator/compiler workflow
+     -> inspect/contract autonomous action loop
+     -> ANSWER intention through the ordinary AUTO action loop
+```
 
-## Agent-computer interface and safety
+The conceptual workflow is not an agent tool loop. It is a prompt chain with deterministic
+compilation and bounded repair. The inspect/contract workflow is an agent because the model chooses
+among planning, inspection, contract retrieval, mutation, answer, and question actions after seeing
+tool results.
 
-Anthropic emphasizes that tool design is as important as prompt design. Varka exposes a deliberately narrow, strict JSON action protocol rather than provider-managed automatic tool calling.
+There is still one provider model and no specialist-agent delegation. `SourceDocumentWorkers` and
+durable work items are infrastructure, not independent LLM workers.
 
-| Provider-visible action    | Backend capability                                                   | Reliability property                                                               |
-| -------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `plan_source_model`        | Plan large source documents into ordered modeling slices             | Keeps long attachment workflows bounded and resumable.                             |
-| `inspect_model`            | Read full workspace or a focused element                             | Fact finding without persistence access.                                           |
-| `describe_types`           | Retrieve exact Ecore type contracts and required containment closure | Replaces schema guessing with canonical contracts.                                 |
-| `commit_model_batch`       | Create, update, connect, or delete in a working copy                 | UUID IDs, evidence checks, preconditions, structural validation, and confirmation. |
-| `answer_user` / `ask_user` | End informational turns or request a needed decision                 | Avoids unnecessary mutation and supplies a human checkpoint.                       |
+## Agent-computer interfaces
 
-Java-level helpers such as `searchModel`, `createElements`, and `validateModel` support these actions but are not independently provider-visible in the current loop.
+### Adaptive strategy schema
 
-- **Ground truth:** current `ModelWorkspace`, deterministic Ecore contracts, tool failures, and structural validation—not self-reported reasoning.
-- **Memory and retrieval:** durable threads/messages, JDBC chat memory, a bounded recent-message window, and lexical metamodel retrieval.
-- **Source accountability:** untrusted attachment text is split into source units and stored with source-grounded or inferred element provenance; source maps can be planned into slices; incomplete coverage yields `PARTIAL`.
-- **Operational guardrails:** secret redaction, injection labelling, rate limit, retry/circuit breaker, time/step/provider-call budgets, cancellation, idempotency, durable audit events, and SSE replay.
-- **Mutation guardrails:** no provider database access; mutations remain private until structural validation and revision-checked atomic persistence. Deletion uses a server-controlled confirmation path; undo uses the stored inverse patch.
-- **Transparency:** the user sees factual planning, tool, validation, checkpoint, and lifecycle events—not private chain-of-thought.
+```json
+{ "strategy": "CONCEPTUAL_GENERATION|INSPECT_AGENT|ANSWER" }
+```
 
-## Is it ad hoc?
+This schema is closed and audited. The backend supplies structural facts and removes unsafe
+strategies without inspecting request keywords.
 
-The implementation contains custom mechanics, but they are intentional domain adaptations rather than ad-hoc behavior:
+`ANSWER` is not presently a separate read-only capability set. It maps to the same AUTO loop as
+`INSPECT_AGENT`, so non-mutation is prompt-directed rather than backend-enforced. This is a current
+implementation limitation.
 
-- The `AgentAction` envelope and direct provider calls implement a transparent, low-abstraction agent/tool loop, consistent with Anthropic's caution that frameworks can obscure prompts and responses.
-- `ModelWorkspace`, Ecore contracts, and revision-locked persistence are modeling-specific agent-computer-interface protections that generic frameworks cannot supply.
-- Queueing, checkpoints, provenance, cancellation, confirmation, and SSE replay are deterministic operational workflow infrastructure around the single agent.
+### Inspect/contract actions
 
-The accurate label is: **a custom, production-oriented, bounded single-agent augmented-LLM pattern embedded in a durable deterministic workflow.**
+| Action                     | Backend capability                                                                           |
+| -------------------------- | -------------------------------------------------------------------------------------------- |
+| `plan_model_edit`          | Produce durable checkpoint slices and contract candidates.                                   |
+| `inspect_model`            | Read exact workspace facts.                                                                  |
+| `describe_types`           | Retrieve authoritative Ecore contracts.                                                      |
+| `commit_model_batch`       | Apply checked creates, updates, connections, deletions, and evidence to a private workspace. |
+| `answer_user` / `ask_user` | Finish without mutation or request necessary input.                                          |
 
-## Next steps justified by the reference
+### Conceptual intermediate representation
 
-1. Add task-level evaluation before adding agents: structural validity, user acceptance/undo rate, repair rate, source coverage, conflicts, latency, and cost by task type.
-2. Continue treating the action envelope as an agent-computer interface: test tool descriptions and validation errors with representative prompts; consider native structured output only if it improves reliability without weakening backend authority.
-3. Add routing or specialist workers only for measured, genuinely distinct task modes, with explicit plans for workspace merge, provenance, evaluation, and cost.
-4. Retain the existing human controls for consequential work: confirmation, cancellation, checkpointing, undo, and visible stopping conditions.
+The conceptual path uses a JSON object keyed by instance ID. Each object has an exact EClass,
+attribute triples, parent-to-child compositions, source-to-target references, and optional evidence.
+The deterministic compiler is the computer interface: it resolves IDs and ordering and rejects any
+contract mismatch without inventing semantic content.
 
-## Code basis
+## Safety properties
 
-- [Anthropic: Building effective agents](https://www.anthropic.com/engineering/building-effective-agents)
-- `docs/internal/adr/ADR-003-explicit-tool-loop.md` and `docs/internal/adr/ADR-004-single-agent.md`
-- `packages/java/platform-assistant/src/main/java/.../agent/AgentTurnLoop.java`
-- `packages/java/platform-assistant/src/main/java/.../tools/AgentModelTools.java`
-- `packages/java/platform-assistant/src/main/java/.../application/AgenticTurnService.java`
-- `apps/backend/src/main/java/.../assistant/DurableAssistantTurnWorker.java`
-- `docs/internal/ai/current-llm-workflow.md`
+- Provider output never writes PostgreSQL directly.
+- Ecore-derived contracts, not prompt claims, define legal model structure.
+- Mutation occurs in a private `ModelWorkspace`.
+- Only structural Ecore/EMF validation gates assistant apply and commit.
+- Destructive batches require server-controlled confirmation and preconditions.
+- Expected revisions prevent stale writes.
+- Checkpoints, inverse patches, provenance, calls, tokens, failures, and events are durable.
+- Source coverage prevents false completion when source units remain unaccounted.
+- Users see factual workflow events, not private reasoning.
+
+## Intentional exclusions
+
+- No keyword router or hard-coded natural-language transformation.
+- No canned/coded fallback model.
+- No parallel model voting or specialist-agent delegation.
+- No semantic EVL gate inside assistant generation, repair, apply, or commit.
+- No silent conceptual-to-agent fallback after a failure; transitions require explicit durable
+  workflow state.
+- No client-facing internal strategy selector.
+
+## Current evidence boundary
+
+The inspect/contract agent has passed all four required Arvan fixtures. Conceptual generation has
+passed bounded empty-model and source-backed cases but not persisted-model evolution. Unified mode
+has three final passes out of four; library generation has a successful attempt but its final gated
+rerun failed on truncated output. The pattern is architecturally sound, but repeated-run reliability
+and human usefulness evaluation remain production work.
+
+See [assistant-approach-comparison.md](assistant-approach-comparison.md) and
+[current-llm-workflow.md](current-llm-workflow.md).

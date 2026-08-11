@@ -36,12 +36,18 @@ generator issue.
 ## Assistant Is Unavailable
 
 - Confirm `VARKA_AI_ENABLED=true`.
-- Check provider base URL, credentials, model names, and request timeout.
+- Confirm the Arvan base URL/key, `DeepSeek-V4-Flash`, `VARKA_AI_MODE=unified`, JSON schema
+  protocol, native tools disabled, and request timeout.
 - Check dedicated AI proxy configuration.
 - Set `VARKA_AI_ENABLED=false` while diagnosing provider or durable turn issues.
 - Make sure message requests include an `idempotencyKey`.
-- Restart or rebuild the backend after metamodel or EVL changes so packaged MDE resources and
-  Ecore-derived assistant contracts are fresh.
+- Restart or rebuild the backend after Ecore/metamodel changes so packaged MDE resources and
+  Ecore-derived assistant contracts are fresh. EVL-only changes do not alter the assistant gate.
+
+For failed structured turns, inspect persisted provider calls before changing prompts. Distinguish
+timeout, empty output, `finish_reason=length`, malformed JSON, compiler rejection, structural
+rejection, and stale revision. A provider response is not a successful scenario unless the expected
+checkpoint, preservation, structure, and source coverage were observed.
 
 ## Diagram Canvas Does Not Render
 

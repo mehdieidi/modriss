@@ -50,6 +50,12 @@ from assistant_turns
 group by state
 order by state;
 
+select provider, model, finish_reason, error, count(*)
+from assistant_provider_calls
+where started_at > now() - interval '1 hour'
+group by provider, model, finish_reason, error
+order by count(*) desc;
+
 select version, description, success
 from flyway_schema_history
 order by installed_rank desc;
@@ -57,14 +63,15 @@ order by installed_rank desc;
 
 ## Mitigation Patterns
 
-| Symptom               | Possible mitigation                                                                      |
-| --------------------- | ---------------------------------------------------------------------------------------- |
-| Backend not ready     | Check database health, Flyway errors, environment variables, and backend logs.           |
-| Users cannot login    | Check auth errors, disabled user state, session expiry, and database connectivity.       |
-| Jobs stuck            | Use admin Jobs view, inspect `mde_jobs`, cancel queued/running jobs if needed.           |
-| Assistant turns stuck | Use admin Assistant view, request cancellation, check provider errors and circuit state. |
-| High API latency      | Check database pool, slow queries, JVM memory, and active job load.                      |
-| Log search missing    | Check backend file logging, Promtail status, and Loki readiness.                         |
+| Symptom                        | Possible mitigation                                                                                                                                               |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend not ready              | Check database health, Flyway errors, environment variables, and backend logs.                                                                                    |
+| Users cannot login             | Check auth errors, disabled user state, session expiry, and database connectivity.                                                                                |
+| Jobs stuck                     | Use admin Jobs view, inspect `mde_jobs`, cancel queued/running jobs if needed.                                                                                    |
+| Assistant turns stuck          | Use admin Assistant view, request cancellation, inspect workflow/work-item state, provider finish reason/error, request deadline, and circuit state.              |
+| Assistant generation truncated | Preserve the failed turn/report, inspect completion usage and `finish_reason`, and reduce bounded work; do not retry the same oversized semantic request blindly. |
+| High API latency               | Check database pool, slow queries, JVM memory, and active job load.                                                                                               |
+| Log search missing             | Check backend file logging, Promtail status, and Loki readiness.                                                                                                  |
 
 ## Communication
 

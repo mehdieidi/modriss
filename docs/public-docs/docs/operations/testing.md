@@ -58,9 +58,10 @@ Run live provider tests explicitly when a compatible provider is configured:
 mvn test -Pllm-provider-tests -Dgroups=llm-provider
 ```
 
-For local FreeModel/FreeLLM-style OpenAI-compatible endpoints, keep the normal assistant provider
-configuration in `.env`, for example `VARKA_AI_PROVIDER=openai`,
-`OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`, and `VARKA_AI_TEST_MODEL`.
+Live provider tests use the Arvan OpenAI-compatible configuration in the ignored `.env`:
+`VARKA_AI_PROVIDER=openai`, the Arvan `OPENAI_COMPATIBLE_BASE_URL` and key,
+`VARKA_AI_MODEL=DeepSeek-V4-Flash`, JSON schema protocol, native tools disabled, and unified mode.
+Use `VARKA_AI_TEST_MODEL` only for an intentional evaluation override.
 
 ## PostgreSQL integration tests
 
@@ -93,26 +94,28 @@ python scripts/format.py --check
 8. Download the artifact ZIP and run its generated validation and tests.
 9. Deploy the generated project to LocalStack and verify runtime effects.
 
-## Assistant Source-Backed Live Eval
+## Assistant live evaluation
 
-For the chatbot attachment workflow, use the focused live-eval script after the Docker Compose
-backend is rebuilt and healthy:
+For the required unified chatbot fixtures, rebuild the Docker Compose backend, verify health, and
+use the durable live-eval gate:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\live-cim-source-file-eval.ps1 `
-  -StoryPath tmp\assistant-source-tests\story-v1-single.md `
-  -TimeoutSeconds 1500 `
-  -MaxContinues 8
+powershell -ExecutionPolicy Bypass -File scripts\run-assistant-live-eval.ps1 `
+  -FixtureId create-cim-library `
+  -ReportPath target\unified-create-cim-library.md
 ```
 
-The script registers a temporary user, creates a project and CIM model, uploads the source file
-through the multipart chatbot attachment endpoint, submits a durable turn, waits for terminal
-status, fetches the updated model, and calls validation.
+Run the same command for `cim-feature-evolution`, `source-to-cim-pantry`, and
+`create-pim-serverless`. The script registers a temporary user, creates project/model state,
+uploads fixture source when required, submits durable turns, follows checkpoints/terminal state,
+fetches the model, and records calls, tokens, latency, coverage, preservation, structure, and
+validation evidence.
 
-Current expected one-story behavior is `SUCCEEDED`, one checkpoint, 100% source coverage, and saved
-model elements. The assistant workflow itself gates generated output with structural Ecore/EMF
-validation only; EVL validation should be run separately when a test scenario explicitly needs
-semantic review feedback.
+Do not reduce acceptance to provider connectivity or one stochastic success. Preserve every failed
+and successful report. Current unified evidence passes feature evolution, source-backed pantry, and
+serverless PIM; the final library rerun failed on length-limited output. The assistant gates output
+with structural Ecore/EMF validation only; run EVL separately only when a user-oriented test
+explicitly needs semantic review feedback.
 
 ## What to Test After Language Changes
 

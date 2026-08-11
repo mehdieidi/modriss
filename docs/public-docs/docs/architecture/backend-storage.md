@@ -2,14 +2,14 @@
 
 ## Backend Layers
 
-| Layer                | Main responsibilities                                                                              |
-| -------------------- | -------------------------------------------------------------------------------------------------- |
-| Controllers          | HTTP validation, authentication extraction, response shapes                                        |
-| Application services | Auth, projects, models, transformations, artifacts, layouts, jobs                                  |
-| Modeling services    | Metamodel resolution, UI config, layout, JSON/XMI conversion                                       |
-| MDE runners          | EVL validation, ETL transformation, EGX/EGL generation                                             |
-| Assistant services   | Durable turn orchestration, metamodel-checked tools, checkpoints, provenance, provider-call audits |
-| Persistence adapter  | PostgreSQL reads and writes behind `PlatformStore`                                                 |
+| Layer                | Main responsibilities                                                                                                    |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Controllers          | HTTP validation, authentication extraction, response shapes                                                              |
+| Application services | Auth, projects, models, transformations, artifacts, layouts, jobs                                                        |
+| Modeling services    | Metamodel resolution, UI config, layout, JSON/XMI conversion                                                             |
+| MDE runners          | EVL validation, ETL transformation, EGX/EGL generation                                                                   |
+| Assistant services   | Adaptive strategy, conceptual compilation, checked agent tools, durable turns/checkpoints, provenance and provider audit |
+| Persistence adapter  | PostgreSQL reads and writes behind `PlatformStore`                                                                       |
 
 ## Core Persistence
 
@@ -32,8 +32,9 @@ The assistant adds:
 - Spring AI recent chat memory
 - Checkpoints with inverse patches for undo
 - Source units and per-element provenance
-- Provider-call records and action audits
-- Persisted rate-limit windows
+- Provider-call prompts/usage and action audits
+- Source blueprints, context caches, workflows, work items, source facts, and validation attempts
+- A reserved rate-limit table; current runtime limiting is in memory
 
 ## Concurrency and Integrity
 

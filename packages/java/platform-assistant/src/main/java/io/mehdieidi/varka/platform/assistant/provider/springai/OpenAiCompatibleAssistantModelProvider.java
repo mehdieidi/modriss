@@ -2,6 +2,7 @@ package io.mehdieidi.varka.platform.assistant.provider.springai;
 
 import com.openai.client.okhttp.OpenAIOkHttpClient;
 import io.mehdieidi.varka.platform.assistant.agent.AgentActionSchema;
+import io.mehdieidi.varka.platform.assistant.agent.AgentTurnLoop;
 import io.mehdieidi.varka.platform.assistant.agent.ConceptualInstanceModelWorkflow;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
@@ -135,7 +136,11 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       builder.outputSchema(
           "conceptual_instance_model".equals(prompt.requiredTool())
               ? ConceptualInstanceModelWorkflow.jsonSchema()
-              : AgentActionSchema.json(prompt.patchContracts()));
+              : "conceptual_type_selection".equals(prompt.requiredTool())
+                  ? ConceptualInstanceModelWorkflow.typeSelectionSchema()
+                  : "assistant_strategy".equals(prompt.requiredTool())
+                      ? AgentTurnLoop.strategySchema()
+                      : AgentActionSchema.json(prompt.patchContracts()));
     }
     return builder;
   }
@@ -157,9 +162,13 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       // transport.  Without these fields a compatible gateway can use its much larger defaults,
       // making a single bounded workflow step exceed the turn's token and latency budget.
       body.put("temperature", 0.2);
-      body.put(
-          "max_tokens",
-          Math.min(properties.maxCompletionTokens(), capabilities().maxCompletionTokens()));
+      int completionLimit =
+          "assistant_strategy".equals(prompt.requiredTool())
+              ? 4096
+              : "conceptual_type_selection".equals(prompt.requiredTool())
+                  ? 4096
+                  : properties.maxCompletionTokens();
+      body.put("max_tokens", Math.min(completionLimit, capabilities().maxCompletionTokens()));
       applyModelGenerationControls(body, model);
       var messages = body.putArray("messages");
       messages
@@ -244,17 +253,29 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       var body = mapper.createObjectNode();
       body.put("model", model);
       body.put("temperature", 0.0);
-      body.put(
-          "max_tokens",
-          Math.min(properties.maxCompletionTokens(), capabilities().maxCompletionTokens()));
+      int completionLimit =
+          "assistant_strategy".equals(prompt.requiredTool())
+              ? 4096
+              : "conceptual_type_selection".equals(prompt.requiredTool())
+                  ? 4096
+                  : properties.maxCompletionTokens();
+      body.put("max_tokens", Math.min(completionLimit, capabilities().maxCompletionTokens()));
       applyModelGenerationControls(body, model);
       var messages = body.putArray("messages");
+      boolean structuredDocument =
+          "conceptual_instance_model".equals(prompt.requiredTool())
+              || "conceptual_type_selection".equals(prompt.requiredTool())
+              || "assistant_strategy".equals(prompt.requiredTool());
       String requiredAction =
           prompt.requiredTool() == null
               ? ""
-              : "\n\nWORKFLOW GATE: Return action '"
-                  + prompt.requiredTool()
-                  + "' in this response. Do not choose another action.";
+              : structuredDocument
+                  ? "\n\n"
+                      + "WORKFLOW GATE: Return only the requested structured document in this"
+                      + " response."
+                  : "\n\nWORKFLOW GATE: Return action '"
+                      + prompt.requiredTool()
+                      + "' in this response. Do not choose another action.";
       messages
           .addObject()
           .put("role", "system")
@@ -264,8 +285,10 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                   + "\n"
                   + prompt.system()
                   + "\n\nSTRICT JSON PROTOCOL: Return exactly one JSON object matching the"
-                  + " action envelope described above. Do not use markdown, prose, or provider"
-                  + " function calls."
+                  + (structuredDocument
+                      ? " requested structured-document schema."
+                      : " action envelope described above.")
+                  + " Do not use markdown, prose, or provider function calls."
                   + requiredAction);
       messages.addObject().put("role", "user").put("content", userWithContext(prompt));
       body.putObject("response_format").put("type", "json_object");
@@ -397,6 +420,12 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   private static String normalizeRequiredJsonAction(
       com.fasterxml.jackson.databind.ObjectMapper mapper, String content, String requiredAction) {
     if (requiredAction == null || requiredAction.isBlank()) return content;
+    // The conceptual instance model is itself the structured document. It is not an action
+    // envelope and must reach the deterministic compiler byte-for-byte apart from provider JSON
+    // transport decoding.
+    if ("conceptual_instance_model".equals(requiredAction)
+        || "conceptual_type_selection".equals(requiredAction)
+        || "assistant_strategy".equals(requiredAction)) return content;
     String candidate = content == null ? "" : content.trim();
     if (candidate.startsWith("```")) {
       int firstNewline = candidate.indexOf('\n');

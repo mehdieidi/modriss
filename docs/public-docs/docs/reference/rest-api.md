@@ -130,9 +130,17 @@ responses include checkpoint counts, saved element counts, source coverage, rema
 provider-call/token counters, repair attempts, provenance, continuation turns, and current
 workflow/work-item fields.
 
+The chatbot has one unified production behavior. Requests do not include an agent/conceptual mode,
+provider, or internal strategy. The backend automatically selects a bounded conceptual generator,
+inspect/contract action loop, or answer path while retaining the same durable turn controls.
+
 `coveragePercent=100` means tracked source units were accounted for; it is separate from semantic
 EVL validity. Call the model validation endpoint after a checkpoint when a validation-green model is
 required.
+
+Workflow fields in a turn response report resumable backend state; clients must not treat them as a
+strategy-selection contract. A checkpoint confirms structural Ecore/EMF conformance and atomic
+persistence, not EVL semantic validity.
 
 ### Planned Routes
 

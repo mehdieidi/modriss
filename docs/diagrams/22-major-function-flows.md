@@ -106,9 +106,10 @@ flowchart TD
     claim["DurableAssistantTurnWorker claims lease"]
     load["Load thread, model, expected revision, attachments"]
     split["Split source text into source units / source map when present"]
-    contracts["Load Ecore-derived metamodel contracts"]
-    loop["Run AgentTurnLoop<br/>plan_source_model / inspect / describe / commit"]
-    tools["Execute checked AgentModelTools against ModelWorkspace"]
+    route{"Durable state and strict<br/>adaptive strategy"}
+    conceptual["Conceptual workflow<br/>type selection / complete IR / compiler"]
+    loop["Inspect/contract AgentTurnLoop<br/>plan / inspect / describe / commit"]
+    tools["Compile checked ModelCommandBatch<br/>against ModelWorkspace"]
     guards["Batch guards<br/>UUID ids, evidence IDs, references, containment"]
     validate["Structural validation of resulting workspace"]
     outcome{"Outcome"}
@@ -117,10 +118,17 @@ flowchart TD
     events["Append durable turn events"]
     terminal["Mark turn terminal"]
 
-    start --> claim --> load --> split --> contracts --> loop --> tools --> guards --> validate --> outcome
+    start --> claim --> load --> split --> route
+    route -- empty-model conceptual --> conceptual --> tools
+    route -- existing/selected/resumed/destructive --> loop --> tools
+    route -- answer --> outcome
+    tools --> guards --> validate --> outcome
     outcome -- valid work --> commit --> provenance --> events --> terminal
     outcome -- needs input/confirmation/partial/failure --> events --> terminal
 ```
+
+Both mutation branches use the same provider adapter, workspace, structural gate, revision commit,
+checkpoint, provenance, audit, and event lifecycle. Routing never uses request keyword matching.
 
 ## `AssistantHardeningService.providerCall`
 

@@ -36,6 +36,9 @@ class TypeContractServiceTest {
             .contains("ServerlessService.functions"));
     assertTrue(
         service.containmentPlacements(ModelLevel.PIM, "EventType").contains("PIMModel.eventTypes"));
+    assertTrue(
+        service.rootContainments(ModelLevel.PIM, "ServerlessService").stream()
+            .anyMatch(reference -> reference.name().equals("services")));
   }
 
   @Test

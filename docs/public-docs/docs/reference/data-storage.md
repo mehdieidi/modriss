@@ -37,14 +37,16 @@ migration policy.
 
 ## Assistant Data
 
-| Area                    | Tables                                                                              |
-| ----------------------- | ----------------------------------------------------------------------------------- |
-| Conversation            | `assistant_threads`, `assistant_messages`, `assistant_thread_summaries`             |
-| Recent Spring AI memory | `SPRING_AI_CHAT_MEMORY`                                                             |
-| Durable turns           | `assistant_turns`, `assistant_turn_events`, `assistant_checkpoints`                 |
-| Source provenance/audit | `assistant_source_units`, `assistant_element_provenance`, `assistant_action_audits` |
-| Provider usage          | `assistant_provider_calls`                                                          |
-| Rate limiting           | `assistant_rate_limits` (schema reserved; runtime limit is in-memory)               |
+| Area                    | Tables                                                                                  |
+| ----------------------- | --------------------------------------------------------------------------------------- |
+| Conversation            | `assistant_threads`, `assistant_messages`, `assistant_thread_summaries`                 |
+| Recent Spring AI memory | `SPRING_AI_CHAT_MEMORY`                                                                 |
+| Durable turns           | `assistant_turns`, `assistant_turn_events`, `assistant_checkpoints`                     |
+| Source provenance/audit | `assistant_source_units`, `assistant_element_provenance`, `assistant_action_audits`     |
+| Source planning/context | `assistant_source_facts`, `assistant_source_blueprints`, `assistant_turn_context_cache` |
+| Durable workflow        | `assistant_workflows`, `assistant_work_items`, `assistant_validation_attempts`          |
+| Provider usage/audit    | `assistant_provider_calls`, including stored system/user prompts and token usage        |
+| Rate limiting           | `assistant_rate_limits` (schema reserved; runtime limit is in-memory)                   |
 
 Turn checkpoints are tied to model revisions, so an inverse is rejected when the model changed
 after that checkpoint.

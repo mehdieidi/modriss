@@ -21,7 +21,7 @@ flowchart TB
         cli["Container: MDE CLI Tools<br/>Picocli shaded JARs<br/>Metamodel compile, validate, transform, generate"]
     end
 
-    provider["External AI Provider"]
+    provider["Arvan OpenAI-compatible AI<br/>DeepSeek-V4-Flash"]
     proxy["Optional HTTP/SOCKS Proxy"]
 
     user -->|"HTTP/HTTPS entrypoints"| caddy
@@ -49,7 +49,7 @@ flowchart TB
     promtail -->|"Reads access logs"| caddy
     dozzle -->|"Reads Docker socket logs"| backend
     cli -->|"Reads executable MDE assets"| mde
-    backend -->|"Spring AI calls"| proxy
+    backend -->|"Structured JSON calls<br/>temperature 0, thinking disabled"| proxy
     proxy --> provider
 ```
 

@@ -29,7 +29,7 @@ flowchart TB
     end
 
     proxy["Host AI proxy<br/>host.docker.internal:2081 by default"]
-    provider["OpenAI-compatible / Gemini"]
+    provider["Arvan OpenAI-compatible<br/>DeepSeek-V4-Flash"]
 
     host -->|"docker compose up --build"| compose
     browser -->|"HTTP :8088 / *.localhost:8088"| caddy
@@ -76,7 +76,7 @@ sequenceDiagram
 
     Boot->>Flyway: Apply classpath db/migration
     Flyway->>DB: Platform migrations V1, V5, V9
-    Flyway->>DB: Assistant migrations V14-V18
+    Flyway->>DB: Assistant migrations V14-V18 and V24-V28
     Boot->>Core: Construct service graph
     Core->>Meta: Resolve CIM, PIM, PSM metamodel descriptors
     Meta-->>Core: EPackages, versions, SHA-256 hashes

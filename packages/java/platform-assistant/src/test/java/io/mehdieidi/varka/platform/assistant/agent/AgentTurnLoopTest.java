@@ -29,6 +29,43 @@ import tools.jackson.databind.ObjectMapper;
 
 class AgentTurnLoopTest {
   @Test
+  void adaptiveStrategyUsesStrictLlmDecisionAndAuditsIt() throws Exception {
+    ModelService models = mock(ModelService.class);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    AdaptiveAnswerProvider provider = new AdaptiveAnswerProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            3,
+            3);
+    var root =
+        new ObjectMapper()
+            .readTree("{\"id\":\"root\",\"eClass\":\"CIMModel\",\"modelLevel\":\"CIM\"}");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, root, new AssistantPatchCompiler(), null);
+
+    var result =
+        loop.run(
+            "adaptive",
+            ModelLevel.CIM,
+            "Explain the current model",
+            null,
+            workspace,
+            false,
+            AgentTurnLoop.WorkflowMode.ADAPTIVE);
+
+    assertEquals("Explained", result.message());
+    assertEquals(2, result.providerCalls());
+    assertEquals("assistant_strategy", provider.firstRequiredTool);
+    assertEquals(2, result.providerCallDetails().size());
+  }
+
+  @Test
   void normalizesPaperStyleBatchWrapperWithoutInventingModelContent() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     var arguments =
@@ -285,8 +322,8 @@ Work items:
             new AgentModelTools(new TypeContractService(knowledge), models),
             new MetamodelGuideGenerator(knowledge),
             null,
-            Duration.ofSeconds(5),
-            Duration.ofSeconds(5),
+            Duration.ofSeconds(60),
+            Duration.ofSeconds(60),
             5,
             3);
     var json =
@@ -1018,6 +1055,33 @@ Work items:
       calls++;
       ProviderCallBudget.consume();
       throw new PlatformException(502, "Provider failed");
+    }
+  }
+
+  private static final class AdaptiveAnswerProvider implements AssistantModelProvider {
+    int calls;
+    String firstRequiredTool;
+
+    @Override
+    public AssistantProviderMetadata metadata() {
+      return new AssistantProviderMetadata("fake", "", "");
+    }
+
+    @Override
+    public boolean available() {
+      return true;
+    }
+
+    @Override
+    public AssistantReply complete(AssistantPrompt prompt) {
+      ProviderCallBudget.consume();
+      calls++;
+      if (calls == 1) {
+        firstRequiredTool = prompt.requiredTool();
+        return new AssistantReply("{\"strategy\":\"ANSWER\"}", "fake", "fake");
+      }
+      return new AssistantReply(
+          "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"Explained\"}}", "fake", "fake");
     }
   }
 

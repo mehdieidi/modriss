@@ -147,6 +147,14 @@ Assistant commands use REST. Realtime progress uses authenticated SSE with durab
 See
 [public realtime reference](../public-docs/docs/reference/realtime-api.md).
 
+The API exposes one unified assistant. Clients do not send an agent/conceptual mode. The backend
+uses durable structural state and a strict LLM strategy decision to choose conceptual empty-model
+generation, the inspect/contract agent, or a non-mutating answer. All mutation strategies share the
+same turn, checkpoint, confirmation, revision, audit, and SSE protocol.
+
+Implementation note: the strategy value `ANSWER` currently enters the ordinary `AUTO` action loop;
+it is expected to return `answer_user` but is not an enforced read-only capability set.
+
 | Method   | Path                                                              | Purpose                          |
 | -------- | ----------------------------------------------------------------- | -------------------------------- |
 | `POST`   | `/api/chatbot/sessions`                                           | Create or resume a session       |
@@ -173,7 +181,8 @@ optional `modelId`, `revision`, `expectedRevision`, `activeView`, `selectedEleme
 `attachmentIds`, or inline `attachmentName`/`attachmentContent`. Text attachments may be uploaded
 first with `POST /api/chatbot/sessions/{sessionId}/attachments` and then referenced by ID. Message
 submission returns `202` with `turnId`, state, model/revision, acceptance/deadline timestamps, and
-an event cursor.
+an event cursor. There is deliberately no provider, workflow, strategy, agent-mode, or conceptual-mode
+field in this request.
 
 `GET /api/chatbot/turns/{turnId}` is the polling fallback and returns checkpoint counts, saved
 elements, source coverage, remaining work, provider-call/token usage, and source-grounded or
@@ -184,6 +193,13 @@ For source-backed CIM generation, `coveragePercent=100` means all tracked source
 accounted for by source-grounded or inferred provenance. It does not by itself guarantee semantic
 EVL validity; clients should call the model validation endpoint when a validation-green model is
 required.
+
+`workflowKind`, `phase`, `currentWorkItemId`, and `workItems` expose durable progress for diagnosis
+and continuation. They are observations, not client controls. Internal values such as `ADAPTIVE`,
+`RESUME_REPAIR`, or modeling-plan phases may evolve without creating a strategy-selection API.
+
+The assistant commits only after structural Ecore/EMF validation. A `model.checkpoint` event means a
+revision-checked structural commit occurred; it does not mean EVL semantic validation ran.
 
 ## Impact Analysis
 

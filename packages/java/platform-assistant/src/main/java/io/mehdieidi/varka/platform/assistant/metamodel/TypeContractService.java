@@ -34,6 +34,23 @@ public final class TypeContractService {
     return knowledge.rootContainment(level, elementType);
   }
 
+  /** Returns the exact Ecore root EClass used by the deterministic instance compiler. */
+  public String rootType(ModelLevel level) {
+    return knowledge.rootType(level);
+  }
+
+  /** Returns every writable root containment accepting the supplied concrete EClass. */
+  public List<MetamodelKnowledgeService.ReferenceContract> rootContainments(
+      ModelLevel level, String elementType) {
+    String child = require(level, elementType).eClass();
+    return require(level, knowledge.rootType(level)).references().stream()
+        .filter(MetamodelKnowledgeService.ReferenceContract::containment)
+        .filter(reference -> !reference.readonly())
+        .filter(reference -> assignable(level, child, reference.targetType()))
+        .sorted(Comparator.comparing(MetamodelKnowledgeService.ReferenceContract::name))
+        .toList();
+  }
+
   public List<TypeContract> describe(ModelLevel level, List<String> names) {
     if (names == null || names.isEmpty()) {
       throw new PlatformException(400, "At least one type name is required.");

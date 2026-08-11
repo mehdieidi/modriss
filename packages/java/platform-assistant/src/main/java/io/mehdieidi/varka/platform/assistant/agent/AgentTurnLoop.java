@@ -257,6 +257,17 @@ public final class AgentTurnLoop {
       WorkflowMode mode,
       java.util.function.BooleanSupplier cancellationRequested,
       java.util.function.Supplier<PlatformException> stopReason) {
+    if (mode == WorkflowMode.ADAPTIVE) {
+      return runAdaptive(
+          sessionId,
+          level,
+          userMessage,
+          sourceDocument,
+          workspace,
+          destructiveConfirmed,
+          cancellationRequested,
+          stopReason);
+    }
     Instant deadline =
         Instant.now()
             .plus(sourceDocument == null || sourceDocument.isBlank() ? timeout : sourceTimeout);
@@ -1126,6 +1137,199 @@ public final class AgentTurnLoop {
       ProviderCallBudget.clear();
       cancellations.remove(sessionId, canceled);
     }
+  }
+
+  /**
+   * Uses a closed LLM decision schema for semantic routing. Deterministic facts only remove unsafe
+   * strategies; they never infer modeling intent from request words.
+   */
+  private TurnResult runAdaptive(
+      String sessionId,
+      ModelLevel level,
+      String userMessage,
+      String sourceDocument,
+      ModelWorkspace workspace,
+      boolean destructiveConfirmed,
+      java.util.function.BooleanSupplier cancellationRequested,
+      java.util.function.Supplier<PlatformException> stopReason) {
+    String system =
+        "Choose one internal Varka assistant strategy. CONCEPTUAL_GENERATION produces a complete "
+            + "conceptual instance model and is best for empty-model generation, coherent additive "
+            + "updates, and source-grounded generation. INSPECT_AGENT is best for surgical, "
+            + "ambiguous, selected-element, or potentially destructive edits. ANSWER is only for "
+            + "questions/explanations that require no model mutation. Return only the schema.";
+    boolean modelEmpty = hasNoModelElements(workspace);
+    int sourceChars = sourceDocument == null ? 0 : sourceDocument.length();
+    boolean conceptualSafe = !destructiveConfirmed && modelEmpty;
+    String legal = conceptualSafe ? "CONCEPTUAL_GENERATION,ANSWER" : "INSPECT_AGENT,ANSWER";
+    String user =
+        "Authoritative structural facts: level="
+            + level
+            + ", modelEmpty="
+            + modelEmpty
+            + ", sourceCharacters="
+            + sourceChars
+            + ", destructiveConfirmation="
+            + destructiveConfirmed
+            + ", legalStrategies="
+            + legal
+            + ".\nRequest:\n"
+            + (userMessage == null ? "" : userMessage)
+            + (sourceDocument == null || sourceDocument.isBlank()
+                ? ""
+                : "\nSource is present and will be supplied to the selected workflow.");
+    ProviderCallBudget.bind(2);
+    List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall> strategyCalls =
+        new ArrayList<>();
+    long strategyPromptTokens = 0;
+    long strategyCompletionTokens = 0;
+    String strategy = "";
+    String correction = "";
+    try {
+      for (int attempt = 0; attempt < 2 && strategy.isBlank(); attempt++) {
+        String attemptUser = user + correction;
+        long started = System.nanoTime();
+        AssistantModelProvider.AssistantReply decision;
+        try {
+          decision =
+              provider.completeStructured(
+                  new AssistantPrompt(
+                      system, attemptUser, List.of(), List.of(), "assistant_strategy"));
+        } catch (RuntimeException failure) {
+          String failureMessage =
+              failure.getMessage() == null
+                  ? ""
+                  : failure.getMessage().toLowerCase(java.util.Locale.ROOT);
+          if (attempt == 0
+              && (failureMessage.contains("finish_reason=length")
+                  || failureMessage.contains("no structured json content"))) {
+            correction =
+                "\n"
+                    + "The prior response was truncated. Return only one tiny JSON object with the"
+                    + " exact field strategy and one value from legalStrategies. No explanation.";
+            continue;
+          }
+          throw failure;
+        }
+        long latency =
+            java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+        long prompt = decision.usage().reported() ? decision.usage().promptTokens() : 0;
+        long completion = decision.usage().reported() ? decision.usage().completionTokens() : 0;
+        strategyPromptTokens += prompt;
+        strategyCompletionTokens += completion;
+        strategyCalls.add(
+            new io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall(
+                decision.provider(),
+                decision.model(),
+                latency,
+                prompt,
+                completion,
+                decision.usage().reported(),
+                system,
+                attemptUser));
+        try {
+          strategy = findStrategy(mapper.readTree(decision.content()));
+        } catch (RuntimeException ignored) {
+          strategy = "";
+        }
+        correction =
+            "\n"
+                + "The prior response violated the closed strategy schema. Your entire response"
+                + " must be exactly one JSON object such as"
+                + " {\"strategy\":\"CONCEPTUAL_GENERATION\"}, using one value from legalStrategies"
+                + " and no other fields.";
+      }
+    } catch (RuntimeException failure) {
+      int calls = ProviderCallBudget.count();
+      PlatformException cause =
+          failure instanceof PlatformException platform
+              ? platform
+              : new PlatformException(502, "Adaptive strategy selection failed.", failure);
+      throw new TurnExecutionException(
+          cause, calls, strategyPromptTokens, strategyCompletionTokens, strategyCalls);
+    } finally {
+      ProviderCallBudget.clear();
+    }
+    if (!conceptualSafe && "CONCEPTUAL_GENERATION".equals(strategy)) strategy = "INSPECT_AGENT";
+    if (conceptualSafe && "INSPECT_AGENT".equals(strategy)) strategy = "CONCEPTUAL_GENERATION";
+    WorkflowMode selected =
+        switch (strategy) {
+          case "CONCEPTUAL_GENERATION" -> WorkflowMode.CONCEPTUAL_INSTANCE_GENERATION;
+          case "INSPECT_AGENT", "ANSWER" -> WorkflowMode.AUTO;
+          default ->
+              throw new TurnExecutionException(
+                  new PlatformException(422, "Adaptive strategy is outside the allowlist."),
+                  strategyCalls.size(),
+                  strategyPromptTokens,
+                  strategyCompletionTokens,
+                  strategyCalls);
+        };
+    TurnResult result;
+    try {
+      result =
+          run(
+              sessionId,
+              level,
+              userMessage,
+              sourceDocument,
+              workspace,
+              destructiveConfirmed,
+              selected,
+              cancellationRequested,
+              stopReason);
+    } catch (TurnExecutionException failure) {
+      List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall> failedCalls =
+          new ArrayList<>(strategyCalls);
+      failedCalls.addAll(failure.providerCallDetails());
+      throw new TurnExecutionException(
+          failure,
+          strategyCalls.size() + failure.providerCalls(),
+          strategyPromptTokens + failure.promptTokens(),
+          strategyCompletionTokens + failure.completionTokens(),
+          failedCalls);
+    }
+    List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall> calls =
+        new ArrayList<>();
+    calls.addAll(strategyCalls);
+    calls.addAll(result.providerCallDetails());
+    return new TurnResult(
+        result.message(),
+        result.patch(),
+        result.inversePatch(),
+        result.validation(),
+        result.provider(),
+        result.model(),
+        result.commandBatch(),
+        result.providerCalls() + strategyCalls.size(),
+        result.promptTokens() + strategyPromptTokens,
+        result.completionTokens() + strategyCompletionTokens,
+        List.copyOf(calls),
+        result.modelingPlan(),
+        result.sourceBlueprint(),
+        result.sourceAnalysis());
+  }
+
+  /** Strict JSON schema used by the unified assistant's semantic strategy planner. */
+  public static String strategySchema() {
+    return "{\"type\":\"object\",\"required\":[\"strategy\"],\"additionalProperties\":false,"
+               + "\"properties\":{\"strategy\":{\"type\":\"string\",\"enum\":[\"CONCEPTUAL_GENERATION\",\"INSPECT_AGENT\",\"ANSWER\"]}}}";
+  }
+
+  private String findStrategy(JsonNode node) {
+    if (node == null) return "";
+    if (node.isObject() && node.hasNonNull("strategy")) {
+      String value = node.path("strategy").asText("");
+      if (java.util.Set.of("CONCEPTUAL_GENERATION", "INSPECT_AGENT", "ANSWER").contains(value)) {
+        return value;
+      }
+    }
+    if (node.isContainer()) {
+      for (JsonNode child : node) {
+        String found = findStrategy(child);
+        if (!found.isBlank()) return found;
+      }
+    }
+    return "";
   }
 
   private boolean mutatingPlanWithoutCheckpoint(JsonNode modelingPlan, AgentModelTools turnTools) {
@@ -2777,6 +2981,7 @@ validation.
 
   /** Durable router mode. Read-only modes never mutate, checkpoint, validate, or repair. */
   public enum WorkflowMode {
+    ADAPTIVE(false),
     AUTO(false),
     EXPLAIN_MODEL(true),
     EXPLAIN_METAMODEL(true),
@@ -2808,7 +3013,7 @@ validation.
     private final List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
         providerCallDetails;
 
-    private TurnExecutionException(
+    TurnExecutionException(
         PlatformException cause,
         int providerCalls,
         long promptTokens,

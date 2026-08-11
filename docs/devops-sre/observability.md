@@ -53,6 +53,12 @@ Useful metric groups:
 - `varka.mde.jobs.*` for transformation/generation job activity.
 - `varka.assistant.*` for assistant requests, provider calls, rate limits, and failures.
 
+For assistant diagnosis, correlate metrics/logs with `assistantTurnId`, then inspect durable
+workflow kind/phase, work items, provider calls and prompts, validation attempts, checkpoints,
+provenance, and coverage. Classify failures as transport timeout, empty output, length truncation,
+malformed schema, compiler/tool rejection, structural rejection, conflict, cancellation, or overall
+deadline. The internal strategy is not a client-selected dimension.
+
 ## Logs
 
 The backend writes logs to `/app/logs/backend.log` inside the backend container. Compose mounts this

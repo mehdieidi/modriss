@@ -27,7 +27,10 @@ tags:
   - name: Modeling
     description: Modeling UI configuration and layout services.
   - name: Assistant
-    description: Durable AI modeling assistant sessions, turns, checkpoints, and SSE replay.
+    description: >-
+      Unified durable AI modeling assistant sessions, turns, checkpoints, source provenance, and
+      SSE replay. Clients do not select an internal agent/conceptual strategy. Assistant commits
+      are gated by structural Ecore/EMF conformance; EVL remains a separate user-initiated API.
   - name: Future
     description: Planned feature placeholders that currently return 501.
 paths:
@@ -1106,7 +1109,10 @@ paths:
     post:
       tags: [Assistant]
       summary: Send assistant message
-      description: Accepts an idempotent durable assistant turn. Text attachments may be referenced by attachmentIds and can drive source-backed CIM modeling.
+      description: >-
+        Accepts an idempotent durable assistant turn. Text attachments may be referenced by
+        attachmentIds and can drive source-backed CIM modeling. The backend automatically selects
+        its internal strategy; this request intentionally has no strategy or mode field.
       requestBody:
         required: true
         content:
@@ -2042,6 +2048,9 @@ components:
     AssistantMessageRequest:
       type: object
       required: [message, idempotencyKey]
+      description: >-
+        Unified chatbot request. model/revision and selection are authoritative structural context;
+        they are not hints for a client-selected modeling engine.
       properties:
         message:
           type: string
@@ -2164,8 +2173,10 @@ components:
             $ref: "#/components/schemas/AssistantContinuation"
         workflowKind:
           type: string
+          description: Diagnostic durable workflow identifier; observational, not client-selectable.
         phase:
           type: string
+          description: Current persisted workflow phase.
         currentWorkItemId:
           type: string
         workItems:
@@ -2189,6 +2200,9 @@ components:
         ]
     AssistantCheckpoint:
       type: object
+      description: >-
+        Revision-checked assistant checkpoint accepted after structural Ecore/EMF validation. It
+        does not assert EVL semantic validity.
       properties:
         checkpointId:
           type: integer

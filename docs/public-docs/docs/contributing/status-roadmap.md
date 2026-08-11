@@ -14,8 +14,9 @@
 - Artifact browsing, editing, project ZIP download, and artifact ZIP download
 - Change impact analysis across CIM, PIM, PSM models and generated artifacts
 - PostgreSQL persistence and Flyway migrations
-- Assistant sessions, durable turns, memory, metamodel-checked tools, structural validation,
-  checkpoints, undo, and authenticated SSE event replay
+- Unified assistant routing, paper-style conceptual compilation, inspect/contract agent actions,
+  source provenance, durable turns/work items, structural validation, checkpoints, undo, and
+  authenticated SSE replay
 - Reusable MDE Java runners and CLI tools
 - Architecture diagrams, samples, and generated-project deployment guidance
 
@@ -27,6 +28,9 @@
   use.
 - Production deployment security, scaling, monitoring, backup, and secret-management choices are
   environment responsibilities.
+- Unified empty-library generation remains sensitive to provider output truncation; conceptual
+  persisted-model evolution and repeated paraphrase acceptance are not yet production-complete.
+- The adaptive `ANSWER` intention is not yet enforced as a read-only capability boundary.
 
 ## Planned Areas
 

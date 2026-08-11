@@ -2,7 +2,6 @@ package io.mehdieidi.varka.backend.assistant;
 
 import io.mehdieidi.varka.platform.assistant.agent.AgentTurnLoop;
 import io.mehdieidi.varka.platform.assistant.agent.ConceptualInstanceModelWorkflow;
-import io.mehdieidi.varka.platform.assistant.agent.OpenRouterConceptualModelProvider;
 import io.mehdieidi.varka.platform.assistant.application.AgenticAssistantFacade;
 import io.mehdieidi.varka.platform.assistant.application.AgenticTurnService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
@@ -78,9 +77,11 @@ public class AiConfig {
 
   @Bean
   public ConceptualInstanceModelWorkflow conceptualInstanceModelWorkflow(
-      MetamodelGuideGenerator guides, AiProperties properties) {
-    return new ConceptualInstanceModelWorkflow(
-        new OpenRouterConceptualModelProvider(properties), guides, properties);
+      AssistantModelProvider provider,
+      MetamodelGuideGenerator guides,
+      TypeContractService contracts,
+      AiProperties properties) {
+    return new ConceptualInstanceModelWorkflow(provider, guides, contracts, properties);
   }
 
   @Bean(destroyMethod = "close")

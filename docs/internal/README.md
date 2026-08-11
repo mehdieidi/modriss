@@ -6,16 +6,17 @@ readers, and operators.
 
 ## AI Assistant
 
-| Document                                                                | Description                                         |
-| ----------------------------------------------------------------------- | --------------------------------------------------- |
-| [assistant.md](ai/assistant.md)                                         | Assistant architecture, modes, and guardrails       |
-| [assistant-skills.md](ai/assistant-skills.md)                           | Runtime assistant skills and selection rules        |
-| [current-llm-workflow.md](ai/current-llm-workflow.md)                   | Current LLM workflow, live status, and known issues |
-| [agents-pattern-assessment.md](ai/agents-pattern-assessment.md)         | Mapping of the implemented assistant to patterns    |
-| [live-eval-gate-report.md](ai/live-eval-gate-report.md)                 | Latest local live-eval result for source-to-CIM     |
-| [sample-prompts.md](ai/sample-prompts.md)                               | Example prompts for modeling workflows              |
-| [implementation-learning-guide.md](ai/implementation-learning-guide.md) | End-to-end learning path through the AI stack       |
-| [ai-migration-plan.md](../ai-migration-plan.md)                         | Historical redesign plan and technology choices     |
+| Document                                                                                  | Description                                        |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| [assistant.md](ai/assistant.md)                                                           | Unified architecture, Arvan setup, and guardrails  |
+| [assistant-skills.md](ai/assistant-skills.md)                                             | Inspect/contract-path skills and selection rules   |
+| [current-llm-workflow.md](ai/current-llm-workflow.md)                                     | Exact adaptive, conceptual, and agent workflows    |
+| [conceptual-instance-paper-traceability.md](ai/conceptual-instance-paper-traceability.md) | Full paper-to-implementation traceability          |
+| [assistant-approach-comparison.md](ai/assistant-approach-comparison.md)                   | Agent, conceptual, and unified live evidence       |
+| [agents-pattern-assessment.md](ai/agents-pattern-assessment.md)                           | Mapping of the adaptive implementation to patterns |
+| [live-eval-gate-report.md](ai/live-eval-gate-report.md)                                   | Current four-fixture live-evaluation status        |
+| [sample-prompts.md](ai/sample-prompts.md)                                                 | Example prompts for modeling workflows             |
+| [implementation-learning-guide.md](ai/implementation-learning-guide.md)                   | End-to-end learning path through the AI stack      |
 
 ## Generated Artifacts
 

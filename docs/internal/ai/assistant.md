@@ -1,361 +1,220 @@
-# AI Assistant Setup and Current Design
+# AI assistant setup and architecture
 
-This project has a bounded backend assistant for model help, source-backed modeling, and validated
-model mutation. It works from the active project, selected model level, current model ID/revision,
-selected elements, optional text attachments, deterministic metamodel contracts, and bounded recent
-conversation context.
+Updated: 2026-08-12
 
-For the current source-to-CIM workflow status and live-eval notes, see
-[current-llm-workflow.md](current-llm-workflow.md).
+Varka exposes one durable LLM-based modeling chatbot for CIM, PIM, and PSM. It can answer questions,
+generate a bounded model from an empty root, transform source text into model content, and evolve an
+existing model. Users do not choose between agent and conceptual modes.
 
-## What the assistant uses
+For exact runtime detail, see [current-llm-workflow.md](current-llm-workflow.md). For the paper
+mapping, see [conceptual-instance-paper-traceability.md](conceptual-instance-paper-traceability.md).
 
-- OpenAI-compatible or Gemini providers via Spring AI for assistant turns.
-- Spring AI JDBC chat memory for recent conversation window.
-- PostgreSQL for durable threads, turns, events, checkpoints, provenance, provider-call audits, and
-  chat memory.
-- Backend metamodel contracts and validation before any model mutation is committed.
+## Production configuration
 
-## How to enable it
+The available deployment provider is Arvan's OpenAI-compatible endpoint with
+`DeepSeek-V4-Flash`:
 
-Set these environment variables before starting the backend:
-
-```bash
+```dotenv
 VARKA_AI_ENABLED=true
 VARKA_AI_PROVIDER=openai
-OPENAI_COMPATIBLE_API_KEY=your_api_key
-```
-
-Useful optional knobs:
-
-```bash
-VARKA_AI_PROVIDER=openai
-OPENAI_COMPATIBLE_BASE_URL=your_arvan_openai_compatible_base_url
+OPENAI_COMPATIBLE_BASE_URL=<Arvan OpenAI-compatible base URL>
+OPENAI_COMPATIBLE_API_KEY=<secret>
 VARKA_AI_MODEL=DeepSeek-V4-Flash
-VARKA_AI_TEST_MODEL=DeepSeek-V4-Flash
-VARKA_AI_MODE=agent
-VARKA_AI_MAX_TOOL_CALLS=24
+VARKA_AI_MODE=unified
+VARKA_AI_OPENAI_PROTOCOL=json_schema
+VARKA_AI_NATIVE_TOOLS_PREFERRED=false
+VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
+VARKA_AI_MAX_TOOL_CALLS=0
 VARKA_AI_MAX_AGENT_STEPS=8
-VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=8
+VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=6
 VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=6
 VARKA_AI_TOKEN_BUDGET=16000
 VARKA_AI_MAX_COMPLETION_TOKENS=16000
-VARKA_AI_REQUEST_TIMEOUT=90s
-VARKA_AI_TURN_TIMEOUT=8m
-VARKA_AI_SOURCE_TURN_TIMEOUT=10m
-VARKA_AI_PROVIDER_RETRY_ATTEMPTS=2
-VARKA_AI_NATIVE_TOOLS_PREFERRED=false
-VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
-VARKA_AI_OPENAI_PROTOCOL=json_schema
+VARKA_AI_REQUEST_TIMEOUT=180s
+VARKA_AI_TURN_TIMEOUT=12m
+VARKA_AI_SOURCE_TURN_TIMEOUT=15m
+VARKA_AI_PROVIDER_RETRY_ATTEMPTS=0
 ```
 
-The longer durable deadlines reflect observed Arvan latency; each HTTP request remains bounded by
-`VARKA_AI_REQUEST_TIMEOUT`. Empty length-limited completions and upstream failures may be retried
-within the explicit provider-call budget.
+`VARKA_AI_MAX_TOOL_CALLS=0` is the example's compatibility value; `AiProperties` normalizes it to
+the runtime default of 24. Provider-call budgets remain the tighter control for the current action
+protocol.
 
-For another OpenAI-compatible provider, keep `VARKA_AI_PROVIDER=openai` or use the accepted aliases
-`openai-compatible` / `openai_compatible`, then set `OPENAI_COMPATIBLE_BASE_URL`,
-`OPENAI_COMPATIBLE_API_KEY`, and `VARKA_AI_MODEL` to provider-specific values. Use
-`VARKA_AI_TEST_MODEL` only for tests or evaluations that intentionally run against a different
-model than production.
+Do not commit API keys or put them in `application.yml`. Compose passes a local ignored `.env` to
+the backend container. Set `VARKA_AI_ENABLED=false` to disable provider calls and assistant model
+changes.
 
-`VARKA_AI_OPENAI_PROTOCOL=json_schema` selects the JSON action path used by Arvan and
-`DeepSeek-V4-Flash`. Native tools remain available with `tools` for endpoints that return reliable
-`tool_calls`. DeepSeek requests use JSON object output, temperature zero, and its model-specific
-thinking-disable control.
+For Arvan structured requests, the adapter sends JSON-object output, temperature zero, and
+`"thinking":{"type":"disabled"}`. Native tool calling and forced tool choice remain disabled
+because they were not reliable through this endpoint. `VARKA_AI_TEST_MODEL` is only an evaluation
+override; production uses `VARKA_AI_MODEL`.
 
-For Gemini:
+`VARKA_AI_MODE` accepts exactly:
 
-```bash
-VARKA_AI_PROVIDER=gemini
-GEMINI_API_KEY=your_gemini_api_key
-VARKA_AI_MODEL=gemini-2.0-flash
-VARKA_AI_TEST_MODEL=gemini-2.0-flash
+- `unified` — the only normal production value;
+- `agent-test` — force the inspect/contract path for acceptance comparison;
+- `conceptual-test` — force the conceptual path for non-destructive acceptance comparison.
+
+Unknown values fail backend startup and never silently select a path.
+
+## Runtime architecture
+
+```text
+ChatbotController (REST + authenticated SSE)
+  -> AssistantTurnStore (QUEUED durable turn)
+  -> DurableAssistantTurnWorker
+  -> AgenticAssistantFacade / AgenticTurnService
+  -> AgentTurnLoop
+       -> strict adaptive strategy decision
+          -> ConceptualInstanceModelWorkflow
+          -> inspect/contract agent actions
+          -> ANSWER intention through the ordinary AUTO action loop
+  -> ModelWorkspace
+  -> structural validation
+  -> revision-checked commit + checkpoint + inverse patch
 ```
 
-If you do not want provider calls or assistant model changes, set:
+The durable layer owns authentication, project/model access, idempotency, queue leases, timeouts,
+cancellation, expected revisions, destructive confirmation, checkpoints, undo, continuation,
+source accounting, provider-call audit, and SSE replay. Strategy selection does not change these
+guarantees.
 
-```bash
-VARKA_AI_ENABLED=false
+## Automatic strategy selection
+
+The adaptive LLM returns only one strict enum value: `CONCEPTUAL_GENERATION`, `INSPECT_AGENT`, or
+`ANSWER`. The backend does not route by keywords or prompt matching. It restricts strategies using
+model emptiness, selected-element context, source presence/size, durable workflow state, and
+destructive confirmation.
+
+Current production policy is deliberately conservative:
+
+- Fresh empty models may use conceptual generation.
+- Existing models use the inspect/contract agent for mutation.
+- Selected-element, resumed, and destructive work stays on the agent path. Ambiguity is handled by
+  agent inspection/clarification when that path is active; there is no deterministic ambiguity
+  classifier in the router.
+- Questions are expected to finish through `answer_user` without a checkpoint.
+
+This reflects live evidence, not an assumption that either method is universally superior.
+
+Current caveat: the adaptive `ANSWER` value maps to `WorkflowMode.AUTO`, not an enforced read-only
+mode. The ordinary loop is prompted to answer, but mutation actions remain available. The explicit
+read-only workflow modes exist in `AgentTurnLoop` but are not selected by the unified worker today.
+
+## Conceptual generation path
+
+The conceptual workflow implements the paper's complete conceptual instance-model JSON followed by
+deterministic Ecore compilation:
+
+```text
+request + source + current model + authoritative Ecore
+  -> LLM EClass selection (maximum eight)
+  -> exact contract and required construction closure
+  -> complete conceptual JSON
+  -> deterministic IDs/order/containment/reference compilation
+  -> private workspace mutation
+  -> structural validation
+  -> diagnostic + corrected complete JSON when needed
+  -> atomic durable commit
 ```
 
-The assistant runs as one autonomous modeling agent. The LLM can answer, ask for needed input, or
-drive validated model tools. The backend validates model-changing work before committing it and
-stores checkpoints so committed changes can be undone through the API and UI.
+New objects use temporary instance IDs. Existing objects must use exact persisted IDs. Parent
+objects own composition entries; source objects own non-containment reference entries. Attributes,
+compositions, and references are validated and compiled independently. The compiler may derive root
+placement only when one exact Ecore containment is mechanically unambiguous.
 
-Do not put API keys directly in `application.yml`. Use environment variables or a local `.env` file
-that is not committed.
+Conceptual omission never deletes existing data. This path cannot emit deletions or moves. Its
+current complete response is bounded to ten ordinary objects or eight source-backed objects. It is
+not yet a persisted multi-response conceptual blueprint/slicing pipeline.
 
-## Modeling protocol
+## Inspect/contract agent path
 
-There is one assistant modeling mode. Model-changing turns run through `AgentTurnLoop` with access
-to an in-memory `ModelWorkspace`. Structured actions are checked against live Ecore contracts
-before they mutate the workspace. The final workspace is structurally validated and then committed
-atomically against the expected model revision.
+The action loop exposes six provider actions:
 
-The LLM returns one action per step:
+- `plan_model_edit`
+- `inspect_model`
+- `describe_types`
+- `commit_model_batch`
+- `answer_user`
+- `ask_user`
 
-- `plan_source_model` for a large source-document blueprint.
-- `inspect_model` for current model facts.
-- `describe_types` for exact Ecore contracts.
-- `commit_model_batch` for creates, updates, connections, deletions, and source evidence.
-- `answer_user` for non-mutating answers.
-- `ask_user` when required input is missing.
+Compatibility actions `analyze_source_units`, `plan_cim_blueprint`, and `plan_source_model` remain
+available only when resuming the corresponding older durable source workflow. New source turns use
+`plan_model_edit`.
 
-The compiler accepts the equivalent conceptual JSON vocabulary used by the instance-generation
-paper, but only as structural schema normalization. It never generates business content or infers
-intent locally.
+The LLM chooses semantic content; deterministic code supplies model facts and exact Ecore contracts,
+resolves UUID/client references, checks containment and references, applies preconditions, accounts
+for source units, validates the candidate, and persists workflow state. Deletions require the
+existing `NEEDS_CONFIRMATION` and server-authored confirmation continuation.
 
-### Source-backed CIM flow
+## Source documents
 
-For source attachments, the worker extracts text and persists bounded `assistant_source_units`.
-The prompt includes either concrete source units or a source-document map. Small and medium files are
-modeled directly; larger files may be planned into slices with `plan_source_model`. Source-backed
-turns reject premature answer/question actions while modelable source evidence remains in scope.
+The chatbot accepts uploaded `.md`, `.txt`, and `.json` attachments, or inline text attachment
+content. The backend stores text, splits it into bounded `assistant_source_units`, and gives the LLM
+exact unit IDs. Committed evidence is persisted as:
 
-Committed element provenance is labelled source-grounded or inferred. The backend replaces
-provider-facing `clientRef` values with UUID element IDs, validates source evidence IDs, normalizes
-safe containment/reference issues, and records checkpoint/source coverage details on the durable
-turn.
+- `SOURCE_GROUNDED` with a source-unit ID; or
+- `INFERRED` with a written assumption.
 
-Assistant-generated changes are gated only by structural Ecore/EMF conformance through
-`ModelService.validateStructural(...)`. EVL semantic validation is reserved for explicit
-user-initiated model validation workflows and is not part of assistant apply, repair, or commit.
+`coveragePercent=100` means all tracked source units were accounted for. It does not mean the model
+passed EVL or a human usefulness review. Relevant uncovered units prevent a successful completion.
+The durable agent can persist plans and partial slices across `/continue`; conceptual generation is
+currently one bounded complete document.
 
-## Docker Compose
+## Validation and persistence boundary
 
-`docker compose up` starts PostgreSQL, backend, frontend, landing, LocalStack,
-and Dozzle. The backend ships with assistant code available, but AI calls are disabled by default:
+Assistant-generated actions, conceptual models, patches, repairs, and checkpoints are accepted only
+after `ModelService.validateStructural(...)` succeeds in the private workspace.
 
-```bash
-VARKA_AI_ENABLED=false
-```
+Assistant apply/repair/commit does not call `ModelService.validate(...)`, stored semantic-validation
+endpoints, `validateGeneratedXmi(...)`, `EpsilonEvlValidator`, or EVL CLIs/profiles. EVL remains an
+explicit user-initiated validation workflow outside the chatbot.
 
-To enable AI for a Compose run, set environment variables before starting Compose:
+A rejected candidate is never partially committed. Successful commits are revision checked and
+produce a checkpoint plus inverse patch when applicable.
 
-```bash
-VARKA_AI_ENABLED=true
-VARKA_AI_PROVIDER=openai
-OPENAI_COMPATIBLE_API_KEY=your_api_key
-docker compose up --build
-```
+## Required client flow
 
-Compose passes `.env` into the backend container. The AI proxy is disabled unless
-`VARKA_AI_PROXY_ENABLED=true`; when the backend runs in a container, set
-`VARKA_AI_PROXY_HOST=host.docker.internal` if the proxy is running on the host.
+1. Create or open a project and saved CIM/PIM/PSM model.
+2. Create/resume a chatbot session.
+3. Submit a message with `idempotencyKey`, model ID, current expected revision, optional selected
+   element IDs, and optional attachment IDs.
+4. Receive `202 Accepted` with a durable `turnId`.
+5. Follow `GET /api/chatbot/turns/{turnId}/events` or poll the turn status endpoint.
+6. Reload the model after a checkpoint event.
+7. Use `/continue`, `/confirm`, `/rebase`, `/undo`, or checkpoint rollback as required by state.
 
-To turn AI off again:
+There is no client-visible strategy selector, provider token streaming, WebSocket protocol, private
+reasoning stream, or approve/reject proposal step.
 
-```bash
-VARKA_AI_ENABLED=false
-docker compose up --build
-```
+## Durable storage
 
-## How to set the proxy
+PostgreSQL stores:
 
-The backend uses a dedicated proxy only for AI requests.
+- `SPRING_AI_CHAT_MEMORY`;
+- `assistant_threads`, `assistant_messages`, and `assistant_thread_summaries`;
+- `assistant_turns`, `assistant_turn_events`, and `assistant_checkpoints`;
+- `assistant_source_units` and `assistant_element_provenance`;
+- `assistant_provider_calls` and `assistant_action_audits`;
+- durable workflow/work-item state used by plans and continuations;
+- `assistant_rate_limits` as a reserved schema table while runtime limiting remains in memory.
 
-Default local proxy settings:
+## Operational guidance
 
-```bash
-VARKA_AI_PROXY_ENABLED=true
-VARKA_AI_PROXY_TYPE=HTTP
-VARKA_AI_PROXY_HOST=127.0.0.1
-VARKA_AI_PROXY_PORT=2081
-```
+- Rebuild/restart the backend after changing Ecore/metamodel resources.
+- Every new turn must use the latest model revision or it can become `CONFLICTED`.
+- Inspect persisted provider calls and turn events before changing prompts after a failure.
+- Treat `finish_reason=length` as a size failure, not a connectivity success.
+- Keep failed live reports; do not overwrite or reinterpret them as passes.
+- Run explicit model validation separately when humans require EVL feedback.
 
-For SOCKS:
+## Current acceptance status
 
-```bash
-VARKA_AI_PROXY_TYPE=SOCKS
-VARKA_AI_PROXY_PORT=2082
-```
+Agent-only acceptance passed all four required fixtures. Conceptual generation passed bounded empty
+library, source-backed pantry, and empty serverless PIM runs, but failed reliable persisted-model
+feature evolution. Unified mode passed feature evolution, pantry, and serverless PIM; library has a
+successful run but the final gated rerun failed on length-limited provider output.
 
-If the backend runs in Docker Compose, use:
-
-```bash
-VARKA_AI_PROXY_HOST=host.docker.internal
-```
-
-Compose already defaults to that host for the backend container.
-
-Proxy health is checked separately from the rest of the app. If the proxy is unreachable, AI
-requests fail clearly without affecting normal app traffic.
-
-## How to give the assistant a model
-
-The chatbot needs an existing project plus a model in the relevant level:
-
-- `CIM`
-- `PIM`
-- `PSM`
-
-The assistant session is scoped by project and level. It uses the selected model ID and revision
-from the frontend, so create or open a real model first.
-
-### Easiest path in the frontend
-
-1. Create a project.
-2. Open the CIM, PIM, or PSM workspace.
-3. Create or import a model in that workspace.
-4. Open the chat panel for the same project and level.
-5. Send a message.
-
-The chat request includes:
-
-- `modelId`
-- `revision` or `expectedRevision`
-- `activeView`
-- selected element IDs
-- optional uploaded attachment IDs or inline attachment content
-- an `idempotencyKey`
-
-That is the compact context the backend needs.
-
-### API path
-
-You can also create a model directly:
-
-```http
-POST /api/cim
-X-Auth-Token: <token>
-Content-Type: application/json
-
-{
-  "projectId": "project-1",
-  "name": "My CIM model",
-  "model": {
-    "eClass": "CIMModel",
-    "diagram": {
-      "elements": [],
-      "relationships": []
-    }
-  }
-}
-```
-
-Use `/api/pim` or `/api/psm` for the other levels.
-
-The exact model shape can come from the existing editor or an import. The assistant only needs a
-saved model ID and revision to work against.
-
-## Where the AI gets context
-
-The assistant gets its working context from three backend-owned sources:
-
-1. **Metamodel and methodology catalogs**
-
-   - The backend extracts deterministic contracts from the current Ecore metamodels.
-   - Contracts include classifier names, attributes, references, containments, multiplicities,
-     enum values, and level ownership.
-   - Raw `.evl` files are not sent to the provider.
-
-2. **Current model context**
-
-   - The backend loads the saved model by `modelId` and revision, then presents it through
-     validated workspace tools.
-   - Selected element IDs help focus reads and edits, but the backend still enforces model access
-     and revision checks.
-
-3. **Recent conversation and source attachments**
-   - Spring AI JDBC chat memory keeps the recent message window.
-   - Durable assistant messages and turns preserve history and audit details.
-   - Uploaded `.md`, `.txt`, and `.json` attachments can be split into bounded source units with
-     per-element provenance.
-
-So the assistant learns formal structure from Ecore-derived contracts and current state from
-workspace reads. It does not get raw EVL files or unchecked direct database access.
-
-## What is stored in PostgreSQL
-
-The AI feature adds these tables:
-
-- `SPRING_AI_CHAT_MEMORY`: recent chat memory used by Spring AI.
-- `assistant_threads`: one assistant thread per user/project/modeling level.
-- `assistant_messages`: durable user/assistant/system/tool message audit history.
-- `assistant_thread_summaries`: rolling summaries of long conversations.
-- `assistant_turns`: durable accepted/running/terminal assistant turns with idempotency keys,
-  deadlines, model/revision state, counters, final messages, and cancellation flags.
-- `assistant_turn_events`: replayable turn events with cursor IDs and per-turn sequences.
-- `assistant_checkpoints`: committed model checkpoints and inverse patches used for undo.
-- `assistant_source_units`: bounded source-document chunks used by source-backed turns.
-- `assistant_element_provenance`: source-grounded or inferred labels for committed elements.
-- `assistant_provider_calls`: provider/model/timing/token/error audit records.
-- `assistant_action_audits`: cancellation, confirmation, undo, and other turn action records.
-- `assistant_rate_limits`: schema reserved for persisted rate limiting; runtime limiting is
-  in-memory today.
-
-How they get filled:
-
-- Flyway creates the tables when the backend starts against PostgreSQL.
-- chat memory and durable messages are filled when users send messages in the chatbot.
-- turns, events, checkpoints, source units, provenance, provider calls, and audits are filled as
-  durable assistant work is accepted and processed.
-- rate limiting is enforced in memory; the `assistant_rate_limits` table is not written today.
-
-## If metamodels or methodology files change
-
-What you should do after changing metamodel or methodology files:
-
-1. Rebuild/restart the backend so packaged `mde/` resources and Ecore-derived contracts are fresh.
-2. If model validation rules changed, revalidate affected models in the UI or via the validation
-   endpoints before testing assistant turns.
-
-If you are running with Docker Compose:
-
-```bash
-docker compose up --build
-```
-
-If you changed only files mounted into an already-running container, restart the backend container:
-
-```bash
-docker compose restart backend
-```
-
-Assistant turns use model ID and expected revision. When a model changes and gets a new revision,
-new turns must use the updated revision or they will conflict.
-
-## Frontend test flow
-
-1. Start PostgreSQL.
-2. Start the backend with the AI vars above.
-3. Start the frontend.
-4. Log in, create or open a project.
-5. Create a model in CIM, PIM, or PSM.
-6. Open the chat panel and ask for an explanation or a bounded change.
-
-The assistant may explain, ask for needed input, apply a validated change, finish partially, or ask
-for explicit confirmation before destructive work. The backend never commits an invalid mutation.
-Applied changes can be undone when a checkpoint inverse is available.
-
-## Current live status
-
-Latest local live test through the real multipart upload path:
-
-- `story-v1-single.md`: `SUCCEEDED`, 100% source coverage, one checkpoint, 16 saved elements, four
-  provider calls.
-- Assistant checkpoints are gated by structural Ecore/EMF conformance only. The assistant apply
-  path does not execute EVL or require semantic validation to pass; run explicit model validation
-  after a checkpoint when EVL feedback is needed for human review.
-
-Focused regression tests for source splitting, provider action parsing, turn-loop behavior, and
-model tools currently pass: 26 tests, 0 failures.
-
-## Does the frontend offer turn controls or undo?
-
-Yes.
-
-- The UI follows durable turn status and replayable SSE events.
-- A completed/partial turn can be continued with `POST /api/chatbot/turns/{turnId}/continue`.
-- A turn that needs destructive confirmation can be confirmed with
-  `POST /api/chatbot/turns/{turnId}/confirm`.
-- A committed checkpoint can be undone with `POST /api/chatbot/turns/{turnId}/undo`.
-
-There is no Approve/Reject step in the current UI or API.
-
-## Notes
-
-- Chat memory is cleared when you clear a conversation.
-- The assistant does not receive raw EVL files.
-- Provider changes are configuration only, not code changes.
+Consequently the implementation is usable but not yet perfectly reliable for every required
+scenario. See [assistant-approach-comparison.md](assistant-approach-comparison.md) for exact evidence
+and remaining limitations.

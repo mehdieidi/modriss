@@ -124,9 +124,12 @@ classDiagram
         +complete(messages)
     }
     class AgentTurnLoop
+    class ConceptualInstanceModelWorkflow
     class AgentActionCodec
     class AgentModelTools
     class ModelWorkspace
+    class MetamodelGuideGenerator
+    class TypeContractService
     class AssistantMetamodelSchemaService
     class ConfiguredAssistantModelProvider
     class OpenAiCompatibleAssistantModelProvider
@@ -147,8 +150,13 @@ classDiagram
     AgenticAssistantFacade --> AssistantSessionStore
     AgenticAssistantFacade --> AssistantChatMemory
     AgenticAssistantFacade --> AgentTurnLoop
+    AgentTurnLoop --> ConceptualInstanceModelWorkflow
     AgentTurnLoop --> AgentActionCodec
     AgentTurnLoop --> AgentModelTools
+    ConceptualInstanceModelWorkflow --> AssistantModelProvider
+    ConceptualInstanceModelWorkflow --> MetamodelGuideGenerator
+    ConceptualInstanceModelWorkflow --> TypeContractService
+    ConceptualInstanceModelWorkflow --> AgentModelTools
     AgentModelTools --> ModelWorkspace
     AgentModelTools --> AssistantMetamodelSchemaService
     AgenticAssistantFacade --> AssistantRealtimeHub

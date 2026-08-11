@@ -1,112 +1,134 @@
-# How the Varka AI Assistant Works
+# How the Varka AI assistant works
 
-This guide connects the current assistant runtime to the code that implements it. For operator
-setup, see [assistant.md](assistant.md). For the public summary, see
-[ai-assistant.md](../../public-docs/docs/guides/ai-assistant.md).
+This guide maps the current unified runtime to its implementation. The governing rule is:
 
-The central rule is:
+> The LLM owns modeling semantics; the backend owns contracts, IDs, structural compilation,
+> validation, durable state, and persistence.
 
-> The LLM can suggest actions, but the backend owns every model read, mutation, validation,
-> checkpoint, event, and commit.
+## Request-to-commit path
 
-## Runtime Shape
+1. `ChatbotController` authenticates the session, resolves attachments, requires an
+   `idempotencyKey`, ensures a saved model, and creates a `QUEUED` turn.
+2. `DurableAssistantTurnWorker` claims the turn under a renewable lease, prepares source units and
+   persisted workflow context, and selects `ADAPTIVE`, `RESUME_REPAIR`, or the explicit test route.
+3. `AgenticAssistantFacade` and `AgenticTurnService` load the expected model revision into a private
+   `ModelWorkspace` and invoke `AgentTurnLoop`.
+4. For a fresh unified turn, `AgentTurnLoop.runAdaptive` requests one strict strategy value. Empty
+   models permit conceptual generation; non-empty models permit the inspect agent. Both permit an
+   `ANSWER` intention.
+5. The selected strategy produces a `ModelCommandBatch` or a read-only answer.
+6. `AgentModelTools` and `ModelCommandCompiler` apply checked commands to the workspace.
+7. `ModelWorkspace` calls the structural validator. A successful candidate is committed against the
+   expected revision; rejected work never mutates persistence.
+8. The worker finalizes checkpoints, inverse patches, source provenance, provider-call records,
+   workflow state, and replayable events before marking the turn terminal.
 
-Varka uses one durable assistant-turn runtime:
+## Main code paths
 
-1. `ChatbotController` accepts a session-scoped message and requires a request-body
-   `idempotencyKey`.
-2. The controller resolves attachments, ensures the active model, creates a `QUEUED`
-   `AssistantTurn`, saves a starter checkpoint, and returns `202 Accepted`.
-3. `DurableAssistantTurnWorker` claims queued turns and calls `AgenticAssistantFacade`.
-4. `AgenticAssistantFacade` runs `AgentTurnLoop` with `AgentModelTools` over a `ModelWorkspace`.
-5. Tool calls are checked by `AssistantMetamodelSchemaService` and live Ecore-derived contracts.
-6. Valid workspace changes are committed through model services against the expected revision.
-7. The backend records events, checkpoints, source provenance, provider-call usage, and final turn
-   state.
+| Concern                           | Primary implementation                                                                  |
+| --------------------------------- | --------------------------------------------------------------------------------------- |
+| REST, attachment, and SSE API     | `apps/backend/.../api/ChatbotController.java`                                           |
+| Durable execution and routing     | `apps/backend/.../assistant/DurableAssistantTurnWorker.java`                            |
+| Spring wiring                     | `apps/backend/.../assistant/AiConfig.java`                                              |
+| Session and turn orchestration    | `AgenticAssistantFacade`, `AgenticTurnService`                                          |
+| Adaptive decision and action loop | `agent/AgentTurnLoop.java`, `AgentActionCodec.java`                                     |
+| Paper conceptual workflow         | `agent/ConceptualInstanceModelWorkflow.java`                                            |
+| Ecore guide and exact contracts   | `MetamodelGuideGenerator`, `TypeContractService`, `MetamodelKnowledgeService`           |
+| Commands and workspace tools      | `AgentModelTools`, `ModelCommandCompiler`, `ModelWorkspace`                             |
+| Arvan provider protocol           | `OpenAiCompatibleAssistantModelProvider`                                                |
+| Provider selection/hardening      | `ConfiguredAssistantModelProvider`, `AssistantHardeningService`, `AssistantPromptGuard` |
+| Durable storage                   | `AssistantTurnStore`, session/memory ports, JDBC implementations                        |
 
-## Main Code Paths
+## Adaptive routing
 
-| Concern                       | Primary classes                                                                                              |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| HTTP and SSE API              | `apps/backend/.../api/ChatbotController.java`                                                                |
-| Durable worker and undo       | `apps/backend/.../assistant/DurableAssistantTurnWorker.java`, `DurableTurnUndoService.java`                  |
-| Turn orchestration            | `platform-assistant/.../application/AgenticAssistantFacade.java`                                             |
-| Agent loop and action parsing | `platform-assistant/.../agent/AgentTurnLoop.java`, `AgentActionCodec.java`                                   |
-| Model tools                   | `platform-assistant/.../tools/AgentModelTools.java`, `workspace/ModelWorkspace.java`                         |
-| Metamodel contracts           | `AssistantMetamodelSchemaService`, `MetamodelContractGraph`, `EcoreContractExtractor`                        |
-| Providers                     | `ConfiguredAssistantModelProvider`, `OpenAiCompatibleAssistantModelProvider`, `GeminiAssistantModelProvider` |
-| Persistence                   | `AssistantTurnStore`, `AssistantSessionStore`, `AssistantChatMemory`, JDBC implementations                   |
+The production configuration string is parsed by `DurableAssistantTurnWorker.AssistantMode` and
+accepts only `unified`, `agent-test`, or `conceptual-test`. Normal clients cannot set it per request.
 
-## Provider and Configuration
+`runAdaptive` sends structural facts and the user request to the provider under the
+`assistant_strategy` schema. It allows exactly `CONCEPTUAL_GENERATION`, `INSPECT_AGENT`, or
+`ANSWER`. One malformed/truncated strategy response can be corrected. The decision and correction
+are audited like every other provider call.
 
-Provider calls are optional and disabled by default with `VARKA_AI_ENABLED=false`. The active
-provider is `openai` or `gemini`; `openai-compatible` and `openai_compatible` normalize to the
-OpenAI-compatible path. `VARKA_AI_MODEL` is the single production model selector. Tests and
-evaluations may use `VARKA_AI_TEST_MODEL` when they intentionally need a different model.
+The deterministic boundary can remove unsafe strategies but cannot infer business intent:
 
-`AssistantHardeningService` handles rate limits, retries, circuit breaking, timeouts, and optional
-AI-only proxy routing. Provider token streaming is not exposed; progress is represented as durable
-turn events.
+- `modelEmpty=true` permits conceptual mutation and disallows agent mutation;
+- `modelEmpty=false` permits agent mutation and disallows conceptual mutation;
+- selected, resumed, and confirmed-destructive work never reaches the conceptual route.
 
-## Tools and Safety
+`ANSWER` enters the ordinary `AUTO` action loop. It is prompted to terminate with `answer_user`, but
+this is not an enforced read-only boundary: the same mutation actions remain available. The
+explicit read-only loop modes are not currently selected by the unified worker.
 
-The LLM does not write the database directly. It asks the backend to execute named actions such as:
+## Conceptual compilation
 
-- `describe_types`
-- `read_model`
-- `search_model`
-- `create_elements`
-- `update_elements`
-- `delete_elements`
-- `connect_elements`
-- `validate_model`
-- `plan_work`
+`ConceptualInstanceModelWorkflow` performs two LLM tasks through the same provider adapter:
 
-Before a mutation changes the workspace, the backend verifies type names, features, enum values,
-containment, reference targets, and model level ownership against the Ecore contract graph. Before
-a committed model revision is stored, the resulting model is structurally validated and checked
-against the expected revision.
+1. `conceptual_type_selection` chooses at most eight exact EClasses.
+2. `conceptual_instance_model` produces the complete paper-style instance JSON.
 
-Destructive batches move the turn to `NEEDS_CONFIRMATION`; a confirmed follow-up turn is created
-through `POST /api/chatbot/turns/{turnId}/confirm`.
+The backend expands the selected types with Ecore construction/required closure. During parsing and
+compilation it accepts no unknown EClass, attribute, enum, association, target type, or ID. All
+objects are registered before relationships are resolved, then creates are emitted in containment
+dependency order. Existing IDs become updates; omitted existing content remains unchanged.
 
-## Durable Events
+Unique legal root containment can be derived mechanically. Ambiguous or illegal placement, multiple
+containment owners, cycles, missing required features, or unresolved references become repair
+diagnostics. A repair receives the complete rejected document and must return a corrected complete
+document. The conceptual compiler never generates domain fallback content.
 
-Clients submit work over REST and follow progress with authenticated SSE:
+## Agent action execution
 
-```http
-GET /api/chatbot/turns/{turnId}/events
-X-Auth-Token: <token>
-Last-Event-ID: <optional cursor>
-```
+The inspect/contract path uses a small action protocol, not arbitrary Java tools. Planning can
+persist slices and work items. Inspection and `describe_types` return authoritative facts to the
+same LLM. `commit_model_batch` is checked against exact contracts and the current inventory.
 
-Events are stored in `assistant_turn_events`, so clients can reconnect with `Last-Event-ID` or the
-`eventCursor` query parameter. Polling `GET /api/chatbot/turns/{turnId}` is the fallback.
+`AgentAction.Kind` still includes `analyze_source_units`, `plan_cim_blueprint`, and
+`plan_source_model` to resume older source workflows. Backend state rejects those actions in normal
+new source turns, which use `plan_model_edit`.
 
-## Storage
+Provider `clientRef` values exist only inside a batch. The backend generates persisted UUIDs and
+resolves same-batch connections. Deletion requires explicit server-controlled confirmation and
+preconditions. Tool failures suitable for repair are converted to compact structured diagnostics.
 
-Assistant migrations live in `packages/java/platform-assistant/src/main/resources/db/assistant-migration`.
-The current durable schema is introduced by `V14__assistant_baseline.sql` and refined by V15-V18.
+## Source and continuation state
 
-Important tables:
+The worker splits attachments into source units, stores them, and supplies exact IDs to the selected
+workflow. The agent path can persist source analysis, source blueprints, modeling plans, and work
+items, then resume them through a continuation without replanning. Conceptual generation consumes
+the selected source in one bounded complete response and does not currently persist a conceptual
+instance ledger.
 
-- `assistant_threads`, `assistant_messages`, `assistant_thread_summaries`
-- `assistant_turns`, `assistant_turn_events`, `assistant_checkpoints`
-- `assistant_source_units`, `assistant_element_provenance`
-- `assistant_provider_calls`, `assistant_action_audits`
-- `SPRING_AI_CHAT_MEMORY`
-- `assistant_rate_limits` (schema reserved; runtime limiter is in memory)
+Coverage is computed from saved `SOURCE_GROUNDED`/`INFERRED` evidence. It must not be interpreted as
+EVL validity or human semantic approval.
 
-The old assistant proposal, retrieval-document, model-context, and pending-interaction tables are
-dropped by the squashed V14 migration. Projects, ordinary models, revisions, and XMI payloads are
-not modified by that assistant-state migration.
+## Provider details
 
-## Operational Notes
+The production environment uses the Arvan OpenAI-compatible endpoint and
+`DeepSeek-V4-Flash`. `VARKA_AI_OPENAI_PROTOCOL=json_schema` uses structured JSON content rather than
+native tool calls. The adapter selects a schema based on the requested operation, sets temperature
+zero, disables DeepSeek thinking with the required object form, normalizes compatible JSON
+envelopes, and reports usage where supplied by the provider.
 
-- Restart or rebuild the backend after metamodel changes so Ecore-derived contracts and packaged
-  `mde/` assets are fresh.
-- Run explicit model validation after EVL changes when reviewing semantic readiness; EVL does not
-  gate assistant apply behavior.
-- Use `POST /api/chatbot/turns/{turnId}/undo` to apply a checkpoint inverse when available.
-- Use `POST /api/chatbot/turns/{turnId}/continue` for partial completed work.
-- Use `POST /api/chatbot/turns/{turnId}/cancel` to request cancellation of queued/running work.
+`ProviderCallBudget` bounds every route. `AssistantHardeningService` supplies request timeout,
+retry/circuit-breaker, rate-limit, proxy, and cancellation controls. Failed calls are retained in
+durable turn accounting.
+
+## Structural-only validation
+
+The mutation boundary is `ModelWorkspace` and `AgentModelTools.validateModel()`, which reaches
+`ModelService.validateStructural(...)`. Assistant code must never substitute full stored/EVL
+validation. EVL changes should be tested through explicit model-validation workflows, not assistant
+apply tests.
+
+## Operational tracing
+
+Correlate a problem by `assistantTurnId`:
+
+1. Read the durable turn state, final message, workflow kind, phase, and current work item.
+2. Replay `assistant_turn_events` to identify the last completed stage.
+3. Inspect `assistant_provider_calls` for schema, latency, finish reason, usage, and failure.
+4. Inspect validation attempts and checkpoints.
+5. For source work, inspect source units, provenance, and coverage before changing prompts.
+
+Do not treat provider connectivity, structural validity, or one successful stochastic run as full
+scenario acceptance.

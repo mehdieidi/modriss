@@ -49,12 +49,18 @@ cost, and organizational policy are intentional.
 ```bash
 VARKA_AI_ENABLED=true
 VARKA_AI_PROVIDER=openai
+OPENAI_COMPATIBLE_BASE_URL=your_arvan_openai_compatible_base_url
 OPENAI_COMPATIBLE_API_KEY=your_api_key
+VARKA_AI_MODEL=DeepSeek-V4-Flash
+VARKA_AI_MODE=unified
+VARKA_AI_OPENAI_PROTOCOL=json_schema
+VARKA_AI_NATIVE_TOOLS_PREFERRED=false
+VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
 docker compose up --build
 ```
 
-For a compatible gateway, also set `OPENAI_COMPATIBLE_BASE_URL`. For Gemini, set
-`VARKA_AI_PROVIDER=gemini` and `GEMINI_API_KEY`.
+The validated deployment uses Arvan and `DeepSeek-V4-Flash`. `unified` automatically chooses the
+internal modeling workflow; users and API clients do not select it.
 
 ## Stop or Reset
 

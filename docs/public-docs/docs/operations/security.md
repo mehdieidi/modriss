@@ -17,12 +17,14 @@ artifacts. Security controls therefore span the platform runtime and the project
 ## Assistant Controls
 
 - AI is disabled unless explicitly enabled.
-- The assistant runs as one autonomous modeling agent. Model-changing work is compiled, validated,
-  applied, audited, and exposed with undo.
+- The assistant runs as one unified durable workflow with a strict adaptive strategy, a bounded
+  conceptual compiler path, and one inspect/contract agent path. There are no delegated model
+  workers and no client-selectable strategy.
 - The assistant uses backend-owned metamodel contracts, selected model state, optional attachments,
   and durable recent conversation context rather than raw EVL files or unchecked database access.
-- Tool-driven changes are checked against live Ecore contracts, structurally validated, committed
-  against the expected model revision, and audited through durable turns.
+- Conceptual and action-driven changes are checked against live Ecore contracts, structurally
+  validated, committed against the expected model revision, and audited through durable turns.
+- EVL and stored semantic validation are never assistant apply/repair/commit gates.
 - Destructive batches require explicit confirmation; committed checkpoints may include inverse
   patches for undo.
 - Provider calls have timeouts, retries, rate limits, a circuit breaker, and an optional dedicated

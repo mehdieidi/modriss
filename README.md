@@ -5,8 +5,8 @@
 Varka is an AI-assisted, model-driven platform. You work in three formal modeling levels
 (CIM, PIM, AWS PSM) in the browser, validate with Eclipse Epsilon, transform between levels, and
 generate a reviewable project (infrastructure, Go handlers, contracts, tests, docs). An optional
-assistant can explain the metamodel, drive checked model tools, and commit changes only after
-backend validation.
+assistant automatically chooses a bounded conceptual generator, an inspect/contract editing loop,
+or a read-only answer, and commits changes only after structural Ecore/EMF validation.
 
 ```text
 CIM  ──validate/transform──▶  PIM  ──validate/transform──▶  AWS PSM  ──generate──▶  deployable project

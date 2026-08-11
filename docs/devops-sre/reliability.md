@@ -14,15 +14,16 @@ surfaces, so one generic uptime number is not enough.
 
 ## Suggested SLIs
 
-| SLI                      | Measurement                                                              |
-| ------------------------ | ------------------------------------------------------------------------ |
-| API availability         | Percentage of non-5xx responses for user-facing API routes.              |
-| API latency              | p95 latency for HTTP requests.                                           |
-| Job success              | Percentage of MDE jobs ending in successful states.                      |
-| Job freshness            | Percentage of queued/running jobs completing within timeout.             |
-| Assistant success        | Percentage of accepted assistant turns ending in useful terminal states. |
-| Readiness                | Percentage of successful readiness probe checks.                         |
-| Admin audit completeness | Percentage of admin mutating actions with audit events.                  |
+| SLI                        | Measurement                                                                                                                         |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| API availability           | Percentage of non-5xx responses for user-facing API routes.                                                                         |
+| API latency                | p95 latency for HTTP requests.                                                                                                      |
+| Job success                | Percentage of MDE jobs ending in successful states.                                                                                 |
+| Job freshness              | Percentage of queued/running jobs completing within timeout.                                                                        |
+| Assistant workflow success | Percentage of complete scenarios with expected checkpoints, preservation, structure, and coverage, segmented by fixture/task shape. |
+| Assistant transport health | Provider calls without timeout, empty output, truncation, malformed JSON, or circuit rejection.                                     |
+| Readiness                  | Percentage of successful readiness probe checks.                                                                                    |
+| Admin audit completeness   | Percentage of admin mutating actions with audit events.                                                                             |
 
 ## Suggested SLO Starting Points
 
@@ -58,6 +59,9 @@ Watch these before scaling:
 - PostgreSQL CPU, memory, storage, and connection count.
 - MDE job queue depth and job duration.
 - Assistant provider latency and token usage.
+- Assistant provider calls per checkpoint, truncation/repair rate, source coverage, revision
+  conflicts, and scenario-level preservation/usefulness results. A `SUCCEEDED` transport call alone
+  is not a modeling-success signal.
 
 ## Reliability Practices
 

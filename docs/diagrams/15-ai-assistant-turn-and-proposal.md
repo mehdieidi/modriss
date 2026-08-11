@@ -15,7 +15,11 @@ flowchart TD
     checkpoint["Save starter checkpoint and model.checkpoint event"]
     accepted["Return 202 TurnAcceptedResponse"]
     claim["Worker claims turn"]
-    run["Run AgentTurnLoop<br/>source units, contracts, model tools"]
+    durableRoute{"Persisted/selected/<br/>destructive state?"}
+    adaptive["Strict adaptive LLM strategy<br/>structural allowlist"]
+    conceptual["Conceptual type selection<br/>complete JSON + Ecore compiler"]
+    agent["Inspect/contract AgentTurnLoop<br/>plan / inspect / contracts / batch"]
+    answer["ANSWER intention<br/>ordinary AUTO action loop"]
     state{"Outcome"}
     commit["Commit structurally valid model revision"]
     saveCheckpoint["Save checkpoint, source coverage, provenance, provider calls, events"]
@@ -25,7 +29,12 @@ flowchart TD
     start --> auth --> attach --> source --> idem
     idem -- yes --> existing --> controls
     idem -- no --> ensure --> create --> checkpoint --> accepted --> controls
-    create --> claim --> run --> state
+    create --> claim --> durableRoute
+    durableRoute -- yes --> agent --> state
+    durableRoute -- no --> adaptive
+    adaptive -- empty-model mutation --> conceptual --> state
+    adaptive -- existing-model mutation --> agent
+    adaptive -- ANSWER --> answer --> agent
     state -- committed work --> commit --> saveCheckpoint --> terminal
     state -- needs input/confirmation/partial/failure --> terminal
     terminal --> controls

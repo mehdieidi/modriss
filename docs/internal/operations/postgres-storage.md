@@ -93,7 +93,10 @@ V1__create_platform_schema.sql
 MDE job metadata extensions are in `V5__mde_job_async_metadata.sql` under
 `platform-storage-postgres`; project-member custom roles are in
 `V9__project_member_custom_roles.sql`. Assistant durable-turn tables are introduced by
-`V14__assistant_baseline.sql` and refined by the later assistant migrations.
+`V14__assistant_baseline.sql` and currently refined through
+`V28__assistant_workflow_engine.sql`. Assistant migrations V24-V28 add continuation/provenance
+lineage, context caching, source blueprints, provider prompt audit, and durable workflow/work-item
+state.
 
 Flyway versions are global across both migration locations because the backend loads both locations
 into the same Flyway instance. Do not choose a version by looking at only one folder. For future

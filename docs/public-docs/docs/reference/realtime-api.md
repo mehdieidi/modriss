@@ -16,7 +16,9 @@ Accept: text/event-stream
 
 Every event contains an event ID, turn ID, sequence, type, timestamp, and safe payload. Common event
 types include `turn.accepted`, `turn.stage`, `tool.started`, `tool.completed`,
-`model.checkpoint`, `turn.needs_input`, `turn.needs_confirmation`, `turn.completed`,
+`turn.workflow.routed`, `turn.plan.ready`, `model.slice`, `model.checkpoint`,
+`model.checkpoint.committed`, `turn.validation.completed`, `turn.needs_input`,
+`turn.needs_confirmation`, `turn.completed`,
 `turn.failed`, `turn.cancelled`, `turn.feedback`, and source-coverage progress payloads. Clients
 must poll turn status when SSE disconnects and must tolerate replayed events.
 
@@ -27,3 +29,7 @@ gate.
 
 Provider token text streaming and WebSocket access are intentionally not supported. The UI exposes
 only factual stage/checkpoint/validation/coverage progress, never private reasoning.
+
+Internal workflow events can identify routing and durable work-item progress, but they are
+observability data. Clients cannot select or override the assistant's internal conceptual/agent
+strategy through SSE or REST.

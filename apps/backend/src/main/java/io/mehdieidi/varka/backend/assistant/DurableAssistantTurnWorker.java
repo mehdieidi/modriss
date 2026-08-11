@@ -42,7 +42,7 @@ public final class DurableAssistantTurnWorker {
   private final VarkaMetrics metrics;
   private final TransactionTemplate transactions;
   private final boolean workflowEngineV2;
-  private final String assistantMode;
+  private final AssistantMode assistantMode;
   private final int maxSourceChunksPerTurn;
   private final String workerId = "assistant-" + UUID.randomUUID();
   // Documents up to 24k characters remain whole. Larger documents are segmented only at semantic
@@ -83,7 +83,7 @@ public final class DurableAssistantTurnWorker {
       VarkaMetrics metrics,
       TransactionTemplate transactions,
       @Value("${varka.ai.workflow-engine-v2:true}") boolean workflowEngineV2,
-      @Value("${varka.ai.mode:legacy}") String assistantMode,
+      @Value("${varka.ai.mode:unified}") String assistantMode,
       @Value("${varka.ai.max-source-chunks-per-turn:24}") int maxSourceChunksPerTurn) {
     this.turns = turns;
     this.assistant = assistant;
@@ -91,7 +91,7 @@ public final class DurableAssistantTurnWorker {
     this.metrics = metrics;
     this.transactions = transactions;
     this.workflowEngineV2 = workflowEngineV2;
-    this.assistantMode = assistantMode == null ? "legacy" : assistantMode.trim();
+    this.assistantMode = AssistantMode.parse(assistantMode);
     this.maxSourceChunksPerTurn = Math.max(1, maxSourceChunksPerTurn);
   }
 
@@ -222,8 +222,14 @@ public final class DurableAssistantTurnWorker {
               ? turn.message().substring(CONFIRMED_DESTRUCTION_PREFIX.length())
               : turn.message();
       AgentTurnLoop.WorkflowMode route = route(turn, message);
-      if ("conceptual-instance".equalsIgnoreCase(assistantMode)) {
+      if (assistantMode == AssistantMode.CONCEPTUAL_TEST && !destructiveConfirmed) {
         route = AgentTurnLoop.WorkflowMode.CONCEPTUAL_INSTANCE_GENERATION;
+      } else if (assistantMode == AssistantMode.UNIFIED
+          && !destructiveConfirmed
+          && turn.selectedElementIds().isEmpty()
+          && (route == AgentTurnLoop.WorkflowMode.AUTO
+              || route == AgentTurnLoop.WorkflowMode.SOURCE_TO_MODEL)) {
+        route = AgentTurnLoop.WorkflowMode.ADAPTIVE;
       }
       if (!turn.selectedElementIds().isEmpty()) {
         message +=
@@ -809,6 +815,28 @@ public final class DurableAssistantTurnWorker {
         "turn.workflow.routed",
         java.util.Map.of("workflowKind", mode.name(), "readOnly", mode.readOnly()));
     return mode;
+  }
+
+  /** One production mode plus explicit, non-production acceptance-test overrides. */
+  enum AssistantMode {
+    UNIFIED,
+    AGENT_TEST,
+    CONCEPTUAL_TEST;
+
+    static AssistantMode parse(String configured) {
+      String value =
+          configured == null ? "unified" : configured.trim().toLowerCase(java.util.Locale.ROOT);
+      return switch (value) {
+        case "unified" -> UNIFIED;
+        case "agent-test" -> AGENT_TEST;
+        case "conceptual-test" -> CONCEPTUAL_TEST;
+        default ->
+            throw new IllegalArgumentException(
+                "Invalid varka.ai.mode '"
+                    + value
+                    + "'. Expected unified, agent-test, or conceptual-test.");
+      };
+    }
   }
 
   private String appendPersistedWorkflowContext(String turnId, String message) {

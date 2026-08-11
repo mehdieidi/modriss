@@ -104,16 +104,19 @@ a chatbot window appears inside the editor. Through this interface, the user can
 assistant using natural language.
 
 The AI assistant is designed to understand the current state of the model being edited. It receives
-backend-owned Ecore-derived contracts and validation feedback. Based on user prompts, the assistant
-can create, modify, and refine model elements through validated backend tools. Structural
-metamodel conformance is enforced before commit. Semantic EVL validation is intentionally outside
-the chatbot apply path and is available only through explicit validation workflows.
+backend-owned Ecore-derived contracts and validation feedback. One unified durable workflow uses a
+strict LLM strategy decision to choose bounded conceptual empty-model generation, an
+inspect/contract editing loop, or a non-mutating answer. Users do not select that internal strategy.
+Structural metamodel conformance is enforced before commit. Semantic EVL validation is
+intentionally outside the chatbot apply path and is available only through explicit validation
+workflows.
 
 Instead of manually creating every element, the user can describe the intended model changes in
 natural language, upload source documents such as user stories, and ask the assistant to generate
-or update the model accordingly. The source-backed CIM workflow is actively being hardened: the
-one-story attachment path now reaches a saved `SUCCEEDED` checkpoint with 100% source coverage
-under the assistant's structural Ecore/EMF apply gate.
+or update the model accordingly. Source units, evidence provenance, provider calls, checkpoints,
+and continuations are durable. Live Arvan acceptance currently passes the unified feature-evolution,
+source-backed pantry, and serverless PIM scenarios; library generation remains sensitive to
+length-limited structured output and is not yet reliably accepted.
 
 The assistant’s changes are reflected visually on the frontend canvas through REST model reloads
 and authenticated server-sent events for durable turn progress. The chat interaction is designed to

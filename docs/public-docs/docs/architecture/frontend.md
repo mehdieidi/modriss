@@ -24,7 +24,8 @@ At startup the frontend loads `GET /api/modeling/config`, including `diagramEdit
 - Metadata-driven palette and attribute panels
 - Graph editing, relationship creation, layout, views, and focus
 - Validation and generation progress
-- Assistant chat, durable turn status, checkpoint, confirmation, continue, cancel, and undo controls
+- One assistant chat with automatic backend strategy selection, durable turn status, checkpoint,
+  confirmation, continue, cancel, rebase, rollback, and undo controls
 - Artifact explorer and file editor
 - Change impact analysis
 - Planned admin workspace surfaces

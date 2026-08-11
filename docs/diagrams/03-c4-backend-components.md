@@ -28,10 +28,12 @@ flowchart LR
         facade["AgenticAssistantFacade"]
         worker["DurableAssistantTurnWorker"]
         turnStore["AssistantTurnStore"]
-        provider["ConfiguredAssistantModelProvider"]
+        provider["ConfiguredAssistantModelProvider<br/>Arvan OpenAI-compatible production"]
         guard["PromptGuard + Hardening"]
-        tools["AgentTurnLoop + AgentModelTools"]
-        schema["AssistantMetamodelSchemaService"]
+        router["AgentTurnLoop<br/>strict adaptive strategy"]
+        conceptual["ConceptualInstanceModelWorkflow<br/>paper IR + deterministic compiler"]
+        tools["Inspect/contract AgentModelTools<br/>ModelWorkspace"]
+        schema["MetamodelKnowledgeService<br/>TypeContractService + schema service"]
         memory["AssistantSessionStore + AssistantChatMemory"]
     end
 
@@ -45,7 +47,7 @@ flowchart LR
     store["Port: PlatformStore"]
     postgres["Adapter: PostgresPlatformStore"]
     db[("PostgreSQL")]
-    ai["OpenAI-compatible or Gemini"]
+    ai["Arvan OpenAI-compatible endpoint<br/>DeepSeek-V4-Flash"]
 
     client --> controllers
     client <--> realtime
@@ -75,9 +77,13 @@ flowchart LR
 
     worker --> turnStore
     worker --> facade
-    facade --> provider --> ai
-    facade --> guard
-    facade --> tools
+    facade --> router
+    router --> conceptual
+    router --> tools
+    router --> guard --> provider --> ai
+    conceptual --> guard
+    conceptual --> schema
+    conceptual --> tools
     tools --> schema
     tools --> models
     facade --> memory

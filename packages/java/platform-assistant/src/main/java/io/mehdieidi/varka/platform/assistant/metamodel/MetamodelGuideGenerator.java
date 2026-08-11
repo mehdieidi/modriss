@@ -62,6 +62,25 @@ public final class MetamodelGuideGenerator {
         .collect(Collectors.joining(", ", level.name() + " types: ", ""));
   }
 
+  /**
+   * Renders complete feature contracts for an LLM-selected set and its deterministic Ecore
+   * construction closure. Selection remains an LLM semantic decision; this method only serializes
+   * authoritative contracts and never invents model content.
+   */
+  public String generateForTypes(ModelLevel level, List<TypeContract> selected) {
+    java.util.LinkedHashMap<String, TypeContract> unique = new java.util.LinkedHashMap<>();
+    if (selected != null) selected.forEach(type -> unique.putIfAbsent(type.eClass(), type));
+    StringBuilder guide =
+        new StringBuilder("root=")
+            .append(knowledge.rootType(level))
+            .append(";selectedTypes=")
+            .append(String.join(",", unique.keySet()));
+    unique.values().stream()
+        .sorted(Comparator.comparing(TypeContract::eClass))
+        .forEach(type -> appendCompactType(guide, type));
+    return guide.toString();
+  }
+
   /** Returns whether a name is an exact EClass in the authoritative level metamodel. */
   public boolean isKnownType(ModelLevel level, String name) {
     if (name == null || name.isBlank()) return false;
@@ -94,35 +113,29 @@ public final class MetamodelGuideGenerator {
     knowledge.typeContracts(level).stream()
         .filter(TypeContract::creatable)
         .sorted(Comparator.comparing(TypeContract::eClass))
-        .forEach(
-            type -> {
-              guide.append('\n').append(type.eClass());
-              if (!type.supertypes().isEmpty())
-                guide.append('<').append(String.join(",", type.supertypes()));
-              if (!type.attributes().isEmpty())
-                guide
-                    .append("|a:")
-                    .append(
-                        type.attributes().stream()
-                            .map(this::attribute)
-                            .collect(Collectors.joining(",")));
-              List<ReferenceContract> containments =
-                  type.references().stream().filter(ReferenceContract::containment).toList();
-              if (!containments.isEmpty())
-                guide
-                    .append("|c:")
-                    .append(
-                        containments.stream()
-                            .map(this::reference)
-                            .collect(Collectors.joining(",")));
-              List<ReferenceContract> links =
-                  type.references().stream().filter(reference -> !reference.containment()).toList();
-              if (!links.isEmpty())
-                guide
-                    .append("|r:")
-                    .append(links.stream().map(this::reference).collect(Collectors.joining(",")));
-            });
+        .forEach(type -> appendCompactType(guide, type));
     return guide.toString();
+  }
+
+  private void appendCompactType(StringBuilder guide, TypeContract type) {
+    guide.append('\n').append(type.eClass());
+    if (!type.supertypes().isEmpty()) guide.append('<').append(String.join(",", type.supertypes()));
+    if (!type.attributes().isEmpty())
+      guide
+          .append("|a:")
+          .append(type.attributes().stream().map(this::attribute).collect(Collectors.joining(",")));
+    List<ReferenceContract> containments =
+        type.references().stream().filter(ReferenceContract::containment).toList();
+    if (!containments.isEmpty())
+      guide
+          .append("|c:")
+          .append(containments.stream().map(this::reference).collect(Collectors.joining(",")));
+    List<ReferenceContract> links =
+        type.references().stream().filter(reference -> !reference.containment()).toList();
+    if (!links.isEmpty())
+      guide
+          .append("|r:")
+          .append(links.stream().map(this::reference).collect(Collectors.joining(",")));
   }
 
   private String renderRelevant(ModelLevel level, String request) {

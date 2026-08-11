@@ -1,107 +1,110 @@
-# AI Modeling Assistant Architecture
+# Unified AI modeling assistant architecture
 
-## Component Architecture
+## Components and shared durable boundary
 
 ```mermaid
 flowchart TB
-    ui["Frontend chat UI<br/>sessions, durable turns, SSE replay, controls"]
-    api["ChatbotController<br/>REST and authenticated SSE"]
-    worker["DurableAssistantTurnWorker"]
-    facade["AgenticAssistantFacade"]
+    ui["Frontend chat UI<br/>one assistant, no strategy selector"]
+    api["ChatbotController<br/>REST + authenticated SSE"]
+    worker["DurableAssistantTurnWorker<br/>lease, source context, durable routing"]
+    facade["AgenticAssistantFacade<br/>AgenticTurnService"]
     loop["AgentTurnLoop"]
-    codec["AgentActionCodec"]
-    tools["AgentModelTools"]
-    workspace["ModelWorkspace"]
-    schema["AssistantMetamodelSchemaService<br/>Ecore contracts"]
-    hard["AssistantHardeningService<br/>rate limit, retry, circuit breaker"]
-    prompts["AssistantPromptGuard"]
-    provider["ConfiguredAssistantModelProvider"]
-    openai["OpenAiCompatibleAssistantModelProvider"]
-    gemini["GeminiAssistantModelProvider"]
-    nativeTools["Native tool-call adapter<br/>or strict JSON action fallback"]
-    models["ModelService + ProjectService"]
-    turns["AssistantTurnStore"]
-    sessions["AssistantSessionStore"]
-    memory["AssistantChatMemory"]
-    uploads["UploadService"]
-    splitter["SourceUnitSplitter<br/>source units and aliases"]
-    undo["DurableTurnUndoService"]
-    db[("PostgreSQL")]
-    ai["OpenAI-compatible API or Gemini"]
+    strategy{"Strict LLM strategy<br/>CONCEPTUAL_GENERATION<br/>INSPECT_AGENT<br/>ANSWER"}
 
-    ui --> api
-    api --> facade
-    api --> turns
-    api --> uploads
-    api --> undo
+    subgraph conceptual["Conceptual generation"]
+        select["LLM EClass selection<br/>maximum 8 exact names"]
+        guide["MetamodelGuideGenerator + TypeContractService<br/>Ecore construction/required closure"]
+        ir["Complete paper-style conceptual JSON<br/>temporary/persisted instance IDs"]
+        compiler["Conceptual Ecore compiler<br/>attributes / compositions / references / evidence"]
+        repair["Bounded complete-document repair"]
+    end
+
+    subgraph agent["Inspect/contract action loop"]
+        codec["AgentActionCodec"]
+        actions["plan_model_edit / inspect_model / describe_types<br/>commit_model_batch / answer_user / ask_user"]
+        skills["Workflow-selected assistant skills"]
+        tools["AgentModelTools + ModelCommandCompiler"]
+    end
+
+    workspace["Private ModelWorkspace"]
+    structural["ModelService.validateStructural<br/>structural Ecore/EMF only"]
+    commit["Expected-revision atomic commit<br/>checkpoint + inverse patch"]
+    turns[("AssistantTurnStore<br/>turns, events, workflows, source, provenance, calls")]
+    memory[("Session + JDBC chat memory")]
+    model[("Persisted model revisions")]
+    provider["OpenAiCompatibleAssistantModelProvider<br/>Arvan / DeepSeek-V4-Flash<br/>JSON content, temperature 0, thinking disabled"]
+    guard["PromptGuard + AssistantHardeningService<br/>redaction, timeout, budget, retry, circuit breaker"]
+
+    ui --> api --> turns
     worker --> turns
-    worker --> splitter
-    worker --> facade
-    facade --> sessions
+    worker --> facade --> loop --> strategy
+    strategy -->|empty-model mutation| select --> guide --> ir --> compiler
+    compiler -->|diagnostic| repair --> ir
+    compiler --> workspace
+    strategy -->|existing/selected/resumed/destructive mutation| codec --> actions
+    skills --> actions --> tools --> workspace
+    strategy -->|ANSWER intention; AUTO loop| actions
+    loop --> guard --> provider
+    select --> guard
+    ir --> guard
+    workspace --> structural --> commit --> model
+    commit --> turns
     facade --> memory
-    facade --> loop
-    loop --> codec
-    loop --> tools --> workspace
-    tools --> schema
-    tools --> models
-    loop --> provider
-    provider --> prompts --> hard --> openai --> nativeTools --> ai
-    provider --> prompts --> hard --> gemini --> ai
-    turns --> db
-    sessions --> db
-    memory --> db
-    uploads --> db
-    splitter --> turns
-    undo --> models
 ```
 
-## Assistant Workflow
+The same provider adapter and durable lifecycle serve every strategy. Conceptual generation is not
+a separate chatbot or provider. The production router restricts conceptual mutation to fresh empty
+models; existing-model, selected-element, resumed, and destructive mutations use the agent path.
+
+## Strategy decision
 
 ```mermaid
-stateDiagram-v2
-    [*] --> QUEUED: POST message accepted
-    QUEUED --> RUNNING: worker claims turn
-    RUNNING --> SUCCEEDED: validated changes or answer committed
-    RUNNING --> PARTIAL: some valid work committed and remaining work recorded
-    RUNNING --> NEEDS_INPUT: user input required
-    RUNNING --> NEEDS_CONFIRMATION: destructive batch requires confirmation
-    RUNNING --> CONFLICTED: expected revision is stale
-    RUNNING --> CANCELLED: cancellation requested
-    RUNNING --> TIMED_OUT: deadline exceeded
-    RUNNING --> FAILED: provider/tool/validation failure
-    SUCCEEDED --> QUEUED: continue turn
-    PARTIAL --> QUEUED: continue turn
-    NEEDS_CONFIRMATION --> QUEUED: confirm turn
+flowchart TD
+    fresh([Fresh unified turn])
+    durable{"Persisted plan/checkpoint/<br/>source analysis?"}
+    selected{"Selected elements or<br/>confirmed destruction?"}
+    empty{"Model structurally empty?"}
+    llmEmpty["LLM strict enum<br/>CONCEPTUAL_GENERATION or ANSWER"]
+    llmExisting["LLM strict enum<br/>INSPECT_AGENT or ANSWER"]
+    conceptual["Conceptual workflow"]
+    inspect["Inspect/contract workflow"]
+    answer["ANSWER intention<br/>ordinary AUTO action loop"]
+
+    fresh --> durable
+    durable -- yes --> inspect
+    durable -- no --> selected
+    selected -- yes --> inspect
+    selected -- no --> empty
+    empty -- yes --> llmEmpty
+    empty -- no --> llmExisting
+    llmEmpty -->|conceptual| conceptual
+    llmEmpty -->|ANSWER| answer --> inspect
+    llmExisting -->|inspect| inspect
+    llmExisting -->|ANSWER| answer
 ```
 
-## Safety Boundary
+No request keyword or fixture phrase participates in routing.
+
+`ANSWER` is not yet an enforced read-only branch. It enters the ordinary AUTO action loop, whose
+prompt should select `answer_user` but whose mutation actions remain available.
+
+## Validation boundary
 
 ```mermaid
 flowchart LR
-    user["User request + selected elements + attachments"]
-    contracts["Ecore-derived contracts<br/>types, features, enums, containments"]
-    source["Source units + source-document map<br/>for attachments"]
-    workspace["In-memory ModelWorkspace"]
-    agent["AgentTurnLoop"]
-    tools["Validated model tools"]
-    guards["Batch guards<br/>UUID ids, evidence checks, containment/reference normalization"]
-    validate["Structural Ecore/EMF validation<br/>no EVL in assistant apply"]
-    commit["Revision-checked commit"]
-    checkpoint["Checkpoint + inverse patch"]
-    storage["Persisted model revision"]
+    output["LLM semantic output"]
+    compile["Exact Ecore checks and deterministic compilation"]
+    private["Private working model"]
+    structural{"Structural Ecore/EMF valid?"}
+    diagnostic["Repair diagnostic; persisted model unchanged"]
+    atomic["Revision-checked atomic commit"]
+    evl["Explicit user validation endpoint / EVL"]
 
-    user --> agent
-    source --> agent
-    contracts --> tools
-    workspace --> tools
-    agent --> tools
-    tools --> guards --> workspace
-    workspace --> validate
-    validate --> commit --> storage
-    commit --> checkpoint
-    contracts -. "not raw EVL files" .- agent
+    output --> compile --> private --> structural
+    structural -- no --> diagnostic
+    structural -- yes --> atomic
+    atomic -. "separate, user initiated" .-> evl
 ```
 
-Current live status: the source-backed one-story workflow reaches `SUCCEEDED` with 100% coverage and
-a saved checkpoint. Assistant checkpoints are gated by structural Ecore/EMF conformance only; EVL
-semantic validation remains outside the chatbot apply path.
+EVL, stored semantic validation, and full `ModelService.validate(...)` are outside assistant
+generation, repair, apply, and commit.
