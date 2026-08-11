@@ -45,6 +45,7 @@ public final class AgentTurnLoop {
   private final int maxSourceProviderCalls;
   private final AgentActionCodec actions;
   private final AssistantMetrics metrics;
+  private volatile ConceptualInstanceModelWorkflow conceptualWorkflow;
   private final ObjectMapper mapper = new ObjectMapper();
   private final Map<String, AtomicBoolean> cancellations = new ConcurrentHashMap<>();
 
@@ -170,6 +171,11 @@ public final class AgentTurnLoop {
     this.metrics = metrics == null ? new AssistantMetrics() {} : metrics;
   }
 
+  /** Installs the isolated paper workflow without changing the default agent loop. */
+  public void setConceptualInstanceModelWorkflow(ConceptualInstanceModelWorkflow workflow) {
+    this.conceptualWorkflow = workflow;
+  }
+
   public TurnResult run(
       String sessionId,
       ModelLevel level,
@@ -258,6 +264,21 @@ public final class AgentTurnLoop {
     if (cancellations.putIfAbsent(sessionId, canceled) != null)
       throw new PlatformException(409, "An assistant turn is already active for this session.");
     AgentModelTools turnTools = tools.scoped(level, workspace);
+    if (mode == WorkflowMode.CONCEPTUAL_INSTANCE_GENERATION) {
+      ConceptualInstanceModelWorkflow workflow = conceptualWorkflow;
+      if (workflow == null) throw new PlatformException(503, "Conceptual assistant mode is not configured.");
+      String conceptualRequest = userMessage;
+      if (sourceDocument != null && !sourceDocument.isBlank()) {
+        conceptualRequest += "\n\nSOURCE SPECIFICATION (authoritative input):\n" + sourceDocument;
+      }
+      try {
+        return workflow.run(sessionId, level, conceptualRequest, workspace, turnTools, destructiveConfirmed);
+      } finally {
+        // The conceptual route returns before the general loop's finally block. Always release
+        // the per-session cancellation slot, including provider timeouts and repair failures.
+        cancellations.remove(sessionId, canceled);
+      }
+    }
     long promptTokens = 0;
     long completionTokens = 0;
     List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
@@ -2699,7 +2720,9 @@ validation.
     SOURCE_TO_MODEL(false),
     FEATURE_UPDATE(false),
     RESUME_REPAIR(false),
-    CLARIFY(true);
+    CLARIFY(true),
+    /** Paper workflow: LLM conceptual model followed by deterministic compilation. */
+    CONCEPTUAL_INSTANCE_GENERATION(false);
 
     private final boolean readOnly;
 

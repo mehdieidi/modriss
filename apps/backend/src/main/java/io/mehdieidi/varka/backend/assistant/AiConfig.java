@@ -1,6 +1,8 @@
 package io.mehdieidi.varka.backend.assistant;
 
 import io.mehdieidi.varka.platform.assistant.agent.AgentTurnLoop;
+import io.mehdieidi.varka.platform.assistant.agent.ConceptualInstanceModelWorkflow;
+import io.mehdieidi.varka.platform.assistant.agent.OpenRouterConceptualModelProvider;
 import io.mehdieidi.varka.platform.assistant.application.AgenticAssistantFacade;
 import io.mehdieidi.varka.platform.assistant.application.AgenticTurnService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
@@ -55,8 +57,9 @@ public class AiConfig {
       LexicalRetrievalIndex retrieval,
       AssistantRealtimeHub realtime,
       AiProperties properties,
-      io.mehdieidi.varka.platform.assistant.spi.AssistantMetrics metrics) {
-    return new AgentTurnLoop(
+      io.mehdieidi.varka.platform.assistant.spi.AssistantMetrics metrics,
+      ConceptualInstanceModelWorkflow conceptualWorkflow) {
+    AgentTurnLoop loop = new AgentTurnLoop(
         provider,
         tools,
         guides,
@@ -68,6 +71,15 @@ public class AiConfig {
         properties.maxProviderCallsPerTurn(),
         properties.maxProviderCallsSourceTurn(),
         metrics);
+    loop.setConceptualInstanceModelWorkflow(conceptualWorkflow);
+    return loop;
+  }
+
+  @Bean
+  public ConceptualInstanceModelWorkflow conceptualInstanceModelWorkflow(
+      MetamodelGuideGenerator guides, AiProperties properties) {
+    return new ConceptualInstanceModelWorkflow(
+        new OpenRouterConceptualModelProvider(properties), guides, properties);
   }
 
   @Bean(destroyMethod = "close")

@@ -2,6 +2,7 @@ package io.mehdieidi.varka.platform.assistant.provider.springai;
 
 import com.openai.client.okhttp.OpenAIOkHttpClient;
 import io.mehdieidi.varka.platform.assistant.agent.AgentActionSchema;
+import io.mehdieidi.varka.platform.assistant.agent.ConceptualInstanceModelWorkflow;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.varka.platform.assistant.application.ProviderRequestContext;
@@ -89,6 +90,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     String configured = properties.openaiCompatible().apiKey();
     if (configured != null && !configured.isBlank()) return configured;
     String environment = System.getenv("OPENAI_COMPATIBLE_API_KEY");
+    if (environment == null || environment.isBlank()) environment = System.getenv("OPENAI_API_KEY");
     return environment == null ? "" : environment.trim();
   }
 
@@ -130,7 +132,10 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       builder.parallelToolCalls(false);
     } else {
       // outputSchema requests the strict JSON-schema fallback supported by compatible endpoints.
-      builder.outputSchema(AgentActionSchema.json(prompt.patchContracts()));
+      builder.outputSchema(
+          "conceptual_instance_model".equals(prompt.requiredTool())
+              ? ConceptualInstanceModelWorkflow.jsonSchema()
+              : AgentActionSchema.json(prompt.patchContracts()));
     }
     return builder;
   }

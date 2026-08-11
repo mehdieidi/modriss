@@ -72,6 +72,7 @@ varka:
     max-text-chars: ${VARKA_UPLOAD_MAX_TEXT_CHARS:120000}
   ai:
     enabled: ${VARKA_AI_ENABLED:false}
+    mode: ${VARKA_AI_MODE:legacy}
     workflow-engine-v2: ${VARKA_AI_WORKFLOW_ENGINE_V2:true}
     provider: ${VARKA_AI_PROVIDER:openai}
     request-timeout: ${VARKA_AI_REQUEST_TIMEOUT:30s}

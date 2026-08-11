@@ -42,6 +42,7 @@ public final class DurableAssistantTurnWorker {
   private final VarkaMetrics metrics;
   private final TransactionTemplate transactions;
   private final boolean workflowEngineV2;
+  private final String assistantMode;
   private final int maxSourceChunksPerTurn;
   private final String workerId = "assistant-" + UUID.randomUUID();
   // Documents up to 24k characters remain whole. Larger documents are segmented only at semantic
@@ -82,6 +83,7 @@ public final class DurableAssistantTurnWorker {
       VarkaMetrics metrics,
       TransactionTemplate transactions,
       @Value("${varka.ai.workflow-engine-v2:true}") boolean workflowEngineV2,
+      @Value("${varka.ai.mode:legacy}") String assistantMode,
       @Value("${varka.ai.max-source-chunks-per-turn:24}") int maxSourceChunksPerTurn) {
     this.turns = turns;
     this.assistant = assistant;
@@ -89,6 +91,7 @@ public final class DurableAssistantTurnWorker {
     this.metrics = metrics;
     this.transactions = transactions;
     this.workflowEngineV2 = workflowEngineV2;
+    this.assistantMode = assistantMode == null ? "legacy" : assistantMode.trim();
     this.maxSourceChunksPerTurn = Math.max(1, maxSourceChunksPerTurn);
   }
 
@@ -219,6 +222,9 @@ public final class DurableAssistantTurnWorker {
               ? turn.message().substring(CONFIRMED_DESTRUCTION_PREFIX.length())
               : turn.message();
       AgentTurnLoop.WorkflowMode route = route(turn, message);
+      if ("conceptual-instance".equalsIgnoreCase(assistantMode)) {
+        route = AgentTurnLoop.WorkflowMode.CONCEPTUAL_INSTANCE_GENERATION;
+      }
       if (!turn.selectedElementIds().isEmpty()) {
         message +=
             "\n\nSelected canvas elements are focus context only: "

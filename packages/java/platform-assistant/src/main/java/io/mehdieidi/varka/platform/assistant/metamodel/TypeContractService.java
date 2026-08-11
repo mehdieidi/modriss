@@ -28,6 +28,12 @@ public final class TypeContractService {
     throw unknown(level, name);
   }
 
+  /** Returns the unique Ecore-derived root containment for a creatable type, when one exists. */
+  public java.util.Optional<MetamodelKnowledgeService.ReferenceContract> rootContainment(
+      ModelLevel level, String elementType) {
+    return knowledge.rootContainment(level, elementType);
+  }
+
   public List<TypeContract> describe(ModelLevel level, List<String> names) {
     if (names == null || names.isEmpty()) {
       throw new PlatformException(400, "At least one type name is required.");

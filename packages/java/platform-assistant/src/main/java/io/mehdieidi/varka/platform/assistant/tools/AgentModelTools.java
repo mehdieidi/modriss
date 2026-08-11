@@ -85,6 +85,11 @@ public final class AgentModelTools {
     return contracts.describe(active().level(), names);
   }
 
+  /** Resolves an exact root containment from the live Ecore contract index. */
+  public java.util.Optional<ReferenceContract> rootContainment(String elementType) {
+    return contracts.rootContainment(active().level(), elementType);
+  }
+
   public JsonNode readModel(String id) {
     JsonNode model = active().workspace().snapshot();
     return id == null || id.isBlank() ? model : find(model, id);
