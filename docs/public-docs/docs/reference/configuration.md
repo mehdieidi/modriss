@@ -68,8 +68,10 @@ internal strategy per request.
 Timeouts, token budgets, context limits, agent steps, provider-call limits, repair attempts, source
 passes, rate limits, retries, and recent-message windows all trade completeness and resilience
 against latency, memory use, and provider cost. `VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN` and
-`VARKA_AI_SOURCE_TURN_TIMEOUT` are the larger budgets used for source-backed attachment turns.
-Increasing them allows more complex documents; lowering them makes failures faster and cheaper.
+`VARKA_AI_SOURCE_TURN_TIMEOUT` are the separately configurable budgets used for source-backed
+attachment turns. The tested DeepSeek profile uses 20 calls for both normal and source turns, with
+12- and 15-minute timeouts respectively. Increasing them allows more complex documents; lowering
+them makes failures faster and cheaper but can starve review or correction.
 `VARKA_AI_FALLBACK_PROVIDER` is used only after an HTTP 429 from the primary provider. Durable
 assistant message submission currently requires an `idempotencyKey` in the request body so retries
 cannot apply duplicate work.

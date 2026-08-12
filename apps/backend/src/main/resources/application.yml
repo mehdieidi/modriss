@@ -77,9 +77,16 @@ varka:
     provider: ${VARKA_AI_PROVIDER:openai}
     request-timeout: ${VARKA_AI_REQUEST_TIMEOUT:30s}
     turn-timeout: ${VARKA_AI_TURN_TIMEOUT:3m}
+    max-tool-calls: ${VARKA_AI_MAX_TOOL_CALLS:0}
+    validation-repair-attempts: ${VARKA_AI_VALIDATION_REPAIR_ATTEMPTS:1}
+    max-repair-attempts: ${VARKA_AI_MAX_REPAIR_ATTEMPTS:4}
     max-agent-steps: ${VARKA_AI_MAX_AGENT_STEPS:8}
+    max-tool-calls-per-step: ${VARKA_AI_MAX_TOOL_CALLS_PER_STEP:8}
     token-budget: ${VARKA_AI_TOKEN_BUDGET:16000}
     max-prompt-tokens: ${VARKA_AI_MAX_PROMPT_TOKENS:24000}
+    max-context-snippets: ${VARKA_AI_MAX_CONTEXT_SNIPPETS:16}
+    reserved-schema-snippets: ${VARKA_AI_RESERVED_SCHEMA_SNIPPETS:10}
+    max-snippet-chars: ${VARKA_AI_MAX_SNIPPET_CHARS:1600}
     max-system-chars: ${VARKA_AI_MAX_SYSTEM_CHARS:14000}
     max-source-chunk-tokens: ${VARKA_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
     max-source-chunks-per-turn: ${VARKA_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
@@ -92,7 +99,11 @@ varka:
     max-contract-count: ${VARKA_AI_MAX_CONTRACT_COUNT:12}
     native-tools-preferred: ${VARKA_AI_NATIVE_TOOLS_PREFERRED:true}
     forced-tool-choice-reliable: ${VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE:true}
+    llm-contract-rerank-enabled: ${VARKA_AI_LLM_CONTRACT_RERANK_ENABLED:false}
     source-turn-timeout: ${VARKA_AI_SOURCE_TURN_TIMEOUT:5m}
+    max-cim-modeling-passes: ${VARKA_AI_MAX_CIM_MODELING_PASSES:4}
+    prefer-llm-source-extraction: ${VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION:true}
+    require-idempotency-key: ${VARKA_AI_REQUIRE_IDEMPOTENCY_KEY:true}
     fallback-provider: ${VARKA_AI_FALLBACK_PROVIDER:}
     hardening:
       per-user-requests-per-window: ${VARKA_AI_RATE_LIMIT_REQUESTS:30}

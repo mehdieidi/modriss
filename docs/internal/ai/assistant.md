@@ -8,6 +8,8 @@ existing model. Users do not choose between agent and conceptual modes.
 
 For exact runtime detail, see [current-llm-workflow.md](current-llm-workflow.md). For the paper
 mapping, see [conceptual-instance-paper-traceability.md](conceptual-instance-paper-traceability.md).
+The complete environment-variable reference, including accepted values, examples, inheritance,
+and limit semantics, is [environment-variables.md](../environment-variables.md#ai-assistant).
 
 ## Production configuration
 

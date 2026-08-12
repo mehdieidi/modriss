@@ -56,11 +56,21 @@ VARKA_AI_MODE=unified
 VARKA_AI_OPENAI_PROTOCOL=json_schema
 VARKA_AI_NATIVE_TOOLS_PREFERRED=false
 VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
+VARKA_AI_REQUEST_TIMEOUT=180s
+VARKA_AI_TURN_TIMEOUT=12m
+VARKA_AI_SOURCE_TURN_TIMEOUT=15m
+VARKA_AI_MAX_SYSTEM_CHARS=32000
+VARKA_AI_MAX_COMPLETION_TOKENS=16000
+VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=20
+VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=20
+VARKA_AI_PROVIDER_RETRY_ATTEMPTS=0
 docker compose up --build
 ```
 
 The validated deployment uses Arvan and `DeepSeek-V4-Flash`. `unified` automatically chooses the
-internal modeling workflow; users and API clients do not select it.
+internal modeling workflow; users and API clients do not select it. These limits are the tested
+DeepSeek profile: the staged conceptual workflow can consume 18 conceptual calls plus two routing
+calls, while individual generation stages remain more tightly bounded.
 
 ## Stop or Reset
 

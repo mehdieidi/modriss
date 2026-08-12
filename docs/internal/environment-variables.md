@@ -1,9 +1,10 @@
 # Environment Variables
 
-This file explains every active key in the root `.env` and `.env.example` files. The two files are
-kept at the same active key set; `.env` contains local values while `.env.example` contains safe
-defaults. The list below is derived from the Spring configuration, Docker Compose file, frontend
-runtime wiring, and database/LocalStack helper scripts.
+This file explains every supported key in the root `.env.example`. Local `.env` files may also
+contain machine-specific overrides or obsolete keys retained from an older checkout; only keys
+documented here and wired by the current application/Compose configuration are supported. The list
+below is derived from Spring configuration, Docker Compose, frontend runtime wiring, and helper
+scripts.
 
 An environment variable is a named setting that the app reads when it starts. The name is the part
 before `=`, and the value is the part after it:
@@ -116,59 +117,86 @@ protocol, and bounded work. The deployed configuration uses Arvan's OpenAI-compa
 `DeepSeek-V4-Flash`; provider-family alternatives remain adapter capabilities, not validated
 production configurations for this deployment.
 
-| Variable                                     | Possible values                                              | What it means                                                                                                                                         |
-| -------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VARKA_AI_ENABLED`                           | `true`, `false`                                              | Master switch for outbound AI calls. `false` means the backend should not call an AI provider.                                                        |
-| `VARKA_AI_MODE`                              | `unified`, `agent-test`, `conceptual-test`                   | `unified` is the sole production mode. Test values force one internal strategy for acceptance; unknown values fail startup.                           |
-| `VARKA_AI_WORKFLOW_ENGINE_V2`                | `true`, `false`                                              | Rollout guard for claiming durable turns. `false` stops new worker claims; there is no legacy fallback executor.                                      |
-| `VARKA_AI_PROVIDER`                          | `openai`, `openai-compatible`, `openai_compatible`, `gemini` | Which provider family to use. The OpenAI-compatible aliases normalize to the `openai` provider path.                                                  |
-| `VARKA_AI_REQUEST_TIMEOUT`                   | Duration like `5m`, `10m`                                    | Maximum time to wait for one provider request before giving up.                                                                                       |
-| `VARKA_AI_TURN_TIMEOUT`                      | Duration like `5m`                                           | Overall assistant turn ceiling. Timed-out turns must not apply later.                                                                                 |
-| `VARKA_AI_MAX_MODEL_DELTA_ELEMENTS_PER_PASS` | Non-negative integer                                         | Maximum model elements changed in one source-analysis pass. Lower values reduce mutation size; higher values allow larger automatic changes.          |
-| `VARKA_AI_MAX_CIM_MODELING_PASSES`           | Positive integer                                             | Maximum incremental CIM passes for a source-backed turn. Higher values can improve completeness but increase latency and provider usage.              |
-| `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION`      | `true`, `false`                                              | When true, source attachments use LLM evidence extraction when available; false prefers deterministic/local extraction.                               |
-| `VARKA_AI_MAX_REPAIR_ATTEMPTS`               | Positive integer                                             | Maximum structural repair attempts after validation fails.                                                                                            |
-| `VARKA_AI_MAX_TOOL_CALLS`                    | `0` or positive integer                                      | Legacy total tool-operation limit. The current properties constructor normalizes `0` to 24.                                                           |
-| `VARKA_AI_MAX_AGENT_STEPS`                   | Positive integer                                             | Maximum agent loop steps for bounded agent turns.                                                                                                     |
-| `VARKA_AI_MAX_TOOL_CALLS_PER_STEP`           | Positive integer                                             | Maximum tool calls in one agent loop step.                                                                                                            |
-| `VARKA_AI_TOKEN_BUDGET`                      | Positive integer                                             | Approximate maximum tokens the assistant should spend in a turn. Larger budgets allow more context but cost more and may be slower.                   |
-| `VARKA_AI_MAX_PROMPT_TOKENS`                 | Positive integer                                             | Maximum prompt token budget per provider call.                                                                                                        |
-| `VARKA_AI_MAX_COMPLETION_TOKENS`             | Positive integer                                             | Maximum requested structured completion budget. Conceptual responses remain additionally bounded by object count.                                     |
-| `VARKA_AI_MAX_SOURCE_CHUNK_TOKENS`           | Positive integer                                             | Maximum source text budget per source-understanding chunk.                                                                                            |
-| `VARKA_AI_MAX_SOURCE_CHUNKS_PER_TURN`        | Positive integer                                             | Maximum source chunks processed in one turn.                                                                                                          |
-| `VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN`       | Positive integer                                             | Maximum provider calls for a standard assistant turn. Higher values allow more retries/planning but increase latency and cost.                        |
-| `VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN`    | Positive integer                                             | Maximum provider calls when source analysis runs. Higher values allow deeper extraction but increase latency and cost.                                |
-| `VARKA_AI_SOURCE_TURN_TIMEOUT`               | Duration like `12m`                                          | Overall timeout for source-backed turns. It should be at least as large as the normal turn timeout when source analysis is enabled.                   |
-| `VARKA_AI_REQUIRE_IDEMPOTENCY_KEY`           | `true`, `false`                                              | Compatibility setting. Durable message submission currently requires request-body `idempotencyKey` whenever durable turn storage is active.           |
-| `VARKA_AI_MAX_CONTEXT_SNIPPETS`              | Positive integer                                             | Maximum retrieved context snippets sent to the model.                                                                                                 |
-| `VARKA_AI_RESERVED_SCHEMA_SNIPPETS`          | Positive integer                                             | Minimum context slots reserved for schema/metamodel information.                                                                                      |
-| `VARKA_AI_MAX_SNIPPET_CHARS`                 | Positive integer                                             | Maximum characters per retrieved context snippet.                                                                                                     |
-| `VARKA_AI_MAX_SYSTEM_CHARS`                  | Positive integer                                             | Maximum characters in the generated system prompt.                                                                                                    |
-| `VARKA_AI_RATE_LIMIT_REQUESTS`               | Positive integer                                             | Maximum assistant requests per user in one rate-limit window.                                                                                         |
-| `VARKA_AI_RATE_LIMIT_WINDOW`                 | Duration like `1m`                                           | The window used with `VARKA_AI_RATE_LIMIT_REQUESTS`.                                                                                                  |
-| `VARKA_AI_CIRCUIT_FAILURE_THRESHOLD`         | Positive integer                                             | Number of consecutive provider failures before the circuit breaker opens.                                                                             |
-| `VARKA_AI_CIRCUIT_OPEN_DURATION`             | Duration like `1m`                                           | How long the app waits before trying the provider again after the circuit opens.                                                                      |
-| `VARKA_AI_PROVIDER_RETRY_ATTEMPTS`           | `0` or positive integer                                      | How many retry attempts the app makes for provider calls.                                                                                             |
-| `VARKA_AI_RETRY_BACKOFF`                     | Duration like `250ms`, `1s`                                  | Delay between provider retry attempts.                                                                                                                |
-| `VARKA_AI_RECENT_MESSAGE_WINDOW`             | Positive integer                                             | Number of recent durable chat messages included as context.                                                                                           |
-| `VARKA_AI_FALLBACK_PROVIDER`                 | Empty, `openai`, `gemini`                                    | Optional backup provider used after HTTP 429 from the primary provider. Empty means no fallback. Not used for 5xx, timeout, or circuit-open failures. |
-| `VARKA_AI_VALIDATION_REPAIR_ATTEMPTS`        | Non-negative integer                                         | Legacy validation-repair setting. `VARKA_AI_MAX_REPAIR_ATTEMPTS` takes precedence when it is positive.                                                |
-| `VARKA_AI_LLM_CONTRACT_RERANK_ENABLED`       | `true`, `false`                                              | Enables optional LLM reranking of retrieved contracts. It can improve relevance but adds provider calls and latency.                                  |
-| `VARKA_AI_NATIVE_TOOLS_PREFERRED`            | `true`, `false`                                              | Whether provider-native tool calls are preferred when supported. Must remain `false` for the tested Arvan configuration.                              |
-| `VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE`       | `true`, `false`                                              | Whether the endpoint reliably honors forced tool choice. Must remain `false` for Arvan.                                                               |
-| `VARKA_AI_OPENAI_PROTOCOL`                   | `json_schema`, `tools`, `auto`                               | OpenAI-compatible response protocol. Production Arvan uses `json_schema`, transported as structured JSON-object content with schema prompting.        |
+Tested local/production-style DeepSeek profile (credentials intentionally omitted):
+
+```dotenv
+VARKA_AI_ENABLED=true
+VARKA_AI_MODE=unified
+VARKA_AI_WORKFLOW_ENGINE_V2=true
+VARKA_AI_PROVIDER=openai
+VARKA_AI_MODEL=DeepSeek-V4-Flash
+VARKA_AI_OPENAI_PROTOCOL=json_schema
+VARKA_AI_NATIVE_TOOLS_PREFERRED=false
+VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
+VARKA_AI_REQUEST_TIMEOUT=180s
+VARKA_AI_TURN_TIMEOUT=12m
+VARKA_AI_SOURCE_TURN_TIMEOUT=15m
+VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=20
+VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=20
+VARKA_AI_PROVIDER_RETRY_ATTEMPTS=0
+```
+
+The values below show supported input forms and the safe sample used in `.env.example`. Positive
+limits mean integers greater than zero. `0` is meaningful only where explicitly stated; several
+configuration records normalize non-positive limits to an internal default.
+
+| Variable                                  | Possible values                                              | What it means                                                                                                                                                  |
+| ----------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VARKA_AI_ENABLED`                        | `true`, `false`                                              | Master switch for outbound AI calls. `false` means the backend should not call an AI provider.                                                                 |
+| `VARKA_AI_MODE`                           | `unified`, `agent-test`, `conceptual-test`                   | `unified` is the sole production mode. Test values force one internal strategy for acceptance; unknown values fail startup.                                    |
+| `VARKA_AI_WORKFLOW_ENGINE_V2`             | `true`, `false`                                              | Rollout guard for claiming durable turns. `false` stops new worker claims; there is no legacy fallback executor.                                               |
+| `VARKA_AI_PROVIDER`                       | `openai`, `openai-compatible`, `openai_compatible`, `gemini` | Which provider family to use. The OpenAI-compatible aliases normalize to the `openai` provider path.                                                           |
+| `VARKA_AI_EMBEDDING_PROVIDER`             | `none`, `transformers`                                       | Spring AI embedding backend. The supported sample is `none`, which uses lexical retrieval. Use `transformers` only with a verified local ONNX model/tokenizer. |
+| `VARKA_AI_REQUEST_TIMEOUT`                | Positive duration; sample `180s`                             | Maximum time for one provider request. Keep it below the applicable turn timeout.                                                                              |
+| `VARKA_AI_TURN_TIMEOUT`                   | Positive duration; sample `12m`                              | Overall assistant turn ceiling. Timed-out turns must not apply later.                                                                                          |
+| `VARKA_AI_MAX_CIM_MODELING_PASSES`        | Positive integer                                             | Maximum incremental CIM passes for a source-backed turn. Higher values can improve completeness but increase latency and provider usage.                       |
+| `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION`   | `true`, `false`                                              | When true, source attachments use LLM evidence extraction when available; false prefers deterministic/local extraction.                                        |
+| `VARKA_AI_MAX_REPAIR_ATTEMPTS`            | Positive integer; sample `4`                                 | Maximum structural repair attempts after structural Ecore/EMF validation fails. This never enables EVL semantic gating.                                        |
+| `VARKA_AI_MAX_TOOL_CALLS`                 | `0` or positive integer                                      | Legacy total tool-operation limit. The current properties constructor normalizes `0` to 24.                                                                    |
+| `VARKA_AI_MAX_AGENT_STEPS`                | Positive integer                                             | Maximum agent loop steps for bounded agent turns.                                                                                                              |
+| `VARKA_AI_MAX_TOOL_CALLS_PER_STEP`        | Positive integer                                             | Maximum tool calls in one agent loop step.                                                                                                                     |
+| `VARKA_AI_TOKEN_BUDGET`                   | Positive integer; sample `16000`                             | Approximate planning/context budget used by the assistant. It is not the audited whole-turn provider-token total.                                              |
+| `VARKA_AI_MAX_PROMPT_TOKENS`              | Positive integer; sample `24000`                             | Maximum estimated prompt budget per provider call.                                                                                                             |
+| `VARKA_AI_MAX_COMPLETION_TOKENS`          | Positive integer; tested `16000`                             | Provider capability ceiling. Individual stages apply smaller limits; conceptual responses are also bounded by object/collection counts.                        |
+| `VARKA_AI_MAX_PATCH_CREATES`              | Positive integer; sample `48`                                | Maximum create operations accepted in one agent patch schema. This does not raise the conceptual workflow's eight-object limit.                                |
+| `VARKA_AI_MAX_PATCH_CONNECTIONS`          | Positive integer; sample `96`                                | Maximum relationship operations accepted in one agent patch schema.                                                                                            |
+| `VARKA_AI_MAX_PATCH_EVIDENCE`             | Positive integer; sample `64`                                | Maximum source-evidence records accepted in one agent patch schema.                                                                                            |
+| `VARKA_AI_MAX_CONTRACT_COUNT`             | Positive integer; sample `12`                                | Maximum exact Ecore type contracts exposed in one agent patch prompt.                                                                                          |
+| `VARKA_AI_MAX_SOURCE_CHUNK_TOKENS`        | Positive integer                                             | Maximum source text budget per source-understanding chunk.                                                                                                     |
+| `VARKA_AI_MAX_SOURCE_CHUNKS_PER_TURN`     | Positive integer                                             | Maximum source chunks processed in one turn.                                                                                                                   |
+| `VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN`    | Positive integer; tested `20`                                | Hard turn-wide provider-call ceiling. The staged conceptual path may use 18 calls plus two routing calls; values below 20 can starve review/correction.        |
+| `VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN` | Positive integer; tested `20`                                | Provider-call ceiling for source-backed turns. Increase only with matching timeout/cost monitoring.                                                            |
+| `VARKA_AI_SOURCE_TURN_TIMEOUT`            | Positive duration; sample `15m`                              | Overall timeout for source-backed turns. It should be at least as large as the normal turn timeout.                                                            |
+| `VARKA_AI_REQUIRE_IDEMPOTENCY_KEY`        | `true`, `false`                                              | Compatibility setting. Durable message submission currently requires request-body `idempotencyKey` whenever durable turn storage is active.                    |
+| `VARKA_AI_MAX_CONTEXT_SNIPPETS`           | Positive integer; sample `16`                                | Maximum retrieved context snippets sent to the model.                                                                                                          |
+| `VARKA_AI_RESERVED_SCHEMA_SNIPPETS`       | Positive integer; sample `10`                                | Context slots reserved for authoritative schema/metamodel snippets. Keep this no larger than the total snippet limit.                                          |
+| `VARKA_AI_MAX_SNIPPET_CHARS`              | Positive integer; sample `1600`                              | Maximum characters per retrieved context snippet.                                                                                                              |
+| `VARKA_AI_MAX_SYSTEM_CHARS`               | Positive integer; tested `32000`                             | Maximum characters in the generated system prompt. The larger tested value prevents cutting authoritative Ecore guidance.                                      |
+| `VARKA_AI_RATE_LIMIT_REQUESTS`            | Positive integer                                             | Maximum assistant requests per user in one rate-limit window.                                                                                                  |
+| `VARKA_AI_RATE_LIMIT_WINDOW`              | Duration like `1m`                                           | The window used with `VARKA_AI_RATE_LIMIT_REQUESTS`.                                                                                                           |
+| `VARKA_AI_CIRCUIT_FAILURE_THRESHOLD`      | Positive integer                                             | Number of consecutive provider failures before the circuit breaker opens.                                                                                      |
+| `VARKA_AI_CIRCUIT_OPEN_DURATION`          | Duration like `1m`                                           | How long the app waits before trying the provider again after the circuit opens.                                                                               |
+| `VARKA_AI_PROVIDER_RETRY_ATTEMPTS`        | `0` or positive integer; tested `0`                          | Additional transport/provider attempts after the initial call. Semantic workflow retries are separate and still consume the provider-call budget.              |
+| `VARKA_AI_RETRY_BACKOFF`                  | Duration like `250ms`, `1s`                                  | Delay between provider retry attempts.                                                                                                                         |
+| `VARKA_AI_RECENT_MESSAGE_WINDOW`          | Positive integer                                             | Number of recent durable chat messages included as context.                                                                                                    |
+| `VARKA_AI_FALLBACK_PROVIDER`              | Empty, `openai`, `gemini`                                    | Optional backup provider used after HTTP 429 from the primary provider. Empty means no fallback. Not used for 5xx, timeout, or circuit-open failures.          |
+| `VARKA_AI_VALIDATION_REPAIR_ATTEMPTS`     | Non-negative integer                                         | Legacy validation-repair setting. `VARKA_AI_MAX_REPAIR_ATTEMPTS` takes precedence when it is positive.                                                         |
+| `VARKA_AI_LLM_CONTRACT_RERANK_ENABLED`    | `true`, `false`                                              | Enables optional LLM reranking of retrieved contracts. It can improve relevance but adds provider calls and latency.                                           |
+| `VARKA_AI_NATIVE_TOOLS_PREFERRED`         | `true`, `false`                                              | Whether provider-native tool calls are preferred when supported. Must remain `false` for the tested Arvan configuration.                                       |
+| `VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE`    | `true`, `false`                                              | Whether the endpoint reliably honors forced tool choice. Must remain `false` for Arvan.                                                                        |
+| `VARKA_AI_OPENAI_PROTOCOL`                | `json_schema`, `json-schema`, `tools`, `auto`                | OpenAI-compatible response protocol. Production Arvan uses `json_schema`; `auto` currently resolves from the environment and otherwise defaults to `tools`.    |
 
 ## AI Provider Credentials And Models
 
 These are secrets or provider-specific names. Keep real keys in `.env`, not `.env.example`.
 
-| Variable                     | Possible values                                                            | What it means                                                                                                                    |
-| ---------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `OPENAI_COMPATIBLE_BASE_URL` | URL like `https://api.openai.com/v1` or another OpenAI-compatible base URL | Base URL for OpenAI-style providers. Use the provider's API root expected by the OpenAI SDK, usually including `/v1`.            |
-| `OPENAI_COMPATIBLE_API_KEY`  | Provider API key or empty                                                  | API key for OpenAI-compatible providers.                                                                                         |
-| `GEMINI_API_KEY`             | Gemini API key or empty                                                    | API key for Google Gemini.                                                                                                       |
-| `VARKA_AI_MODEL`             | `DeepSeek-V4-Flash` for production, or another configured model name       | Single model used by strategy, conceptual, and agent calls. The deployed Arvan configuration requires `DeepSeek-V4-Flash`.       |
-| `VARKA_AI_TEST_MODEL`        | Empty, `auto`, or a provider model name                                    | Optional model used by tests/evaluations that intentionally run against a different model. Empty falls back to `VARKA_AI_MODEL`. |
+| Variable                     | Possible values                                                            | What it means                                                                                                                                          |
+| ---------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `OPENAI_COMPATIBLE_BASE_URL` | URL like `https://api.openai.com/v1` or another OpenAI-compatible base URL | Base URL for OpenAI-style providers. The application removes trailing slashes and appends `/v1` when it is absent.                                     |
+| `OPENAI_COMPATIBLE_API_KEY`  | Provider API key or empty                                                  | API key for OpenAI-compatible providers.                                                                                                               |
+| `GEMINI_API_KEY`             | Gemini API key or empty                                                    | API key for Google Gemini.                                                                                                                             |
+| `VARKA_AI_MODEL`             | `DeepSeek-V4-Flash` for production, or another configured model name       | Single model used by strategy, conceptual, and agent calls. The deployed Arvan configuration requires `DeepSeek-V4-Flash`.                             |
+| `VARKA_AI_TEST_MODEL`        | Empty or a provider model name                                             | Optional evaluation override. Empty falls back to `VARKA_AI_MODEL`; `auto` has no special application meaning and is passed literally to the provider. |
 
 ## AI Proxy
 
@@ -181,6 +209,22 @@ These only affect outbound AI provider calls, not every network call in the app.
 | `VARKA_AI_PROXY_HOST`            | Hostname or IP address    | Proxy server host. Use `127.0.0.1` for host-local development, or `host.docker.internal` from inside Docker on supported platforms. |
 | `VARKA_AI_PROXY_PORT`            | Port number               | Proxy server port. Common local defaults are `2081` for HTTP and `2082` for SOCKS.                                                  |
 | `VARKA_AI_PROXY_CONNECT_TIMEOUT` | Duration like `2s`        | How long to wait when checking or connecting to the proxy.                                                                          |
+
+Provider-specific overrides use the same accepted types. Each omitted override inherits the
+corresponding global `VARKA_AI_PROXY_*` setting.
+
+| Variable family                         | Available values / sample                  | What it means                                                 |
+| --------------------------------------- | ------------------------------------------ | ------------------------------------------------------------- |
+| `VARKA_AI_OPENAI_PROXY_ENABLED`         | `true`, `false`; sample `false`            | Overrides proxy enablement for OpenAI-compatible/Arvan calls. |
+| `VARKA_AI_OPENAI_PROXY_TYPE`            | `DIRECT`, `HTTP`, `SOCKS`; sample `HTTP`   | Overrides the OpenAI-compatible proxy type.                   |
+| `VARKA_AI_OPENAI_PROXY_HOST`            | Hostname/IP; sample `host.docker.internal` | Overrides the OpenAI-compatible proxy host.                   |
+| `VARKA_AI_OPENAI_PROXY_PORT`            | Port `1`–`65535`; sample `2081`            | Overrides the OpenAI-compatible proxy port.                   |
+| `VARKA_AI_OPENAI_PROXY_CONNECT_TIMEOUT` | Positive duration; sample `2s`             | Overrides the OpenAI-compatible proxy connection timeout.     |
+| `VARKA_AI_GEMINI_PROXY_ENABLED`         | `true`, `false`; sample `false`            | Overrides proxy enablement for Gemini calls.                  |
+| `VARKA_AI_GEMINI_PROXY_TYPE`            | `DIRECT`, `HTTP`, `SOCKS`; sample `HTTP`   | Overrides the Gemini proxy type.                              |
+| `VARKA_AI_GEMINI_PROXY_HOST`            | Hostname/IP; sample `127.0.0.1`            | Overrides the Gemini proxy host.                              |
+| `VARKA_AI_GEMINI_PROXY_PORT`            | Port `1`–`65535`; sample `2081`            | Overrides the Gemini proxy port.                              |
+| `VARKA_AI_GEMINI_PROXY_CONNECT_TIMEOUT` | Positive duration; sample `2s`             | Overrides the Gemini proxy connection timeout.                |
 
 ## Observability
 
