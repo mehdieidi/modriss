@@ -1228,7 +1228,7 @@ public final class AgentTurnLoop {
                 system,
                 attemptUser));
         try {
-          strategy = findStrategy(mapper.readTree(decision.content()));
+          strategy = findStrategy(strategyJson(decision.content()));
         } catch (RuntimeException ignored) {
           strategy = "";
         }
@@ -1331,6 +1331,36 @@ public final class AgentTurnLoop {
       }
     }
     return "";
+  }
+
+  /** Extracts one balanced provider JSON object before applying the closed strategy allowlist. */
+  private JsonNode strategyJson(String content) {
+    String value = content == null ? "" : content.trim();
+    int start = value.indexOf('{');
+    if (start < 0)
+      throw new IllegalArgumentException("Strategy response contained no JSON object.");
+    boolean quoted = false;
+    boolean escaped = false;
+    int depth = 0;
+    for (int index = start; index < value.length(); index++) {
+      char character = value.charAt(index);
+      if (quoted) {
+        if (escaped) escaped = false;
+        else if (character == '\\') escaped = true;
+        else if (character == '"') quoted = false;
+      } else if (character == '"') {
+        quoted = true;
+      } else if (character == '{') {
+        depth++;
+      } else if (character == '}' && --depth == 0) {
+        try {
+          return mapper.readTree(value.substring(start, index + 1));
+        } catch (Exception failure) {
+          throw new IllegalArgumentException("Strategy response JSON was malformed.", failure);
+        }
+      }
+    }
+    throw new IllegalArgumentException("Strategy response JSON was truncated.");
   }
 
   private boolean mutatingPlanWithoutCheckpoint(JsonNode modelingPlan, AgentModelTools turnTools) {

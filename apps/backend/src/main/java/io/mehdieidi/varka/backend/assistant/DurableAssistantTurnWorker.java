@@ -254,22 +254,28 @@ public final class DurableAssistantTurnWorker {
             "Checkpoint " + (turn.checkpointCount() + 1),
             null);
       }
+      String durableMessage = message;
+      String durableSource = sourceForAgent;
+      AgentTurnLoop.WorkflowMode durableRoute = route;
       var result =
-          assistant.durableMessage(
-              user,
-              turn.threadId(),
-              turn.modelId(),
-              turn.expectedRevision(),
-              message,
-              sourceForAgent,
-              destructiveConfirmed,
-              () -> turns.cancellationRequested(turn.id()),
+          io.mehdieidi.varka.platform.assistant.application.DurableTurnExecutionContext.with(
+              turn.id(),
               () ->
-                  Instant.now().isAfter(turn.deadlineAt())
-                      ? new io.mehdieidi.varka.platform.kernel.PlatformException(
-                          504, "Assistant turn exceeded its configured deadline.")
-                      : null,
-              route);
+                  assistant.durableMessage(
+                      user,
+                      turn.threadId(),
+                      turn.modelId(),
+                      turn.expectedRevision(),
+                      durableMessage,
+                      durableSource,
+                      destructiveConfirmed,
+                      () -> turns.cancellationRequested(turn.id()),
+                      () ->
+                          Instant.now().isAfter(turn.deadlineAt())
+                              ? new io.mehdieidi.varka.platform.kernel.PlatformException(
+                                  504, "Assistant turn exceeded its configured deadline.")
+                              : null,
+                      durableRoute));
       boolean checkpointSaved = !result.inversePatch().isEmpty();
       preflightSourceEvidence(turn, units, result.commandBatch());
       final long[] committedRevision = {result.revision()};
@@ -796,7 +802,12 @@ public final class DurableAssistantTurnWorker {
             || turns.sourceBlueprint(turn.id()).isPresent()
             || sourceAnalysis(turn.id()).isPresent();
     AgentTurnLoop.WorkflowMode mode;
-    if (hasDurableWorkflow) {
+    if (existingWorkflow
+        .map(AssistantTurnStore.Workflow::workflowKind)
+        .filter("CONCEPTUAL_GENERATION"::equals)
+        .isPresent()) {
+      mode = AgentTurnLoop.WorkflowMode.CONCEPTUAL_INSTANCE_GENERATION;
+    } else if (hasDurableWorkflow) {
       mode = AgentTurnLoop.WorkflowMode.RESUME_REPAIR;
     } else if (sourceBacked) {
       mode = AgentTurnLoop.WorkflowMode.SOURCE_TO_MODEL;

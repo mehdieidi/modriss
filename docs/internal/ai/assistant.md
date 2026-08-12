@@ -107,9 +107,9 @@ deterministic Ecore compilation:
 
 ```text
 request + source + current model + authoritative Ecore
-  -> small LLM blueprint (maximum 48 objects and 12 EClasses)
+  -> small LLM blueprint (maximum 8 objects and 12 EClasses)
   -> exact contract and required construction closure
-  -> coherent slices of at most eight complete objects
+  -> coherent slices of at most two complete objects on Arvan/DeepSeek
   -> stable-ID merge and cross-slice reference resolution
   -> structured LLM quality review/correction
   -> deterministic IDs/order/containment/reference compilation
@@ -127,8 +127,11 @@ placement only when one exact Ecore containment is mechanically unambiguous.
 Conceptual omission never deletes existing data. This path cannot emit deletions or moves. A
 truncated slice is discarded and split; it is never retried at the same size. All slices are merged
 and compiled in the private workspace, so no partial conceptual result is committed. The blueprint
-and slices are audited within the durable turn, but are not yet restart-resumable as separately
-persisted conceptual work items.
+is stored in the durable workflow plan and every planned object has an idempotent work item holding
+its blueprint entry and, once accepted, its complete conceptual payload. Lease recovery skips
+completed objects and preserves any truncation-reduced slice size. Provider calls and token totals
+are written incrementally with keyed audit rows, while intermediate payloads remain private and
+never become model revisions.
 
 ## Inspect/contract agent path
 
@@ -161,8 +164,8 @@ exact unit IDs. Committed evidence is persisted as:
 
 `coveragePercent=100` means all tracked source units were accounted for. It does not mean the model
 passed EVL or a human usefulness review. Relevant uncovered units prevent a successful completion.
-The durable agent can persist plans and partial slices across `/continue`; conceptual generation is
-currently one bounded complete document.
+Both paths persist plans and completed work across worker recovery. Conceptual generation still
+produces one atomic model commit even when its private slices span multiple worker executions.
 
 ## Validation and persistence boundary
 

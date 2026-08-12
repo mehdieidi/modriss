@@ -113,6 +113,11 @@ public interface AssistantTurnStore {
 
   void recordProviderCalls(String turnId, List<ProviderCall> calls);
 
+  /** Persists one call immediately; keyed calls are safe to record again at turn completion. */
+  default void recordProviderCall(String turnId, ProviderCall call) {
+    recordProviderCalls(turnId, List.of(call));
+  }
+
   void saveCheckpoint(String turnId, String modelId, long revision, Object inversePatch);
 
   /** Creates or returns a durable checkpoint intent before mutating the model. */
@@ -210,7 +215,33 @@ public interface AssistantTurnStore {
       String systemPrompt,
       String userPrompt,
       String finishReason,
-      String error) {
+      String error,
+      String callKey) {
+    public ProviderCall(
+        String provider,
+        String model,
+        long latencyMillis,
+        long promptTokens,
+        long completionTokens,
+        boolean usageReported,
+        String systemPrompt,
+        String userPrompt,
+        String finishReason,
+        String error) {
+      this(
+          provider,
+          model,
+          latencyMillis,
+          promptTokens,
+          completionTokens,
+          usageReported,
+          systemPrompt,
+          userPrompt,
+          finishReason,
+          error,
+          null);
+    }
+
     public ProviderCall(
         String provider,
         String model,
@@ -230,6 +261,7 @@ public interface AssistantTurnStore {
           systemPrompt,
           userPrompt,
           "COMPLETED",
+          null,
           null);
     }
 
@@ -250,6 +282,7 @@ public interface AssistantTurnStore {
           null,
           null,
           "COMPLETED",
+          null,
           null);
     }
   }

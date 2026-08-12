@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.platform.assistant.agent;
 
+import io.mehdieidi.varka.platform.assistant.application.DurableTurnExecutionContext;
 import io.mehdieidi.varka.platform.assistant.application.ProviderCallBudget;
 import io.mehdieidi.varka.platform.assistant.config.AiProperties;
 import io.mehdieidi.varka.platform.assistant.domain.ModelCommandBatch;
@@ -40,6 +41,7 @@ public final class ConceptualInstanceModelWorkflow {
   private final MetamodelGuideGenerator guides;
   private final TypeContractService contracts;
   private final AiProperties properties;
+  private final AssistantTurnStore turns;
   private final ObjectMapper mapper = new ObjectMapper();
 
   public ConceptualInstanceModelWorkflow(
@@ -47,10 +49,20 @@ public final class ConceptualInstanceModelWorkflow {
       MetamodelGuideGenerator guides,
       TypeContractService contracts,
       AiProperties properties) {
+    this(provider, guides, contracts, properties, null);
+  }
+
+  public ConceptualInstanceModelWorkflow(
+      AssistantModelProvider provider,
+      MetamodelGuideGenerator guides,
+      TypeContractService contracts,
+      AiProperties properties,
+      AssistantTurnStore turns) {
     this.provider = java.util.Objects.requireNonNull(provider, "provider");
     this.guides = java.util.Objects.requireNonNull(guides, "guides");
     this.contracts = java.util.Objects.requireNonNull(contracts, "contracts");
     this.properties = java.util.Objects.requireNonNull(properties, "properties");
+    this.turns = turns;
   }
 
   /** OpenAI-compatible schema for the paper IR plus optional Varka source evidence. */
@@ -86,7 +98,7 @@ public final class ConceptualInstanceModelWorkflow {
     return "{\"type\":\"object\",\"required\":[\"types\",\"objects\"],\"additionalProperties\":false,"
                + "\"properties\":{\"types\":{\"type\":\"array\",\"minItems\":1,\"maxItems\":12,"
                + "\"uniqueItems\":true,\"items\":{\"type\":\"string\",\"minLength\":1}},"
-               + "\"objects\":{\"type\":\"array\",\"minItems\":1,\"maxItems\":48,\"items\":{"
+               + "\"objects\":{\"type\":\"array\",\"minItems\":1,\"maxItems\":8,\"items\":{"
                + "\"type\":\"object\",\"required\":[\"instanceId\",\"type\",\"purpose\",\"slice\"],"
                + "\"properties\":{\"instanceId\":{\"type\":\"string\",\"minLength\":1},"
                + "\"type\":{\"type\":\"string\",\"minLength\":1},\"purpose\":{\"type\":\"string\"},"
@@ -98,6 +110,16 @@ public final class ConceptualInstanceModelWorkflow {
 
   /** Schema for the semantic review; corrections are bounded conceptual objects, never prose. */
   public static String reviewSchema() {
+    return "{\"type\":\"object\",\"required\":[\"acceptable\",\"findings\"],"
+        + "\"additionalProperties\":false,\"properties\":{\"acceptable\":{\"type\":\"boolean\"},"
+        + "\"findings\":{\"type\":\"array\",\"maxItems\":1,\"items\":{\"type\":\"object\","
+        + "\"additionalProperties\":false,\"properties\":{\"objectIds\":{\"type\":\"array\","
+        + "\"items\":{\"type\":\"string\"}},\"sourceUnitIds\":{\"type\":\"array\","
+        + "\"items\":{\"type\":\"string\"}},\"problem\":{\"type\":\"string\"},"
+        + "\"recommendedCorrection\":{\"type\":\"string\"}}}}}}";
+  }
+
+  public static String correctionSchema() {
     return "{\"type\":\"object\",\"required\":[\"acceptable\",\"findings\",\"corrections\"],"
         + "\"additionalProperties\":false,\"properties\":{\"acceptable\":{\"type\":\"boolean\"},"
         + "\"findings\":{\"type\":\"array\",\"items\":{\"type\":\"object\"}},"
@@ -112,27 +134,42 @@ public final class ConceptualInstanceModelWorkflow {
       AgentModelTools tools,
       boolean destructiveConfirmed) {
     AssistantModelProvider.AssistantReply last = null;
-    UsageAudit audit = new UsageAudit();
+    String durableTurnId = DurableTurnExecutionContext.turnId();
     boolean sourceBacked =
         request != null && request.contains("SOURCE SPECIFICATION (authoritative input)");
     int maxCalls =
         Math.max(
             4,
             sourceBacked
-                ? properties.maxProviderCallsSourceTurn()
-                : properties.maxProviderCallsPerTurn());
+                ? properties.maxProviderCallsSourceTurn() - 2
+                : properties.maxProviderCallsPerTurn() - 2);
+    UsageAudit audit = new UsageAudit(durableTurnId, maxCalls);
     ProviderCallBudget.bind(maxCalls);
     try {
       try {
         JsonNode current = workspace.snapshot();
-        Blueprint blueprint = planBlueprint(level, request, current, audit, maxCalls);
+        Blueprint blueprint = restoredBlueprint(durableTurnId, level);
+        if (blueprint == null) {
+          blueprint = planBlueprint(level, request, current, audit, maxCalls);
+          persistBlueprint(durableTurnId, blueprint);
+        }
         String metamodel =
             guides.generateForTypes(
                 level,
                 contracts.requiredContainmentClosure(level, new ArrayList<>(blueprint.types())));
-        LinkedHashMap<String, JsonNode> generated =
-            generateSlices(level, request, current, metamodel, blueprint, audit, maxCalls);
+        LinkedHashMap<String, JsonNode> generated = restoredObjects(durableTurnId, blueprint);
+        generateSlices(
+            durableTurnId,
+            level,
+            request,
+            current,
+            metamodel,
+            blueprint,
+            generated,
+            audit,
+            maxCalls);
         last = review(level, request, metamodel, blueprint, generated, audit, maxCalls);
+        persistObjects(durableTurnId, blueprint, generated);
         ConceptualModel conceptual = new ConceptualModel(generated);
         ModelCommandBatch batch;
         try {
@@ -149,6 +186,7 @@ public final class ConceptualInstanceModelWorkflow {
                   compilerFailure.getMessage(),
                   audit,
                   maxCalls);
+          persistObjects(durableTurnId, blueprint, generated);
           conceptual = new ConceptualModel(generated);
           batch = conceptual.commands(current, contracts, level);
         }
@@ -169,7 +207,7 @@ public final class ConceptualInstanceModelWorkflow {
             last.provider(),
             last.model(),
             batch,
-            Math.max(audit.callDetails.size(), ProviderCallBudget.count()),
+            audit.totalCalls(),
             audit.promptTokens,
             audit.completionTokens,
             List.copyOf(audit.callDetails),
@@ -179,7 +217,7 @@ public final class ConceptualInstanceModelWorkflow {
       } catch (RuntimeException failure) {
         throw new AgentTurnLoop.TurnExecutionException(
             asPlatformException(failure),
-            Math.max(audit.callDetails.size(), ProviderCallBudget.count()),
+            audit.totalCalls(),
             audit.promptTokens,
             audit.completionTokens,
             audit.callDetails);
@@ -191,6 +229,7 @@ public final class ConceptualInstanceModelWorkflow {
 
   private Blueprint planBlueprint(
       ModelLevel level, String request, JsonNode current, UsageAudit audit, int maxCalls) {
+    Set<String> suppliedSourceUnits = sourceUnitIds(request);
     String system =
         "Plan a bounded conceptual instance model for Varka's "
             + level.name()
@@ -198,6 +237,11 @@ public final class ConceptualInstanceModelWorkflow {
             + " Every object needed for a coherent useful model must have one unique temporary"
             + " instanceId, exact EClass, short purpose, containment owner/feature when known,"
             + " major reference target IDs, source-unit allocation, and a positive slice number."
+            + " sourceUnitIds may contain ONLY IDs from the explicit available-source list; when"
+            + " that list is empty every sourceUnitIds array must be empty."
+            + " Every object must use an exact legal containment placement from the supplied"
+            + " index. If a desired type is nested, also plan its required owner object."
+            + " Plan at most 8 semantically important objects total."
             + " Group semantically coherent objects together. Use only the authoritative type"
             + " index. The existing root is rootId and must not be planned as an object. Do not"
             + " include prose or markdown.";
@@ -205,14 +249,65 @@ public final class ConceptualInstanceModelWorkflow {
         guides.index(level)
             + "\n\nCURRENT MODEL TYPES:\n"
             + currentTypes(current)
+            + "\n\nAUTHORITATIVE CONTAINMENT PLACEMENTS (child <- owner.feature):\n"
+            + containmentIndex(level)
             + "\n\nREQUEST AND SOURCE SPECIFICATION:\n"
             + (request == null ? "" : request)
+            + "\n\nAVAILABLE SOURCE UNIT IDS (closed allowlist): "
+            + suppliedSourceUnits
             + "\n\nReturn {types:[exact EClass names],objects:[{instanceId,type,purpose,"
             + "ownerInstanceId,containment,referenceTargets,sourceUnitIds,slice}]}. Do not emit"
             + " attributes or complete conceptual objects.";
-    AssistantModelProvider.AssistantReply reply = audit.call(system, user, "conceptual_blueprint");
-    Blueprint blueprint = Blueprint.parse(mapper, reply.content(), contracts, level);
-    int capacity = Math.max(1, maxCalls - 2) * 8;
+    Blueprint blueprint = null;
+    String correction = "";
+    RuntimeException lastFailure = null;
+    for (int attempt = 0; attempt < 2; attempt++) {
+      AssistantModelProvider.AssistantReply reply =
+          audit.call(system, user + correction, "conceptual_blueprint");
+      try {
+        blueprint = Blueprint.parse(mapper, reply.content(), contracts, level);
+        blueprint = normalizeBlueprintPlacements(level, blueprint);
+        Set<String> allocated = new LinkedHashSet<>();
+        for (BlueprintObject object : blueprint.objects()) {
+          allocated.addAll(object.sourceUnitIds());
+        }
+        List<String> diagnostics = blueprintDiagnostics(level, blueprint);
+        if (!suppliedSourceUnits.containsAll(allocated)) {
+          Set<String> unknown = new LinkedHashSet<>(allocated);
+          unknown.removeAll(suppliedSourceUnits);
+          diagnostics.add("invented source-unit IDs " + unknown);
+        }
+        if (!allocated.containsAll(suppliedSourceUnits)) {
+          Set<String> missing = new LinkedHashSet<>(suppliedSourceUnits);
+          missing.removeAll(allocated);
+          diagnostics.add("did not allocate supplied source units " + missing);
+        }
+        if (!diagnostics.isEmpty()) {
+          throw new PlatformException(
+              422, "Conceptual blueprint diagnostics: " + String.join("; ", diagnostics) + ".");
+        }
+        int capacity = Math.max(1, maxCalls - 2) * 2;
+        if (blueprint.objects().size() > capacity) {
+          throw new PlatformException(
+              422,
+              "Blueprint planned "
+                  + blueprint.objects().size()
+                  + " objects; the DeepSeek/Arvan bounded capacity is "
+                  + capacity
+                  + ". Keep the most important coherent objects and relationships.");
+        }
+        break;
+      } catch (RuntimeException failure) {
+        lastFailure = failure;
+        correction =
+            "\n\nThe prior blueprint was rejected: "
+                + safe(failure.getMessage())
+                + " Return a corrected small blueprint. Use only the closed source-unit allowlist."
+                + " Do not return attributes, full objects, prose, or markdown.";
+      }
+    }
+    if (blueprint == null) throw lastFailure;
+    int capacity = Math.max(1, maxCalls - 2) * 2;
     if (blueprint.objects().size() > capacity) {
       throw new PlatformException(
           422,
@@ -222,36 +317,125 @@ public final class ConceptualInstanceModelWorkflow {
               + capacity
               + ". Use the durable inspect/contract source workflow for a larger model.");
     }
-    Set<String> suppliedSourceUnits = sourceUnitIds(request);
-    Set<String> allocated = new LinkedHashSet<>();
-    blueprint.objects().forEach(object -> allocated.addAll(object.sourceUnitIds()));
-    if (!allocated.containsAll(suppliedSourceUnits)) {
-      Set<String> missing = new LinkedHashSet<>(suppliedSourceUnits);
-      missing.removeAll(allocated);
-      throw new PlatformException(
-          422, "Conceptual blueprint did not allocate supplied source units: " + missing + ".");
-    }
     return blueprint;
   }
 
-  private LinkedHashMap<String, JsonNode> generateSlices(
+  private String containmentIndex(ModelLevel level) {
+    return contracts.all(level).stream()
+        .filter(TypeContract::creatable)
+        .map(
+            type ->
+                type.eClass()
+                    + " <- "
+                    + contracts.containmentPlacements(level, type.eClass()).stream()
+                        .map(
+                            placement -> {
+                              int dot = placement.indexOf('.');
+                              return dot < 0
+                                  ? placement
+                                  : "ownerType="
+                                      + placement.substring(0, dot)
+                                      + ", containment="
+                                      + placement.substring(dot + 1);
+                            })
+                        .toList())
+        .collect(java.util.stream.Collectors.joining("\n"));
+  }
+
+  private Blueprint normalizeBlueprintPlacements(ModelLevel level, Blueprint blueprint) {
+    Map<String, BlueprintObject> byId = new LinkedHashMap<>();
+    blueprint.objects().forEach(object -> byId.put(object.instanceId(), object));
+    List<BlueprintObject> normalized = new ArrayList<>();
+    JsonNode json = blueprint.json().deepCopy();
+    for (int index = 0; index < blueprint.objects().size(); index++) {
+      BlueprintObject object = blueprint.objects().get(index);
+      String ownerType =
+          "rootId".equals(object.ownerInstanceId())
+              ? contracts.rootType(level)
+              : byId.containsKey(object.ownerInstanceId())
+                  ? byId.get(object.ownerInstanceId()).type()
+                  : "";
+      String containment = object.containment();
+      String prefix = ownerType + ".";
+      if (!ownerType.isBlank() && containment.startsWith(prefix)) {
+        containment = containment.substring(prefix.length());
+        ((tools.jackson.databind.node.ObjectNode) json.path("objects").get(index))
+            .put("containment", containment);
+      }
+      normalized.add(
+          new BlueprintObject(
+              object.instanceId(),
+              object.type(),
+              object.purpose(),
+              object.ownerInstanceId(),
+              containment,
+              object.referenceTargets(),
+              object.sourceUnitIds(),
+              object.slice()));
+    }
+    return new Blueprint(blueprint.types(), List.copyOf(normalized), json);
+  }
+
+  private List<String> blueprintDiagnostics(ModelLevel level, Blueprint blueprint) {
+    List<String> diagnostics = new ArrayList<>();
+    Map<String, BlueprintObject> objects = new LinkedHashMap<>();
+    blueprint.objects().forEach(object -> objects.put(object.instanceId(), object));
+    for (BlueprintObject object : blueprint.objects()) {
+      String ownerType;
+      if ("rootId".equals(object.ownerInstanceId())) {
+        ownerType = contracts.rootType(level);
+      } else {
+        BlueprintObject owner = objects.get(object.ownerInstanceId());
+        ownerType = owner == null ? "" : owner.type();
+      }
+      boolean legal =
+          !ownerType.isBlank()
+              && contracts.require(level, ownerType).references().stream()
+                  .filter(ReferenceContract::containment)
+                  .filter(reference -> !reference.readonly())
+                  .filter(reference -> reference.name().equals(object.containment()))
+                  .anyMatch(
+                      reference ->
+                          contracts.assignable(level, object.type(), reference.targetType()));
+      if (!legal) {
+        diagnostics.add(
+            object.instanceId()
+                + " ("
+                + object.type()
+                + ") has illegal placement "
+                + object.ownerInstanceId()
+                + "."
+                + object.containment()
+                + "; legal placements are "
+                + contracts.containmentPlacements(level, object.type()));
+      }
+    }
+    return diagnostics;
+  }
+
+  private void generateSlices(
+      String durableTurnId,
       ModelLevel level,
       String request,
       JsonNode current,
       String metamodel,
       Blueprint blueprint,
+      LinkedHashMap<String, JsonNode> generated,
       UsageAudit audit,
       int maxCalls) {
     ArrayDeque<List<BlueprintObject>> pending = new ArrayDeque<>();
     Map<Integer, List<BlueprintObject>> planned = new LinkedHashMap<>();
+    int persistedSliceSize = persistedSliceSize(durableTurnId);
     blueprint.objects().stream()
+        .filter(object -> !generated.containsKey(object.instanceId()))
         .sorted(java.util.Comparator.comparingInt(BlueprintObject::slice))
         .forEach(
             object ->
                 planned.computeIfAbsent(object.slice(), ignored -> new ArrayList<>()).add(object));
     List<BlueprintObject> packed = new ArrayList<>();
     for (List<BlueprintObject> group : planned.values()) {
-      if (group.size() <= 8 && packed.size() + group.size() <= 8) {
+      if (group.size() <= persistedSliceSize
+          && packed.size() + group.size() <= persistedSliceSize) {
         packed.addAll(group);
         continue;
       }
@@ -259,15 +443,14 @@ public final class ConceptualInstanceModelWorkflow {
         pending.addLast(List.copyOf(packed));
         packed.clear();
       }
-      for (int start = 0; start < group.size(); start += 8) {
+      for (int start = 0; start < group.size(); start += persistedSliceSize) {
         List<BlueprintObject> chunk =
-            List.copyOf(group.subList(start, Math.min(start + 8, group.size())));
-        if (chunk.size() == 8) pending.addLast(chunk);
+            List.copyOf(group.subList(start, Math.min(start + persistedSliceSize, group.size())));
+        if (chunk.size() == persistedSliceSize) pending.addLast(chunk);
         else packed.addAll(chunk);
       }
     }
     if (!packed.isEmpty()) pending.addLast(List.copyOf(packed));
-    LinkedHashMap<String, JsonNode> generated = new LinkedHashMap<>();
     while (!pending.isEmpty()) {
       if (ProviderCallBudget.count() >= maxCalls - 1) {
         throw new PlatformException(
@@ -306,6 +489,7 @@ public final class ConceptualInstanceModelWorkflow {
       } catch (RuntimeException failure) {
         if (truncated(failure) && slice.size() > 1) {
           int middle = slice.size() / 2;
+          persistSliceSize(durableTurnId, Math.max(1, middle), failure.getMessage());
           pending.addFirst(List.copyOf(slice.subList(middle, slice.size())));
           pending.addFirst(List.copyOf(slice.subList(0, middle)));
           log.warn(
@@ -319,6 +503,7 @@ public final class ConceptualInstanceModelWorkflow {
       }
       try {
         mergeSlice(slice, reply.content(), generated);
+        persistObjects(durableTurnId, blueprint, generated);
       } catch (RuntimeException schemaFailure) {
         if (ProviderCallBudget.count() >= maxCalls - 1) throw schemaFailure;
         String correctedUser =
@@ -332,13 +517,13 @@ public final class ConceptualInstanceModelWorkflow {
         AssistantModelProvider.AssistantReply corrected =
             audit.call(system, correctedUser, "conceptual_instance_slice");
         mergeSlice(slice, corrected.content(), generated);
+        persistObjects(durableTurnId, blueprint, generated);
       }
     }
     if (generated.size() != blueprint.objects().size()) {
       throw new PlatformException(
           422, "Conceptual slices did not generate every blueprint object.");
     }
-    return generated;
   }
 
   private void mergeSlice(
@@ -396,36 +581,39 @@ public final class ConceptualInstanceModelWorkflow {
             + " conceptual model for modeling usefulness and grounding. Check every user/source"
             + " requirement, duplicated or conflated concepts, meaningful names, appropriate"
             + " abstraction, relationship quality, unsupported inventions, and whether important"
-            + " concepts were incorrectly reduced to free text. Return strict JSON. If acceptable,"
-            + " corrections must be {}. If not acceptable, corrections must contain complete"
-            + " replacement conceptual object for only one affected existing instance ID"
-            + " (maximum 1). Return at most one concise finding. Correct only the single most"
-            + " important release-blocking"
-            + " problems; never add/delete IDs and never return prose.";
+            + " concepts were incorrectly reduced to free text. Return strict JSON with only"
+            + " acceptable and findings. Return at most one concise release-blocking finding;"
+            + " never regenerate objects and never return prose.";
     String user =
         "REQUEST AND SOURCE:\n"
             + (request == null ? "" : request)
             + "\n\nBLUEPRINT:\n"
             + blueprint.json()
-            + "\n\nMETAMODEL:\n"
-            + metamodel
-            + "\n\nGENERATED CONCEPTUAL MODEL:\n"
-            + mapper.valueToTree(generated)
-            + "\n\nReturn {acceptable,findings,corrections}.";
+            + "\n\nGENERATED SEMANTIC INVENTORY:\n"
+            + compactGenerated(generated)
+            + "\n\nReturn {acceptable,findings}.";
     AssistantModelProvider.AssistantReply reply;
     try {
       reply = audit.call(system, user, "conceptual_review");
+      return finishQualityReview(
+          reply, level, request, metamodel, blueprint, generated, audit, maxCalls);
     } catch (RuntimeException failure) {
-      if (!truncated(failure) || ProviderCallBudget.count() >= maxCalls) throw failure;
+      if (ProviderCallBudget.count() >= maxCalls) throw failure;
       String reducedUser =
-          user
-              + "\n\nThe prior review response was truncated. Return a much smaller terminal JSON"
-              + " object: at most one short finding and at most one corrected object. If no"
-              + " release-blocking problem exists, return acceptable:true with empty corrections.";
+          "REQUEST AND SOURCE:\n"
+              + (request == null ? "" : request)
+              + "\n\nPLANNED OBJECT PURPOSES:\n"
+              + compactBlueprint(blueprint)
+              + "\n\nGENERATED SEMANTIC INVENTORY:\n"
+              + compactGenerated(generated)
+              + "\n\nThe prior review was rejected by the provider/protocol boundary: "
+              + safe(failure.getMessage())
+              + ". Return a much smaller terminal JSON"
+              + " object with only acceptable and at most one short finding.";
       reply = audit.call(system, reducedUser, "conceptual_review");
+      return finishQualityReview(
+          reply, level, request, metamodel, blueprint, generated, audit, maxCalls);
     }
-    applyReview(reply.content(), blueprint, generated);
-    return reply;
   }
 
   private AssistantModelProvider.AssistantReply correctCompilerFailure(
@@ -439,18 +627,24 @@ public final class ConceptualInstanceModelWorkflow {
       int maxCalls) {
     List<String> affectedIds =
         blueprint.objects().stream()
-            .map(BlueprintObject::instanceId)
             .filter(
-                id ->
+                object ->
                     diagnostic != null
-                        && (diagnostic.contains("'" + id + "'") || diagnostic.contains(id + ".")))
-            .limit(2)
+                        && (diagnostic.contains("'" + object.instanceId() + "'")
+                            || diagnostic.contains(object.instanceId() + ".")
+                            || diagnostic.contains(object.type() + ".")))
+            .map(BlueprintObject::instanceId)
+            .limit(4)
             .toList();
     if (affectedIds.isEmpty()) {
       affectedIds = blueprint.objects().stream().map(BlueprintObject::instanceId).limit(1).toList();
     }
     var rejected = JsonNodeFactory.instance.objectNode();
     affectedIds.forEach(id -> rejected.set(id, generated.get(id).deepCopy()));
+    List<String> affectedTypes =
+        affectedIds.stream().map(id -> generated.get(id).path("type").asText()).distinct().toList();
+    String focusedMetamodel =
+        guides.generateForTypes(level, contracts.requiredContainmentClosure(level, affectedTypes));
     String system =
         "Correct a bounded conceptual model rejected by Varka's deterministic Ecore compiler."
             + " Return {acceptable:false,findings:[...],corrections:{...}}. Corrections must"
@@ -462,7 +656,7 @@ public final class ConceptualInstanceModelWorkflow {
         "REQUEST:\n"
             + request
             + "\n\nMETAMODEL:\n"
-            + metamodel
+            + focusedMetamodel
             + "\n\nBLUEPRINT:\n"
             + blueprint.json()
             + "\n\nONLY AFFECTED REJECTED OBJECTS:\n"
@@ -471,8 +665,8 @@ public final class ConceptualInstanceModelWorkflow {
             + safe(diagnostic);
     AssistantModelProvider.AssistantReply reply;
     try {
-      reply = audit.call(system, user, "conceptual_review");
-      applyReview(reply.content(), blueprint, generated);
+      reply = audit.call(system, user, "conceptual_correction");
+      applyReview(reply.content(), blueprint, generated, affectedIds.size());
     } catch (RuntimeException firstFailure) {
       if (ProviderCallBudget.count() >= maxCalls) throw firstFailure;
       String retryUser =
@@ -482,15 +676,23 @@ public final class ConceptualInstanceModelWorkflow {
               + " Return a tiny terminal JSON object correcting ONLY "
               + affectedIds
               + ". findings must contain at most one short item.";
-      reply = audit.call(system, retryUser, "conceptual_review");
-      applyReview(reply.content(), blueprint, generated);
+      reply = audit.call(system, retryUser, "conceptual_correction");
+      applyReview(reply.content(), blueprint, generated, affectedIds.size());
     }
     return reply;
   }
 
   private void applyReview(
-      String content, Blueprint blueprint, LinkedHashMap<String, JsonNode> generated) {
+      String content,
+      Blueprint blueprint,
+      LinkedHashMap<String, JsonNode> generated,
+      int maxCorrections) {
     JsonNode review = strictObject(content, "conceptual review");
+    if (review.path("acceptable").asBoolean(false) && review.isObject()) {
+      var object = (tools.jackson.databind.node.ObjectNode) review;
+      if (!review.path("findings").isArray()) object.putArray("findings");
+      if (!review.path("corrections").isObject()) object.putObject("corrections");
+    }
     if (!review.has("acceptable")
         || !review.path("findings").isArray()
         || !review.path("corrections").isObject()) {
@@ -502,8 +704,9 @@ public final class ConceptualInstanceModelWorkflow {
       throw new PlatformException(
           422, "Conceptual reviewer rejected the model without structured corrections.");
     }
-    if (corrections.size() > 1) {
-      throw new PlatformException(422, "Conceptual review may correct at most 1 object.");
+    if (corrections.size() > maxCorrections) {
+      throw new PlatformException(
+          422, "Conceptual review may correct at most " + maxCorrections + " objects.");
     }
     Map<String, BlueprintObject> planned = new LinkedHashMap<>();
     blueprint.objects().forEach(object -> planned.put(object.instanceId(), object));
@@ -539,6 +742,87 @@ public final class ConceptualInstanceModelWorkflow {
     }
   }
 
+  private JsonNode compactBlueprint(Blueprint blueprint) {
+    var result = JsonNodeFactory.instance.arrayNode();
+    for (BlueprintObject object : blueprint.objects()) {
+      var item = result.addObject();
+      item.put("instanceId", object.instanceId());
+      item.put("type", object.type());
+      item.put("purpose", object.purpose());
+      if (!object.referenceTargets().isEmpty()) {
+        item.set("referenceTargets", mapper.valueToTree(object.referenceTargets()));
+      }
+      if (!object.sourceUnitIds().isEmpty()) {
+        item.set("sourceUnitIds", mapper.valueToTree(object.sourceUnitIds()));
+      }
+    }
+    return result;
+  }
+
+  private JsonNode compactGenerated(LinkedHashMap<String, JsonNode> generated) {
+    var result = JsonNodeFactory.instance.arrayNode();
+    generated.forEach(
+        (id, value) -> {
+          var item = result.addObject();
+          item.put("instanceId", id);
+          item.put("type", value.path("type").asText());
+          var names = item.putObject("attributes");
+          for (JsonNode attribute : value.path("attributes")) {
+            String name = attribute.path("attributeName").asText();
+            if (java.util.Set.of("name", "summary", "description", "statement", "term")
+                .contains(name)) names.set(name, attribute.path("value").deepCopy());
+          }
+          var relationships = item.putArray("relationships");
+          for (String kind : List.of("compositions", "references")) {
+            for (JsonNode relationship : value.path("associations").path(kind)) {
+              relationships.add(
+                  relationship.path("associationName").asText()
+                      + "->"
+                      + relationship.path("instanceID").asText());
+            }
+          }
+          var evidence = item.putArray("sourceUnitIds");
+          for (JsonNode entry : value.path("evidence")) {
+            if (entry.hasNonNull("sourceUnitId")) evidence.add(entry.path("sourceUnitId").asText());
+          }
+        });
+    return result;
+  }
+
+  private AssistantModelProvider.AssistantReply finishQualityReview(
+      AssistantModelProvider.AssistantReply reply,
+      ModelLevel level,
+      String request,
+      String metamodel,
+      Blueprint blueprint,
+      LinkedHashMap<String, JsonNode> generated,
+      UsageAudit audit,
+      int maxCalls) {
+    JsonNode review = requireReview(reply.content());
+    if (review.path("acceptable").asBoolean(false)) return reply;
+    if (ProviderCallBudget.count() >= maxCalls) {
+      throw new PlatformException(
+          422, "Conceptual quality review rejected the staged model: " + review.path("findings"));
+    }
+    return correctCompilerFailure(
+        level,
+        request,
+        metamodel,
+        blueprint,
+        generated,
+        "QUALITY REVIEW FINDINGS: " + review.path("findings"),
+        audit,
+        maxCalls);
+  }
+
+  private JsonNode requireReview(String content) {
+    JsonNode review = strictObject(content, "conceptual review");
+    if (!review.has("acceptable") || !review.path("findings").isArray()) {
+      throw new PlatformException(422, "Conceptual review must contain acceptable and findings.");
+    }
+    return review;
+  }
+
   private Set<String> sourceUnitIds(String request) {
     if (request == null || request.isBlank()) return Set.of();
     java.util.regex.Matcher matcher =
@@ -546,6 +830,111 @@ public final class ConceptualInstanceModelWorkflow {
     LinkedHashSet<String> result = new LinkedHashSet<>();
     while (matcher.find()) result.add(matcher.group(1));
     return result;
+  }
+
+  private Blueprint restoredBlueprint(String turnId, ModelLevel level) {
+    if (turns == null || turnId == null || turnId.isBlank()) return null;
+    return turns
+        .workflow(turnId)
+        .filter(workflow -> "CONCEPTUAL_GENERATION".equals(workflow.workflowKind()))
+        .map(AssistantTurnStore.Workflow::plan)
+        .filter(plan -> plan != null && plan.path("blueprint").isObject())
+        .map(plan -> Blueprint.parse(mapper, plan.path("blueprint").toString(), contracts, level))
+        .orElse(null);
+  }
+
+  private void persistBlueprint(String turnId, Blueprint blueprint) {
+    if (turns == null || turnId == null || turnId.isBlank()) return;
+    var plan = durablePlan(turnId);
+    plan.set("blueprint", blueprint.json().deepCopy());
+    if (!plan.has("sliceSize")) plan.put("sliceSize", 2);
+    turns.saveWorkflow(
+        new AssistantTurnStore.Workflow(turnId, "CONCEPTUAL_GENERATION", "SLICING", null, plan));
+    persistObjects(turnId, blueprint, new LinkedHashMap<>());
+  }
+
+  private LinkedHashMap<String, JsonNode> restoredObjects(String turnId, Blueprint blueprint) {
+    LinkedHashMap<String, JsonNode> result = new LinkedHashMap<>();
+    if (turns == null || turnId == null || turnId.isBlank()) return result;
+    Map<Integer, BlueprintObject> planned = new LinkedHashMap<>();
+    for (int index = 0; index < blueprint.objects().size(); index++) {
+      planned.put(index + 1, blueprint.objects().get(index));
+    }
+    for (AssistantTurnStore.WorkItem item : turns.workItems(turnId)) {
+      BlueprintObject object = planned.get(item.ordinal());
+      JsonNode generated = item.payload() == null ? null : item.payload().get("generated");
+      if (object != null && generated != null && generated.isObject()) {
+        result.put(object.instanceId(), generated.deepCopy());
+      }
+    }
+    return result;
+  }
+
+  private void persistObjects(
+      String turnId, Blueprint blueprint, LinkedHashMap<String, JsonNode> generated) {
+    if (turns == null || turnId == null || turnId.isBlank()) return;
+    List<AssistantTurnStore.WorkItem> items = new ArrayList<>();
+    String next = null;
+    for (int index = 0; index < blueprint.objects().size(); index++) {
+      BlueprintObject object = blueprint.objects().get(index);
+      JsonNode value = generated.get(object.instanceId());
+      var payload = JsonNodeFactory.instance.objectNode();
+      payload.set("blueprintObject", blueprint.json().path("objects").get(index).deepCopy());
+      if (value != null) payload.set("generated", value.deepCopy());
+      String id = turnId + ":conceptual:" + (index + 1);
+      String status = value == null ? "pending" : "generated";
+      if (next == null && value == null) next = id;
+      items.add(
+          new AssistantTurnStore.WorkItem(
+              id,
+              index + 1,
+              object.instanceId() + " (slice " + object.slice() + ")",
+              status,
+              "conceptual-object-" + object.instanceId(),
+              payload));
+    }
+    turns.saveWorkItems(turnId, items);
+    var plan = durablePlan(turnId);
+    plan.set("blueprint", blueprint.json().deepCopy());
+    turns.saveWorkflow(
+        new AssistantTurnStore.Workflow(
+            turnId, "CONCEPTUAL_GENERATION", next == null ? "REVIEWING" : "SLICING", next, plan));
+  }
+
+  private int persistedSliceSize(String turnId) {
+    if (turns == null || turnId == null || turnId.isBlank()) return 2;
+    return turns
+        .workflow(turnId)
+        .map(AssistantTurnStore.Workflow::plan)
+        .map(plan -> plan.path("sliceSize").asInt(2))
+        .map(size -> Math.max(1, Math.min(2, size)))
+        .orElse(2);
+  }
+
+  private void persistSliceSize(String turnId, int size, String diagnostic) {
+    if (turns == null || turnId == null || turnId.isBlank()) return;
+    var workflow = turns.workflow(turnId);
+    var plan = durablePlan(turnId);
+    plan.put("sliceSize", Math.max(1, Math.min(2, size)));
+    plan.put("lastTruncationDiagnostic", safe(diagnostic));
+    turns.saveWorkflow(
+        new AssistantTurnStore.Workflow(
+            turnId,
+            "CONCEPTUAL_GENERATION",
+            "SLICING",
+            workflow.map(AssistantTurnStore.Workflow::currentWorkItemId).orElse(null),
+            plan));
+  }
+
+  private tools.jackson.databind.node.ObjectNode durablePlan(String turnId) {
+    var plan = JsonNodeFactory.instance.objectNode();
+    if (turns == null || turnId == null || turnId.isBlank()) return plan;
+    turns
+        .workflow(turnId)
+        .map(AssistantTurnStore.Workflow::plan)
+        .filter(JsonNode::isObject)
+        .ifPresent(existing -> plan.setAll((tools.jackson.databind.node.ObjectNode) existing));
+    return plan;
   }
 
   private PlatformException asPlatformException(RuntimeException failure) {
@@ -706,12 +1095,33 @@ public final class ConceptualInstanceModelWorkflow {
   }
 
   private final class UsageAudit {
+    private final String turnId;
+    private final int maxCalls;
+    private int priorCalls;
     private long promptTokens;
     private long completionTokens;
     private final List<AssistantTurnStore.ProviderCall> callDetails = new ArrayList<>();
 
+    private UsageAudit(String turnId, int maxCalls) {
+      this.turnId = turnId;
+      this.maxCalls = maxCalls;
+      if (turns != null && turnId != null && !turnId.isBlank()) {
+        JsonNode plan = turns.workflow(turnId).map(AssistantTurnStore.Workflow::plan).orElse(null);
+        if (plan != null) {
+          priorCalls = Math.max(0, plan.path("providerCalls").asInt(0));
+          promptTokens = Math.max(0L, plan.path("promptTokens").asLong(0));
+          completionTokens = Math.max(0L, plan.path("completionTokens").asLong(0));
+        }
+      }
+    }
+
     private AssistantModelProvider.AssistantReply call(
         String system, String user, String requiredTool) {
+      if (totalCalls() >= maxCalls) {
+        throw new PlatformException(
+            429, "Conceptual generation exhausted its durable provider-call budget.");
+      }
+      String callKey = java.util.UUID.randomUUID().toString();
       long started = System.nanoTime();
       AssistantModelProvider.AssistantReply reply;
       try {
@@ -722,7 +1132,7 @@ public final class ConceptualInstanceModelWorkflow {
       } catch (RuntimeException failure) {
         long latency = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
         AssistantModelProvider.AssistantProviderMetadata metadata = provider.metadata();
-        callDetails.add(
+        AssistantTurnStore.ProviderCall failed =
             new AssistantTurnStore.ProviderCall(
                 metadata.provider(),
                 properties.model(),
@@ -733,7 +1143,9 @@ public final class ConceptualInstanceModelWorkflow {
                 system,
                 user,
                 failureReason(failure),
-                safe(failure.getMessage())));
+                safe(failure.getMessage()),
+                callKey);
+        record(failed);
         throw failure;
       }
       long latency = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
@@ -741,7 +1153,7 @@ public final class ConceptualInstanceModelWorkflow {
         promptTokens += Math.max(0, reply.usage().promptTokens());
         completionTokens += Math.max(0, reply.usage().completionTokens());
       }
-      callDetails.add(
+      AssistantTurnStore.ProviderCall completed =
           new AssistantTurnStore.ProviderCall(
               reply.provider(),
               reply.model(),
@@ -750,8 +1162,34 @@ public final class ConceptualInstanceModelWorkflow {
               reply.usage().completionTokens(),
               reply.usage().reported(),
               reply.systemPrompt() == null ? system : reply.systemPrompt(),
-              reply.userPrompt() == null ? user : reply.userPrompt()));
+              reply.userPrompt() == null ? user : reply.userPrompt(),
+              "COMPLETED",
+              null,
+              callKey);
+      record(completed);
       return reply;
+    }
+
+    private void record(AssistantTurnStore.ProviderCall call) {
+      callDetails.add(call);
+      if (turns == null || turnId == null || turnId.isBlank()) return;
+      turns.recordProviderCall(turnId, call);
+      var workflow = turns.workflow(turnId);
+      var plan = durablePlan(turnId);
+      plan.put("providerCalls", totalCalls());
+      plan.put("promptTokens", promptTokens);
+      plan.put("completionTokens", completionTokens);
+      turns.saveWorkflow(
+          new AssistantTurnStore.Workflow(
+              turnId,
+              "CONCEPTUAL_GENERATION",
+              workflow.map(AssistantTurnStore.Workflow::phase).orElse("PLANNING"),
+              workflow.map(AssistantTurnStore.Workflow::currentWorkItemId).orElse(null),
+              plan));
+    }
+
+    private int totalCalls() {
+      return priorCalls + callDetails.size();
     }
 
     private String failureReason(RuntimeException failure) {
@@ -1347,8 +1785,8 @@ public final class ConceptualInstanceModelWorkflow {
         throw new PlatformException(
             422, "Conceptual blueprint must select between 1 and 12 exact EClasses.");
       }
-      if (root.path("objects").size() > 48) {
-        throw new PlatformException(422, "Conceptual blueprint may declare at most 48 objects.");
+      if (root.path("objects").size() > 8) {
+        throw new PlatformException(422, "Conceptual blueprint may declare at most 8 objects.");
       }
       List<BlueprintObject> objects = new ArrayList<>();
       LinkedHashSet<String> ids = new LinkedHashSet<>();

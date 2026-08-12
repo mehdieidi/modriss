@@ -98,6 +98,36 @@ class JdbcAssistantTurnStorePostgresIntegrationTest {
   }
 
   @Test
+  void keyedProviderCallAuditIsIdempotentAcrossIncrementalAndFinalRecording() {
+    AssistantTurn turn = turn("turn-call-key");
+    turns.create(turn);
+    var call =
+        new AssistantTurnStore.ProviderCall(
+            "openai",
+            "DeepSeek-V4-Flash",
+            25,
+            10,
+            20,
+            true,
+            "system",
+            "user",
+            "COMPLETED",
+            null,
+            "conceptual-call-1");
+
+    turns.recordProviderCall(turn.id(), call);
+    turns.recordProviderCalls(turn.id(), List.of(call));
+
+    assertEquals(
+        1,
+        jdbc.queryForObject(
+            "SELECT count(*) FROM assistant_provider_calls WHERE turn_id = ? AND call_key = ?",
+            Integer.class,
+            turn.id(),
+            "conceptual-call-1"));
+  }
+
+  @Test
   void persistsSourceBlueprintAndSliceCursorForAContinuation() throws Exception {
     AssistantTurn parent = turn("turn-blueprint-parent");
     AssistantTurn child = turn("turn-blueprint-child");

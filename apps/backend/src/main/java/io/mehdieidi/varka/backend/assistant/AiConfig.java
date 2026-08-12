@@ -80,8 +80,9 @@ public class AiConfig {
       AssistantModelProvider provider,
       MetamodelGuideGenerator guides,
       TypeContractService contracts,
-      AiProperties properties) {
-    return new ConceptualInstanceModelWorkflow(provider, guides, contracts, properties);
+      AiProperties properties,
+      io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore turns) {
+    return new ConceptualInstanceModelWorkflow(provider, guides, contracts, properties, turns);
   }
 
   @Bean(destroyMethod = "close")

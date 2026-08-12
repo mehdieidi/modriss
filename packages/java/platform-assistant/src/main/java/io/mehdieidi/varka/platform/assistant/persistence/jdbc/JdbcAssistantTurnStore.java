@@ -613,7 +613,8 @@ RETURNING *
       jdbc.update(
           "INSERT INTO assistant_provider_calls(turn_id, provider, model, started_at, latency_ms,"
               + " prompt_tokens, completion_tokens, finish_reason, system_prompt, user_prompt,"
-              + " error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              + " error, call_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT"
+              + " (turn_id, call_key) WHERE call_key IS NOT NULL DO NOTHING",
           turnId,
           call.provider(),
           call.model(),
@@ -626,7 +627,8 @@ RETURNING *
               : call.finishReason(),
           call.systemPrompt(),
           call.userPrompt(),
-          call.error());
+          call.error(),
+          call.callKey());
     }
   }
 

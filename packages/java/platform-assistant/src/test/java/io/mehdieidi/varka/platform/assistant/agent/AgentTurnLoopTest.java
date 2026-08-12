@@ -1078,7 +1078,10 @@ Work items:
       calls++;
       if (calls == 1) {
         firstRequiredTool = prompt.requiredTool();
-        return new AssistantReply("{\"strategy\":\"ANSWER\"}", "fake", "fake");
+        return new AssistantReply(
+            "I will use the read-only path.\n```json\n{\"strategy\":\"ANSWER\"}\n```",
+            "fake",
+            "fake");
       }
       return new AssistantReply(
           "{\"tool\":\"answer_user\",\"arguments\":{\"message\":\"Explained\"}}", "fake", "fake");

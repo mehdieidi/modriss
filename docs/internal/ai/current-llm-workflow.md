@@ -70,11 +70,11 @@ The conceptual strategy is implemented by `ConceptualInstanceModelWorkflow`.
 
 ### Blueprint and bounded conceptual slices
 
-The blueprint pass assigns stable temporary IDs, exact EClasses, containment ownership, major
+The blueprint pass assigns at most eight stable temporary IDs, exact EClasses, containment ownership, major
 reference targets, source-unit allocation, and coherent slice numbers without generating full
 attribute payloads. It is capped at 48 objects and 12 focused EClasses.
 
-Each slice pass receives:
+Each Arvan/DeepSeek slice contains at most two rich objects and receives:
 
 - the selected authoritative Ecore contracts;
 - a compact persisted-model inventory with exact IDs, ownership, attributes, and references;
@@ -222,8 +222,8 @@ structure, preservation, and failure evidence is in
 
 ## Known limitations
 
-- The conceptual blueprint and slice ledger is bounded and truncation-adaptive, but its intermediate
-  state is not yet persisted independently for worker restart/resume.
+- The conceptual blueprint, per-object payloads, reduced slice size, provider-call audit, and token
+  totals are durable. Lease recovery resumes missing IDs without exposing a partial model revision.
 - Conceptual updates to non-empty models have not passed the feature-evolution acceptance fixture
   reliably and are therefore excluded by the production safety rule.
 - The staged library protocol has one successful live DeepSeek/Arvan gate and still requires the

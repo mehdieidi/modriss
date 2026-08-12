@@ -39,6 +39,7 @@ class JdbcAssistantTurnStoreTelemetryTest {
             eq("COMPLETED"),
             eq("system prompt"),
             eq("user prompt"),
+            isNull(),
             isNull());
   }
 
@@ -72,7 +73,8 @@ class JdbcAssistantTurnStoreTelemetryTest {
             eq("TRUNCATED"),
             eq("system"),
             eq("user"),
-            eq("finish_reason=length"));
+            eq("finish_reason=length"),
+            isNull());
   }
 
   @Test

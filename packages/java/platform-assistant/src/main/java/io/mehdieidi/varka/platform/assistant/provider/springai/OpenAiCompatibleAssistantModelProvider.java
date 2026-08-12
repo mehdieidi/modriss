@@ -142,11 +142,13 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                       ? ConceptualInstanceModelWorkflow.blueprintSchema()
                       : "conceptual_review".equals(prompt.requiredTool())
                           ? ConceptualInstanceModelWorkflow.reviewSchema()
-                          : "conceptual_type_selection".equals(prompt.requiredTool())
-                              ? ConceptualInstanceModelWorkflow.typeSelectionSchema()
-                              : "assistant_strategy".equals(prompt.requiredTool())
-                                  ? AgentTurnLoop.strategySchema()
-                                  : AgentActionSchema.json(prompt.patchContracts()));
+                          : "conceptual_correction".equals(prompt.requiredTool())
+                              ? ConceptualInstanceModelWorkflow.correctionSchema()
+                              : "conceptual_type_selection".equals(prompt.requiredTool())
+                                  ? ConceptualInstanceModelWorkflow.typeSelectionSchema()
+                                  : "assistant_strategy".equals(prompt.requiredTool())
+                                      ? AgentTurnLoop.strategySchema()
+                                      : AgentActionSchema.json(prompt.patchContracts()));
     }
     return builder;
   }
@@ -177,9 +179,11 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                       ? 8000
                       : "conceptual_review".equals(prompt.requiredTool())
                           ? 3000
-                          : "conceptual_instance_slice".equals(prompt.requiredTool())
+                          : "conceptual_correction".equals(prompt.requiredTool())
                               ? 8000
-                              : properties.maxCompletionTokens();
+                              : "conceptual_instance_slice".equals(prompt.requiredTool())
+                                  ? 8000
+                                  : properties.maxCompletionTokens();
       body.put("max_tokens", Math.min(completionLimit, capabilities().maxCompletionTokens()));
       applyModelGenerationControls(body, model);
       var messages = body.putArray("messages");
@@ -274,9 +278,11 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                       ? 8000
                       : "conceptual_review".equals(prompt.requiredTool())
                           ? 3000
-                          : "conceptual_instance_slice".equals(prompt.requiredTool())
+                          : "conceptual_correction".equals(prompt.requiredTool())
                               ? 8000
-                              : properties.maxCompletionTokens();
+                              : "conceptual_instance_slice".equals(prompt.requiredTool())
+                                  ? 8000
+                                  : properties.maxCompletionTokens();
       body.put("max_tokens", Math.min(completionLimit, capabilities().maxCompletionTokens()));
       applyModelGenerationControls(body, model);
       var messages = body.putArray("messages");
@@ -285,6 +291,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
               || "conceptual_instance_slice".equals(prompt.requiredTool())
               || "conceptual_blueprint".equals(prompt.requiredTool())
               || "conceptual_review".equals(prompt.requiredTool())
+              || "conceptual_correction".equals(prompt.requiredTool())
               || "conceptual_type_selection".equals(prompt.requiredTool())
               || "assistant_strategy".equals(prompt.requiredTool());
       String requiredAction =
@@ -448,6 +455,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
         || "conceptual_instance_slice".equals(requiredAction)
         || "conceptual_blueprint".equals(requiredAction)
         || "conceptual_review".equals(requiredAction)
+        || "conceptual_correction".equals(requiredAction)
         || "conceptual_type_selection".equals(requiredAction)
         || "assistant_strategy".equals(requiredAction)) return content;
     String candidate = content == null ? "" : content.trim();
