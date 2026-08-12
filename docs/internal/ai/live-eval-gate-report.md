@@ -40,6 +40,33 @@ seconds, 8 audited calls, 21,720 prompt tokens, 23,286 completion tokens, one ch
 structural validity. Earlier failed staged attempts remain in `target/`; this single pass does not
 yet satisfy the repeated-run release gate.
 
+The subsequent final two-object verification on 2026-08-12 failed safely after 130 seconds: two
+slice responses were length-limited, four of eight private objects were durably staged, the
+conceptual review reserve was reached after five conceptual calls (seven calls including adaptive
+routing), and no checkpoint or partial model revision was published. The active follow-up profile
+therefore uses one DeepSeek object per slice, stricter bounded JSON collections, smaller
+stage-specific completion limits, and explicit recovery/review capacity.
+
+A later one-object run generated and durably staged all seven planned objects without publishing a
+partial revision, but its 14-call ceiling was consumed by routing, blueprint correction, two slice
+corrections, and review. The LLM reviewer then correctly rejected a missing planned policy
+relationship, with no call left to apply its correction. The active ceiling is now 18 so review and
+compiler correction cannot be starved by earlier bounded recoveries. Focused tests pass; this final
+budget still awaits a successful live rerun and the repeated acceptance campaign.
+
+The first 18-call run then completed all slices, review, and one compiler correction, but correctly
+published no checkpoint because the blueprint had selected `DomainEntity` without planning its
+required `identityAttributes` and `primaryIdentityAttribute` references to `InformationItem`.
+Required writable containment and non-containment reference closure is now checked against Ecore at
+blueprint time, where DeepSeek can add the stable dependency IDs or choose another suitable EClass.
+That final invariant is covered by focused tests and the rebuilt backend is healthy, but it has not
+yet completed a live acceptance run.
+
+The immediate rerun failed safely before slicing when DeepSeek's blueprint correction reached a
+temporary 2,500-token stage cap. The cap has been restored to the previously proven 8,000-token
+blueprint headroom; object count, schema collections, one-object slices, provider calls, and total
+turn time remain bounded. No committed model checkpoint was created by this attempt.
+
 ## Interpretation
 
 - Provider connectivity alone is not acceptance.

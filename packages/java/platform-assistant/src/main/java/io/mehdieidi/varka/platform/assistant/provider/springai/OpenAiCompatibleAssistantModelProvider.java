@@ -172,15 +172,15 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       body.put("temperature", 0.2);
       int completionLimit =
           "assistant_strategy".equals(prompt.requiredTool())
-              ? 4096
+              ? 512
               : "conceptual_type_selection".equals(prompt.requiredTool())
-                  ? 4096
+                  ? 1500
                   : "conceptual_blueprint".equals(prompt.requiredTool())
                       ? 8000
                       : "conceptual_review".equals(prompt.requiredTool())
-                          ? 3000
+                          ? 1000
                           : "conceptual_correction".equals(prompt.requiredTool())
-                              ? 8000
+                              ? 4000
                               : "conceptual_instance_slice".equals(prompt.requiredTool())
                                   ? 8000
                                   : properties.maxCompletionTokens();
@@ -271,15 +271,15 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       body.put("temperature", 0.0);
       int completionLimit =
           "assistant_strategy".equals(prompt.requiredTool())
-              ? 4096
+              ? 512
               : "conceptual_type_selection".equals(prompt.requiredTool())
-                  ? 4096
+                  ? 1500
                   : "conceptual_blueprint".equals(prompt.requiredTool())
                       ? 8000
                       : "conceptual_review".equals(prompt.requiredTool())
-                          ? 3000
+                          ? 1000
                           : "conceptual_correction".equals(prompt.requiredTool())
-                              ? 8000
+                              ? 4000
                               : "conceptual_instance_slice".equals(prompt.requiredTool())
                                   ? 8000
                                   : properties.maxCompletionTokens();

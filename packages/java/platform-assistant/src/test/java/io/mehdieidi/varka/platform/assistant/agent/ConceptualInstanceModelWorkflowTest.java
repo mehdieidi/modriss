@@ -112,7 +112,9 @@ class ConceptualInstanceModelWorkflowTest {
     AiProperties properties = mock(AiProperties.class);
     when(properties.maxProviderCallsPerTurn()).thenReturn(8);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(8);
-    when(properties.model()).thenReturn("DeepSeek-V4-Flash");
+    // Exercise adaptive splitting from the two-object default used by providers which have not
+    // demonstrated DeepSeek's live one-object completion constraint.
+    when(properties.model()).thenReturn("gpt-4.1");
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     var workflow =
         new ConceptualInstanceModelWorkflow(
@@ -138,6 +140,107 @@ class ConceptualInstanceModelWorkflowTest {
     assertEquals(5, result.providerCallDetails().size());
     assertEquals("TRUNCATED", result.providerCallDetails().get(1).finishReason());
     assertEquals(2, result.commandBatch().creates().size());
+  }
+
+  @Test
+  void retriesOneDeepSeekObjectWithACompactPromptAfterTruncation() throws Exception {
+    String blueprint =
+        """
+{"types":["Actor"],"objects":[
+  {"instanceId":"actor-1","type":"Actor","purpose":"Borrower","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"sourceUnitIds":[],"slice":1}
+]}
+""";
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply(blueprint),
+                ScriptedAssistantModelProvider.failure(
+                    new PlatformException(502, "finish_reason=length")),
+                ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(14);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(14);
+    when(properties.model()).thenReturn("DeepSeek-V4-Flash");
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
+
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.CIM,
+            "Create a library",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+            false);
+
+    assertEquals(4, result.providerCalls());
+    assertEquals("TRUNCATED", result.providerCallDetails().get(1).finishReason());
+    assertEquals(1, result.commandBatch().creates().size());
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
+  void rejectsBlueprintMissingRequiredReferenceClosureBeforeGeneratingSlices() throws Exception {
+    String invalidBlueprint =
+        """
+{"types":["DomainEntity"],"objects":[
+  {"instanceId":"book","type":"DomainEntity","purpose":"Book","ownerInstanceId":"rootId","containment":"domainEntities","referenceTargets":[],"sourceUnitIds":[],"slice":1}
+]}
+""";
+    String correctedBlueprint =
+        """
+{"types":["Actor"],"objects":[
+  {"instanceId":"actor-1","type":"Actor","purpose":"Borrower","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"sourceUnitIds":[],"slice":1}
+]}
+""";
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply(invalidBlueprint),
+                ScriptedAssistantModelProvider.reply(correctedBlueprint),
+                ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(18);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(18);
+    when(properties.model()).thenReturn("DeepSeek-V4-Flash");
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
+
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.CIM,
+            "Create a library",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+            false);
+
+    assertEquals(4, result.providerCalls());
+    assertEquals(1, result.commandBatch().creates().size());
+    assertEquals("Actor", result.commandBatch().creates().get(0).eClass());
+    assertEquals(0, provider.remainingSteps());
   }
 
   @Test
@@ -191,8 +294,6 @@ class ConceptualInstanceModelWorkflowTest {
         new ScriptedAssistantModelProvider(
             List.of(
                 ScriptedAssistantModelProvider.reply(blueprint),
-                ScriptedAssistantModelProvider.failure(
-                    new PlatformException(502, "finish_reason=length")),
                 ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
                 ScriptedAssistantModelProvider.failure(new PlatformException(503, "restart"))));
     AiProperties properties = properties();
@@ -267,9 +368,9 @@ class ConceptualInstanceModelWorkflowTest {
                           .scoped(ModelLevel.CIM, resumedWorkspace),
                       false));
 
-      assertEquals(6, result.providerCalls());
+      assertEquals(5, result.providerCalls());
       assertEquals(2, result.providerCallDetails().size());
-      assertEquals(6, savedCalls.size());
+      assertEquals(5, savedCalls.size());
       assertEquals(2, result.commandBatch().creates().size());
       assertEquals(0, resumedProvider.remainingSteps());
     } finally {

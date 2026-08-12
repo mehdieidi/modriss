@@ -72,16 +72,20 @@ The conceptual strategy is implemented by `ConceptualInstanceModelWorkflow`.
 
 The blueprint pass assigns at most eight stable temporary IDs, exact EClasses, containment ownership, major
 reference targets, source-unit allocation, and coherent slice numbers without generating full
-attribute payloads. It is capped at 48 objects and 12 focused EClasses.
+attribute payloads. It is capped at 8 objects and 12 focused EClasses. Blueprint acceptance checks
+both legal containment placement and closure of every required writable Ecore reference, so a rich
+object cannot be generated before its required stable-ID dependencies are planned.
 
-Each Arvan/DeepSeek slice contains at most two rich objects and receives:
+Each Arvan/DeepSeek slice contains one rich object. Providers without DeepSeek's observed
+completion behavior may pack at most two. Every slice receives:
 
 - the selected authoritative Ecore contracts;
 - a compact persisted-model inventory with exact IDs, ownership, attributes, and references;
 - the user request and supplied source units;
 - the exact paper-style JSON contract.
 
-Each response contains at most eight objects and is keyed by instance ID. New keys are temporary
+Each response contains only the bounded slice (one object on DeepSeek, at most two otherwise) and
+is keyed by instance ID. New keys are temporary
 IDs; updates must use exact persisted IDs and the persisted EClass. Every value contains:
 
 ```json
@@ -191,6 +195,11 @@ The same `OpenAiCompatibleAssistantModelProvider` handles strategy selection, co
 selection, conceptual generation, and agent actions. Provider-call latency, prompt/completion token
 usage, prompts, model, and failures are persisted, including failed turns.
 
+The deployed 18-call ceiling reserves up to two calls for adaptive routing and 16 for conceptual
+work. The conceptual budget accommodates the blueprint, eight single-object slices, quality review,
+and bounded slice, review, and compiler corrections. Stage-specific completion limits keep strategy,
+blueprint, slice, and review responses substantially below the provider's broad global maximum.
+
 ## Commit and validation boundary
 
 Both mutation paths produce a candidate `ModelWorkspace`. The only assistant gate is structural
@@ -208,12 +217,12 @@ EVL is available only when a user explicitly initiates model validation outside 
 
 ## Current live evidence
 
-| Fixture                 | Agent acceptance | Conceptual acceptance                    | Unified acceptance                                                             |
-| ----------------------- | ---------------- | ---------------------------------------- | ------------------------------------------------------------------------------ |
-| `create-cim-library`    | Passed           | Passed in an optimized run               | Staged protocol passed once: 304 s, 8 calls, one structurally valid checkpoint |
-| `cim-feature-evolution` | Passed           | Failed the second persisted-model update | Passed through the agent path                                                  |
-| `source-to-cim-pantry`  | Passed           | Passed with complete coverage            | Passed with complete coverage                                                  |
-| `create-pim-serverless` | Passed           | Passed after bounded contract selection  | Passed through conceptual generation                                           |
+| Fixture                 | Agent acceptance | Conceptual acceptance                    | Unified acceptance                                                                        |
+| ----------------------- | ---------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `create-cim-library`    | Passed           | Passed in an optimized run               | The two-object profile passed once, then failed live; the one-object profile awaits rerun |
+| `cim-feature-evolution` | Passed           | Failed the second persisted-model update | Passed through the agent path                                                             |
+| `source-to-cim-pantry`  | Passed           | Passed with complete coverage            | Passed with complete coverage                                                             |
+| `create-pim-serverless` | Passed           | Passed after bounded contract selection  | Passed through conceptual generation                                                      |
 
 The evidence supports conceptual generation for bounded empty models and the agent for persisted
 updates. It does not support a claim of perfect reliability. Detailed call, latency, token, repair,
@@ -226,7 +235,8 @@ structure, preservation, and failure evidence is in
   totals are durable. Lease recovery resumes missing IDs without exposing a partial model revision.
 - Conceptual updates to non-empty models have not passed the feature-evolution acceptance fixture
   reliably and are therefore excluded by the production safety rule.
-- The staged library protocol has one successful live DeepSeek/Arvan gate and still requires the
-  repeated-run release campaign.
+- The staged library protocol had one successful two-object-slice run, but a later final-profile
+  run truncated two slices and exhausted the review reserve with zero commits. The one-object
+  profile still requires a successful live rerun and the repeated-run release campaign.
 - Structural validity does not prove conceptual usefulness or EVL semantic validity.
 - The live paraphrase corpus and repeated-run production SLO gate remain incomplete.

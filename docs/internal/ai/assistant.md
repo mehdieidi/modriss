@@ -26,8 +26,8 @@ VARKA_AI_NATIVE_TOOLS_PREFERRED=false
 VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
 VARKA_AI_MAX_TOOL_CALLS=0
 VARKA_AI_MAX_AGENT_STEPS=8
-VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=8
-VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=8
+VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=18
+VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=18
 VARKA_AI_TOKEN_BUDGET=16000
 VARKA_AI_MAX_COMPLETION_TOKENS=16000
 VARKA_AI_REQUEST_TIMEOUT=180s
@@ -109,7 +109,7 @@ deterministic Ecore compilation:
 request + source + current model + authoritative Ecore
   -> small LLM blueprint (maximum 8 objects and 12 EClasses)
   -> exact contract and required construction closure
-  -> coherent slices of at most two complete objects on Arvan/DeepSeek
+  -> one complete object per DeepSeek/Arvan slice (at most two on other providers)
   -> stable-ID merge and cross-slice reference resolution
   -> structured LLM quality review/correction
   -> deterministic IDs/order/containment/reference compilation
@@ -132,6 +132,11 @@ its blueprint entry and, once accepted, its complete conceptual payload. Lease r
 completed objects and preserves any truncation-reduced slice size. Provider calls and token totals
 are written incrementally with keyed audit rows, while intermediate payloads remain private and
 never become model revisions.
+
+The 18-call ceiling covers up to two adaptive-strategy attempts plus a conceptual budget of 16:
+blueprint, as many as eight one-object DeepSeek slices, review, and bounded slice, review, and
+compiler corrections. This replaces the earlier eight-call/two-object and 14-call profiles after
+live runs exhausted review or correction capacity without committing a checkpoint.
 
 ## Inspect/contract agent path
 
