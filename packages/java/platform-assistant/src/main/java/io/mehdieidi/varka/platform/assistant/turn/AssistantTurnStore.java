@@ -208,7 +208,31 @@ public interface AssistantTurnStore {
       long completionTokens,
       boolean usageReported,
       String systemPrompt,
-      String userPrompt) {
+      String userPrompt,
+      String finishReason,
+      String error) {
+    public ProviderCall(
+        String provider,
+        String model,
+        long latencyMillis,
+        long promptTokens,
+        long completionTokens,
+        boolean usageReported,
+        String systemPrompt,
+        String userPrompt) {
+      this(
+          provider,
+          model,
+          latencyMillis,
+          promptTokens,
+          completionTokens,
+          usageReported,
+          systemPrompt,
+          userPrompt,
+          "COMPLETED",
+          null);
+    }
+
     public ProviderCall(
         String provider,
         String model,
@@ -224,6 +248,8 @@ public interface AssistantTurnStore {
           completionTokens,
           usageReported,
           null,
+          null,
+          "COMPLETED",
           null);
     }
   }

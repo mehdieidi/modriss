@@ -26,8 +26,8 @@ VARKA_AI_NATIVE_TOOLS_PREFERRED=false
 VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
 VARKA_AI_MAX_TOOL_CALLS=0
 VARKA_AI_MAX_AGENT_STEPS=8
-VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=6
-VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=6
+VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=8
+VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=8
 VARKA_AI_TOKEN_BUDGET=16000
 VARKA_AI_MAX_COMPLETION_TOKENS=16000
 VARKA_AI_REQUEST_TIMEOUT=180s
@@ -97,24 +97,25 @@ Current production policy is deliberately conservative:
 
 This reflects live evidence, not an assumption that either method is universally superior.
 
-Current caveat: the adaptive `ANSWER` value maps to `WorkflowMode.AUTO`, not an enforced read-only
-mode. The ordinary loop is prompted to answer, but mutation actions remain available. The explicit
-read-only workflow modes exist in `AgentTurnLoop` but are not selected by the unified worker today.
+The adaptive `ANSWER` value maps to the enforced read-only explanation workflow, so mutation actions
+are unavailable for informational turns.
 
 ## Conceptual generation path
 
-The conceptual workflow implements the paper's complete conceptual instance-model JSON followed by
+The conceptual workflow implements a bounded stable-ID blueprint followed by conceptual slices and
 deterministic Ecore compilation:
 
 ```text
 request + source + current model + authoritative Ecore
-  -> LLM EClass selection (maximum eight)
+  -> small LLM blueprint (maximum 48 objects and 12 EClasses)
   -> exact contract and required construction closure
-  -> complete conceptual JSON
+  -> coherent slices of at most eight complete objects
+  -> stable-ID merge and cross-slice reference resolution
+  -> structured LLM quality review/correction
   -> deterministic IDs/order/containment/reference compilation
   -> private workspace mutation
   -> structural validation
-  -> diagnostic + corrected complete JSON when needed
+  -> diagnostic + bounded corrected objects when needed
   -> atomic durable commit
 ```
 
@@ -123,9 +124,11 @@ objects own composition entries; source objects own non-containment reference en
 compositions, and references are validated and compiled independently. The compiler may derive root
 placement only when one exact Ecore containment is mechanically unambiguous.
 
-Conceptual omission never deletes existing data. This path cannot emit deletions or moves. Its
-current complete response is bounded to ten ordinary objects or eight source-backed objects. It is
-not yet a persisted multi-response conceptual blueprint/slicing pipeline.
+Conceptual omission never deletes existing data. This path cannot emit deletions or moves. A
+truncated slice is discarded and split; it is never retried at the same size. All slices are merged
+and compiled in the private workspace, so no partial conceptual result is committed. The blueprint
+and slices are audited within the durable turn, but are not yet restart-resumable as separately
+persisted conceptual work items.
 
 ## Inspect/contract agent path
 
@@ -215,6 +218,9 @@ library, source-backed pantry, and empty serverless PIM runs, but failed reliabl
 feature evolution. Unified mode passed feature evolution, pantry, and serverless PIM; library has a
 successful run but the final gated rerun failed on length-limited provider output.
 
-Consequently the implementation is usable but not yet perfectly reliable for every required
-scenario. See [assistant-approach-comparison.md](assistant-approach-comparison.md) for exact evidence
-and remaining limitations.
+The staged conceptual protocol subsequently passed a live `create-cim-library` gate against
+Arvan/`DeepSeek-V4-Flash`: `SUCCEEDED`, one structurally valid checkpoint, eight audited provider
+calls, 21,720 prompt tokens, 23,286 completion tokens, and 304 seconds total latency. This is one
+successful live gate, not yet the required repeated-run production campaign. See
+[assistant-approach-comparison.md](assistant-approach-comparison.md) for the earlier comparison and
+remaining limitations.

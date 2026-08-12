@@ -136,11 +136,17 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       builder.outputSchema(
           "conceptual_instance_model".equals(prompt.requiredTool())
               ? ConceptualInstanceModelWorkflow.jsonSchema()
-              : "conceptual_type_selection".equals(prompt.requiredTool())
-                  ? ConceptualInstanceModelWorkflow.typeSelectionSchema()
-                  : "assistant_strategy".equals(prompt.requiredTool())
-                      ? AgentTurnLoop.strategySchema()
-                      : AgentActionSchema.json(prompt.patchContracts()));
+              : "conceptual_instance_slice".equals(prompt.requiredTool())
+                  ? ConceptualInstanceModelWorkflow.jsonSchema()
+                  : "conceptual_blueprint".equals(prompt.requiredTool())
+                      ? ConceptualInstanceModelWorkflow.blueprintSchema()
+                      : "conceptual_review".equals(prompt.requiredTool())
+                          ? ConceptualInstanceModelWorkflow.reviewSchema()
+                          : "conceptual_type_selection".equals(prompt.requiredTool())
+                              ? ConceptualInstanceModelWorkflow.typeSelectionSchema()
+                              : "assistant_strategy".equals(prompt.requiredTool())
+                                  ? AgentTurnLoop.strategySchema()
+                                  : AgentActionSchema.json(prompt.patchContracts()));
     }
     return builder;
   }
@@ -167,7 +173,13 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
               ? 4096
               : "conceptual_type_selection".equals(prompt.requiredTool())
                   ? 4096
-                  : properties.maxCompletionTokens();
+                  : "conceptual_blueprint".equals(prompt.requiredTool())
+                      ? 8000
+                      : "conceptual_review".equals(prompt.requiredTool())
+                          ? 3000
+                          : "conceptual_instance_slice".equals(prompt.requiredTool())
+                              ? 8000
+                              : properties.maxCompletionTokens();
       body.put("max_tokens", Math.min(completionLimit, capabilities().maxCompletionTokens()));
       applyModelGenerationControls(body, model);
       var messages = body.putArray("messages");
@@ -258,12 +270,21 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
               ? 4096
               : "conceptual_type_selection".equals(prompt.requiredTool())
                   ? 4096
-                  : properties.maxCompletionTokens();
+                  : "conceptual_blueprint".equals(prompt.requiredTool())
+                      ? 8000
+                      : "conceptual_review".equals(prompt.requiredTool())
+                          ? 3000
+                          : "conceptual_instance_slice".equals(prompt.requiredTool())
+                              ? 8000
+                              : properties.maxCompletionTokens();
       body.put("max_tokens", Math.min(completionLimit, capabilities().maxCompletionTokens()));
       applyModelGenerationControls(body, model);
       var messages = body.putArray("messages");
       boolean structuredDocument =
           "conceptual_instance_model".equals(prompt.requiredTool())
+              || "conceptual_instance_slice".equals(prompt.requiredTool())
+              || "conceptual_blueprint".equals(prompt.requiredTool())
+              || "conceptual_review".equals(prompt.requiredTool())
               || "conceptual_type_selection".equals(prompt.requiredTool())
               || "assistant_strategy".equals(prompt.requiredTool());
       String requiredAction =
@@ -424,6 +445,9 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     // envelope and must reach the deterministic compiler byte-for-byte apart from provider JSON
     // transport decoding.
     if ("conceptual_instance_model".equals(requiredAction)
+        || "conceptual_instance_slice".equals(requiredAction)
+        || "conceptual_blueprint".equals(requiredAction)
+        || "conceptual_review".equals(requiredAction)
         || "conceptual_type_selection".equals(requiredAction)
         || "assistant_strategy".equals(requiredAction)) return content;
     String candidate = content == null ? "" : content.trim();
@@ -532,6 +556,16 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       com.fasterxml.jackson.databind.node.ObjectNode body)
       throws java.io.IOException, InterruptedException {
     String requestBody = mapper.writeValueAsString(body);
+    int promptEstimate = Math.max(1, (requestBody.length() + 3) / 4);
+    if (promptEstimate > properties.maxPromptTokens()) {
+      throw new PlatformException(
+          413,
+          "AI prompt estimate "
+              + promptEstimate
+              + " tokens exceeds the configured per-call budget of "
+              + properties.maxPromptTokens()
+              + ". Reduce the source/model slice before calling the provider.");
+    }
     awaitTokenCapacity(estimatedTokenDemand(requestBody, body.path("max_tokens").asInt(0)));
     var request =
         HttpRequest.newBuilder(URI.create(baseUrl() + "/chat/completions"))

@@ -32,6 +32,14 @@ authoritative per-run record, including failed attempts.
 | `source-to-cim-pantry`  | Passed                | 121 s, 4 calls, complete source coverage/provenance                                                                                                                                                  |
 | `create-pim-serverless` | Passed                | 85 s, 6 calls, structural checkpoint through conceptual generation                                                                                                                                   |
 
+## Staged conceptual follow-up
+
+After replacing monolithic conceptual output with the stable-ID blueprint/slice/review protocol,
+`create-cim-library` passed a live unified gate against Arvan `DeepSeek-V4-Flash`: `SUCCEEDED`, 304
+seconds, 8 audited calls, 21,720 prompt tokens, 23,286 completion tokens, one checkpoint, and
+structural validity. Earlier failed staged attempts remain in `target/`; this single pass does not
+yet satisfy the repeated-run release gate.
+
 ## Interpretation
 
 - Provider connectivity alone is not acceptance.

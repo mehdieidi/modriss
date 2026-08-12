@@ -1255,7 +1255,8 @@ public final class AgentTurnLoop {
     WorkflowMode selected =
         switch (strategy) {
           case "CONCEPTUAL_GENERATION" -> WorkflowMode.CONCEPTUAL_INSTANCE_GENERATION;
-          case "INSPECT_AGENT", "ANSWER" -> WorkflowMode.AUTO;
+          case "INSPECT_AGENT" -> WorkflowMode.AUTO;
+          case "ANSWER" -> WorkflowMode.EXPLAIN_MODEL;
           default ->
               throw new TurnExecutionException(
                   new PlatformException(422, "Adaptive strategy is outside the allowlist."),

@@ -237,6 +237,23 @@ class OpenAiCompatibleAssistantModelProviderTest {
   }
 
   @Test
+  void preservesEveryStagedConceptualDocumentWithoutAnActionEnvelope() throws Exception {
+    String responseBody =
+        "{\"choices\":[{\"finish_reason\":\"stop\",\"message\":{\"content\":\"{\\\"types\\\":[\\\"Actor\\\"],\\\"objects\\\":[]}\"}}]}";
+
+    for (String document :
+        List.of("conceptual_blueprint", "conceptual_instance_slice", "conceptual_review")) {
+      var response =
+          OpenAiCompatibleAssistantModelProvider.jsonChatResponse(
+              mapper, responseBody, "DeepSeek-V4-Flash", document);
+      var content = mapper.readTree(response.getResult().getOutput().getText());
+
+      assertTrue(content.path("types").isArray());
+      assertFalse(content.has("action"));
+    }
+  }
+
+  @Test
   void recognizesProviderQualifiedAndBareQwenModelIds() {
     assertTrue(OpenAiCompatibleAssistantModelProvider.isQwenModel("qwen3-235b-a22b"));
     assertTrue(OpenAiCompatibleAssistantModelProvider.isQwenModel("Qwen/Qwen3.5-35B-A3B-FP8"));

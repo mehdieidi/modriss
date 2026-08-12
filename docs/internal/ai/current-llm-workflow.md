@@ -61,34 +61,28 @@ keywords. Safety restrictions are deterministic:
 If the strategy response is malformed, one bounded correction requests only the tiny schema.
 Strategy calls and their tokens are included in the durable provider-call audit.
 
-`ANSWER` is currently an intent signal, not an enforced read-only route: it maps to
-`WorkflowMode.AUTO`, just like `INSPECT_AGENT`. That loop is prompted to use `answer_user` for
-questions, but its mutation actions remain technically available. `EXPLAIN_MODEL` and
-`EXPLAIN_METAMODEL` are enforced read-only modes in `AgentTurnLoop`, but the unified worker does not
-currently select them for fresh requests.
+`ANSWER` maps to the enforced read-only explanation workflow. Mutation actions are unavailable on
+that route.
 
 ## Conceptual generation
 
 The conceptual strategy is implemented by `ConceptualInstanceModelWorkflow`.
 
-### Contract-selection pass
+### Blueprint and bounded conceptual slices
 
-The LLM receives the complete authoritative EClass index and chooses a focused set of four to seven
-types, with a strict maximum of eight. Names must be exact. The backend validates those names and
-adds deterministic construction, containment, and required-reference closure before rendering a
-compact Ecore guide.
+The blueprint pass assigns stable temporary IDs, exact EClasses, containment ownership, major
+reference targets, source-unit allocation, and coherent slice numbers without generating full
+attribute payloads. It is capped at 48 objects and 12 focused EClasses.
 
-### Complete conceptual document
-
-The generation pass receives:
+Each slice pass receives:
 
 - the selected authoritative Ecore contracts;
 - a compact persisted-model inventory with exact IDs, ownership, attributes, and references;
 - the user request and supplied source units;
 - the exact paper-style JSON contract.
 
-The response is keyed by instance ID. New keys are temporary IDs; updates must use exact persisted
-IDs and the persisted EClass. Every value contains:
+Each response contains at most eight objects and is keyed by instance ID. New keys are temporary
+IDs; updates must use exact persisted IDs and the persisted EClass. Every value contains:
 
 ```json
 {
@@ -107,9 +101,11 @@ IDs and the persisted EClass. Every value contains:
 Composition is written on the parent and points to the child. A non-containment reference is
 written on its source and points to its target. JSON order is irrelevant.
 
-The current implementation bounds an ordinary response to ten important objects and a
-source-backed response to eight. It asks for a smaller complete response after provider truncation.
-It does not yet persist a conceptual blueprint/instance ledger across multiple conceptual calls.
+Slices may reference IDs declared in later slices. The backend merges them only after every planned
+ID has exactly one payload. A length-truncated response is abandoned and split into smaller slices.
+Before compilation, a structured LLM reviewer checks requirement coverage, duplication,
+relationships, naming, abstraction, grounding, and unsupported invention; corrections must be
+bounded replacement objects rather than prose.
 
 ### Deterministic compilation and repair
 
@@ -212,12 +208,12 @@ EVL is available only when a user explicitly initiates model validation outside 
 
 ## Current live evidence
 
-| Fixture                 | Agent acceptance | Conceptual acceptance                    | Unified acceptance                                                                            |
-| ----------------------- | ---------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `create-cim-library`    | Passed           | Passed in an optimized run               | Unresolved reliability: one successful run, final gated rerun failed on length-limited output |
-| `cim-feature-evolution` | Passed           | Failed the second persisted-model update | Passed through the agent path                                                                 |
-| `source-to-cim-pantry`  | Passed           | Passed with complete coverage            | Passed with complete coverage                                                                 |
-| `create-pim-serverless` | Passed           | Passed after bounded contract selection  | Passed through conceptual generation                                                          |
+| Fixture                 | Agent acceptance | Conceptual acceptance                    | Unified acceptance                                                             |
+| ----------------------- | ---------------- | ---------------------------------------- | ------------------------------------------------------------------------------ |
+| `create-cim-library`    | Passed           | Passed in an optimized run               | Staged protocol passed once: 304 s, 8 calls, one structurally valid checkpoint |
+| `cim-feature-evolution` | Passed           | Failed the second persisted-model update | Passed through the agent path                                                  |
+| `source-to-cim-pantry`  | Passed           | Passed with complete coverage            | Passed with complete coverage                                                  |
+| `create-pim-serverless` | Passed           | Passed after bounded contract selection  | Passed through conceptual generation                                           |
 
 The evidence supports conceptual generation for bounded empty models and the agent for persisted
 updates. It does not support a claim of perfect reliability. Detailed call, latency, token, repair,
@@ -226,11 +222,11 @@ structure, preservation, and failure evidence is in
 
 ## Known limitations
 
-- Conceptual generation is a complete-response protocol and remains sensitive to output
-  truncation; it has no persisted multi-response instance ledger yet.
+- The conceptual blueprint and slice ledger is bounded and truncation-adaptive, but its intermediate
+  state is not yet persisted independently for worker restart/resume.
 - Conceptual updates to non-empty models have not passed the feature-evolution acceptance fixture
   reliably and are therefore excluded by the production safety rule.
-- The final unified library rerun failed after eight audited calls without a checkpoint, although a
-  previous run succeeded.
+- The staged library protocol has one successful live DeepSeek/Arvan gate and still requires the
+  repeated-run release campaign.
 - Structural validity does not prove conceptual usefulness or EVL semantic validity.
 - The live paraphrase corpus and repeated-run production SLO gate remain incomplete.

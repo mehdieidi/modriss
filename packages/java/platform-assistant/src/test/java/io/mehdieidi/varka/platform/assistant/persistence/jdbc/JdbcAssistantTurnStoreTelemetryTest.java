@@ -3,6 +3,7 @@ package io.mehdieidi.varka.platform.assistant.persistence.jdbc;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 
 import io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall;
@@ -37,7 +38,41 @@ class JdbcAssistantTurnStoreTelemetryTest {
             eq(7L),
             eq("COMPLETED"),
             eq("system prompt"),
-            eq("user prompt"));
+            eq("user prompt"),
+            isNull());
+  }
+
+  @Test
+  void persistsClassifiedProviderFailures() {
+    JdbcAssistantTurnStore store = new JdbcAssistantTurnStore(jdbc, new ObjectMapper());
+    store.recordProviderCalls(
+        "turn-1",
+        List.of(
+            new ProviderCall(
+                "openai",
+                "DeepSeek-V4-Flash",
+                99,
+                -1,
+                -1,
+                false,
+                "system",
+                "user",
+                "TRUNCATED",
+                "finish_reason=length")));
+    verify(jdbc)
+        .update(
+            anyString(),
+            eq("turn-1"),
+            eq("openai"),
+            eq("DeepSeek-V4-Flash"),
+            any(),
+            eq(99L),
+            isNull(),
+            isNull(),
+            eq("TRUNCATED"),
+            eq("system"),
+            eq("user"),
+            eq("finish_reason=length"));
   }
 
   @Test

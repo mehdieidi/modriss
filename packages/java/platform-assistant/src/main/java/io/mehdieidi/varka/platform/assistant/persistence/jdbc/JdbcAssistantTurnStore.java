@@ -612,8 +612,8 @@ RETURNING *
         calls == null ? List.<AssistantTurnStore.ProviderCall>of() : calls) {
       jdbc.update(
           "INSERT INTO assistant_provider_calls(turn_id, provider, model, started_at, latency_ms,"
-              + " prompt_tokens, completion_tokens, finish_reason, system_prompt, user_prompt)"
-              + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              + " prompt_tokens, completion_tokens, finish_reason, system_prompt, user_prompt,"
+              + " error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           turnId,
           call.provider(),
           call.model(),
@@ -621,9 +621,12 @@ RETURNING *
           Math.max(0L, call.latencyMillis()),
           call.usageReported() ? Math.max(0L, call.promptTokens()) : null,
           call.usageReported() ? Math.max(0L, call.completionTokens()) : null,
-          "COMPLETED",
+          call.finishReason() == null || call.finishReason().isBlank()
+              ? "COMPLETED"
+              : call.finishReason(),
           call.systemPrompt(),
-          call.userPrompt());
+          call.userPrompt(),
+          call.error());
     }
   }
 
