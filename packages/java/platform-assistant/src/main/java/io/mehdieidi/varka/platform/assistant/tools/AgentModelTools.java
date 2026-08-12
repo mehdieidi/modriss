@@ -932,9 +932,17 @@ public final class AgentModelTools {
                         + legal.keySet()
                         + ".");
               }
+              if (contract.many() && value != null && !value.isNull() && !value.isArray()) {
+                var values = tools.jackson.databind.node.JsonNodeFactory.instance.arrayNode();
+                values.add(value.deepCopy());
+                value = values;
+              }
               if (!contract.enumLiterals().isEmpty()
                   && value != null
-                  && !contract.enumLiterals().contains(value.asText())) {
+                  && (value.isArray()
+                      ? java.util.stream.StreamSupport.stream(value.spliterator(), false)
+                          .anyMatch(item -> !contract.enumLiterals().contains(item.asText()))
+                      : !contract.enumLiterals().contains(value.asText()))) {
                 throw new PlatformException(
                     422,
                     "Invalid enum value '"

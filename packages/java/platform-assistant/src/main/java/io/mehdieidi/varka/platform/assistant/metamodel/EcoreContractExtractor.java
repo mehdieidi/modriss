@@ -53,6 +53,7 @@ public class EcoreContractExtractor {
               text(map, "name"),
               text(map, "type"),
               Boolean.TRUE.equals(map.get("required")),
+              Boolean.TRUE.equals(map.get("many")),
               strings(map.get("options"))));
     }
     List<ReferenceContract> references = new ArrayList<>();

@@ -174,13 +174,13 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
           "assistant_strategy".equals(prompt.requiredTool())
               ? 512
               : "conceptual_type_selection".equals(prompt.requiredTool())
-                  ? 1500
+                  ? 4000
                   : "conceptual_blueprint".equals(prompt.requiredTool())
                       ? 8000
                       : "conceptual_review".equals(prompt.requiredTool())
-                          ? 1000
+                          ? 4000
                           : "conceptual_correction".equals(prompt.requiredTool())
-                              ? 4000
+                              ? 8000
                               : "conceptual_instance_slice".equals(prompt.requiredTool())
                                   ? 8000
                                   : properties.maxCompletionTokens();
@@ -273,13 +273,13 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
           "assistant_strategy".equals(prompt.requiredTool())
               ? 512
               : "conceptual_type_selection".equals(prompt.requiredTool())
-                  ? 1500
+                  ? 4000
                   : "conceptual_blueprint".equals(prompt.requiredTool())
                       ? 8000
                       : "conceptual_review".equals(prompt.requiredTool())
-                          ? 1000
+                          ? 4000
                           : "conceptual_correction".equals(prompt.requiredTool())
-                              ? 4000
+                              ? 8000
                               : "conceptual_instance_slice".equals(prompt.requiredTool())
                                   ? 8000
                                   : properties.maxCompletionTokens();

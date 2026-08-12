@@ -195,10 +195,11 @@ The same `OpenAiCompatibleAssistantModelProvider` handles strategy selection, co
 selection, conceptual generation, and agent actions. Provider-call latency, prompt/completion token
 usage, prompts, model, and failures are persisted, including failed turns.
 
-The deployed 18-call ceiling reserves up to two calls for adaptive routing and 16 for conceptual
-work. The conceptual budget accommodates the blueprint, eight single-object slices, quality review,
-and bounded slice, review, and compiler corrections. Stage-specific completion limits keep strategy,
-blueprint, slice, and review responses substantially below the provider's broad global maximum.
+The deployed 20-call ceiling reserves up to two calls for adaptive routing and 18 for conceptual
+work. The conceptual budget accommodates semantic type selection, the blueprint, eight
+single-object slices, quality review, and bounded selection, slice, review, and compiler
+corrections. Stage-specific completion limits keep every response bounded below the provider's
+broad global maximum.
 
 ## Commit and validation boundary
 

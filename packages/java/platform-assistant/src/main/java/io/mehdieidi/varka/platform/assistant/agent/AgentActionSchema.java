@@ -390,12 +390,13 @@ public final class AgentActionSchema {
     type.attributes().stream()
         .filter(attribute -> !"id".equals(attribute.name()))
         .forEach(
-            attribute ->
-                attributes.put(
-                    attribute.name(),
-                    attribute.enumLiterals().isEmpty()
-                        ? openValueSchema()
-                        : enumStringSchema(attribute.enumLiterals())));
+            attribute -> {
+              Map<String, Object> value =
+                  attribute.enumLiterals().isEmpty()
+                      ? openValueSchema()
+                      : enumStringSchema(attribute.enumLiterals());
+              attributes.put(attribute.name(), attribute.many() ? array(value, null) : value);
+            });
     List<String> requiredAttributes =
         type.attributes().stream()
             .filter(AttributeContract::required)

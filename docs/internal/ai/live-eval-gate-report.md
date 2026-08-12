@@ -67,6 +67,18 @@ temporary 2,500-token stage cap. The cap has been restored to the previously pro
 blueprint headroom; object count, schema collections, one-object slices, provider calls, and total
 turn time remain bounded. No committed model checkpoint was created by this attempt.
 
+The final bounded-attribute configuration passed a fresh live `create-cim-library` run against
+Arvan `DeepSeek-V4-Flash` on 2026-08-12 with provider retries and automatic durable resumes both
+disabled. The turn succeeded with 16 audited calls, 21,120 prompt tokens, 21,278 completion tokens,
+one committed checkpoint at revision 2, and a structurally valid result containing seven conceptual
+objects and eight relationships. One type-selection response was length-limited; the workflow's
+bounded semantic retry recovered within the 20-call budget. The persisted turn totals reconcile
+exactly with the 16 provider-call rows, and all eight conceptual work items are `generated`.
+
+This is one successful stochastic run of the final configuration. It does not satisfy the required
+ten consecutive passes, controlled live-provider restart matrix, paraphrase-corpus threshold, or
+human usefulness gate.
+
 ## Interpretation
 
 - Provider connectivity alone is not acceptance.
@@ -76,8 +88,8 @@ turn time remain bounded. No committed model checkpoint was created by this atte
 - Current evidence justifies conceptual generation for bounded empty models and the inspect/contract
   agent for persisted updates.
 
-Focused conceptual/compiler/provider/adaptive tests passed 25/25, and the strict backend mode test
-passed 1/1 after these runs. No formatter or linter was used.
+Focused conceptual/compiler/provider/adaptive tests passed 41/41, and the complete backend reactor
+package build passed after these runs. No formatter or linter was used.
 
 See [assistant-approach-comparison.md](assistant-approach-comparison.md) for the complete comparison
 and exact report filenames.

@@ -37,27 +37,25 @@ class MetamodelGuideGeneratorTest {
   }
 
   @Test
-  void resolvesProviderPhrasesToExactContracts() {
+  void acceptsExactLiveEcoreContracts() {
     TypeContractService contracts = new TypeContractService(knowledge);
 
+    assertEquals("BusinessProcess", contracts.require(ModelLevel.CIM, "BusinessProcess").eClass());
     assertEquals(
-        "BusinessProcess", contracts.require(ModelLevel.CIM, "Business process EClass").eClass());
-    assertEquals(
-        "ServerlessService",
-        contracts.require(ModelLevel.PIM, "serverless/service root contract").eClass());
+        "ServerlessService", contracts.require(ModelLevel.PIM, "ServerlessService").eClass());
   }
 
   @Test
-  void resolvesCommonProviderAliasesFromLiveToolsOutput() {
+  void rejectsProviderAliasesInsteadOfSilentlyGuessingEcoreTypes() {
     TypeContractService contracts = new TypeContractService(knowledge);
 
-    assertEquals("InformationItem", contracts.require(ModelLevel.CIM, "Concept").eClass());
-    assertEquals("BusinessProcess", contracts.require(ModelLevel.CIM, "Process").eClass());
-    assertEquals(
-        "Requirement", contracts.require(ModelLevel.CIM, "CommunityPantryRequest").eClass());
-    assertEquals("PlatformCapability", contracts.require(ModelLevel.PIM, "Requirement").eClass());
-    assertEquals(
-        "IdempotencyPolicy", contracts.require(ModelLevel.PIM, "IdempotencyPattern").eClass());
-    assertEquals("CachePolicy", contracts.require(ModelLevel.PIM, "CachingPolicy").eClass());
+    assertThrows(PlatformException.class, () -> contracts.require(ModelLevel.CIM, "Concept"));
+    assertThrows(PlatformException.class, () -> contracts.require(ModelLevel.CIM, "Process"));
+    assertThrows(
+        PlatformException.class, () -> contracts.require(ModelLevel.CIM, "CommunityPantryRequest"));
+    assertThrows(PlatformException.class, () -> contracts.require(ModelLevel.PIM, "Requirement"));
+    assertThrows(
+        PlatformException.class, () -> contracts.require(ModelLevel.PIM, "IdempotencyPattern"));
+    assertThrows(PlatformException.class, () -> contracts.require(ModelLevel.PIM, "CachingPolicy"));
   }
 }

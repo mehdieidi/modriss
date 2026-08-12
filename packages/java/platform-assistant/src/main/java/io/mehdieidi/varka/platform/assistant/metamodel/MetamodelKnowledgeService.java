@@ -154,7 +154,12 @@ public class MetamodelKnowledgeService {
 
   /** One EAttribute contract. */
   public record AttributeContract(
-      String name, String type, boolean required, List<String> enumLiterals) {}
+      String name, String type, boolean required, boolean many, List<String> enumLiterals) {
+    public AttributeContract(
+        String name, String type, boolean required, List<String> enumLiterals) {
+      this(name, type, required, false, enumLiterals);
+    }
+  }
 
   /** One EReference contract. */
   public record ReferenceContract(

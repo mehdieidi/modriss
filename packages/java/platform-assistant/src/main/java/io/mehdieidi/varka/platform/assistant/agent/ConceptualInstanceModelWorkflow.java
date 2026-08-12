@@ -70,8 +70,8 @@ public final class ConceptualInstanceModelWorkflow {
     return "{\"type\":\"object\",\"minProperties\":1,\"maxProperties\":2,\"additionalProperties\":{\"type\":\"object\",\"additionalProperties\":false,"
                + "\"required\":[\"type\",\"attributes\",\"associations\"],"
                + "\"properties\":{\"type\":{\"type\":\"string\",\"minLength\":1},"
-               + "\"attributes\":{\"type\":\"array\",\"maxItems\":24,\"items\":{\"type\":\"object\",\"additionalProperties\":false,"
-               + "\"required\":[\"dataType\",\"attributeName\",\"value\"],\"properties\":{"
+               + "\"attributes\":{\"type\":\"array\",\"maxItems\":8,\"items\":{\"type\":\"object\",\"additionalProperties\":false,"
+               + "\"required\":[\"attributeName\",\"value\"],\"properties\":{"
                + "\"dataType\":{\"type\":\"string\"},\"attributeName\":{\"type\":\"string\",\"minLength\":1},"
                + "\"value\":{}}}},\"associations\":{\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"compositions\",\"references\"],"
                + "\"properties\":{\"compositions\":{\"type\":\"array\",\"maxItems\":16,\"items\":{\"$ref\":\"#/$defs/association\"}},"
@@ -111,12 +111,12 @@ public final class ConceptualInstanceModelWorkflow {
   /** Schema for the semantic review; corrections are bounded conceptual objects, never prose. */
   public static String reviewSchema() {
     return "{\"type\":\"object\",\"required\":[\"acceptable\",\"findings\"],"
-        + "\"additionalProperties\":false,\"properties\":{\"acceptable\":{\"type\":\"boolean\"},"
-        + "\"findings\":{\"type\":\"array\",\"maxItems\":1,\"items\":{\"type\":\"object\","
-        + "\"additionalProperties\":false,\"properties\":{\"objectIds\":{\"type\":\"array\","
-        + "\"items\":{\"type\":\"string\"}},\"sourceUnitIds\":{\"type\":\"array\","
-        + "\"items\":{\"type\":\"string\"}},\"problem\":{\"type\":\"string\"},"
-        + "\"recommendedCorrection\":{\"type\":\"string\"}}}}}}";
+               + "\"additionalProperties\":false,\"properties\":{\"acceptable\":{\"type\":\"boolean\"},"
+               + "\"findings\":{\"type\":\"array\",\"maxItems\":1,\"items\":{\"type\":\"object\","
+               + "\"additionalProperties\":false,\"required\":[\"objectIds\",\"problem\",\"recommendedCorrection\"],\"properties\":{\"objectIds\":{\"type\":\"array\",\"minItems\":1,"
+               + "\"items\":{\"type\":\"string\"}},\"sourceUnitIds\":{\"type\":\"array\","
+               + "\"items\":{\"type\":\"string\"}},\"problem\":{\"type\":\"string\"},"
+               + "\"recommendedCorrection\":{\"type\":\"string\"}}}}}}";
   }
 
   public static String correctionSchema() {
@@ -150,7 +150,12 @@ public final class ConceptualInstanceModelWorkflow {
         JsonNode current = workspace.snapshot();
         Blueprint blueprint = restoredBlueprint(durableTurnId, level);
         if (blueprint == null) {
-          blueprint = planBlueprint(level, request, current, audit, maxCalls);
+          Set<String> selectedTypes = restoredSelectedTypes(durableTurnId, level);
+          if (selectedTypes.isEmpty()) {
+            selectedTypes = selectMetamodelTypes(level, request, current, audit);
+            persistSelectedTypes(durableTurnId, selectedTypes);
+          }
+          blueprint = planBlueprint(level, request, current, selectedTypes, audit, maxCalls);
           persistBlueprint(durableTurnId, blueprint);
         }
         String metamodel =
@@ -228,8 +233,17 @@ public final class ConceptualInstanceModelWorkflow {
   }
 
   private Blueprint planBlueprint(
-      ModelLevel level, String request, JsonNode current, UsageAudit audit, int maxCalls) {
+      ModelLevel level,
+      String request,
+      JsonNode current,
+      Set<String> selectedTypes,
+      UsageAudit audit,
+      int maxCalls) {
     Set<String> suppliedSourceUnits = sourceUnitIds(request);
+    List<TypeContract> focusedContracts =
+        contracts.requiredContainmentClosure(level, new ArrayList<>(selectedTypes));
+    LinkedHashSet<String> focusedTypes = new LinkedHashSet<>();
+    focusedContracts.forEach(type -> focusedTypes.add(type.eClass()));
     String system =
         "Plan a bounded conceptual instance model for Varka's "
             + level.name()
@@ -238,19 +252,19 @@ public final class ConceptualInstanceModelWorkflow {
             + " instanceId, exact EClass, short purpose, containment owner/feature when known,"
             + " major reference target IDs, source-unit allocation, and a positive slice number."
             + " sourceUnitIds may contain ONLY IDs from the explicit available-source list; when"
-            + " that list is empty every sourceUnitIds array must be empty."
-            + " Every object must use an exact legal containment placement from the supplied"
-            + " index. If a desired type is nested, also plan its required owner object."
-            + " Plan at most 8 semantically important objects total."
-            + " Group semantically coherent objects together. Use only the authoritative type"
-            + " index. The existing root is rootId and must not be planned as an object. Do not"
-            + " include prose or markdown.";
+            + " that list is empty every sourceUnitIds array must be empty. Every object must use"
+            + " an exact legal containment placement from the supplied index. If a desired type is"
+            + " nested, also plan its required owner object. Plan at most 8 semantically important"
+            + " objects total. Group semantically coherent objects together. Use only the closed"
+            + " focused EClass vocabulary. The existing root is rootId and must not be planned as"
+            + " an object. Do not include prose or markdown.";
     String user =
-        guides.index(level)
+        "AUTHORITATIVE FOCUSED ECORE CONTRACTS (closed vocabulary):\n"
+            + blueprintStructuralGuide(level, focusedContracts, focusedTypes)
             + "\n\nCURRENT MODEL TYPES:\n"
             + currentTypes(current)
-            + "\n\nAUTHORITATIVE CONTAINMENT PLACEMENTS (child <- owner.feature):\n"
-            + containmentIndex(level)
+            + "\n\nAUTHORITATIVE FOCUSED CONTAINMENT PLACEMENTS (child <- owner.feature):\n"
+            + containmentIndex(level, focusedTypes)
             + "\n\nREQUEST AND SOURCE SPECIFICATION:\n"
             + (request == null ? "" : request)
             + "\n\nAVAILABLE SOURCE UNIT IDS (closed allowlist): "
@@ -262,11 +276,31 @@ public final class ConceptualInstanceModelWorkflow {
     String correction = "";
     RuntimeException lastFailure = null;
     for (int attempt = 0; attempt < 2; attempt++) {
-      AssistantModelProvider.AssistantReply reply =
-          audit.call(system, user + correction, "conceptual_blueprint");
+      AssistantModelProvider.AssistantReply reply;
+      try {
+        reply = audit.call(system, user + correction, "conceptual_blueprint");
+      } catch (RuntimeException failure) {
+        lastFailure = failure;
+        if (attempt == 0 && truncated(failure)) {
+          correction =
+              "\n\nThe prior blueprint response was truncated. Return only the compact ledger"
+                  + " fields requested below, with at most 8 objects and no prose, attributes, or"
+                  + " duplicate explanatory text.";
+          continue;
+        }
+        throw failure;
+      }
       try {
         blueprint = Blueprint.parse(mapper, reply.content(), contracts, level);
         blueprint = normalizeBlueprintPlacements(level, blueprint);
+        Set<String> outsideFocus = new LinkedHashSet<>(blueprint.types());
+        outsideFocus.removeAll(focusedTypes);
+        if (!outsideFocus.isEmpty()) {
+          throw new PlatformException(
+              422,
+              "Conceptual blueprint used EClasses outside the selected closed vocabulary: "
+                  + outsideFocus);
+        }
         Set<String> allocated = new LinkedHashSet<>();
         for (BlueprintObject object : blueprint.objects()) {
           allocated.addAll(object.sourceUnitIds());
@@ -321,9 +355,9 @@ public final class ConceptualInstanceModelWorkflow {
   }
 
   private int blueprintCapacity(int maxCalls) {
-    // Reserve blueprint + review calls and two bounded recovery/correction calls. DeepSeek uses
-    // one rich object per slice because repeated live two-object responses reached finish_reason
-    // length. Other providers may safely pack two while honoring the same recovery reserve.
+    // Reserve type selection, blueprint, review, and one bounded recovery/correction call.
+    // DeepSeek uses one rich object per slice because repeated live two-object responses reached
+    // finish_reason length. Other providers may safely pack two with the same reserve.
     return Math.min(8, Math.max(1, maxCalls - 4) * defaultSliceSize());
   }
 
@@ -333,14 +367,20 @@ public final class ConceptualInstanceModelWorkflow {
     return model.startsWith("deepseek") || model.contains("/deepseek") ? 1 : 2;
   }
 
-  private String containmentIndex(ModelLevel level) {
-    return contracts.all(level).stream()
+  private String containmentIndex(ModelLevel level, Set<String> focusedTypes) {
+    return focusedTypes.stream()
+        .map(type -> contracts.require(level, type))
         .filter(TypeContract::creatable)
         .map(
             type ->
                 type.eClass()
                     + " <- "
                     + contracts.containmentPlacements(level, type.eClass()).stream()
+                        .filter(
+                            placement -> {
+                              int dot = placement.indexOf('.');
+                              return dot > 0 && focusedTypes.contains(placement.substring(0, dot));
+                            })
                         .map(
                             placement -> {
                               int dot = placement.indexOf('.');
@@ -352,6 +392,37 @@ public final class ConceptualInstanceModelWorkflow {
                                       + placement.substring(dot + 1);
                             })
                         .toList())
+        .collect(java.util.stream.Collectors.joining("\n"));
+  }
+
+  private String blueprintStructuralGuide(
+      ModelLevel level, List<TypeContract> focusedContracts, Set<String> focusedTypes) {
+    return focusedContracts.stream()
+        .map(
+            type -> {
+              String references =
+                  type.references().stream()
+                      .filter(reference -> !reference.readonly())
+                      .filter(
+                          reference ->
+                              reference.required()
+                                  || focusedTypes.contains(reference.targetType())
+                                  || focusedTypes.stream()
+                                      .anyMatch(
+                                          candidate ->
+                                              contracts.assignable(
+                                                  level, candidate, reference.targetType())))
+                      .map(
+                          reference ->
+                              reference.name()
+                                  + "->"
+                                  + reference.targetType()
+                                  + (reference.containment() ? "[containment]" : "[reference]")
+                                  + (reference.required() ? "[required]" : "")
+                                  + (reference.many() ? "[many]" : "[one]"))
+                      .collect(java.util.stream.Collectors.joining(","));
+              return type.eClass() + "|creatable=" + type.creatable() + "|references=" + references;
+            })
         .collect(java.util.stream.Collectors.joining("\n"));
   }
 
@@ -520,7 +591,7 @@ public final class ConceptualInstanceModelWorkflow {
                       + " generated in another slice.");
       String user =
           "AUTHORITATIVE METAMODEL CONTRACTS:\n"
-              + metamodel
+              + sliceMetamodel(level, slice, blueprint)
               + "\n\nSTABLE INSTANCE BLUEPRINT:\n"
               + blueprint.json()
               + "\n\nCURRENT PERSISTED MODEL:\n"
@@ -529,8 +600,10 @@ public final class ConceptualInstanceModelWorkflow {
               + (request == null ? "" : request)
               + "\n\nGENERATE ONLY THESE INSTANCE IDS: "
               + ids
-              + ". Return exactly those keys, with complete attributes, compositions, references,"
-              + " and evidence. It is valid to reference any ID declared in the blueprint even if"
+              + ". Return exactly those keys with every required attribute and at most 8 meaningful"
+              + " writable attributes per object; do not enumerate absent, blank, or decorative"
+              + " optional attributes. Include complete real compositions, references, and"
+              + " evidence. It is valid to reference any ID declared in the blueprint even if"
               + " that target belongs to a later slice. Maximum objects in this response: "
               + slice.size()
               + ". Association arrays contain only real links: associationName,"
@@ -589,6 +662,31 @@ public final class ConceptualInstanceModelWorkflow {
       throw new PlatformException(
           422, "Conceptual slices did not generate every blueprint object.");
     }
+  }
+
+  private String sliceMetamodel(
+      ModelLevel level, List<BlueprintObject> slice, Blueprint blueprint) {
+    Map<String, BlueprintObject> byId = new LinkedHashMap<>();
+    blueprint.objects().forEach(object -> byId.put(object.instanceId(), object));
+    LinkedHashSet<String> names = new LinkedHashSet<>();
+    for (BlueprintObject object : slice) {
+      names.add(object.type());
+      if (!"rootId".equals(object.ownerInstanceId())
+          && byId.containsKey(object.ownerInstanceId())) {
+        names.add(byId.get(object.ownerInstanceId()).type());
+      }
+      object.referenceTargets().stream()
+          .map(byId::get)
+          .filter(java.util.Objects::nonNull)
+          .map(BlueprintObject::type)
+          .forEach(names::add);
+      blueprint.objects().stream()
+          .filter(child -> child.ownerInstanceId().equals(object.instanceId()))
+          .map(BlueprintObject::type)
+          .forEach(names::add);
+    }
+    return guides.generateForTypes(
+        level, names.stream().map(name -> contracts.require(level, name)).toList());
   }
 
   private void mergeSlice(
@@ -717,8 +815,9 @@ public final class ConceptualInstanceModelWorkflow {
               + compactGenerated(generated)
               + "\n\nThe prior review was rejected by the provider/protocol boundary: "
               + safe(failure.getMessage())
-              + ". Return a much smaller terminal JSON"
-              + " object with only acceptable and at most one short finding.";
+              + ". Return a much smaller terminal JSON object with only acceptable and at most"
+              + " one short finding. A rejecting finding must include objectIds using exact IDs"
+              + " from PLANNED OBJECT PURPOSES, problem, and recommendedCorrection.";
       reply = audit.call(system, reducedUser, "conceptual_review");
       return finishQualityReview(
           reply, level, request, metamodel, blueprint, generated, audit, maxCalls);
@@ -748,17 +847,19 @@ public final class ConceptualInstanceModelWorkflow {
     if (affectedIds.isEmpty()) {
       affectedIds = blueprint.objects().stream().map(BlueprintObject::instanceId).limit(1).toList();
     }
+    List<String> correctionIds = List.copyOf(affectedIds);
     var rejected = JsonNodeFactory.instance.objectNode();
-    affectedIds.forEach(id -> rejected.set(id, generated.get(id).deepCopy()));
-    List<String> affectedTypes =
-        affectedIds.stream().map(id -> generated.get(id).path("type").asText()).distinct().toList();
-    String focusedMetamodel =
-        guides.generateForTypes(level, contracts.requiredContainmentClosure(level, affectedTypes));
+    correctionIds.forEach(id -> rejected.set(id, generated.get(id).deepCopy()));
+    List<BlueprintObject> affectedObjects =
+        blueprint.objects().stream()
+            .filter(object -> correctionIds.contains(object.instanceId()))
+            .toList();
+    String focusedMetamodel = sliceMetamodel(level, affectedObjects, blueprint);
     String system =
         "Correct a bounded conceptual model rejected by Varka's deterministic Ecore compiler."
             + " Return {acceptable:false,findings:[...],corrections:{...}}. Corrections must"
             + " contain complete replacement objects for ONLY these affected IDs: "
-            + affectedIds
+            + correctionIds
             + ". Preserve all valid semantics. Do not echo other objects, add/delete IDs, or"
             + " return prose.";
     String user =
@@ -767,7 +868,7 @@ public final class ConceptualInstanceModelWorkflow {
             + "\n\nMETAMODEL:\n"
             + focusedMetamodel
             + "\n\nBLUEPRINT:\n"
-            + blueprint.json()
+            + compactBlueprint(blueprint)
             + "\n\nONLY AFFECTED REJECTED OBJECTS:\n"
             + rejected
             + "\n\nCOMPILER DIAGNOSTIC:\n"
@@ -775,7 +876,7 @@ public final class ConceptualInstanceModelWorkflow {
     AssistantModelProvider.AssistantReply reply;
     try {
       reply = audit.call(system, user, "conceptual_correction");
-      applyReview(reply.content(), blueprint, generated, affectedIds.size());
+      applyReview(reply.content(), blueprint, generated, correctionIds.size());
     } catch (RuntimeException firstFailure) {
       if (audit.totalCalls() >= maxCalls) throw firstFailure;
       String retryUser =
@@ -783,10 +884,10 @@ public final class ConceptualInstanceModelWorkflow {
               + "\n\nThe prior correction was rejected or truncated: "
               + safe(firstFailure.getMessage())
               + " Return a tiny terminal JSON object correcting ONLY "
-              + affectedIds
+              + correctionIds
               + ". findings must contain at most one short item.";
       reply = audit.call(system, retryUser, "conceptual_correction");
-      applyReview(reply.content(), blueprint, generated, affectedIds.size());
+      applyReview(reply.content(), blueprint, generated, correctionIds.size());
     }
     return reply;
   }
@@ -907,7 +1008,7 @@ public final class ConceptualInstanceModelWorkflow {
       LinkedHashMap<String, JsonNode> generated,
       UsageAudit audit,
       int maxCalls) {
-    JsonNode review = requireReview(reply.content());
+    JsonNode review = requireReview(reply.content(), blueprint);
     if (review.path("acceptable").asBoolean(false)) return reply;
     if (audit.totalCalls() >= maxCalls) {
       throw new PlatformException(
@@ -924,10 +1025,31 @@ public final class ConceptualInstanceModelWorkflow {
         maxCalls);
   }
 
-  private JsonNode requireReview(String content) {
+  private JsonNode requireReview(String content, Blueprint blueprint) {
     JsonNode review = strictObject(content, "conceptual review");
     if (!review.has("acceptable") || !review.path("findings").isArray()) {
       throw new PlatformException(422, "Conceptual review must contain acceptable and findings.");
+    }
+    Set<String> plannedIds =
+        blueprint.objects().stream()
+            .map(BlueprintObject::instanceId)
+            .collect(java.util.stream.Collectors.toSet());
+    for (JsonNode finding : review.path("findings")) {
+      if (!finding.path("objectIds").isArray()
+          || finding.path("objectIds").isEmpty()
+          || !nonBlankText(finding.get("problem"))
+          || !nonBlankText(finding.get("recommendedCorrection"))) {
+        throw new PlatformException(
+            422,
+            "Each conceptual review finding must name exact objectIds, problem, and"
+                + " recommendedCorrection.");
+      }
+      for (JsonNode id : finding.path("objectIds")) {
+        if (!id.isTextual() || !plannedIds.contains(id.asText())) {
+          throw new PlatformException(
+              422, "Conceptual review finding used an undeclared object ID.");
+        }
+      }
     }
     return review;
   }
@@ -950,6 +1072,31 @@ public final class ConceptualInstanceModelWorkflow {
         .filter(plan -> plan != null && plan.path("blueprint").isObject())
         .map(plan -> Blueprint.parse(mapper, plan.path("blueprint").toString(), contracts, level))
         .orElse(null);
+  }
+
+  private Set<String> restoredSelectedTypes(String turnId, ModelLevel level) {
+    if (turns == null || turnId == null || turnId.isBlank()) return Set.of();
+    JsonNode selected =
+        turns
+            .workflow(turnId)
+            .filter(workflow -> "CONCEPTUAL_GENERATION".equals(workflow.workflowKind()))
+            .map(AssistantTurnStore.Workflow::plan)
+            .map(plan -> plan.path("selectedTypes"))
+            .orElse(null);
+    if (selected == null || !selected.isArray() || selected.isEmpty()) return Set.of();
+    LinkedHashSet<String> result = new LinkedHashSet<>();
+    selected.forEach(type -> result.add(contracts.require(level, type.asText("").trim()).eClass()));
+    return java.util.Collections.unmodifiableSet(result);
+  }
+
+  private void persistSelectedTypes(String turnId, Set<String> selectedTypes) {
+    if (turns == null || turnId == null || turnId.isBlank()) return;
+    var plan = durablePlan(turnId);
+    var selected = plan.putArray("selectedTypes");
+    selectedTypes.forEach(selected::add);
+    turns.saveWorkflow(
+        new AssistantTurnStore.Workflow(
+            turnId, "CONCEPTUAL_GENERATION", "BLUEPRINTING", null, plan));
   }
 
   private void persistBlueprint(String turnId, Blueprint blueprint) {
@@ -1068,8 +1215,8 @@ public final class ConceptualInstanceModelWorkflow {
         + " authoritative metamodel. Do not infer missing business facts. New JSON keys are"
         + " temporary instance IDs. For an existing element, use its exact persisted id as the key"
         + " and repeat its exact EClass.\n"
-        + "Use the paper IR exactly: each value has type,"
-        + " attributes:[{dataType,attributeName,value}], and"
+        + "Use the paper IR exactly: each value has type, attributes:[{attributeName,value}]"
+        + " (dataType is optional because Ecore is authoritative), and"
         + " associations:{compositions:[{associationName,associatedClassName,instanceID}],references:[...]}."
         + " A composition is written on the PARENT object and instanceID identifies its CHILD. A"
         + " reference is written on its source object and instanceID identifies its target. Do not"
@@ -1126,7 +1273,7 @@ public final class ConceptualInstanceModelWorkflow {
         .toString();
   }
 
-  private String selectMetamodelContracts(
+  private Set<String> selectMetamodelTypes(
       ModelLevel level, String request, JsonNode current, UsageAudit audit) {
     String system =
         "Select the exact EClasses needed to model the request as a conceptual instance model. This"
@@ -1134,20 +1281,33 @@ public final class ConceptualInstanceModelWorkflow {
             + " and supporting types needed for meaningful nodes and edges. Choose between 4 and 7"
             + " focused types (8 absolute maximum); never copy the full type index. Prefer a"
             + " coherent minimal vocabulary over unrelated alternatives. Use only case-sensitive"
-            + " names from the supplied authoritative type index. Do not generate model content or"
+            + " names from the supplied authoritative type index. The complete required Ecore"
+            + " closure must fit within 8 non-root object types; use the supplied structural costs"
+            + " to avoid combining several expensive types. Do not generate model content or"
             + " explain. Return {\"types\":[...]}.";
     String baseUser =
         guides.index(level)
+            + "\n\nMINIMUM ECORE CLOSURE COST PER SELECTED TYPE (non-root object types):\n"
+            + structuralSelectionCosts(level)
             + "\n\nCURRENT MODEL TYPES (existing IDs will be supplied to the generation pass):\n"
             + currentTypes(current)
             + "\n\nREQUEST AND SOURCE SPECIFICATION:\n"
             + (request == null ? "" : request);
     String correction = "";
-    for (int attempt = 0; attempt < 2; attempt++) {
-      AssistantModelProvider.AssistantReply reply =
-          audit.call(system, baseUser + correction, "conceptual_type_selection");
+    for (int attempt = 0; attempt < 3; attempt++) {
+      AssistantModelProvider.AssistantReply reply;
       try {
-        JsonNode selected = mapper.readTree(reply.content());
+        reply = audit.call(system, baseUser + correction, "conceptual_type_selection");
+      } catch (RuntimeException failure) {
+        if (attempt == 2 || !truncated(failure)) throw failure;
+        correction =
+            "\n\nThe prior type-selection response was truncated. Return only"
+                + " {\"types\":[...]} with a coherent exact-EClass selection whose supplied"
+                + " structural costs total at most 8. No prose or analysis.";
+        continue;
+      }
+      try {
+        JsonNode selected = strictObject(reply.content(), "conceptual type selection");
         if (!selected.path("types").isArray() || selected.path("types").isEmpty()) {
           throw new PlatformException(
               422, "Conceptual type selection must contain at least one EClass.");
@@ -1165,18 +1325,40 @@ public final class ConceptualInstanceModelWorkflow {
                   + names.size()
                   + " types; the strict maximum is 8.");
         }
-        collectTypeNames(current, names);
-        String guide =
-            guides.generateForTypes(
-                level, contracts.requiredContainmentClosure(level, new ArrayList<>(names)));
+        List<TypeContract> closure =
+            contracts.requiredContainmentClosure(level, new ArrayList<>(names));
+        long perTypeObjects =
+            names.stream().mapToLong(name -> minimumSelectionCost(level, name)).sum();
+        long closureObjects = closure.stream().filter(TypeContract::creatable).count();
+        long minimumObjects = Math.max(perTypeObjects, closureObjects);
+        if (minimumObjects > 8) {
+          String costs =
+              names.stream()
+                  .map(name -> name + "=" + minimumSelectionCost(level, name))
+                  .collect(java.util.stream.Collectors.joining(", "));
+          throw new PlatformException(
+              422,
+              "Selected EClasses "
+                  + names
+                  + " have minimum structural costs {"
+                  + costs
+                  + "}; their per-type total is "
+                  + perTypeObjects
+                  + " and their combined closure contains "
+                  + closureObjects
+                  + " non-root object types, requiring at least "
+                  + minimumObjects
+                  + " objects and exceeding the 8-object atomic capacity. Remove or replace at"
+                  + " least one expensive type while preserving the request semantics.");
+        }
         log.info(
-            "Conceptual Ecore contract selection level={} requestedTypes={} guideChars={}",
+            "Conceptual Ecore contract selection level={} requestedTypes={} closureTypes={}",
             level,
             names,
-            guide.length());
-        return guide;
+            closure.stream().map(TypeContract::eClass).toList());
+        return java.util.Collections.unmodifiableSet(names);
       } catch (Exception failure) {
-        if (attempt == 1) {
+        if (attempt == 2) {
           if (failure instanceof RuntimeException runtime) throw runtime;
           throw new PlatformException(
               422, "LLM did not return parseable conceptual type selection JSON.");
@@ -1189,6 +1371,23 @@ public final class ConceptualInstanceModelWorkflow {
       }
     }
     throw new PlatformException(422, "Conceptual type selection failed.");
+  }
+
+  private String structuralSelectionCosts(ModelLevel level) {
+    return contracts.all(level).stream()
+        .filter(TypeContract::creatable)
+        .sorted(java.util.Comparator.comparing(TypeContract::eClass))
+        .map(
+            type -> {
+              return type.eClass() + "=" + minimumSelectionCost(level, type.eClass());
+            })
+        .collect(java.util.stream.Collectors.joining(", "));
+  }
+
+  private long minimumSelectionCost(ModelLevel level, String type) {
+    return contracts.requiredContainmentClosure(level, List.of(type)).stream()
+        .filter(TypeContract::creatable)
+        .count();
   }
 
   private String currentTypes(JsonNode current) {
@@ -1797,7 +1996,6 @@ public final class ConceptualInstanceModelWorkflow {
       Map<String, JsonNode> result = new LinkedHashMap<>();
       for (JsonNode item : node) {
         String name = item.path("attributeName").asText("").trim();
-        String dataType = item.path("dataType").asText("").trim();
         if (name.isBlank()) {
           throw new PlatformException(
               422, "Attribute on conceptual object '" + id + "' has no name.");
@@ -1814,24 +2012,24 @@ public final class ConceptualInstanceModelWorkflow {
                   + legal.keySet()
                   + ".");
         }
-        if (!dataType.isBlank() && !dataType.equals(contract.type())) {
-          throw new PlatformException(
-              422,
-              "Attribute "
-                  + type.eClass()
-                  + "."
-                  + name
-                  + " has dataType "
-                  + dataType
-                  + " but Ecore requires "
-                  + contract.type()
-                  + ".");
-        }
+        // dataType is redundant provider metadata. Attribute name resolution above selects the
+        // authoritative live Ecore datatype; never spend an LLM repair call correcting a stale or
+        // generic annotation when the semantic value and exact feature are otherwise valid.
         JsonNode value =
             item.get("value") == null ? JsonNodeFactory.instance.nullNode() : item.get("value");
-        if (!contract.enumLiterals().isEmpty()
-            && !value.isNull()
-            && !contract.enumLiterals().contains(value.asText())) {
+        if (contract.many() && !value.isNull() && !value.isArray()) {
+          var values = JsonNodeFactory.instance.arrayNode();
+          values.add(value.deepCopy());
+          value = values;
+        }
+        boolean invalidEnum =
+            !contract.enumLiterals().isEmpty()
+                && !value.isNull()
+                && (value.isArray()
+                    ? java.util.stream.StreamSupport.stream(value.spliterator(), false)
+                        .anyMatch(entry -> !contract.enumLiterals().contains(entry.asText()))
+                    : !contract.enumLiterals().contains(value.asText()));
+        if (invalidEnum) {
           throw new PlatformException(
               422,
               "Invalid enum value '"
@@ -1848,6 +2046,24 @@ public final class ConceptualInstanceModelWorkflow {
           throw new PlatformException(
               422, "Duplicate attribute '" + name + "' on conceptual object '" + id + "'.");
         }
+      }
+      List<String> missingRequired =
+          legal.values().stream()
+              .filter(AttributeContract::required)
+              .map(AttributeContract::name)
+              .filter(name -> !"id".equals(name))
+              .filter(name -> !result.containsKey(name) || result.get(name).isNull())
+              .toList();
+      if (!missingRequired.isEmpty()) {
+        throw new PlatformException(
+            422,
+            "Conceptual object '"
+                + id
+                + "' of "
+                + type.eClass()
+                + " is missing required Ecore attributes "
+                + missingRequired
+                + ".");
       }
       return result;
     }

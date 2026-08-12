@@ -245,7 +245,12 @@ public final class MetamodelGuideGenerator {
   }
 
   private String attribute(AttributeContract attribute) {
-    String value = attribute.name() + (attribute.required() ? "*" : "") + ":" + attribute.type();
+    String value =
+        attribute.name()
+            + (attribute.required() ? "*" : "")
+            + ":"
+            + attribute.type()
+            + (attribute.many() ? "[]" : "");
     return attribute.enumLiterals().isEmpty()
         ? value
         : value + "{" + String.join("|", attribute.enumLiterals()) + "}";

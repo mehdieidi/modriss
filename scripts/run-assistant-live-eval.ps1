@@ -441,10 +441,10 @@ function Test-ScenarioGate {
   # The evolution gate contains two independent modeling turns. Unified complex turns include a
   # schema-bound strategy decision, focused Ecore contract selection, generation, and bounded
   # complete-model repairs. All calls remain visible; this is a workflow budget, not a retry mask.
-  # The deployed DeepSeek profile permits 18 calls for one modeling turn: up to two adaptive
-  # strategy calls and 16 conceptual/agent calls. Evolution fixtures contain two independent
+  # The deployed DeepSeek profile permits 20 calls for one modeling turn: up to two adaptive
+  # strategy calls and 18 conceptual/agent calls. Evolution fixtures contain two independent
   # modeling turns. This is an acceptance ceiling; every call and retry remains audited.
-  $callBudget = if ($scenarioId -in @("cim-feature-evolution", "edit-existing-pim-add-pattern")) { 36 } elseif ($Fixture.route -eq "EXPLANATION") { 2 } else { 18 }
+  $callBudget = if ($scenarioId -in @("cim-feature-evolution", "edit-existing-pim-add-pattern")) { 40 } elseif ($Fixture.route -eq "EXPLANATION") { 2 } else { 20 }
   $callBudget += [int]$ProviderRetryCount
   if ([int]$Result.ProviderCalls -gt $callBudget) {
     $failures += "provider calls $($Result.ProviderCalls) exceed budget $callBudget"
