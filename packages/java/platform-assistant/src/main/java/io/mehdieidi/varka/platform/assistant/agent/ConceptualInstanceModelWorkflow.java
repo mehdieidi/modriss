@@ -68,23 +68,31 @@ public final class ConceptualInstanceModelWorkflow {
 
   /** OpenAI-compatible schema for the paper IR plus optional Varka source evidence. */
   public static String jsonSchema() {
-    return "{\"type\":\"object\",\"minProperties\":1,\"maxProperties\":2,\"additionalProperties\":{\"type\":\"object\",\"additionalProperties\":false,"
+    return "{\"type\":\"object\",\"minProperties\":1,\"maxProperties\":2,"
+               + "\"additionalProperties\":{\"type\":\"object\",\"additionalProperties\":false,"
                + "\"required\":[\"type\",\"attributes\",\"associations\"],"
                + "\"properties\":{\"type\":{\"type\":\"string\",\"minLength\":1},"
-               + "\"attributes\":{\"type\":\"array\",\"maxItems\":8,\"items\":{\"type\":\"object\",\"additionalProperties\":false,"
+               + "\"attributes\":{\"type\":\"array\",\"maxItems\":8,"
+               + "\"items\":{\"type\":\"object\",\"additionalProperties\":false,"
                + "\"required\":[\"attributeName\",\"value\"],\"properties\":{"
                + "\"dataType\":{\"type\":\"string\"},\"attributeName\":{\"type\":\"string\",\"minLength\":1},"
-               + "\"value\":{}}}},\"associations\":{\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"compositions\",\"references\"],"
-               + "\"properties\":{\"compositions\":{\"type\":\"array\",\"maxItems\":16,\"items\":{\"$ref\":\"#/$defs/association\"}},"
+               + "\"value\":{}}}},\"associations\":{\"type\":\"object\","
+               + "\"additionalProperties\":false,\"required\":[\"compositions\",\"references\"],"
+               + "\"properties\":{\"compositions\":{\"type\":\"array\",\"maxItems\":16,"
+               + "\"items\":{\"$ref\":\"#/$defs/association\"}},"
                + "\"references\":{\"type\":\"array\",\"maxItems\":24,\"items\":{\"$ref\":\"#/$defs/association\"}}}},"
-               + "\"evidence\":{\"type\":\"array\",\"maxItems\":16,\"items\":{\"type\":\"object\",\"additionalProperties\":false,"
+               + "\"evidence\":{\"type\":\"array\",\"maxItems\":16,"
+               + "\"items\":{\"type\":\"object\",\"additionalProperties\":false,"
                + "\"required\":[\"sourceUnitId\",\"kind\"],\"properties\":{"
                + "\"sourceUnitId\":{\"type\":\"string\"},\"requirementId\":{\"type\":\"string\"},"
                + "\"kind\":{\"type\":\"string\",\"enum\":[\"SOURCE_GROUNDED\",\"INFERRED\"]},"
                + "\"assumption\":{\"type\":\"string\"}}}}}},"
-               + "\"$defs\":{\"association\":{\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"associationName\",\"associatedClassName\",\"instanceID\"],"
+               + "\"$defs\":{\"association\":{\"type\":\"object\","
+               + "\"additionalProperties\":false,\"required\":[\"associationName\","
+               + "\"associatedClassName\",\"instanceID\"],"
                + "\"properties\":{\"associationName\":{\"type\":\"string\",\"minLength\":1},"
-               + "\"associatedClassName\":{\"type\":\"string\",\"minLength\":1},\"instanceID\":{\"type\":\"string\",\"minLength\":1}}}}}";
+               + "\"associatedClassName\":{\"type\":\"string\",\"minLength\":1},"
+               + "\"instanceID\":{\"type\":\"string\",\"minLength\":1}}}}}";
   }
 
   /** Strict allowlisted schema for the semantic metamodel-contract selection pass. */
@@ -135,7 +143,8 @@ public final class ConceptualInstanceModelWorkflow {
     return "{\"type\":\"object\",\"required\":[\"acceptable\",\"findings\"],"
                + "\"additionalProperties\":false,\"properties\":{\"acceptable\":{\"type\":\"boolean\"},"
                + "\"findings\":{\"type\":\"array\",\"maxItems\":1,\"items\":{\"type\":\"object\","
-               + "\"additionalProperties\":false,\"required\":[\"objectIds\",\"problem\",\"recommendedCorrection\"],\"properties\":{\"objectIds\":{\"type\":\"array\",\"minItems\":1,"
+               + "\"additionalProperties\":false,\"required\":[\"objectIds\",\"problem\","
+               + "\"recommendedCorrection\"],\"properties\":{\"objectIds\":{\"type\":\"array\",\"minItems\":1,"
                + "\"items\":{\"type\":\"string\"}},\"sourceUnitIds\":{\"type\":\"array\","
                + "\"items\":{\"type\":\"string\"}},\"problem\":{\"type\":\"string\"},"
                + "\"recommendedCorrection\":{\"type\":\"string\"}}}}}}";
@@ -150,17 +159,19 @@ public final class ConceptualInstanceModelWorkflow {
 
   public static String obligationReviewSchema() {
     return "{\"type\":\"object\",\"required\":[\"acceptable\",\"coverage\",\"findings\"],"
-               + "\"additionalProperties\":false,\"properties\":{\"acceptable\":{\"type\":\"boolean\"},"
-               + "\"coverage\":{\"type\":\"array\",\"maxItems\":12,\"items\":{\"type\":\"object\","
-               + "\"additionalProperties\":false,\"required\":[\"obligationId\",\"state\",\"evidenceObjectIds\",\"evidenceRelationships\",\"explanation\"],"
-               + "\"properties\":{\"obligationId\":{\"type\":\"string\"},"
-               + "\"state\":{\"type\":\"string\",\"enum\":[\"SATISFIED\",\"PARTIAL\",\"MISSING\"]},"
-               + "\"evidenceObjectIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},"
-               + "\"evidenceRelationships\":{\"type\":\"array\",\"items\":{\"type\":\"object\","
-               + "\"additionalProperties\":false,\"required\":[\"sourceId\",\"feature\",\"targetId\"],"
-               + "\"properties\":{\"sourceId\":{\"type\":\"string\"},\"feature\":{\"type\":\"string\"},\"targetId\":{\"type\":\"string\"}}}},"
-               + "\"explanation\":{\"type\":\"string\"}}}},"
-               + "\"findings\":{\"type\":\"array\",\"maxItems\":1,\"items\":{\"type\":\"string\"}}}}";
+        + "\"additionalProperties\":false,\"properties\":{\"acceptable\":{\"type\":\"boolean\"},"
+        + "\"coverage\":{\"type\":\"array\",\"maxItems\":12,\"items\":{\"type\":\"object\","
+        + "\"additionalProperties\":false,\"required\":[\"obligationId\",\"state\","
+        + "\"evidenceObjectIds\",\"evidenceRelationships\",\"explanation\"],"
+        + "\"properties\":{\"obligationId\":{\"type\":\"string\"},"
+        + "\"state\":{\"type\":\"string\",\"enum\":[\"SATISFIED\",\"PARTIAL\",\"MISSING\"]},"
+        + "\"evidenceObjectIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},"
+        + "\"evidenceRelationships\":{\"type\":\"array\",\"items\":{\"type\":\"object\","
+        + "\"additionalProperties\":false,\"required\":[\"sourceId\",\"feature\",\"targetId\"],"
+        + "\"properties\":{\"sourceId\":{\"type\":\"string\"},"
+        + "\"feature\":{\"type\":\"string\"},\"targetId\":{\"type\":\"string\"}}}},"
+        + "\"explanation\":{\"type\":\"string\"}}}},"
+        + "\"findings\":{\"type\":\"array\",\"maxItems\":1,\"items\":{\"type\":\"string\"}}}}";
   }
 
   public AgentTurnLoop.TurnResult run(

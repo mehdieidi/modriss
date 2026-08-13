@@ -6,7 +6,6 @@ import { setStatus } from "./status.js";
 import {
   isModelingLevel,
   modelingElementDefinition,
-  modelingKernelTypes,
   modelingLevelKeys,
 } from "./modeling-config-data.js";
 import { applyDefinitionAccent, renderPalette, syncPaletteCollapsedUi } from "./canvas.js";
@@ -134,7 +133,7 @@ function selectedContext(process, progress) {
   return { phase, stage, task };
 }
 
-function suggestedPhase(process, progress) {
+function _suggestedPhase(process, progress) {
   return process?.phases?.find((phase) => !isPhaseComplete(phase, progress)) || null;
 }
 
@@ -521,7 +520,7 @@ function renderTaskCard(task, progress) {
   return card;
 }
 
-function renderPhaseDetail(host, process, progress) {
+function _renderPhaseDetail(host, process, progress) {
   const { phase, stage, task } = selectedContext(process, progress);
   if (!phase || !stage) return;
 
@@ -700,7 +699,7 @@ function renderChangeManagement(host, process) {
   });
 }
 
-function renderProcessEngine(host, process) {
+function _renderProcessEngine(host, process) {
   const engine = process?.processEngine;
   if (!engine?.cycle?.length) return;
 
@@ -755,7 +754,7 @@ function renderProcessEngine(host, process) {
   }
 }
 
-function renderEndToEndBar(host) {
+function _renderEndToEndBar(host) {
   const e2e = state.guidedModeling.endToEnd;
   const cycle = e2e?.processEngine?.cycle || e2e?.phases;
   if (!cycle?.length) return;

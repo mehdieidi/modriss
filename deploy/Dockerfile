@@ -15,6 +15,6 @@ RUN mkdir -p /app/uploads /app/logs /app/storage \
     && chown -R varka:varka /app/uploads /app/logs /app/storage
 COPY --from=build /workspace/apps/backend/target/backend-*.jar /app/backend.jar
 COPY --from=build /workspace/mde /app/mde
-USER varka
+USER 10001
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/backend.jar"]

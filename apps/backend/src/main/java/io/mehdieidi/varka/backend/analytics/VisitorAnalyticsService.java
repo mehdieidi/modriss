@@ -97,7 +97,10 @@ public class VisitorAnalyticsService {
     if (!normalizedReportedIp.isBlank()) {
       return normalizedReportedIp;
     }
-    for (String header : IP_HEADERS) {
+    String headerIp = "";
+    boolean foundHeader = false;
+    for (int index = 0; index < IP_HEADERS.size() && !foundHeader; index++) {
+      String header = IP_HEADERS.get(index);
       String value = request.getHeader(header);
       if (value == null || value.isBlank()) {
         continue;
@@ -105,10 +108,17 @@ public class VisitorAnalyticsService {
       if ("Forwarded".equalsIgnoreCase(header)) {
         String forwarded = forwardedFor(value);
         if (!forwarded.isBlank()) {
-          return forwarded;
+          headerIp = forwarded;
+        } else {
+          headerIp = value.split(",")[0].trim();
         }
+      } else {
+        headerIp = value.split(",")[0].trim();
       }
-      return value.split(",")[0].trim();
+      foundHeader = true;
+    }
+    if (!headerIp.isBlank()) {
+      return headerIp;
     }
     return request.getRemoteAddr() == null ? "" : request.getRemoteAddr();
   }

@@ -379,9 +379,12 @@ final class ModelValidationService {
   private String structuralExportGuidance(PlatformException failure) {
     String detail = failure == null || failure.getMessage() == null ? "" : failure.getMessage();
     detail = detail.replace('\r', ' ').replace('\n', ' ').trim();
-    if (detail.isBlank())
+    if (detail.isBlank()) {
       return "Inspect the rejected EClass, attribute, containment, or reference.";
-    if (detail.length() > 1000) detail = detail.substring(0, 1000);
+    }
+    if (detail.length() > 1000) {
+      detail = detail.substring(0, 1000);
+    }
     return detail;
   }
 

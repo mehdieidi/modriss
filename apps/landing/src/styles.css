@@ -247,7 +247,9 @@ a {
   color: #267850;
   display: grid;
   place-items: center;
-  font: 9px Manrope;
+  font:
+    9px Manrope,
+    sans-serif;
   font-weight: bold;
 }
 .workspace-body {
@@ -305,7 +307,9 @@ a {
   color: #91a0a5;
 }
 .validated {
-  font: 8px "DM Mono";
+  font:
+    8px "DM Mono",
+    monospace;
   color: #258259;
   background: #e0f8e9;
   padding: 5px 7px;
@@ -380,7 +384,9 @@ a {
   display: flex;
   align-items: center;
   gap: 7px;
-  font: 8px "DM Mono";
+  font:
+    8px "DM Mono",
+    monospace;
   color: #91a0a5;
   border-top: 1px solid #eef2f2;
 }
@@ -425,7 +431,6 @@ a {
 }
 .proof-strip {
   background: #0a273a;
-  color: #eef7f4;
   min-height: 83px;
   display: flex;
   align-items: center;
@@ -484,7 +489,7 @@ a {
   position: relative;
   overflow: hidden;
 }
-.journey-card:after {
+.journey-card::after {
   content: "";
   position: absolute;
   width: 150px;
@@ -497,23 +502,25 @@ a {
 .intent {
   background: #e5f9eb;
 }
-.intent:after {
+.intent::after {
   background: #9de1b8;
 }
 .architecture {
   background: #e3f5f7;
 }
-.architecture:after {
+.architecture::after {
   background: #8dd7e5;
 }
 .build {
   background: #f8eedf;
 }
-.build:after {
+.build::after {
   background: #f5bd7b;
 }
 .card-index {
-  font: 10px "DM Mono";
+  font:
+    10px "DM Mono",
+    monospace;
   color: #668277;
 }
 .journey-icon {
@@ -544,7 +551,9 @@ a {
 .model-label {
   position: absolute;
   bottom: 26px;
-  font: 9px "DM Mono";
+  font:
+    9px "DM Mono",
+    monospace;
   text-transform: uppercase;
   color: #4f7968;
 }
@@ -566,18 +575,18 @@ a {
   position: relative;
   overflow: hidden;
 }
-.feature-art:before,
-.feature-art:after {
+.feature-art::before,
+.feature-art::after {
   content: "";
   position: absolute;
   border: 1px solid #6593a288;
   border-radius: 50%;
 }
-.feature-art:before {
+.feature-art::before {
   width: 520px;
   height: 520px;
 }
-.feature-art:after {
+.feature-art::after {
   width: 290px;
   height: 290px;
 }
@@ -595,7 +604,9 @@ a {
   justify-content: space-between;
   border-bottom: 1px solid #edf0ee;
   padding-bottom: 12px;
-  font: 10px "DM Mono";
+  font:
+    10px "DM Mono",
+    monospace;
   color: #607479;
 }
 .panel-head b {
@@ -834,7 +845,9 @@ a {
   border-bottom: 1px solid #c7ddd1;
 }
 .trust-list > article > span {
-  font: 10px "DM Mono";
+  font:
+    10px "DM Mono",
+    monospace;
   color: #438368;
   margin-top: 5px;
 }
@@ -921,6 +934,7 @@ footer div {
   color: #52676f;
   font-weight: 700;
 }
+
 @media (max-width: 760px) {
   .nav {
     height: 68px;

@@ -637,7 +637,7 @@
   font-size: 0.65rem;
   font-weight: 650;
   color: var(--muted);
-  margin: 4px 0 4px;
+  margin: 4px 0;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }

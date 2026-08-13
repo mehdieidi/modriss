@@ -13,7 +13,7 @@ Per the project validation boundary, chatbot/LLM assistant generated model outpu
 
 ## EVL Basis
 
-The tests follow the Eclipse Epsilon EVL semantics documented at https://eclipse.dev/epsilon/doc/evl/:
+The tests follow the Eclipse Epsilon EVL semantics documented in the [EVL documentation](https://eclipse.dev/epsilon/doc/evl/):
 
 - `constraint` failures are mandatory validation failures.
 - `critique` failures are non-mandatory quality findings.

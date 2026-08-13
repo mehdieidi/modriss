@@ -532,10 +532,7 @@ public final class DurableAssistantTurnWorker {
         }
         var next = sourceBlueprint.get().blueprint().path("slices").get(nextSlice);
         String nextFocus = next.path("focus").asText("the next planned model slice");
-        remainingWork =
-            remainingWork == null
-                ? "Next planned model slice: " + nextFocus + "."
-                : remainingWork + " Next planned model slice: " + nextFocus + ".";
+        remainingWork += " Next planned model slice: " + nextFocus + ".";
         if (state == AssistantTurn.State.SUCCEEDED) state = AssistantTurn.State.PARTIAL;
       }
       complete(

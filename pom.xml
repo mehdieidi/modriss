@@ -79,6 +79,7 @@
             <effort>Max</effort>
             <excludeFilterFile>${session.executionRootDirectory}/config/spotbugs/exclude-filter.xml</excludeFilterFile>
             <failOnError>true</failOnError>
+            <fork>false</fork>
             <includeTests>true</includeTests>
             <threshold>High</threshold>
           </configuration>

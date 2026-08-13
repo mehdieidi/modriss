@@ -1332,7 +1332,8 @@ public final class AgentTurnLoop {
   /** Strict JSON schema used by the unified assistant's semantic strategy planner. */
   public static String strategySchema() {
     return "{\"type\":\"object\",\"required\":[\"strategy\"],\"additionalProperties\":false,"
-               + "\"properties\":{\"strategy\":{\"type\":\"string\",\"enum\":[\"CONCEPTUAL_GENERATION\",\"INSPECT_AGENT\",\"ANSWER\"]}}}";
+        + "\"properties\":{\"strategy\":{\"type\":\"string\","
+        + "\"enum\":[\"CONCEPTUAL_GENERATION\",\"INSPECT_AGENT\",\"ANSWER\"]}}}";
   }
 
   private String findStrategy(JsonNode node) {

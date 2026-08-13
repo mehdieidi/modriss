@@ -90,13 +90,11 @@ def ensure_python_lint_dependencies(scope_names: list[str]) -> None:
 
 
 def run_maven_goals(goals: list[str]) -> None:
-    # test-compile feeds SpotBugs/PMD without the package/install overhead of a full build.
-    # Reactor order still resolves SNAPSHOT siblings within the same Maven invocation.
+    # Run sequentially because SpotBugs' forked analysis can leave parallel Maven
+    # reactors hanging after all checks have completed on Windows.
     run(
         [
             maven(),
-            "-T",
-            "1C",
             "--batch-mode",
             "test-compile",
             *goals,

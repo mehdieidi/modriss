@@ -1164,7 +1164,7 @@ function updateChatProviderLabel(provider) {
   el.chatProviderLabel.classList.remove("hidden");
 }
 
-async function ensureChatRealtime(scopeKey, typeKey, sessionId) {
+async function _ensureChatRealtime(scopeKey, typeKey, sessionId) {
   const channel = state.chat.channels.get(scopeKey);
   if (channel?.kind === "fetch-sse" && !channel.handle?.signal?.aborted) {
     return;
