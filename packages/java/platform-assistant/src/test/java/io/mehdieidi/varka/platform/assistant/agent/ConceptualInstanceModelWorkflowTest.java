@@ -34,6 +34,283 @@ class ConceptualInstanceModelWorkflowTest {
       new TypeContractService(new MetamodelKnowledgeService(new AssistantMetamodelSchemaService()));
 
   @Test
+  void exposesAbstractWorkflowStepOptionsRejectsTheAbstractTypeAndCompilesTheLlmSubtype()
+      throws Exception {
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"Workflow\"]}"),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"types":["ServerlessService","Workflow","WorkflowStep"],"objects":[
+  {"instanceId":"service-1","type":"ServerlessService","purpose":"Order service","ownerInstanceId":"rootId","containment":"services","referenceTargets":[],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"workflow-1","type":"Workflow","purpose":"Order workflow","ownerInstanceId":"service-1","containment":"workflows","referenceTargets":[],"sourceUnitIds":[],"slice":2},
+  {"instanceId":"step-1","type":"WorkflowStep","purpose":"Handle order command","ownerInstanceId":"workflow-1","containment":"steps","referenceTargets":[],"sourceUnitIds":[],"slice":3}
+]}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"types":["ServerlessService","Workflow","TaskStep"],"objects":[
+  {"instanceId":"service-1","type":"ServerlessService","purpose":"Order service","ownerInstanceId":"rootId","containment":"services","referenceTargets":[],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"workflow-1","type":"Workflow","purpose":"Order workflow","ownerInstanceId":"service-1","containment":"workflows","referenceTargets":[],"sourceUnitIds":[],"slice":2},
+  {"instanceId":"step-1","type":"TaskStep","purpose":"Handle order command","ownerInstanceId":"workflow-1","containment":"steps","referenceTargets":[],"sourceUnitIds":[],"slice":3}
+]}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"service-1":{"type":"ServerlessService","attributes":[
+  {"attributeName":"name","value":"Order service"},
+  {"attributeName":"boundaryType","value":"CAPABILITY_BASED"}
+],"associations":{"compositions":[{"associationName":"workflows","associatedClassName":"Workflow","instanceID":"workflow-1"}],"references":[]}}}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"workflow-1":{"type":"Workflow","attributes":[
+  {"attributeName":"name","value":"Order workflow"},
+  {"attributeName":"workflowKind","value":"ORCHESTRATION"}
+],"associations":{"compositions":[{"associationName":"steps","associatedClassName":"WorkflowStep","instanceID":"step-1"}],"references":[]}}}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"step-1":{"type":"TaskStep","attributes":[{"attributeName":"name","value":"Handle order command"}],"associations":{"compositions":[],"references":[]}}}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(10);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
+    when(properties.model()).thenReturn("DeepSeek-V4-Flash");
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.PIM, "model", 1, emptyPim(), new AssistantPatchCompiler(), null);
+
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.PIM,
+            "Create an order workflow with command-handling behavior",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.PIM, workspace),
+            false);
+
+    String blueprintPrompt = provider.prompts().get(1).user();
+    assertTrue(
+        blueprintPrompt.contains("Workflow.steps requires one or more concrete WorkflowStep"));
+    assertTrue(blueprintPrompt.contains("StartStep"));
+    assertTrue(blueprintPrompt.contains("TaskStep"));
+    assertTrue(
+        provider
+            .prompts()
+            .get(2)
+            .user()
+            .contains("uses abstract or non-creatable EClass 'WorkflowStep'"));
+    assertEquals(
+        List.of("ServerlessService", "Workflow", "TaskStep"),
+        result.commandBatch().creates().stream().map(create -> create.eClass()).toList());
+    assertEquals("workflow-1", result.commandBatch().creates().get(2).owner());
+    assertEquals("steps", result.commandBatch().creates().get(2).reference());
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
+  void asksDeepSeekForASemanticSubsetWhenTheSelectedPimClosureExceedsCapacity() throws Exception {
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply(
+                    "{\"types\":[\"Api\",\"ApiRoute\",\"EventFlow\",\"DataStore\","
+                        + "\"ExternalAdapter\",\"ObservabilityConfig\",\"SecurityPolicy\","
+                        + "\"Workflow\",\"Function\",\"EventType\",\"Queue\",\"DataModel\"]}"),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"types\":[\"Api\",\"DataStore\",\"ObservabilityConfig\","
+                        + "\"SecurityPolicy\"]}"),
+                ScriptedAssistantModelProvider.failure(new PlatformException(502, "stop"))));
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(18);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(18);
+    when(properties.model()).thenReturn("DeepSeek-V4-Flash");
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.PIM, "model", 1, emptyPim(), new AssistantPatchCompiler(), null);
+
+    assertThrows(
+        AgentTurnLoop.TurnExecutionException.class,
+        () ->
+            workflow.run(
+                "session",
+                ModelLevel.PIM,
+                "Create serverless order processing",
+                workspace,
+                new AgentModelTools(contracts, models).scoped(ModelLevel.PIM, workspace),
+                false));
+
+    String repairPrompt = provider.prompts().get(1).user();
+    assertTrue(repairPrompt.contains("importance-ranked SUBSET"));
+    assertTrue(repairPrompt.contains("marginal closure savings"));
+    assertTrue(repairPrompt.contains("object excess"));
+    assertTrue(repairPrompt.contains("Fewer than 4 types is valid"));
+    assertEquals("conceptual_blueprint", provider.prompts().get(2).requiredTool());
+  }
+
+  @Test
+  void combinesMalformedAssociationAndMissingRequiredAttributeInOneSliceCorrection()
+      throws Exception {
+    String blueprint =
+        """
+{"types":["ServerlessService","DataStore"],"objects":[
+  {"instanceId":"service-1","type":"ServerlessService","purpose":"Order service","ownerInstanceId":"rootId","containment":"services","referenceTargets":[],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"ds1","type":"DataStore","purpose":"Order store","ownerInstanceId":"service-1","containment":"stores","referenceTargets":[],"sourceUnitIds":[],"slice":2}
+]}
+""";
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply(
+                    "{\"types\":[\"ServerlessService\",\"DataStore\"]}"),
+                ScriptedAssistantModelProvider.reply(blueprint),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"service-1":{"type":"ServerlessService","attributes":[
+  {"attributeName":"name","value":"Order service"},
+  {"attributeName":"boundaryType","value":"CAPABILITY_BASED"}
+],"associations":{"compositions":[{"associationName":"stores","associatedClassName":"DataStore","instanceID":"ds1"}],"references":[]}}}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"ds1":{"type":"DataStore","attributes":[
+  {"attributeName":"name","value":"Order store"},
+  {"attributeName":"storeKind","value":"KEY_VALUE"}
+],"associations":{"compositions":[],"references":[{"associationName":"retentionPolicy","associatedClassName":"RetentionPolicy","instanceID":[]}]}}}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"ds1":{"type":"DataStore","attributes":[
+  {"attributeName":"name","value":"Order store"},
+  {"attributeName":"storeKind","value":"KEY_VALUE"},
+  {"attributeName":"consistencyNeed","value":"EVENTUAL"}
+],"associations":{"compositions":[],"references":[]}}}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(18);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(18);
+    when(properties.model()).thenReturn("DeepSeek-V4-Flash");
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.PIM, "model", 1, emptyPim(), new AssistantPatchCompiler(), null);
+
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.PIM,
+            "Create serverless order processing",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.PIM, workspace),
+            false);
+
+    String correctionPrompt = provider.prompts().get(4).user();
+    assertTrue(correctionPrompt.contains("has an invalid references entry"));
+    assertTrue(correctionPrompt.contains("missing required Ecore attributes [consistencyNeed]"));
+    assertEquals(6, result.providerCalls());
+    assertEquals(2, result.commandBatch().creates().size());
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
+  void rejectsABlueprintThatSilentlyDropsASelectedSemanticType() throws Exception {
+    String correctedBlueprint =
+        """
+{"types":["Actor","BusinessGoal"],"objects":[
+  {"instanceId":"actor-1","type":"Actor","purpose":"Borrower","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"goal-1","type":"BusinessGoal","purpose":"Borrow books","ownerInstanceId":"rootId","containment":"goals","referenceTargets":[],"sourceUnitIds":[],"slice":2}
+]}
+""";
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\",\"BusinessGoal\"]}"),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"types":["Actor"],"objects":[
+  {"instanceId":"actor-1","type":"Actor","purpose":"Borrower","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"sourceUnitIds":[],"slice":1}
+]}
+"""),
+                ScriptedAssistantModelProvider.failure(
+                    new PlatformException(502, "finish_reason=length")),
+                ScriptedAssistantModelProvider.reply(correctedBlueprint),
+                ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"goal-1":{"type":"BusinessGoal","attributes":[{"attributeName":"name","value":"Borrow books"}],"associations":{"compositions":[],"references":[]}}}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(10);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
+    when(properties.model()).thenReturn("DeepSeek-V4-Flash");
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
+
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.CIM,
+            "Create a library borrower and borrowing goal",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+            false);
+
+    assertTrue(
+        provider
+            .prompts()
+            .get(2)
+            .user()
+            .contains("omitted selected semantic EClasses [BusinessGoal]"));
+    assertTrue(
+        provider
+            .prompts()
+            .get(3)
+            .user()
+            .contains("omitted selected semantic EClasses [BusinessGoal]"));
+    assertTrue(provider.prompts().get(3).user().contains("prior blueprint response was truncated"));
+    assertEquals("TRUNCATED", result.providerCallDetails().get(2).finishReason());
+    assertEquals(2, result.commandBatch().creates().size());
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
   void stagesStableIdSlicesAndAppliesStructuredQualityCorrectionAtomically() throws Exception {
     var provider =
         new ScriptedAssistantModelProvider(
@@ -295,22 +572,40 @@ class ConceptualInstanceModelWorkflowTest {
     String invalidBlueprint =
         """
 {"types":["DomainEntity"],"objects":[
-  {"instanceId":"book","type":"DomainEntity","purpose":"Book","ownerInstanceId":"rootId","containment":"domainEntities","referenceTargets":[],"sourceUnitIds":[],"slice":1}
+  {"instanceId":"book","type":"DomainEntity","purpose":"Book","ownerInstanceId":"rootId","containment":"entities","referenceTargets":[],"sourceUnitIds":[],"slice":1}
 ]}
 """;
     String correctedBlueprint =
         """
-{"types":["Actor"],"objects":[
-  {"instanceId":"actor-1","type":"Actor","purpose":"Borrower","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"sourceUnitIds":[],"slice":1}
+{"types":["DomainEntity","InformationItem"],"objects":[
+  {"instanceId":"book","type":"DomainEntity","purpose":"Book","ownerInstanceId":"rootId","containment":"entities","referenceTargets":["book-id"],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"book-id","type":"InformationItem","purpose":"Book identifier","ownerInstanceId":"rootId","containment":"informationItems","referenceTargets":[],"sourceUnitIds":[],"slice":2}
 ]}
 """;
     var provider =
         new ScriptedAssistantModelProvider(
             List.of(
-                ScriptedAssistantModelProvider.reply("{\"types\":[\"DomainEntity\",\"Actor\"]}"),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"types\":[\"DomainEntity\",\"InformationItem\"]}"),
                 ScriptedAssistantModelProvider.reply(invalidBlueprint),
                 ScriptedAssistantModelProvider.reply(correctedBlueprint),
-                ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"book":{"type":"DomainEntity","attributes":[
+  {"attributeName":"name","value":"Book"},
+  {"attributeName":"identityStrategy","value":"NATURAL_KEY"}
+],"associations":{"compositions":[],"references":[
+  {"associationName":"identityAttributes","associatedClassName":"InformationItem","instanceID":"book-id"},
+  {"associationName":"primaryIdentityAttribute","associatedClassName":"InformationItem","instanceID":"book-id"}
+]}}}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"book-id":{"type":"InformationItem","attributes":[
+  {"attributeName":"name","value":"Book ID"},
+  {"attributeName":"type","value":"IDENTIFIER"}
+],"associations":{"compositions":[],"references":[]}}}
+"""),
                 ScriptedAssistantModelProvider.reply(
                     "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
     AiProperties properties = mock(AiProperties.class);
@@ -338,16 +633,17 @@ class ConceptualInstanceModelWorkflowTest {
             new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
             false);
 
-    assertEquals(5, result.providerCalls());
-    assertEquals(1, result.commandBatch().creates().size());
-    assertEquals("Actor", result.commandBatch().creates().get(0).eClass());
+    assertEquals(6, result.providerCalls());
+    assertEquals(2, result.commandBatch().creates().size());
+    assertEquals("DomainEntity", result.commandBatch().creates().get(0).eClass());
     String slicePrompt =
         provider.prompts().stream()
             .filter(prompt -> "conceptual_instance_slice".equals(prompt.requiredTool()))
             .findFirst()
             .orElseThrow()
             .user();
-    assertTrue(!slicePrompt.contains("DomainEntity|"));
+    assertTrue(slicePrompt.contains("DomainEntity"));
+    assertTrue(slicePrompt.contains("InformationItem"));
     assertEquals(0, provider.remainingSteps());
   }
 
@@ -363,9 +659,17 @@ class ConceptualInstanceModelWorkflowTest {
         new ScriptedAssistantModelProvider(
             List.of(
                 ScriptedAssistantModelProvider.reply(
-                    "{\"types\":[\"Actor\",\"BusinessGoal\",\"BusinessCapability\",\"DomainEntity\",\"DomainRelationship\",\"Policy\",\"UbiquitousLanguageTerm\"]}"),
+                    "{\"types\":[\"Actor\",\"BusinessGoal\",\"BusinessCapability\",\"DomainEntity\","
+                        + "\"DomainRelationship\",\"Policy\",\"UbiquitousLanguageTerm\","
+                        + "\"Requirement\",\"BusinessProcess\",\"Command\",\"BusinessEvent\","
+                        + "\"Risk\",\"Hotspot\"]}"),
                 ScriptedAssistantModelProvider.failure(
                     new PlatformException(502, "finish_reason=length")),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"types\":[\"Actor\",\"BusinessGoal\",\"BusinessCapability\",\"DomainEntity\","
+                        + "\"DomainRelationship\",\"Policy\",\"UbiquitousLanguageTerm\","
+                        + "\"Requirement\",\"BusinessProcess\",\"Command\",\"BusinessEvent\","
+                        + "\"Risk\",\"Hotspot\"]}"),
                 ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\"]}"),
                 ScriptedAssistantModelProvider.reply(blueprint),
                 ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
@@ -396,8 +700,12 @@ class ConceptualInstanceModelWorkflowTest {
             new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
             false);
 
-    assertEquals(6, result.providerCalls());
+    assertEquals(7, result.providerCalls());
     assertEquals(1, result.commandBatch().creates().size());
+    assertTrue(provider.prompts().get(2).user().contains("The prior selection was rejected"));
+    assertTrue(
+        provider.prompts().get(2).user().contains("prior type-selection response was truncated"));
+    assertTrue(provider.prompts().get(3).user().contains("strict maximum is 12"));
     assertEquals(0, provider.remainingSteps());
   }
 
@@ -406,8 +714,8 @@ class ConceptualInstanceModelWorkflowTest {
     String blueprint =
         """
 {"types":["Actor"],"objects":[
-  {"instanceId":"actor-1","type":"Actor","purpose":"Borrower","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"sourceUnitIds":[],"slice":1},
-  {"instanceId":"actor-2","type":"Actor","purpose":"Librarian","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"sourceUnitIds":[],"slice":1}
+  {"instanceId":"actor-1","type":"Actor","purpose":"Borrower","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"obligationIds":["OBL-1"],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"actor-2","type":"Actor","purpose":"Librarian","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"obligationIds":["OBL-1"],"sourceUnitIds":[],"slice":1}
 ]}
 """;
     AtomicReference<AssistantTurnStore.Workflow> savedWorkflow = new AtomicReference<>();
@@ -451,6 +759,9 @@ class ConceptualInstanceModelWorkflowTest {
     var firstProvider =
         new ScriptedAssistantModelProvider(
             List.of(
+                ScriptedAssistantModelProvider.reply(
+                    "{\"obligations\":[{\"id\":\"OBL-1\",\"obligation\":\"Represent library"
+                        + " participants\",\"importance\":\"MANDATORY\",\"sourceUnitIds\":[],\"expectedEClasses\":[\"Actor\",\"Requirement\"]}]}"),
                 ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\"]}"),
                 ScriptedAssistantModelProvider.reply(blueprint),
                 ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
@@ -487,6 +798,16 @@ class ConceptualInstanceModelWorkflowTest {
       assertEquals(1, savedWorkflow.get().plan().path("sliceSize").asInt());
       assertEquals("Actor", savedWorkflow.get().plan().path("selectedTypes").get(0).asText());
       assertEquals(
+          "OBL-1",
+          savedWorkflow
+              .get()
+              .plan()
+              .path("obligationLedger")
+              .path("obligations")
+              .get(0)
+              .path("id")
+              .asText());
+      assertEquals(
           "actors",
           savedWorkflow
               .get()
@@ -504,7 +825,8 @@ class ConceptualInstanceModelWorkflowTest {
               List.of(
                   ScriptedAssistantModelProvider.reply(actor("actor-2", "Librarian")),
                   ScriptedAssistantModelProvider.reply(
-                      "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
+                      "{\"acceptable\":true,\"coverage\":[{\"obligationId\":\"OBL-1\",\"state\":\"SATISFIED\",\"evidenceObjectIds\":[\"actor-1\",\"actor-2\"],\"evidenceRelationships\":[],\"explanation\":\"Both"
+                          + " participants are modeled\"}],\"findings\":[]}")));
       var resumedWorkspace =
           new ModelWorkspace(
               ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
@@ -528,22 +850,150 @@ class ConceptualInstanceModelWorkflowTest {
                           .scoped(ModelLevel.CIM, resumedWorkspace),
                       false));
 
-      assertEquals(6, result.providerCalls());
+      assertEquals(7, result.providerCalls());
       assertEquals(2, result.providerCallDetails().size());
-      assertEquals(6, savedCalls.size());
+      assertEquals(7, savedCalls.size());
       assertEquals(2, result.commandBatch().creates().size());
+      assertTrue(
+          resumedProvider
+              .prompts()
+              .get(1)
+              .system()
+              .contains("alternative candidate mappings selected during interpretation"));
       assertEquals(0, resumedProvider.remainingSteps());
     } finally {
       // DurableTurnExecutionContext restores its thread-local value after each invocation.
     }
   }
 
+  @Test
+  void usesOnlyLedgerCandidatesAfterATypeSelectionTruncation() throws Exception {
+    String blueprint =
+        "{\"types\":[\"Actor\"],\"objects\":[{\"instanceId\":\"actor-1\",\"type\":\"Actor\","
+            + "\"purpose\":\"Borrower\",\"ownerInstanceId\":\"rootId\",\"containment\":\"actors\","
+            + "\"referenceTargets\":[],\"obligationIds\":[\"OBL-1\"],\"sourceUnitIds\":[],\"slice\":1}]}";
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply(
+                    "{\"obligations\":[{\"id\":\"OBL-1\",\"obligation\":\"Represent"
+                        + " participants\",\"importance\":\"MANDATORY\",\"sourceUnitIds\":[],\"expectedEClasses\":[\"Actor\",\"Requirement\"]}]}"),
+                ScriptedAssistantModelProvider.failure(
+                    new PlatformException(502, "finish_reason=length")),
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\"]}"),
+                ScriptedAssistantModelProvider.reply(blueprint),
+                ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"acceptable\":true,\"coverage\":[{\"obligationId\":\"OBL-1\",\"state\":\"SATISFIED\",\"evidenceObjectIds\":[\"actor-1\"],\"evidenceRelationships\":[],\"explanation\":\"Participant"
+                        + " modeled\"}],\"findings\":[]}")));
+    AssistantTurnStore store = mock(AssistantTurnStore.class);
+    when(store.workflow("turn-compact-selection")).thenReturn(Optional.empty());
+    when(store.workItems("turn-compact-selection")).thenReturn(List.of());
+    AiProperties properties = properties();
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties, store);
+
+    DurableTurnExecutionContext.with(
+        "turn-compact-selection",
+        () ->
+            workflow.run(
+                "session",
+                ModelLevel.CIM,
+                "Create participants",
+                workspace,
+                new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+                false));
+
+    String retry = provider.prompts().get(2).user();
+    assertTrue(retry.contains("Actor=1"));
+    assertTrue(retry.contains("Requirement=1"));
+    assertTrue(retry.contains("prior type-selection response was truncated"));
+    assertTrue(!retry.contains("UbiquitousLanguageTerm"));
+  }
+
   private AiProperties properties() {
     AiProperties properties = mock(AiProperties.class);
-    when(properties.maxProviderCallsPerTurn()).thenReturn(8);
-    when(properties.maxProviderCallsSourceTurn()).thenReturn(8);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(10);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
     return properties;
+  }
+
+  @Test
+  void preventsCheckpointWhenIndependentReviewCannotProveAMandatoryObligation() throws Exception {
+    String blueprint =
+        """
+{"types":["Actor"],"objects":[
+  {"instanceId":"actor-1","type":"Actor","purpose":"Borrower","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"obligationIds":["OBL-1"],"sourceUnitIds":[],"slice":1}
+]}
+""";
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply(
+                    "{\"obligations\":[{\"id\":\"OBL-1\",\"obligation\":\"Represent borrowing"
+                        + " behavior\",\"importance\":\"MANDATORY\",\"sourceUnitIds\":[],\"expectedEClasses\":[\"Actor\"]}]}"),
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\"]}"),
+                ScriptedAssistantModelProvider.reply(blueprint),
+                ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"acceptable\":false,\"coverage\":[{\"obligationId\":\"OBL-1\",\"state\":\"PARTIAL\",\"evidenceObjectIds\":[\"actor-1\"],\"evidenceRelationships\":[],\"explanation\":\"Actor"
+                        + " alone does not prove behavior\"}],\"findings\":[\"Missing behavioral"
+                        + " relationship\"]}")));
+    AssistantTurnStore store = mock(AssistantTurnStore.class);
+    AtomicReference<AssistantTurnStore.Workflow> savedWorkflow = new AtomicReference<>();
+    when(store.workflow("turn-obligation-failure"))
+        .thenAnswer(ignored -> Optional.ofNullable(savedWorkflow.get()));
+    when(store.workItems("turn-obligation-failure")).thenReturn(List.of());
+    doAnswer(
+            invocation -> {
+              savedWorkflow.set(invocation.getArgument(0));
+              return null;
+            })
+        .when(store)
+        .saveWorkflow(org.mockito.ArgumentMatchers.any());
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(12);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(12);
+    when(properties.model()).thenReturn("DeepSeek-V4-Flash");
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    ModelService models = mock(ModelService.class);
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties, store);
+
+    AgentTurnLoop.TurnExecutionException failure =
+        assertThrows(
+            AgentTurnLoop.TurnExecutionException.class,
+            () ->
+                DurableTurnExecutionContext.with(
+                    "turn-obligation-failure",
+                    () ->
+                        workflow.run(
+                            "session",
+                            ModelLevel.CIM,
+                            "Create borrowing behavior",
+                            workspace,
+                            new AgentModelTools(contracts, models)
+                                .scoped(ModelLevel.CIM, workspace),
+                            false)));
+
+    assertTrue(
+        failure.getMessage().contains("Mandatory requirement obligations were not satisfied"));
+    assertTrue(!workspace.snapshot().toString().contains("Borrower"));
+    assertEquals(0, provider.remainingSteps());
   }
 
   private String actor(String id, String name) {

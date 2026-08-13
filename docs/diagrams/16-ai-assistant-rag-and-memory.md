@@ -1,98 +1,49 @@
-# AI Assistant Contracts, Source Units, and Durable Memory
+# AI assistant contracts, obligations, source units, and durable memory
 
-## Metamodel Contract Use
-
-```mermaid
-flowchart TD
-    ecore["CIM/PIM/PSM combined Ecore"]
-    extractor["EcoreContractExtractor"]
-    index["MetamodelKnowledgeIndex"]
-    knowledge["MetamodelKnowledgeService"]
-    guide["MetamodelGuideGenerator"]
-    contracts["TypeContractService"]
-    conceptual["ConceptualInstanceModelWorkflow"]
-    schema["AssistantMetamodelSchemaService"]
-    tools["AgentModelTools"]
-    workspace["ModelWorkspace"]
-
-    ecore --> extractor --> index
-    index --> knowledge --> guide --> conceptual
-    knowledge --> contracts --> conceptual
-    index --> schema --> tools
-    tools --> workspace
-    schema -->|"types, attributes, references, containments, enum values"| tools
-```
-
-## Source-Backed Turn Provenance
-
-```mermaid
-sequenceDiagram
-    actor Client
-    participant C as ChatbotController
-    participant U as UploadService
-    participant W as DurableAssistantTurnWorker
-    participant S as SourceUnitSplitter
-    participant T as AssistantTurnStore
-    participant A as AgentTurnLoop / Conceptual Workflow
-
-    Client->>C: Upload .md/.txt/.json attachment
-    C->>U: store assistant attachment
-    Client->>C: Submit message with attachmentIds
-    C->>T: create durable turn with source text
-    W->>S: split source text into bounded units and aliases
-    W->>T: persist assistant_source_units
-    alt durable inspect/contract source workflow
-        W->>A: source units + persisted plan/work-item context
-        A-->>W: modeling plan and atomic source-grounded slice
-    else bounded conceptual source workflow
-        W->>A: selected source units + exact Ecore contracts
-        A-->>W: one complete conceptual document with evidence
-    end
-    W->>A: run turn with source units, contracts, and model tools
-    A-->>W: committed elements with source-grounded/inferred labels
-    W->>T: persist assistant_element_provenance and coveragePercent
-```
-
-## Durable Memory Layout
+## Exact metamodel and semantic planning
 
 ```mermaid
 flowchart LR
-    thread["assistant_threads<br/>user/project/level scope"]
-    messages["assistant_messages<br/>durable audit history"]
-    spring["SPRING_AI_CHAT_MEMORY<br/>recent chat window"]
-    summaries["assistant_thread_summaries<br/>rolling summary"]
-    turns["assistant_turns<br/>state, idempotency, deadlines, counters"]
-    events["assistant_turn_events<br/>replay cursor and payload"]
-    checkpoints["assistant_checkpoints<br/>model revision and inverse patch"]
-    sources["assistant_source_units"]
-    provenance["assistant_element_provenance"]
-    calls["assistant_provider_calls"]
-    audits["assistant_action_audits"]
-    workflows["assistant_workflows + assistant_work_items<br/>durable strategy/plan progress"]
-    facts["assistant_source_facts + assistant_source_blueprints<br/>context cache"]
-    validation["assistant_validation_attempts"]
-    limits["assistant_rate_limits<br/>schema reserved"]
-
-    thread --> messages
-    thread --> spring
-    thread --> summaries
-    thread --> turns
-    turns --> events
-    turns --> checkpoints
-    turns --> sources --> provenance
-    turns --> calls
-    turns --> audits
-    turns --> workflows
-    turns --> facts
-    turns --> validation
-    limits
+    Ecore["Live CIM/PIM Ecore"] --> Extract["EcoreContractExtractor / TypeContractService"]
+    Extract --> Index["Exact type index, construction closure,<br/>containment and reference contracts"]
+    Request["User request + optional source units"] --> Ledger["LLM obligation ledger"]
+    Index --> Ledger
+    Ledger --> Select["LLM type selection"]
+    Select --> Capacity["Deterministic combined closure/capacity gate"]
+    Capacity --> Blueprint["LLM stable-ID blueprint"]
+    Blueprint --> WorkItems["Private durable slice work items"]
+    WorkItems --> Review["Independent LLM obligation evidence review"]
 ```
 
-Source coverage is a provenance/accounting signal. It says whether tracked source units were
-modeled, inferred, or intentionally left as remaining work. Assistant checkpoints do not execute EVL
-or require semantic EVL validity; model validation endpoints remain available for explicit
-post-checkpoint review.
+There is no business-semantic keyword mapper. The LLM owns the obligation text and candidate exact
+EClasses. Deterministic code verifies that candidates exist and are creatable, that mandatory
+obligations survive selection and blueprint allocation, and that final cited objects and
+relationship triples exist.
 
-The inspect/contract path can persist source plans and work items across continuations. The current
-conceptual path is bounded to one complete response and does not yet persist a cross-response
-instance ledger.
+Lexical/embedding retrieval may help the inspect/contract action loop select relevant metamodel
+contracts. It is not a semantic fallback generator and does not replace exact live Ecore closure.
+
+## Source provenance
+
+```mermaid
+flowchart LR
+    Upload["Uploaded md/txt/json"] --> Units["assistant_source_units"]
+    Units --> Evidence{"Element evidence"}
+    Evidence --> Grounded["SOURCE_GROUNDED<br/>exact sourceUnitId"]
+    Evidence --> Inferred["INFERRED<br/>explicit assumption"]
+    Grounded --> Provenance["assistant_element_provenance"]
+    Inferred --> Provenance
+```
+
+Source coverage is accounting, not EVL validity. Obligation coverage is a separate LLM judgment
+whose identifiers and evidence are deterministically checked. Both must be reported honestly.
+
+## Durable memory
+
+The runtime persists thread messages/summaries, turns/events, provider prompts and usage,
+obligation/type/blueprint workflow state, private work-item payloads, source context and provenance,
+validation attempts, checkpoints, and inverse patches. This allows lease recovery to resume
+completed stages without exposing private partial objects or reinterpreting a persisted ledger.
+
+Assistant generation and commit use only `ModelService.validateStructural(...)`. EVL remains a
+separate explicit validation workflow.

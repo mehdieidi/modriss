@@ -125,18 +125,19 @@ specific checkpoint, record binary feedback, and undo saved checkpoints. See
 
 Message requests include an `idempotencyKey`, user `message`, optional `modelId`, `revision` or
 `expectedRevision`, current `activeView`, selected element IDs, and uploaded `attachmentIds`.
-Uploaded `.md`, `.txt`, and `.json` attachments can drive source-backed CIM modeling. Turn status
+Uploaded `.md`, `.txt`, and `.json` attachments can drive source-backed modeling. Turn status
 responses include checkpoint counts, saved element counts, source coverage, remaining work,
 provider-call/token counters, repair attempts, provenance, continuation turns, and current
 workflow/work-item fields.
 
-The chatbot has one unified production behavior. Requests do not include an agent/conceptual mode,
-provider, or internal strategy. The backend automatically selects a bounded conceptual generator,
-inspect/contract action loop, or answer path while retaining the same durable turn controls.
+The chatbot supports CIM and PIM; PSM session creation is rejected with HTTP 422. Requests do not
+include an agent/conceptual mode, provider, or internal strategy. The backend automatically selects
+a bounded conceptual generator, inspect/contract action loop, or enforced read-only answer path
+while retaining the same durable turn controls.
 
-`coveragePercent=100` means tracked source units were accounted for; it is separate from semantic
-EVL validity. Call the model validation endpoint after a checkpoint when a validation-green model is
-required.
+`coveragePercent=100` means enforced source/mandatory-obligation accounting passed for the active
+workflow; it is separate from EVL validity. Call the model-validation endpoint after a checkpoint
+when EVL feedback is required.
 
 Workflow fields in a turn response report resumable backend state; clients must not treat them as a
 strategy-selection contract. A checkpoint confirms structural Ecore/EMF conformance and atomic

@@ -152,8 +152,8 @@ uses durable structural state and a strict LLM strategy decision to choose conce
 generation, the inspect/contract agent, or a non-mutating answer. All mutation strategies share the
 same turn, checkpoint, confirmation, revision, audit, and SSE protocol.
 
-Implementation note: the strategy value `ANSWER` currently enters the ordinary `AUTO` action loop;
-it is expected to return `answer_user` but is not an enforced read-only capability set.
+`ANSWER` maps to the enforced read-only `EXPLAIN_MODEL` workflow. PSM assistant sessions are
+rejected with HTTP 422; the chatbot currently supports CIM and PIM only.
 
 | Method   | Path                                                              | Purpose                          |
 | -------- | ----------------------------------------------------------------- | -------------------------------- |
@@ -173,6 +173,8 @@ it is expected to return `answer_user` but is not an enforced read-only capabili
 | `POST`   | `/api/chatbot/turns/{turnId}/checkpoints/{checkpointId}/rollback` | Roll back a specific checkpoint  |
 | `POST`   | `/api/chatbot/turns/{turnId}/feedback`                            | Record accepted/rejected signal  |
 | `GET`    | `/api/chatbot/turns/{turnId}/events`                              | Replay durable SSE events        |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`        | Legacy applied-proposal details  |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo`   | Legacy proposal inverse          |
 
 ### Message request and response
 
@@ -185,14 +187,15 @@ an event cursor. There is deliberately no provider, workflow, strategy, agent-mo
 field in this request.
 
 `GET /api/chatbot/turns/{turnId}` is the polling fallback and returns checkpoint counts, saved
-elements, source coverage, remaining work, provider-call/token usage, and source-grounded or
-inferred provenance labels. Reload the model after a `model.checkpoint` event; no uncommitted model
-preview or proposal approval protocol is exposed.
+elements, enforced coverage accounting, remaining work, provider-call/token usage, repair count,
+provenance, continuations, workflow phase, current work item, and work-item statuses. Reload the
+model after a `model.checkpoint` event; no uncommitted model preview or proposal approval protocol
+is exposed for new durable turns.
 
-For source-backed CIM generation, `coveragePercent=100` means all tracked source units were
-accounted for by source-grounded or inferred provenance. It does not by itself guarantee semantic
-EVL validity; clients should call the model validation endpoint when a validation-green model is
-required.
+For source-backed generation, `coveragePercent=100` requires tracked source accounting. The
+conceptual workflow also sets 100 only after its independent mandatory-obligation verdict passes.
+Neither value means EVL validation ran; clients should call the explicit model-validation endpoint
+when EVL feedback is required.
 
 `workflowKind`, `phase`, `currentWorkItemId`, and `workItems` expose durable progress for diagnosis
 and continuation. They are observations, not client controls. Internal values such as `ADAPTIVE`,

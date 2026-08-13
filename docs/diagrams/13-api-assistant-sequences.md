@@ -50,7 +50,7 @@ sequenceDiagram
         W->>L: route from durable structural state
         alt fresh turn without selection/destruction
             L->>L: strict LLM strategy decision
-            Note over L: Empty mutation -> conceptual<br/>Existing mutation -> inspect agent<br/>ANSWER intention -> ordinary AUTO loop
+            Note over L: Empty mutation -> obligation-gated conceptual<br/>Existing mutation -> inspect agent<br/>ANSWER -> read-only EXPLAIN_MODEL
         else resumed, selected, or destructive turn
             Note over W,L: inspect/contract workflow
         end

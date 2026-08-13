@@ -20,12 +20,14 @@ At startup the frontend loads `GET /api/modeling/config`, including `diagramEdit
 ## Main Areas
 
 - Authentication and project management
-- CIM, PIM, and PSM workbenches
+- CIM, PIM, and PSM workbenches; the chatbot is enabled only for CIM and PIM
 - Metadata-driven palette and attribute panels
 - Graph editing, relationship creation, layout, views, and focus
 - Validation and generation progress
 - One assistant chat with automatic backend strategy selection, durable turn status, checkpoint,
   confirmation, continue, cancel, rebase, rollback, and undo controls
+- Factual progress for obligation planning, type selection, blueprinting, private slices, review,
+  structural validation, partial/failure states, and checkpoint publication
 - Artifact explorer and file editor
 - Change impact analysis
 - Planned admin workspace surfaces

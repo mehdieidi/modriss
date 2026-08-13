@@ -148,6 +148,9 @@ elements.
 
 ## AWS Platform-Specific Architecture
 
+These are platform modeling or transformation prompts for non-chatbot workflows. The current AI
+chatbot rejects PSM sessions and must not be used to create or edit AWS PSM models.
+
 - Create an AWS PSM for this serverless PIM.
 - Map the selected API to Amazon API Gateway and AWS Lambda.
 - Map the selected queue to Amazon SQS and configure a dead-letter queue.
@@ -164,6 +167,10 @@ elements.
 - Fix the PSM so it can generate valid deployment artifacts.
 
 ## Validation and Quality
+
+Run explicit model validation through the validation workflow first when these prompts refer to EVL
+issues. The chatbot itself uses only structural validation during generation/apply and must not call
+EVL as an assistant gate.
 
 - Validate the current model and explain every issue.
 - Fix all mandatory validation errors and propose the changes.
@@ -199,6 +206,10 @@ elements.
 - Describe what would be generated from this model.
 
 ## Transform and Generate
+
+Transformation and artifact generation are explicit platform operations, not assistant mutation
+actions. The chatbot may explain or prepare a CIM/PIM, but PIM-to-PSM transformation and PSM
+artifact generation use their dedicated APIs/services.
 
 - Transform this CIM into a PIM.
 - Transform this PIM into an AWS PSM.
@@ -315,6 +326,9 @@ from `mde/methodology/process-definitions/`.
 - **pim.p11.platform-mapping-readiness:** Complete `PlatformMappingAssessment` and pass PIM EVL before PIM→PSM transform.
 
 ### PSM phases
+
+PSM phase prompts are retained as methodology reference only; they are not supported chatbot
+session prompts in the current implementation.
 
 - **psm.p2.security-baseline:** Establish `AwsSecurityBaseline`, IAM roles/policies, KMS, and Secrets Manager resources.
 - **psm.p8.compute:** Deploy `AwsLambdaFunction` resources with event source mappings matching PIM functions.

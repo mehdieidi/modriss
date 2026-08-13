@@ -58,9 +58,9 @@ The API sequence diagrams cover the primary controller route templates and inter
 - Transformations and MDE jobs: 5 routes.
 - Artifacts: 5 routes.
 - Modeling configuration, layout, and process definitions: 7 routes.
-- Assistant REST/SSE: session, message submission, durable turn status, event replay, attachment,
-  thread, cancel, continue, confirm, undo, rollback, rebase, feedback, source coverage, and clear
-  flows.
+- Assistant REST/SSE: CIM/PIM session, message submission, durable turn status, event replay,
+  attachment, thread, cancel, continue, confirm, undo, rollback, rebase, feedback, source and
+  obligation coverage, legacy proposal lookup/undo, and clear flows.
 - Health, OpenAPI, Swagger UI, future-feature wildcard routes, and Actuator endpoints.
 
 `{level}` means one of `cim`, `pim`, or `psm`; the same sequence applies to each concrete level.

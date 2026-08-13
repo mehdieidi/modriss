@@ -72,8 +72,10 @@ against latency, memory use, and provider cost. `VARKA_AI_MAX_PROVIDER_CALLS_SOU
 attachment turns. The tested DeepSeek profile uses 20 calls for both normal and source turns, with
 12- and 15-minute timeouts respectively. Increasing them allows more complex documents; lowering
 them makes failures faster and cheaper but can starve review or correction.
-`VARKA_AI_FALLBACK_PROVIDER` is used only after an HTTP 429 from the primary provider. Durable
-assistant message submission currently requires an `idempotencyKey` in the request body so retries
+`VARKA_AI_FALLBACK_PROVIDER` is used only after an HTTP 429 from the primary provider. The current
+single-provider Arvan deployment must leave it empty; configuring another adapter does not make that
+provider supported in production. Durable assistant message submission currently requires an
+`idempotencyKey` in the request body so retries
 cannot apply duplicate work.
 
 Model selection uses one production model: `VARKA_AI_MODEL`. Tests and evaluations that need a
@@ -88,6 +90,15 @@ DeepSeek `thinking` disable object. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION` and
 `VARKA_AI_LLM_CONTRACT_RERANK_ENABLED` can improve source/retrieval quality at the cost of extra
 provider calls. The proxy variables accept `DIRECT`, `HTTP`, or `SOCKS`; proxy settings affect AI
 provider traffic only.
+
+The conceptual blueprint maximum (16 objects/types), obligation-ledger maximum (12 obligations),
+type-selection attempts (4), and compact truncation-retry protocol are implementation invariants,
+not environment variables. Effective conceptual capacity is lower when required Ecore closure or
+the provider-call reserve consumes budget.
+
+Values in `application.yml` are safe code defaults, not the validated Arvan production profile.
+The repository `.env.example` intentionally overrides several of them, including 12/15-minute turn
+timeouts, 16,000 completion tokens, JSON protocol, disabled native tools, and zero provider retries.
 
 ## Observability
 

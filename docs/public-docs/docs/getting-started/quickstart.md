@@ -69,8 +69,10 @@ docker compose up --build
 
 The validated deployment uses Arvan and `DeepSeek-V4-Flash`. `unified` automatically chooses the
 internal modeling workflow; users and API clients do not select it. These limits are the tested
-DeepSeek profile: the staged conceptual workflow can consume 18 conceptual calls plus two routing
-calls, while individual generation stages remain more tightly bounded.
+DeepSeek profile: a standard turn reserves up to two calls for adaptive routing and exposes the
+remaining bounded budget to obligation planning, type selection, blueprinting, private slices,
+independent review, and corrections. The conceptual schema caps blueprints at 16 objects/types;
+required Ecore closure and call reserves can lower the effective capacity.
 
 ## Stop or Reset
 

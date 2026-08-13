@@ -1,46 +1,37 @@
-# AI Assistant Durable Turn and Checkpoint Lifecycle
+# AI assistant durable turn and checkpoint lifecycle
 
-## Turn Flow
+## Turn flow
 
 ```mermaid
-flowchart TD
-    start([User sends message])
-    auth["Authenticate and resolve session"]
-    attach["Resolve uploaded/inline attachments"]
-    source["Split source attachments<br/>persist source units"]
-    idem{"Existing idempotency key?"}
-    existing["Return existing turn acceptance"]
-    ensure["Ensure active model and starter revision"]
-    create["Create QUEUED assistant_turn"]
-    checkpoint["Save starter checkpoint and model.checkpoint event"]
-    accepted["Return 202 TurnAcceptedResponse"]
-    claim["Worker claims turn"]
-    durableRoute{"Persisted/selected/<br/>destructive state?"}
-    adaptive["Strict adaptive LLM strategy<br/>structural allowlist"]
-    conceptual["Conceptual type selection<br/>complete JSON + Ecore compiler"]
-    agent["Inspect/contract AgentTurnLoop<br/>plan / inspect / contracts / batch"]
-    answer["ANSWER intention<br/>ordinary AUTO action loop"]
-    state{"Outcome"}
-    commit["Commit structurally valid model revision"]
-    saveCheckpoint["Save checkpoint, source coverage, provenance, provider calls, events"]
-    terminal["Persist terminal state and final message"]
-    controls["Client polls status or replays SSE events"]
+sequenceDiagram
+    participant C as Client
+    participant A as ChatbotController
+    participant T as AssistantTurnStore
+    participant W as DurableAssistantTurnWorker
+    participant L as AgentTurnLoop / workflow
+    participant P as Arvan DeepSeek-V4-Flash
+    participant M as ModelService
 
-    start --> auth --> attach --> source --> idem
-    idem -- yes --> existing --> controls
-    idem -- no --> ensure --> create --> checkpoint --> accepted --> controls
-    create --> claim --> durableRoute
-    durableRoute -- yes --> agent --> state
-    durableRoute -- no --> adaptive
-    adaptive -- empty-model mutation --> conceptual --> state
-    adaptive -- existing-model mutation --> agent
-    adaptive -- ANSWER --> answer --> agent
-    state -- committed work --> commit --> saveCheckpoint --> terminal
-    state -- needs input/confirmation/partial/failure --> terminal
-    terminal --> controls
+    C->>A: POST session message + idempotencyKey + expected revision
+    A->>T: persist QUEUED turn and accepted event
+    A-->>C: 202 turnId, deadlineAt, eventCursor
+    W->>T: claim lease, mark RUNNING
+    W->>L: execute adaptive workflow
+    L->>P: strategy and bounded stage calls
+    L->>T: persist workflow plan, work items, calls, events
+    L->>M: apply candidate to private workspace
+    L->>M: validateStructural(candidate)
+    alt obligations and structure pass
+        W->>T: atomic checkpoint + inverse patch + resulting revision
+        W->>T: SUCCEEDED + final event
+    else clarification/confirmation/conflict/partial/failure
+        W->>T: terminal state and exact diagnostic
+        Note over T,M: Saved model remains unchanged unless a coherent checkpoint was committed.
+    end
+    C->>A: GET turn status or replay turn SSE
 ```
 
-## Durable Turn States
+## States and controls
 
 ```mermaid
 stateDiagram-v2
@@ -54,62 +45,14 @@ stateDiagram-v2
     RUNNING --> CANCELLED
     RUNNING --> TIMED_OUT
     RUNNING --> FAILED
-    SUCCEEDED --> [*]
-    PARTIAL --> [*]
-    NEEDS_INPUT --> [*]
-    NEEDS_CONFIRMATION --> [*]
-    CONFLICTED --> [*]
-    CANCELLED --> [*]
-    TIMED_OUT --> [*]
-    FAILED --> [*]
+    PARTIAL --> QUEUED: continue creates child turn
+    NEEDS_CONFIRMATION --> QUEUED: confirm
+    CONFLICTED --> QUEUED: rebase
 ```
 
-## Checkpoint Undo
+Controls are cancellation, continuation, destructive confirmation, rebase, turn undo, checkpoint
+rollback, and feedback. New durable turns do not use an approve/reject proposal stage. Legacy
+proposal detail/undo endpoints remain for compatibility with already-applied proposal records.
 
-```mermaid
-sequenceDiagram
-    actor User
-    participant UI as Chat panel
-    participant API as ChatbotController
-    participant Undo as DurableTurnUndoService
-    participant M as ModelService
-    participant DB as PostgreSQL
-
-    User->>UI: Undo completed turn checkpoint
-    UI->>API: POST /api/chatbot/turns/{turnId}/undo
-    API->>Undo: undo(user, turn)
-    Undo->>DB: Load turn checkpoints and inverse patch
-    Undo->>M: Apply inverse against current model revision
-    M->>DB: Persist new model revision
-    Undo-->>API: modelId, revision
-    API-->>UI: TurnUndoResponse
-    UI->>API: reload model if needed
-```
-
-## Rebase, Rollback, and Feedback
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant UI as Chat panel
-    participant API as ChatbotController
-    participant Turns as AssistantTurnStore
-    participant Undo as DurableTurnUndoService
-    participant M as ModelService
-
-    User->>UI: Resolve stale revision without overlap
-    UI->>API: POST /api/chatbot/turns/{turnId}/rebase
-    API->>Turns: update expected revision and enqueue continuation
-    API-->>UI: TurnAcceptedResponse
-
-    User->>UI: Roll back a specific checkpoint
-    UI->>API: POST /api/chatbot/turns/{turnId}/checkpoints/{checkpointId}/rollback
-    API->>Undo: apply checkpoint inverse
-    Undo->>M: persist new model revision
-    API-->>UI: modelId, revision
-
-    User->>UI: Mark turn accepted or rejected
-    UI->>API: POST /api/chatbot/turns/{turnId}/feedback
-    API->>Turns: append turn.feedback event
-    API-->>UI: 202 Accepted
-```
+Every checkpoint is revision-checked and stores an inverse patch. Undo and rollback create a new
+revision; they do not rewrite history.

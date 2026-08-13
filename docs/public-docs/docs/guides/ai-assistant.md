@@ -1,92 +1,84 @@
 # AI modeling assistant
 
-Varka provides one durable modeling chatbot for CIM, PIM, and PSM. You describe the desired model,
-ask a question, select canvas elements when relevant, or attach source text. The backend
-automatically chooses an internal modeling strategy; there is no agent/conceptual mode selector in
-the UI or API.
+Varka provides one durable conversational assistant for CIM and PIM. PSM assistant sessions are
+currently out of scope and are rejected by the API. The deployed provider is Arvan
+`DeepSeek-V4-Flash`.
 
-## What it can do
+## What it does
 
-- Explain the current model or authoritative metamodel.
-- Generate bounded CIM or PIM content from an empty saved model.
-- Turn `.md`, `.txt`, or `.json` source documents into source-grounded CIM content.
-- Add features to an existing model while preserving unrelated elements.
-- Inspect selected elements and their ownership/references before surgical edits.
-- Pause for missing input or explicit confirmation before destructive changes.
-- Save durable checkpoints that can be continued, rebased, rolled back, or undone.
+The assistant can create bounded fresh conceptual models, inspect or explain models, evolve an
+existing model through checked actions, and use uploaded text as source material. It uses the live
+Ecore metamodel rather than a separate hard-coded modeling vocabulary.
 
-The LLM decides the model's business meaning, objects, values, and relationships. Backend code
-supplies exact Ecore contracts and handles IDs, containment order, reference resolution, source
-accounting, validation, persistence, and workflow control.
+The assistant is intentionally honest about incomplete work. Provider truncation, structural
+problems, capacity conflicts, missing mandatory requirements, revision conflicts, or needed
+clarification can produce `PARTIAL`, `FAILED`, `CONFLICTED`, `NEEDS_INPUT`, or
+`NEEDS_CONFIRMATION` instead of a shallow success.
 
 ## Automatic internal strategy
 
-For a fresh empty model, the assistant can generate a complete conceptual instance document and
-compile it deterministically into model commands. For an existing model, selected-element edit,
-resumed workflow, or destructive request, it uses a bounded inspect/contract action loop. Questions
-can finish without changing the model.
+The UI exposes one chatbot. Internally, an LLM chooses one closed strategy allowed by structural
+state:
 
-Strategy selection uses a strict LLM enum constrained by structural facts such as whether the model
-is empty, whether elements are selected, and whether durable or destructive state is present. It
-does not route from request keywords.
+- `CONCEPTUAL_GENERATION` for fresh empty CIM/PIM creation.
+- `INSPECT_AGENT` for existing models, selected elements, resumed work, and destructive edits.
+- `ANSWER` for read-only model explanation.
 
-## Durable turn lifecycle
+The backend does not route business meaning with prompt keywords or canned templates.
 
-Message submission returns `202 Accepted` with a `turnId`, model ID/revision, deadline, and event
-cursor. Follow the turn through authenticated SSE or the polling status endpoint.
+## Fresh-model generation
 
-A turn may finish as:
+The conceptual workflow creates a durable requirement-obligation ledger, selects exact EClasses,
+plans a stable-ID blueprint, generates private slices, independently reviews mandatory obligation
+coverage, compiles the result, validates structural Ecore/EMF conformance, and then commits one
+atomic checkpoint.
 
-- `SUCCEEDED` — answer completed or all intended validated work committed;
-- `PARTIAL` — a valid checkpoint was saved and more work remains;
-- `NEEDS_INPUT` or `NEEDS_CONFIRMATION`;
-- `CONFLICTED`, `CANCELLED`, `TIMED_OUT`, or `FAILED`.
+No generated object is visible before the final checkpoint. If any mandatory obligation cannot be
+proven with real staged object/reference evidence, the checkpoint is not published.
 
-Reload the model after a checkpoint event. Use the turn control endpoints to continue partial work,
-confirm destruction, cancel, rebase safe revision drift, roll back a checkpoint, or undo a turn.
-The current interface has no approve/reject proposal stage.
+The private blueprint schema allows at most 16 objects/types, further constrained by required
+Ecore closure and the provider-call budget. Larger models need a future coherent multi-increment
+design; the assistant must not silently omit requested concepts to fit the ceiling.
 
-## Source-backed CIM generation
+## Existing-model edits
 
-The backend stores attachments and splits them into bounded source units with stable IDs. Created or
-inferred model elements record provenance as either:
+Existing-model turns inspect the saved model, request exact contracts, and submit checked command
+batches. Revision checks, containment/reference enforcement, destructive confirmation, private
+staging, structural validation, and inverse patches protect existing content. Existing-model
+preservation still needs broader repeated live evidence.
 
-- source-grounded, with an exact source-unit ID; or
-- inferred, with an explicit assumption.
+## Source-backed modeling
 
-A source-backed turn cannot report successful completion while relevant units remain unaccounted.
-`coveragePercent=100` is a source-accounting result, not a claim of semantic correctness.
+Uploaded `.md`, `.txt`, and `.json` content can be split into durable source units. Element
+provenance is stored as `SOURCE_GROUNDED` or `INFERRED`. `coveragePercent` represents source and
+mandatory-obligation accounting; it is not EVL semantic validity.
 
-## Safety and validation
+## Turn lifecycle and controls
 
-All changes are first applied to a private working copy. EClasses, attributes, enum literals,
-containment, references, IDs, required features, and revision preconditions are checked against
-backend-owned Ecore contracts. A failed candidate does not partially mutate the saved model.
+Messages create asynchronous durable turns. Clients can poll status or replay turn events over
+authenticated SSE. Supported controls include cancellation, continuation, destructive
+confirmation, rebase, turn undo, checkpoint rollback, and feedback.
 
-Assistant-generated changes are gated only by structural Ecore/EMF conformance. The chatbot does
-not run EVL during generation, repair, apply, or commit. When semantic EVL feedback is required, a
-user must run the normal model-validation workflow separately after a checkpoint.
+Terminal states are `SUCCEEDED`, `PARTIAL`, `NEEDS_INPUT`, `NEEDS_CONFIRMATION`, `CONFLICTED`,
+`CANCELLED`, `TIMED_OUT`, and `FAILED`. `QUEUED` and `RUNNING` are non-terminal.
 
-Destructive work requires explicit confirmation and current-model preconditions. Successful model
-turns save checkpoints and inverse patches when undo is possible.
+## Validation and safety
 
-## Realtime behavior
+Assistant output is gated only by structural Ecore/EMF conformance through
+`ModelService.validateStructural(...)`. The assistant does not invoke EVL, stored semantic
+validation, or full `ModelService.validate(...)` during generation, repair, apply, review, or
+commit. Run explicit model validation separately when semantic EVL feedback is required.
 
-The event stream contains factual lifecycle, action, validation, checkpoint, coverage, and failure
-events. It does not stream private reasoning or provider token text, and it is not a WebSocket.
-Events are durable and can be replayed after reconnecting.
+Structural validity alone does not prove that a model is useful. Varka also uses an LLM obligation
+review and stronger live-evaluation gates, but the required repeated reliability campaigns are not
+complete. The assistant must not yet be described as perfectly reliable or production-ready.
 
-## Current limitations
+## Provider limitations
 
-- Provider latency and structured-output truncation can make large generation unreliable.
-- Conceptual generation is currently bounded to one complete response rather than a persisted
-  multi-response instance ledger.
-- Existing-model changes intentionally use the inspect/contract path because conceptual update
-  reliability has not met the live acceptance threshold.
-- The adaptive `ANSWER` intention currently enters the ordinary action loop rather than an enforced
-  read-only capability set; non-mutation is prompt-directed in that branch.
-- Structural validity does not guarantee that a model is useful, complete, or semantically valid;
-  review the generated model and run explicit validation where appropriate.
+Arvan may emit extensive reasoning despite non-thinking controls and may finish a small structured
+stage with `finish_reason=length`. Varka uses bounded stage-specific retries and durable accounting,
+but broad PIM generation can still take several minutes or fail atomically.
 
-See [REST API](../reference/rest-api.md) and
-[Durable assistant realtime API](../reference/realtime-api.md) for integration details.
+For transport details, see [REST API](../reference/rest-api.md),
+[Realtime API](../reference/realtime-api.md), and
+[Configuration](../reference/configuration.md).

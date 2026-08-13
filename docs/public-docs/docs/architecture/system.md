@@ -51,6 +51,8 @@ modeling configuration rather than maintaining a second independent metamodel.
 - The admin app is a separate browser app for operational control-plane workflows.
 - Prometheus, Grafana, Loki, Promtail, Caddy logs, and Dozzle provide the local DevOps/SRE surface.
 - AI provider calls are optional and isolated from normal platform traffic.
-- The backend exposes one durable assistant and automatically routes internally between conceptual
-  generation, inspect/contract editing, and non-mutating answers.
+- The backend exposes one durable CIM/PIM assistant and automatically routes internally between
+  obligation-gated conceptual generation, inspect/contract editing, and enforced read-only answers.
+- Assistant mutation is structurally gated only; explicit EVL validation is a separate platform
+  workflow. PSM assistant sessions are currently out of scope.
 - LocalStack is used to test generated AWS projects, not to run Varka itself.

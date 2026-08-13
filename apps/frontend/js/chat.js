@@ -36,6 +36,10 @@ const THINKING_STAGE_LABELS = Object.freeze({
   READING_MODEL: "Reading your model",
   ANALYZING_SOURCE: "Analyzing source document",
   QUERYING_METAMODEL: "Inspecting the metamodel",
+  ROUTING: "Choosing an approach",
+  BLUEPRINTING: "Designing the model structure",
+  SLICING: "Building model elements",
+  REVIEWING: "Reviewing model coverage",
   PLANNING: "Planning changes",
   PREVIEWING_PATCH: "Previewing model operations",
   MODELING_PREVIEW: "Streaming canvas preview",
@@ -46,6 +50,15 @@ const THINKING_STAGE_LABELS = Object.freeze({
   WAITING: "Waiting for input",
   COMPLETED: "Finished",
   FAILED: "Encountered an issue",
+});
+
+const DURABLE_WORKFLOW_LABELS = Object.freeze({
+  CONCEPTUAL_GENERATION: "Model generation",
+  INSPECT_AGENT: "Model update",
+  ANSWER: "Model explanation",
+  EXPLAIN_MODEL: "Model explanation",
+  EXPLAIN_METAMODEL: "Metamodel explanation",
+  RESUME_REPAIR: "Resumed model update",
 });
 
 const ASSISTANT_TOOL_PROGRESS = Object.freeze({
@@ -251,6 +264,83 @@ function chatScopeKey(typeKey = state.activeType) {
 
 function workflowLabel(state) {
   return WORKFLOW_LABELS[state] || state || "Working";
+}
+
+function durableWorkflowLabel(workflowKind) {
+  const key = String(workflowKind || "").toUpperCase();
+  return DURABLE_WORKFLOW_LABELS[key] || "Modeling assistant";
+}
+
+function durableProgressForTurn(turn) {
+  const stateName = String(turn?.state || "QUEUED").toUpperCase();
+  if (DURABLE_TERMINAL_STATES.has(stateName)) {
+    return {
+      stage: stateName === "SUCCEEDED" ? "COMPLETED" : stateName,
+      message: turn?.finalMessage || `Assistant turn ${stateName.toLowerCase()}.`,
+      progress: null,
+    };
+  }
+  const phase = String(turn?.phase || "QUEUED").toUpperCase();
+  const workItems = Array.isArray(turn?.workItems) ? turn.workItems : [];
+  const completed = workItems.filter((item) =>
+    ["COMPLETED", "GENERATED"].includes(String(item?.status || "").toUpperCase()),
+  ).length;
+  const activeItem = workItems.find(
+    (item) => String(item?.id || "") === String(turn?.currentWorkItemId || ""),
+  );
+  const progress = workItems.length
+    ? {
+        index: Math.min(workItems.length, completed + (completed < workItems.length ? 1 : 0)),
+        count: workItems.length,
+      }
+    : null;
+  switch (phase) {
+    case "READING":
+      return { stage: "READING_MODEL", message: "Reviewing the current model context.", progress };
+    case "ROUTED":
+      return {
+        stage: "ROUTING",
+        message: "Choosing the best modeling workflow for your request.",
+        progress,
+      };
+    case "BLUEPRINTING":
+      return {
+        stage: "BLUEPRINTING",
+        message: "Selecting exact metamodel types and designing a coherent model structure.",
+        progress,
+      };
+    case "SLICING":
+      return {
+        stage: "SLICING",
+        message: activeItem?.label
+          ? `Building ${activeItem.label}.`
+          : "Building the planned model elements and relationships.",
+        progress,
+      };
+    case "REVIEWING":
+      return {
+        stage: "REVIEWING",
+        message: "Reviewing requirement coverage, naming, and relationships before saving.",
+        progress: workItems.length ? { index: workItems.length, count: workItems.length } : null,
+      };
+    case "EXECUTING":
+      return {
+        stage: "APPLYING",
+        message: activeItem?.label
+          ? `Applying ${activeItem.label}.`
+          : "Applying the next planned model change in a working copy.",
+        progress,
+      };
+    default:
+      return {
+        stage: stateName === "RUNNING" ? "PLANNING" : stateName,
+        message:
+          stateName === "QUEUED"
+            ? "Waiting to start the modeling turn."
+            : "Working on your request.",
+        progress,
+      };
+  }
 }
 
 function idleStageForWorkflow(workflowState) {
@@ -520,7 +610,9 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
                 "COMPLETING",
               );
             } else if (eventName === "turn.stage") {
-              updateThinkingStatus(event?.payload?.stage || "Assistant is working.", "PLANNING");
+              const phase = String(event?.payload?.stage || "").toUpperCase();
+              const progress = durableProgressForTurn({ state: "RUNNING", phase });
+              updateThinkingStatus(progress.message, progress.stage, progress.progress);
             } else if (eventName === "source.blueprint.saved") {
               const slices = Number(event?.payload?.slices) || 0;
               updateThinkingStatus(
@@ -573,10 +665,8 @@ async function waitForDurableTurn(turnId, typeKey, eventCursor = 0) {
       latest = await api(`/chatbot/turns/${turnId}`);
       renderDurableRun(latest, typeKey);
       const stateName = String(latest?.state || "");
-      updateThinkingStatus(
-        latest?.finalMessage || `Assistant turn ${stateName.toLowerCase() || "is running"}.`,
-        stateName === "RUNNING" ? "PLANNING" : stateName,
-      );
+      const progress = durableProgressForTurn(latest);
+      updateThinkingStatus(progress.message, progress.stage, progress.progress);
       if (DURABLE_TERMINAL_STATES.has(stateName)) {
         if (latest?.modelId) await applyAssistantModelResponse(typeKey, latest);
         return latest;
@@ -761,7 +851,9 @@ function renderDurableRun(turn, typeKey) {
   bubble.replaceChildren();
   const title = document.createElement("div");
   title.className = "chat-proposal-title";
-  title.textContent = `${turn.workflowKind || "Modeling"} · ${String(turn.state || "QUEUED").replaceAll("_", " ")}`;
+  title.textContent = `${durableWorkflowLabel(turn.workflowKind)} · ${String(turn.state || "QUEUED")
+    .replaceAll("_", " ")
+    .toLowerCase()}`;
   bubble.appendChild(title);
   const details = document.createElement("p");
   details.className = "chat-proposal-intro";

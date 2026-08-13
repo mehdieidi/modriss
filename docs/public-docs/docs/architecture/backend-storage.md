@@ -33,8 +33,15 @@ The assistant adds:
 - Checkpoints with inverse patches for undo
 - Source units and per-element provenance
 - Provider-call prompts/usage and action audits
-- Source blueprints, context caches, workflows, work items, source facts, and validation attempts
+- Source blueprints, context caches, workflows, private work items, source facts, and structural
+  validation attempts
 - A reserved rate-limit table; current runtime limiting is in memory
+
+For conceptual generation, `assistant_workflows.plan` stores the obligation ledger, selected exact
+types, stable-ID blueprint, current slice size, accounting, diagnostics, and accepted obligation
+verdict. Generated slice objects remain in private `assistant_work_items.payload` records until a
+complete structurally valid checkpoint commits. Provider calls store prompts, latency, token usage,
+finish reason/error, and an optional idempotent `call_key`.
 
 ## Concurrency and Integrity
 

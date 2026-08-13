@@ -19,6 +19,7 @@ replace the old delta/proposal pipeline.
 ## Consequences
 
 - Configuration and docs expose one modeling mode only.
-- Provider output is constrained either to the paper-style conceptual IR or allowlisted agent
-  actions, both compiled and validated against Ecore-derived contracts.
+- Provider output is constrained either to the obligation-ledger/type/blueprint/private-slice
+  conceptual protocol or allowlisted agent actions. Both compile to the same checked command and
+  workspace boundary.
 - Turn execution is persisted in durable assistant tables rather than proposal-specific state.

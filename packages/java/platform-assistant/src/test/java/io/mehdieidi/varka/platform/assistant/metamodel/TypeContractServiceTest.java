@@ -70,4 +70,29 @@ class TypeContractServiceTest {
     assertTrue(names.contains("DomainEntity"));
     assertTrue(names.contains("InformationItem"));
   }
+
+  @Test
+  void preservesAbstractRequiredTargetsAsCapacityPlaceholders() {
+    TypeContractService service =
+        new TypeContractService(
+            new MetamodelKnowledgeService(new AssistantMetamodelSchemaService()));
+
+    var closure = service.requiredContainmentClosure(ModelLevel.PIM, List.of("Workflow"));
+    var names = closure.stream().map(contract -> contract.eClass()).toList();
+
+    assertTrue(names.contains("PIMModel"));
+    assertTrue(names.contains("Workflow"));
+    assertTrue(names.contains("WorkflowStep"));
+    assertFalse(
+        closure.stream()
+            .filter(contract -> contract.eClass().equals("WorkflowStep"))
+            .findFirst()
+            .orElseThrow()
+            .creatable());
+    assertTrue(
+        closure.stream()
+                .filter(contract -> !service.rootType(ModelLevel.PIM).equals(contract.eClass()))
+                .count()
+            >= 2);
+  }
 }

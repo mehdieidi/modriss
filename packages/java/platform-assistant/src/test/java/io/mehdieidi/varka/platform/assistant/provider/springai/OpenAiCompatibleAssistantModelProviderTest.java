@@ -221,6 +221,19 @@ class OpenAiCompatibleAssistantModelProviderTest {
   }
 
   @Test
+  void givesDeepSeekStrategySelectionBoundedRecoveryHeadroom() {
+    assertEquals(
+        2048, OpenAiCompatibleAssistantModelProvider.completionLimit("assistant_strategy", 16000));
+    assertEquals(
+        16000,
+        OpenAiCompatibleAssistantModelProvider.completionLimit("conceptual_type_selection", 16000));
+    assertEquals(
+        16000,
+        OpenAiCompatibleAssistantModelProvider.completionLimit("conceptual_blueprint", 16000));
+    assertEquals(16000, OpenAiCompatibleAssistantModelProvider.completionLimit(null, 16000));
+  }
+
+  @Test
   void wrapsBareJsonArgumentsWithTheWorkflowRequiredAction() throws Exception {
     var response =
         OpenAiCompatibleAssistantModelProvider.jsonChatResponse(
@@ -242,7 +255,12 @@ class OpenAiCompatibleAssistantModelProviderTest {
         "{\"choices\":[{\"finish_reason\":\"stop\",\"message\":{\"content\":\"{\\\"types\\\":[\\\"Actor\\\"],\\\"objects\\\":[]}\"}}]}";
 
     for (String document :
-        List.of("conceptual_blueprint", "conceptual_instance_slice", "conceptual_review")) {
+        List.of(
+            "conceptual_blueprint",
+            "conceptual_instance_slice",
+            "conceptual_obligation_ledger",
+            "conceptual_obligation_review",
+            "conceptual_review")) {
       var response =
           OpenAiCompatibleAssistantModelProvider.jsonChatResponse(
               mapper, responseBody, "DeepSeek-V4-Flash", document);
@@ -251,6 +269,16 @@ class OpenAiCompatibleAssistantModelProviderTest {
       assertTrue(content.path("types").isArray());
       assertFalse(content.has("action"));
     }
+  }
+
+  @Test
+  void classifiesObligationStagesAsStructuredDocumentsInTheArvanJsonTransport() {
+    assertTrue(
+        OpenAiCompatibleAssistantModelProvider.isStructuredDocument(
+            "conceptual_obligation_ledger"));
+    assertTrue(
+        OpenAiCompatibleAssistantModelProvider.isStructuredDocument(
+            "conceptual_obligation_review"));
   }
 
   @Test

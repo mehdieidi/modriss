@@ -21,7 +21,7 @@ to determine what is required.
 | Shared abstract syntax             | `mde/metamodels/shared/kernel.emf`                                                                   | `kernel.ecore`, all three combined Ecore files, EVL, ETL, EGX/EGL, UI metadata, JSON/XMI bridge, assistant contracts, samples |
 | CIM abstract syntax                | `mde/metamodels/cim/*.emf`                                                                           | `cim-combined.ecore`, CIM EVL, CIM-to-PIM ETL, CIM UI metadata, model import/export, assistant, samples/tests                 |
 | PIM abstract syntax                | `mde/metamodels/pim/*.emf`                                                                           | `pim-combined.ecore`, PIM EVL, both ETL profiles, PIM UI metadata, model import/export, assistant, samples/tests              |
-| AWS PSM abstract syntax            | `mde/metamodels/psm/*.emf`                                                                           | `psm-combined.ecore`, PSM EVL, PIM-to-PSM ETL, EGX/EGL, PSM UI metadata, model import/export, assistant, samples/tests        |
+| AWS PSM abstract syntax            | `mde/metamodels/psm/*.emf`                                                                           | `psm-combined.ecore`, PSM EVL, PIM-to-PSM ETL, EGX/EGL, PSM UI metadata, model import/export, samples/tests                   |
 | Runtime metamodel                  | `mde/metamodels/{cim,pim,psm}/*-combined.ecore`                                                      | Java EMF loading, validation, transformation, generation, UI structural metadata, metamodel hash/version                      |
 | Semantic validation                | `mde/validation/{cim,pim,psm}/`                                                                      | `ModelService`, EVL CLI, validation endpoint tests                                                                            |
 | CIM-to-PIM semantics               | `mde/transformations/cim-to-pim/`                                                                    | ETL runner/CLI, `TransformationService`, generated PIM, tests/docs                                                            |
@@ -745,7 +745,8 @@ change.
 3. Update assistant defaults, tool behavior, and prompts when they encode affected fields/types.
 4. Update `AgentActionCodec`, `AgentModelTools`, `ModelWorkspace`, or metamodel contract extraction
    only if the action protocol, workspace semantics, or Ecore contract shape changed.
-5. Validate representative assistant turns for CIM, PIM, and PSM.
+5. Validate representative assistant turns for CIM and PIM. PSM assistant sessions are currently
+   out of scope; validate PSM transformations, explicit validation, and generation separately.
 6. Test representative add, update, relationship, delete, confirmation, checkpoint, continue,
    cancel, and undo flows.
 7. Verify assistant events, provenance, and validation summaries reflect the current metamodel and

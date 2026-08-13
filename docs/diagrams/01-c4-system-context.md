@@ -31,13 +31,12 @@ flowchart TB
     pim["Platform-independent serverless model"]
     psm["AWS platform-specific model"]
     artifacts["Deployable source, contracts, IaC, tests, docs, scripts"]
-    assistant["Unified bounded AI assistant<br/>Conceptual generation, inspected edits, answers"]
+    assistant["Unified bounded CIM/PIM AI assistant<br/>Obligation-gated generation, inspected edits, answers"]
     formal["Formal MDE engine<br/>Ecore + EVL + ETL + EGX/EGL"]
 
     intent --> cim --> pim --> psm --> artifacts
     assistant -.-> cim
     assistant -.-> pim
-    assistant -.-> psm
     formal --> cim
     formal --> pim
     formal --> psm

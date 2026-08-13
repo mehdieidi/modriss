@@ -97,19 +97,19 @@ flowchart TD
     proxy["Validate optional AI proxy"]
     provider["Provider call with retry/circuit"]
     strategy{"Strict adaptive strategy<br/>structural allowlist"}
-    conceptual["Conceptual JSON + Ecore compiler"]
+    conceptual["Obligation ledger + private slices<br/>independent review + Ecore compiler"]
     action["Inspect/contract AgentAction"]
     ground["Check type, feature, containment, evidence, and target IDs"]
     preview["Update workspace and validate"]
     decision{"Mandatory validation passes?"}
     save["Commit checkpointed model revision"]
-    answer["ANSWER intention enters AUTO loop<br/>prompt-directed non-mutation"]
+    answer["ANSWER -> enforced read-only<br/>EXPLAIN_MODEL"]
     block["Reject with 422/409 and audit"]
 
     prompt --> redact --> inject --> rate --> proxy --> provider --> strategy
     strategy -- conceptual --> conceptual --> ground
     strategy -- inspect/edit --> action --> ground
-    strategy -- answer --> answer --> action
+    strategy -- answer --> answer
     ground --> preview --> decision
     decision -- yes --> save
     decision -- no --> block

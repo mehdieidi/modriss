@@ -1,134 +1,82 @@
 # How the Varka AI assistant works
 
-This guide maps the current unified runtime to its implementation. The governing rule is:
-
-> The LLM owns modeling semantics; the backend owns contracts, IDs, structural compilation,
-> validation, durable state, and persistence.
+Updated: 2026-08-13
 
 ## Request-to-commit path
 
-1. `ChatbotController` authenticates the session, resolves attachments, requires an
-   `idempotencyKey`, ensures a saved model, and creates a `QUEUED` turn.
-2. `DurableAssistantTurnWorker` claims the turn under a renewable lease, prepares source units and
-   persisted workflow context, and selects `ADAPTIVE`, `RESUME_REPAIR`, or the explicit test route.
-3. `AgenticAssistantFacade` and `AgenticTurnService` load the expected model revision into a private
-   `ModelWorkspace` and invoke `AgentTurnLoop`.
-4. For a fresh unified turn, `AgentTurnLoop.runAdaptive` requests one strict strategy value. Empty
-   models permit conceptual generation; non-empty models permit the inspect agent. Both permit an
-   `ANSWER` intention.
-5. The selected strategy produces a `ModelCommandBatch` or a read-only answer.
-6. `AgentModelTools` and `ModelCommandCompiler` apply checked commands to the workspace.
-7. `ModelWorkspace` calls the structural validator. A successful candidate is committed against the
-   expected revision; rejected work never mutates persistence.
-8. The worker finalizes checkpoints, inverse patches, source provenance, provider-call records,
-   workflow state, and replayable events before marking the turn terminal.
-
-## Main code paths
-
-| Concern                           | Primary implementation                                                                  |
-| --------------------------------- | --------------------------------------------------------------------------------------- |
-| REST, attachment, and SSE API     | `apps/backend/.../api/ChatbotController.java`                                           |
-| Durable execution and routing     | `apps/backend/.../assistant/DurableAssistantTurnWorker.java`                            |
-| Spring wiring                     | `apps/backend/.../assistant/AiConfig.java`                                              |
-| Session and turn orchestration    | `AgenticAssistantFacade`, `AgenticTurnService`                                          |
-| Adaptive decision and action loop | `agent/AgentTurnLoop.java`, `AgentActionCodec.java`                                     |
-| Paper conceptual workflow         | `agent/ConceptualInstanceModelWorkflow.java`                                            |
-| Ecore guide and exact contracts   | `MetamodelGuideGenerator`, `TypeContractService`, `MetamodelKnowledgeService`           |
-| Commands and workspace tools      | `AgentModelTools`, `ModelCommandCompiler`, `ModelWorkspace`                             |
-| Arvan provider protocol           | `OpenAiCompatibleAssistantModelProvider`                                                |
-| Provider selection/hardening      | `ConfiguredAssistantModelProvider`, `AssistantHardeningService`, `AssistantPromptGuard` |
-| Durable storage                   | `AssistantTurnStore`, session/memory ports, JDBC implementations                        |
+1. `ChatbotController` authenticates a CIM/PIM session and accepts an idempotent asynchronous turn.
+2. `DurableAssistantTurnWorker` claims the turn under a lease and reconstructs model/source state.
+3. `AgentTurnLoop` asks the LLM for one closed strategy allowed by deterministic structural facts.
+4. The selected workflow uses the same provider adapter and private `ModelWorkspace`.
+5. Mutation output is compiled against live Ecore contracts.
+6. `ModelService.validateStructural(...)` is the only assistant validation gate.
+7. A successful candidate commits as an expected-revision checkpoint with an inverse patch.
 
 ## Adaptive routing
 
-The production configuration string is parsed by `DurableAssistantTurnWorker.AssistantMode` and
-accepts only `unified`, `agent-test`, or `conceptual-test`. Normal clients cannot set it per request.
+The allowlist is `CONCEPTUAL_GENERATION`, `INSPECT_AGENT`, and `ANSWER`. Fresh empty models may use
+conceptual generation. Existing models, selected elements, resumptions, and confirmed destructive
+turns use the inspect/contract agent. `ANSWER` maps to read-only `EXPLAIN_MODEL`.
 
-`runAdaptive` sends structural facts and the user request to the provider under the
-`assistant_strategy` schema. It allows exactly `CONCEPTUAL_GENERATION`, `INSPECT_AGENT`, or
-`ANSWER`. One malformed/truncated strategy response can be corrected. The decision and correction
-are audited like every other provider call.
+Routing does not inspect business keywords. The LLM owns intent interpretation; deterministic code
+only restricts the legal workflow based on model state and safety facts.
 
-The deterministic boundary can remove unsafe strategies but cannot infer business intent:
+## Conceptual workflow
 
-- `modelEmpty=true` permits conceptual mutation and disallows agent mutation;
-- `modelEmpty=false` permits agent mutation and disallows conceptual mutation;
-- selected, resumed, and confirmed-destructive work never reaches the conceptual route.
+`ConceptualInstanceModelWorkflow` is a durable prompt chain:
 
-`ANSWER` enters the ordinary `AUTO` action loop. It is prompted to terminate with `answer_user`, but
-this is not an enforced read-only boundary: the same mutation actions remain available. The
-explicit read-only loop modes are not currently selected by the unified worker.
+1. `conceptual_obligation_ledger` creates up to 12 stable mandatory/optional obligations and maps
+   them to exact creatable candidate EClasses.
+2. `conceptual_type_selection` chooses exact EClasses. The backend verifies mandatory coverage and
+   the actual combined required closure. There are four bounded selection attempts.
+3. `conceptual_blueprint` plans up to 16 stable object IDs/types, legal ownership, references,
+   obligation/source allocations, and slices.
+4. `conceptual_instance_slice` generates private object payloads. Large blueprints start at two
+   objects per slice and fall back to one after a length truncation.
+5. `conceptual_obligation_review` independently judges every obligation and cites exact staged
+   object IDs and relationship triples.
+6. The compiler resolves IDs, attributes, containment, references, required features, and evidence
+   into `ModelCommandBatch`.
 
-## Conceptual compilation
+Candidate EClasses in an obligation are alternatives, not all required types. The backend verifies
+that cited evidence is real but never maps prompt words or chooses a semantic subtype. Abstract
+required targets are represented in closure, and exact creatable subtypes are offered to the LLM.
 
-`ConceptualInstanceModelWorkflow` performs two LLM tasks through the same provider adapter:
+The obligation ledger, selected types, blueprint, slice size, generated work-item payloads,
+diagnostics, and successful verdict are durable. Private generated objects do not become a model
+revision until the final atomic checkpoint.
 
-1. `conceptual_type_selection` chooses at most eight exact EClasses.
-2. `conceptual_instance_model` produces the complete paper-style instance JSON.
+## Arvan behavior
 
-The backend expands the selected types with Ecore construction/required closure. During parsing and
-compilation it accepts no unknown EClass, attribute, enum, association, target type, or ID. All
-objects are registered before relationships are resolved, then creates are emitted in containment
-dependency order. Existing IDs become updates; omitted existing content remains unchanged.
+`OpenAiCompatibleAssistantModelProvider` uses JSON content, temperature zero, and DeepSeek's
+non-thinking request field. Arvan can still return extensive reasoning and `finish_reason=length`.
+After type-selection truncation, the workflow sends a compact prompt containing only obligation
+candidates, exact closure costs, the request, and the latest diagnostic.
 
-Unique legal root containment can be derived mechanically. Ambiguous or illegal placement, multiple
-containment owners, cycles, missing required features, or unresolved references become repair
-diagnostics. A repair receives the complete rejected document and must return a corrected complete
-document. The conceptual compiler never generates domain fallback content.
+Provider-call prompts, model, latency, token usage, finish reason, errors, and idempotent call keys
+are persisted. Failed calls remain part of turn accounting.
 
-## Agent action execution
+## Inspect/contract actions
 
-The inspect/contract path uses a small action protocol, not arbitrary Java tools. Planning can
-persist slices and work items. Inspection and `describe_types` return authoritative facts to the
-same LLM. `commit_model_batch` is checked against exact contracts and the current inventory.
-
-`AgentAction.Kind` still includes `analyze_source_units`, `plan_cim_blueprint`, and
-`plan_source_model` to resume older source workflows. Backend state rejects those actions in normal
-new source turns, which use `plan_model_edit`.
-
-Provider `clientRef` values exist only inside a batch. The backend generates persisted UUIDs and
-resolves same-batch connections. Deletion requires explicit server-controlled confirmation and
-preconditions. Tool failures suitable for repair are converted to compact structured diagnostics.
+The normal closed actions are `plan_model_edit`, `inspect_model`, `describe_types`,
+`commit_model_batch`, `answer_user`, and `ask_user`. Model tools return exact inventory/contracts
+and compile mutations; they do not generate business semantics.
 
 ## Source and continuation state
 
-The worker splits attachments into source units, stores them, and supplies exact IDs to the selected
-workflow. The agent path can persist source analysis, source blueprints, modeling plans, and work
-items, then resume them through a continuation without replanning. Conceptual generation consumes
-the selected source in one bounded complete response and does not currently persist a conceptual
-instance ledger.
+Attachments become durable source units. Provenance is `SOURCE_GROUNDED` or `INFERRED` with an
+assumption. Source coverage is accounting. Continuation creates a child turn and resumes persisted
+work without duplicating committed checkpoints or private work items.
 
-Coverage is computed from saved `SOURCE_GROUNDED`/`INFERRED` evidence. It must not be interpreted as
-EVL validity or human semantic approval.
+## Validation boundary
 
-## Provider details
+Assistant generation, review, repair, apply, and commit call only
+`ModelService.validateStructural(...)`. EVL, stored semantic-validation endpoints,
+`validateGeneratedXmi(...)`, and `ModelService.validate(...)` are outside assistant paths.
 
-The production environment uses the Arvan OpenAI-compatible endpoint and
-`DeepSeek-V4-Flash`. `VARKA_AI_OPENAI_PROTOCOL=json_schema` uses structured JSON content rather than
-native tool calls. The adapter selects a schema based on the requested operation, sets temperature
-zero, disables DeepSeek thinking with the required object form, normalizes compatible JSON
-envelopes, and reports usage where supplied by the provider.
+## Current limitation
 
-`ProviderCallBudget` bounds every route. `AssistantHardeningService` supplies request timeout,
-retry/circuit-breaker, rate-limit, proxy, and cancellation controls. Failed calls are retained in
-durable turn accounting.
-
-## Structural-only validation
-
-The mutation boundary is `ModelWorkspace` and `AgentModelTools.validateModel()`, which reaches
-`ModelService.validateStructural(...)`. Assistant code must never substitute full stored/EVL
-validation. EVL changes should be tested through explicit model-validation workflows, not assistant
-apply tests.
-
-## Operational tracing
-
-Correlate a problem by `assistantTurnId`:
-
-1. Read the durable turn state, final message, workflow kind, phase, and current work item.
-2. Replay `assistant_turn_events` to identify the last completed stage.
-3. Inspect `assistant_provider_calls` for schema, latency, finish reason, usage, and failure.
-4. Inspect validation attempts and checkpoints.
-5. For source work, inspect source units, provenance, and coverage before changing prompts.
-
-Do not treat provider connectivity, structural validity, or one successful stochastic run as full
-scenario acceptance.
+The single conceptual checkpoint is bounded by a 16-object schema, required closure, and the
+provider-call budget. A coherent multi-increment design is still required for larger models. The
+latest obligation-gated PIM profile fails atomically and has not yet completed the repeated live
+campaigns needed for production readiness.

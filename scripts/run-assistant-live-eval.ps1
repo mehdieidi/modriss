@@ -114,6 +114,37 @@ function Count-Checkpoint {
   return Count-Array $Turn.checkpoints
 }
 
+function Get-EClasses {
+  param($Value)
+  $types = [System.Collections.Generic.HashSet[string]]::new()
+  if ($null -eq $Value) { return @() }
+  $stack = [System.Collections.Generic.Stack[object]]::new()
+  $visited = [System.Collections.Generic.HashSet[int]]::new()
+  $stack.Push($Value)
+  while ($stack.Count -gt 0) {
+    $current = $stack.Pop()
+    if ($null -eq $current -or $current -is [string] -or $current.GetType().IsValueType) { continue }
+    $identity = [System.Runtime.CompilerServices.RuntimeHelpers]::GetHashCode($current)
+    if (-not $visited.Add($identity)) { continue }
+    $eClass = $current.PSObject.Properties["eClass"]
+    if ($eClass -and -not [string]::IsNullOrWhiteSpace([string]$eClass.Value)) {
+      [void]$types.Add([string]$eClass.Value)
+    }
+    if ($current -is [System.Collections.IDictionary]) {
+      foreach ($item in $current.Values) { $stack.Push($item) }
+    } elseif ($current -is [System.Collections.IEnumerable]) {
+      foreach ($item in $current) { $stack.Push($item) }
+    } else {
+      foreach ($property in $current.PSObject.Properties) {
+        if ($property.MemberType -eq "NoteProperty" -or $property.MemberType -eq "Property") {
+          $stack.Push($property.Value)
+        }
+      }
+    }
+  }
+  return @($types)
+}
+
   function Count-StructuralNodes {
     param($Value)
     if ($null -eq $Value) { return 0 }
@@ -157,6 +188,7 @@ function Inspect-Model {
     Elements = Count-Array $visual.elements
     Relationships = Count-Array $visual.relationships
     ValidationValid = $validation.valid
+    EClasses = @(Get-EClasses $modelJson)
     ModelText = ($modelJson | ConvertTo-Json -Depth 60 -Compress)
   }
 }
@@ -227,6 +259,7 @@ function Run-Scenario {
     Elements = $inspection.Elements
     Relationships = $inspection.Relationships
     ValidationValid = $inspection.ValidationValid
+    EClasses = $inspection.EClasses
     ModelId = $turn.modelId
     Revision = $turn.revision
     Message = $turn.finalMessage
@@ -324,7 +357,7 @@ function Run-FixtureScenario {
   switch ([string]$Fixture.id) {
     "source-to-cim-pantry" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "cim" -Prompt "Create a complete CIM model from the attached user stories. Ground each modeled element in the source where possible and mark assumptions explicitly." -AttachmentName "community-pantry-user-stories.md" -AttachmentContent $Story }
     "create-cim-library" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "cim" -Prompt "Create a compact complete CIM library model with actors, goals, capabilities, concepts, policies, and borrowing relationships." }
-    "create-pim-serverless" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "pim" -Prompt "Create a complete PIM for serverless order processing with HTTP API, commands, events, persistent data, payment integration, observability, and security." }
+    "create-pim-serverless" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "pim" -Prompt "Create a complete PIM for serverless order processing with HTTP API, command-handling behavior, event publication and consumption, persistent data, external payment integration, observability, security, and workflow behavior." }
     "edit-existing-pim-add-pattern" { return Run-EditScenario -Token $Token -ProjectId $ProjectId }
     "cim-feature-evolution" { return Run-CimFeatureEvolutionScenario -Token $Token -ProjectId $ProjectId }
     "answer-only" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "cim" -Prompt "Explain what a CIM model contains. Do not create, edit, or delete a model." }
@@ -417,7 +450,20 @@ function Test-ScenarioGate {
       if ([int]$Result.StructuralNodes -lt 5) { $failures += "library CIM is too shallow" }
     }
     "create-pim-serverless" {
-      if ([int]$Result.StructuralNodes -lt 5) { $failures += "serverless PIM is too shallow" }
+      if ([int]$Result.StructuralNodes -lt 10) { $failures += "serverless PIM is too shallow" }
+      if ([int]$Result.CoveragePercent -lt 100) { $failures += "mandatory LLM obligation coverage was not proven" }
+      $requiredTypes = @("Api", "Function", "EventType", "DataStore", "ExternalAdapter", "ObservabilityConfig", "Workflow")
+      foreach ($requiredType in $requiredTypes) {
+        if (@($Result.EClasses) -notcontains $requiredType) { $failures += "missing required semantic evidence type $requiredType" }
+      }
+      if ((@($Result.EClasses) -notcontains "SecurityPolicy") -and (@($Result.EClasses) -notcontains "AuthPolicy")) {
+        $failures += "missing security policy evidence"
+      }
+      $workflowStepTypes = @("StartStep", "SuccessEndStep", "FailureEndStep", "TaskStep", "ChoiceStep", "ParallelStep", "MapStep", "WaitStep", "PassStep")
+      if (@($workflowStepTypes | Where-Object { @($Result.EClasses) -contains $_ }).Count -lt 1) {
+        $failures += "workflow has no concrete step evidence"
+      }
+      if ([int]$Result.Relationships -lt 5) { $failures += "serverless PIM has too few relationships" }
     }
     "edit-existing-pim-add-pattern" {
       if ([int]$Result.StructuralNodes -lt 6) { $failures += "PIM edit did not produce enough model structure" }
@@ -444,7 +490,9 @@ function Test-ScenarioGate {
   # The deployed DeepSeek profile permits 20 calls for one modeling turn: up to two adaptive
   # strategy calls and 18 conceptual/agent calls. Evolution fixtures contain two independent
   # modeling turns. This is an acceptance ceiling; every call and retry remains audited.
-  $callBudget = if ($scenarioId -in @("cim-feature-evolution", "edit-existing-pim-add-pattern")) { 40 } elseif ($Fixture.route -eq "EXPLANATION") { 2 } else { 20 }
+  # Explanation turns use one semantic routing call and one answer call. Allow one additional
+  # audited call for a strict-schema correction; no deterministic answer is substituted.
+  $callBudget = if ($scenarioId -in @("cim-feature-evolution", "edit-existing-pim-add-pattern")) { 40 } elseif ($Fixture.route -eq "EXPLANATION") { 3 } else { 20 }
   $callBudget += [int]$ProviderRetryCount
   if ([int]$Result.ProviderCalls -gt $callBudget) {
     $failures += "provider calls $($Result.ProviderCalls) exceed budget $callBudget"

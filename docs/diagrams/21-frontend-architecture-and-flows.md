@@ -119,7 +119,7 @@ sequenceDiagram
     UI->>API: POST /chatbot/sessions/{id}/messages with modelId, revision, selected IDs, idempotencyKey
     API-->>UI: 202 TurnAcceptedResponse
     UI->>SSE: GET /api/chatbot/turns/{turnId}/events
-    SSE-->>UI: stage/tool/checkpoint/completion events
+    SSE-->>UI: obligation/type/blueprint/slice/review/validation/checkpoint events
     UI->>UI: Render turn status, checkpoints, confirmation/continue/undo controls
     opt checkpoint or completed turn references updated model
         UI->>API: GET /api/{level}/{modelId}

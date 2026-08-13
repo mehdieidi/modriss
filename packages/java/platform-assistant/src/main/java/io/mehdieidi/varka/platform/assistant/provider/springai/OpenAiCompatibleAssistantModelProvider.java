@@ -26,6 +26,7 @@ import org.springframework.ai.tool.function.FunctionToolCallback;
 /** OpenAI-compatible provider implemented through Spring AI and a one-shot native tool adapter. */
 public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantModelProvider {
 
+  private static final int STRATEGY_COMPLETION_LIMIT = 2048;
   private static final Logger log =
       LoggerFactory.getLogger(OpenAiCompatibleAssistantModelProvider.class);
   private final AtomicReference<TokenWindow> tokenWindow = new AtomicReference<>();
@@ -140,15 +141,19 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                   ? ConceptualInstanceModelWorkflow.jsonSchema()
                   : "conceptual_blueprint".equals(prompt.requiredTool())
                       ? ConceptualInstanceModelWorkflow.blueprintSchema()
-                      : "conceptual_review".equals(prompt.requiredTool())
-                          ? ConceptualInstanceModelWorkflow.reviewSchema()
-                          : "conceptual_correction".equals(prompt.requiredTool())
-                              ? ConceptualInstanceModelWorkflow.correctionSchema()
-                              : "conceptual_type_selection".equals(prompt.requiredTool())
-                                  ? ConceptualInstanceModelWorkflow.typeSelectionSchema()
-                                  : "assistant_strategy".equals(prompt.requiredTool())
-                                      ? AgentTurnLoop.strategySchema()
-                                      : AgentActionSchema.json(prompt.patchContracts()));
+                      : "conceptual_obligation_ledger".equals(prompt.requiredTool())
+                          ? ConceptualInstanceModelWorkflow.obligationLedgerSchema()
+                          : "conceptual_obligation_review".equals(prompt.requiredTool())
+                              ? ConceptualInstanceModelWorkflow.obligationReviewSchema()
+                              : "conceptual_review".equals(prompt.requiredTool())
+                                  ? ConceptualInstanceModelWorkflow.reviewSchema()
+                                  : "conceptual_correction".equals(prompt.requiredTool())
+                                      ? ConceptualInstanceModelWorkflow.correctionSchema()
+                                      : "conceptual_type_selection".equals(prompt.requiredTool())
+                                          ? ConceptualInstanceModelWorkflow.typeSelectionSchema()
+                                          : "assistant_strategy".equals(prompt.requiredTool())
+                                              ? AgentTurnLoop.strategySchema()
+                                              : AgentActionSchema.json(prompt.patchContracts()));
     }
     return builder;
   }
@@ -171,19 +176,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       // making a single bounded workflow step exceed the turn's token and latency budget.
       body.put("temperature", 0.2);
       int completionLimit =
-          "assistant_strategy".equals(prompt.requiredTool())
-              ? 512
-              : "conceptual_type_selection".equals(prompt.requiredTool())
-                  ? 4000
-                  : "conceptual_blueprint".equals(prompt.requiredTool())
-                      ? 8000
-                      : "conceptual_review".equals(prompt.requiredTool())
-                          ? 4000
-                          : "conceptual_correction".equals(prompt.requiredTool())
-                              ? 8000
-                              : "conceptual_instance_slice".equals(prompt.requiredTool())
-                                  ? 8000
-                                  : properties.maxCompletionTokens();
+          completionLimit(prompt.requiredTool(), properties.maxCompletionTokens());
       body.put("max_tokens", Math.min(completionLimit, capabilities().maxCompletionTokens()));
       applyModelGenerationControls(body, model);
       var messages = body.putArray("messages");
@@ -270,30 +263,11 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       body.put("model", model);
       body.put("temperature", 0.0);
       int completionLimit =
-          "assistant_strategy".equals(prompt.requiredTool())
-              ? 512
-              : "conceptual_type_selection".equals(prompt.requiredTool())
-                  ? 4000
-                  : "conceptual_blueprint".equals(prompt.requiredTool())
-                      ? 8000
-                      : "conceptual_review".equals(prompt.requiredTool())
-                          ? 4000
-                          : "conceptual_correction".equals(prompt.requiredTool())
-                              ? 8000
-                              : "conceptual_instance_slice".equals(prompt.requiredTool())
-                                  ? 8000
-                                  : properties.maxCompletionTokens();
+          completionLimit(prompt.requiredTool(), properties.maxCompletionTokens());
       body.put("max_tokens", Math.min(completionLimit, capabilities().maxCompletionTokens()));
       applyModelGenerationControls(body, model);
       var messages = body.putArray("messages");
-      boolean structuredDocument =
-          "conceptual_instance_model".equals(prompt.requiredTool())
-              || "conceptual_instance_slice".equals(prompt.requiredTool())
-              || "conceptual_blueprint".equals(prompt.requiredTool())
-              || "conceptual_review".equals(prompt.requiredTool())
-              || "conceptual_correction".equals(prompt.requiredTool())
-              || "conceptual_type_selection".equals(prompt.requiredTool())
-              || "assistant_strategy".equals(prompt.requiredTool());
+      boolean structuredDocument = isStructuredDocument(prompt.requiredTool());
       String requiredAction =
           prompt.requiredTool() == null
               ? ""
@@ -355,6 +329,23 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       reasoning.put("exclude", true);
       body.put("enable_thinking", false);
     }
+  }
+
+  static int completionLimit(String requiredTool, int fallback) {
+    return switch (requiredTool == null ? "" : requiredTool) {
+      case "assistant_strategy" -> STRATEGY_COMPLETION_LIMIT;
+      // Arvan currently returns reasoning_content for DeepSeek-V4-Flash even when the official
+      // thinking:{type:"disabled"} control is present. Type selection therefore needs the
+      // configured ceiling to leave room for provider-side reasoning before its tiny JSON result.
+      case "conceptual_type_selection",
+          "conceptual_blueprint",
+          "conceptual_obligation_ledger",
+          "conceptual_obligation_review" ->
+          fallback;
+      case "conceptual_review" -> 8000;
+      case "conceptual_correction", "conceptual_instance_slice" -> 8000;
+      default -> fallback;
+    };
   }
 
   /** Preserves native token usage instead of losing it while adapting a tool call to Spring AI. */
@@ -451,13 +442,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     // The conceptual instance model is itself the structured document. It is not an action
     // envelope and must reach the deterministic compiler byte-for-byte apart from provider JSON
     // transport decoding.
-    if ("conceptual_instance_model".equals(requiredAction)
-        || "conceptual_instance_slice".equals(requiredAction)
-        || "conceptual_blueprint".equals(requiredAction)
-        || "conceptual_review".equals(requiredAction)
-        || "conceptual_correction".equals(requiredAction)
-        || "conceptual_type_selection".equals(requiredAction)
-        || "assistant_strategy".equals(requiredAction)) return content;
+    if (isStructuredDocument(requiredAction)) return content;
     String candidate = content == null ? "" : content.trim();
     if (candidate.startsWith("```")) {
       int firstNewline = candidate.indexOf('\n');
@@ -482,6 +467,18 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     } catch (com.fasterxml.jackson.core.JsonProcessingException ignored) {
       return content;
     }
+  }
+
+  static boolean isStructuredDocument(String requiredAction) {
+    return "conceptual_instance_model".equals(requiredAction)
+        || "conceptual_instance_slice".equals(requiredAction)
+        || "conceptual_blueprint".equals(requiredAction)
+        || "conceptual_obligation_ledger".equals(requiredAction)
+        || "conceptual_obligation_review".equals(requiredAction)
+        || "conceptual_review".equals(requiredAction)
+        || "conceptual_correction".equals(requiredAction)
+        || "conceptual_type_selection".equals(requiredAction)
+        || "assistant_strategy".equals(requiredAction);
   }
 
   private static Integer integerOrNull(com.fasterxml.jackson.databind.JsonNode value) {

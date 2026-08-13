@@ -31,6 +31,13 @@ class AgentActionSchemaTest {
   }
 
   @Test
+  void requiresANonEmptyUserFacingMessage() throws Exception {
+    var schema = new ObjectMapper().valueToTree(AgentActionSchema.toolSchema("respond_to_user"));
+
+    assertEquals(1, schema.path("properties").path("message").path("minLength").asInt());
+  }
+
+  @Test
   void doesNotExposeDeprecatedSourcePlanningAction() throws Exception {
     var schema = new ObjectMapper().readTree(AgentActionSchema.json());
 

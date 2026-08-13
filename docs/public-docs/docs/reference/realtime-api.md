@@ -22,10 +22,10 @@ types include `turn.accepted`, `turn.stage`, `tool.started`, `tool.completed`,
 `turn.failed`, `turn.cancelled`, `turn.feedback`, and source-coverage progress payloads. Clients
 must poll turn status when SSE disconnects and must tolerate replayed events.
 
-For source-backed turns, checkpoint/status payloads may include `coveragePercent`, unresolved
-source-unit counts, provider-call counters, repair attempts, and `remainingWork`. Reload the model
-after each `model.checkpoint` event and run model validation separately when semantic validity is a
-gate.
+Status payloads may include `coveragePercent`, unresolved source units or obligations,
+provider-call/token counters, repair attempts, workflow phase, work items, and `remainingWork`.
+Reload the model after each `model.checkpoint` event. Run explicit model validation separately when
+EVL feedback is required; assistant checkpoints use structural validation only.
 
 Provider token text streaming and WebSocket access are intentionally not supported. The UI exposes
 only factual stage/checkpoint/validation/coverage progress, never private reasoning.
@@ -33,3 +33,6 @@ only factual stage/checkpoint/validation/coverage progress, never private reason
 Internal workflow events can identify routing and durable work-item progress, but they are
 observability data. Clients cannot select or override the assistant's internal conceptual/agent
 strategy through SSE or REST.
+
+Conceptual work items and obligation-review evidence remain private until a complete atomic
+checkpoint is committed. SSE never exposes provider reasoning content.

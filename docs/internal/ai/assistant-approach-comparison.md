@@ -1,27 +1,50 @@
 # Assistant strategy acceptance evidence
 
-Reports in `target/` are immutable run evidence and include unsuccessful attempts. Counts below are taken directly from the live-evaluation reports.
+Updated: 2026-08-13
 
-| Fixture                 | Inspect/contract agent                                                                                             | Conceptual evidence so far                                                                                                                                                                                                                                                                         |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `create-cim-library`    | Passed: 112 s, 4 calls, 22,193/15,748 prompt/completion tokens, 46 nodes, structurally valid.                      | Passed optimized: 91 s, 2 calls, 4,439/14,895 tokens, 40 nodes, structurally valid. An earlier repair run passed in 287 s.                                                                                                                                                                         |
-| `cim-feature-evolution` | Passed: 233 s, 8 calls, 56,904/36,843 tokens, 106 final nodes, old and new features preserved, structurally valid. | Failed final acceptance: the ten-object run saved the first feature at 263 s but the second update failed; 640 s and 11 calls. Earlier attempts made no checkpoint. Unified therefore restricts conceptual generation to structurally empty models and uses the agent for persisted-model updates. |
-| `source-to-cim-pantry`  | Passed: 118 s, 3 calls, 17,659/25,357 tokens, 69 nodes, 100% coverage, structurally valid.                         | Passed after bounded slicing: 145 s, 3 calls, 5,373/12,240 tokens, one checkpoint, complete provenance/coverage, structurally valid. Three earlier truncation/repair failures remain recorded.                                                                                                     |
-| `create-pim-serverless` | Passed: 163 s, 10 calls, 52,161/22,652 tokens, 28 nodes, structurally valid.                                       | Passed after contract retrieval bounding: 124 s, 4 calls, 20,350/22,346 tokens, one compiler repair and one checkpoint, structurally valid. Four earlier selection/timeout failures remain recorded.                                                                                               |
+Varka exposes one chatbot and uses three internal outcomes. This document compares their current
+evidence boundary; exact immutable run details are in `live-eval-gate-report.md` and reports under
+`target/live-eval/`.
 
-The conceptual library run is much cheaper in prompt tokens and provider calls. The agent is currently more robust for the feature-evolution, source-planning, and large inherited PIM contract surfaces. Conceptual JSON is more exposed to whole-document truncation; the agent is more exposed to multi-call latency and malformed action envelopes. Neither strategy is treated as globally superior. The unified planner chooses semantically through a strict enum schema, while structural facts prohibit conceptual routing for selected-element and confirmed-destructive work.
+| Outcome                 | Intended use                                                        | Current evidence                                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CONCEPTUAL_GENERATION` | Fresh empty CIM/PIM creation                                        | Strong focused tests, successful earlier CIM/source/PIM baselines, and reliable atomic failure. The new mandatory-obligation PIM profile has no clean semantic acceptance pass yet. |
+| `INSPECT_AGENT`         | Existing models, selected elements, resumed work, destructive edits | Earlier live feature-evolution evidence is positive, but preservation/deletion/reference/restart campaigns remain incomplete.                                                       |
+| `ANSWER`                | Informational model questions                                       | Maps to enforced read-only `EXPLAIN_MODEL`; earlier answer-only live baseline completed without mutation. Repeated paraphrase campaign remains incomplete.                          |
 
-## Unified live evidence
+## Conceptual evolution
 
-| Fixture                 | Result                 | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ----------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `create-cim-library`    | Unresolved reliability | One run reached `SUCCEEDED` with a structural checkpoint in 243 s (8 calls, 20,829/28,060 tokens), but the then-current four-call fixture gate rejected it. With the corrected eight-call gate, the final paid rerun failed after 398 s because the provider returned length-limited output and saved no checkpoint. The earlier successful model is retained as evidence, but is not reported as a final acceptance pass. |
-| `cim-feature-evolution` | Passed                 | 266 s, 9 calls, 39,084/28,281 tokens, two checkpoints; the first feature was preserved and the second was added.                                                                                                                                                                                                                                                                                                           |
-| `source-to-cim-pantry`  | Passed                 | 121 s, 4 calls, 5,984/15,466 tokens, one checkpoint, structural validity and complete source coverage/provenance.                                                                                                                                                                                                                                                                                                          |
-| `create-pim-serverless` | Passed                 | 85 s, 6 calls, 31,425/16,185 tokens, one checkpoint and structural validity. An earlier unconstrained strategy chose the agent and failed; the empty-model structural legality rule then bounded the strategy to conceptual generation.                                                                                                                                                                                    |
+The original conceptual path selected a small type set and generated one complete document. The
+current implementation instead persists an LLM obligation ledger, exact type selection, a stable-ID
+blueprint, private slice work items, and an independent obligation verdict before deterministic
+compilation and one atomic checkpoint.
 
-The live evidence supports the adaptive architecture, but not a claim that every required fixture is reliably passing: library generation remains provider-output/truncation sensitive, and conceptual persisted-model evolution remains unsuccessful. Failed reports are intentionally kept beside successful attempts under `target/`.
+This eliminated a known false-positive gate where a structurally valid serverless PIM omitted
+command behavior, a real event, workflow behavior, and a payment adapter. Current success requires
+100% mandatory obligation coverage plus exact persisted API, function, event, datastore, payment,
+observability, security, workflow, concrete-step, and relationship evidence.
 
-The current `ANSWER` strategy value is not an enforced read-only route; it enters the same AUTO
-action loop as `INSPECT_AGENT`. This does not affect the mutation-fixture comparison above, but is a
-production hardening item for informational turns.
+## Latest Arvan evidence
+
+- Abstract-target handling was live-confirmed when DeepSeek chose concrete `TaskStep`; the run later
+  failed during review and left the model unchanged.
+- Obligation run 1 exposed and led to fixing JSON action-wrapping for ledger/review documents.
+- Obligation run 2 privately generated 14 objects and was correctly blocked by the independent
+  reviewer; review alternative semantics were then clarified.
+- Obligation run 3 failed after repeated type-selection length truncations.
+- Obligation run 4 confirmed compact candidate-only retries and reduced wall time to 239 seconds,
+  but the final selected closure exceeded capacity. A fourth bounded selection attempt is now
+  deployed and focused-test green but not yet live-confirmed.
+
+No recent obligation-gated failure published a partial model revision. That is safety evidence, not
+production-readiness evidence.
+
+## Conclusion
+
+Neither mutation outcome is globally superior. Conceptual generation provides coherent private
+planning for fresh models; the inspect agent provides surgical access to persisted models. Both
+share exact Ecore contracts, private staging, structural-only validation, revision checks,
+checkpoints, provider audit, and durable recovery.
+
+Do not claim perfect reliability until repeated CIM, source-backed CIM, PIM, answer, transport,
+restart, existing-model preservation, latency, and visual UI campaigns pass.

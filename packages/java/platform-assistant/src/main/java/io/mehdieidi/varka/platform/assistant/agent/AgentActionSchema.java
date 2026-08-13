@@ -63,7 +63,8 @@ public final class AgentActionSchema {
       throw new IllegalArgumentException("Unknown assistant tool: " + toolName);
     }
     return switch (toolName) {
-      case "respond_to_user" -> object(Map.of("message", stringSchema()), List.of("message"));
+      case "respond_to_user" ->
+          object(Map.of("message", nonEmptyStringSchema()), List.of("message"));
       case "analyze_source_units" -> sourceAnalysisSchema();
       case "plan_cim_blueprint" -> cimBlueprintSchema();
       case "plan_model_edit" -> planModelEditSchema();
@@ -469,6 +470,10 @@ public final class AgentActionSchema {
 
   private static Map<String, Object> stringSchema() {
     return Map.of("type", "string");
+  }
+
+  private static Map<String, Object> nonEmptyStringSchema() {
+    return Map.of("type", "string", "minLength", 1);
   }
 
   private static Map<String, Object> stringSchema(String description) {

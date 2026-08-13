@@ -3,8 +3,9 @@
 This matrix tracks the AWS PSM model-to-text generator in `mde/generation/awspsm-to-artifacts`.
 The coverage surface is the EGX rule set plus the EGL/EOL helper logic reached by those rules.
 
-Validation boundary: generated PSM model outputs in assistant paths must be gated only by structural
-Ecore/EMF conformance. These generator tests do not invoke EVL semantic validation.
+PSM chatbot generation is currently out of scope. If a future assistant path produces PSM output,
+the project boundary still requires structural Ecore/EMF gating only. These explicit generator
+tests do not invoke EVL semantic validation.
 
 ## Executable Coverage
 

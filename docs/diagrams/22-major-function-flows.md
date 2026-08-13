@@ -107,11 +107,11 @@ flowchart TD
     load["Load thread, model, expected revision, attachments"]
     split["Split source text into source units / source map when present"]
     route{"Durable state and strict<br/>adaptive strategy"}
-    conceptual["Conceptual workflow<br/>type selection / complete IR / compiler"]
+    conceptual["Conceptual workflow<br/>obligations / types / blueprint / private slices / review / compiler"]
     loop["Inspect/contract AgentTurnLoop<br/>plan / inspect / describe / commit"]
     tools["Compile checked ModelCommandBatch<br/>against ModelWorkspace"]
     guards["Batch guards<br/>UUID ids, evidence IDs, references, containment"]
-    validate["Structural validation of resulting workspace"]
+    validate["ModelService.validateStructural<br/>of resulting workspace"]
     outcome{"Outcome"}
     commit["Commit valid model revision and checkpoint"]
     provenance["Persist source provenance, coverage, and provider-call usage"]

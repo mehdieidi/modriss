@@ -140,6 +140,11 @@ The values below show supported input forms and the safe sample used in `.env.ex
 limits mean integers greater than zero. `0` is meaningful only where explicitly stated; several
 configuration records normalize non-positive limits to an internal default.
 
+The conceptual blueprint schema maximum (16 objects/types), obligation-ledger maximum (12), four
+type-selection attempts, abstract-target closure accounting, and compact Arvan truncation retries
+are code-level invariants. They are deliberately not tunable environment variables. Effective
+object capacity is derived from the provider-call budget and current slice size.
+
 | Variable                                  | Possible values                                              | What it means                                                                                                                                                  |
 | ----------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `VARKA_AI_ENABLED`                        | `true`, `false`                                              | Master switch for outbound AI calls. `false` means the backend should not call an AI provider.                                                                 |
@@ -158,7 +163,7 @@ configuration records normalize non-positive limits to an internal default.
 | `VARKA_AI_TOKEN_BUDGET`                   | Positive integer; sample `16000`                             | Approximate planning/context budget used by the assistant. It is not the audited whole-turn provider-token total.                                              |
 | `VARKA_AI_MAX_PROMPT_TOKENS`              | Positive integer; sample `24000`                             | Maximum estimated prompt budget per provider call.                                                                                                             |
 | `VARKA_AI_MAX_COMPLETION_TOKENS`          | Positive integer; tested `16000`                             | Provider capability ceiling. Individual stages apply smaller limits; conceptual responses are also bounded by object/collection counts.                        |
-| `VARKA_AI_MAX_PATCH_CREATES`              | Positive integer; sample `48`                                | Maximum create operations accepted in one agent patch schema. This does not raise the conceptual workflow's eight-object limit.                                |
+| `VARKA_AI_MAX_PATCH_CREATES`              | Positive integer; sample `48`                                | Maximum creates accepted in one inspect/contract agent patch. It does not change the separate conceptual 16-object schema cap or its lower effective capacity. |
 | `VARKA_AI_MAX_PATCH_CONNECTIONS`          | Positive integer; sample `96`                                | Maximum relationship operations accepted in one agent patch schema.                                                                                            |
 | `VARKA_AI_MAX_PATCH_EVIDENCE`             | Positive integer; sample `64`                                | Maximum source-evidence records accepted in one agent patch schema.                                                                                            |
 | `VARKA_AI_MAX_CONTRACT_COUNT`             | Positive integer; sample `12`                                | Maximum exact Ecore type contracts exposed in one agent patch prompt.                                                                                          |
@@ -179,7 +184,7 @@ configuration records normalize non-positive limits to an internal default.
 | `VARKA_AI_PROVIDER_RETRY_ATTEMPTS`        | `0` or positive integer; tested `0`                          | Additional transport/provider attempts after the initial call. Semantic workflow retries are separate and still consume the provider-call budget.              |
 | `VARKA_AI_RETRY_BACKOFF`                  | Duration like `250ms`, `1s`                                  | Delay between provider retry attempts.                                                                                                                         |
 | `VARKA_AI_RECENT_MESSAGE_WINDOW`          | Positive integer                                             | Number of recent durable chat messages included as context.                                                                                                    |
-| `VARKA_AI_FALLBACK_PROVIDER`              | Empty, `openai`, `gemini`                                    | Optional backup provider used after HTTP 429 from the primary provider. Empty means no fallback. Not used for 5xx, timeout, or circuit-open failures.          |
+| `VARKA_AI_FALLBACK_PROVIDER`              | Empty, `openai`, `gemini`                                    | Optional backup used only after HTTP 429. Keep empty in the current Arvan-only deployment. It is not used for 5xx, timeout, or circuit-open failures.          |
 | `VARKA_AI_VALIDATION_REPAIR_ATTEMPTS`     | Non-negative integer                                         | Legacy validation-repair setting. `VARKA_AI_MAX_REPAIR_ATTEMPTS` takes precedence when it is positive.                                                         |
 | `VARKA_AI_LLM_CONTRACT_RERANK_ENABLED`    | `true`, `false`                                              | Enables optional LLM reranking of retrieved contracts. It can improve relevance but adds provider calls and latency.                                           |
 | `VARKA_AI_NATIVE_TOOLS_PREFERRED`         | `true`, `false`                                              | Whether provider-native tool calls are preferred when supported. Must remain `false` for the tested Arvan configuration.                                       |

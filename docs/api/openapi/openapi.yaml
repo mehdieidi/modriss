@@ -1070,20 +1070,40 @@ paths:
     get:
       tags: [Assistant]
       summary: List recent assistant conversations
+      parameters:
+        - { name: projectId, in: query, required: true, schema: { type: string } }
+        - { name: level, in: query, required: true, schema: { type: string, enum: [cim, pim] } }
+        - { name: days, in: query, required: false, schema: { type: integer, default: 3 } }
       responses:
         "200":
           description: Recent conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AssistantConversation" }
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/chatbot/sessions:
     post:
       tags: [Assistant]
       summary: Create assistant session
+      description: Creates or resumes a CIM/PIM assistant session. PSM returns HTTP 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateAssistantSessionRequest" }
       responses:
         "200":
           description: Created assistant session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CreateAssistantSessionResponse" }
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: Unsupported PSM assistant level
   /api/chatbot/sessions/{sessionId}:
     parameters:
       - name: sessionId
@@ -1111,8 +1131,9 @@ paths:
       summary: Send assistant message
       description: >-
         Accepts an idempotent durable assistant turn. Text attachments may be referenced by
-        attachmentIds and can drive source-backed CIM modeling. The backend automatically selects
-        its internal strategy; this request intentionally has no strategy or mode field.
+        attachmentIds and can drive source-backed modeling. The backend automatically selects
+        conceptual generation, inspect/contract editing, or a read-only answer; this request
+        intentionally has no strategy or mode field.
       requestBody:
         required: true
         content:
@@ -1527,6 +1548,8 @@ paths:
         "202":
           description: Telemetry accepted
   /api/chatbot/turns/{turnId}/rebase:
+    parameters:
+      - { name: turnId, in: path, required: true, schema: { type: string } }
     post:
       tags: [Assistant]
       summary: Rebase a non-overlapping durable assistant turn
@@ -1544,6 +1567,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/TurnAcceptedResponse"
   /api/chatbot/turns/{turnId}/checkpoints/{checkpointId}/rollback:
+    parameters:
+      - { name: turnId, in: path, required: true, schema: { type: string } }
+      - { name: checkpointId, in: path, required: true, schema: { type: integer, format: int64 } }
     post:
       tags: [Assistant]
       summary: Roll back a durable assistant checkpoint
@@ -1555,6 +1581,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/TurnUndoResponse"
   /api/chatbot/turns/{turnId}/feedback:
+    parameters:
+      - { name: turnId, in: path, required: true, schema: { type: string } }
     post:
       tags: [Assistant]
       summary: Record assistant-turn feedback
@@ -1567,15 +1595,21 @@ paths:
       responses:
         "202": { description: Feedback accepted }
   /api/chatbot/sessions/{sessionId}/proposals/{proposalId}:
+    parameters:
+      - { name: sessionId, in: path, required: true, schema: { type: string } }
+      - { name: proposalId, in: path, required: true, schema: { type: string } }
     get:
       tags: [Assistant]
-      summary: Get an assistant proposal
+      summary: Get a legacy applied assistant proposal
       responses:
         "200": { description: Assistant proposal }
   /api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo:
+    parameters:
+      - { name: sessionId, in: path, required: true, schema: { type: string } }
+      - { name: proposalId, in: path, required: true, schema: { type: string } }
     post:
       tags: [Assistant]
-      summary: Undo an assistant proposal
+      summary: Undo a legacy applied assistant proposal
       responses:
         "200": { description: Proposal undone }
   /api/admin/assistant/turns/{id}/provider-calls:
@@ -2045,6 +2079,36 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ValidationIssue"
+    CreateAssistantSessionRequest:
+      type: object
+      required: [modelType, projectId]
+      properties:
+        modelType:
+          type: string
+          enum: [cim, pim]
+        modelName: { type: string }
+        initialDocument:
+          type: string
+          description: Legacy initial document hint.
+        projectId: { type: string }
+        resumeSessionId: { type: string }
+        forceNew: { type: boolean }
+    CreateAssistantSessionResponse:
+      type: object
+      required: [sessionId]
+      properties:
+        sessionId: { type: string }
+        modelId:
+          type: string
+          nullable: true
+    AssistantConversation:
+      type: object
+      properties:
+        sessionId: { type: string }
+        title: { type: string }
+        preview: { type: string }
+        updatedAt: { type: string, format: date-time }
+        messageCount: { type: integer }
     AssistantMessageRequest:
       type: object
       required: [message, idempotencyKey]
@@ -2064,7 +2128,8 @@ components:
           format: int64
         activeView:
           type: string
-          enum: [CIM, PIM, PSM]
+          enum: [CIM, PIM]
+          description: Current assistant-supported canvas level. PSM assistant sessions are unsupported.
         selectedElementIds:
           type: array
           items:
@@ -2148,7 +2213,9 @@ components:
           type: integer
           minimum: 0
           maximum: 100
-          description: Source-unit accounting coverage, not semantic EVL validity.
+          description: >-
+            Enforced source and/or mandatory-obligation accounting for the active workflow. This is
+            not EVL semantic validity.
         remainingWork:
           type: string
         finalMessage:

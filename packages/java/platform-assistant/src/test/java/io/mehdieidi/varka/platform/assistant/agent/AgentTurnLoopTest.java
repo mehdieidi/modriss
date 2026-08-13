@@ -66,6 +66,43 @@ class AgentTurnLoopTest {
   }
 
   @Test
+  void treatsRequiredPimScaffoldingAsEmptyWhenModelingSurfacesAreEmpty() throws Exception {
+    ModelService models = mock(ModelService.class);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    AdaptiveAnswerProvider provider = new AdaptiveAnswerProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            3,
+            3);
+    var root =
+        new ObjectMapper()
+            .readTree(
+                """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","diagram":{"elements":[],"relationships":[]},"graph":{"elements":[],"relationships":[]},"implementationProfile":{"id":"profile","eClass":"ImplementationProfile","name":"Generated profile"}}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.PIM, "m", 1, root, new AssistantPatchCompiler(), null);
+
+    loop.run(
+        "adaptive-pim",
+        ModelLevel.PIM,
+        "Explain the current model",
+        null,
+        workspace,
+        false,
+        AgentTurnLoop.WorkflowMode.ADAPTIVE);
+
+    assertTrue(provider.firstUserPrompt.contains("modelEmpty=true"));
+    assertTrue(provider.firstUserPrompt.contains("legalStrategies=CONCEPTUAL_GENERATION,ANSWER"));
+  }
+
+  @Test
   void normalizesPaperStyleBatchWrapperWithoutInventingModelContent() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     var arguments =
@@ -718,6 +755,45 @@ Work items:
   }
 
   @Test
+  void repairsAnEmptyReadOnlyAnswerWithinBudget() throws Exception {
+    ModelService models = mock(ModelService.class);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    EmptyAnswerThenRecoveryProvider provider = new EmptyAnswerThenRecoveryProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            3,
+            2);
+    var json =
+        new ObjectMapper()
+            .readTree(
+                """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","diagram":{"elements":[],"relationships":[]}}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, json, new AssistantPatchCompiler(), null);
+
+    var result =
+        loop.run(
+            "s",
+            ModelLevel.CIM,
+            "Explain what a CIM model contains",
+            null,
+            workspace,
+            false,
+            AgentTurnLoop.WorkflowMode.EXPLAIN_MODEL);
+
+    assertEquals("Recovered", result.message());
+    assertEquals(2, result.providerCalls());
+    verify(models, never()).validateStructural(any(), any());
+  }
+
+  @Test
   void rejectsClarificationForAnExistingElementWhenTheModelIsEmpty() throws Exception {
     ModelService models = mock(ModelService.class);
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
@@ -1061,6 +1137,7 @@ Work items:
   private static final class AdaptiveAnswerProvider implements AssistantModelProvider {
     int calls;
     String firstRequiredTool;
+    String firstUserPrompt;
 
     @Override
     public AssistantProviderMetadata metadata() {
@@ -1078,6 +1155,7 @@ Work items:
       calls++;
       if (calls == 1) {
         firstRequiredTool = prompt.requiredTool();
+        firstUserPrompt = prompt.user();
         return new AssistantReply(
             "I will use the read-only path.\n```json\n{\"strategy\":\"ANSWER\"}\n```",
             "fake",

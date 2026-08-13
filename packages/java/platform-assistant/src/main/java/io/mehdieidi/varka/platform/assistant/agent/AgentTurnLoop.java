@@ -1017,6 +1017,25 @@ public final class AgentTurnLoop {
           }
         } catch (PlatformException toolFailure) {
           metrics.recordAssistantMalformedAction(actionFailureReason(toolFailure));
+          if (readOnlyMode
+              && repairableToolFailure(toolFailure)
+              && repairAttempts < 1
+              && ProviderCallBudget.hasRemaining()) {
+            repairAttempts++;
+            metrics.recordAssistantRepairReason(actionFailureReason(toolFailure));
+            user =
+                followUpContext(userMessage, sourceDocument)
+                    + "\n\nYour previous read-only action was rejected by the strict action"
+                    + " schema. Diagnostic: "
+                    + toolFailure.getMessage()
+                    + "\nReturn exactly one corrected JSON object with no prose or extra"
+                    + " fields: {\"action\":\"answer_user\",\"arguments\":{\"message\":"
+                    + "\"a complete, non-empty user-facing answer\"}}. The message value must"
+                    + " be a JSON string, not an object, array, or null. Answer the original"
+                    + " request using the authoritative context already supplied. Do not mutate,"
+                    + " inspect, validate, or create a checkpoint.";
+            continue;
+          }
           if (!readOnlyMode
               && repairableToolFailure(toolFailure)
               && repairAttempts < Math.max(4, maxProviderCalls - 2)
@@ -1666,6 +1685,12 @@ public final class AgentTurnLoop {
 
   private boolean hasNoModelElements(ModelWorkspace workspace) {
     JsonNode root = workspace.snapshot();
+    JsonNode diagramElements = root.path("diagram").path("elements");
+    JsonNode graphElements = root.path("graph").path("elements");
+    if (diagramElements.isArray() || graphElements.isArray()) {
+      return (!diagramElements.isArray() || diagramElements.isEmpty())
+          && (!graphElements.isArray() || graphElements.isEmpty());
+    }
     String rootId = root.path("id").asText();
     return !containsModelElement(root, rootId);
   }

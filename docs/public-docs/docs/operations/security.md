@@ -17,13 +17,14 @@ artifacts. Security controls therefore span the platform runtime and the project
 ## Assistant Controls
 
 - AI is disabled unless explicitly enabled.
-- The assistant runs as one unified durable workflow with a strict adaptive strategy, a bounded
-  conceptual compiler path, and one inspect/contract agent path. There are no delegated model
-  workers and no client-selectable strategy.
+- The assistant runs as one unified durable CIM/PIM workflow with a strict adaptive strategy, an
+  obligation-gated conceptual path, an inspect/contract path, and an enforced read-only answer
+  path. There are no delegated model workers and no client-selectable strategy.
 - The assistant uses backend-owned metamodel contracts, selected model state, optional attachments,
   and durable recent conversation context rather than raw EVL files or unchecked database access.
-- Conceptual and action-driven changes are checked against live Ecore contracts, structurally
-  validated, committed against the expected model revision, and audited through durable turns.
+- Conceptual objects remain private until mandatory-obligation evidence and live Ecore structure
+  pass. All mutation paths are structurally validated, committed against the expected model
+  revision, and audited through durable turns.
 - EVL and stored semantic validation are never assistant apply/repair/commit gates.
 - Destructive batches require explicit confirmation; committed checkpoints may include inverse
   patches for undo.

@@ -21,8 +21,8 @@ flowchart LR
 - CIM-to-PIM and PIM-to-AWS-PSM transformations implemented with ETL.
 - AWS project generation implemented with EGX/EGL.
 - PostgreSQL persistence for users, projects, models, artifacts, jobs, and assistant state.
-- A bounded AI modeling assistant with retrieval, source attachments, auto-applied
-  backend-validated changes, checkpoints, provenance, and undo.
+- A bounded CIM/PIM AI modeling assistant with obligation-gated private generation, retrieval,
+  source attachments, structurally validated atomic checkpoints, provenance, and undo.
 - Reusable Java runners and command-line tools for MDE automation.
 
 ## Choose Your Path
