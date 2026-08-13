@@ -1,5 +1,12 @@
 # Varka Modeling Methodologies
 
+The complete Persian software-project lifecycle process—including initiation, iterative MDE
+construction, transition, release, operations, maintenance, roles, artifacts, gates, umbrella
+activities, tailoring rules, and Mermaid diagrams—is defined in
+[`software-development-process-fa.md`](software-development-process-fa.md). The machine-readable
+definitions below are the technical modeling and artifact-readiness subprocesses enacted inside
+that lifecycle.
+
 Canonical, machine-readable **iterative-incremental** process definitions for CIM, PIM,
 AWS PSM, generated-artifact deployment readiness, and the end-to-end pipeline. Each process follows **SPEM 2.0**: sequential phases → stages
 → optional sub-stages → atomic tasks, plus roles, artifact kinds, guidelines, and a
