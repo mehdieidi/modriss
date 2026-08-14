@@ -65,17 +65,19 @@ other members use custom role labels chosen by the project owner (for example `A
 
 Replace `{level}` with `cim`, `pim`, or `psm`.
 
-| Method                          | Path                               | Purpose                         |
-| ------------------------------- | ---------------------------------- | ------------------------------- |
-| `GET`, `POST`                   | `/api/{level}`                     | List or create models           |
-| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/{level}/{id}`                | Read, replace, patch, or delete |
-| `GET`                           | `/api/{level}/{id}/views/{viewId}` | Read a materialized model view  |
-| `POST`                          | `/api/{level}/validate`            | Validate an unsaved model       |
-| `POST`                          | `/api/{level}/{id}/validate`       | Validate a saved model          |
-| `POST`                          | `/api/{level}/{id}/validate/jobs`  | Submit saved-model validation   |
-| `POST`                          | `/api/{level}/export`              | Export an unsaved model         |
-| `POST`                          | `/api/{level}/{id}/export`         | Export a saved model            |
-| `POST`                          | `/api/{level}/import`              | Import multipart JSON or XMI    |
+| Method                          | Path                                    | Purpose                                |
+| ------------------------------- | --------------------------------------- | -------------------------------------- |
+| `GET`, `POST`                   | `/api/{level}`                          | List or create models                  |
+| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/{level}/{id}`                     | Read, replace, patch, or delete        |
+| `GET`                           | `/api/{level}/{id}/views/{viewId}`      | Read a materialized model view         |
+| `POST`                          | `/api/{level}/validate`                 | Validate an unsaved model              |
+| `POST`                          | `/api/{level}/validate/structural`      | Structurally validate an unsaved model |
+| `POST`                          | `/api/{level}/{id}/validate`            | Validate a saved model                 |
+| `POST`                          | `/api/{level}/{id}/validate/structural` | Structurally validate a saved model    |
+| `POST`                          | `/api/{level}/{id}/validate/jobs`       | Submit saved-model validation          |
+| `POST`                          | `/api/{level}/export`                   | Export an unsaved model                |
+| `POST`                          | `/api/{level}/{id}/export`              | Export a saved model                   |
+| `POST`                          | `/api/{level}/import`                   | Import multipart JSON or XMI           |
 
 Updates and transformations should include `expectedRevision`. Patch operations use JSON Pointer
 paths and support `add`, `replace`, and `remove`; root replacement is not supported by patch.

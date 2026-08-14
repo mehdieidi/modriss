@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1587,9 +1588,9 @@ final class EpsilonEgxGeneratorTest {
     assertNotNull(runtimeApi, "Generated Runtime HTTP API should be discoverable.");
     String apiId = runtimeApi.path("ApiId").asText();
     String apiEndpoint = runtimeApi.path("ApiEndpoint").asText();
-    List<String> apiCandidates =
+    List<HttpEndpoint> apiCandidates =
         new ArrayList<>(localStackHttpCandidates(apiEndpoint + "/runtime", endpoint));
-    apiCandidates.add(endpoint + "/_aws/execute-api/" + apiId + "/runtime");
+    apiCandidates.add(new HttpEndpoint(endpoint + "/_aws/execute-api/" + apiId + "/runtime", null));
     HttpResponse<String> apiResponse =
         postJsonToFirstReachableUrl(apiCandidates, "{\"payload\":{\"source\":\"junit-http-api\"}}");
     assertGeneratedHttpEntrypointResponse(apiResponse, "API Gateway HTTP route");
@@ -1602,20 +1603,17 @@ final class EpsilonEgxGeneratorTest {
    * @param localStackEndpoint LocalStack gateway endpoint reachable from the host JVM
    * @return primary and HTTP-normalized candidates
    */
-  private List<String> localStackHttpCandidates(String urlText, String localStackEndpoint) {
-    List<String> candidates = new ArrayList<>();
-    candidates.add(urlText);
+  private List<HttpEndpoint> localStackHttpCandidates(String urlText, String localStackEndpoint) {
+    List<HttpEndpoint> candidates = new ArrayList<>();
+    candidates.add(new HttpEndpoint(urlText, null));
     if (urlText.startsWith("https://")) {
-      candidates.add("http://" + urlText.substring("https://".length()));
+      candidates.add(new HttpEndpoint("http://" + urlText.substring("https://".length()), null));
     }
     try {
       java.net.URI reportedUri = java.net.URI.create(urlText);
       java.net.URI endpointUri = java.net.URI.create(localStackEndpoint);
       String host = reportedUri.getHost();
-      if (host != null
-          && !host.equals("127.0.0.1")
-          && !host.equals("localhost")
-          && !host.endsWith("localhost.localstack.cloud")) {
+      if (host != null && !host.equals("127.0.0.1") && !host.equals("localhost")) {
         Matcher virtualHostMatcher =
             Pattern.compile("^(.*\\.(?:lambda-url|execute-api)\\.[a-z0-9-]+\\.).+$").matcher(host);
         if (virtualHostMatcher.matches()) {
@@ -1623,12 +1621,12 @@ final class EpsilonEgxGeneratorTest {
               new java.net.URI(
                   "http",
                   reportedUri.getUserInfo(),
-                  virtualHostMatcher.group(1) + "localhost.localstack.cloud",
+                  "127.0.0.1",
                   endpointUri.getPort(),
                   reportedUri.getPath(),
                   reportedUri.getQuery(),
                   reportedUri.getFragment());
-          candidates.add(hostReachableUri.toString());
+          candidates.add(new HttpEndpoint(hostReachableUri.toString(), host));
         }
       }
     } catch (Exception ex) {
@@ -1644,18 +1642,23 @@ final class EpsilonEgxGeneratorTest {
    * @param body JSON request body
    * @return HTTP response
    */
-  private HttpResponse<String> postJsonToFirstReachableUrl(List<String> urlCandidates, String body)
-      throws Exception {
+  private HttpResponse<String> postJsonToFirstReachableUrl(
+      List<HttpEndpoint> urlCandidates, String body) throws Exception {
     HttpClient client = HttpClient.newHttpClient();
     AssertionError lastFailure = null;
-    for (String urlCandidate : urlCandidates) {
+    for (HttpEndpoint endpoint : urlCandidates) {
       try {
-        HttpRequest request =
-            HttpRequest.newBuilder(java.net.URI.create(urlCandidate))
+        HttpRequest.Builder requestBuilder =
+            HttpRequest.newBuilder(java.net.URI.create(endpoint.url()))
                 .timeout(Duration.ofMinutes(1))
-                .header("content-type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
+                .header("content-type", "application/json");
+        if (endpoint.hostHeader() != null) {
+          // LocalStack routes virtual Lambda URLs by Host while the mapped URL connects to the
+          // host-published edge port. Java's HTTP client requires this opt-in for Host headers.
+          requestBuilder.header("Host", endpoint.hostHeader());
+        }
+        HttpRequest request =
+            requestBuilder.POST(HttpRequest.BodyPublishers.ofString(body)).build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 404 && response.statusCode() != 502) {
           return response;
@@ -1665,7 +1668,7 @@ final class EpsilonEgxGeneratorTest {
                 "Generated HTTP endpoint returned "
                     + response.statusCode()
                     + " at "
-                    + urlCandidate
+                    + endpoint.url()
                     + ": "
                     + response.body());
       } catch (IOException | InterruptedException | IllegalArgumentException ex) {
@@ -1673,13 +1676,17 @@ final class EpsilonEgxGeneratorTest {
           Thread.currentThread().interrupt();
         }
         lastFailure =
-            new AssertionError("Generated HTTP endpoint was not reachable at " + urlCandidate, ex);
+            new AssertionError(
+                "Generated HTTP endpoint was not reachable at " + endpoint.url(), ex);
       }
     }
     throw lastFailure == null
         ? new AssertionError("No generated HTTP endpoint candidates were provided.")
         : lastFailure;
   }
+
+  /** Host-published HTTP endpoint and optional virtual host used for LocalStack routing. */
+  private record HttpEndpoint(String url, String hostHeader) {}
 
   /**
    * Verifies a generated HTTP entrypoint response came from the Lambda handler.
@@ -2089,7 +2096,9 @@ final class EpsilonEgxGeneratorTest {
                 "LAMBDA_RUNTIME_ENVIRONMENT_TIMEOUT="
                     + dotEnv.getOrDefault("LAMBDA_RUNTIME_ENVIRONMENT_TIMEOUT", "120"),
                 "-e",
-                "LOCALSTACK_HOST=" + containerName + ":4566",
+                "LOCALSTACK_HOST=localhost.localstack.cloud:4566",
+                "-e",
+                "S3_ENDPOINT_STRATEGY=path",
                 "-e",
                 "LAMBDA_DOCKER_NETWORK=" + networkName,
                 "-e",
@@ -2132,14 +2141,11 @@ final class EpsilonEgxGeneratorTest {
     command.add("127.0.0.1::4566");
     command.add(image);
 
-    Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
-    boolean finished = process.waitFor(Duration.ofMinutes(5).toMillis(), TimeUnit.MILLISECONDS);
-    String outputText = new String(process.getInputStream().readAllBytes()).trim();
-    if (!finished) {
-      process.destroyForcibly();
-    }
+    ProcessResult result = runProcessCapturing(new ProcessBuilder(command), Duration.ofMinutes(5));
+    boolean finished = result.finished();
+    String outputText = result.output().trim();
     Assumptions.assumeTrue(
-        finished && process.exitValue() == 0,
+        finished && result.exitCode() == 0,
         "LocalStack container could not be started: " + outputText);
     return outputText.lines().findFirst().orElseThrow();
   }
@@ -2384,21 +2390,36 @@ final class EpsilonEgxGeneratorTest {
    * @throws InterruptedException when interrupted while waiting
    */
   private ProcessResult runProcessCapturing(ProcessBuilder builder, Duration timeout)
-      throws IOException, InterruptedException {
+      throws IOException, InterruptedException, java.util.concurrent.ExecutionException {
     Process process = builder.redirectErrorStream(true).start();
-    boolean finished = process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    if (!finished) {
+    CompletableFuture<String> outputFuture =
+        CompletableFuture.supplyAsync(
+            () -> {
+              try {
+                return new String(process.getInputStream().readAllBytes());
+              } catch (IOException ex) {
+                return "Process output unavailable: " + ex.getMessage();
+              }
+            });
+    boolean finished;
+    try {
+      process.onExit().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+      finished = true;
+    } catch (java.util.concurrent.TimeoutException ex) {
       process.destroyForcibly();
       process.waitFor(Duration.ofSeconds(5).toMillis(), TimeUnit.MILLISECONDS);
+      finished = false;
     }
-    String outputText;
     try {
-      outputText = new String(process.getInputStream().readAllBytes());
-    } catch (IOException ex) {
-      outputText = "Process output unavailable after termination: " + ex.getMessage();
+      String outputText = outputFuture.get(5, TimeUnit.SECONDS);
+      int exitCode = finished ? process.exitValue() : -1;
+      return new ProcessResult(finished, exitCode, outputText);
+    } catch (java.util.concurrent.TimeoutException ex) {
+      outputFuture.cancel(true);
+      int exitCode = finished ? process.exitValue() : -1;
+      return new ProcessResult(
+          finished, exitCode, "Process output unavailable after termination: " + ex.getMessage());
     }
-    int exitCode = finished ? process.exitValue() : -1;
-    return new ProcessResult(finished, exitCode, outputText);
   }
 
   /** Captured process result. */

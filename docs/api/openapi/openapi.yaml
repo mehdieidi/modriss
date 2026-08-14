@@ -495,6 +495,29 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /api/{level}/validate/structural:
+    parameters:
+      - $ref: "#/components/parameters/ModelLevelPath"
+    post:
+      tags: [Models]
+      summary: Validate unsaved model JSON for structural Ecore/EMF conformance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveModelRequest"
+      responses:
+        "200":
+          description: Structural validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/{level}/{id}/validate:
     parameters:
       - $ref: "#/components/parameters/ModelLevelPath"
@@ -505,6 +528,26 @@ paths:
       responses:
         "200":
           description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/{level}/{id}/validate/structural:
+    parameters:
+      - $ref: "#/components/parameters/ModelLevelPath"
+      - $ref: "#/components/parameters/ModelId"
+    post:
+      tags: [Models]
+      summary: Validate a stored model for structural Ecore/EMF conformance
+      responses:
+        "200":
+          description: Structural validation result
           content:
             application/json:
               schema:

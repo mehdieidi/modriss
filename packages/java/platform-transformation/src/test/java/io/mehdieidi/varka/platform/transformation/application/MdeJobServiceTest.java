@@ -148,7 +148,9 @@ class MdeJobServiceTest {
   private MdeJobRecord waitForTerminal(
       MdeJobService jobs, io.mehdieidi.varka.platform.identity.domain.UserRecord user, String id)
       throws Exception {
-    long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+    // Stored validation uses the same runtime timeout as the worker and may pay the one-time
+    // EMF/EVL initialization cost on a clean build. The polling window must cover that contract.
+    long deadline = System.nanoTime() + Duration.ofMinutes(3).toNanos();
     MdeJobRecord job = jobs.get(user, id);
     while (System.nanoTime() < deadline) {
       job = jobs.get(user, id);
