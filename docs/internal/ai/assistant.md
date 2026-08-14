@@ -13,6 +13,7 @@ OpenAI-compatible JSON-content adapter:
 
 ```dotenv
 VARKA_AI_ENABLED=true
+VARKA_AI_METAMODEL_MODE=normal
 VARKA_AI_MODE=unified
 VARKA_AI_WORKFLOW_ENGINE_V2=true
 VARKA_AI_PROVIDER=openai
@@ -30,6 +31,18 @@ VARKA_AI_PROVIDER_RETRY_ATTEMPTS=0
 `agent-test` and `conceptual-test` are acceptance-test overrides. `unified` is the sole normal
 mode. The code contains other provider-family adapters, but they are not validated alternatives for
 this deployment.
+
+`VARKA_AI_METAMODEL_MODE` is independent of the workflow `VARKA_AI_MODE`. Its default, `normal`,
+retains the complete existing metamodel surface. Set it to `excerpt` to restrict LLM discovery,
+retrieval, planning, and patch compilation to the curated core CIM/PIM concepts in
+`assistant/metamodel/excerpt-metamodel.json`. The profile only selects EClasses; their exact
+contracts are projected from the canonical combined Ecore files. Both modes use the same canonical
+structural validation gate, and neither assistant path invokes EVL.
+
+The excerpt includes non-creatable kernel interface contracts when selected concepts have required
+references declared against those interfaces. This keeps required-reference closure resolvable
+without adding those interfaces to the LLM's concrete candidate list. Non-structural source-quality
+classifications live in `assistant/metamodel/metamodel-semantics.json`, not Java workflow branches.
 
 ## Runtime architecture
 

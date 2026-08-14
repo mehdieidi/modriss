@@ -3,6 +3,7 @@ package io.mehdieidi.varka.backend.assistant;
 import io.mehdieidi.varka.backend.observability.VarkaMetrics;
 import io.mehdieidi.varka.platform.assistant.agent.AgentTurnLoop;
 import io.mehdieidi.varka.platform.assistant.application.AgenticAssistantFacade;
+import io.mehdieidi.varka.platform.assistant.metamodel.AssistantMetamodelSemantics;
 import io.mehdieidi.varka.platform.assistant.source.SourceFactGraph;
 import io.mehdieidi.varka.platform.assistant.source.SourceUnitSplitter;
 import io.mehdieidi.varka.platform.assistant.source.SourceWorkPlan;
@@ -1013,16 +1014,8 @@ public final class DurableAssistantTurnWorker {
                     .map(create -> create.eClass() == null ? "" : create.eClass())
                     .filter(
                         eClass ->
-                            java.util.Set.of(
-                                    "Command",
-                                    "Query",
-                                    "BusinessEvent",
-                                    "DomainEntity",
-                                    "InformationItem",
-                                    "Policy",
-                                    "DecisionModel",
-                                    "DecisionRule")
-                                .contains(eClass))
+                            AssistantMetamodelSemantics.isSourceRichType(
+                                io.mehdieidi.varka.platform.kernel.ModelLevel.CIM, eClass))
                     .count();
     int score =
         total == 0

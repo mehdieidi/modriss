@@ -71,6 +71,7 @@ The deployed Arvan profile uses JSON content rather than native tool calls:
 VARKA_AI_PROVIDER=openai
 VARKA_AI_MODEL=DeepSeek-V4-Flash
 VARKA_AI_MODE=unified
+VARKA_AI_METAMODEL_MODE=normal
 VARKA_AI_OPENAI_PROTOCOL=json_schema
 VARKA_AI_NATIVE_TOOLS_PREFERRED=false
 VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
@@ -80,6 +81,24 @@ The adapter sends temperature zero and `thinking: {"type":"disabled"}`. Arvan ca
 large `reasoning_content` and `finish_reason=length`. Truncated type-selection retries therefore
 use only the LLM obligation candidates, exact closure costs, the request, and the latest diagnostic.
 The selector currently has four bounded attempts so the LLM can act on a final capacity diagnostic.
+
+## Assistant metamodel modes
+
+`VARKA_AI_METAMODEL_MODE=normal` preserves the complete existing CIM/PIM contract surface.
+`VARKA_AI_METAMODEL_MODE=excerpt` exposes the curated profile in
+`src/main/resources/assistant/metamodel/excerpt-metamodel.json`. The excerpt keeps the central CIM
+business/process/data concepts and the central PIM service/function/API/event/data/workflow
+concepts, including the supporting types needed to construct them.
+
+Required abstract kernel targets are retained as non-creatable support contracts. Assistant
+quality classifications are data-owned by `assistant/metamodel/metamodel-semantics.json`; Java
+workflow code does not carry fixed CIM/PIM EClass lists.
+
+The excerpt is an assistant-facing projection, not a second source of truth. Exact attributes,
+references, enum values, inheritance, and containments are always read from the canonical combined
+Ecore metamodels. Patch compilation and `ModelService.validateStructural(...)` also continue to use
+the canonical metamodels, so excerpt-created models conform to the same CIM/PIM languages as normal
+mode. Changing this setting requires a backend restart.
 
 ## Validation and evidence boundary
 

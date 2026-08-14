@@ -65,6 +65,12 @@ adapters, but they are not the validated production configuration described here
 acceptance-test overrides, and any other value fails startup. Clients never select this mode or an
 internal strategy per request.
 
+`VARKA_AI_METAMODEL_MODE=normal` exposes the complete CIM/PIM metamodel to the assistant and is the
+default. Set it to `excerpt` to expose only the curated core business, process, data, service,
+function, API, event, workflow, integration, security, and configuration concepts. This setting
+changes only assistant discovery and patch contracts; generated models are still structurally
+validated against the complete canonical Ecore metamodel. Restart the backend after changing it.
+
 Timeouts, token budgets, context limits, agent steps, provider-call limits, repair attempts, source
 passes, rate limits, retries, and recent-message windows all trade completeness and resilience
 against latency, memory use, and provider cost. `VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN` and

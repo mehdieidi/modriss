@@ -3,6 +3,7 @@ package io.mehdieidi.varka.platform.assistant.agent;
 import io.mehdieidi.varka.platform.assistant.application.ProviderCallBudget;
 import io.mehdieidi.varka.platform.assistant.application.ProviderRequestContext;
 import io.mehdieidi.varka.platform.assistant.domain.ModelCommandBatch;
+import io.mehdieidi.varka.platform.assistant.metamodel.AssistantMetamodelSemantics;
 import io.mehdieidi.varka.platform.assistant.metamodel.LexicalRetrievalIndex;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelGuideGenerator;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.AttributeContract;
@@ -2794,11 +2795,7 @@ validation.
         batch.creates().stream()
             .map(create -> create.eClass() == null ? "" : create.eClass())
             .allMatch(
-                eClass ->
-                    eClass.equals("Actor")
-                        || eClass.equals("BusinessGoal")
-                        || eClass.equals("BusinessCapability")
-                        || eClass.equals("Requirement"));
+                eClass -> AssistantMetamodelSemantics.isSourceGenericType(ModelLevel.CIM, eClass));
     if (onlyGeneric) {
       throw new PlatformException(
           422,
@@ -2812,16 +2809,7 @@ validation.
   }
 
   private boolean richCimType(String eClass) {
-    return java.util.Set.of(
-            "Command",
-            "Query",
-            "BusinessEvent",
-            "DomainEntity",
-            "InformationItem",
-            "Policy",
-            "DecisionModel",
-            "DecisionRule")
-        .contains(eClass);
+    return AssistantMetamodelSemantics.isSourceRichType(ModelLevel.CIM, eClass);
   }
 
   private ModelCommandBatch normalizeSourceEvidence(

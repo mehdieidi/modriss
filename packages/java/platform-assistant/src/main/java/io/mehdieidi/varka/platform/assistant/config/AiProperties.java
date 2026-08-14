@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.platform.assistant.config;
 
+import io.mehdieidi.varka.platform.assistant.metamodel.AssistantMetamodelMode;
 import io.mehdieidi.varka.platform.assistant.spi.AssistantSettings;
 import java.net.InetSocketAddress;
 import java.time.Duration;
@@ -11,6 +12,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * Provider-neutral assistant settings for model selection and proxy routing.
  *
  * @param enabled whether outbound AI calls are allowed
+ * @param metamodelMode assistant-facing metamodel surface, normal or excerpt
  * @param provider configured provider key, currently {@code openai} or {@code gemini}
  * @param requestTimeout outbound AI request timeout
  * @param turnTimeout overall assistant turn timeout
@@ -54,6 +56,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "varka.ai")
 public record AiProperties(
     boolean enabled,
+    AssistantMetamodelMode metamodelMode,
     String provider,
     Duration requestTimeout,
     int maxToolCalls,
@@ -95,6 +98,7 @@ public record AiProperties(
     implements AssistantSettings {
   /** Applies production defaults when an environment-backed setting is omitted. */
   public AiProperties {
+    metamodelMode = metamodelMode == null ? AssistantMetamodelMode.NORMAL : metamodelMode;
     provider = Provider.from(provider).key();
     requestTimeout = requestTimeout == null ? Duration.ofSeconds(60) : requestTimeout;
     turnTimeout = turnTimeout == null ? Duration.ofMinutes(3) : turnTimeout;

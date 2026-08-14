@@ -14,6 +14,7 @@ class ProxyAvailabilityTest {
             true,
             null,
             null,
+            null,
             0,
             0,
             0,

@@ -1,5 +1,7 @@
 package io.mehdieidi.varka.platform.assistant.patch;
 
+import io.mehdieidi.varka.platform.assistant.metamodel.AssistantMetamodelProfile;
+import io.mehdieidi.varka.platform.assistant.metamodel.AssistantMetamodelSemantics;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
@@ -22,23 +24,46 @@ public class AssistantMetamodelSchemaService {
 
   private final Map<ModelLevel, LevelSchema> levels;
   private final MetamodelResolver resolver;
+  private final AssistantMetamodelProfile profile;
 
   public AssistantMetamodelSchemaService() {
     this(
         new ModelingConfigService(),
-        new FileMetamodelResolver(new MdeRuntimePaths(MdeRuntimeOptions.defaults())));
+        new FileMetamodelResolver(new MdeRuntimePaths(MdeRuntimeOptions.defaults())),
+        AssistantMetamodelProfile.normal());
+  }
+
+  public AssistantMetamodelSchemaService(AssistantMetamodelProfile profile) {
+    this(
+        new ModelingConfigService(),
+        new FileMetamodelResolver(new MdeRuntimePaths(MdeRuntimeOptions.defaults())),
+        profile);
   }
 
   AssistantMetamodelSchemaService(ModelingConfigService modelingConfig) {
     this(
         modelingConfig,
-        new FileMetamodelResolver(new MdeRuntimePaths(MdeRuntimeOptions.defaults())));
+        new FileMetamodelResolver(new MdeRuntimePaths(MdeRuntimeOptions.defaults())),
+        AssistantMetamodelProfile.normal());
   }
 
   public AssistantMetamodelSchemaService(
       ModelingConfigService modelingConfig, MetamodelResolver resolver) {
+    this(modelingConfig, resolver, AssistantMetamodelProfile.normal());
+  }
+
+  public AssistantMetamodelSchemaService(
+      ModelingConfigService modelingConfig,
+      MetamodelResolver resolver,
+      AssistantMetamodelProfile profile) {
+    this.profile = profile == null ? AssistantMetamodelProfile.normal() : profile;
     this.levels = load(modelingConfig.config());
     this.resolver = resolver;
+  }
+
+  /** Assistant-facing metamodel projection currently in use. */
+  public AssistantMetamodelProfile profile() {
+    return profile;
   }
 
   /** SHA-256 of the active combined Ecore bytes; use as the metamodel drift/cache key. */
@@ -502,9 +527,98 @@ public class AssistantMetamodelSchemaService {
       if (starter == null || starter.isEmpty()) {
         starter = (Map<String, Object>) rawLevel.get("rootTemplate");
       }
-      result.put(level, new LevelSchema(text(starter, "eClass"), types));
+      String rootType = text(starter, "eClass");
+      LevelSchema fullSchema = new LevelSchema(rootType, types);
+      for (String configuredType : AssistantMetamodelSemantics.configuredTypes(level)) {
+        if (fullSchema.type(configuredType).isEmpty()) {
+          throw new PlatformException(
+              500,
+              "Assistant metamodel semantics contain unknown "
+                  + level
+                  + " type: "
+                  + configuredType);
+        }
+      }
+      result.put(level, project(level, fullSchema));
     }
     return Map.copyOf(result);
+  }
+
+  private LevelSchema project(ModelLevel level, LevelSchema fullSchema) {
+    if (profile.mode()
+            == io.mehdieidi.varka.platform.assistant.metamodel.AssistantMetamodelMode.NORMAL
+        || level == ModelLevel.PSM) {
+      return fullSchema;
+    }
+    LinkedHashMap<String, TypeSchema> selected = new LinkedHashMap<>();
+    for (String configuredType : profile.includedTypes(level)) {
+      if (fullSchema.type(configuredType).isEmpty()) {
+        throw new PlatformException(
+            500,
+            "Assistant excerpt metamodel contains unknown " + level + " type: " + configuredType);
+      }
+    }
+    for (Map.Entry<String, TypeSchema> entry : fullSchema.types().entrySet()) {
+      TypeSchema type = entry.getValue();
+      if (!type.name().equals(fullSchema.rootType()) && !profile.includes(level, type.name())) {
+        continue;
+      }
+      List<ReferenceSchema> missingRequired =
+          type.references().stream()
+              .filter(ReferenceSchema::required)
+              .filter(reference -> !targetAvailable(fullSchema, level, reference.targetType()))
+              .toList();
+      if (!missingRequired.isEmpty()) {
+        throw new PlatformException(
+            500,
+            "Assistant excerpt metamodel cannot satisfy required reference "
+                + type.name()
+                + "."
+                + missingRequired.get(0).name()
+                + ".");
+      }
+      List<ReferenceSchema> references =
+          type.references().stream()
+              .filter(reference -> targetAvailable(fullSchema, level, reference.targetType()))
+              .toList();
+      selected.put(
+          entry.getKey(),
+          new TypeSchema(
+              type.name(),
+              type.creatable(),
+              type.relationshipElement(),
+              type.supertypes(),
+              type.label(),
+              type.category(),
+              type.attributes(),
+              references));
+    }
+    return new LevelSchema(
+        fullSchema.rootType(),
+        java.util.Collections.unmodifiableMap(new LinkedHashMap<>(selected)));
+  }
+
+  private boolean targetAvailable(LevelSchema fullSchema, ModelLevel level, String targetType) {
+    if (profile.includes(level, targetType)) {
+      return true;
+    }
+    return profile.includedTypes(level).stream()
+        .anyMatch(
+            candidate ->
+                assignableTransitive(fullSchema, candidate, targetType, new java.util.HashSet<>()));
+  }
+
+  private boolean assignableTransitive(
+      LevelSchema schema, String actual, String declared, java.util.Set<String> visited) {
+    if (actual.equals(declared)) {
+      return true;
+    }
+    if (!visited.add(actual)) {
+      return false;
+    }
+    return schema.type(actual).stream()
+        .flatMap(type -> type.supertypes().stream())
+        .anyMatch(supertype -> assignableTransitive(schema, supertype, declared, visited));
   }
 
   private String text(Map<String, Object> map, String key) {

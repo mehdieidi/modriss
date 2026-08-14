@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "levels": {
+    "cim": {
+      "sourceQuality": {
+        "genericTypes": ["Actor", "BusinessGoal", "BusinessCapability", "Requirement"],
+        "richTypes": [
+          "Command",
+          "Query",
+          "BusinessEvent",
+          "DomainEntity",
+          "InformationItem",
+          "Policy",
+          "DecisionRule"
+        ]
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@ package io.mehdieidi.varka.platform.assistant.metamodel;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.AttributeContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.ReferenceContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.TypeContract;
+import io.mehdieidi.varka.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.modeling.config.ModelingConfigService;
 import java.util.ArrayList;
@@ -21,12 +22,21 @@ public class EcoreContractExtractor {
   }
 
   public MetamodelKnowledgeIndex extract() {
+    return extract(null);
+  }
+
+  /** Extracts contracts, optionally projecting them through an assistant-facing schema. */
+  public MetamodelKnowledgeIndex extract(AssistantMetamodelSchemaService schemas) {
     Map<ModelLevel, List<TypeContract>> byLevel = new EnumMap<>(ModelLevel.class);
     List<MetamodelContractRecord> records = new ArrayList<>();
     for (ModelLevel level : ModelLevel.values()) {
       List<TypeContract> types =
           modelingConfig.ecoreDerivedElements(level).stream()
               .map(raw -> typeContract(level, raw))
+              .filter(
+                  type ->
+                      schemas == null || schemas.tryCanonicalType(level, type.eClass()).isPresent())
+              .map(type -> projectReferences(level, type, schemas))
               .toList();
       byLevel.put(level, types);
       records.add(levelOverview(level, types));
@@ -37,6 +47,25 @@ public class EcoreContractExtractor {
       }
     }
     return new MetamodelKnowledgeIndex(byLevel, records);
+  }
+
+  private TypeContract projectReferences(
+      ModelLevel level, TypeContract type, AssistantMetamodelSchemaService schemas) {
+    if (schemas == null) {
+      return type;
+    }
+    List<ReferenceContract> references =
+        type.references().stream()
+            .filter(
+                reference -> schemas.reference(level, type.eClass(), reference.name()).isPresent())
+            .toList();
+    return new TypeContract(
+        type.level(),
+        type.eClass(),
+        type.creatable(),
+        type.supertypes(),
+        type.attributes(),
+        references);
   }
 
   @SuppressWarnings("unchecked")

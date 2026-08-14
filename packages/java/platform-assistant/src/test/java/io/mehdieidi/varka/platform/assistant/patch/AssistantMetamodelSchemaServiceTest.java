@@ -4,9 +4,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.mehdieidi.varka.platform.assistant.metamodel.AssistantMetamodelMode;
+import io.mehdieidi.varka.platform.assistant.metamodel.AssistantMetamodelProfile;
+import io.mehdieidi.varka.platform.assistant.metamodel.AssistantMetamodelSemantics;
+import io.mehdieidi.varka.platform.assistant.metamodel.EcoreContractExtractor;
+import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelGuideGenerator;
+import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService;
+import io.mehdieidi.varka.platform.assistant.metamodel.TypeContractService;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
+import io.mehdieidi.varka.platform.modeling.config.ModelingConfigService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -80,5 +88,114 @@ class AssistantMetamodelSchemaServiceTest {
   void exposesCombinedEcoreShaAsTheDriftKey() {
     String sha = schemas.metamodelSha(ModelLevel.CIM);
     assertTrue(sha.matches("[0-9a-f]{64}"));
+  }
+
+  @Test
+  void excerptModeExposesCoreCimConceptsAndRejectsPeripheralOnes() {
+    AssistantMetamodelSchemaService excerpt =
+        new AssistantMetamodelSchemaService(AssistantMetamodelProfile.excerpt());
+
+    assertEquals(AssistantMetamodelMode.EXCERPT, excerpt.profile().mode());
+    assertEquals(schemas.metamodelSha(ModelLevel.CIM), excerpt.metamodelSha(ModelLevel.CIM));
+    assertEquals("BusinessProcess", excerpt.canonicalType(ModelLevel.CIM, "BusinessProcess"));
+    assertEquals("DomainEntity", excerpt.canonicalType(ModelLevel.CIM, "DomainEntity"));
+    assertThrows(PlatformException.class, () -> excerpt.canonicalType(ModelLevel.CIM, "Risk"));
+    assertTrue(
+        excerpt.coverage(ModelLevel.CIM).creatableTypes()
+            < schemas.coverage(ModelLevel.CIM).creatableTypes());
+  }
+
+  @Test
+  void excerptModeExposesCorePimConceptsAndFiltersKnowledgeIndex() {
+    AssistantMetamodelSchemaService excerpt =
+        new AssistantMetamodelSchemaService(AssistantMetamodelProfile.excerpt());
+    MetamodelKnowledgeService knowledge = new MetamodelKnowledgeService(excerpt);
+
+    assertEquals("Function", excerpt.canonicalType(ModelLevel.PIM, "Function"));
+    assertEquals("Workflow", excerpt.canonicalType(ModelLevel.PIM, "Workflow"));
+    assertEquals("DataModel", excerpt.canonicalType(ModelLevel.PIM, "DataModel"));
+    assertThrows(
+        PlatformException.class,
+        () -> excerpt.canonicalType(ModelLevel.PIM, "PlatformMappingAssessment"));
+    assertThrows(
+        PlatformException.class,
+        () -> knowledge.typeContract(ModelLevel.PIM, "PlatformMappingAssessment"));
+    assertTrue(
+        knowledge.typeContract(ModelLevel.PIM, "Function").references().stream()
+            .noneMatch(reference -> reference.targetType().equals("EnvironmentVariable")));
+  }
+
+  @Test
+  void normalModeRetainsTheCompleteExistingSurface() {
+    assertEquals(AssistantMetamodelMode.NORMAL, schemas.profile().mode());
+    assertEquals("Risk", schemas.canonicalType(ModelLevel.CIM, "Risk"));
+    assertEquals(
+        "PlatformMappingAssessment",
+        schemas.canonicalType(ModelLevel.PIM, "PlatformMappingAssessment"));
+  }
+
+  @Test
+  void excerptRetainsEveryRequiredReferenceOfItsIncludedTypes() {
+    AssistantMetamodelSchemaService excerpt =
+        new AssistantMetamodelSchemaService(AssistantMetamodelProfile.excerpt());
+
+    for (ModelLevel level : List.of(ModelLevel.CIM, ModelLevel.PIM)) {
+      for (AssistantMetamodelSchemaService.TypeSchema type : excerpt.types(level)) {
+        List<String> excerptReferences =
+            type.references().stream()
+                .map(AssistantMetamodelSchemaService.ReferenceSchema::name)
+                .toList();
+        schemas.typeSchema(level, type.name()).orElseThrow().references().stream()
+            .filter(AssistantMetamodelSchemaService.ReferenceSchema::required)
+            .forEach(
+                reference ->
+                    assertTrue(
+                        excerptReferences.contains(reference.name()),
+                        () ->
+                            level
+                                + " excerpt dropped required reference "
+                                + type.name()
+                                + "."
+                                + reference.name()));
+      }
+    }
+  }
+
+  @Test
+  void everyExcerptCreatableTypeHasAResolvableRequiredContractClosure() {
+    AssistantMetamodelSchemaService excerpt =
+        new AssistantMetamodelSchemaService(AssistantMetamodelProfile.excerpt());
+    MetamodelKnowledgeService knowledge = new MetamodelKnowledgeService(excerpt);
+    TypeContractService contracts = new TypeContractService(knowledge);
+
+    for (ModelLevel level : List.of(ModelLevel.CIM, ModelLevel.PIM)) {
+      knowledge.typeContracts(level).stream()
+          .filter(MetamodelKnowledgeService.TypeContract::creatable)
+          .forEach(type -> contracts.requiredContainmentClosure(level, List.of(type.eClass())));
+    }
+
+    assertTrue(!knowledge.typeContract(ModelLevel.PIM, "FlowEndpoint").creatable());
+    assertTrue(!knowledge.typeContract(ModelLevel.PIM, "FunctionTarget").creatable());
+    String candidateIndex = new MetamodelGuideGenerator(knowledge).index(ModelLevel.PIM);
+    assertTrue(!candidateIndex.contains("FlowEndpoint"));
+    assertTrue(!candidateIndex.contains("FunctionTarget"));
+  }
+
+  @Test
+  void normalModeUsesTheOriginalUnprojectedEcoreKnowledgeIndex() {
+    MetamodelKnowledgeService normal = new MetamodelKnowledgeService(schemas);
+    var direct = new EcoreContractExtractor(new ModelingConfigService()).extract();
+
+    for (ModelLevel level : ModelLevel.values()) {
+      assertEquals(direct.typeContracts(level), normal.typeContracts(level));
+      assertEquals(direct.records(level), normal.index().records(level));
+    }
+  }
+
+  @Test
+  void sourceQualityMetadataNamesCanonicalCimTypes() {
+    for (String type : AssistantMetamodelSemantics.configuredTypes(ModelLevel.CIM)) {
+      assertEquals(type, schemas.canonicalType(ModelLevel.CIM, type));
+    }
   }
 }

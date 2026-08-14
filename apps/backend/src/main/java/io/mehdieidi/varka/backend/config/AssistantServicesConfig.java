@@ -3,6 +3,8 @@ package io.mehdieidi.varka.backend.config;
 import io.mehdieidi.varka.backend.observability.VarkaMetrics;
 import io.mehdieidi.varka.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.varka.platform.assistant.application.AssistantPromptGuard;
+import io.mehdieidi.varka.platform.assistant.config.AiProperties;
+import io.mehdieidi.varka.platform.assistant.metamodel.AssistantMetamodelProfile;
 import io.mehdieidi.varka.platform.assistant.metamodel.LexicalRetrievalIndex;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService;
 import io.mehdieidi.varka.platform.assistant.patch.AssistantMetamodelSchemaService;
@@ -26,10 +28,17 @@ public class AssistantServicesConfig {
 
   @Bean
   @SuppressWarnings("unused") // Invoked by Spring while building the application context.
+  AssistantMetamodelProfile assistantMetamodelProfile(AiProperties properties) {
+    return AssistantMetamodelProfile.forMode(properties.metamodelMode());
+  }
+
+  @Bean
+  @SuppressWarnings("unused") // Invoked by Spring while building the application context.
   AssistantMetamodelSchemaService assistantMetamodelSchemaService(
       io.mehdieidi.varka.platform.modeling.config.ModelingConfigService modelingConfig,
-      io.mehdieidi.varka.platform.modeling.metamodel.MetamodelResolver resolver) {
-    return new AssistantMetamodelSchemaService(modelingConfig, resolver);
+      io.mehdieidi.varka.platform.modeling.metamodel.MetamodelResolver resolver,
+      AssistantMetamodelProfile profile) {
+    return new AssistantMetamodelSchemaService(modelingConfig, resolver, profile);
   }
 
   @Bean
@@ -41,8 +50,10 @@ public class AssistantServicesConfig {
 
   @Bean
   @SuppressWarnings("unused") // Invoked by Spring while building the application context.
-  MetamodelKnowledgeService metamodelKnowledgeService(AssistantMetamodelSchemaService schemas) {
-    return new MetamodelKnowledgeService(schemas);
+  MetamodelKnowledgeService metamodelKnowledgeService(
+      AssistantMetamodelSchemaService schemas,
+      io.mehdieidi.varka.platform.modeling.config.ModelingConfigService modelingConfig) {
+    return new MetamodelKnowledgeService(schemas, modelingConfig);
   }
 
   @Bean

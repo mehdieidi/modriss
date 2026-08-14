@@ -19,7 +19,11 @@ public class MetamodelKnowledgeService {
   public MetamodelKnowledgeService(
       AssistantMetamodelSchemaService schemas, ModelingConfigService modelingConfig) {
     this.schemas = schemas == null ? new AssistantMetamodelSchemaService() : schemas;
-    this.index = new EcoreContractExtractor(modelingConfig).extract();
+    EcoreContractExtractor extractor = new EcoreContractExtractor(modelingConfig);
+    this.index =
+        this.schemas.profile().mode() == AssistantMetamodelMode.NORMAL
+            ? extractor.extract()
+            : extractor.extract(this.schemas);
   }
 
   /** Returns all creatable type contracts for a level. */
