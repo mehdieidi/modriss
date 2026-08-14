@@ -1175,6 +1175,44 @@
   padding: 2px 8px 8px;
 }
 
+.chat-model-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  max-width: min(46%, 220px);
+  margin-right: auto;
+  padding: 5px 9px 5px 7px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border) 76%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-glow) 32%, var(--surface-3) 68%);
+  color: var(--muted);
+  font: 600 10px/1.1 var(--font-ui);
+  white-space: nowrap;
+}
+
+.chat-model-badge.hidden {
+  display: none;
+}
+
+.chat-model-badge-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent-light);
+  font-size: 11px;
+}
+
+.chat-model-badge-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .chat-send-btn {
   display: inline-flex;
   align-items: center;

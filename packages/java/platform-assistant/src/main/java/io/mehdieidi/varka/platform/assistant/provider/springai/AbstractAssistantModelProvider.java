@@ -58,7 +58,7 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
 
   @Override
   public AssistantProviderMetadata metadata() {
-    return new AssistantProviderMetadata(providerKey, baseUrl(), proxyDescription());
+    return new AssistantProviderMetadata(providerKey, baseUrl(), proxyDescription(), model());
   }
 
   @Override

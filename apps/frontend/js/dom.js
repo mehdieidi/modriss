@@ -89,6 +89,8 @@ export const el = {
   chatActivityMessage: document.getElementById("chatActivityMessage"),
   chatProgressBar: document.getElementById("chatProgressBar"),
   chatProviderLabel: document.getElementById("chatProviderLabel"),
+  chatModelBadge: document.getElementById("chatModelBadge"),
+  chatModelLabel: document.getElementById("chatModelLabel"),
   chatActivityHistory: document.getElementById("chatActivityHistory"),
   chatInputRow: document.getElementById("chatInputRow"),
   mobileDock: document.getElementById("mobileDock"),

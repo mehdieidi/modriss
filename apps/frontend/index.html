@@ -34,7 +34,7 @@
     <link href="/css/buttons.css" rel="stylesheet" />
     <link href="/css/sidebar.css" rel="stylesheet" />
     <link href="/css/canvas.css" rel="stylesheet" />
-    <link href="/css/chat.css?v=chat-stop-20260704c" rel="stylesheet" />
+    <link href="/css/chat.css?v=model-badge-ui-20260814a" rel="stylesheet" />
     <link href="/css/artifact.css" rel="stylesheet" />
     <link href="/css/panels.css" rel="stylesheet" />
     <link href="/css/methodology.css" rel="stylesheet" />
@@ -1111,6 +1111,15 @@
               ></span>
               <input accept=".txt,.md,.json" id="chatFileInput" multiple type="file" />
             </label>
+            <div
+              class="chat-model-badge hidden"
+              id="chatModelBadge"
+              title="Active language model"
+              aria-label="Active language model"
+            >
+              <span class="chat-model-badge-icon" aria-hidden="true">✦</span>
+              <span class="chat-model-badge-label" id="chatModelLabel"></span>
+            </div>
             <button
               class="chat-send-btn"
               id="chatSendBtn"

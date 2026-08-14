@@ -43,7 +43,7 @@ import {
   toggleChatHistoryPanel,
   uploadChatAttachment,
   updateChatAttachmentLabel,
-} from "./chat.js?v=durable-workflow-ui-20260722a";
+} from "./chat.js?v=model-badge-ui-20260814a";
 import {
   bindProjectDialogActions,
   deleteCurrentProject,

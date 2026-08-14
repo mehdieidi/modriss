@@ -1175,6 +1175,20 @@ function updateChatProviderLabel(provider) {
   el.chatProviderLabel.classList.remove("hidden");
 }
 
+function updateChatModelBadge(model) {
+  if (!el.chatModelBadge || !el.chatModelLabel) {
+    return;
+  }
+  const key = typeof model === "string" ? model.trim() : "";
+  el.chatModelLabel.textContent = key;
+  el.chatModelBadge.title = key ? `Active language model: ${key}` : "Active language model";
+  el.chatModelBadge.setAttribute(
+    "aria-label",
+    key ? `Active language model: ${key}` : "Active language model",
+  );
+  el.chatModelBadge.classList.toggle("hidden", !key);
+}
+
 async function _ensureChatRealtime(scopeKey, typeKey, sessionId) {
   const channel = state.chat.channels.get(scopeKey);
   if (channel?.kind === "fetch-sse" && !channel.handle?.signal?.aborted) {
@@ -1246,9 +1260,11 @@ export async function ensureChatSession({ hydrate = true, ...options } = {}) {
   const session = {
     sessionId: response.sessionId,
     modelId: response.modelId || null,
+    modelName: response.modelName || null,
     projectId: state.project.id,
   };
   state.chat.sessions.set(scopeKey, session);
+  updateChatModelBadge(session.modelName);
   if (hydrate) {
     await hydrateChatThread(typeKey, session.sessionId, scopeKey, generation);
   }
@@ -1286,6 +1302,8 @@ function updateChatHeaderSubtitle() {
   if (el.chatLevelLabel) {
     el.chatLevelLabel.textContent = levelLabel(state.activeType);
   }
+  const session = state.chat.sessions.get(chatScopeKey());
+  updateChatModelBadge(session?.modelName);
 }
 
 export async function loadChatHistory() {
@@ -1431,12 +1449,28 @@ export async function startNewChatConversation() {
   setStatus("Started a new conversation");
 }
 
-async function hydrateChatThread(typeKey, sessionId, expectedScopeKey = chatScopeKey(typeKey), generation = chatGeneration) {
+async function hydrateChatThread(
+  typeKey,
+  sessionId,
+  expectedScopeKey = chatScopeKey(typeKey),
+  generation = chatGeneration,
+) {
   try {
     const thread = await api(`/chatbot/sessions/${sessionId}/thread`);
     if (!isCurrentChatScope(expectedScopeKey, generation)) {
       return;
     }
+    // Provider metadata is available even for a brand-new, empty thread. Keep the model badge
+    // independent from message hydration so the composer can identify the active model before the
+    // first user message is sent.
+    updateChatProviderLabel(thread.provider);
+    const hydratedModelName =
+      typeof thread.provider?.model === "string" ? thread.provider.model.trim() : "";
+    const cachedSession = state.chat.sessions.get(expectedScopeKey);
+    if (cachedSession && hydratedModelName) {
+      cachedSession.modelName = hydratedModelName;
+    }
+    updateChatModelBadge(hydratedModelName || cachedSession?.modelName);
     const hasMessages = Array.isArray(thread.messages) && thread.messages.length > 0;
     if (!hasMessages) {
       resetChatActivityUi();
@@ -1474,9 +1508,6 @@ async function hydrateChatThread(typeKey, sessionId, expectedScopeKey = chatScop
     } else if (thread.workflowState) {
       applyWorkflowSnapshot(thread.workflowState, workflowLabel(thread.workflowState));
     } else resetChatActivityUi();
-    if (isCurrentChatScope(expectedScopeKey, generation)) {
-      updateChatProviderLabel(thread.provider);
-    }
   } catch {
     if (isCurrentChatScope(expectedScopeKey, generation)) {
       resetChatActivityUi();
@@ -1526,7 +1557,11 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
 }
 
 function isCurrentChatScope(scopeKey, generation = chatGeneration) {
-  return generation === chatGeneration && renderedChatScopeKey === scopeKey && chatScopeKey() === scopeKey;
+  return (
+    generation === chatGeneration &&
+    renderedChatScopeKey === scopeKey &&
+    chatScopeKey() === scopeKey
+  );
 }
 
 function handleChatRealtimeEvent(scopeKey, generation, typeKey, eventType, payload) {

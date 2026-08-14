@@ -173,7 +173,7 @@ public class ChatbotController {
         Boolean.TRUE.equals(request.forceNew()),
         safeLogValue(request.resumeSessionId()),
         elapsedMillis(started));
-    return new CreateSessionResponse(session.id(), null);
+    return new CreateSessionResponse(session.id(), null, assistant.providerMetadata().model());
   }
 
   /**
@@ -884,7 +884,11 @@ public class ChatbotController {
    * @param sessionId session ID
    * @param modelId optional model ID
    */
-  public record CreateSessionResponse(String sessionId, String modelId) {}
+  public record CreateSessionResponse(String sessionId, String modelId, String modelName) {
+    public CreateSessionResponse(String sessionId, String modelId) {
+      this(sessionId, modelId, null);
+    }
+  }
 
   /**
    * Assistant message payload.

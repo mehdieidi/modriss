@@ -298,6 +298,11 @@ public final class AgenticAssistantFacade {
         provider.metadata());
   }
 
+  /** Returns the configured provider metadata for lightweight UI/runtime discovery. */
+  public AssistantModelProvider.AssistantProviderMetadata providerMetadata() {
+    return provider.metadata();
+  }
+
   public AssistantProposal proposal(UserRecord user, String sessionId, String proposalId) {
     throw new PlatformException(
         410, "Assistant proposals were replaced by durable turns and checkpoints.");

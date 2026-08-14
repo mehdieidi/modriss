@@ -142,7 +142,11 @@ public interface AssistantModelProvider {
    * @param baseUrl API base URL
    * @param proxy proxy description
    */
-  record AssistantProviderMetadata(String provider, String baseUrl, String proxy) {}
+  record AssistantProviderMetadata(String provider, String baseUrl, String proxy, String model) {
+    public AssistantProviderMetadata(String provider, String baseUrl, String proxy) {
+      this(provider, baseUrl, proxy, null);
+    }
+  }
 
   /** Single provider capability configuration. */
   record ProviderCapabilities(
