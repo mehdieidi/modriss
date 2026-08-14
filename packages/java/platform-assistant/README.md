@@ -42,7 +42,7 @@ read-only workflow that cannot mutate, checkpoint, validate, or repair.
 7. Deterministic compilation into `ModelCommandBatch`.
 8. Structural-only validation and one atomic checkpoint commit.
 
-The blueprint schema admits at most 16 objects/types. Effective capacity is also constrained by
+The blueprint schema admits at most 18 objects/types. Effective capacity is also constrained by
 the provider-call budget and required Ecore closure. Abstract required targets count toward
 capacity; the LLM chooses among exact creatable subtypes supplied by the backend.
 

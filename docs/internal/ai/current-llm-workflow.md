@@ -77,9 +77,9 @@ EClasses expected to provide model evidence. Deterministic code does not infer t
 prompt words. It checks that type selection retains a compatible mapping for every mandatory
 obligation and persists the ledger before blueprinting so restart/resume cannot reinterpret it.
 
-The blueprint pass assigns at most sixteen stable temporary IDs, exact EClasses, containment ownership, major
+The blueprint pass assigns at most eighteen stable temporary IDs, exact EClasses, containment ownership, major
 reference targets, obligation allocation, source-unit allocation, and coherent slice numbers without generating full
-attribute payloads. It is capped at 16 objects and 16 focused EClasses. Blueprint acceptance checks
+attribute payloads. It is capped at 18 objects and 18 focused EClasses. Blueprint acceptance checks
 both legal containment placement and closure of every required writable Ecore reference, so a rich
 object cannot be generated before its required stable-ID dependencies are planned.
 
@@ -231,8 +231,13 @@ The deployed 20-call ceiling reserves up to two calls for adaptive routing and 1
 work. The conceptual budget accommodates obligation interpretation, semantic type selection, a
 blueprint, private slices, independent obligation review, and bounded selection, slice, review, and
 compiler corrections. Effective object capacity is derived from the remaining call budget and
-slice size and is capped by the 16-object schema. Stage-specific completion limits keep every
+slice size and is capped by the 18-object schema. Stage-specific completion limits keep every
 response bounded below the provider's broad global maximum.
+
+LLM review is configurable with `VARKA_AI_LLM_REVIEW_ENABLED`. When disabled, no reviewer or judge
+call runs and only structural Ecore/EMF conformance gates the candidate. Progressive conceptual
+work is durable: one bounded automatic recovery pass can reuse the obligation ledger, selected
+types, blueprint, and generated objects without requiring a user-visible Resume action.
 
 ## Commit and validation boundary
 
@@ -251,12 +256,13 @@ EVL is available only when a user explicitly initiates model validation outside 
 
 ## Current live evidence
 
-| Fixture                 | Agent acceptance | Conceptual acceptance                    | Unified acceptance                                                                  |
-| ----------------------- | ---------------- | ---------------------------------------- | ----------------------------------------------------------------------------------- |
-| `create-cim-library`    | Passed           | Passed in an optimized run               | Earlier bounded profiles passed; repeated final-profile campaign remains incomplete |
-| `cim-feature-evolution` | Passed           | Failed the second persisted-model update | Passed through the agent path                                                       |
-| `source-to-cim-pantry`  | Passed           | Passed with complete coverage            | Passed with complete coverage                                                       |
-| `create-pim-serverless` | Passed           | Earlier bounded run passed structurally  | Obligation-gated profile currently fails atomically; no clean semantic pass yet     |
+| Fixture                     | Agent acceptance | Conceptual acceptance                       | Unified acceptance                                                                  |
+| --------------------------- | ---------------- | ------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `create-cim-library`        | Passed           | Passed in an optimized run                  | Earlier bounded profiles passed; repeated final-profile campaign remains incomplete |
+| `cim-feature-evolution`     | Passed           | Failed the second persisted-model update    | Passed through the agent path                                                       |
+| `source-to-cim-pantry`      | Passed           | Passed with complete coverage               | Passed with complete coverage                                                       |
+| `create-pim-serverless`     | Passed           | Passed structurally with Gemma              | 2026-08-14: automatic compiler recovery, 33 nodes, 20 real calls                    |
+| `create-pim-doctor-booking` | Not applicable   | Two of three exact-prompt Gemma runs passed | 27/28-node structural checkpoints; one safe malformed-JSON failure                  |
 
 The evidence supports conceptual generation for bounded empty models and the agent for persisted
 updates. It does not support a claim of perfect reliability. Detailed call, latency, token, repair,
@@ -272,9 +278,22 @@ structure, preservation, and failure evidence is in
 - The staged library protocol had one successful two-object-slice run, but a later final-profile
   run truncated two slices and exhausted the review reserve with zero commits. The one-object
   profile still requires a successful live rerun and the repeated-run release campaign.
-- Structural validity does not prove conceptual usefulness or EVL semantic validity.
+- Structural validity is the chatbot's required validation boundary; human usefulness still needs
+  repeated evaluation. EVL is intentionally outside chatbot apply/repair/commit paths.
 - The live paraphrase corpus and repeated-run production SLO gate remain incomplete.
-- Arvan can spend most of a response on `reasoning_content` and end type selection with
-  `finish_reason=length` despite non-thinking controls. Truncated retries use a compact vocabulary
-  derived from the LLM obligation ledger, but the latest fourth-attempt correction still needs
-  live confirmation.
+- The 2026-08-14 Gemma run proves one successful automatic-recovery path, not repeated production
+  reliability. The ten-run campaign, paraphrase corpus, restart matrix, persisted-model evolution,
+  and human usefulness review remain open.
+- With LLM review disabled, structural validity does not guarantee that every generated name or
+  design choice is optimal; this is an explicit tradeoff rather than hidden reviewer coverage.
+- The exact doctor-booking prompt now has two successful structurally valid runs out of three after
+  the provider-account HTTP 403 cleared. The remaining run failed safely on malformed provider JSON.
+- Gemma remains the active and currently better-observed model, but its endpoint is intermittent:
+  the latest persisted-evolution rerun failed on two transport attempts with zero generated tokens.
+- Required writable Ecore references are now validated within each conceptual slice so a focused
+  correction happens before later slices consume the budget. This is focused-test green but still
+  needs a provider-available persisted-evolution live run.
+- A fresh backend Docker image was built and deployed healthy; the earlier Docker Hub 403 is no
+  longer a blocker.
+- Expired `RUNNING` turns whose worker leases have ended are now finalized as `TIMED_OUT` during
+  polling, preventing a restart from leaving a permanent working indicator.

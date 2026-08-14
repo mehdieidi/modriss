@@ -48,6 +48,7 @@ class ProxyAvailabilityTest {
             false,
             null,
             0,
+            true,
             true);
     ProxyAvailability availability = new ProxyAvailability(properties);
 

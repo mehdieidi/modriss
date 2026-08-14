@@ -169,6 +169,43 @@ class JdbcAssistantTurnStorePostgresIntegrationTest {
   }
 
   @Test
+  void successfulProgressivePhaseRequeuesWithoutBecomingTerminal() {
+    AssistantTurn turn = turn("turn-auto-continue");
+    turns.create(turn);
+    turns.claim("worker", Instant.now(), java.time.Duration.ofSeconds(30)).orElseThrow();
+
+    turns.continueProgressively(turn.id(), 4L, "Continue the next planned slice.");
+
+    AssistantTurn continued = turns.find(turn.id()).orElseThrow();
+    assertEquals(AssistantTurn.State.QUEUED, continued.state());
+    assertEquals(4L, continued.revision());
+    assertEquals(4L, continued.expectedRevision());
+    assertEquals("Continue the next planned slice.", continued.remainingWork());
+    assertEquals(null, continued.finalMessage());
+    assertTrue(
+        turns.events(turn.id(), 0).stream()
+            .anyMatch(event -> "turn.auto_continued".equals(event.type())));
+  }
+
+  @Test
+  void expiredRunningLeaseBecomesTimedOutAfterWorkerRestart() {
+    AssistantTurn turn = turn("turn-expired-running");
+    turns.create(turn);
+    Instant claimedAt = turn.acceptedAt();
+    turns.claim("stopped-worker", claimedAt, java.time.Duration.ofSeconds(30)).orElseThrow();
+
+    turns.expireTimedOut(claimedAt.plusSeconds(90));
+
+    AssistantTurn expired = turns.find(turn.id()).orElseThrow();
+    assertEquals(AssistantTurn.State.TIMED_OUT, expired.state());
+    assertEquals(null, expired.workerId());
+    assertEquals(null, expired.leaseUntil());
+    assertTrue(
+        turns.events(turn.id(), 0).stream()
+            .anyMatch(event -> "turn.completed".equals(event.type())));
+  }
+
+  @Test
   void cancellationCancelsQueuedTurnsInTheContinuationTree() {
     AssistantTurn parent = turn("turn-cancel-parent");
     AssistantTurn child = turn("turn-cancel-child");

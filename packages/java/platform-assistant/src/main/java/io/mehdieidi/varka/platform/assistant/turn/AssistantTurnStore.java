@@ -51,6 +51,9 @@ public interface AssistantTurnStore {
       Long revision,
       String remainingWork);
 
+  /** Requeues a successful progressive phase without exposing a terminal user-resume state. */
+  void continueProgressively(String turnId, Long revision, String remainingWork);
+
   /** Requeues the same durable request from its last committed checkpoint. */
   default void resume(String turnId, Long expectedRevision) {
     resume(turnId, expectedRevision, null);

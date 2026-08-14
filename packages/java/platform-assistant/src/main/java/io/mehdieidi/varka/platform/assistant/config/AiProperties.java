@@ -49,6 +49,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param sourceTurnTimeout overall assistant turn timeout when a source attachment is present
  * @param maxCimModelingPasses maximum incremental CIM modeling passes per source-backed turn
  * @param preferLlmSourceExtraction whether CIM attachments use LLM evidence extraction
+ * @param llmReviewEnabled whether generated models receive an additional LLM quality verdict
  */
 @ConfigurationProperties(prefix = "varka.ai")
 public record AiProperties(
@@ -89,7 +90,8 @@ public record AiProperties(
     boolean llmContractRerankEnabled,
     Duration sourceTurnTimeout,
     int maxCimModelingPasses,
-    boolean preferLlmSourceExtraction)
+    boolean preferLlmSourceExtraction,
+    boolean llmReviewEnabled)
     implements AssistantSettings {
   /** Applies production defaults when an environment-backed setting is omitted. */
   public AiProperties {

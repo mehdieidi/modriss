@@ -2,10 +2,21 @@ package io.mehdieidi.varka.backend.assistant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
 class DurableAssistantModeTest {
+  @Test
+  void recognizesPersistedConceptualPlansAsDurableRecoveryState() throws Exception {
+    var mapper = new tools.jackson.databind.ObjectMapper();
+
+    assertTrue(
+        DurableAssistantTurnWorker.isDurablePlan(
+            mapper.readTree(
+                "{\"obligationLedger\":{\"obligations\":[]},\"selectedTypes\":[\"Api\"],\"blueprint\":{\"objects\":[]}}")));
+  }
+
   @Test
   void acceptsOnlyUnifiedAndExplicitTestOverrides() {
     assertEquals(

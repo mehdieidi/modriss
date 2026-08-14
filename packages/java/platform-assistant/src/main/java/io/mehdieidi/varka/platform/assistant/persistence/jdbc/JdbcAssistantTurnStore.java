@@ -278,11 +278,12 @@ FROM candidate WHERE t.id = candidate.id RETURNING t.*
     }
     List<String> expired =
         jdbc.query(
-            "UPDATE assistant_turns SET state = 'TIMED_OUT', lease_until = NULL, completed_at = ?,"
-                + " final_message = COALESCE(final_message, 'Assistant turn exceeded its configured"
-                + " deadline.') WHERE state = 'QUEUED' AND deadline_at <= ? RETURNING"
-                + " id",
+            "UPDATE assistant_turns SET state = 'TIMED_OUT', lease_until = NULL, worker_id = NULL,"
+                + " completed_at = ?, final_message = COALESCE(final_message, 'Assistant turn"
+                + " exceeded its configured deadline.') WHERE (state = 'QUEUED' OR (state ="
+                + " 'RUNNING' AND lease_until <= ?)) AND deadline_at <= ? RETURNING id",
             (rs, row) -> rs.getString(1),
+            timestamp(now),
             timestamp(now),
             timestamp(now));
     for (String id : expired)
@@ -309,6 +310,29 @@ FROM candidate WHERE t.id = candidate.id RETURNING t.*
         id,
         "turn.completed",
         Map.of("state", state.name(), "message", message == null ? "" : message));
+  }
+
+  @Override
+  public void continueProgressively(String turnId, Long revision, String remainingWork) {
+    int changed =
+        jdbc.update(
+            "UPDATE assistant_turns SET state = 'QUEUED', revision = COALESCE(?, revision),"
+                + " expected_revision = COALESCE(?, revision), remaining_work = ?, worker_id ="
+                + " NULL, lease_until = NULL, completed_at = NULL, final_message = NULL WHERE id ="
+                + " ? AND state = 'RUNNING' AND cancellation_requested = false",
+            revision,
+            revision,
+            remainingWork,
+            turnId);
+    if (changed != 1) {
+      throw new PlatformException(409, "Progressive assistant work could not be continued.");
+    }
+    appendEvent(
+        turnId,
+        "turn.auto_continued",
+        Map.of(
+            "revision", revision == null ? "" : revision,
+            "message", remainingWork == null ? "Continuing remaining work." : remainingWork));
   }
 
   @Override

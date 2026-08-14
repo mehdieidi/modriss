@@ -15,6 +15,11 @@
     "assertions": ["checkpoint", "structural_validity"]
   },
   {
+    "id": "create-pim-doctor-booking",
+    "route": "COMPLEX_EDIT",
+    "assertions": ["checkpoint", "structural_validity"]
+  },
+  {
     "id": "edit-existing-pim-add-pattern",
     "route": "COMPLEX_EDIT",
     "assertions": ["checkpoint", "structural_validity", "feature_preservation"]

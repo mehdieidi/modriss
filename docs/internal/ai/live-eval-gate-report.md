@@ -1,9 +1,54 @@
 # Assistant live-evaluation status
 
-Updated: 2026-08-13
+Updated: 2026-08-14
 
 This is a curated index of the latest acceptance evidence. Raw reports under `target/` remain the
 authoritative per-run record, including failed attempts.
+
+## 2026-08-14 Gemma reliability follow-up
+
+With `Gemma-4-31B-IT`, LLM review disabled, structural validation enabled, and manual durable
+resumes disabled, `create-pim-serverless` reached `SUCCEEDED` in 151 seconds. It committed one
+structurally valid checkpoint with 33 structural nodes, 20 audited provider calls, and 60,100 /
+13,149 prompt/completion tokens. The first compiler budget ended on an invalid `Subscription`
+reference; the worker automatically requeued the same turn, restored its obligation ledger,
+selected types, blueprint, and staged objects, and completed after two additional real calls. The
+committed model includes API routing, command handling, event publication and consumption,
+persistence and schema, payment integration, observability, authorization, and workflow behavior.
+
+The raw report
+`target/live-eval/create-pim-serverless-gemma-accounted-auto-recovery-20260814.md` recorded the
+product turn as successful but the gate as failed because the gate recognized `SecurityPolicy`
+but not the valid `AuthorizationPolicy` subtype selected by Gemma. That stale gate condition is now
+corrected. This is one successful stochastic run, not the repeated-run release campaign.
+
+The exact user prompt, `Create a serverless model for online doctor visit appointment booking.`,
+is now a versioned live fixture (`create-pim-doctor-booking`). Provider access recovered after an
+initial HTTP 403. Two of the next three independent product runs succeeded in 118 and 103 seconds,
+committing structurally valid 27- and 28-node models. They used different valid architectures: one
+function-centric and one workflow-centric. The third run failed safely after malformed provider
+JSON on the initial pass and its single automatic recovery; its complete blueprint remained
+durable and the visible model was not changed. Current exact-prompt evidence is therefore 2/3, not
+release-grade reliability.
+
+The Docker Hub 403 is also cleared. A fresh backend image was built from the Temurin base image and
+deployed healthy. The latest image after the required-reference slice fix is
+`sha256:e6554d9db1bb9d827689aaa690f9d724d4b2399d8cbde8390f4255a4d8c86833`.
+
+Persisted evolution exposed a late-validation defect: a correct blueprint planned a
+`DomainEntity` identifier, but generated slices could omit one of its named required references
+and consume the full generation budget before compiler rejection. Required writable Ecore
+references are now checked and corrected inside each focused slice. All 22 focused conceptual
+workflow tests pass. The post-deployment live rerun was blocked before reasoning by two Gemma
+transport failures (zero tokens and zero mutation), so live evolution proof is still outstanding.
+The application permits one bounded transport retry. The eval harness now also defaults to at most
+one isolated replay and aggregates latency, calls, and tokens across attempts instead of hiding
+earlier replay cost.
+
+The persisted-state audit also found a historical expired turn stranded in `RUNNING` after its
+worker lease ended. Timeout cleanup now includes abandoned running leases as well as queued turns.
+The PostgreSQL regression suite passes, and after deployment the historical row automatically
+transitioned to `TIMED_OUT`; no queued or running turns remain.
 
 ## Inspect/contract agent baseline
 

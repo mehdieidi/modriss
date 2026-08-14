@@ -34,6 +34,112 @@ class ConceptualInstanceModelWorkflowTest {
       new TypeContractService(new MetamodelKnowledgeService(new AssistantMetamodelSchemaService()));
 
   @Test
+  void repairsInventedSourceEvidenceAcrossMultipleSliceCorrections() throws Exception {
+    String blueprint =
+        """
+{"types":["ServerlessService"],"objects":[
+  {"instanceId":"service-1","type":"ServerlessService","purpose":"Appointment service","ownerInstanceId":"rootId","containment":"services","referenceTargets":[],"sourceUnitIds":[],"slice":1}
+]}
+""";
+    String objectPrefix =
+        """
+{"service-1":{"type":"ServerlessService","attributes":[
+  {"attributeName":"name","value":"Appointment service"},
+  {"attributeName":"boundaryType","value":"CAPABILITY_BASED"}
+],"associations":{"compositions":[],"references":[]},"evidence":[
+""";
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"ServerlessService\"]}"),
+                ScriptedAssistantModelProvider.reply(blueprint),
+                ScriptedAssistantModelProvider.reply(
+                    objectPrefix
+                        + "{\"sourceUnitId\":\"OBL-1\",\"requirementId\":\"R1\",\"kind\":\"source_grounded\",\"assumption\":\"\"}]}}"),
+                ScriptedAssistantModelProvider.reply(
+                    objectPrefix
+                        + "{\"sourceUnitId\":\"OBL-1\",\"requirementId\":\"R1\",\"kind\":\"SOURCE_GROUNDED\",\"assumption\":\"\"}]}}"),
+                ScriptedAssistantModelProvider.reply(
+                    objectPrefix
+                        + "{\"sourceUnitId\":\"\",\"requirementId\":\"R1\",\"kind\":\"INFERRED\",\"assumption\":\"The"
+                        + " user requested an appointment service.\"}]}}")));
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(10);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
+    when(properties.maxRepairAttempts()).thenReturn(2);
+    when(properties.model()).thenReturn("Gemma-4-31B-IT");
+    when(properties.llmReviewEnabled()).thenReturn(false);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.PIM, "model", 1, emptyPim(), new AssistantPatchCompiler(), null);
+
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.PIM,
+            "Create an appointment service",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.PIM, workspace),
+            false);
+
+    assertTrue(provider.prompts().get(2).user().contains("EXACT SOURCE-UNIT ALLOWLIST"));
+    assertTrue(provider.prompts().get(3).user().contains("unknown sourceUnitId 'OBL-1'"));
+    assertTrue(provider.prompts().get(4).user().contains("unknown sourceUnitId 'OBL-1'"));
+    assertEquals("INFERRED", result.commandBatch().evidence().get(0).kind());
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
+  void requiresEveryJointlyNecessaryEClassFromTheLlmObligationLedger() throws Exception {
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply(
+                    "{\"obligations\":[{\"id\":\"OBL-1\",\"obligation\":\"Publish and consume order"
+                        + " events\",\"importance\":\"MANDATORY\",\"sourceUnitIds\":[],\"expectedEClasses\":[\"EventBus\",\"EventType\"]}]}"),
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"EventBus\"]}"),
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"EventBus\",\"EventType\"]}"),
+                ScriptedAssistantModelProvider.failure(new PlatformException(502, "stop"))));
+    AssistantTurnStore store = mock(AssistantTurnStore.class);
+    when(store.workflow("turn-joint-types")).thenReturn(Optional.empty());
+    when(store.workItems("turn-joint-types")).thenReturn(List.of());
+    AiProperties properties = properties();
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    ModelService models = mock(ModelService.class);
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.PIM, "model", 1, emptyPim(), new AssistantPatchCompiler(), null);
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties, store);
+
+    assertThrows(
+        AgentTurnLoop.TurnExecutionException.class,
+        () ->
+            DurableTurnExecutionContext.with(
+                "turn-joint-types",
+                () ->
+                    workflow.run(
+                        "session",
+                        ModelLevel.PIM,
+                        "Create event publication and consumption",
+                        workspace,
+                        new AgentModelTools(contracts, models).scoped(ModelLevel.PIM, workspace),
+                        false)));
+
+    assertTrue(provider.prompts().get(2).user().contains("OBL-1=[EventType]"));
+    assertEquals("conceptual_blueprint", provider.prompts().get(3).requiredTool());
+  }
+
+  @Test
   void exposesAbstractWorkflowStepOptionsRejectsTheAbstractTypeAndCompilesTheLlmSubtype()
       throws Exception {
     var provider =
@@ -73,13 +179,12 @@ class ConceptualInstanceModelWorkflowTest {
                 ScriptedAssistantModelProvider.reply(
                     """
 {"step-1":{"type":"TaskStep","attributes":[{"attributeName":"name","value":"Handle order command"}],"associations":{"compositions":[],"references":[]}}}
-"""),
-                ScriptedAssistantModelProvider.reply(
-                    "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
+""")));
     AiProperties properties = mock(AiProperties.class);
     when(properties.maxProviderCallsPerTurn()).thenReturn(10);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
+    when(properties.llmReviewEnabled()).thenReturn(false);
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     var workflow =
         new ConceptualInstanceModelWorkflow(
@@ -133,7 +238,7 @@ class ConceptualInstanceModelWorkflowTest {
                     "{\"types\":[\"Api\",\"DataStore\",\"ObservabilityConfig\","
                         + "\"SecurityPolicy\"]}"),
                 ScriptedAssistantModelProvider.failure(new PlatformException(502, "stop"))));
-    AiProperties properties = mock(AiProperties.class);
+    AiProperties properties = reviewEnabledProperties();
     when(properties.maxProviderCallsPerTurn()).thenReturn(18);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(18);
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
@@ -158,7 +263,8 @@ class ConceptualInstanceModelWorkflowTest {
                 false));
 
     String repairPrompt = provider.prompts().get(1).user();
-    assertTrue(repairPrompt.contains("importance-ranked SUBSET"));
+    assertTrue(repairPrompt.contains("importance-ranked selection"));
+    assertTrue(repairPrompt.contains("Preserve every required type"));
     assertTrue(repairPrompt.contains("marginal closure savings"));
     assertTrue(repairPrompt.contains("object excess"));
     assertTrue(repairPrompt.contains("Fewer than 4 types is valid"));
@@ -205,7 +311,7 @@ class ConceptualInstanceModelWorkflowTest {
 """),
                 ScriptedAssistantModelProvider.reply(
                     "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
-    AiProperties properties = mock(AiProperties.class);
+    AiProperties properties = reviewEnabledProperties();
     when(properties.maxProviderCallsPerTurn()).thenReturn(18);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(18);
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
@@ -267,7 +373,7 @@ class ConceptualInstanceModelWorkflowTest {
 """),
                 ScriptedAssistantModelProvider.reply(
                     "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
-    AiProperties properties = mock(AiProperties.class);
+    AiProperties properties = reviewEnabledProperties();
     when(properties.maxProviderCallsPerTurn()).thenReturn(10);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
@@ -341,7 +447,7 @@ class ConceptualInstanceModelWorkflowTest {
                     """
 {"acceptable":false,"findings":[{"objectIds":["actor-2"],"problem":"Name is not domain-specific"}],"corrections":{"actor-2":{"type":"Actor","attributes":[{"dataType":"EString","attributeName":"name","value":"Librarian"}],"associations":{"compositions":[],"references":[]}}}}
 """)));
-    AiProperties properties = mock(AiProperties.class);
+    AiProperties properties = reviewEnabledProperties();
     when(properties.maxProviderCallsPerTurn()).thenReturn(10);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
@@ -388,7 +494,7 @@ class ConceptualInstanceModelWorkflowTest {
                 ScriptedAssistantModelProvider.reply(actor("actor-2", "Librarian")),
                 ScriptedAssistantModelProvider.reply(
                     "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
-    AiProperties properties = mock(AiProperties.class);
+    AiProperties properties = reviewEnabledProperties();
     when(properties.maxProviderCallsPerTurn()).thenReturn(8);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(8);
     // Exercise adaptive splitting from the two-object default used by providers which have not
@@ -439,7 +545,7 @@ class ConceptualInstanceModelWorkflowTest {
                 ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
                 ScriptedAssistantModelProvider.reply(
                     "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
-    AiProperties properties = mock(AiProperties.class);
+    AiProperties properties = reviewEnabledProperties();
     when(properties.maxProviderCallsPerTurn()).thenReturn(14);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(14);
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
@@ -488,7 +594,7 @@ class ConceptualInstanceModelWorkflowTest {
                 ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
                 ScriptedAssistantModelProvider.reply(
                     "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
-    AiProperties properties = mock(AiProperties.class);
+    AiProperties properties = reviewEnabledProperties();
     when(properties.maxProviderCallsPerTurn()).thenReturn(18);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(18);
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
@@ -537,7 +643,7 @@ class ConceptualInstanceModelWorkflowTest {
                     "{\"acceptable\":false,\"findings\":[{\"message\":\"Rename the actor\"}]}"),
                 ScriptedAssistantModelProvider.reply(
                     "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
-    AiProperties properties = mock(AiProperties.class);
+    AiProperties properties = reviewEnabledProperties();
     when(properties.maxProviderCallsPerTurn()).thenReturn(18);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(18);
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
@@ -595,6 +701,15 @@ class ConceptualInstanceModelWorkflowTest {
   {"attributeName":"name","value":"Book"},
   {"attributeName":"identityStrategy","value":"NATURAL_KEY"}
 ],"associations":{"compositions":[],"references":[
+  {"associationName":"identityAttributes","associatedClassName":"InformationItem","instanceID":"book-id"}
+]}}}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"book":{"type":"DomainEntity","attributes":[
+  {"attributeName":"name","value":"Book"},
+  {"attributeName":"identityStrategy","value":"NATURAL_KEY"}
+],"associations":{"compositions":[],"references":[
   {"associationName":"identityAttributes","associatedClassName":"InformationItem","instanceID":"book-id"},
   {"associationName":"primaryIdentityAttribute","associatedClassName":"InformationItem","instanceID":"book-id"}
 ]}}}
@@ -608,7 +723,7 @@ class ConceptualInstanceModelWorkflowTest {
 """),
                 ScriptedAssistantModelProvider.reply(
                     "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
-    AiProperties properties = mock(AiProperties.class);
+    AiProperties properties = reviewEnabledProperties();
     when(properties.maxProviderCallsPerTurn()).thenReturn(18);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(18);
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
@@ -633,7 +748,7 @@ class ConceptualInstanceModelWorkflowTest {
             new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
             false);
 
-    assertEquals(6, result.providerCalls());
+    assertEquals(7, result.providerCalls());
     assertEquals(2, result.commandBatch().creates().size());
     assertEquals("DomainEntity", result.commandBatch().creates().get(0).eClass());
     String slicePrompt =
@@ -644,6 +759,13 @@ class ConceptualInstanceModelWorkflowTest {
             .user();
     assertTrue(slicePrompt.contains("DomainEntity"));
     assertTrue(slicePrompt.contains("InformationItem"));
+    assertTrue(
+        provider.prompts().stream()
+            .filter(prompt -> "conceptual_instance_slice".equals(prompt.requiredTool()))
+            .anyMatch(
+                prompt ->
+                    prompt.user().contains("missing required Ecore references")
+                        && prompt.user().contains("primaryIdentityAttribute->InformationItem")));
     assertEquals(0, provider.remainingSteps());
   }
 
@@ -675,7 +797,7 @@ class ConceptualInstanceModelWorkflowTest {
                 ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
                 ScriptedAssistantModelProvider.reply(
                     "{\"acceptable\":true,\"findings\":[],\"corrections\":{}}")));
-    AiProperties properties = mock(AiProperties.class);
+    AiProperties properties = reviewEnabledProperties();
     when(properties.maxProviderCallsPerTurn()).thenReturn(18);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(18);
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
@@ -761,7 +883,7 @@ class ConceptualInstanceModelWorkflowTest {
             List.of(
                 ScriptedAssistantModelProvider.reply(
                     "{\"obligations\":[{\"id\":\"OBL-1\",\"obligation\":\"Represent library"
-                        + " participants\",\"importance\":\"MANDATORY\",\"sourceUnitIds\":[],\"expectedEClasses\":[\"Actor\",\"Requirement\"]}]}"),
+                        + " participants\",\"importance\":\"MANDATORY\",\"sourceUnitIds\":[],\"expectedEClasses\":[\"Actor\"]}]}"),
                 ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\"]}"),
                 ScriptedAssistantModelProvider.reply(blueprint),
                 ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
@@ -850,7 +972,7 @@ class ConceptualInstanceModelWorkflowTest {
                           .scoped(ModelLevel.CIM, resumedWorkspace),
                       false));
 
-      assertEquals(7, result.providerCalls());
+      assertEquals(2, result.providerCalls());
       assertEquals(2, result.providerCallDetails().size());
       assertEquals(7, savedCalls.size());
       assertEquals(2, result.commandBatch().creates().size());
@@ -859,7 +981,7 @@ class ConceptualInstanceModelWorkflowTest {
               .prompts()
               .get(1)
               .system()
-              .contains("alternative candidate mappings selected during interpretation"));
+              .contains("minimum jointly required mappings selected during interpretation"));
       assertEquals(0, resumedProvider.remainingSteps());
     } finally {
       // DurableTurnExecutionContext restores its thread-local value after each invocation.
@@ -877,7 +999,7 @@ class ConceptualInstanceModelWorkflowTest {
             List.of(
                 ScriptedAssistantModelProvider.reply(
                     "{\"obligations\":[{\"id\":\"OBL-1\",\"obligation\":\"Represent"
-                        + " participants\",\"importance\":\"MANDATORY\",\"sourceUnitIds\":[],\"expectedEClasses\":[\"Actor\",\"Requirement\"]}]}"),
+                        + " participants\",\"importance\":\"MANDATORY\",\"sourceUnitIds\":[],\"expectedEClasses\":[\"Actor\"]}]}"),
                 ScriptedAssistantModelProvider.failure(
                     new PlatformException(502, "finish_reason=length")),
                 ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\"]}"),
@@ -915,13 +1037,13 @@ class ConceptualInstanceModelWorkflowTest {
 
     String retry = provider.prompts().get(2).user();
     assertTrue(retry.contains("Actor=1"));
-    assertTrue(retry.contains("Requirement=1"));
+    assertTrue(!retry.contains("Requirement=1"));
     assertTrue(retry.contains("prior type-selection response was truncated"));
     assertTrue(!retry.contains("UbiquitousLanguageTerm"));
   }
 
   private AiProperties properties() {
-    AiProperties properties = mock(AiProperties.class);
+    AiProperties properties = reviewEnabledProperties();
     when(properties.maxProviderCallsPerTurn()).thenReturn(10);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
@@ -961,7 +1083,7 @@ class ConceptualInstanceModelWorkflowTest {
             })
         .when(store)
         .saveWorkflow(org.mockito.ArgumentMatchers.any());
-    AiProperties properties = mock(AiProperties.class);
+    AiProperties properties = reviewEnabledProperties();
     when(properties.maxProviderCallsPerTurn()).thenReturn(12);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(12);
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
@@ -1200,6 +1322,12 @@ class ConceptualInstanceModelWorkflowTest {
         """
 {"id":"root","eClass":"CIMModel","modelLevel":"CIM","diagram":{"elements":[],"relationships":[]}}
 """);
+  }
+
+  private static AiProperties reviewEnabledProperties() {
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.llmReviewEnabled()).thenReturn(true);
+    return properties;
   }
 
   private tools.jackson.databind.JsonNode existingCim() throws Exception {

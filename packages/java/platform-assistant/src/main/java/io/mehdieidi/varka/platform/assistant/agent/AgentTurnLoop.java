@@ -3069,6 +3069,7 @@ validation.
     private final long completionTokens;
     private final List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
         providerCallDetails;
+    private final boolean progressiveRecovery;
 
     TurnExecutionException(
         PlatformException cause,
@@ -3077,12 +3078,24 @@ validation.
         long completionTokens,
         List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
             providerCallDetails) {
+      this(cause, providerCalls, promptTokens, completionTokens, providerCallDetails, false);
+    }
+
+    TurnExecutionException(
+        PlatformException cause,
+        int providerCalls,
+        long promptTokens,
+        long completionTokens,
+        List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
+            providerCallDetails,
+        boolean progressiveRecovery) {
       super(cause.status(), cause.getMessage(), cause);
       this.providerCalls = providerCalls;
       this.promptTokens = Math.max(0L, promptTokens);
       this.completionTokens = Math.max(0L, completionTokens);
       this.providerCallDetails =
           providerCallDetails == null ? List.of() : List.copyOf(providerCallDetails);
+      this.progressiveRecovery = progressiveRecovery;
     }
 
     public int providerCalls() {
@@ -3100,6 +3113,10 @@ validation.
     public List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
         providerCallDetails() {
       return providerCallDetails;
+    }
+
+    public boolean progressiveRecovery() {
+      return progressiveRecovery;
     }
   }
 }

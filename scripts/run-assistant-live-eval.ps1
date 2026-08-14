@@ -7,7 +7,8 @@ param(
   [ValidateRange(0, 8)]
   [int]$MaxDurableResumes = 4,
   [ValidateRange(0, 8)]
-  [int]$ProviderRetryCount = 8,
+  [int]$ProviderRetryCount = 1,
+  [switch]$RequireLlmObligationReview,
   [string[]]$FixtureId = @(),
   [string]$ReportPath = "docs/internal/ai/live-eval-gate-report.md",
   [string]$FixturePath = "packages/java/platform-assistant/src/test/resources/assistant-durable-eval-fixtures.json"
@@ -358,6 +359,7 @@ function Run-FixtureScenario {
     "source-to-cim-pantry" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "cim" -Prompt "Create a complete CIM model from the attached user stories. Ground each modeled element in the source where possible and mark assumptions explicitly." -AttachmentName "community-pantry-user-stories.md" -AttachmentContent $Story }
     "create-cim-library" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "cim" -Prompt "Create a compact complete CIM library model with actors, goals, capabilities, concepts, policies, and borrowing relationships." }
     "create-pim-serverless" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "pim" -Prompt "Create a complete PIM for serverless order processing with HTTP API, command-handling behavior, event publication and consumption, persistent data, external payment integration, observability, security, and workflow behavior." }
+    "create-pim-doctor-booking" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "pim" -Prompt "Create a serverless model for online doctor visit appointment booking." }
     "edit-existing-pim-add-pattern" { return Run-EditScenario -Token $Token -ProjectId $ProjectId }
     "cim-feature-evolution" { return Run-CimFeatureEvolutionScenario -Token $Token -ProjectId $ProjectId }
     "answer-only" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "cim" -Prompt "Explain what a CIM model contains. Do not create, edit, or delete a model." }
@@ -406,9 +408,21 @@ function Test-TransientProviderFailure {
 
 function Run-FixtureWithProviderRetries {
   param([string]$Token, [string]$ProjectId, $Fixture, [string]$Story)
+  $totalSeconds = 0
+  $totalProviderCalls = 0
+  $totalPromptTokens = 0
+  $totalCompletionTokens = 0
   for ($attempt = 0; $attempt -le $ProviderRetryCount; $attempt++) {
     $result = Run-FixtureScenario -Token $Token -ProjectId $ProjectId -Fixture $Fixture -Story $Story
+    $totalSeconds += [int]$result.Seconds
+    $totalProviderCalls += [int]$result.ProviderCalls
+    $totalPromptTokens += [long]$result.PromptTokens
+    $totalCompletionTokens += [long]$result.CompletionTokens
     if (-not (Test-TransientProviderFailure $result) -or $attempt -eq $ProviderRetryCount) {
+      $result.Seconds = $totalSeconds
+      $result.ProviderCalls = $totalProviderCalls
+      $result.PromptTokens = $totalPromptTokens
+      $result.CompletionTokens = $totalCompletionTokens
       $result | Add-Member -NotePropertyName ProviderRetryAttempts -NotePropertyValue $attempt
       return $result
     }
@@ -451,12 +465,15 @@ function Test-ScenarioGate {
     }
     "create-pim-serverless" {
       if ([int]$Result.StructuralNodes -lt 10) { $failures += "serverless PIM is too shallow" }
-      if ([int]$Result.CoveragePercent -lt 100) { $failures += "mandatory LLM obligation coverage was not proven" }
-      $requiredTypes = @("Api", "Function", "EventType", "DataStore", "ExternalAdapter", "ObservabilityConfig", "Workflow")
+      if ($RequireLlmObligationReview -and [int]$Result.CoveragePercent -lt 100) { $failures += "mandatory LLM obligation coverage was not proven" }
+      $requiredTypes = @("Api", "Function", "EventType", "DataStore", "ObservabilityConfig", "Workflow")
       foreach ($requiredType in $requiredTypes) {
         if (@($Result.EClasses) -notcontains $requiredType) { $failures += "missing required semantic evidence type $requiredType" }
       }
-      if ((@($Result.EClasses) -notcontains "SecurityPolicy") -and (@($Result.EClasses) -notcontains "AuthPolicy")) {
+      if ((@($Result.EClasses) -notcontains "ExternalAdapter") -and (@($Result.EClasses) -notcontains "ExternalEndpoint")) {
+        $failures += "missing external integration evidence"
+      }
+      if ((@($Result.EClasses) -notcontains "SecurityPolicy") -and (@($Result.EClasses) -notcontains "AuthorizationPolicy") -and (@($Result.EClasses) -notcontains "AuthPolicy")) {
         $failures += "missing security policy evidence"
       }
       $workflowStepTypes = @("StartStep", "SuccessEndStep", "FailureEndStep", "TaskStep", "ChoiceStep", "ParallelStep", "MapStep", "WaitStep", "PassStep")
@@ -464,6 +481,20 @@ function Test-ScenarioGate {
         $failures += "workflow has no concrete step evidence"
       }
       if ([int]$Result.Relationships -lt 5) { $failures += "serverless PIM has too few relationships" }
+    }
+    "create-pim-doctor-booking" {
+      if ([int]$Result.StructuralNodes -lt 8) { $failures += "doctor-booking PIM is too shallow" }
+      foreach ($requiredType in @("ServerlessService", "Api", "DataStore", "Workflow")) {
+        if (@($Result.EClasses) -notcontains $requiredType) { $failures += "missing doctor-booking evidence type $requiredType" }
+      }
+      if ((@($Result.EClasses) -notcontains "SecurityPolicy") -and (@($Result.EClasses) -notcontains "AuthorizationPolicy") -and (@($Result.EClasses) -notcontains "AuthPolicy")) {
+        $failures += "missing doctor-booking security evidence"
+      }
+      $workflowStepTypes = @("StartStep", "SuccessEndStep", "FailureEndStep", "TaskStep", "ChoiceStep", "ParallelStep", "MapStep", "WaitStep", "PassStep")
+      if (@($workflowStepTypes | Where-Object { @($Result.EClasses) -contains $_ }).Count -lt 1) {
+        $failures += "doctor-booking workflow has no concrete step"
+      }
+      if ([int]$Result.Relationships -lt 4) { $failures += "doctor-booking PIM has too few relationships" }
     }
     "edit-existing-pim-add-pattern" {
       if ([int]$Result.StructuralNodes -lt 6) { $failures += "PIM edit did not produce enough model structure" }

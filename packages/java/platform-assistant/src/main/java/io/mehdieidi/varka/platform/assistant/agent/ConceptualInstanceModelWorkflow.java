@@ -37,7 +37,7 @@ import tools.jackson.databind.node.JsonNodeFactory;
  */
 public final class ConceptualInstanceModelWorkflow {
   private static final Logger log = LoggerFactory.getLogger(ConceptualInstanceModelWorkflow.class);
-  private static final int MAX_BLUEPRINT_OBJECTS = 16;
+  private static final int MAX_BLUEPRINT_OBJECTS = 18;
   private final AssistantModelProvider provider;
   private final MetamodelGuideGenerator guides;
   private final TypeContractService contracts;
@@ -229,31 +229,46 @@ public final class ConceptualInstanceModelWorkflow {
             generated,
             audit,
             maxCalls);
-        last =
-            obligations.obligations().isEmpty()
-                ? review(level, request, metamodel, blueprint, generated, audit, maxCalls)
-                : reviewObligations(
-                    level, request, obligations, blueprint, generated, audit, maxCalls);
+        if (properties.llmReviewEnabled()) {
+          last =
+              obligations.obligations().isEmpty()
+                  ? review(level, request, metamodel, blueprint, generated, audit, maxCalls)
+                  : reviewObligations(
+                      level, request, obligations, blueprint, generated, audit, maxCalls);
+        } else {
+          AssistantModelProvider.AssistantProviderMetadata metadata = provider.metadata();
+          last =
+              new AssistantModelProvider.AssistantReply(
+                  "",
+                  metadata.provider(),
+                  metadata.model() == null ? properties.model() : metadata.model());
+        }
         persistObjects(durableTurnId, blueprint, generated);
         ConceptualModel conceptual = new ConceptualModel(generated);
-        ModelCommandBatch batch;
-        try {
-          batch = conceptual.commands(current, contracts, level);
-        } catch (RuntimeException compilerFailure) {
-          if (audit.totalCalls() >= maxCalls) throw compilerFailure;
-          last =
-              correctCompilerFailure(
-                  level,
-                  request,
-                  metamodel,
-                  blueprint,
-                  generated,
-                  compilerFailure.getMessage(),
-                  audit,
-                  maxCalls);
-          persistObjects(durableTurnId, blueprint, generated);
-          conceptual = new ConceptualModel(generated);
-          batch = conceptual.commands(current, contracts, level);
+        ModelCommandBatch batch = null;
+        int compilerCorrections = 0;
+        while (batch == null) {
+          try {
+            batch = conceptual.commands(current, contracts, level);
+          } catch (RuntimeException compilerFailure) {
+            if (audit.totalCalls() >= maxCalls
+                || compilerCorrections >= Math.max(1, properties.maxRepairAttempts())) {
+              throw new ProgressiveCompilationFailure(compilerFailure);
+            }
+            last =
+                correctCompilerFailure(
+                    level,
+                    request,
+                    metamodel,
+                    blueprint,
+                    generated,
+                    compilerFailure.getMessage(),
+                    audit,
+                    maxCalls);
+            persistObjects(durableTurnId, blueprint, generated);
+            conceptual = new ConceptualModel(generated);
+            compilerCorrections++;
+          }
         }
         tools.commitModelBatch(batch, destructiveConfirmed);
         ModelService.ValidationResult validation = tools.validateModel();
@@ -264,8 +279,11 @@ public final class ConceptualInstanceModelWorkflow {
                   + (validation == null ? "no result" : validation.issues()));
         }
         return new AgentTurnLoop.TurnResult(
-            "Applied a staged conceptual instance model, reviewed its requirement coverage, and"
-                + " structurally validated the result.",
+            properties.llmReviewEnabled()
+                ? "Applied a staged conceptual instance model, reviewed its requirement coverage,"
+                    + " and structurally validated the result."
+                : "Applied a staged conceptual instance model and structurally validated the"
+                    + " result.",
             workspace.patch(),
             workspace.inversePatch(),
             validation,
@@ -285,10 +303,22 @@ public final class ConceptualInstanceModelWorkflow {
             audit.totalCalls(),
             audit.promptTokens,
             audit.completionTokens,
-            audit.callDetails);
+            audit.callDetails,
+            failure instanceof ProgressiveCompilationFailure);
       }
     } finally {
       ProviderCallBudget.clear();
+    }
+  }
+
+  private static final class ProgressiveCompilationFailure extends PlatformException {
+    private ProgressiveCompilationFailure(RuntimeException cause) {
+      super(
+          cause instanceof PlatformException platform ? platform.status() : 422,
+          cause.getMessage() == null
+              ? "Conceptual compilation repair is incomplete."
+              : cause.getMessage(),
+          cause);
     }
   }
 
@@ -299,9 +329,18 @@ public final class ConceptualInstanceModelWorkflow {
             + " selection. Semantic interpretation and exact EClass mapping are your decisions."
             + " Preserve every explicit functional, data, integration, security, observability,"
             + " and workflow requirement as a separate MANDATORY obligation; use OPTIONAL only"
-            + " for genuinely nonessential enrichment. Map each obligation to one to four exact"
-            + " creatable EClasses from the authoritative live index that could provide concrete"
-            + " model evidence. Do not match words mechanically and do not generate objects. Use"
+            + " for genuinely nonessential enrichment. Map each obligation to the smallest jointly"
+            + " sufficient set of exact creatable EClasses from the authoritative live index."
+            + " Normally use exactly one EClass per obligation; use two only when both are needed"
+            + " as distinct semantic evidence (for example, a channel and an event type for"
+            + " explicit publication/consumption). Do not list containment owners, contracts,"
+            + " workflow steps, schemas, principals, policies, routes, or other structural support"
+            + " unless the request explicitly requires that concept—the Ecore closure and"
+            + " blueprint phases add necessary support. expectedEClasses is a required set, not a"
+            + " list of alternatives: include two"
+            + " channel and an event type for explicit publication/consumption). Reuse the same"
+            + " EClass across obligations when appropriate. Do not match words mechanically and"
+            + " do not generate objects. Use"
             + " stable IDs OBL-1, OBL-2, ... and return JSON only.";
     String user =
         guides.index(level)
@@ -317,26 +356,56 @@ public final class ConceptualInstanceModelWorkflow {
             + "Return {obligations:[{id,obligation,importance,sourceUnitIds,expectedEClasses}]}";
     RuntimeException lastFailure = null;
     String correction = "";
-    for (int attempt = 0; attempt < 2; attempt++) {
+    for (int attempt = 0; attempt < 4; attempt++) {
       try {
         var reply = audit.call(system, user + correction, "conceptual_obligation_ledger");
-        return ObligationLedger.parse(
-            strictObject(reply.content(), "conceptual obligation ledger"),
-            contracts,
-            level,
-            sourceUnitIds(request));
+        ObligationLedger ledger =
+            ObligationLedger.parse(
+                strictObject(reply.content(), "conceptual obligation ledger"),
+                contracts,
+                level,
+                sourceUnitIds(request));
+        validateObligationLedgerCapacity(level, ledger, blueprintCapacity(maxCalls));
+        return ledger;
       } catch (RuntimeException failure) {
         lastFailure = failure;
-        if (attempt == 1) throw failure;
+        if (attempt == 3) throw failure;
         correction =
             "\n\nThe prior ledger was rejected: "
                 + safe(failure.getMessage())
-                + " Return only the corrected compact ledger with at most 12 obligations.";
+                + " Return only the corrected compact ledger with at most 12 obligations and"
+                + " normally 9-12 unique mandatory evidence EClasses overall. Remove structural"
+                + " helpers and alternative refinements; keep two EClasses for an obligation only"
+                + " when both are semantically indispensable.";
       }
     }
     throw lastFailure == null
         ? new PlatformException(422, "Conceptual obligation planning failed.")
         : lastFailure;
+  }
+
+  private void validateObligationLedgerCapacity(
+      ModelLevel level, ObligationLedger ledger, int capacity) {
+    LinkedHashSet<String> mandatoryTypes = new LinkedHashSet<>();
+    ledger.mandatory().forEach(item -> mandatoryTypes.addAll(item.expectedEClasses()));
+    int closureSize =
+        contracts.requiredContainmentClosure(level, new ArrayList<>(mandatoryTypes)).stream()
+            .filter(type -> !contracts.rootType(level).equals(type.eClass()))
+            .map(TypeContract::eClass)
+            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new))
+            .size();
+    if (closureSize > capacity) {
+      throw new PlatformException(
+          422,
+          "Mandatory obligation EClasses "
+              + mandatoryTypes
+              + " require a combined structural closure of "
+              + closureSize
+              + " types, exceeding capacity "
+              + capacity
+              + ". Merge overlapping obligations and choose a smaller jointly sufficient"
+              + " required set without turning expectedEClasses into alternatives.");
+    }
   }
 
   private Blueprint planBlueprint(
@@ -397,13 +466,13 @@ public final class ConceptualInstanceModelWorkflow {
     Blueprint blueprint = null;
     String correction = "";
     RuntimeException lastFailure = null;
-    for (int attempt = 0; attempt < 3; attempt++) {
+    for (int attempt = 0; attempt < 5; attempt++) {
       AssistantModelProvider.AssistantReply reply;
       try {
         reply = audit.call(system, user + correction, "conceptual_blueprint");
       } catch (RuntimeException failure) {
         lastFailure = failure;
-        if (attempt < 2 && truncated(failure)) {
+        if (attempt < 4 && truncated(failure)) {
           correction +=
               "\n\nThe prior blueprint response was truncated. Continue to honor every earlier"
                   + " rejection diagnostic above. Return only the compact ledger"
@@ -474,11 +543,14 @@ public final class ConceptualInstanceModelWorkflow {
       } catch (RuntimeException failure) {
         lastFailure = failure;
         blueprint = null;
-        if (attempt == 2) throw failure;
+        if (attempt == 4) throw failure;
         correction =
             "\n\nThe prior blueprint was rejected: "
                 + safe(failure.getMessage())
-                + " Return a corrected small blueprint. Use only the closed source-unit allowlist."
+                + " Treat every diagnostic as mandatory. Add the missing concrete structural"
+                + " object using an exact option and containment from the supplied contracts;"
+                + " preserve all already-valid planned objects. Return a corrected small"
+                + " blueprint using only the closed source-unit allowlist."
                 + " Do not return attributes, full objects, prose, or markdown.";
       }
     }
@@ -740,21 +812,22 @@ public final class ConceptualInstanceModelWorkflow {
             "mandatory obligation " + obligation.id() + " is not allocated to an object");
         continue;
       }
-      boolean mapped =
-          evidence.stream()
-              .anyMatch(
-                  object ->
-                      obligation.expectedEClasses().stream()
-                          .anyMatch(
-                              expected -> contracts.assignable(level, object.type(), expected)));
-      if (!mapped) {
+      List<String> missingExpectedTypes =
+          obligation.expectedEClasses().stream()
+              .filter(
+                  expected ->
+                      evidence.stream()
+                          .noneMatch(
+                              object -> contracts.assignable(level, object.type(), expected)))
+              .toList();
+      if (!missingExpectedTypes.isEmpty()) {
         diagnostics.add(
             "mandatory obligation "
                 + obligation.id()
-                + " is allocated only to incompatible object types "
+                + " is allocated to object types "
                 + evidence.stream().map(BlueprintObject::type).toList()
-                + "; expected one of "
-                + obligation.expectedEClasses());
+                + " but lacks jointly required types "
+                + missingExpectedTypes);
       }
     }
     return diagnostics;
@@ -823,12 +896,19 @@ public final class ConceptualInstanceModelWorkflow {
               + compactSnapshot(current)
               + "\n\nREQUEST AND SOURCE SPECIFICATION:\n"
               + (request == null ? "" : request)
+              + "\n\nEXACT SOURCE-UNIT ALLOWLIST FOR SOURCE_GROUNDED EVIDENCE: "
+              + sourceUnitIds(request)
+              + ". Obligation IDs are not source-unit IDs. When this allowlist is empty, every"
+              + " evidence item must use INFERRED with an explicit assumption."
               + "\n\nGENERATE ONLY THESE INSTANCE IDS: "
               + ids
               + ". Return exactly those keys with every required attribute and at most 8 meaningful"
               + " writable attributes per object; do not enumerate absent, blank, or decorative"
               + " optional attributes. Include complete real compositions, references, and"
-              + " evidence. It is valid to reference any ID declared in the blueprint even if"
+              + " evidence. Every writable reference marked [required] in the authoritative"
+              + " contracts MUST appear under compositions or references with its exact"
+              + " associationName and a compatible associatedClassName."
+              + " It is valid to reference any ID declared in the blueprint even if"
               + " that target belongs to a later slice. Maximum objects in this response: "
               + slice.size()
               + ". Association arrays contain only real links: associationName,"
@@ -864,13 +944,24 @@ public final class ConceptualInstanceModelWorkflow {
                 + " one terminal JSON object and no prose.";
         reply = audit.call(system, reducedUser, "conceptual_instance_slice");
       }
-      try {
-        mergeSlice(level, slice, reply.content(), generated);
-        persistObjects(durableTurnId, blueprint, generated);
-      } catch (RuntimeException schemaFailure) {
-        if (audit.totalCalls() >= maxCalls - 1) throw schemaFailure;
+      RuntimeException lastSchemaFailure = null;
+      for (int correctionAttempt = 0;
+          correctionAttempt <= Math.max(1, properties.maxRepairAttempts());
+          correctionAttempt++) {
+        try {
+          mergeSlice(level, slice, reply.content(), generated, sourceUnitIds(request));
+          persistObjects(durableTurnId, blueprint, generated);
+          lastSchemaFailure = null;
+          break;
+        } catch (RuntimeException schemaFailure) {
+          lastSchemaFailure = schemaFailure;
+        }
+        if (audit.totalCalls() >= maxCalls - 1
+            || correctionAttempt >= Math.max(1, properties.maxRepairAttempts())) {
+          throw lastSchemaFailure;
+        }
         String combinedDiagnostic =
-            safe(schemaFailure.getMessage())
+            safe(lastSchemaFailure.getMessage())
                 + requiredAttributeDiagnostic(level, slice, reply.content());
         String correctedUser =
             user
@@ -880,10 +971,7 @@ public final class ConceptualInstanceModelWorkflow {
                 + " object must contain attributes as an array and associations as an object with"
                 + " separate compositions and references arrays. Do not omit valid content and do"
                 + " not return an action envelope or prose.";
-        AssistantModelProvider.AssistantReply corrected =
-            audit.call(system, correctedUser, "conceptual_instance_slice");
-        mergeSlice(level, slice, corrected.content(), generated);
-        persistObjects(durableTurnId, blueprint, generated);
+        reply = audit.call(system, correctedUser, "conceptual_instance_slice");
       }
     }
     if (generated.size() != blueprint.objects().size()) {
@@ -921,7 +1009,8 @@ public final class ConceptualInstanceModelWorkflow {
       ModelLevel level,
       List<BlueprintObject> slice,
       String content,
-      LinkedHashMap<String, JsonNode> generated) {
+      LinkedHashMap<String, JsonNode> generated,
+      Set<String> allowedSourceUnitIds) {
     ConceptualModel parsed = ConceptualModel.parse(mapper, content);
     Set<String> expected =
         new LinkedHashSet<>(slice.stream().map(BlueprintObject::instanceId).toList());
@@ -949,6 +1038,8 @@ public final class ConceptualInstanceModelWorkflow {
       }
       validateCompleteObject(object.instanceId(), value);
       validateRequiredAttributes(level, object.instanceId(), object.type(), value);
+      validateRequiredReferences(level, object.instanceId(), object.type(), value);
+      validateSourceEvidence(object.instanceId(), value, allowedSourceUnitIds);
       if (generated.containsKey(object.instanceId())) {
         throw new PlatformException(
             422, "Duplicate conceptual instance ID across slices: " + object.instanceId());
@@ -956,6 +1047,25 @@ public final class ConceptualInstanceModelWorkflow {
     }
     for (BlueprintObject object : slice) {
       generated.put(object.instanceId(), parsed.objects.get(object.instanceId()));
+    }
+  }
+
+  private void validateSourceEvidence(
+      String instanceId, JsonNode value, Set<String> allowedSourceUnitIds) {
+    for (JsonNode evidence : value.path("evidence")) {
+      String kind = evidence.path("kind").asText("").trim().toUpperCase(java.util.Locale.ROOT);
+      if (!"SOURCE_GROUNDED".equals(kind)) continue;
+      String sourceUnitId = evidence.path("sourceUnitId").asText("").trim();
+      if (sourceUnitId.isBlank() || !allowedSourceUnitIds.contains(sourceUnitId)) {
+        throw new PlatformException(
+            422,
+            "Conceptual object '"
+                + instanceId
+                + "' used SOURCE_GROUNDED evidence with unknown sourceUnitId '"
+                + sourceUnitId
+                + "'. Use only the supplied source-unit allowlist, or use INFERRED with an"
+                + " explicit assumption when no source unit supports the statement.");
+      }
     }
   }
 
@@ -1026,6 +1136,42 @@ public final class ConceptualInstanceModelWorkflow {
     }
   }
 
+  private void validateRequiredReferences(
+      ModelLevel level, String instanceId, String typeName, JsonNode value) {
+    JsonNode associations = value.path("associations");
+    List<String> missing = new ArrayList<>();
+    for (ReferenceContract reference : contracts.require(level, typeName).references()) {
+      if (!reference.required() || reference.readonly()) continue;
+      boolean present = false;
+      for (String kind : List.of("compositions", "references")) {
+        for (JsonNode association : associations.path(kind)) {
+          if (reference.name().equals(association.path("associationName").asText())
+              && contracts.assignable(
+                  level,
+                  association.path("associatedClassName").asText(),
+                  reference.targetType())) {
+            present = true;
+            break;
+          }
+        }
+        if (present) break;
+      }
+      if (!present) missing.add(reference.name() + "->" + reference.targetType());
+    }
+    if (!missing.isEmpty()) {
+      throw new PlatformException(
+          422,
+          "Conceptual object '"
+              + instanceId
+              + "' of "
+              + typeName
+              + " is missing required Ecore references "
+              + missing
+              + ". Add each exact associationName with a compatible target declared in the"
+              + " blueprint or persisted model.");
+    }
+  }
+
   private String requiredAttributeDiagnostic(
       ModelLevel level, List<BlueprintObject> slice, String content) {
     try {
@@ -1083,8 +1229,8 @@ public final class ConceptualInstanceModelWorkflow {
             + level.name()
             + " model satisfies each requirement obligation. Use only exact staged object and"
             + " relationship evidence; names or free text alone do not prove behavior or a"
-            + " relationship. Each obligation's expectedEClasses are alternative candidate"
-            + " mappings selected during interpretation, not a checklist: do not require every"
+            + " relationship. Each obligation's expectedEClasses are the minimum jointly required"
+            + " mappings selected during interpretation, so require concrete evidence for every"
             + " listed EClass. Judge the obligation text against the concrete evidence and do not"
             + " invent stronger requirements or unrequested supporting concepts. Return one"
             + " compact JSON verdict, no reasoning or model correction."
@@ -1761,6 +1907,10 @@ public final class ConceptualInstanceModelWorkflow {
             + " and supporting types needed for meaningful nodes and edges. Internally account for"
             + " every explicit user/source requirement before answering: do not omit requested"
             + " functional concepts merely to make room for generic cross-cutting qualities. Choose"
+            + " every EClass in each mandatory obligation's expectedEClasses required set. Reuse"
+            + " one type when it genuinely represents multiple obligations. Do not add unrelated"
+            + " alternatives merely for completeness; required structural support is added from"
+            + " Ecore closure after your semantic choice. "
             + " between 1 and "
             + capacity
             + " focused types; choose fewer only when required to fit the structural budget. Never"
@@ -1783,24 +1933,27 @@ public final class ConceptualInstanceModelWorkflow {
             + "\n\nREQUEST AND SOURCE SPECIFICATION:\n"
             + (request == null ? "" : request);
     String correction = "";
-    for (int attempt = 0; attempt < 4; attempt++) {
+    for (int attempt = 0; attempt < 5; attempt++) {
       AssistantModelProvider.AssistantReply reply;
       try {
         boolean compactRetry = attempt > 0 && !obligations.obligations().isEmpty();
         reply =
             audit.call(
                 compactRetry
-                    ? "Choose a coherent exact-EClass set from the LLM-authored obligation"
-                        + " candidates below. Candidate lists are alternatives, not checklists."
-                        + " Cover every mandatory obligation while fitting the exact combined"
-                        + " closure capacity. Return only {\"types\":[...]}."
+                    ? "Choose a coherent exact-EClass set from the LLM-authored obligation ledger"
+                        + " below. Each mandatory expectedEClasses list is the LLM-authored"
+                        + " jointly required set, not alternatives. Include every required type,"
+                        + " reusing a type across obligations when appropriate; do not add types"
+                        + " outside those sets merely for completeness. Required Ecore support"
+                        + " types are added later. Cover every mandatory obligation while fitting"
+                        + " the exact combined closure capacity. Return only {\"types\":[...]}."
                     : system,
                 compactRetry
                     ? compactTypeSelectionRetry(level, request, obligations, capacity, correction)
                     : baseUser + correction,
                 "conceptual_type_selection");
       } catch (RuntimeException failure) {
-        if (attempt == 3 || !truncated(failure)) throw failure;
+        if (attempt == 4 || !truncated(failure)) throw failure;
         correction =
             correction
                 + "\nThe prior type-selection response was truncated. Return only the compact"
@@ -1819,24 +1972,31 @@ public final class ConceptualInstanceModelWorkflow {
           if (name.isBlank()) continue;
           names.add(contracts.require(level, name).eClass());
         }
-        Set<String> missingMandatoryTypes = new LinkedHashSet<>();
+        List<String> missingMandatoryMappings = new ArrayList<>();
         for (Obligation obligation : obligations.mandatory()) {
-          boolean represented =
+          List<String> missing =
               obligation.expectedEClasses().stream()
-                  .anyMatch(
+                  .filter(
                       expected ->
                           names.stream()
-                              .anyMatch(
+                              .noneMatch(
                                   selectedType ->
-                                      contracts.assignable(level, selectedType, expected)));
-          if (!represented) missingMandatoryTypes.addAll(obligation.expectedEClasses());
+                                      contracts.assignable(level, selectedType, expected)))
+                  .toList();
+          if (!missing.isEmpty()) {
+            missingMandatoryMappings.add(obligation.id() + "=" + missing);
+          }
         }
-        if (!missingMandatoryTypes.isEmpty()) {
+        if (!missingMandatoryMappings.isEmpty()) {
           throw new PlatformException(
               422,
-              "Type selection omitted mandatory obligation mappings "
-                  + missingMandatoryTypes
-                  + ".");
+              "Type selection "
+                  + names
+                  + " omitted mandatory obligation EClasses "
+                  + missingMandatoryMappings
+                  + ". Add every listed missing type and"
+                  + " remove lower-priority selected types as needed to remain within capacity;"
+                  + " the ledger contains jointly required types, not alternatives.");
         }
         if (names.size() > capacity) {
           throw new PlatformException(
@@ -1882,9 +2042,10 @@ public final class ConceptualInstanceModelWorkflow {
                   + closureObjects
                   + " non-root object types, exceeding the "
                   + capacity
-                  + "-object atomic capacity. Return an"
-                  + " importance-ranked SUBSET of these previously selected types. The exact"
-                  + " marginal closure savings from removing each one are {"
+                  + "-object atomic capacity. Return the smallest importance-ranked selection from"
+                  + " the closed obligation-required vocabulary. Preserve every required type and"
+                  + " remove only unrelated optional additions. The exact marginal closure savings"
+                  + " from removing each one are {"
                   + marginalSavings
                   + "}; remove types whose marginal savings cover at least the "
                   + excess
@@ -1892,7 +2053,7 @@ public final class ConceptualInstanceModelWorkflow {
                   + " requirements as possible. The combined required closure must fit within "
                   + capacity
                   + ". Fewer than 4 types is valid when necessary;"
-                  + " do not introduce replacement types in this correction.");
+                  + " do not introduce types outside the obligation-required vocabulary.");
         }
         log.info(
             "Conceptual Ecore contract selection level={} requestedTypes={} closureTypes={}",
@@ -1901,7 +2062,7 @@ public final class ConceptualInstanceModelWorkflow {
             closure.stream().map(TypeContract::eClass).toList());
         return java.util.Collections.unmodifiableSet(names);
       } catch (Exception failure) {
-        if (attempt == 3) {
+        if (attempt == 4) {
           if (failure instanceof RuntimeException runtime) throw runtime;
           throw new PlatformException(
               422, "LLM did not return parseable conceptual type selection JSON.");
@@ -1911,8 +2072,9 @@ public final class ConceptualInstanceModelWorkflow {
                 + safe(failure.getMessage())
                 + " Return a corrected focused selection of at most "
                 + capacity
-                + " exact EClass names. Follow"
-                + " any requested subset-only constraint exactly; do not copy the full index.";
+                + " exact EClass names. Cover every mandatory obligation using all of its jointly"
+                + " required EClasses, rebalance other selections when necessary, and"
+                + " do not copy the full index.";
       }
     }
     throw new PlatformException(422, "Conceptual type selection failed.");
@@ -1978,6 +2140,8 @@ public final class ConceptualInstanceModelWorkflow {
     private final String turnId;
     private final int maxCalls;
     private int priorCalls;
+    private long priorPromptTokens;
+    private long priorCompletionTokens;
     private long promptTokens;
     private long completionTokens;
     private final List<AssistantTurnStore.ProviderCall> callDetails = new ArrayList<>();
@@ -1989,8 +2153,8 @@ public final class ConceptualInstanceModelWorkflow {
         JsonNode plan = turns.workflow(turnId).map(AssistantTurnStore.Workflow::plan).orElse(null);
         if (plan != null) {
           priorCalls = Math.max(0, plan.path("providerCalls").asInt(0));
-          promptTokens = Math.max(0L, plan.path("promptTokens").asLong(0));
-          completionTokens = Math.max(0L, plan.path("completionTokens").asLong(0));
+          priorPromptTokens = Math.max(0L, plan.path("promptTokens").asLong(0));
+          priorCompletionTokens = Math.max(0L, plan.path("completionTokens").asLong(0));
         }
       }
     }
@@ -2056,9 +2220,9 @@ public final class ConceptualInstanceModelWorkflow {
       turns.recordProviderCall(turnId, call);
       var workflow = turns.workflow(turnId);
       var plan = durablePlan(turnId);
-      plan.put("providerCalls", totalCalls());
-      plan.put("promptTokens", promptTokens);
-      plan.put("completionTokens", completionTokens);
+      plan.put("providerCalls", priorCalls + totalCalls());
+      plan.put("promptTokens", priorPromptTokens + promptTokens);
+      plan.put("completionTokens", priorCompletionTokens + completionTokens);
       turns.saveWorkflow(
           new AssistantTurnStore.Workflow(
               turnId,
@@ -2069,7 +2233,7 @@ public final class ConceptualInstanceModelWorkflow {
     }
 
     private int totalCalls() {
-      return priorCalls + callDetails.size();
+      return callDetails.size();
     }
 
     private String failureReason(RuntimeException failure) {

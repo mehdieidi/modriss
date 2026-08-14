@@ -44,6 +44,7 @@ public final class DurableAssistantTurnWorker {
   private final boolean workflowEngineV2;
   private final AssistantMode assistantMode;
   private final int maxSourceChunksPerTurn;
+  private final boolean automaticContinuationEnabled;
   private final String workerId = "assistant-" + UUID.randomUUID();
   // Documents up to 24k characters remain whole. Larger documents are segmented only at semantic
   // boundaries; each incremental slice also receives a map of the complete source below.
@@ -84,7 +85,9 @@ public final class DurableAssistantTurnWorker {
       TransactionTemplate transactions,
       @Value("${varka.ai.workflow-engine-v2:true}") boolean workflowEngineV2,
       @Value("${varka.ai.mode:unified}") String assistantMode,
-      @Value("${varka.ai.max-source-chunks-per-turn:24}") int maxSourceChunksPerTurn) {
+      @Value("${varka.ai.max-source-chunks-per-turn:24}") int maxSourceChunksPerTurn,
+      @Value("${varka.ai.automatic-continuation-enabled:true}")
+          boolean automaticContinuationEnabled) {
     this.turns = turns;
     this.assistant = assistant;
     this.store = store;
@@ -93,6 +96,7 @@ public final class DurableAssistantTurnWorker {
     this.workflowEngineV2 = workflowEngineV2;
     this.assistantMode = AssistantMode.parse(assistantMode);
     this.maxSourceChunksPerTurn = Math.max(1, maxSourceChunksPerTurn);
+    this.automaticContinuationEnabled = automaticContinuationEnabled;
   }
 
   @Scheduled(fixedDelayString = "${varka.ai.worker-poll-interval:PT0.5S}")
@@ -276,6 +280,13 @@ public final class DurableAssistantTurnWorker {
                                   504, "Assistant turn exceeded its configured deadline.")
                               : null,
                       durableRoute));
+      turns.setProviderCallCount(
+          turn.id(), Math.max(0, turn.providerCalls()) + result.providerCalls());
+      turns.setTokenUsage(
+          turn.id(),
+          Math.max(0L, turn.promptTokens()) + result.promptTokens(),
+          Math.max(0L, turn.completionTokens()) + result.completionTokens());
+      turns.recordProviderCalls(turn.id(), result.providerCallDetails());
       boolean checkpointSaved = !result.inversePatch().isEmpty();
       preflightSourceEvidence(turn, units, result.commandBatch());
       final long[] committedRevision = {result.revision()};
@@ -286,7 +297,7 @@ public final class DurableAssistantTurnWorker {
           existingModelingWorkflow
               .filter(workflow -> "MODELING_PLAN".equals(workflow.workflowKind()))
               .map(AssistantTurnStore.Workflow::plan)
-              .filter(this::durablePlan)
+              .filter(DurableAssistantTurnWorker::isDurablePlan)
               .isPresent();
       if (result.modelingPlan() != null
           && result.modelingPlan().isObject()
@@ -383,17 +394,14 @@ public final class DurableAssistantTurnWorker {
       }
       turns.setSavedElementCount(
           turn.id(), Math.max(0, turn.savedElementCount()) + result.affectedElementIds().size());
-      turns.setProviderCallCount(
-          turn.id(), Math.max(0, turn.providerCalls()) + result.providerCalls());
-      turns.setTokenUsage(
-          turn.id(),
-          Math.max(0L, turn.promptTokens()) + result.promptTokens(),
-          Math.max(0L, turn.completionTokens()) + result.completionTokens());
-      turns.recordProviderCalls(turn.id(), result.providerCallDetails());
       AssistantTurn.State state =
           turns.cancellationRequested(turn.id())
               ? AssistantTurn.State.CANCELLED
               : AssistantTurn.State.SUCCEEDED;
+      boolean progressivePhaseCompleted =
+          result.sourceAnalysis() != null
+              || result.sourceBlueprint() != null
+              || (result.commandBatch() != null && !result.commandBatch().turnComplete());
       // A terminal model action is a validated, atomic slice. The provider can deliberately
       // leave turnComplete=false for large/source-backed work; the persisted checkpoint then
       // becomes the durable resume point exposed by /turns/{id}/continue.
@@ -535,6 +543,14 @@ public final class DurableAssistantTurnWorker {
         remainingWork += " Next planned model slice: " + nextFocus + ".";
         if (state == AssistantTurn.State.SUCCEEDED) state = AssistantTurn.State.PARTIAL;
       }
+      if (automaticContinuationEnabled
+          && progressivePhaseCompleted
+          && state == AssistantTurn.State.PARTIAL
+          && !turns.cancellationRequested(turn.id())
+          && Instant.now().isBefore(turn.deadlineAt())) {
+        turns.continueProgressively(turn.id(), committedRevision[0], remainingWork);
+        return;
+      }
       complete(
           turn,
           state,
@@ -554,18 +570,60 @@ public final class DurableAssistantTurnWorker {
             Math.max(0L, turn.promptTokens()) + turnFailure.promptTokens(),
             Math.max(0L, turn.completionTokens()) + turnFailure.completionTokens());
         turns.recordProviderCalls(turn.id(), turnFailure.providerCallDetails());
+        var progressiveWorkflow = turns.workflow(turn.id());
+        boolean hasDurableConceptualProgress =
+            progressiveWorkflow
+                    .filter(item -> "CONCEPTUAL_GENERATION".equals(item.workflowKind()))
+                    .isPresent()
+                && turns.workItems(turn.id()).stream()
+                    .anyMatch(item -> item.payload().path("generated").isObject());
+        if (automaticContinuationEnabled
+            && (turnFailure.progressiveRecovery() || hasDurableConceptualProgress)
+            && !turns.cancellationRequested(turn.id())
+            && Instant.now().isBefore(turn.deadlineAt())) {
+          int recoveryCount =
+              progressiveWorkflow
+                  .map(item -> item.plan().path("automaticRecoveryCount").asInt(0))
+                  .orElse(0);
+          if (recoveryCount < 1) {
+            progressiveWorkflow.ifPresent(
+                item -> {
+                  tools.jackson.databind.node.ObjectNode plan =
+                      item.plan().isObject()
+                          ? (tools.jackson.databind.node.ObjectNode) item.plan().deepCopy()
+                          : tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+                  plan.put("automaticRecoveryCount", recoveryCount + 1);
+                  turns.saveWorkflow(
+                      new AssistantTurnStore.Workflow(
+                          item.turnId(),
+                          item.workflowKind(),
+                          "COMPILER_RECOVERY_QUEUED",
+                          item.currentWorkItemId(),
+                          plan));
+                });
+            turns.appendEvent(
+                turn.id(),
+                "turn.auto_recovery_queued",
+                java.util.Map.of(
+                    "stage",
+                    "COMPILATION",
+                    "reason",
+                    ex.getMessage() == null ? "repair incomplete" : ex.getMessage()));
+            turns.continueProgressively(turn.id(), turn.revision(), ex.getMessage());
+            return;
+          }
+        }
       }
-      // Bounded in-turn repair is exhausted. Preserve the validated checkpoint, expose the
-      // exact remaining work, and let the user explicitly resume the same durable run.
+      // Bounded in-turn repair is exhausted. Preserve any validated checkpoint and stop honestly;
+      // replaying the same failed phase behind a Resume button can waste tokens indefinitely.
       var latestCheckpoint = turns.latestCheckpoint(turn.id());
       if ((ex.status() == 422 || transientProviderFailure(ex.status()))
           && (turn.checkpointCount() > 0 || latestCheckpoint.isPresent())
           && !turns.cancellationRequested(turn.id())) {
         complete(
             turn,
-            AssistantTurn.State.PARTIAL,
-            "This work item could not be applied. Saved checkpoints remain available; resume this"
-                + " turn when ready.",
+            AssistantTurn.State.FAILED,
+            "This work item could not be applied. Any saved checkpoint remains intact.",
             latestCheckpoint.map(AssistantTurnStore.Checkpoint::revision).orElse(turn.revision()),
             ex.getMessage());
         return;
@@ -581,7 +639,7 @@ public final class DurableAssistantTurnWorker {
                             .contains("confirmation")
                     ? AssistantTurn.State.NEEDS_CONFIRMATION
                     : AssistantTurn.State.CONFLICTED;
-            case 422 -> AssistantTurn.State.PARTIAL;
+            case 422 -> AssistantTurn.State.FAILED;
             default -> AssistantTurn.State.FAILED;
           };
       complete(
@@ -791,7 +849,7 @@ public final class DurableAssistantTurnWorker {
     boolean durablePlanPresent =
         existingWorkflow
             .map(AssistantTurnStore.Workflow::plan)
-            .filter(this::durablePlan)
+            .filter(DurableAssistantTurnWorker::isDurablePlan)
             .isPresent();
     boolean hasDurableWorkflow =
         turn.checkpointCount() > 0
@@ -849,7 +907,7 @@ public final class DurableAssistantTurnWorker {
 
   private String appendPersistedWorkflowContext(String turnId, String message) {
     var workflow = turns.workflow(turnId);
-    if (workflow.isEmpty() || !durablePlan(workflow.get().plan())) return message;
+    if (workflow.isEmpty() || !isDurablePlan(workflow.get().plan())) return message;
     var workItems = turns.workItems(turnId);
     StringBuilder result = new StringBuilder(message == null ? "" : message);
     result
@@ -880,10 +938,13 @@ public final class DurableAssistantTurnWorker {
     return result.toString();
   }
 
-  private boolean durablePlan(tools.jackson.databind.JsonNode plan) {
+  static boolean isDurablePlan(tools.jackson.databind.JsonNode plan) {
     if (plan == null || plan.isNull() || plan.isMissingNode() || !plan.isObject()) return false;
     if (plan.path("slices").isArray() && !plan.path("slices").isEmpty()) return true;
-    return plan.path("sourceUnitIds").isArray() && !plan.path("sourceUnitIds").isEmpty();
+    if (plan.path("sourceUnitIds").isArray() && !plan.path("sourceUnitIds").isEmpty()) return true;
+    return plan.path("obligationLedger").isObject()
+        || (plan.path("selectedTypes").isArray() && !plan.path("selectedTypes").isEmpty())
+        || plan.path("blueprint").isObject();
   }
 
   private boolean transientProviderFailure(int status) {
