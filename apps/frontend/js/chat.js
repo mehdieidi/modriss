@@ -154,6 +154,10 @@ let activeTurnCanceling = false;
 let activeTurnId = null;
 let streamingAssistantEl = null;
 let streamingAssistantText = "";
+// Every project switch invalidates asynchronous work that belongs to the previous
+// project. The chat UI is shared, so callbacks must prove they still own it before
+// writing to the DOM.
+let chatGeneration = 0;
 // SSE and durable-turn polling can report the same checkpoint at nearly the
 // same time. Share its load so the canvas receives one incremental update.
 const assistantModelApplyInFlight = new Map();
@@ -238,14 +242,17 @@ export function closeChatWindow() {
   syncChatOpenState();
 }
 
-async function createChatSession(typeKey, { forceNew = false, resumeSessionId = null } = {}) {
+async function createChatSession(
+  typeKey,
+  { forceNew = false, resumeSessionId = null, projectId = state.project?.id } = {},
+) {
   const response = await api("/chatbot/sessions", {
     method: "POST",
     body: JSON.stringify({
       modelType: MODEL_TYPES[typeKey].chatType,
       modelName: (state.tabs[typeKey]?.modelName || `${typeKey}-assistant`).trim(),
       initialDocument: "Initialized from web modeling editor",
-      projectId: state.project.id,
+      projectId,
       forceNew,
       resumeSessionId,
     }),
@@ -358,6 +365,7 @@ export function resetChatActivityUi() {
 function applyWorkflowSnapshot(_workflowState, _message = null) {}
 
 export function resetChatForProjectChange() {
+  chatGeneration += 1;
   for (const channel of state.chat.channels.values()) {
     try {
       channel.handle?.close?.();
@@ -371,6 +379,9 @@ export function resetChatForProjectChange() {
   state.chat.attachments = [];
   state.chat.historyOpen = false;
   renderedChatScopeKey = null;
+  activeTurnId = null;
+  streamingAssistantEl = null;
+  streamingAssistantText = "";
   resetChatActivityUi();
   closeChatHistoryPanel();
   resetChatMessagesUi();
@@ -1197,6 +1208,8 @@ export async function ensureChatSession({ hydrate = true, ...options } = {}) {
   }
   const typeKey = state.activeType;
   const scopeKey = chatScopeKey(typeKey);
+  const generation = chatGeneration;
+  const projectId = state.project.id;
   const cached = state.chat.sessions.get(scopeKey);
   if (
     !options.forceNew &&
@@ -1216,7 +1229,7 @@ export async function ensureChatSession({ hydrate = true, ...options } = {}) {
 
   let response;
   try {
-    response = await createChatSession(typeKey, options);
+    response = await createChatSession(typeKey, { ...options, projectId });
   } catch (error) {
     if (isPlannedFeatureError(error)) {
       state.chat.available = false;
@@ -1226,6 +1239,10 @@ export async function ensureChatSession({ hydrate = true, ...options } = {}) {
     throw error;
   }
 
+  if (generation !== chatGeneration || state.project?.id !== projectId) {
+    return null;
+  }
+
   const session = {
     sessionId: response.sessionId,
     modelId: response.modelId || null,
@@ -1233,7 +1250,7 @@ export async function ensureChatSession({ hydrate = true, ...options } = {}) {
   };
   state.chat.sessions.set(scopeKey, session);
   if (hydrate) {
-    await hydrateChatThread(typeKey, session.sessionId);
+    await hydrateChatThread(typeKey, session.sessionId, scopeKey, generation);
   }
 
   return session;
@@ -1246,9 +1263,11 @@ export async function prepareChatWindow() {
     return null;
   }
   const scopeKey = chatScopeKey();
+  const generation = chatGeneration;
   const isScopeChange = renderedChatScopeKey !== scopeKey;
   if (isScopeChange) {
     // An empty thread must render as empty for its own level, never as the last level's thread.
+    renderedChatScopeKey = scopeKey;
     resetChatMessagesUi();
     resetChatActivityUi();
   }
@@ -1257,7 +1276,7 @@ export async function prepareChatWindow() {
   closeChatHistoryPanel();
   updateChatHeaderSubtitle();
   const session = await ensureChatSession({ hydrate: isScopeChange });
-  if (session) {
+  if (session && isCurrentChatScope(scopeKey, generation)) {
     renderedChatScopeKey = scopeKey;
   }
   return session;
@@ -1412,9 +1431,12 @@ export async function startNewChatConversation() {
   setStatus("Started a new conversation");
 }
 
-async function hydrateChatThread(typeKey, sessionId) {
+async function hydrateChatThread(typeKey, sessionId, expectedScopeKey = chatScopeKey(typeKey), generation = chatGeneration) {
   try {
     const thread = await api(`/chatbot/sessions/${sessionId}/thread`);
+    if (!isCurrentChatScope(expectedScopeKey, generation)) {
+      return;
+    }
     const hasMessages = Array.isArray(thread.messages) && thread.messages.length > 0;
     if (!hasMessages) {
       resetChatActivityUi();
@@ -1436,6 +1458,7 @@ async function hydrateChatThread(typeKey, sessionId) {
       beginChatActivity("Restoring the in-progress assistant turn.", "PLANNING");
       void waitForDurableTurn(activeTurn.turnId, typeKey, activeTurn.eventCursor || 0)
         .then(async (completed) => {
+          if (!isCurrentChatScope(expectedScopeKey, generation)) return;
           if (activeTurnId !== activeTurn.turnId && activeTurnId !== null) return;
           activeTurnId = null;
           endChatActivity(null, completed?.state || null);
@@ -1443,6 +1466,7 @@ async function hydrateChatThread(typeKey, sessionId) {
           appendDurableTurnActions(completed, typeKey);
         })
         .catch((error) => {
+          if (!isCurrentChatScope(expectedScopeKey, generation)) return;
           activeTurnId = null;
           endChatActivity("Could not restore the assistant turn.", "FAILED");
           setError(error, { prefix: "Could not restore assistant progress." });
@@ -1450,9 +1474,13 @@ async function hydrateChatThread(typeKey, sessionId) {
     } else if (thread.workflowState) {
       applyWorkflowSnapshot(thread.workflowState, workflowLabel(thread.workflowState));
     } else resetChatActivityUi();
-    updateChatProviderLabel(thread.provider);
+    if (isCurrentChatScope(expectedScopeKey, generation)) {
+      updateChatProviderLabel(thread.provider);
+    }
   } catch {
-    resetChatActivityUi();
+    if (isCurrentChatScope(expectedScopeKey, generation)) {
+      resetChatActivityUi();
+    }
   }
 }
 export async function clearChatConversation() {
@@ -1460,6 +1488,7 @@ export async function clearChatConversation() {
 }
 
 async function connectChatRealtime(scopeKey, typeKey, sessionId) {
+  const generation = chatGeneration;
   const controller = new AbortController();
   state.chat.channels.set(scopeKey, { kind: "fetch-sse", handle: controller });
   void fetch(apiUrl(`/chatbot/sessions/${sessionId}/events`), {
@@ -1483,7 +1512,7 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
           if (!eventName || !raw) continue;
           try {
             const data = JSON.parse(raw);
-            handleChatRealtimeEvent(typeKey, eventName, data?.payload);
+            handleChatRealtimeEvent(scopeKey, generation, typeKey, eventName, data?.payload);
           } catch (_error) {
             continue;
           }
@@ -1496,10 +1525,14 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
     });
 }
 
-function handleChatRealtimeEvent(typeKey, eventType, payload) {
+function isCurrentChatScope(scopeKey, generation = chatGeneration) {
+  return generation === chatGeneration && renderedChatScopeKey === scopeKey && chatScopeKey() === scopeKey;
+}
+
+function handleChatRealtimeEvent(scopeKey, generation, typeKey, eventType, payload) {
   // Realtime channels remain connected when the window is closed or the user changes tabs.
   // Only the active rendered scope may update this shared UI surface.
-  if (renderedChatScopeKey !== chatScopeKey(typeKey)) {
+  if (!isCurrentChatScope(scopeKey, generation)) {
     return;
   }
   if (eventType === "assistant.text.delta") {
@@ -2023,6 +2056,8 @@ export async function sendChatMessage() {
     return;
   }
   const text = typedText || defaultAttachmentMessage();
+  const sendScopeKey = chatScopeKey();
+  const sendGeneration = chatGeneration;
 
   let response = null;
   try {
@@ -2081,11 +2116,17 @@ export async function sendChatMessage() {
         state.activeType,
         response.eventCursor || 0,
       );
+      if (!isCurrentChatScope(sendScopeKey, sendGeneration)) {
+        return;
+      }
       activeTurnId = null;
       endChatActivity(null, response?.state || null);
       appendAssistantDeduped(await durableAssistantMessage(response, session.sessionId));
       appendDurableTurnActions(response, state.activeType);
     } else {
+      if (!isCurrentChatScope(sendScopeKey, sendGeneration)) {
+        return;
+      }
       applyHttpActivity(response);
       endChatActivity(null, response?.workflowState || null);
       appendAssistantDeduped(response.assistantMessage || "Done");
@@ -2109,6 +2150,9 @@ export async function sendChatMessage() {
     }
     setStatus("Assistant response received");
   } catch (error) {
+    if (!isCurrentChatScope(sendScopeKey, sendGeneration)) {
+      return;
+    }
     if (chatBusyDepth > 0) {
       endChatActivity("Could not complete the request.", "FAILED");
     }
