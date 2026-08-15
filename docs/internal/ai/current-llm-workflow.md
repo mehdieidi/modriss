@@ -1,6 +1,6 @@
 # Current LLM modeling workflow
 
-Updated: 2026-08-13
+Updated: 2026-08-15
 
 This document describes the implementation currently in the repository. It distinguishes shipped
 behavior from proposed production hardening.
@@ -99,12 +99,18 @@ the semantically appropriate subtype. Abstract or otherwise non-creatable bluepr
 rejected before slice generation.
 
 Every mandatory obligation must be allocated to at least one planned object whose exact EClass is
-one of the ledger mappings or an assignable concrete subtype. After all private slices are staged,
-an independent bounded LLM verdict reports `SATISFIED`, `PARTIAL`, or `MISSING` for every obligation
-and cites exact staged object IDs and structured source-feature-target relationship evidence. The
-backend verifies every cited ID and relationship against the staged model. A mandatory obligation
-without a `SATISFIED` verdict and real object evidence prevents compilation and checkpoint commit;
-there is no semantic fallback. This is requirement-satisfaction gating, not EVL validation.
+one of the ledger mappings or an assignable concrete subtype. Each focused slice also rejects any
+emitted association that is not an exact writable Ecore reference, is placed under the wrong
+containment/reference collection, names an unknown or incompatible target, declares a target
+EClass different from the actual planned or persisted target, duplicates a single-valued feature,
+or contradicts blueprint containment ownership. This keeps structural correction local instead of
+spending the remaining generation budget before the complete compiler reports the defect. After
+all private slices are staged, an independent bounded LLM verdict can report `SATISFIED`, `PARTIAL`,
+or `MISSING` for every obligation and cite exact staged object IDs and structured
+source-feature-target relationship evidence. This verdict runs only when
+`VARKA_AI_LLM_REVIEW_ENABLED=true`; the backend then verifies every cited ID and relationship. When
+review is disabled, no verdict or judge call occurs and structural Ecore conformance alone gates
+the candidate. There is no semantic fallback, and neither mode invokes EVL validation.
 
 Small Arvan/DeepSeek blueprints normally use one rich object per slice. Blueprints larger than eight
 objects begin with two related objects per slice to preserve call budget and durably split to one if
@@ -207,12 +213,13 @@ only one final atomic checkpoint.
 
 ## Provider protocol
 
-The deployed configuration is:
+The active normal-mode deployment is:
 
 ```dotenv
 VARKA_AI_PROVIDER=openai
-VARKA_AI_MODEL=DeepSeek-V4-Flash
+VARKA_AI_MODEL=Gemma-4-31B-IT
 VARKA_AI_MODE=unified
+VARKA_AI_METAMODEL_MODE=normal
 VARKA_AI_OPENAI_PROTOCOL=json_schema
 VARKA_AI_NATIVE_TOOLS_PREFERRED=false
 VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
@@ -238,6 +245,9 @@ LLM review is configurable with `VARKA_AI_LLM_REVIEW_ENABLED`. When disabled, no
 call runs and only structural Ecore/EMF conformance gates the candidate. Progressive conceptual
 work is durable: one bounded automatic recovery pass can reuse the obligation ledger, selected
 types, blueprint, and generated objects without requiring a user-visible Resume action.
+Provider calls are inserted into an idempotent durable ledger as they finish. Turn-level call and
+token totals are reconciled from that ledger after insertion, including when cancellation
+interrupts the ordinary worker completion path.
 
 ## Commit and validation boundary
 
@@ -291,9 +301,18 @@ structure, preservation, and failure evidence is in
 - Gemma remains the active and currently better-observed model, but its endpoint is intermittent:
   the latest persisted-evolution rerun failed on two transport attempts with zero generated tokens.
 - Required writable Ecore references are now validated within each conceptual slice so a focused
-  correction happens before later slices consume the budget. This is focused-test green but still
-  needs a provider-available persisted-evolution live run.
-- A fresh backend Docker image was built and deployed healthy; the earlier Docker Hub 403 is no
-  longer a blocker.
+  correction happens before later slices consume the budget. All emitted association features,
+  kinds, targets, types, multiplicities, and ownership are now checked there as well. This is
+  focused-test green but still needs a post-fix persisted-evolution live run.
+- The 2026-08-15 bounded evolution run timed out during initial creation after 20 calls. It exposed
+  the late association checks and stale cancellation aggregates fixed above, but did not reach the
+  persisted edit and therefore is not acceptance evidence.
+- Its one post-fix rerun proved that association and required-reference defects are now rejected in
+  focused slices, but still timed out after 17 calls with 8 of 14 private objects staged. A provider
+  HTTP 403 raced with cancellation; cancellation now takes precedence and V31 repaired historical
+  raced terminal rows. Persisted evolution remains unproven and no further replay was launched.
+- The 2026-08-15 backend JAR was deployed in a new local image derived from the prior runtime image
+  because Docker Hub again returned HTTP 403 for Maven base-image metadata. The service is healthy;
+  a conventional clean Docker rebuild remains externally blocked until registry access recovers.
 - Expired `RUNNING` turns whose worker leases have ended are now finalized as `TIMED_OUT` during
   polling, preventing a restart from leaving a permanent working indicator.

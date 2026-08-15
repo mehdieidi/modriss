@@ -330,6 +330,12 @@ function durableProgressForTurn(turn) {
         message: "Reviewing requirement coverage, naming, and relationships before saving.",
         progress: workItems.length ? { index: workItems.length, count: workItems.length } : null,
       };
+    case "COMPILER_RECOVERY_QUEUED":
+      return {
+        stage: "REPAIRING",
+        message: "Repairing the rejected model slice while preserving completed work.",
+        progress,
+      };
     case "EXECUTING":
       return {
         stage: "APPLYING",
@@ -610,6 +616,22 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
                 event?.payload?.message || "Continuing from the latest committed checkpoint.",
                 "PLANNING",
               );
+            } else if (eventName === "turn.auto_continued") {
+              updateThinkingStatus(
+                event?.payload?.message ||
+                  "Continuing automatically from the saved workflow state.",
+                "PLANNING",
+              );
+            } else if (eventName === "turn.auto_recovery_queued") {
+              const reason = String(event?.payload?.reason || "")
+                .trim()
+                .slice(0, 240);
+              updateThinkingStatus(
+                reason
+                  ? `A generated slice needs repair: ${reason}`
+                  : "A generated slice needs repair; preserving completed work and retrying once.",
+                "REPAIRING",
+              );
             } else if (eventName === "turn.validation.completed") {
               updateThinkingStatus("Validation completed for the current draft.", "VALIDATING");
             } else if (eventName === "turn.coverage.updated") {
@@ -878,6 +900,17 @@ function renderDurableRun(turn, typeKey) {
     .filter(Boolean)
     .join(" · ");
   if (details.textContent) bubble.appendChild(details);
+  const providerCalls = Number(turn.providerCalls) || 0;
+  const promptTokens = Number(turn.promptTokens) || 0;
+  const completionTokens = Number(turn.completionTokens) || 0;
+  if (providerCalls || promptTokens || completionTokens) {
+    const usage = document.createElement("div");
+    usage.className = "chat-proposal-meta";
+    usage.textContent = `Provider usage: ${providerCalls} call${providerCalls === 1 ? "" : "s"} · ${(
+      promptTokens + completionTokens
+    ).toLocaleString()} tokens (${promptTokens.toLocaleString()} prompt + ${completionTokens.toLocaleString()} completion).`;
+    bubble.appendChild(usage);
+  }
   const workItems = Array.isArray(turn.workItems) ? turn.workItems : [];
   if (workItems.length) {
     const plan = document.createElement("ol");

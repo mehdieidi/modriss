@@ -69,7 +69,7 @@ The deployed Arvan profile uses JSON content rather than native tool calls:
 
 ```dotenv
 VARKA_AI_PROVIDER=openai
-VARKA_AI_MODEL=DeepSeek-V4-Flash
+VARKA_AI_MODEL=Gemma-4-31B-IT
 VARKA_AI_MODE=unified
 VARKA_AI_METAMODEL_MODE=normal
 VARKA_AI_OPENAI_PROTOCOL=json_schema
@@ -81,6 +81,12 @@ The adapter sends temperature zero and `thinking: {"type":"disabled"}`. Arvan ca
 large `reasoning_content` and `finish_reason=length`. Truncated type-selection retries therefore
 use only the LLM obligation candidates, exact closure costs, the request, and the latest diagnostic.
 The selector currently has four bounded attempts so the LLM can act on a final capacity diagnostic.
+
+Focused conceptual slices validate every emitted association against the live Ecore contract before
+later slices are generated. The complete compiler remains authoritative, while early feature,
+containment kind, target type, multiplicity, and ownership diagnostics keep corrections local and
+bounded. Provider call and token summaries are reconciled from the idempotent durable call ledger,
+including cancellation paths.
 
 ## Assistant metamodel modes
 

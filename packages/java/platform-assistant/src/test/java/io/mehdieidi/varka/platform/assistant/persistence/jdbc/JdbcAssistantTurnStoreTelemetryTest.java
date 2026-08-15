@@ -2,6 +2,7 @@ package io.mehdieidi.varka.platform.assistant.persistence.jdbc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
@@ -41,6 +42,13 @@ class JdbcAssistantTurnStoreTelemetryTest {
             eq("user prompt"),
             isNull(),
             isNull());
+    verify(jdbc)
+        .update(
+            contains("UPDATE assistant_turns SET provider_calls"),
+            eq("turn-1"),
+            eq("turn-1"),
+            eq("turn-1"),
+            eq("turn-1"));
   }
 
   @Test

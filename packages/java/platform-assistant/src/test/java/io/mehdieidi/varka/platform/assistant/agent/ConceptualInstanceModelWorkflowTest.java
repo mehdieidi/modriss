@@ -174,7 +174,7 @@ class ConceptualInstanceModelWorkflowTest {
 {"workflow-1":{"type":"Workflow","attributes":[
   {"attributeName":"name","value":"Order workflow"},
   {"attributeName":"workflowKind","value":"ORCHESTRATION"}
-],"associations":{"compositions":[{"associationName":"steps","associatedClassName":"WorkflowStep","instanceID":"step-1"}],"references":[]}}}
+],"associations":{"compositions":[{"associationName":"steps","associatedClassName":"TaskStep","instanceID":"step-1"}],"references":[]}}}
 """),
                 ScriptedAssistantModelProvider.reply(
                     """
@@ -766,6 +766,72 @@ class ConceptualInstanceModelWorkflowTest {
                 prompt ->
                     prompt.user().contains("missing required Ecore references")
                         && prompt.user().contains("primaryIdentityAttribute->InformationItem")));
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
+  void rejectsInvalidAssociationTypeInsideTheFocusedSlice() throws Exception {
+    String blueprint =
+        """
+{"types":["Actor","BusinessGoal"],"objects":[
+  {"instanceId":"customer","type":"Actor","purpose":"Customer","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"place-order","type":"BusinessGoal","purpose":"Place orders","ownerInstanceId":"rootId","containment":"goals","referenceTargets":["customer"],"sourceUnitIds":[],"slice":1}
+]}
+""";
+    String actor =
+        """
+"customer":{"type":"Actor","attributes":[{"attributeName":"name","value":"Customer"}],"associations":{"compositions":[],"references":[]}}
+""";
+    String invalidGoal =
+        """
+"place-order":{"type":"BusinessGoal","attributes":[{"attributeName":"name","value":"Place orders"}],"associations":{"compositions":[],"references":[{"associationName":"owners","associatedClassName":"Stakeholder","instanceID":"customer"}]}}
+""";
+    String correctedGoal =
+        """
+"place-order":{"type":"BusinessGoal","attributes":[{"attributeName":"name","value":"Place orders"}],"associations":{"compositions":[],"references":[]}}
+""";
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\",\"BusinessGoal\"]}"),
+                ScriptedAssistantModelProvider.reply(blueprint),
+                ScriptedAssistantModelProvider.reply("{" + actor + "," + invalidGoal + "}"),
+                ScriptedAssistantModelProvider.reply("{" + actor + "," + correctedGoal + "}")));
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(10);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
+    when(properties.maxRepairAttempts()).thenReturn(1);
+    when(properties.model()).thenReturn("Gemma-4-31B-IT");
+    when(properties.llmReviewEnabled()).thenReturn(false);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
+
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.CIM,
+            "Create order goals and actors",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+            false);
+
+    assertTrue(
+        provider
+            .prompts()
+            .get(3)
+            .user()
+            .contains("declares associatedClassName Stakeholder but instance 'customer' is Actor"));
+    assertEquals(2, result.commandBatch().creates().size());
+    assertEquals(0, result.commandBatch().connections().size());
     assertEquals(0, provider.remainingSteps());
   }
 

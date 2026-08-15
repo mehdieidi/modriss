@@ -949,7 +949,8 @@ public final class ConceptualInstanceModelWorkflow {
           correctionAttempt <= Math.max(1, properties.maxRepairAttempts());
           correctionAttempt++) {
         try {
-          mergeSlice(level, slice, reply.content(), generated, sourceUnitIds(request));
+          mergeSlice(
+              level, slice, reply.content(), current, blueprint, generated, sourceUnitIds(request));
           persistObjects(durableTurnId, blueprint, generated);
           lastSchemaFailure = null;
           break;
@@ -1009,6 +1010,8 @@ public final class ConceptualInstanceModelWorkflow {
       ModelLevel level,
       List<BlueprintObject> slice,
       String content,
+      JsonNode current,
+      Blueprint blueprint,
       LinkedHashMap<String, JsonNode> generated,
       Set<String> allowedSourceUnitIds) {
     ConceptualModel parsed = ConceptualModel.parse(mapper, content);
@@ -1039,6 +1042,7 @@ public final class ConceptualInstanceModelWorkflow {
       validateCompleteObject(object.instanceId(), value);
       validateRequiredAttributes(level, object.instanceId(), object.type(), value);
       validateRequiredReferences(level, object.instanceId(), object.type(), value);
+      validateAssociations(level, object, value, current, blueprint);
       validateSourceEvidence(object.instanceId(), value, allowedSourceUnitIds);
       if (generated.containsKey(object.instanceId())) {
         throw new PlatformException(
@@ -1048,6 +1052,153 @@ public final class ConceptualInstanceModelWorkflow {
     for (BlueprintObject object : slice) {
       generated.put(object.instanceId(), parsed.objects.get(object.instanceId()));
     }
+  }
+
+  /**
+   * Rejects structurally impossible links while the provider still has the focused slice context.
+   * The complete compiler remains authoritative, but deferring these checks until every slice has
+   * been generated wastes calls and makes a small object defect expensive to repair.
+   */
+  private void validateAssociations(
+      ModelLevel level,
+      BlueprintObject source,
+      JsonNode value,
+      JsonNode current,
+      Blueprint blueprint) {
+    Map<String, String> knownTypes = new LinkedHashMap<>();
+    collectCurrentTypes(current, knownTypes);
+    String currentRootId = current.path("id").asText("");
+    String currentRootType = current.path("eClass").asText(contracts.rootType(level));
+    knownTypes.put("rootId", currentRootType);
+    if (!currentRootId.isBlank()) knownTypes.put(currentRootId, currentRootType);
+    Map<String, BlueprintObject> planned = new LinkedHashMap<>();
+    for (BlueprintObject object : blueprint.objects()) {
+      planned.put(object.instanceId(), object);
+      knownTypes.put(object.instanceId(), object.type());
+    }
+
+    var contract = contracts.require(level, source.type());
+    for (String kind : List.of("compositions", "references")) {
+      boolean containment = "compositions".equals(kind);
+      Map<String, Integer> occurrences = new LinkedHashMap<>();
+      for (JsonNode association : value.path("associations").path(kind)) {
+        String feature = association.path("associationName").asText("").trim();
+        String declaredType = association.path("associatedClassName").asText("").trim();
+        String targetId = association.path("instanceID").asText("").trim();
+        if (feature.isBlank() || declaredType.isBlank() || targetId.isBlank()) {
+          throw new PlatformException(
+              422,
+              "Association on conceptual object '"
+                  + source.instanceId()
+                  + "' requires non-empty associationName, associatedClassName, and instanceID.");
+        }
+        var reference =
+            contract.references().stream()
+                .filter(candidate -> candidate.name().equals(feature))
+                .findFirst()
+                .orElseThrow(
+                    () ->
+                        new PlatformException(
+                            422,
+                            "Association '"
+                                + source.instanceId()
+                                + "."
+                                + feature
+                                + "' is not a writable Ecore reference on "
+                                + source.type()
+                                + "."));
+        if (reference.readonly() || reference.containment() != containment) {
+          throw new PlatformException(
+              422,
+              "Association '"
+                  + source.instanceId()
+                  + "."
+                  + feature
+                  + "' must be emitted under "
+                  + (reference.containment() ? "compositions" : "references")
+                  + " and must be writable.");
+        }
+        String actualType = knownTypes.get(targetId);
+        if (actualType == null) {
+          throw new PlatformException(
+              422,
+              "Association '"
+                  + source.instanceId()
+                  + "."
+                  + feature
+                  + "' targets unknown instance ID '"
+                  + targetId
+                  + "'.");
+        }
+        if (!declaredType.equals(actualType)) {
+          throw new PlatformException(
+              422,
+              "Association '"
+                  + source.instanceId()
+                  + "."
+                  + feature
+                  + "' declares associatedClassName "
+                  + declaredType
+                  + " but instance '"
+                  + targetId
+                  + "' is "
+                  + actualType
+                  + ".");
+        }
+        if (!contracts.assignable(level, actualType, reference.targetType())) {
+          throw new PlatformException(
+              422,
+              "Association '"
+                  + source.instanceId()
+                  + "."
+                  + feature
+                  + "' requires "
+                  + reference.targetType()
+                  + " but instance '"
+                  + targetId
+                  + "' is "
+                  + actualType
+                  + ".");
+        }
+        int count = occurrences.merge(feature, 1, Integer::sum);
+        if (!reference.many() && count > 1) {
+          throw new PlatformException(
+              422,
+              "Single-valued association '"
+                  + source.instanceId()
+                  + "."
+                  + feature
+                  + "' was emitted more than once.");
+        }
+        BlueprintObject target = planned.get(targetId);
+        if (containment
+            && target != null
+            && (!source.instanceId().equals(target.ownerInstanceId())
+                || !feature.equals(target.containment()))) {
+          throw new PlatformException(
+              422,
+              "Composition '"
+                  + source.instanceId()
+                  + "."
+                  + feature
+                  + "' conflicts with the blueprint ownership of '"
+                  + targetId
+                  + "'.");
+        }
+      }
+    }
+  }
+
+  private void collectCurrentTypes(JsonNode node, Map<String, String> knownTypes) {
+    if (node == null || node.isNull() || node.isValueNode()) return;
+    if (node.isObject()) {
+      String id = node.path("id").asText("").trim();
+      String type = node.path("eClass").asText("").trim();
+      if (!id.isBlank() && !type.isBlank()) knownTypes.put(id, type);
+      node.properties().forEach(entry -> collectCurrentTypes(entry.getValue(), knownTypes));
+      return;
+    }
+    node.forEach(child -> collectCurrentTypes(child, knownTypes));
   }
 
   private void validateSourceEvidence(

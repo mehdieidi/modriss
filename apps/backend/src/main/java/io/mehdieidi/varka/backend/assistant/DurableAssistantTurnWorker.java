@@ -571,6 +571,19 @@ public final class DurableAssistantTurnWorker {
             Math.max(0L, turn.promptTokens()) + turnFailure.promptTokens(),
             Math.max(0L, turn.completionTokens()) + turnFailure.completionTokens());
         turns.recordProviderCalls(turn.id(), turnFailure.providerCallDetails());
+        if (failureState(ex.status(), ex.getMessage(), turns.cancellationRequested(turn.id()))
+            == AssistantTurn.State.CANCELLED) {
+          var latestCheckpoint = turns.latestCheckpoint(turn.id());
+          Long savedRevision =
+              latestCheckpoint.map(AssistantTurnStore.Checkpoint::revision).orElse(turn.revision());
+          complete(
+              turn,
+              AssistantTurn.State.CANCELLED,
+              cancellationMessage(turn, savedRevision),
+              savedRevision,
+              turn.remainingWork());
+          return;
+        }
         var progressiveWorkflow = turns.workflow(turn.id());
         boolean hasDurableConceptualProgress =
             progressiveWorkflow
@@ -629,20 +642,7 @@ public final class DurableAssistantTurnWorker {
             ex.getMessage());
         return;
       }
-      AssistantTurn.State state =
-          switch (ex.status()) {
-            case 499 -> AssistantTurn.State.CANCELLED;
-            case 504 -> AssistantTurn.State.TIMED_OUT;
-            case 409 ->
-                ex.getMessage() != null
-                        && ex.getMessage()
-                            .toLowerCase(java.util.Locale.ROOT)
-                            .contains("confirmation")
-                    ? AssistantTurn.State.NEEDS_CONFIRMATION
-                    : AssistantTurn.State.CONFLICTED;
-            case 422 -> AssistantTurn.State.FAILED;
-            default -> AssistantTurn.State.FAILED;
-          };
+      AssistantTurn.State state = failureState(ex.status(), ex.getMessage(), false);
       complete(
           turn,
           state,
@@ -946,6 +946,18 @@ public final class DurableAssistantTurnWorker {
     return plan.path("obligationLedger").isObject()
         || (plan.path("selectedTypes").isArray() && !plan.path("selectedTypes").isEmpty())
         || plan.path("blueprint").isObject();
+  }
+
+  static AssistantTurn.State failureState(
+      int status, String message, boolean cancellationRequested) {
+    if (cancellationRequested || status == 499) return AssistantTurn.State.CANCELLED;
+    if (status == 504) return AssistantTurn.State.TIMED_OUT;
+    if (status == 409) {
+      return message != null && message.toLowerCase(java.util.Locale.ROOT).contains("confirmation")
+          ? AssistantTurn.State.NEEDS_CONFIRMATION
+          : AssistantTurn.State.CONFLICTED;
+    }
+    return AssistantTurn.State.FAILED;
   }
 
   private boolean transientProviderFailure(int status) {

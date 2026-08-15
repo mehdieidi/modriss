@@ -1,9 +1,59 @@
 # Assistant live-evaluation status
 
-Updated: 2026-08-14
+Updated: 2026-08-15
 
 This is a curated index of the latest acceptance evidence. Raw reports under `target/` remain the
 authoritative per-run record, including failed attempts.
+
+## 2026-08-15 persisted-CIM evolution investigation
+
+One bounded `cim-feature-evolution` run used Gemma in normal metamodel mode with external replay
+disabled. The fixture timed out after 428 seconds during its first, empty-model creation turn; the
+second persisted edit was never reached. The turn generated and durably retained all 14 planned
+objects, used 20 provider calls and 43,775 / 9,617 prompt/completion tokens according to the
+authoritative call ledger, committed no model checkpoint, and was cancelled safely with no visible
+model mutation.
+
+This was a product-workflow failure rather than a zero-token provider outage. Three invalid
+associations had been accepted by focused slices and discovered only after all objects were staged:
+two links declared `Stakeholder` while targeting `Actor`, and one `ValueObject` emitted a
+nonexistent `attributes` containment. Six late correction calls and the bounded automatic recovery
+then exhausted the latency envelope.
+
+Focused slice acceptance now checks every emitted association against live Ecore contracts:
+writable feature existence, containment/reference placement, non-empty fields, target ID and exact
+target EClass, target assignability, single-valued multiplicity, and blueprint containment
+ownership. These checks are structural only. They cause the original small slice to be corrected
+before later generation calls are spent. A focused regression reproduces the live
+`Stakeholder`/`Actor` mismatch, and the conceptual workflow suite now passes 23 tests.
+
+The run also exposed stale cancellation accounting: the per-call ledger contained 20 calls while
+the turn summary showed 18. Provider-call insertion now reconciles aggregate calls and tokens from
+the idempotent ledger, so cancellation or a worker crash after a provider response cannot hide
+already-spent cost. The frontend now displays aggregate provider calls/tokens and explicit bounded
+automatic-continuation/recovery progress. The post-fix live acceptance run remains outstanding;
+this evidence does not prove persisted evolution reliability.
+
+The one permitted post-fix rerun also timed out at 429 seconds during initial creation, before the
+persisted edit. Early validation behaved as intended: invalid object shape, both required
+`DomainEntity` identity references, and the invalid `ValueObject.attributes` association were
+rejected in their focused slices. Gemma nevertheless needed repeated corrections and had staged
+only 8 of 14 objects when the deadline arrived. The terminal ledger records 17 calls and 37,554 /
+9,618 prompt/completion tokens, zero committed checkpoints, and no visible mutation. An in-flight
+call returned HTTP 403 after cancellation was requested, exposing a state race where provider
+failure could win over cancellation. The worker now gives cancellation precedence after recording
+telemetry, and migration V31 corrected affected historical terminal rows and events. This rerun was
+not repeated; current evidence says early checking is fixed, while Gemma latency/output quality
+still prevents this fixture from meeting its acceptance budget.
+
+The final Docker Hub metadata lookup returned HTTP 403 for the Maven base image. Because the
+application JAR built locally and the prior backend image already contained the unchanged JRE,
+system packages, metamodel files, non-root user, and entrypoint, deployment replaced only
+`/app/backend.jar` in a container derived from that image. The final running image is
+`sha256:82d5d818c82a43dfe7a4875de9b724ce1745993e777f3176b0b3e222a97433ed`; prior images are retained
+under dated `pre-*` tags. Migrations V30 and V31 reconciled provider aggregates and cancellation
+race outcomes. Health is UP with Gemma, normal mode, LLM review disabled, one provider retry, and
+no queued or running turns.
 
 ## 2026-08-14 Gemma reliability follow-up
 

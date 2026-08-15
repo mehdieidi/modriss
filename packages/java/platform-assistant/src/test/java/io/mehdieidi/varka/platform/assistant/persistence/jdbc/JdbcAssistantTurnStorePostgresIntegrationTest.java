@@ -125,6 +125,10 @@ class JdbcAssistantTurnStorePostgresIntegrationTest {
             Integer.class,
             turn.id(),
             "conceptual-call-1"));
+    AssistantTurn reconciled = turns.find(turn.id()).orElseThrow();
+    assertEquals(1, reconciled.providerCalls());
+    assertEquals(10, reconciled.promptTokens());
+    assertEquals(20, reconciled.completionTokens());
   }
 
   @Test

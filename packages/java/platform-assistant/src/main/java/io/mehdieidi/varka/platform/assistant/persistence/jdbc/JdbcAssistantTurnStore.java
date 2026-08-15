@@ -654,6 +654,20 @@ RETURNING *
           call.error(),
           call.callKey());
     }
+    // The per-call ledger is written before a provider result is interpreted. Cancellation or a
+    // worker crash can therefore happen after the ledger insert but before the normal aggregate
+    // update. Reconcile from the idempotent ledger so the user-visible totals never omit calls or
+    // tokens already spent.
+    jdbc.update(
+        "UPDATE assistant_turns SET provider_calls = (SELECT count(*) FROM"
+            + " assistant_provider_calls WHERE turn_id = ?), prompt_tokens = COALESCE((SELECT"
+            + " sum(prompt_tokens) FROM assistant_provider_calls WHERE turn_id = ?), 0),"
+            + " completion_tokens = COALESCE((SELECT sum(completion_tokens) FROM"
+            + " assistant_provider_calls WHERE turn_id = ?), 0) WHERE id = ?",
+        turnId,
+        turnId,
+        turnId,
+        turnId);
   }
 
   @Override

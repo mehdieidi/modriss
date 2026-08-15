@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.mehdieidi.varka.platform.assistant.turn.AssistantTurn;
 import org.junit.jupiter.api.Test;
 
 class DurableAssistantModeTest {
@@ -31,5 +32,15 @@ class DurableAssistantModeTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> DurableAssistantTurnWorker.AssistantMode.parse("conceptual-instance"));
+  }
+
+  @Test
+  void cancellationTakesPrecedenceOverAConcurrentProviderFailure() {
+    assertEquals(
+        AssistantTurn.State.CANCELLED,
+        DurableAssistantTurnWorker.failureState(403, "Provider rejected the request", true));
+    assertEquals(
+        AssistantTurn.State.FAILED,
+        DurableAssistantTurnWorker.failureState(403, "Provider rejected the request", false));
   }
 }
