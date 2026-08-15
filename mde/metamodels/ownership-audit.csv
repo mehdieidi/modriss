@@ -493,16 +493,24 @@ psm,awspsm-api.emf,ApiGatewayUsagePlanKey,False,(none),(none),,,,,flag: unreacha
 psm,awspsm-workflow.emf,AslBranch,False,AslState.branches; AslMapConfig.itemProcessor,AslState.branches; AslMapConfig.itemProcessor,states,val,AslState,,flag: multiple-containment,containment owner,multiple-containment
 psm,awspsm-workflow.emf,AslCatchRule,False,AslState.catch,AslState.catch,,,,,ok,leaf classifier,
 psm,awspsm-workflow.emf,AslChoiceRule,False,AslState.choices,AslState.choices,,,,,ok,leaf classifier,
+psm,awspsm-workflow.emf,AslChoiceState,False,(none),(none),,,,,flag: unreachable,leaf classifier,unreachable
 psm,awspsm-workflow.emf,AslDocument,False,StepFunctionStateMachine.aslDocument,StepFunctionStateMachine.aslDocument,states,val,AslState,,val,containment owner,
+psm,awspsm-workflow.emf,AslFailState,False,(none),(none),,,,,flag: unreachable,leaf classifier,unreachable
 psm,awspsm-workflow.emf,AslMapConfig,False,AslState.mapConfig,AslState.mapConfig,itemProcessor,val,AslBranch,,val,containment owner,
+psm,awspsm-workflow.emf,AslMapState,False,(none),(none),,,,,flag: unreachable,leaf classifier,unreachable
+psm,awspsm-workflow.emf,AslParallelState,False,(none),(none),,,,,flag: unreachable,leaf classifier,unreachable
+psm,awspsm-workflow.emf,AslPassState,False,(none),(none),,,,,flag: unreachable,leaf classifier,unreachable
 psm,awspsm-workflow.emf,AslRetryRule,False,AslState.retry,AslState.retry,,,,,ok,leaf classifier,
-psm,awspsm-workflow.emf,AslState,False,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,retry,val,AslRetryRule,,flag: multiple-containment,containment owner,multiple-containment
-psm,awspsm-workflow.emf,AslState,False,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,catch,val,AslCatchRule,,val,containment owner,multiple-containment
-psm,awspsm-workflow.emf,AslState,False,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,choices,val,AslChoiceRule,,val,containment owner,multiple-containment
-psm,awspsm-workflow.emf,AslState,False,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,branches,val,AslBranch,,val,containment owner,multiple-containment
-psm,awspsm-workflow.emf,AslState,False,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,mapConfig,val,AslMapConfig,,val,containment owner,multiple-containment
-psm,awspsm-workflow.emf,AslState,False,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,nextState,ref,AslState,,ref,cross-link,multiple-containment
-psm,awspsm-workflow.emf,AslState,False,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,invokedResource,ref,AwsResource,,ref,cross-link,multiple-containment
+psm,awspsm-workflow.emf,AslState,True,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,retry,val,AslRetryRule,,flag: multiple-containment,containment owner,multiple-containment
+psm,awspsm-workflow.emf,AslState,True,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,catch,val,AslCatchRule,,val,containment owner,multiple-containment
+psm,awspsm-workflow.emf,AslState,True,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,choices,val,AslChoiceRule,,val,containment owner,multiple-containment
+psm,awspsm-workflow.emf,AslState,True,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,branches,val,AslBranch,,val,containment owner,multiple-containment
+psm,awspsm-workflow.emf,AslState,True,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,mapConfig,val,AslMapConfig,,val,containment owner,multiple-containment
+psm,awspsm-workflow.emf,AslState,True,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,nextState,ref,AslState,,ref,cross-link,multiple-containment
+psm,awspsm-workflow.emf,AslState,True,AslDocument.states; AslBranch.states,AslDocument.states; AslBranch.states,invokedResource,ref,AwsResource,,ref,cross-link,multiple-containment
+psm,awspsm-workflow.emf,AslSucceedState,False,(none),(none),,,,,flag: unreachable,leaf classifier,unreachable
+psm,awspsm-workflow.emf,AslTaskState,False,(none),(none),,,,,flag: unreachable,leaf classifier,unreachable
+psm,awspsm-workflow.emf,AslWaitState,False,(none),(none),,,,,flag: unreachable,leaf classifier,unreachable
 psm,awspsm-compute.emf,AwsLambdaFunction,False,(none),(none),environment,val,LambdaEnvironmentVariable,,flag: unreachable,containment owner,unreachable
 psm,awspsm-compute.emf,AwsLambdaFunction,False,(none),(none),deadLetterConfig,val,LambdaDeadLetterConfig,,val,containment owner,unreachable
 psm,awspsm-compute.emf,AwsLambdaFunction,False,(none),(none),tracing,val,LambdaTracingConfig,,val,containment owner,unreachable

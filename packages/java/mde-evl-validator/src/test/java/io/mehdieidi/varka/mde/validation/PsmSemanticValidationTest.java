@@ -784,16 +784,16 @@ context AWSPSM!AwsPsmModel {
     </resources>
     <resources xsi:type="awspsmworkflow:StepFunctionStateMachine" id="bad-state-machine-asl" name="Bad ASL" logicalId="BadAsl" awsResourceType="AWS::Serverless::StateMachine" role="%s" definitionUri="s.asl.json" definitionString="{}" stateMachineType="STANDARD">
       <aslDocument id="bad-asl" name="Bad ASL" startAt="Missing">
-        <states id="bad-state-a" name="Bad State A" stateName="Duplicate" type="TASK">
+        <states xsi:type="awspsmworkflow:AslTaskState" id="bad-state-a" name="Bad State A" stateName="Duplicate">
           <retry id="bad-asl-retry" name="Bad ASL Retry" intervalSeconds="0" maxAttempts="-1" backoffRate="0.5" maxDelaySeconds="0"/>
           <catch id="bad-asl-catch" name="Bad ASL Catch" nextState="bad-state-terminal-next"/>
         </states>
-        <states id="bad-state-b" name="Bad State B" stateName="Duplicate" type="TASK"/>
-        <states id="bad-state-terminal-next" name="Bad Terminal Next" stateName="Terminal" type="SUCCEED" end="true" nextStateName="After"/>
-        <states id="bad-choice" name="Bad Choice" stateName="Choice" type="CHOICE">
+        <states xsi:type="awspsmworkflow:AslTaskState" id="bad-state-b" name="Bad State B" stateName="Duplicate"/>
+        <states xsi:type="awspsmworkflow:AslSucceedState" id="bad-state-terminal-next" name="Bad Terminal Next" stateName="Terminal" end="true" nextStateName="After"/>
+        <states xsi:type="awspsmworkflow:AslChoiceState" id="bad-choice" name="Bad Choice" stateName="Choice">
           <choices id="bad-choice-rule" name="Bad Choice Rule" nextState="bad-state-terminal-next"/>
         </states>
-        <states id="bad-choice-empty" name="Bad Choice Empty" stateName="ChoiceEmpty" type="CHOICE"/>
+        <states xsi:type="awspsmworkflow:AslChoiceState" id="bad-choice-empty" name="Bad Choice Empty" stateName="ChoiceEmpty"/>
       </aslDocument>
     </resources>
     <resources xsi:type="awspsmobservability:CloudWatchLogGroup" id="bad-log-group" name="Bad Log Group" logicalId="BadLogGroup" awsResourceType="AWS::Logs::LogGroup" productionCritical="true"/>
@@ -931,15 +931,15 @@ context AWSPSM!AwsPsmModel {
   <resources xsi:type="awspsmapi:ApiGatewayIntegration" id="helper-double-integration" name="Helper Double Integration" logicalId="HelperDoubleIntegration" awsResourceType="AWS::ApiGatewayV2::Integration" integrationType="AWS_PROXY" lambdaTarget="helper-function" stateMachineTarget="helper-machine"/>
   <resources xsi:type="awspsmworkflow:StepFunctionStateMachine" id="helper-machine" name="Helper Machine" logicalId="HelperMachine" awsResourceType="AWS::Serverless::StateMachine" role="helper-role" stateMachineType="STANDARD">
     <aslDocument id="helper-asl" name="Helper ASL" startAt="Done">
-      <states id="helper-done" name="Done" stateName="Done" type="SUCCEED" end="true"/>
+      <states xsi:type="awspsmworkflow:AslSucceedState" id="helper-done" name="Done" stateName="Done" end="true"/>
     </aslDocument>
   </resources>
   <resources xsi:type="awspsmworkflow:StepFunctionStateMachine" id="helper-uri-machine" name="Helper URI Machine" logicalId="HelperUriMachine" awsResourceType="AWS::Serverless::StateMachine" role="helper-role" stateMachineType="STANDARD" definitionUri="state.asl.json"/>
   <resources xsi:type="awspsmworkflow:StepFunctionStateMachine" id="helper-string-machine" name="Helper String Machine" logicalId="HelperStringMachine" awsResourceType="AWS::Serverless::StateMachine" role="helper-role" stateMachineType="STANDARD" definitionString="{}"/>
   <resources xsi:type="awspsmworkflow:StepFunctionStateMachine" id="helper-mixed-machine" name="Helper Mixed Machine" logicalId="HelperMixedMachine" awsResourceType="AWS::Serverless::StateMachine" role="helper-role" stateMachineType="STANDARD" definitionUri="state.asl.json" definitionString="{}">
     <aslDocument id="helper-duplicate-asl" name="Helper Duplicate ASL" startAt="Duplicate">
-      <states id="helper-duplicate-state-a" name="Duplicate A" stateName="Duplicate" type="SUCCEED" end="true"/>
-      <states id="helper-duplicate-state-b" name="Duplicate B" stateName="Duplicate" type="SUCCEED" end="true"/>
+      <states xsi:type="awspsmworkflow:AslSucceedState" id="helper-duplicate-state-a" name="Duplicate A" stateName="Duplicate" end="true"/>
+      <states xsi:type="awspsmworkflow:AslSucceedState" id="helper-duplicate-state-b" name="Duplicate B" stateName="Duplicate" end="true"/>
     </aslDocument>
   </resources>
   <metadata id="helper-secret-metadata" name="Secret" propertyName="Secret" required="false" secret="false" format="JSON" validationState="NEEDS_REVIEW">

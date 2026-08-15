@@ -32,7 +32,7 @@ class AslDocument extends kernel.StructuredDocument {
   val AslState[+] states;
 }
 
-class AslState extends kernel.TraceableElement {
+abstract class AslState extends kernel.TraceableElement {
   attr String[1] stateName;
   attr String resource;
   attr String nextStateName;
@@ -45,8 +45,6 @@ class AslState extends kernel.TraceableElement {
   attr String assignJson;
   attr Integer timeoutSeconds;
   attr Integer heartbeatSeconds;
-  attr awspsmenums.AslStateType[1] type;
-
   val AslRetryRule[*] retry;
   val AslCatchRule[*] catch;
   val AslChoiceRule[*] choices;
@@ -55,6 +53,30 @@ class AslState extends kernel.TraceableElement {
 
   ref AslState[?] nextState;
   ref awspsmcore.AwsResource[?] invokedResource;
+}
+
+class AslPassState extends AslState {
+}
+
+class AslTaskState extends AslState {
+}
+
+class AslChoiceState extends AslState {
+}
+
+class AslWaitState extends AslState {
+}
+
+class AslSucceedState extends AslState {
+}
+
+class AslFailState extends AslState {
+}
+
+class AslParallelState extends AslState {
+}
+
+class AslMapState extends AslState {
 }
 
 class AslBranch extends kernel.TraceableElement {

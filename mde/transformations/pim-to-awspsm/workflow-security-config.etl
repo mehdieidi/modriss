@@ -232,27 +232,35 @@ operation createAslDocument(w) {
 
 /** Creates create asl state. */
 operation createAslState(w, ws) {
-  var st = new AWSPSMWORKFLOW!AslState;
+  var st = newAslStateForStep(ws);
   st.id = generatedId("asl_state", ws, "state");
   st.name = ws.name;
   st.stateName = firstText(ws.name, "State");
-  st.type = mapAslStateTypeForStep(ws);
   st.timeoutSeconds = ws.timeoutSeconds;
   st.inputPath = aslJsonPathOrRoot(ws.inputMapping);
   st.outputPath = aslJsonPathOrRoot(ws.outputMapping);
   st.end = ws.isKindOf(PIM!SuccessEndStep) or ws.isKindOf(PIM!FailureEndStep);
-  if (st.type = AWSPSMENUMS!AslStateType#TASK and ws.isKindOf(PIM!TaskStep) and ws.invokesFunction.isDefined()) {
+  if (st.isKindOf(AWSPSMWORKFLOW!AslTaskState) and ws.invokesFunction.isDefined()) {
     st.invokedResource = awsEquivalent(ws.invokesFunction);
     st.resource = "arn:aws:states:::lambda:invoke";
   }
   else {
-    if (st.type = AWSPSMENUMS!AslStateType#TASK and ws.isKindOf(PIM!TaskStep) and ws.nestedWorkflow.isDefined()) {
+    if (st.isKindOf(AWSPSMWORKFLOW!AslTaskState) and ws.nestedWorkflow.isDefined()) {
       st.invokedResource = awsEquivalent(ws.nestedWorkflow);
       st.resource = "arn:aws:states:::states:startExecution.sync";
     }
     else {
-      if (st.type = AWSPSMENUMS!AslStateType#TASK) {
-        st.type = AWSPSMENUMS!AslStateType#PASS;
+      if (st.isKindOf(AWSPSMWORKFLOW!AslTaskState)) {
+        var passState = new AWSPSMWORKFLOW!AslPassState;
+        passState.id = st.id;
+        passState.name = st.name;
+        passState.stateName = st.stateName;
+        passState.timeoutSeconds = st.timeoutSeconds;
+        passState.inputPath = st.inputPath;
+        passState.outputPath = st.outputPath;
+        passState.end = st.end;
+        delete st;
+        st = passState;
         manualDecision("WORKFLOW_TASK_TARGET_REQUIRED",
           "Provide an executable target for workflow task " + ws.name + ".",
           KERNEL!Severity#ERROR, isProductionRoot(), Sequence{w, ws},
@@ -278,6 +286,32 @@ operation createAslState(w, ws) {
   return st;
 }
 
+/** Creates the concrete ASL state classifier corresponding to a PIM workflow step. */
+operation newAslStateForStep(ws) {
+  if (ws.isKindOf(PIM!TaskStep)) {
+    return new AWSPSMWORKFLOW!AslTaskState;
+  }
+  if (ws.isKindOf(PIM!ChoiceStep)) {
+    return new AWSPSMWORKFLOW!AslChoiceState;
+  }
+  if (ws.isKindOf(PIM!ParallelStep)) {
+    return new AWSPSMWORKFLOW!AslParallelState;
+  }
+  if (ws.isKindOf(PIM!MapStep)) {
+    return new AWSPSMWORKFLOW!AslMapState;
+  }
+  if (ws.isKindOf(PIM!WaitStep)) {
+    return new AWSPSMWORKFLOW!AslWaitState;
+  }
+  if (ws.isKindOf(PIM!SuccessEndStep)) {
+    return new AWSPSMWORKFLOW!AslSucceedState;
+  }
+  if (ws.isKindOf(PIM!FailureEndStep)) {
+    return new AWSPSMWORKFLOW!AslFailState;
+  }
+  return new AWSPSMWORKFLOW!AslPassState;
+}
+
 /** Returns a valid JSONPath root when an upstream mapping is absent or still a placeholder. */
 operation aslJsonPathOrRoot(mapping) {
   if (not hasText(mapping) or mapping = "TBD" or not mapping.startsWith("$")) {
@@ -291,7 +325,7 @@ operation completeAslStateTransitions(w, stateByPimId) {
   for (ws in w.steps) {
     var st = stateByPimId.get(cacheKeyFor(ws));
     var out = w.transitions.select(x | x.source = ws);
-    if (st.isDefined() and st.type = AWSPSMENUMS!AslStateType#CHOICE) {
+    if (st.isDefined() and st.isKindOf(AWSPSMWORKFLOW!AslChoiceState)) {
       for (tr in out) {
         var choiceRule = createAslChoice(tr, stateByPimId);
         if (choiceRule.isDefined()) {
@@ -313,7 +347,7 @@ operation completeAslStateTransitions(w, stateByPimId) {
       }
     }
     else {
-      if (st.isDefined() and out.size() <> 1 and not st.end and st.type <> AWSPSMENUMS!AslStateType#CHOICE) {
+      if (st.isDefined() and out.size() <> 1 and not st.end and not st.isKindOf(AWSPSMWORKFLOW!AslChoiceState)) {
         manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
           "Resolve outgoing transition for workflow state " + ws.name + ".",
           KERNEL!Severity#ERROR, true, Sequence{w, ws},
@@ -356,32 +390,6 @@ operation createAslChoice(tr, stateByPimId) {
       "Set WorkflowTransition.conditionExpression or mark it as defaultTransition.");
   }
   return c;
-}
-
-/** Computes map asl state type for step. */
-operation mapAslStateTypeForStep(ws) {
-  if (ws.isKindOf(PIM!TaskStep)) {
-    return AWSPSMENUMS!AslStateType#TASK;
-  }
-  if (ws.isKindOf(PIM!ChoiceStep)) {
-    return AWSPSMENUMS!AslStateType#CHOICE;
-  }
-  if (ws.isKindOf(PIM!ParallelStep)) {
-    return AWSPSMENUMS!AslStateType#PARALLEL;
-  }
-  if (ws.isKindOf(PIM!MapStep)) {
-    return AWSPSMENUMS!AslStateType#MAP;
-  }
-  if (ws.isKindOf(PIM!WaitStep)) {
-    return AWSPSMENUMS!AslStateType#WAIT;
-  }
-  if (ws.isKindOf(PIM!SuccessEndStep)) {
-    return AWSPSMENUMS!AslStateType#SUCCEED;
-  }
-  if (ws.isKindOf(PIM!FailureEndStep)) {
-    return AWSPSMENUMS!AslStateType#FAIL;
-  }
-  return AWSPSMENUMS!AslStateType#PASS;
 }
 
 /** Creates create asl retry. */
@@ -475,7 +483,7 @@ operation renderAsl(doc) {
 
 /** Renders render asl state. */
 operation renderAslState(s) {
-  var body = "{ \"Type\": \"" + aslTypeName(s.type) + "\"";
+  var body = "{ \"Type\": \"" + aslTypeName(s) + "\"";
   if (hasText(s.resource)) {
     body = body + ", \"Resource\": \"" + escapeJson(s.resource) + "\"";
   }
@@ -509,14 +517,29 @@ operation renderAslState(s) {
 }
 
 /** Renders asl type name. */
-operation aslTypeName(t) {
-  if (t = AWSPSMENUMS!AslStateType#SUCCEED) {
+operation aslTypeName(s) {
+  if (s.isKindOf(AWSPSMWORKFLOW!AslPassState)) {
+    return "Pass";
+  }
+  if (s.isKindOf(AWSPSMWORKFLOW!AslTaskState)) {
+    return "Task";
+  }
+  if (s.isKindOf(AWSPSMWORKFLOW!AslChoiceState)) {
+    return "Choice";
+  }
+  if (s.isKindOf(AWSPSMWORKFLOW!AslWaitState)) {
+    return "Wait";
+  }
+  if (s.isKindOf(AWSPSMWORKFLOW!AslSucceedState)) {
     return "Succeed";
   }
-  if (t = AWSPSMENUMS!AslStateType#FAIL) {
+  if (s.isKindOf(AWSPSMWORKFLOW!AslFailState)) {
     return "Fail";
   }
-  return t.asString().substring(0, 1).toUpperCase() + t.asString().substring(1).toLowerCase();
+  if (s.isKindOf(AWSPSMWORKFLOW!AslParallelState)) {
+    return "Parallel";
+  }
+  return "Map";
 }
 
 /** Computes retry json. */

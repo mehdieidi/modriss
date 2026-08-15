@@ -46,8 +46,8 @@
     </resources>
     <resources xsi:type="awspsmworkflow:StepFunctionStateMachine" id="state_machine_runtime" name="Runtime Workflow" logicalId="RuntimeWorkflow" productionCritical="false" importedResource="false" stateMachineName="varka-localstack-workflow" role="role_runtime_lambda">
       <aslDocument id="document_runtime_workflow" name="Runtime Workflow ASL" comment="LocalStack generated fixture workflow." startAt="Start">
-        <states id="state_runtime_start" name="Start" stateName="Start" nextState="state_runtime_done"/>
-        <states id="state_runtime_done" name="Done" stateName="Done" type="SUCCEED"/>
+        <states xsi:type="awspsmworkflow:AslPassState" id="state_runtime_start" name="Start" stateName="Start" nextState="state_runtime_done"/>
+        <states xsi:type="awspsmworkflow:AslSucceedState" id="state_runtime_done" name="Done" stateName="Done"/>
       </aslDocument>
     </resources>
     <resources xsi:type="awspsmapi:HttpApi" id="api_runtime_http" name="Runtime HTTP API" logicalId="RuntimeHttpApi" productionCritical="false" importedResource="false" apiName="Runtime HTTP API" descriptionText="LocalStack generated fixture HTTP API." openApiVersion="3.0.3" protocolType="HTTP">

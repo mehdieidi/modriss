@@ -216,7 +216,7 @@
         "notation": {
           "tag": "SFN",
           "shape": "workflow-node",
-          "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+          "lineFields": ["logicalId", "stateMachineName", "stateName"]
         }
       }
     },
@@ -347,6 +347,31 @@
           "tag": "REL",
           "shape": "relationship-edge",
           "lineFields": ["kind", "generated", "source", "target"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": [
+          "AslPassState",
+          "AslTaskState",
+          "AslChoiceState",
+          "AslWaitState",
+          "AslSucceedState",
+          "AslFailState",
+          "AslParallelState",
+          "AslMapState"
+        ]
+      },
+      "metadata": {
+        "icon": "aws-step-functions",
+        "category": "Step Functions / ASL View",
+        "containedOnly": true,
+        "primitive": "resource-card",
+        "card": {
+          "tag": "SFN",
+          "lineFields": ["stateName", "nextStateName", "end"],
+          "detailFields": ["stateName", "nextStateName", "inputPath", "outputPath", "end"]
         }
       }
     },
@@ -595,8 +620,8 @@
       "primitive": "resource-card",
       "card": {
         "tag": "SFN",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"],
-        "detailFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"],
+        "detailFields": ["logicalId", "stateMachineName", "stateName"]
       }
     },
     {
@@ -2500,8 +2525,8 @@
       "primitive": "resource-card",
       "card": {
         "tag": "SFN",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"],
-        "detailFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"],
+        "detailFields": ["logicalId", "stateMachineName", "stateName"]
       }
     },
     {
@@ -2520,8 +2545,127 @@
       "primitive": "resource-card",
       "card": {
         "tag": "SFN",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"],
-        "detailFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"],
+        "detailFields": ["logicalId", "stateMachineName", "stateName"]
+      }
+    },
+    {
+      "type": "AslPassState",
+      "label": "ASL Pass State",
+      "displayName": "ASL Pass State",
+      "icon": "aws-step-functions",
+      "color": { "light": "#64748b", "dark": "#94a3b8" },
+      "category": "Step Functions / ASL View",
+      "containedOnly": true,
+      "primitive": "resource-card",
+      "card": {
+        "tag": "PASS",
+        "lineFields": ["stateName", "nextStateName"],
+        "detailFields": ["stateName", "inputPath", "outputPath", "nextStateName", "end"]
+      }
+    },
+    {
+      "type": "AslTaskState",
+      "label": "ASL Task State",
+      "displayName": "ASL Task State",
+      "icon": "aws-step-functions",
+      "color": { "light": "#ea580c", "dark": "#fb923c" },
+      "category": "Step Functions / ASL View",
+      "containedOnly": true,
+      "primitive": "resource-card",
+      "card": {
+        "tag": "TASK",
+        "lineFields": ["stateName", "resource", "nextStateName"],
+        "detailFields": [
+          "stateName",
+          "resource",
+          "timeoutSeconds",
+          "heartbeatSeconds",
+          "nextStateName",
+          "end"
+        ]
+      }
+    },
+    {
+      "type": "AslChoiceState",
+      "label": "ASL Choice State",
+      "displayName": "ASL Choice State",
+      "icon": "aws-step-functions",
+      "color": { "light": "#d97706", "dark": "#fbbf24" },
+      "category": "Step Functions / ASL View",
+      "containedOnly": true,
+      "primitive": "resource-card",
+      "card": {
+        "tag": "CHOICE",
+        "lineFields": ["stateName", "nextStateName"],
+        "detailFields": ["stateName", "nextStateName"]
+      }
+    },
+    {
+      "type": "AslWaitState",
+      "label": "ASL Wait State",
+      "displayName": "ASL Wait State",
+      "icon": "aws-step-functions",
+      "color": { "light": "#0284c7", "dark": "#38bdf8" },
+      "category": "Step Functions / ASL View",
+      "containedOnly": true,
+      "primitive": "resource-card",
+      "card": {
+        "tag": "WAIT",
+        "lineFields": ["stateName", "nextStateName"],
+        "detailFields": ["stateName", "nextStateName", "end"]
+      }
+    },
+    {
+      "type": "AslSucceedState",
+      "label": "ASL Succeed State",
+      "displayName": "ASL Succeed State",
+      "icon": "aws-step-functions",
+      "color": { "light": "#16a34a", "dark": "#4ade80" },
+      "category": "Step Functions / ASL View",
+      "containedOnly": true,
+      "primitive": "resource-card",
+      "card": { "tag": "SUCCEED", "lineFields": ["stateName"], "detailFields": ["stateName"] }
+    },
+    {
+      "type": "AslFailState",
+      "label": "ASL Fail State",
+      "displayName": "ASL Fail State",
+      "icon": "aws-step-functions",
+      "color": { "light": "#dc2626", "dark": "#f87171" },
+      "category": "Step Functions / ASL View",
+      "containedOnly": true,
+      "primitive": "resource-card",
+      "card": { "tag": "FAIL", "lineFields": ["stateName"], "detailFields": ["stateName"] }
+    },
+    {
+      "type": "AslParallelState",
+      "label": "ASL Parallel State",
+      "displayName": "ASL Parallel State",
+      "icon": "aws-step-functions",
+      "color": { "light": "#7c3aed", "dark": "#a78bfa" },
+      "category": "Step Functions / ASL View",
+      "containedOnly": true,
+      "primitive": "resource-card",
+      "card": {
+        "tag": "PARALLEL",
+        "lineFields": ["stateName", "nextStateName"],
+        "detailFields": ["stateName", "nextStateName", "end"]
+      }
+    },
+    {
+      "type": "AslMapState",
+      "label": "ASL Map State",
+      "displayName": "ASL Map State",
+      "icon": "aws-step-functions",
+      "color": { "light": "#0d9488", "dark": "#2dd4bf" },
+      "category": "Step Functions / ASL View",
+      "containedOnly": true,
+      "primitive": "resource-card",
+      "card": {
+        "tag": "MAP",
+        "lineFields": ["stateName", "nextStateName"],
+        "detailFields": ["stateName", "nextStateName", "end"]
       }
     },
     {
@@ -2539,8 +2683,8 @@
       "primitive": "resource-card",
       "card": {
         "tag": "SFN",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"],
-        "detailFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"],
+        "detailFields": ["logicalId", "stateMachineName", "stateName"]
       }
     },
     {
@@ -2558,8 +2702,8 @@
       "primitive": "resource-card",
       "card": {
         "tag": "SFN",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"],
-        "detailFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"],
+        "detailFields": ["logicalId", "stateMachineName", "stateName"]
       }
     },
     {
@@ -2577,8 +2721,8 @@
       "primitive": "resource-card",
       "card": {
         "tag": "SFN",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"],
-        "detailFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"],
+        "detailFields": ["logicalId", "stateMachineName", "stateName"]
       }
     },
     {
@@ -2596,8 +2740,8 @@
       "primitive": "resource-card",
       "card": {
         "tag": "SFN",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"],
-        "detailFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"],
+        "detailFields": ["logicalId", "stateMachineName", "stateName"]
       }
     },
     {
@@ -2615,8 +2759,8 @@
       "primitive": "resource-card",
       "card": {
         "tag": "SFN",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"],
-        "detailFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"],
+        "detailFields": ["logicalId", "stateMachineName", "stateName"]
       }
     },
     {
@@ -2632,8 +2776,8 @@
       "primitive": "resource-card",
       "card": {
         "tag": "SFN",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"],
-        "detailFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"],
+        "detailFields": ["logicalId", "stateMachineName", "stateName"]
       }
     },
     {
@@ -2649,8 +2793,8 @@
       "primitive": "resource-card",
       "card": {
         "tag": "SFN",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"],
-        "detailFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"],
+        "detailFields": ["logicalId", "stateMachineName", "stateName"]
       }
     },
     {
@@ -4194,8 +4338,8 @@
       "primitive": "relationship-edge",
       "card": {
         "tag": "VIEW",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"],
-        "detailFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"],
+        "detailFields": ["logicalId", "stateMachineName", "stateName"]
       }
     },
     {
@@ -5166,6 +5310,14 @@
         "StepFunctionStateMachine",
         "AslDocument",
         "AslState",
+        "AslPassState",
+        "AslTaskState",
+        "AslChoiceState",
+        "AslWaitState",
+        "AslSucceedState",
+        "AslFailState",
+        "AslParallelState",
+        "AslMapState",
         "AslRetryRule",
         "AslCatchRule",
         "AslChoiceRule",
@@ -5177,7 +5329,14 @@
       ],
       "palette": [
         "StepFunctionStateMachine",
-        "AslState",
+        "AslPassState",
+        "AslTaskState",
+        "AslChoiceState",
+        "AslWaitState",
+        "AslSucceedState",
+        "AslFailState",
+        "AslParallelState",
+        "AslMapState",
         "AslRetryRule",
         "AslCatchRule",
         "AslChoiceRule"

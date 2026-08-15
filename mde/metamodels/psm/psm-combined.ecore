@@ -986,16 +986,6 @@
       <eLiterals name="STANDARD"/>
       <eLiterals name="EXPRESS" value="1"/>
     </eClassifiers>
-    <eClassifiers xsi:type="ecore:EEnum" name="AslStateType">
-      <eLiterals name="PASS"/>
-      <eLiterals name="TASK" value="1"/>
-      <eLiterals name="CHOICE" value="2"/>
-      <eLiterals name="WAIT" value="3"/>
-      <eLiterals name="SUCCEED" value="4"/>
-      <eLiterals name="FAIL" value="5"/>
-      <eLiterals name="PARALLEL" value="6"/>
-      <eLiterals name="MAP" value="7"/>
-    </eClassifiers>
     <eClassifiers xsi:type="ecore:EEnum" name="DynamoDbBillingMode">
       <eLiterals name="PAY_PER_REQUEST"/>
       <eLiterals name="PROVISIONED" value="1"/>
@@ -2276,7 +2266,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="states" lowerBound="1"
           upperBound="-1" eType="#/13/AslState" containment="true"/>
     </eClassifiers>
-    <eClassifiers xsi:type="ecore:EClass" name="AslState" eSuperTypes="#/14/TraceableElement">
+    <eClassifiers xsi:type="ecore:EClass" name="AslState" abstract="true" eSuperTypes="#/14/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="stateName" lowerBound="1"
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="resource" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -2290,8 +2280,6 @@
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="assignJson" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="timeoutSeconds" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EIntegerObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="heartbeatSeconds" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EIntegerObject"/>
-      <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" lowerBound="1"
-          eType="#/4/AslStateType"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="retry" upperBound="-1"
           eType="#/13/AslRetryRule" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="catch" upperBound="-1"
@@ -2305,6 +2293,14 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="nextState" eType="#/13/AslState"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="invokedResource" eType="#/3/AwsResource"/>
     </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="AslPassState" eSuperTypes="#/13/AslState"/>
+    <eClassifiers xsi:type="ecore:EClass" name="AslTaskState" eSuperTypes="#/13/AslState"/>
+    <eClassifiers xsi:type="ecore:EClass" name="AslChoiceState" eSuperTypes="#/13/AslState"/>
+    <eClassifiers xsi:type="ecore:EClass" name="AslWaitState" eSuperTypes="#/13/AslState"/>
+    <eClassifiers xsi:type="ecore:EClass" name="AslSucceedState" eSuperTypes="#/13/AslState"/>
+    <eClassifiers xsi:type="ecore:EClass" name="AslFailState" eSuperTypes="#/13/AslState"/>
+    <eClassifiers xsi:type="ecore:EClass" name="AslParallelState" eSuperTypes="#/13/AslState"/>
+    <eClassifiers xsi:type="ecore:EClass" name="AslMapState" eSuperTypes="#/13/AslState"/>
     <eClassifiers xsi:type="ecore:EClass" name="AslBranch" eSuperTypes="#/14/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="startAt" lowerBound="1"
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

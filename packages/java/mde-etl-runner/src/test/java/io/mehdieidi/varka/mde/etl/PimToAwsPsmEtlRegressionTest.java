@@ -259,7 +259,7 @@ final class PimToAwsPsmEtlRegressionTest {
     EObject asl = reference(stateMachine, "aslDocument");
     assertTrue(get(asl, "content").toString().contains("\"StartAt\": \"Start\""));
     assertTrue(
-        values(asl, "states").stream().anyMatch(s -> "TASK".equals(enumLabel(get(s, "type")))));
+        values(asl, "states").stream().anyMatch(s -> "AslTaskState".equals(s.eClass().getName())));
 
     EObject userPool = first(resources, "CognitoUserPool", "Customer Identity");
     assertEquals("ON", enumLabel(get(userPool, "mfaConfiguration")));
@@ -467,9 +467,10 @@ final class PimToAwsPsmEtlRegressionTest {
     assertTrue(aslJson.contains("\"Retry\""));
     assertTrue(aslJson.contains("\"Catch\""));
     assertTrue(
-        values(asl, "states").stream().anyMatch(s -> "CHOICE".equals(enumLabel(get(s, "type")))));
+        values(asl, "states").stream()
+            .anyMatch(s -> "AslChoiceState".equals(s.eClass().getName())));
     assertTrue(
-        values(asl, "states").stream().anyMatch(s -> "FAIL".equals(enumLabel(get(s, "type")))));
+        values(asl, "states").stream().anyMatch(s -> "AslFailState".equals(s.eClass().getName())));
 
     EObject missingModelTable = first(resources, "DynamoDbTable", "Missing Model Store");
     assertTrue(values(missingModelTable, "keySchema").isEmpty());

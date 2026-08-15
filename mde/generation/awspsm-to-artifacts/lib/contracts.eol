@@ -254,10 +254,10 @@ operation AWSPSMWORKFLOW!AslDocument emitAslDocumentJson(stateMachineObj : AWSPS
 
 /** Renders a modeled ASL state as a valid, indented JSON member. */
 operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : String {
-  var stateTypeText = self.type.asString();
+  var stateTypeText = self.aslStateTypeName();
   var outText = spaces(indentCount) + self.stateName.jsonString() + ": {\n";
   outText = outText + spaces(indentCount + 2) + "\"Type\": " + stateTypeText.toLowerCase().firstToUpperCase().jsonString();
-  if (self.modelFeatureValue("type").asString() = "TASK" and self.invokedResource.isDefined()) {
+  if (self.isKindOf(AWSPSMWORKFLOW!AslTaskState) and self.invokedResource.isDefined()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Resource\": " + ("${" + self.invokedResource.cfnLogicalId() + "Arn}").jsonString();
   }
   else if (self.resource.isPresent()) {
@@ -281,10 +281,10 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
   if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL" and self.assignJson.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Assign\": " + self.assignJson;
   }
-  if (self.modelFeatureValue("type").asString() = "TASK" and self.timeoutSeconds.isDefined() and self.timeoutSeconds > 0) {
+  if (self.isKindOf(AWSPSMWORKFLOW!AslTaskState) and self.timeoutSeconds.isDefined() and self.timeoutSeconds > 0) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"TimeoutSeconds\": " + self.timeoutSeconds.asString();
   }
-  if (self.modelFeatureValue("type").asString() = "TASK" and self.heartbeatSeconds.isDefined() and self.heartbeatSeconds > 0) {
+  if (self.isKindOf(AWSPSMWORKFLOW!AslTaskState) and self.heartbeatSeconds.isDefined() and self.heartbeatSeconds > 0) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"HeartbeatSeconds\": " + self.heartbeatSeconds.asString();
   }
   if ((stateTypeText = "TASK" or stateTypeText = "PARALLEL" or stateTypeText = "MAP") and self.retry.notEmpty()) {
@@ -320,7 +320,7 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
     }
     outText = outText + spaces(indentCount + 2) + "]";
   }
-  if (self.modelFeatureValue("type").asString() = "WAIT") {
+  if (self.isKindOf(AWSPSMWORKFLOW!AslWaitState)) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Seconds\": 0";
   }
   if (stateTypeText = "PARALLEL" and self.branches.notEmpty()) {
@@ -358,6 +358,32 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
   }
   outText = outText + "\n" + spaces(indentCount) + "}";
   return outText;
+}
+
+/** Returns the Amazon States Language Type represented by a concrete state classifier. */
+operation AWSPSMWORKFLOW!AslState aslStateTypeName() : String {
+  if (self.isKindOf(AWSPSMWORKFLOW!AslPassState)) {
+    return "PASS";
+  }
+  if (self.isKindOf(AWSPSMWORKFLOW!AslTaskState)) {
+    return "TASK";
+  }
+  if (self.isKindOf(AWSPSMWORKFLOW!AslChoiceState)) {
+    return "CHOICE";
+  }
+  if (self.isKindOf(AWSPSMWORKFLOW!AslWaitState)) {
+    return "WAIT";
+  }
+  if (self.isKindOf(AWSPSMWORKFLOW!AslSucceedState)) {
+    return "SUCCEED";
+  }
+  if (self.isKindOf(AWSPSMWORKFLOW!AslFailState)) {
+    return "FAIL";
+  }
+  if (self.isKindOf(AWSPSMWORKFLOW!AslParallelState)) {
+    return "PARALLEL";
+  }
+  return "MAP";
 }
 
 /** Renders an ASL branch or a Map item processor. */

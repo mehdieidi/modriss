@@ -191,17 +191,6 @@ enum StepFunctionType {
   EXPRESS;
 }
 
-enum AslStateType {
-  PASS;
-  TASK;
-  CHOICE;
-  WAIT;
-  SUCCEED;
-  FAIL;
-  PARALLEL;
-  MAP;
-}
-
 enum DynamoDbBillingMode {
   PAY_PER_REQUEST;
   PROVISIONED;

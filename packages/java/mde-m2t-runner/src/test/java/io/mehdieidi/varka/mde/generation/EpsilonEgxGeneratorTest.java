@@ -4984,16 +4984,28 @@ final class EpsilonEgxGeneratorTest {
    * @param metamodelResource loaded AWS PSM metamodel
    * @param id stable fixture id
    * @param stateName ASL state name
-   * @param typeLiteral ASL state type literal
+   * @param typeLiteral ASL state kind used to select its concrete classifier
    * @return configured ASL state
    */
   private EObject createAslState(
       Resource metamodelResource, String id, String stateName, String typeLiteral) {
-    EObject state = create(metamodelResource, "AslState");
+    String classifierName =
+        switch (typeLiteral) {
+          case "PASS" -> "AslPassState";
+          case "TASK" -> "AslTaskState";
+          case "CHOICE" -> "AslChoiceState";
+          case "WAIT" -> "AslWaitState";
+          case "SUCCEED" -> "AslSucceedState";
+          case "FAIL" -> "AslFailState";
+          case "PARALLEL" -> "AslParallelState";
+          case "MAP" -> "AslMapState";
+          default ->
+              throw new IllegalArgumentException("Unsupported ASL state kind: " + typeLiteral);
+        };
+    EObject state = create(metamodelResource, classifierName);
     set(state, "id", id);
     set(state, "name", stateName);
     set(state, "stateName", stateName);
-    set(state, "type", enumValue(metamodelResource, "AslStateType", typeLiteral));
     return state;
   }
 
@@ -5109,17 +5121,15 @@ final class EpsilonEgxGeneratorTest {
     set(lambdaFunction, "role", lambdaRole);
     set(lambdaFunction, "logGroup", logGroup);
 
-    EObject completedState = create(metamodelResource, "AslState");
+    EObject completedState = create(metamodelResource, "AslSucceedState");
     set(completedState, "id", "state_workflow_completed");
     set(completedState, "name", "Workflow Completed");
     set(completedState, "stateName", "Completed");
-    set(completedState, "type", enumValue(metamodelResource, "AslStateType", "SUCCEED"));
 
-    EObject startState = create(metamodelResource, "AslState");
+    EObject startState = create(metamodelResource, "AslPassState");
     set(startState, "id", "state_workflow_start");
     set(startState, "name", "Workflow Start");
     set(startState, "stateName", "Start");
-    set(startState, "type", enumValue(metamodelResource, "AslStateType", "PASS"));
     set(startState, "inputPath", "$");
     set(startState, "outputPath", "$");
     set(startState, "nextState", completedState);

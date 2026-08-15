@@ -209,7 +209,7 @@
         "notation": {
           "tag": "SFN",
           "shape": "workflow-node",
-          "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+          "lineFields": ["logicalId", "stateMachineName", "stateName"]
         }
       }
     },
@@ -328,6 +328,30 @@
           "tag": "REL",
           "shape": "relationship-edge",
           "lineFields": ["kind", "generated", "source", "target"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": [
+          "AslPassState",
+          "AslTaskState",
+          "AslChoiceState",
+          "AslWaitState",
+          "AslSucceedState",
+          "AslFailState",
+          "AslParallelState",
+          "AslMapState"
+        ]
+      },
+      "metadata": {
+        "icon": "aws-step-functions",
+        "category": "Step Functions / ASL View",
+        "containedOnly": true,
+        "notation": {
+          "tag": "SFN",
+          "shape": "resource-card",
+          "lineFields": ["stateName", "nextStateName", "end"]
         }
       }
     },
@@ -1219,6 +1243,14 @@
         "StepFunctionStateMachine",
         "AslDocument",
         "AslState",
+        "AslPassState",
+        "AslTaskState",
+        "AslChoiceState",
+        "AslWaitState",
+        "AslSucceedState",
+        "AslFailState",
+        "AslParallelState",
+        "AslMapState",
         "AslRetryRule",
         "AslCatchRule",
         "AslChoiceRule",
@@ -1230,7 +1262,14 @@
       ],
       "palette": [
         "StepFunctionStateMachine",
-        "AslState",
+        "AslPassState",
+        "AslTaskState",
+        "AslChoiceState",
+        "AslWaitState",
+        "AslSucceedState",
+        "AslFailState",
+        "AslParallelState",
+        "AslMapState",
         "AslRetryRule",
         "AslCatchRule",
         "AslChoiceRule"
@@ -1803,7 +1842,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"]
       },
       "processPhaseId": "psm.ph5",
       "processTaskIds": ["psm.ph5.st2.ss1.t1"],
@@ -3580,7 +3619,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -3598,11 +3637,147 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"]
       },
       "containedOnly": true,
       "creatable": false,
       "supportOnly": true,
+      "processPhaseId": "psm.ph5",
+      "processTaskIds": ["psm.ph5.st2.ss1.t1"],
+      "processStageId": "psm.ph5.st2.ss1"
+    },
+    {
+      "type": "AslPassState",
+      "label": "ASL Pass State",
+      "displayName": "ASL Pass State",
+      "category": "Step Functions / ASL View",
+      "icon": "aws-step-functions",
+      "color": "#64748B",
+      "notation": {
+        "tag": "PASS",
+        "shape": "resource-card",
+        "lineFields": ["stateName", "nextStateName"]
+      },
+      "containedOnly": true,
+      "processPhaseId": "psm.ph5",
+      "processTaskIds": ["psm.ph5.st2.ss1.t1"],
+      "processStageId": "psm.ph5.st2.ss1"
+    },
+    {
+      "type": "AslTaskState",
+      "label": "ASL Task State",
+      "displayName": "ASL Task State",
+      "category": "Step Functions / ASL View",
+      "icon": "aws-step-functions",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "TASK",
+        "shape": "resource-card",
+        "lineFields": ["stateName", "resource", "nextStateName"]
+      },
+      "containedOnly": true,
+      "processPhaseId": "psm.ph5",
+      "processTaskIds": ["psm.ph5.st2.ss1.t1"],
+      "processStageId": "psm.ph5.st2.ss1"
+    },
+    {
+      "type": "AslChoiceState",
+      "label": "ASL Choice State",
+      "displayName": "ASL Choice State",
+      "category": "Step Functions / ASL View",
+      "icon": "aws-step-functions",
+      "color": "#D97706",
+      "notation": {
+        "tag": "CHOICE",
+        "shape": "resource-card",
+        "lineFields": ["stateName", "nextStateName"]
+      },
+      "containedOnly": true,
+      "processPhaseId": "psm.ph5",
+      "processTaskIds": ["psm.ph5.st2.ss1.t1"],
+      "processStageId": "psm.ph5.st2.ss1"
+    },
+    {
+      "type": "AslWaitState",
+      "label": "ASL Wait State",
+      "displayName": "ASL Wait State",
+      "category": "Step Functions / ASL View",
+      "icon": "aws-step-functions",
+      "color": "#0284C7",
+      "notation": {
+        "tag": "WAIT",
+        "shape": "resource-card",
+        "lineFields": ["stateName", "nextStateName"]
+      },
+      "containedOnly": true,
+      "processPhaseId": "psm.ph5",
+      "processTaskIds": ["psm.ph5.st2.ss1.t1"],
+      "processStageId": "psm.ph5.st2.ss1"
+    },
+    {
+      "type": "AslSucceedState",
+      "label": "ASL Succeed State",
+      "displayName": "ASL Succeed State",
+      "category": "Step Functions / ASL View",
+      "icon": "aws-step-functions",
+      "color": "#16A34A",
+      "notation": {
+        "tag": "SUCCEED",
+        "shape": "resource-card",
+        "lineFields": ["stateName"]
+      },
+      "containedOnly": true,
+      "processPhaseId": "psm.ph5",
+      "processTaskIds": ["psm.ph5.st2.ss1.t1"],
+      "processStageId": "psm.ph5.st2.ss1"
+    },
+    {
+      "type": "AslFailState",
+      "label": "ASL Fail State",
+      "displayName": "ASL Fail State",
+      "category": "Step Functions / ASL View",
+      "icon": "aws-step-functions",
+      "color": "#DC2626",
+      "notation": {
+        "tag": "FAIL",
+        "shape": "resource-card",
+        "lineFields": ["stateName"]
+      },
+      "containedOnly": true,
+      "processPhaseId": "psm.ph5",
+      "processTaskIds": ["psm.ph5.st2.ss1.t1"],
+      "processStageId": "psm.ph5.st2.ss1"
+    },
+    {
+      "type": "AslParallelState",
+      "label": "ASL Parallel State",
+      "displayName": "ASL Parallel State",
+      "category": "Step Functions / ASL View",
+      "icon": "aws-step-functions",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "PARALLEL",
+        "shape": "resource-card",
+        "lineFields": ["stateName", "nextStateName"]
+      },
+      "containedOnly": true,
+      "processPhaseId": "psm.ph5",
+      "processTaskIds": ["psm.ph5.st2.ss1.t1"],
+      "processStageId": "psm.ph5.st2.ss1"
+    },
+    {
+      "type": "AslMapState",
+      "label": "ASL Map State",
+      "displayName": "ASL Map State",
+      "category": "Step Functions / ASL View",
+      "icon": "aws-step-functions",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "MAP",
+        "shape": "resource-card",
+        "lineFields": ["stateName", "nextStateName"]
+      },
+      "containedOnly": true,
       "processPhaseId": "psm.ph5",
       "processTaskIds": ["psm.ph5.st2.ss1.t1"],
       "processStageId": "psm.ph5.st2.ss1"
@@ -3617,7 +3792,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -3635,7 +3810,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -3653,7 +3828,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -3671,7 +3846,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -3689,7 +3864,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -3707,7 +3882,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"]
       },
       "processPhaseId": "psm.ph5",
       "processTaskIds": ["psm.ph5.st2.ss1.t1"],
@@ -3723,7 +3898,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"]
       },
       "processPhaseId": "psm.ph5",
       "processTaskIds": ["psm.ph5.st2.ss1.t1"],
@@ -5177,7 +5352,7 @@
       "notation": {
         "tag": "VIEW",
         "shape": "relationship-edge",
-        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
+        "lineFields": ["logicalId", "stateMachineName", "stateName"]
       },
       "relationshipElement": true,
       "processPhaseId": "psm.ph6",

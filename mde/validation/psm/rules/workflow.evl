@@ -61,8 +61,8 @@ context AWSPSM!AslDocument {
   /** Checks that asl has terminal state. */
   constraint AslHasTerminalState {
     check : self.states.exists(stateItem |
-      (stateItem.end = true) or (stateItem.type = AWSPSMENUMS!AslStateType#SUCCEED) or (stateItem.type = AWSPSMENUMS!AslStateType#FAIL))
-    message : 'ASL document has no terminal state. Fix: mark one state end=true or add SUCCEED/FAIL terminal state.'
+      (stateItem.end = true) or stateItem.isKindOf(AWSPSM!AslSucceedState) or stateItem.isKindOf(AWSPSM!AslFailState))
+    message : 'ASL document has no terminal state. Fix: mark one state end=true or add AslSucceedState/AslFailState.'
   }
 }
 
@@ -71,29 +71,34 @@ context AWSPSM!AslState {
   /** Checks that non terminal state has next or terminal type. */
   constraint NonTerminalStateHasNextOrTerminalType {
     check : (self.end = true) or self.nextState.isDefined() or self.nextStateName.hasText() or
-      (self.type = AWSPSMENUMS!AslStateType#SUCCEED) or (self.type = AWSPSMENUMS!AslStateType#FAIL) or (self.type = AWSPSMENUMS!AslStateType#CHOICE)
-    message : 'ASL state ' + self.stateName + ' is not terminal and has no next state. Fix: set nextState/nextStateName, mark end=true, or use a terminal/choice state type.'
+      self.isKindOf(AWSPSM!AslSucceedState) or self.isKindOf(AWSPSM!AslFailState) or self.isKindOf(AWSPSM!AslChoiceState)
+    message : 'ASL state ' + self.stateName + ' is not terminal and has no next state. Fix: set nextState/nextStateName, mark end=true, or use a terminal/choice state class.'
   }
 
   /** Checks that terminal state does not have next. */
   constraint TerminalStateDoesNotHaveNext {
-    guard : (self.end = true) or (self.type = AWSPSMENUMS!AslStateType#SUCCEED) or (self.type = AWSPSMENUMS!AslStateType#FAIL)
+    guard : (self.end = true) or self.isKindOf(AWSPSM!AslSucceedState) or self.isKindOf(AWSPSM!AslFailState)
     check : self.nextState.isUndefined() and (not self.nextStateName.hasText())
     message : 'Terminal ASL state ' + self.stateName + ' also defines a next state. Fix: remove nextState/nextStateName from terminal states.'
   }
 
+}
+
+/** Validates ASL Task State elements. */
+context AWSPSM!AslTaskState {
   /** Checks that task state has resource. */
   constraint TaskStateHasResource {
-    guard : self.type = AWSPSMENUMS!AslStateType#TASK
     check : self.resource.hasText() or self.invokedResource.isDefined()
-    message : 'TASK ASL state ' + self.stateName + ' has no resource or invokedResource. Fix: set the AWS service ARN/resource string or reference the invoked PSM resource.'
+    message : 'AslTaskState ' + self.stateName + ' has no resource or invokedResource. Fix: set the AWS service ARN/resource string or reference the invoked PSM resource.'
   }
+}
 
+/** Validates ASL Choice State elements. */
+context AWSPSM!AslChoiceState {
   /** Checks that choice state has choices. */
   constraint ChoiceStateHasChoices {
-    guard : self.type = AWSPSMENUMS!AslStateType#CHOICE
     check : self.choices.notEmpty()
-    message : 'CHOICE ASL state ' + self.stateName + ' has no choices. Fix: add one or more AslChoiceRule entries.'
+    message : 'AslChoiceState ' + self.stateName + ' has no choices. Fix: add one or more AslChoiceRule entries.'
   }
 }
 

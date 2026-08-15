@@ -2397,6 +2397,46 @@
                     },
                     {
                       "metamodel": "psm",
+                      "eClass": "AslPassState",
+                      "cardinality": "1..*"
+                    },
+                    {
+                      "metamodel": "psm",
+                      "eClass": "AslTaskState",
+                      "cardinality": "1..*"
+                    },
+                    {
+                      "metamodel": "psm",
+                      "eClass": "AslChoiceState",
+                      "cardinality": "1..*"
+                    },
+                    {
+                      "metamodel": "psm",
+                      "eClass": "AslWaitState",
+                      "cardinality": "1..*"
+                    },
+                    {
+                      "metamodel": "psm",
+                      "eClass": "AslSucceedState",
+                      "cardinality": "1..*"
+                    },
+                    {
+                      "metamodel": "psm",
+                      "eClass": "AslFailState",
+                      "cardinality": "1..*"
+                    },
+                    {
+                      "metamodel": "psm",
+                      "eClass": "AslParallelState",
+                      "cardinality": "1..*"
+                    },
+                    {
+                      "metamodel": "psm",
+                      "eClass": "AslMapState",
+                      "cardinality": "1..*"
+                    },
+                    {
+                      "metamodel": "psm",
                       "eClass": "AslBranch",
                       "cardinality": "1..*"
                     },
@@ -2438,7 +2478,8 @@
                   ],
                   "steps": [
                     "Create StepFunctionStateMachine from PIM Workflow definitions.",
-                    "Configure ASL states, retry/catch rules, and logging."
+                    "Select the concrete AslPassState, AslTaskState, AslChoiceState, AslWaitState, AslSucceedState, AslFailState, AslParallelState, or AslMapState classifier for every state.",
+                    "Configure ASL transitions, retry/catch rules, branches, map processors, and logging."
                   ],
                   "entryCriteria": ["API Gateway configured"],
                   "exitCriteria": ["State machines match PIM workflows"],
@@ -2447,14 +2488,15 @@
                     "StepFunctionStateMachine",
                     "AslDocument",
                     "AslState",
-                    "AslBranch",
-                    "AslMapConfig",
-                    "AslRetryRule",
-                    "AslCatchRule",
-                    "AslChoiceRule",
-                    "StepFunctionLoggingConfig",
-                    "StepFunctionTracingConfig",
-                    "SamStateMachineEvent"
+                    "AslPassState",
+                    "AslTaskState",
+                    "AslChoiceState",
+                    "AslWaitState",
+                    "AslSucceedState",
+                    "AslFailState",
+                    "AslParallelState",
+                    "AslMapState",
+                    "AslBranch"
                   ],
                   "durationEstimate": "1-2h"
                 }
@@ -2808,11 +2850,6 @@
                 {
                   "metamodel": "psm",
                   "eEnum": "StepFunctionType",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "psm",
-                  "eEnum": "AslStateType",
                   "cardinality": "enum-values"
                 },
                 {

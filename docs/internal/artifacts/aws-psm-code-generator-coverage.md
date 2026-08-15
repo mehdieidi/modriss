@@ -375,6 +375,7 @@ This inventory is synchronized by `AwsPsmArtifactGenerationSyntaxTest.coverageRe
 - `contracts.eol:AWSPSMAPI!ApiGatewayResponseModel.openapiModelName`
 - `contracts.eol:AWSPSMWORKFLOW!AslDocument.emitAslDocumentJson`
 - `contracts.eol:AWSPSMWORKFLOW!AslState.emitAslStateJson`
+- `contracts.eol:AWSPSMWORKFLOW!AslState.aslStateTypeName`
 - `contracts.eol:AWSPSMWORKFLOW!AslBranch.emitAslBranchJson`
 - `contracts.eol:AWSPSMWORKFLOW!AslRetryRule.emitAslRetryJson`
 - `contracts.eol:AWSPSMWORKFLOW!AslCatchRule.emitAslCatchJson`

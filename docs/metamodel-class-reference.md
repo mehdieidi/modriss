@@ -1219,7 +1219,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 ## PSM (Platform-Specific Model — AWS)
 
 **Modules:** `awspsm-api.emf`, `awspsm-compute.emf`, `awspsm-core.emf`, `awspsm-events.emf`, `awspsm-identity.emf`, `awspsm-integrations.emf`, `awspsm-messaging.emf`, `awspsm-networking.emf`, `awspsm-observability.emf`, `awspsm-root.emf`, `awspsm-security.emf`, `awspsm-storage.emf`, `awspsm-workflow.emf`  
-**Classes:** 206
+**Classes:** 214
 
 ### `awspsm-api.emf`
 
@@ -2633,6 +2633,13 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Incoming `val`:** `AslState.choices`
 - **Inherits:** `kernel.TraceableElement`
 
+#### `AslChoiceState`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** _none_
+- **Incoming `val`:** _none_
+- **Inherits:** `AslState`
+
 #### `AslDocument`
 
 - **Abstract:** No (concrete)
@@ -2640,12 +2647,40 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Incoming `val`:** `StepFunctionStateMachine.aslDocument`
 - **Inherits:** `kernel.StructuredDocument`
 
+#### `AslFailState`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** _none_
+- **Incoming `val`:** _none_
+- **Inherits:** `AslState`
+
 #### `AslMapConfig`
 
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** `AslState.mapConfig`
 - **Inherits:** `kernel.TraceableElement`
+
+#### `AslMapState`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** _none_
+- **Incoming `val`:** _none_
+- **Inherits:** `AslState`
+
+#### `AslParallelState`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** _none_
+- **Incoming `val`:** _none_
+- **Inherits:** `AslState`
+
+#### `AslPassState`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** _none_
+- **Incoming `val`:** _none_
+- **Inherits:** `AslState`
 
 #### `AslRetryRule`
 
@@ -2656,10 +2691,31 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 
 #### `AslState`
 
-- **Abstract:** No (concrete)
+- **Abstract:** Yes (abstract)
 - **Incoming `ref`:** `AslState.nextState`
 - **Incoming `val`:** `AslBranch.states`, `AslDocument.states`
 - **Inherits:** `kernel.TraceableElement`
+
+#### `AslSucceedState`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** _none_
+- **Incoming `val`:** _none_
+- **Inherits:** `AslState`
+
+#### `AslTaskState`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** _none_
+- **Incoming `val`:** _none_
+- **Inherits:** `AslState`
+
+#### `AslWaitState`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** _none_
+- **Incoming `val`:** _none_
+- **Inherits:** `AslState`
 
 #### `SamStateMachineEvent`
 

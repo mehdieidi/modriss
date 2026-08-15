@@ -801,19 +801,23 @@ Deploy state machines with ASL from PIM workflows.
 - `StepFunctionStateMachine`
 - `AslDocument`
 - `AslState`
+- `AslPassState`
+- `AslTaskState`
+- `AslChoiceState`
+- `AslWaitState`
+- `AslSucceedState`
+- `AslFailState`
+- `AslParallelState`
+- `AslMapState`
 - `AslBranch`
-- `AslMapConfig`
-- `AslRetryRule`
-- `AslCatchRule`
-- `AslChoiceRule`
-- `StepFunctionLoggingConfig`
-- `StepFunctionTracingConfig`
-- `SamStateMachineEvent`
 
 **Steps:**
 
 1. Create StepFunctionStateMachine from PIM Workflow definitions.
-2. Configure ASL states, retry/catch rules, and logging.
+2. Select the concrete `AslPassState`, `AslTaskState`, `AslChoiceState`, `AslWaitState`,
+   `AslSucceedState`, `AslFailState`, `AslParallelState`, or `AslMapState` classifier for every
+   state.
+3. Configure ASL transitions, retry/catch rules, branches, map processors, and logging.
 
 **Entry criteria:**
 

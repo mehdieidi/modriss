@@ -1,9 +1,9 @@
 {
   "level": "psm",
   "processId": "varka.psm.modeling",
-  "generatedAt": "2026-07-07T15:28:43.272Z",
-  "totalConcepts": 297,
-  "coveredConcepts": 297,
+  "generatedAt": "2026-08-15T08:34:45.871Z",
+  "totalConcepts": 304,
+  "coveredConcepts": 304,
   "orphanedConcepts": [],
   "entries": [
     {
@@ -1207,6 +1207,54 @@
       "covered": true
     },
     {
+      "concept": "AslPassState",
+      "kind": "EClass",
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
+      "covered": true
+    },
+    {
+      "concept": "AslTaskState",
+      "kind": "EClass",
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
+      "covered": true
+    },
+    {
+      "concept": "AslChoiceState",
+      "kind": "EClass",
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
+      "covered": true
+    },
+    {
+      "concept": "AslWaitState",
+      "kind": "EClass",
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
+      "covered": true
+    },
+    {
+      "concept": "AslSucceedState",
+      "kind": "EClass",
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
+      "covered": true
+    },
+    {
+      "concept": "AslFailState",
+      "kind": "EClass",
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
+      "covered": true
+    },
+    {
+      "concept": "AslParallelState",
+      "kind": "EClass",
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
+      "covered": true
+    },
+    {
+      "concept": "AslMapState",
+      "kind": "EClass",
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
+      "covered": true
+    },
+    {
       "concept": "AslBranch",
       "kind": "EClass",
       "taskIds": ["psm.ph5.st2.ss1.t1"],
@@ -1616,12 +1664,6 @@
     },
     {
       "concept": "StepFunctionType",
-      "kind": "EEnum",
-      "taskIds": ["psm.ph6.st2.t1"],
-      "covered": true
-    },
-    {
-      "concept": "AslStateType",
       "kind": "EEnum",
       "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
