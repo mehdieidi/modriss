@@ -1113,7 +1113,19 @@ function bindEvents() {
   // Attribute panel
   el.attrPanelCloseBtn?.addEventListener("click", closeAttributePanel);
   bindConnectionDrawStateListener();
-  el.attrPanelApplyBtn?.addEventListener("click", applyAttributePanel);
+  el.attrPanelApplyBtn?.addEventListener("click", () => {
+    if (!applyAttributePanel()) {
+      return;
+    }
+    if (!isModelingLevel(state.activeType) || isModelSaveInFlight()) {
+      return;
+    }
+    beginModelSave();
+    setBusy("Saving…");
+    void saveCurrentModel({ rethrow: true, skipBeginSave: true }).catch(() => {
+      // saveCurrentModel updates the visible save status.
+    });
+  });
   el.attrPanelDeleteBtn?.addEventListener("click", deleteSelection);
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Delete" && event.key !== "Backspace") {

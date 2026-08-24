@@ -3,6 +3,7 @@ package io.mehdieidi.varka.platform.storage.postgres;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mehdieidi.varka.platform.artifact.domain.ArtifactRecord;
@@ -18,6 +19,9 @@ import io.mehdieidi.varka.platform.transformation.domain.MdeJobIndexRecord;
 import io.mehdieidi.varka.platform.transformation.domain.MdeJobOperation;
 import io.mehdieidi.varka.platform.transformation.domain.MdeJobRecord;
 import io.mehdieidi.varka.platform.transformation.domain.MdeJobStatus;
+import io.mehdieidi.varka.platform.transformation.synchronization.GeneratedBaseline;
+import io.mehdieidi.varka.platform.transformation.synchronization.ModelBaselineRepository;
+import io.mehdieidi.varka.platform.transformation.synchronization.TransformationDirection;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -248,6 +252,111 @@ class PostgresPlatformStoreIntegrationTest {
                 Path.of("indexes", "models", "missing.json"),
                 io.mehdieidi.varka.platform.model.domain.ModelIndexRecord.class)
             .isEmpty());
+  }
+
+  @Test
+  void storesBaselinesForBothDirectionsWithoutKeyCollisions() {
+    Instant now = Instant.now();
+    store.write(
+        Path.of("users", "user-1.json"),
+        new UserRecord("user-1", "user@example.com", "User", "hash", "salt", now, now));
+    store.write(
+        Path.of("projects", "project-1", "project.json"),
+        new ProjectRecord(
+            "project-1",
+            "Project",
+            "",
+            "user-1",
+            new LinkedHashMap<>(),
+            List.of(new ProjectMember("user-1", "user@example.com", "User", "OWNER", now)),
+            now,
+            now));
+    ModelBaselineRepository repository = new ModelBaselineRepository(store);
+    ObjectNode cimGenerated = store.objectMapper().createObjectNode().put("name", "PIM base");
+    ObjectNode pimGenerated = store.objectMapper().createObjectNode().put("name", "PSM base");
+    repository.save(
+        new GeneratedBaseline(
+            TransformationDirection.CIM_TO_PIM,
+            "project-1",
+            "same-source-id",
+            1,
+            "cim-fingerprint",
+            "pim-target",
+            1,
+            "assets",
+            now,
+            cimGenerated,
+            new byte[] {1}));
+    repository.save(
+        new GeneratedBaseline(
+            TransformationDirection.PIM_TO_AWS_PSM,
+            "project-1",
+            "same-source-id",
+            2,
+            "pim-fingerprint",
+            "psm-target",
+            1,
+            "assets",
+            now,
+            pimGenerated,
+            new byte[] {2}));
+
+    assertEquals(
+        "pim-target",
+        repository
+            .get("project-1", TransformationDirection.CIM_TO_PIM, "same-source-id")
+            .orElseThrow()
+            .targetModelId());
+    assertEquals(
+        "psm-target",
+        repository
+            .get("project-1", TransformationDirection.PIM_TO_AWS_PSM, "same-source-id")
+            .orElseThrow()
+            .targetModelId());
+    assertEquals(2, count("model_synchronization_records"));
+  }
+
+  @Test
+  void rollsBackGroupedSynchronizationWritesWhenCommitWorkFails() {
+    Instant now = Instant.now();
+    store.write(
+        Path.of("users", "user-1.json"),
+        new UserRecord("user-1", "user@example.com", "User", "hash", "salt", now, now));
+    store.write(
+        Path.of("projects", "project-1", "project.json"),
+        new ProjectRecord(
+            "project-1",
+            "Project",
+            "",
+            "user-1",
+            new LinkedHashMap<>(),
+            List.of(new ProjectMember("user-1", "user@example.com", "User", "OWNER", now)),
+            now,
+            now));
+    ModelBaselineRepository repository = new ModelBaselineRepository(store);
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            store.inTransaction(
+                () -> {
+                  repository.save(
+                      new GeneratedBaseline(
+                          TransformationDirection.CIM_TO_PIM,
+                          "project-1",
+                          "source-1",
+                          1,
+                          "source-fingerprint",
+                          "target-1",
+                          1,
+                          "assets",
+                          now,
+                          store.objectMapper().createObjectNode().put("name", "raw baseline"),
+                          new byte[] {1}));
+                  throw new IllegalStateException("force rollback");
+                }));
+
+    assertEquals(0, count("model_synchronization_records"));
   }
 
   private void truncateAllTables() {

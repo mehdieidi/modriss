@@ -543,6 +543,7 @@ public final class MdeJobService implements AutoCloseable {
         case CIM_TO_PIM -> {
           ModelRecord model =
               transformationService.cimToPim(user, latest.sourceModelId(), latest.sourceRevision());
+          Object synchronization = TransformationService.consumeLastSynchronization();
           Map<String, Long> timings = finishTimings(latest, workerStarted);
           write(
               status(
@@ -552,7 +553,7 @@ public final class MdeJobService implements AutoCloseable {
                   model.id(),
                   null,
                   List.of(),
-                  null,
+                  synchronization,
                   timings,
                   latest.startedAt(),
                   Instant.now()));
@@ -561,6 +562,7 @@ public final class MdeJobService implements AutoCloseable {
         case PIM_TO_PSM -> {
           ModelRecord model =
               transformationService.pimToPsm(user, latest.sourceModelId(), latest.sourceRevision());
+          Object synchronization = TransformationService.consumeLastSynchronization();
           Map<String, Long> timings = finishTimings(latest, workerStarted);
           write(
               status(
@@ -570,7 +572,7 @@ public final class MdeJobService implements AutoCloseable {
                   model.id(),
                   null,
                   List.of(),
-                  null,
+                  synchronization,
                   timings,
                   latest.startedAt(),
                   Instant.now()));

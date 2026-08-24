@@ -17,6 +17,8 @@ import io.mehdieidi.varka.platform.transformation.domain.MdeJobIndexRecord;
 import io.mehdieidi.varka.platform.transformation.domain.MdeJobOperation;
 import io.mehdieidi.varka.platform.transformation.domain.MdeJobRecord;
 import io.mehdieidi.varka.platform.transformation.domain.MdeJobStatus;
+import io.mehdieidi.varka.platform.transformation.synchronization.GeneratedBaseline;
+import io.mehdieidi.varka.platform.transformation.synchronization.SynchronizationSession;
 import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
@@ -61,6 +64,11 @@ public final class PostgresPlatformStore implements PlatformStore {
   @Override
   public ObjectMapper objectMapper() {
     return mapper;
+  }
+
+  @Override
+  public <T> T inTransaction(Supplier<T> operation) {
+    return transactions.execute(status -> operation.get());
   }
 
   @Override
@@ -135,6 +143,16 @@ public final class PostgresPlatformStore implements PlatformStore {
               id(key, key.length - 1))
           .orElse(null);
     }
+    if (type == GeneratedBaseline.class || type == SynchronizationSession.class) {
+      return maybeOne(
+              "SELECT payload::text FROM model_synchronization_records "
+                  + "WHERE project_id = ? AND record_kind = ? AND record_id = ?",
+              (rs, row) -> readJson(rs.getString(1), type),
+              key[1],
+              synchronizationKind(type),
+              synchronizationRecordId(key))
+          .orElse(null);
+    }
     throw unsupported(path(key), type);
   }
 
@@ -157,6 +175,14 @@ public final class PostgresPlatformStore implements PlatformStore {
         writeJobIdempotency(record);
       } else if (value instanceof StagedImportRecord record) {
         writeStagedImport(record);
+      } else if (value instanceof GeneratedBaseline record) {
+        writeSynchronizationRecord(
+            record.projectId(),
+            "BASELINE",
+            record.direction().name() + ":" + record.sourceModelId(),
+            record);
+      } else if (value instanceof SynchronizationSession record) {
+        writeSynchronizationRecord(record.projectId(), "SESSION", record.id(), record);
       } else if (value instanceof ModelIndexRecord
           || value instanceof ArtifactIndexRecord
           || value instanceof MdeJobIndexRecord) {
@@ -235,6 +261,13 @@ public final class PostgresPlatformStore implements PlatformStore {
       jdbc.update("DELETE FROM staged_imports WHERE token = ?", id(key, 1));
     } else if (key[0].equals("projects") && key.length >= 5 && key[2].equals("models")) {
       jdbc.update("DELETE FROM models WHERE id = ?", id(key, key.length - 1));
+    } else if (isSynchronizationKey(key)) {
+      jdbc.update(
+          "DELETE FROM model_synchronization_records WHERE project_id = ? "
+              + "AND record_kind = ? AND record_id = ?",
+          key[1],
+          synchronizationKind(key),
+          synchronizationRecordId(key));
     } else if (key[0].equals("indexes")) {
       // Index records are database views of primary tables.
     } else {
@@ -279,6 +312,27 @@ public final class PostgresPlatformStore implements PlatformStore {
                 key[1]);
       } else if (type == StagedImportRecord.class) {
         values = jdbc.query("SELECT * FROM staged_imports ORDER BY created_at", this::stagedImport);
+      } else if (type == GeneratedBaseline.class || type == SynchronizationSession.class) {
+        if (type == GeneratedBaseline.class && key.length >= 5) {
+          values =
+              jdbc.query(
+                  "SELECT payload::text FROM model_synchronization_records "
+                      + "WHERE project_id = ? AND record_kind = ? "
+                      + "AND split_part(record_id, ':', 1) = ? "
+                      + "ORDER BY updated_at DESC",
+                  (rs, row) -> readJson(rs.getString(1), type),
+                  key[1],
+                  synchronizationKind(type),
+                  key[4].toUpperCase());
+        } else {
+          values =
+              jdbc.query(
+                  "SELECT payload::text FROM model_synchronization_records "
+                      + "WHERE project_id = ? AND record_kind = ? ORDER BY updated_at DESC",
+                  (rs, row) -> readJson(rs.getString(1), type),
+                  key[1],
+                  synchronizationKind(type));
+        }
       } else {
         throw unsupported(directory, type);
       }
@@ -398,6 +452,22 @@ public final class PostgresPlatformStore implements PlatformStore {
         r.migrationState(),
         timestamp(r.createdAt()),
         timestamp(r.updatedAt()));
+  }
+
+  private void writeSynchronizationRecord(
+      String projectId, String kind, String recordId, Object value) {
+    jdbc.update(
+        """
+        INSERT INTO model_synchronization_records(project_id, record_kind, record_id, payload)
+        VALUES (?, ?, ?, ?::jsonb)
+        ON CONFLICT (project_id, record_kind, record_id) DO UPDATE SET
+          payload = EXCLUDED.payload,
+          updated_at = CURRENT_TIMESTAMP
+        """,
+        projectId,
+        kind,
+        recordId,
+        json(value));
   }
 
   private void writeStagedImport(StagedImportRecord r) {
@@ -697,6 +767,9 @@ ON CONFLICT (id) DO UPDATE SET project_id=EXCLUDED.project_id,
     if (key[0].equals("model-imports")) {
       return StagedImportRecord.class;
     }
+    if (isSynchronizationKey(key)) {
+      return "baselines".equals(key[3]) ? GeneratedBaseline.class : SynchronizationSession.class;
+    }
     if (key.length > 1 && key[0].equals("indexes") && key[1].equals("mde-job-idempotency")) {
       return MdeJobIdempotencyRecord.class;
     }
@@ -709,6 +782,40 @@ ON CONFLICT (id) DO UPDATE SET project_id=EXCLUDED.project_id,
     } catch (Exception ex) {
       throw new PlatformException(500, "Could not serialize stored data.");
     }
+  }
+
+  private Object readJson(String value, Class<?> type) {
+    try {
+      return mapper.readValue(value, type);
+    } catch (Exception ex) {
+      throw new PlatformException(500, "Could not deserialize synchronization data.", ex);
+    }
+  }
+
+  private boolean isSynchronizationKey(String[] key) {
+    return key.length >= 5
+        && "projects".equals(key[0])
+        && "synchronization".equals(key[2])
+        && ("baselines".equals(key[3]) || "sessions".equals(key[3]));
+  }
+
+  private String synchronizationKind(String[] key) {
+    return "baselines".equals(key[3]) ? "BASELINE" : "SESSION";
+  }
+
+  private String synchronizationKind(Class<?> type) {
+    return type == GeneratedBaseline.class ? "BASELINE" : "SESSION";
+  }
+
+  private String synchronizationRecordId(String[] key) {
+    String recordId = id(key, key.length - 1);
+    if ("baselines".equals(key[3])) {
+      if (key.length < 6) {
+        throw new PlatformException(400, "Baseline path must include a transformation direction.");
+      }
+      return key[4].toUpperCase() + ":" + recordId;
+    }
+    return recordId;
   }
 
   private byte[] jsonBytes(Object value) {

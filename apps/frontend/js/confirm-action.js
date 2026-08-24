@@ -4,6 +4,7 @@ export function confirmAction({
   title = "Confirm Action",
   message = "Are you sure?",
   confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
   danger = false,
 } = {}) {
   if (
@@ -19,6 +20,7 @@ export function confirmAction({
   el.confirmActionTitle.textContent = title;
   el.confirmActionMessage.textContent = message;
   el.confirmActionConfirmBtn.textContent = confirmLabel;
+  el.confirmActionCancelBtn.textContent = cancelLabel;
   el.confirmActionConfirmBtn.classList.toggle("btn-danger", danger);
   el.confirmActionConfirmBtn.classList.toggle("btn-primary", !danger);
   el.confirmActionOverlay.classList.remove("hidden");

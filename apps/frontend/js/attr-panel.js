@@ -53,6 +53,19 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+/** Reads a multi-valued scalar attribute without collapsing it to a string. */
+function readManyAttributeValue(input) {
+  const raw = input.value || "";
+  if (input.dataset.attrType === "json") {
+    const parsed = JSON.parse(raw || "[]");
+    return Array.isArray(parsed) ? parsed : [parsed];
+  }
+  return raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 function configuredTraceKind() {
   return String(modelingLevelConfig(state.activeType).relationshipSemantics?.traceKind || "");
 }
@@ -2164,16 +2177,14 @@ function buildReferenceInput(key, value, field) {
 
 export function applyAttributePanel() {
   if (state.selectedRootModel) {
-    applyRootModelPanel();
-    return;
+    return applyRootModelPanel();
   }
   if (state.selectedConnectionId) {
-    applyConnectionPanel();
-    return;
+    return applyConnectionPanel();
   }
   const node = state.nodesById.get(state.selectedNodeId);
   if (!node) {
-    return;
+    return false;
   }
 
   const labelKey = identityFieldForNode(
@@ -2198,6 +2209,8 @@ export function applyAttributePanel() {
         } else {
           value = input.value || null;
         }
+      } else if (input.dataset.attrMany === "true") {
+        value = readManyAttributeValue(input);
       } else if (attrType === "json") {
         value = JSON.parse(input.value || "null");
       } else if (input.tagName === "TEXTAREA") {
@@ -2224,7 +2237,7 @@ export function applyAttributePanel() {
     markGraphRelationshipsDirty();
   } catch {
     setStatus("One property contains invalid JSON. Fix it before applying changes.");
-    return;
+    return false;
   }
 
   if (undoSnapshot?.signature !== JSON.stringify(state.diagram || {})) {
@@ -2236,6 +2249,7 @@ export function applyAttributePanel() {
   el.attrPanelTitle.textContent = node.label;
   markModelDirty({ viewSynced: true });
   setStatus(`Attributes updated for ${node.id}`);
+  return true;
 }
 
 function applyRootModelPanel() {
@@ -2251,7 +2265,7 @@ function applyRootModelPanel() {
     });
   } catch {
     setStatus("One model property contains invalid JSON. Fix it before applying changes.");
-    return;
+    return false;
   }
   if (!String(root.name || "").trim()) {
     root.name = activeModelName();
@@ -2265,6 +2279,7 @@ function applyRootModelPanel() {
   el.attrPanelTitle.textContent = root.name || activeModelName();
   markModelDirty();
   setStatus("Root model attributes updated");
+  return true;
 }
 
 function readInputValue(input) {
@@ -2281,6 +2296,9 @@ function readInputValue(input) {
     }
     return input.value || null;
   }
+  if (input.dataset.attrMany === "true") {
+    return readManyAttributeValue(input);
+  }
   if (attrType === "json") {
     return JSON.parse(input.value || "null");
   }
@@ -2293,11 +2311,11 @@ function readInputValue(input) {
 function applyConnectionPanel() {
   const edge = state.connectionsById.get(state.selectedConnectionId);
   if (!edge) {
-    return;
+    return false;
   }
   const relationship = state.graph?.relationshipsById?.get(edge.id);
   if (!relationship) {
-    return;
+    return false;
   }
   try {
     el.attrPanelBody.querySelectorAll("[data-attr-key]").forEach((input) => {
@@ -2309,11 +2327,12 @@ function applyConnectionPanel() {
     });
   } catch {
     setStatus("One connection property contains invalid JSON. Fix it before applying changes.");
-    return;
+    return false;
   }
   syncDiagramRenderer({});
   markModelDirty();
   setStatus(`Connection updated: ${edge.kind}`);
+  return true;
 }
 
 function asReferenceIds(value) {

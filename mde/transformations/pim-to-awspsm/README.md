@@ -32,3 +32,17 @@ corresponding `Asl*State` classifiers. A task without an executable target delib
 
 `AslState` is abstract. Transformation and generation code must determine a state's ASL `Type`
 from its concrete EClass, not from an enum-valued feature.
+
+# Iterative synchronization
+
+Normal platform execution generates into an empty temporary AWS PSM resource; preloaded-target
+helpers are not used for preservation. IDs are SHA-256-derived in the `pim-to-awspsm` namespace
+from immutable PIM IDs and distinct target roles such as Lambda, IAM role, and log configuration.
+
+The raw ETL result (`NewGenerated`) is merged into the user-refined AWS PSM (`Working`) against the
+previous raw ETL result (`Base`). Safe incoming changes and additions are applied, user additions
+and independent refinements remain, and delete/change or change/change cases become resumable
+conflicts. Pending sessions fingerprint the Working revision so stale decisions cannot be applied.
+
+The baseline is always the untouched raw output of the most recent successfully accepted ETL
+generation. It is never the user-refined merged working model.

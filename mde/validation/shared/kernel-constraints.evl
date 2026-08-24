@@ -1,4 +1,13 @@
 /** Validates the semantic rules for kernel constraints. */
+context KERNEL!ModelElement {
+  /** Synchronization identity is mandatory and unique within one logical model. */
+  constraint ModelElementIdIsPresentAndUnique {
+    check : self.id.hasText() and
+      KERNEL!ModelElement.all.select(element | element.id = self.id).size() = 1
+    message : "Model element '" + self.labelText() + "' must have a unique, immutable id."
+  }
+}
+
 context KERNEL!TraceLink {
   /** Checks that trace link has reference or external id. */
   constraint TraceLinkHasReferenceOrExternalId {

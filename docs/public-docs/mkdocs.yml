@@ -58,6 +58,7 @@ nav:
   - Architecture:
       - System Architecture: architecture/system.md
       - Backend and Storage: architecture/backend-storage.md
+      - Iterative Model Transformations: architecture/iterative-model-transformations.md
       - Frontend: architecture/frontend.md
   - Operations:
       - DevOps and SRE: operations/devops-sre.md

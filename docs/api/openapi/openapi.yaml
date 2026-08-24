@@ -22,6 +22,8 @@ tags:
     description: CIM, PIM, and PSM model CRUD, validation, import, and export.
   - name: Transformations
     description: MDE transformations and job tracking.
+  - name: Synchronizations
+    description: Pending three-way model synchronization conflict resolution.
   - name: Artifacts
     description: Generated artifact records, files, and downloads.
   - name: Modeling
@@ -798,6 +800,86 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+  /api/synchronizations/{projectId}/{sessionId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: sessionId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Synchronizations]
+      summary: Get a pending model synchronization session and its conflicts
+      responses:
+        "200":
+          description: Pending synchronization session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SynchronizationSession"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Synchronizations]
+      summary: Cancel a pending model synchronization session
+      responses:
+        "204":
+          description: Synchronization session cancelled
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/synchronizations/{projectId}/{sessionId}/resolutions:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: sessionId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [Synchronizations]
+      summary: Record a resolution for one model conflict
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConflictResolutionRequest"
+      responses:
+        "200":
+          description: Updated pending synchronization session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SynchronizationSession"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/synchronizations/{projectId}/{sessionId}/finalize:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: sessionId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [Synchronizations]
+      summary: Validate and commit a fully resolved synchronization session
+      responses:
+        "200":
+          description: Synchronized working model
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelRecord"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/artifact:
     get:
       tags: [Artifacts]
@@ -2093,6 +2175,108 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ValidationIssue"
+    SynchronizationResult:
+      type: object
+      required:
+        [
+          status,
+          targetModelId,
+          incomingChanges,
+          preservedUserChanges,
+          autoMergedChanges,
+          conflicts,
+          generatedAdditions,
+          generatedDeletions,
+          conflictDetails,
+          validationFindings,
+        ]
+      properties:
+        status:
+          type: string
+          enum: [APPLIED, CONFLICTS, BOOTSTRAP_REQUIRED, VALIDATION_FAILED]
+        sessionId:
+          type: string
+          nullable: true
+        targetModelId: { type: string }
+        incomingChanges: { type: integer }
+        preservedUserChanges: { type: integer }
+        autoMergedChanges: { type: integer }
+        conflicts: { type: integer }
+        generatedAdditions: { type: integer }
+        generatedDeletions: { type: integer }
+        conflictDetails:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelConflict"
+        validationFindings:
+          type: array
+          items: { type: string }
+    ModelConflict:
+      type: object
+      properties:
+        conflictId: { type: string }
+        transformationDirection:
+          type: string
+          enum: [CIM_TO_PIM, PIM_TO_AWS_PSM]
+        elementId: { type: string }
+        elementEClass: { type: string }
+        elementName: { type: string }
+        featureName: { type: string }
+        differenceKind: { type: string }
+        path: { type: string }
+        baseValue: {}
+        workingValue: {}
+        generatedValue: {}
+        description: { type: string }
+        availableResolutions:
+          type: array
+          items:
+            type: string
+            enum: [KEEP_USER, TAKE_GENERATED]
+    ConflictResolutionRequest:
+      type: object
+      required: [conflictId, resolution]
+      properties:
+        conflictId: { type: string }
+        resolution:
+          type: string
+          enum: [KEEP_USER, TAKE_GENERATED]
+    SynchronizationSession:
+      type: object
+      required:
+        [
+          id,
+          direction,
+          projectId,
+          sourceModelId,
+          targetModelId,
+          workingRevision,
+          baselineVersion,
+          conflicts,
+          resolutions,
+        ]
+      properties:
+        id: { type: string }
+        direction:
+          type: string
+          enum: [CIM_TO_PIM, PIM_TO_AWS_PSM]
+        projectId: { type: string }
+        sourceModelId: { type: string }
+        targetModelId: { type: string }
+        workingRevision: { type: integer, format: int64 }
+        workingFingerprint: { type: string }
+        baselineVersion: { type: integer, format: int64 }
+        newSourceRevision: { type: integer, format: int64 }
+        createdAt: { type: string, format: date-time }
+        conflicts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelConflict"
+        resolutions:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [KEEP_USER, TAKE_GENERATED]
     ValidationIssue:
       type: object
       properties:
@@ -2507,7 +2691,9 @@ components:
           items:
             type: string
         validationResult:
-          $ref: "#/components/schemas/ValidationResult"
+          oneOf:
+            - $ref: "#/components/schemas/ValidationResult"
+            - $ref: "#/components/schemas/SynchronizationResult"
         timings:
           type: object
           additionalProperties:

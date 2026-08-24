@@ -2,12 +2,23 @@ package io.mehdieidi.varka.platform.transformation.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mehdieidi.varka.platform.artifact.domain.ArtifactRecord;
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
+import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.model.application.ModelService;
 import io.mehdieidi.varka.platform.model.domain.ModelRecord;
+import io.mehdieidi.varka.platform.transformation.synchronization.ConflictResolution;
+import io.mehdieidi.varka.platform.transformation.synchronization.GeneratedBaseline;
+import io.mehdieidi.varka.platform.transformation.synchronization.ModelBaselineRepository;
+import io.mehdieidi.varka.platform.transformation.synchronization.SynchronizationResult;
+import io.mehdieidi.varka.platform.transformation.synchronization.SynchronizationStatus;
+import io.mehdieidi.varka.platform.transformation.synchronization.TransformationDirection;
+import io.mehdieidi.varka.platform.transformation.synchronization.TransformationSynchronizationCoordinator;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +30,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /** End-to-end regression tests for platform transformations backed by the MDE runners. */
 @Execution(ExecutionMode.SAME_THREAD)
@@ -417,6 +429,202 @@ class TransformationServiceTest {
     assertTrue(
         regenerated.files().get(handlerPath).contains(customLogic),
         "Regeneration must preserve content edited inside protected regions.");
+  }
+
+  @Test
+  void firstTransformationCreatesWorkingAndExactRawBaseline() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "first@example.com", "First", "First");
+    ModelRecord cim = createClimateCim(services, context, "first-cim");
+
+    ModelRecord working = services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult result = TransformationService.consumeLastSynchronization();
+    GeneratedBaseline baseline =
+        new ModelBaselineRepository(services.store())
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow();
+
+    assertEquals(SynchronizationStatus.APPLIED, result.status());
+    assertEquals(working.id(), baseline.targetModelId());
+    assertEquals(working.modelJson(), baseline.rawGeneratedModel());
+    assertTrue(
+        java.util.Arrays.equals(
+            services.models().sourceXmi(working).orElseThrow(), baseline.rawGeneratedXmi()));
+  }
+
+  @Test
+  void successfulSynchronizationKeepsUserRefinementButAdvancesRawBaseline() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services, "baseline@example.com", "Baseline", "Baseline");
+    ModelRecord cim = createClimateCim(services, context, "baseline-cim");
+    ModelRecord first = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    String generatedDescription = first.modelJson().path("description").asText();
+    ObjectNode refined = (ObjectNode) first.modelJson().deepCopy();
+    refined.put("description", "User-owned architectural refinement");
+    services
+        .models()
+        .update(
+            context.user(), ModelLevel.PIM, first.id(), first.name(), refined, first.revision());
+
+    ModelRecord merged = services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult mergedResult = TransformationService.consumeLastSynchronization();
+    GeneratedBaseline baseline =
+        new ModelBaselineRepository(services.store())
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow();
+
+    assertEquals(SynchronizationStatus.APPLIED, mergedResult.status());
+    assertEquals(
+        "User-owned architectural refinement", merged.modelJson().path("description").asText());
+    assertEquals(generatedDescription, baseline.rawGeneratedModel().path("description").asText());
+    assertNotEquals(merged.modelJson(), baseline.rawGeneratedModel());
+
+    ModelRecord idempotent = services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult idempotentResult = TransformationService.consumeLastSynchronization();
+    assertEquals(0, idempotentResult.incomingChanges());
+    assertEquals(0, idempotentResult.conflicts());
+    assertEquals(
+        "User-owned architectural refinement", idempotent.modelJson().path("description").asText());
+  }
+
+  @Test
+  void legacyWorkingModelWithoutBaselineIsNeverOverwritten() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "legacy@example.com", "Legacy", "Legacy");
+    ModelRecord cim = createClimateCim(services, context, "legacy-cim");
+    ModelService.ImportResult imported =
+        services
+            .models()
+            .importModel(ModelLevel.PIM, "legacy-pim.xmi", PlatformTestFixtures.pimXmi(), "xmi");
+    ObjectNode legacyJson = (ObjectNode) imported.modelJson().deepCopy();
+    legacyJson.put("transformedFromModelId", cim.id());
+    legacyJson.put("description", "Do not overwrite this legacy working model");
+    ModelRecord legacy =
+        services
+            .models()
+            .create(
+                context.user(), ModelLevel.PIM, context.project().id(), "legacy-pim", legacyJson);
+
+    ModelRecord returned = services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult result = TransformationService.consumeLastSynchronization();
+
+    assertEquals(SynchronizationStatus.BOOTSTRAP_REQUIRED, result.status());
+    assertEquals(legacy.id(), returned.id());
+    assertEquals(
+        "Do not overwrite this legacy working model",
+        returned.modelJson().path("description").asText());
+    assertTrue(
+        new ModelBaselineRepository(services.store())
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .isEmpty());
+  }
+
+  @Test
+  void modifyingWorkingModelMakesPendingConflictSessionStale() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "stale@example.com", "Stale", "Stale");
+    ModelRecord cim = createClimateCim(services, context, "stale-cim");
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+
+    ObjectNode userChanged = (ObjectNode) pim.modelJson().deepCopy();
+    userChanged.put("name", "User target name");
+    pim =
+        services
+            .models()
+            .update(
+                context.user(), ModelLevel.PIM, pim.id(), pim.name(), userChanged, pim.revision());
+    ObjectNode generatorChanged = (ObjectNode) cim.modelJson().deepCopy();
+    generatorChanged.put("name", "Upstream generated name");
+    cim =
+        services
+            .models()
+            .update(
+                context.user(),
+                ModelLevel.CIM,
+                cim.id(),
+                cim.name(),
+                generatorChanged,
+                cim.revision());
+    byte[] changedSourceXmi =
+        new String(services.models().sourceXmi(cim).orElseThrow(), StandardCharsets.UTF_8)
+            .replace(
+                "name=\"ClimateReliefGrantsBusinessModel\"", "name=\"Upstream generated name\"")
+            .getBytes(StandardCharsets.UTF_8);
+    services
+        .store()
+        .writeBytesAtomically(
+            Path.of("projects", context.project().id(), "models", "cim", cim.id() + ".xmi"),
+            changedSourceXmi);
+
+    ModelRecord unchanged = services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult conflictResult = TransformationService.consumeLastSynchronization();
+    assertEquals(SynchronizationStatus.CONFLICTS, conflictResult.status());
+    assertEquals("User target name", unchanged.modelJson().path("name").asText());
+    assertFalse(conflictResult.conflictDetails().isEmpty());
+
+    ObjectNode changedWhilePending = (ObjectNode) unchanged.modelJson().deepCopy();
+    changedWhilePending.put("description", "Changed after conflict creation");
+    services
+        .models()
+        .update(
+            context.user(),
+            ModelLevel.PIM,
+            unchanged.id(),
+            unchanged.name(),
+            changedWhilePending,
+            unchanged.revision());
+    TransformationSynchronizationCoordinator coordinator =
+        new TransformationSynchronizationCoordinator(services.store(), services.models());
+    conflictResult
+        .conflictDetails()
+        .forEach(
+            conflict ->
+                coordinator.resolve(
+                    context.user(),
+                    context.project().id(),
+                    conflictResult.sessionId(),
+                    conflict.conflictId(),
+                    ConflictResolution.KEEP_USER));
+
+    PlatformException stale =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                coordinator.finalizeSession(
+                    context.user(), context.project().id(), conflictResult.sessionId()));
+    assertEquals(409, stale.status());
+    assertEquals(
+        "Changed after conflict creation",
+        services
+            .models()
+            .get(context.user(), ModelLevel.PIM, unchanged.id())
+            .modelJson()
+            .path("description")
+            .asText());
+  }
+
+  private ModelRecord createClimateCim(
+      PlatformTestFixtures.ServiceStack services,
+      PlatformTestFixtures.AuthenticatedContext context,
+      String name) {
+    ModelService.ImportResult imported =
+        services
+            .models()
+            .importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi");
+    return services
+        .models()
+        .create(context.user(), ModelLevel.CIM, context.project().id(), name, imported.modelJson());
   }
 
   private boolean serviceContainmentNonEmpty(JsonNode model, String childField) {

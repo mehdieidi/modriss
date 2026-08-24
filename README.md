@@ -81,14 +81,15 @@ deploy/         Docker Compose stack and Dockerfile
 
 ## Documentation
 
-| Start here             |                                                                                                                                           |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| User guides & concepts | [docs/public-docs/](docs/public-docs/) (MkDocs)                                                                                           |
-| REST & realtime API    | [rest-api](docs/api/rest-api.md) · [realtime](docs/public-docs/docs/reference/realtime-api.md) · [OpenAPI](docs/api/openapi/openapi.yaml) |
-| Architecture diagrams  | [docs/diagrams/](docs/diagrams/)                                                                                                          |
-| Assistant setup        | [docs/internal/ai/assistant.md](docs/internal/ai/assistant.md)                                                                            |
-| Generated AWS projects | [docs/internal/artifacts/deployment-and-testing.md](docs/internal/artifacts/deployment-and-testing.md)                                    |
-| Status & roadmap       | [status-roadmap](docs/public-docs/docs/contributing/status-roadmap.md)                                                                    |
+| Start here                |                                                                                                                                           |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| User guides & concepts    | [docs/public-docs/](docs/public-docs/) (MkDocs)                                                                                           |
+| REST & realtime API       | [rest-api](docs/api/rest-api.md) · [realtime](docs/public-docs/docs/reference/realtime-api.md) · [OpenAPI](docs/api/openapi/openapi.yaml) |
+| Architecture diagrams     | [docs/diagrams/](docs/diagrams/)                                                                                                          |
+| Iterative transformations | [architecture guide](docs/public-docs/docs/architecture/iterative-model-transformations.md)                                               |
+| Assistant setup           | [docs/internal/ai/assistant.md](docs/internal/ai/assistant.md)                                                                            |
+| Generated AWS projects    | [docs/internal/artifacts/deployment-and-testing.md](docs/internal/artifacts/deployment-and-testing.md)                                    |
+| Status & roadmap          | [status-roadmap](docs/public-docs/docs/contributing/status-roadmap.md)                                                                    |
 
 ## Contributing
 

@@ -4,6 +4,7 @@ import io.mehdieidi.varka.platform.kernel.PlatformException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -21,6 +22,20 @@ public interface PlatformStore {
    * @return configured mapper
    */
   ObjectMapper objectMapper();
+
+  /**
+   * Executes a group of persistence operations as one transaction when the adapter supports it.
+   *
+   * <p>The default is suitable for in-memory and test adapters. Durable adapters should override
+   * this method so related records are committed or rolled back together.
+   *
+   * @param operation grouped persistence work
+   * @param <T> result type
+   * @return operation result
+   */
+  default <T> T inTransaction(Supplier<T> operation) {
+    return operation.get();
+  }
 
   /**
    * Reads a stored JSON record when it exists.

@@ -296,18 +296,14 @@ operation generatedStableId(prefix : String, source, suffix : String) {
   if (cachedGeneratedIdByKey.containsKey(key)) {
     return cachedGeneratedIdByKey.get(key);
   }
-  var seed = firstText(source.id, source.name);
-  if (not hasText(seed)) {
-    seed = prefix;
-  }
-  var id = uniqueId(prefix + "_" + slug(seed + "_" + suffix));
+  var id = modelElementIdGenerator.deterministicId("pim-to-awspsm", key);
   cachedGeneratedIdByKey.put(key, id);
   return id;
 }
 
 /** Computes unique id. */
 operation uniqueId(base : String) {
-  return modelElementIdGenerator.nextId();
+  return modelElementIdGenerator.deterministicOccurrenceId("pim-to-awspsm-helper", base);
 }
 
 /** Returns whether the receiver is true. */

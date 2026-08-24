@@ -228,6 +228,7 @@
 
   <modelVersion>4.0.0</modelVersion>
   <modules>
+    <module>packages/java/emf-compare-standalone</module>
     <module>apps/backend</module>
     <module>packages/java/platform-kernel</module>
     <module>packages/java/platform-storage-api</module>

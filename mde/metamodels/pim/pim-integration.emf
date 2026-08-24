@@ -84,7 +84,7 @@ class Subscription extends kernel.TraceableElement {
   ref kernel.SubscriptionTarget[1] target;
 }
 
-class EventRoutingRule extends kernel.TraceableElement, kernel.InvocationSource {
+class EventRoutingRule extends kernel.TraceableElement, kernel.InvocationSource, kernel.PolicyTarget {
   attr String eventPattern;
   attr String scheduleExpression;
   attr Boolean enabled;

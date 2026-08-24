@@ -4,6 +4,11 @@
   <artifactId>platform-transformation</artifactId>
   <dependencies>
     <dependency>
+      <artifactId>emf-compare-standalone</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <artifactId>platform-kernel</artifactId>
       <groupId>${project.groupId}</groupId>
     </dependency>

@@ -1115,6 +1115,7 @@ async function waitForTransformationJob(jobId) {
     const job = await api(`/transformations/jobs/${jobId}`);
     const status = String(job?.status || "").toUpperCase();
     if (status === "SUCCEEDED") {
+      await handleSynchronizationResult(job);
       return job;
     }
     if (status === "FAILED" || status === "CANCELLED") {
@@ -1124,6 +1125,62 @@ async function waitForTransformationJob(jobId) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   throw new Error("Transformation job timed out.");
+}
+
+async function handleSynchronizationResult(job) {
+  const synchronization = job?.validationResult;
+  const status = String(synchronization?.status || "").toUpperCase();
+  if (status === "BOOTSTRAP_REQUIRED") {
+    await confirmAction({
+      title: "Synchronization baseline required",
+      message:
+        "An existing generated model has no baseline. It was left untouched. Delete the toy legacy target or establish a baseline before retrying.",
+      confirmLabel: "Understood",
+      cancelLabel: "Close",
+    });
+    return;
+  }
+  if (status !== "CONFLICTS" || !synchronization.sessionId) {
+    return;
+  }
+  const projectId = state.project?.id || state.project?.projectId;
+  if (!projectId) {
+    throw new Error("A project is required to resolve model synchronization conflicts.");
+  }
+  const conflicts = Array.isArray(synchronization.conflictDetails)
+    ? synchronization.conflictDetails
+    : [];
+  for (const conflict of conflicts) {
+    const generated = await confirmAction({
+      title: `Model conflict: ${conflict.elementName || conflict.elementEClass || "element"}`,
+      message: [
+        `Feature: ${conflict.featureName || "unknown"}`,
+        `Base: ${displayConflictValue(conflict.baseValue)}`,
+        `Your value: ${displayConflictValue(conflict.workingValue)}`,
+        `Generated value: ${displayConflictValue(conflict.generatedValue)}`,
+      ].join("\n"),
+      confirmLabel: "Use generated value",
+      cancelLabel: "Keep my value",
+    });
+    await api(`/synchronizations/${projectId}/${synchronization.sessionId}/resolutions`, {
+      method: "POST",
+      body: JSON.stringify({
+        conflictId: conflict.conflictId,
+        resolution: generated ? "TAKE_GENERATED" : "KEEP_USER",
+      }),
+    });
+  }
+  await api(`/synchronizations/${projectId}/${synchronization.sessionId}/finalize`, {
+    method: "POST",
+  });
+  setStatus("Model synchronization conflicts resolved");
+}
+
+function displayConflictValue(value) {
+  if (value === null || value === undefined) {
+    return "(deleted / absent)";
+  }
+  return typeof value === "string" ? value : JSON.stringify(value);
 }
 
 function isTransformationApiError(error, path) {

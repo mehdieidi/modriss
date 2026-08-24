@@ -48,3 +48,18 @@ Impact analysis routes are implemented under `/api/impact/**`. Planned admin wor
 
 - [REST API](../../docs/api/rest-api.md)
 - [Repository layout](../../docs/public-docs/docs/reference/repository-layout.md)
+
+# Model synchronization API
+
+`CIM -> PIM` and `PIM -> AWS PSM` jobs expose a synchronization object in the job's
+`validationResult` field. Its status is `APPLIED`, `CONFLICTS`, or `BOOTSTRAP_REQUIRED`, with merge
+counts and transport-safe conflict details. When status is `CONFLICTS`, use:
+
+- `GET /api/synchronizations/{projectId}/{sessionId}` to reload the pending session;
+- `POST /api/synchronizations/{projectId}/{sessionId}/resolutions` with `conflictId` and
+  `KEEP_USER` or `TAKE_GENERATED`;
+- `POST /api/synchronizations/{projectId}/{sessionId}/finalize` after resolving every conflict;
+- `DELETE /api/synchronizations/{projectId}/{sessionId}` to cancel without changing Working/Base.
+
+Generated baselines and pending sessions are infrastructure records, not DSML elements. A baseline
+is the untouched raw ETL output, never the merged user-refined Working model.

@@ -1185,8 +1185,24 @@ public final class XmiModelImportService {
         @SuppressWarnings("unchecked")
         List<Object> target = (List<Object>) object.eGet(attribute);
         if (!value.isArray()) {
-          diagnostics.attributeError(
-              object, attribute, "Expected an array for multi-valued attribute.");
+          // Older frontend saves represented editable String[*] fields as a comma-separated
+          // scalar. Accept that legacy shape at the XMI boundary so one such edit cannot make
+          // the whole transformation pipeline unusable. New writes are normalized by the UI.
+          if (value.isTextual() && "modelTags".equals(attribute.getName())) {
+            for (String item : value.asText().split(",")) {
+              Object converted =
+                  attributeValue(
+                      object, attribute, objectMapper.getNodeFactory().textNode(item.trim()));
+              if (converted != null && !item.isBlank()) {
+                target.add(converted);
+              }
+            }
+          } else {
+            Object converted = attributeValue(object, attribute, value);
+            if (converted != null) {
+              target.add(converted);
+            }
+          }
           return;
         }
         if (value.isArray()) {

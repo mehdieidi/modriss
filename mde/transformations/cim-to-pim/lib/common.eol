@@ -296,11 +296,11 @@ operation newId(prefix : String, seed) {
   return generatedId(prefix, seed);
 }
 
-/** Generates one UUID per transformation key and reuses it for within-run lookups. */
+/** Generates a deterministic id per transformation/source/target-role key. */
 operation generatedId(prefix : String, seed) {
   var key = prefix + "::" + seed.asString();
   if (not cachedGeneratedIdByKey.containsKey(key)) {
-    cachedGeneratedIdByKey.put(key, modelElementIdGenerator.nextId());
+    cachedGeneratedIdByKey.put(key, modelElementIdGenerator.deterministicId("cim-to-pim", key));
   }
   return cachedGeneratedIdByKey.get(key);
 }

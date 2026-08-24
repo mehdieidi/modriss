@@ -39,6 +39,11 @@ The PIM-to-AWS-PSM ETL profile creates AWS roots, stages, stacks, compute, APIs,
 events, workflows, IAM, configuration, observability, and provider mappings. Post-processing resolves
 relationships and validates placement and readiness.
 
+Both model-to-model stages support repeated upstream evolution through deterministic fresh
+generation and three-way EMF synchronization. See
+[Iterative and evolutionary model transformations](../architecture/iterative-model-transformations.md)
+for the Base/Working/NewGenerated lifecycle, merge rules, conflict handling, and safety guarantees.
+
 ## PSM to Artifacts
 
 The generator emits a reviewable AWS serverless project containing, as applicable:

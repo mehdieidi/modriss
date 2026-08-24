@@ -17,6 +17,7 @@ final class PlatformTestFixtures {
   private static final Path REPOSITORY_ROOT = findRepositoryRoot();
   private static final byte[] CLIMATE_CIM_XMI =
       loadBytes(REPOSITORY_ROOT.resolve("mde/samples/cim.xmi"));
+  private static final byte[] PIM_XMI = loadBytes(REPOSITORY_ROOT.resolve("mde/samples/pim.xmi"));
   private static final byte[] AWS_PSM_XMI =
       loadBytes(REPOSITORY_ROOT.resolve("mde/samples/psm.xmi"));
 
@@ -28,6 +29,10 @@ final class PlatformTestFixtures {
 
   static byte[] awsPsmXmi() {
     return AWS_PSM_XMI.clone();
+  }
+
+  static byte[] pimXmi() {
+    return PIM_XMI.clone();
   }
 
   static ServiceStack createServices(Path tempDir) {

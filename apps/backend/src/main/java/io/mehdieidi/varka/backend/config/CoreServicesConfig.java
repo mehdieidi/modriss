@@ -21,6 +21,7 @@ import io.mehdieidi.varka.platform.project.application.ProjectService;
 import io.mehdieidi.varka.platform.storage.api.PlatformStore;
 import io.mehdieidi.varka.platform.transformation.application.MdeJobService;
 import io.mehdieidi.varka.platform.transformation.application.TransformationService;
+import io.mehdieidi.varka.platform.transformation.synchronization.TransformationSynchronizationCoordinator;
 import java.nio.file.Path;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -180,6 +181,13 @@ public class CoreServicesConfig {
         mdeRuntimePaths,
         metamodelResolver,
         modelLockService);
+  }
+
+  /** Creates the conflict-resolution facade over persisted synchronization sessions. */
+  @Bean
+  TransformationSynchronizationCoordinator transformationSynchronizationCoordinator(
+      PlatformStore store, ModelService models) {
+    return new TransformationSynchronizationCoordinator(store, models);
   }
 
   /**

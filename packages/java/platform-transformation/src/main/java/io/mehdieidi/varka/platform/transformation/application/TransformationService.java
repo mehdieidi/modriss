@@ -25,6 +25,9 @@ import io.mehdieidi.varka.platform.modeling.runtime.MdeRuntimeOptions;
 import io.mehdieidi.varka.platform.modeling.runtime.MdeRuntimePaths;
 import io.mehdieidi.varka.platform.modeling.xmi.XmiModelImportService;
 import io.mehdieidi.varka.platform.storage.api.PlatformStore;
+import io.mehdieidi.varka.platform.transformation.synchronization.SynchronizationResult;
+import io.mehdieidi.varka.platform.transformation.synchronization.TransformationDirection;
+import io.mehdieidi.varka.platform.transformation.synchronization.TransformationSynchronizationCoordinator;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -77,9 +80,15 @@ public final class TransformationService {
   /** EGX generator used for PSM-to-artifact generation. */
   private final EpsilonEgxGenerator artifactGenerator;
 
+  /** Generated-model synchronization coordinator. */
+  private final TransformationSynchronizationCoordinator synchronization;
+
   /** Per-worker timing data captured by the last transformation operation on the current thread. */
   private static final ThreadLocal<Map<String, Long>> LAST_TIMINGS =
       ThreadLocal.withInitial(LinkedHashMap::new);
+
+  private static final ThreadLocal<SynchronizationResult> LAST_SYNCHRONIZATION =
+      new ThreadLocal<>();
 
   /**
    * Creates a transformation service using default runtime options.
@@ -158,6 +167,7 @@ public final class TransformationService {
     this.artifactGenerator =
         new EpsilonEgxGenerator(
             this.runtimeOptions.executionTimeout(), this.runtimeOptions.maxCapturedOutputBytes());
+    this.synchronization = new TransformationSynchronizationCoordinator(store, modelService);
   }
 
   /**
@@ -194,16 +204,18 @@ public final class TransformationService {
           generated.model().put("sourceModelHash", sourceModelHash(source));
           mirrorReadinessToManualBacklog(generated.model());
           long persistStarted = System.nanoTime();
-          ModelRecord target =
-              modelService.createGenerated(
+          TransformationSynchronizationCoordinator.CoordinatedResult coordinated =
+              synchronization.synchronize(
                   user,
+                  source,
                   ModelLevel.PIM,
-                  source.projectId(),
                   source.name() + "-pim",
                   generated.model(),
-                  generated.sourceXmi());
+                  generated.sourceXmi(),
+                  TransformationDirection.CIM_TO_PIM);
+          LAST_SYNCHRONIZATION.set(coordinated.synchronization());
           addTiming("java.generatedModelPersistenceMs", System.nanoTime() - persistStarted);
-          return target;
+          return coordinated.model();
         });
   }
 
@@ -240,16 +252,18 @@ public final class TransformationService {
           generated.model().put("sourceModelRevision", source.revision());
           generated.model().put("sourceModelHash", sourceModelHash(source));
           long persistStarted = System.nanoTime();
-          ModelRecord target =
-              modelService.createGenerated(
+          TransformationSynchronizationCoordinator.CoordinatedResult coordinated =
+              synchronization.synchronize(
                   user,
+                  source,
                   ModelLevel.PSM,
-                  source.projectId(),
                   source.name() + "-psm",
                   generated.model(),
-                  generated.sourceXmi());
+                  generated.sourceXmi(),
+                  TransformationDirection.PIM_TO_AWS_PSM);
+          LAST_SYNCHRONIZATION.set(coordinated.synchronization());
           addTiming("java.generatedModelPersistenceMs", System.nanoTime() - persistStarted);
-          return target;
+          return coordinated.model();
         });
   }
 
@@ -311,6 +325,13 @@ public final class TransformationService {
     Map<String, Long> timings = Map.copyOf(LAST_TIMINGS.get());
     LAST_TIMINGS.remove();
     return timings;
+  }
+
+  /** Returns and clears synchronization details produced by the current worker thread. */
+  public static SynchronizationResult consumeLastSynchronization() {
+    SynchronizationResult result = LAST_SYNCHRONIZATION.get();
+    LAST_SYNCHRONIZATION.remove();
+    return result;
   }
 
   /**
@@ -1012,6 +1033,7 @@ public final class TransformationService {
 
   private void resetTimings() {
     LAST_TIMINGS.set(new LinkedHashMap<>());
+    LAST_SYNCHRONIZATION.remove();
   }
 
   private void addTiming(String name, long elapsedNanos) {
@@ -1167,7 +1189,7 @@ public final class TransformationService {
       String status,
       JsonNode affectedElements) {
     ObjectNode task = store.objectMapper().createObjectNode();
-    task.put("id", UUID.randomUUID().toString());
+    task.put("id", stablePlatformId(category + "::" + title + "::" + rationale));
     task.put("name", title);
     task.put("title", title);
     task.put("status", status);
@@ -1192,7 +1214,7 @@ public final class TransformationService {
     model
         .withArray("manualBacklog")
         .addObject()
-        .put("id", UUID.randomUUID().toString())
+        .put("id", stablePlatformId("MANUAL_MODELING::" + title))
         .put("name", title)
         .put("status", "OPEN")
         .put("required", true)
@@ -1212,6 +1234,12 @@ public final class TransformationService {
     } catch (Exception ex) {
       throw new PlatformException(500, "Could not serialize model.");
     }
+  }
+
+  private String stablePlatformId(String semanticKey) {
+    return UUID.nameUUIDFromBytes(
+            ("varka-transformation-ui\u0000" + semanticKey).getBytes(StandardCharsets.UTF_8))
+        .toString();
   }
 
   /**
