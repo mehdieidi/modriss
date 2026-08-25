@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -19,6 +20,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamReader;
 import org.eclipse.emf.common.util.Enumerator;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
@@ -37,6 +41,7 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.emf.ecore.xmi.XMLResource;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import tools.jackson.databind.JsonNode;
@@ -188,13 +193,14 @@ public final class XmiModelImportService {
               URI.createURI(
                   "memory:/" + sanitizePurpose(purpose) + "-" + level.apiName() + ".xmi"));
       try (ByteArrayInputStream input = new ByteArrayInputStream(bytes)) {
-        resource.load(input, Map.of());
+        resource.load(input, Map.of(XMLResource.OPTION_DEFER_IDREF_RESOLUTION, Boolean.FALSE));
       }
       assertNoLoadErrors(resource);
       if (resolveAllReferences) {
         EcoreUtil.resolveAll(resourceSet);
         assertNoLoadErrors(resource);
       }
+      repairUnresolvedReferences(resource, bytes);
       validateResourceRoot(level, resource);
       return resource;
     } catch (PlatformException ex) {
@@ -448,6 +454,121 @@ public final class XmiModelImportService {
             + location
             + ": "
             + diagnostic.getMessage());
+  }
+
+  /**
+   * Repairs non-containment references that the EMF XMI reader can leave unset when an external
+   * model uses stable {@code id} values alongside {@code xmi:id} values. The XML attributes are the
+   * authoritative serialized representation; repairing from them keeps import/export lossless
+   * without inventing endpoint values in the transformation layer.
+   *
+   * @param resource loaded XMI resource
+   * @param bytes original XMI bytes
+   */
+  private void repairUnresolvedReferences(Resource resource, byte[] bytes) {
+    Map<String, Map<String, String>> rawReferences = rawReferenceAttributes(bytes);
+    if (rawReferences.isEmpty()) {
+      return;
+    }
+    Map<String, EObject> objectsById = new HashMap<>();
+    List<EObject> objects = new ArrayList<>();
+    resource
+        .getContents()
+        .forEach(
+            root -> {
+              objects.add(root);
+              collectObjects(root, objects);
+            });
+    for (EObject object : objects) {
+      String xmiId = EcoreUtil.getID(object);
+      if (xmiId != null && !xmiId.isBlank()) {
+        objectsById.putIfAbsent(xmiId, object);
+      }
+      EStructuralFeature idFeature = object.eClass().getEStructuralFeature("id");
+      if (idFeature instanceof EAttribute && object.eIsSet(idFeature)) {
+        Object value = object.eGet(idFeature);
+        if (value != null && !String.valueOf(value).isBlank()) {
+          objectsById.putIfAbsent(String.valueOf(value), object);
+        }
+      }
+    }
+    for (EObject object : objects) {
+      Map<String, String> attributes = rawReferences.get(EcoreUtil.getID(object));
+      if (attributes == null) {
+        continue;
+      }
+      for (EReference reference : object.eClass().getEAllReferences()) {
+        if (reference.isContainment() || reference.isContainer() || !reference.isChangeable()) {
+          continue;
+        }
+        String raw = attributes.get(reference.getName());
+        if (raw == null || raw.isBlank()) {
+          continue;
+        }
+        if (reference.isMany()) {
+          @SuppressWarnings("unchecked")
+          List<EObject> current = (List<EObject>) object.eGet(reference);
+          if (!current.isEmpty()) {
+            continue;
+          }
+          for (String id : raw.trim().split("\\s+")) {
+            EObject target = objectsById.get(id);
+            if (target != null && reference.getEReferenceType().isInstance(target)) {
+              current.add(target);
+            }
+          }
+        } else if (object.eGet(reference) == null) {
+          EObject target = objectsById.get(raw.trim());
+          if (target != null && reference.getEReferenceType().isInstance(target)) {
+            object.eSet(reference, target);
+          }
+        }
+      }
+    }
+  }
+
+  /** Collects an object's full containment tree. */
+  private void collectObjects(EObject object, List<EObject> objects) {
+    object
+        .eContents()
+        .forEach(
+            child -> {
+              objects.add(child);
+              collectObjects(child, objects);
+            });
+  }
+
+  /** Reads serialized XML reference attributes keyed by xmi:id. */
+  private Map<String, Map<String, String>> rawReferenceAttributes(byte[] bytes) {
+    Map<String, Map<String, String>> result = new HashMap<>();
+    try {
+      XMLStreamReader reader =
+          XMLInputFactory.newFactory().createXMLStreamReader(new ByteArrayInputStream(bytes));
+      while (reader.hasNext()) {
+        if (reader.next() == XMLStreamConstants.START_ELEMENT) {
+          String id = reader.getAttributeValue("http://www.omg.org/XMI", "id");
+          if (id == null || id.isBlank()) {
+            id = reader.getAttributeValue(null, "id");
+          }
+          if (id == null || id.isBlank()) {
+            continue;
+          }
+          Map<String, String> attributes = new HashMap<>();
+          for (int index = 0; index < reader.getAttributeCount(); index++) {
+            String name = reader.getAttributeLocalName(index);
+            String value = reader.getAttributeValue(index);
+            if (!"id".equals(name) && !"xmi".equals(reader.getAttributePrefix(index))) {
+              attributes.put(name, value);
+            }
+          }
+          result.put(id, attributes);
+        }
+      }
+      reader.close();
+    } catch (Exception ignored) {
+      // Normal EMF loading has already validated the XMI; repair is best effort.
+    }
+    return result;
   }
 
   /**
@@ -1870,7 +1991,9 @@ public final class XmiModelImportService {
      * @param child contained EMF object
      */
     private void addContainmentEdge(EObject owner, EReference reference, EObject child) {
-      if (isGraphSupportObject(child) || isRelationshipObject(child)) {
+      if (isGraphSupportObject(child)
+          || isRelationshipObject(child)
+          || isRelationshipObject(owner)) {
         return;
       }
       String sourceId = ensureId(owner);

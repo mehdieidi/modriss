@@ -32,7 +32,8 @@ const LAST_PROJECT_STORAGE_PREFIX = "varka.lastProjectId";
 
 function defaultModelName(typeKey) {
   const configured = state.modelingConfig.config?.levels?.[typeKey]?.modelNameTemplate;
-  if (!configured) throw new Error(`Modeling config is missing a model name template for '${typeKey}'.`);
+  if (!configured)
+    throw new Error(`Modeling config is missing a model name template for '${typeKey}'.`);
   return configured;
 }
 

@@ -85,7 +85,8 @@ export function isModelSaveInFlight() {
 
 function defaultModelName(typeKey = state.activeType) {
   const configured = state.modelingConfig.config?.levels?.[typeKey]?.modelNameTemplate;
-  if (!configured) throw new Error(`Modeling config is missing a model name template for '${typeKey}'.`);
+  if (!configured)
+    throw new Error(`Modeling config is missing a model name template for '${typeKey}'.`);
   return configured;
 }
 
@@ -1469,18 +1470,17 @@ export function updateGenerateButtonState() {
   }
   const transformation = transformationForLevel(state.activeType);
   const artifactAction = state.modelingConfig.config?.artifactAction || {};
-  const buttonConfig =
-    isArtifactLevel(state.activeType)
+  const buttonConfig = isArtifactLevel(state.activeType)
+    ? {
+        label: artifactAction.buttonLabel || "Download Project",
+        title: artifactAction.buttonTitle || "Download the generated project",
+      }
+    : transformation
       ? {
-          label: artifactAction.buttonLabel || "Download Project",
-          title: artifactAction.buttonTitle || "Download the generated project",
+          label: transformation.buttonLabel || transformation.label || "Generate",
+          title: transformation.buttonTitle || transformation.title || "Run generation",
         }
-      : transformation
-        ? {
-            label: transformation.buttonLabel || transformation.label || "Generate",
-            title: transformation.buttonTitle || transformation.title || "Run generation",
-          }
-        : null;
+      : null;
   const isVisible = Boolean(buttonConfig);
   el.generateContextBtn.classList.toggle("hidden", !isVisible);
   el.generateContextBtn.disabled = !isVisible;

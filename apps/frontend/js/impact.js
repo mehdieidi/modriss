@@ -116,11 +116,7 @@ async function enrichImpactWithArtifactFiles(data) {
   const focalElementId = String(data?.focalElement?.elementId || "").trim();
   const artifacts = downstream.filter((item) => {
     const modelId = item?.modelId;
-    return (
-      isArtifactLevel(item?.modelType) &&
-      modelId != null &&
-      String(modelId).trim() !== ""
-    );
+    return isArtifactLevel(item?.modelType) && modelId != null && String(modelId).trim() !== "";
   });
 
   const pairs = await Promise.all(
@@ -198,9 +194,7 @@ function configuredLevelForAncestor(ancestor) {
 }
 
 function tierBadgeClass(modelType) {
-  return isArtifactLevel(modelType)
-    ? "tier-badge-artifact"
-    : "tier-badge-model";
+  return isArtifactLevel(modelType) ? "tier-badge-artifact" : "tier-badge-model";
 }
 
 // ── Render impact panel ───────────────────────────────────────────────────────

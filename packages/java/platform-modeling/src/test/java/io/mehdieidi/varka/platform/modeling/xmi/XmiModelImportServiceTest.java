@@ -115,6 +115,24 @@ class XmiModelImportServiceTest {
     }
   }
 
+  @Test
+  void importsCimDomainRelationshipEndpointsIntoSemanticJson() throws Exception {
+    XmiModelImportService service = new XmiModelImportService(new ObjectMapper());
+    Path sample = Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize();
+    JsonNode model = service.importModel(ModelLevel.CIM, Files.readAllBytes(sample));
+
+    for (JsonNode relationship : model.path("relationships")) {
+      assertTrue(
+          relationship.path("source").isTextual()
+              && !relationship.path("source").asText().isBlank(),
+          "Missing source for " + relationship.path("id").asText());
+      assertTrue(
+          relationship.path("target").isTextual()
+              && !relationship.path("target").asText().isBlank(),
+          "Missing target for " + relationship.path("id").asText());
+    }
+  }
+
   /** One sample fixture and its expected model level. */
   private record Fixture(ModelLevel level, String fileName) {
     private String metadataFile() {

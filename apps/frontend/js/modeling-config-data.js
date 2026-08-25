@@ -91,7 +91,8 @@ function ensureConfigShape(raw) {
   normalized.defaultLevel = String(raw.defaultLevel || "");
   normalized.artifact = raw.artifact && typeof raw.artifact === "object" ? raw.artifact : {};
   normalized.assistant = raw.assistant && typeof raw.assistant === "object" ? raw.assistant : {};
-  normalized.methodology = raw.methodology && typeof raw.methodology === "object" ? raw.methodology : {};
+  normalized.methodology =
+    raw.methodology && typeof raw.methodology === "object" ? raw.methodology : {};
   normalized.artifactAction =
     raw.artifactAction && typeof raw.artifactAction === "object" ? raw.artifactAction : {};
   normalized.impactAnalysis =
@@ -784,10 +785,7 @@ export function modelingRelationshipElementTypes(typeKey = state.activeType) {
       // containment objects (notably Schedule and Trigger). Only non-creatable relationship
       // records are edge-only and may be omitted from the semantic element tree during Save/XMI
       // reconstruction.
-      .filter(
-        (entry) =>
-          entry?.relationshipElement && entry?.containedOnly === true && entry?.creatable === false,
-      )
+      .filter((entry) => entry?.relationshipElement === true && entry?.containedOnly !== true)
       .map((entry) => entry.type)
   );
 }

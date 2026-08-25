@@ -21,7 +21,8 @@ function isModelingType(typeKey = state.activeType) {
 
 function defaultModelName(typeKey = state.activeType) {
   const configured = state.modelingConfig.config?.levels?.[typeKey]?.modelNameTemplate;
-  if (!configured) throw new Error(`Modeling config is missing a model name template for '${typeKey}'.`);
+  if (!configured)
+    throw new Error(`Modeling config is missing a model name template for '${typeKey}'.`);
   return configured;
 }
 

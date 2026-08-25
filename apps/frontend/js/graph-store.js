@@ -592,7 +592,10 @@ function synthesizeSemanticRefRelationships(graph, typeKey = state.activeType) {
           continue;
         }
         const kind = String(rule.kind || "").trim();
-        if (!kind) throw new Error(`Modeling config is missing a semantic relationship kind for '${rule.feature}'.`);
+        if (!kind)
+          throw new Error(
+            `Modeling config is missing a semantic relationship kind for '${rule.feature}'.`,
+          );
         const sourceId = rule.reverse ? targetId : element.id;
         const destinationId = rule.reverse ? element.id : targetId;
         const key = `${sourceId}|${destinationId}|${kind}`;
@@ -843,7 +846,10 @@ function synthesizeSemanticRefsForElement(graph, typeKey, elementId) {
         continue;
       }
       const kind = String(rule.kind || "").trim();
-      if (!kind) throw new Error(`Modeling config is missing a semantic relationship kind for '${rule.feature}'.`);
+      if (!kind)
+        throw new Error(
+          `Modeling config is missing a semantic relationship kind for '${rule.feature}'.`,
+        );
       const sourceId = rule.reverse ? targetId : elementId;
       const destinationId = rule.reverse ? elementId : targetId;
       if (hasSemanticRelationship(graph, sourceId, destinationId, kind)) {
@@ -2955,7 +2961,12 @@ export function serializeGraphAndViewsInto(
     ? focusBaseViewId || views[0]?.id || null
     : state.views.activeViewId;
   root.traceLinks = graph.traceLinks;
-  root.assumptions = graph.assumptions;
+  // `assumptions` is a semantic CIM root containment as well as a graph projection field.
+  // An imported model can have semantic assumptions while the graph projection intentionally
+  // has none. Never let an empty runtime projection erase those authoritative model objects.
+  if (!Array.isArray(root.assumptions) || root.assumptions.length === 0) {
+    root.assumptions = graph.assumptions;
+  }
   root.validationIssues = [];
   root.manualBacklog = manualBacklog;
   delete root.diagram;
@@ -2998,7 +3009,9 @@ export async function serializeGraphAndViewsIntoAsync(
     ? focusBaseViewId || views[0]?.id || null
     : state.views.activeViewId;
   root.traceLinks = graph.traceLinks;
-  root.assumptions = graph.assumptions;
+  if (!Array.isArray(root.assumptions) || root.assumptions.length === 0) {
+    root.assumptions = graph.assumptions;
+  }
   root.validationIssues = [];
   root.manualBacklog = manualBacklog;
   delete root.diagram;

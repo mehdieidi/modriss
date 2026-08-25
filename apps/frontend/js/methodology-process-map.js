@@ -4,10 +4,7 @@
 import { state } from "./state.js";
 import { el } from "./dom.js";
 import { escapeHtml } from "./utils.js";
-import {
-  isModelingLevel,
-  modelingElementDefinition,
-} from "./modeling-config-data.js";
+import { isModelingLevel, modelingElementDefinition } from "./modeling-config-data.js";
 
 const ICON_BASE = "/assets/icons/process-map";
 const NODE_W = 148;
