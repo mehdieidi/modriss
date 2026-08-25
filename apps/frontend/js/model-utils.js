@@ -395,12 +395,22 @@ function firstConfiguredValue(object, fields) {
   return "";
 }
 
-function setEndpointFields(copy, rule, sourceId, targetId) {
+function setEndpointFields(copy, rule, sourceId, targetId, typeKey) {
   if (rule.sourceFeature) {
     copy[rule.sourceFeature] = copy[rule.sourceFeature] || sourceId;
   }
   if (rule.targetFeature) {
-    copy[rule.targetFeature] = copy[rule.targetFeature] || targetId;
+    let reference = null;
+    try {
+      reference = safeArray(modelingElementDefinition(typeKey, copy.eClass)?.references).find(
+        (candidate) => candidate?.name === rule.targetFeature,
+      );
+    } catch {
+      reference = null;
+    }
+    copy[rule.targetFeature] = reference?.many
+      ? [...new Set([...refIds(copy[rule.targetFeature]), targetId])]
+      : copy[rule.targetFeature] || targetId;
   }
   safeArray(rule.targetFeatures).some((feature) => {
     if (copy[feature]) {
@@ -444,14 +454,40 @@ export function relationshipSemanticCopy(typeKey, relationship, graph = null) {
     ...relationship,
     eClass: type,
   });
+  const semanticObjectId = String(relationship?.semanticObjectId || "").trim();
+  const targetReference = rule?.targetFeature
+    ? safeArray(modelingElementDefinition(typeKey, type)?.references).find(
+        (candidate) => candidate?.name === rule.targetFeature,
+      )
+    : null;
+  if (
+    semanticObjectId &&
+    (targetReference?.many || (rule?.targetFeature && Array.isArray(copy[rule.targetFeature])))
+  ) {
+    copy.id = semanticObjectId;
+  }
+  delete copy.semanticObjectId;
   if (rule) {
-    setEndpointFields(copy, rule, sourceId, targetId);
+    setEndpointFields(copy, rule, sourceId, targetId, typeKey);
     if (rule.removeGenericEndpoints !== false) {
       delete copy.sourceElementId;
       delete copy.targetElementId;
     }
   }
   return copy;
+}
+
+function appendRelationshipCopy(target, feature, copy) {
+  const existing = target[feature]?.find?.(
+    (candidate) => String(candidate?.id) === String(copy?.id),
+  );
+  if (existing) {
+    if (Array.isArray(existing?.targets) || Array.isArray(copy?.targets)) {
+      existing.targets = [...new Set([...refIds(existing.targets), ...refIds(copy.targets)])];
+    }
+    return;
+  }
+  target[feature].push(copy);
 }
 
 function relationshipFromObject(typeKey, raw, fallbackType, fallbackKind, index, owner = null) {
@@ -486,7 +522,8 @@ function relationshipFromObject(typeKey, raw, fallbackType, fallbackKind, index,
     );
     return {
       ...clone(raw),
-      id,
+      id: uniqueTargets.length > 1 ? `${id}::${targetId}` : id,
+      semanticObjectId: raw.id ? String(raw.id) : id,
       eClass: type,
       kind,
       sourceElementId: sourceId,
@@ -628,7 +665,9 @@ function childElementsForContainment(parent, entry, graph, typeKey) {
       children.push(candidate);
     }
   };
-  graph.elementsById?.forEach(addCandidate);
+  if (!entry.relationshipOnly) {
+    graph.elementsById?.forEach(addCandidate);
+  }
   graph.relationshipsById?.forEach(addCandidate);
   return children;
 }
@@ -644,12 +683,17 @@ function attachNestedContainments(typeKey, copy, sourceElement, graph, visited =
   visited.add(visitKey);
   nestedContainmentsForType(typeKey, modelTypeOf(sourceElement)).forEach((entry) => {
     const children = childElementsForContainment(sourceElement, entry, graph, typeKey);
-    const copies = children.map((child) => {
+    const copies = [];
+    children.forEach((child) => {
       const childCopy = isRelationshipElementType(typeKey, modelTypeOf(child))
         ? relationshipSemanticCopy(typeKey, child, graph)
         : stripRuntimeFields(typeKey, child);
       attachNestedContainments(typeKey, childCopy, child, graph, visited);
-      return childCopy;
+      if (entry.relationshipOnly) {
+        appendRelationshipCopy({ [entry.feature]: copies }, entry.feature, childCopy);
+      } else {
+        copies.push(childCopy);
+      }
     });
     copy[entry.feature] = entry.singleton ? copies[0] || null : copies;
   });
@@ -683,7 +727,7 @@ export function populateRootContainments(typeKey, root, graph) {
     }
   });
   graph.relationshipsById?.forEach((relationship) => {
-    if (relationship.visualOnly) {
+    if (relationship.visualOnly || relationship.containment) {
       return;
     }
     const containment = rootContainmentForType(typeKey, modelTypeOf(relationship));
@@ -694,7 +738,7 @@ export function populateRootContainments(typeKey, root, graph) {
     if (containment.singleton) {
       root[containment.feature] = copy;
     } else {
-      root[containment.feature].push(copy);
+      appendRelationshipCopy(root, containment.feature, copy);
     }
   });
   return root;
@@ -736,7 +780,7 @@ export async function populateRootContainmentsAsync(typeKey, root, graph) {
     }
   }
   for (const relationship of graph.relationshipsById?.values() || []) {
-    if (relationship.visualOnly) {
+    if (relationship.visualOnly || relationship.containment) {
       continue;
     }
     const containment = rootContainmentForType(typeKey, modelTypeOf(relationship));
@@ -747,7 +791,7 @@ export async function populateRootContainmentsAsync(typeKey, root, graph) {
     if (containment.singleton) {
       root[containment.feature] = copy;
     } else {
-      root[containment.feature].push(copy);
+      appendRelationshipCopy(root, containment.feature, copy);
     }
     processed += 1;
     if (processed % POPULATE_CONTAINMENTS_YIELD_EVERY === 0) {

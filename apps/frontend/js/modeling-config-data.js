@@ -749,9 +749,18 @@ export function modelingConcreteTypesFor(typeKey, expectedType) {
 }
 
 export function modelingRelationshipElementTypes(typeKey = state.activeType) {
-  return (modelingLevelConfig(typeKey).elements || [])
-    .filter((entry) => entry?.relationshipElement)
-    .map((entry) => entry.type);
+  return (
+    (modelingLevelConfig(typeKey).elements || [])
+      // Some PIM classes are drawn as relationship-shaped nodes but are still real semantic
+      // containment objects (notably Schedule and Trigger). Only non-creatable relationship
+      // records are edge-only and may be omitted from the semantic element tree during Save/XMI
+      // reconstruction.
+      .filter(
+        (entry) =>
+          entry?.relationshipElement && entry?.containedOnly === true && entry?.creatable === false,
+      )
+      .map((entry) => entry.type)
+  );
 }
 
 function containmentTitle(feature) {

@@ -1136,7 +1136,11 @@ function buildGraph(typeKey, modelJson) {
     if (isRootScopeElement(typeKey, normalized)) {
       return;
     }
-    if (allowedTypes.size && !allowedTypes.has(normalized.eClass)) {
+    // The semantic root is authoritative. Generated models may contain valid support or
+    // transformation-produced classes that are intentionally absent from the editable palette.
+    // Dropping those here leaves non-containment references (for example PIM deployment
+    // membership targets) pointing at elements that Save can no longer serialize.
+    if (!isModelingLevel(typeKey) && allowedTypes.size && !allowedTypes.has(normalized.eClass)) {
       return;
     }
     if (seenElements.has(normalized.id)) {
@@ -2691,7 +2695,7 @@ function buildGraphFromSnapshot(snapshot, typeKey = state.activeType) {
     if (isRootScopeElement(typeKey, normalized)) {
       return;
     }
-    if (allowedTypes.size && !allowedTypes.has(normalized.eClass)) {
+    if (!isModelingLevel(typeKey) && allowedTypes.size && !allowedTypes.has(normalized.eClass)) {
       return;
     }
     graph.elementsById.set(normalized.id, normalized);
