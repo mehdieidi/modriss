@@ -12,6 +12,7 @@
 
 # Package Files
 *.jar
+!packages/java/emf-compare-standalone/vendor/org.eclipse.emf.compare_3.5.3.202605071334.jar
 *.war
 *.nar
 *.ear

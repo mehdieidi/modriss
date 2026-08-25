@@ -1099,6 +1099,12 @@ public final class XmiModelImportService {
         }
         JsonNode value = node.get(feature.getName());
         if (value == null || value.isNull()) {
+          if (feature instanceof EAttribute attribute) {
+            String implied = impliedEnumLiteral(eClass, attribute);
+            if (implied != null) {
+              setAttribute(object, attribute, objectMapper.getNodeFactory().textNode(implied));
+            }
+          }
           continue;
         }
         if (feature instanceof EAttribute attribute) {
@@ -1222,6 +1228,29 @@ public final class XmiModelImportService {
       }
     }
 
+    /** Infers a required enum discriminator when the concrete EClass names one option exactly. */
+    private String impliedEnumLiteral(EClass eClass, EAttribute attribute) {
+      if (attribute.isMany()
+          || attribute.getLowerBound() < 1
+          || !(attribute.getEAttributeType() instanceof EEnum eEnum)) {
+        return null;
+      }
+      String typeName =
+          eClass
+              .getName()
+              .replaceFirst("(Step|State)$", "")
+              .replaceAll("([a-z])([A-Z])", "$1_$2")
+              .toUpperCase(java.util.Locale.ROOT);
+      if (typeName.isBlank()) {
+        return null;
+      }
+      List<EEnumLiteral> matches =
+          eEnum.getELiterals().stream()
+              .filter(literal -> typeName.equals(literal.getName()))
+              .toList();
+      return matches.size() == 1 ? matches.get(0).getLiteral() : null;
+    }
+
     /**
      * Converts a JSON scalar to an EMF attribute value.
      *
@@ -1245,6 +1274,13 @@ public final class XmiModelImportService {
         EEnumLiteral enumLiteral = eEnum.getEEnumLiteral(literal);
         if (enumLiteral == null) {
           enumLiteral = eEnum.getEEnumLiteralByLiteral(literal);
+        }
+        if (enumLiteral == null) {
+          try {
+            enumLiteral = eEnum.getEEnumLiteral(Integer.parseInt(literal));
+          } catch (NumberFormatException ignored) {
+            // The final diagnostic below reports the original invalid value.
+          }
         }
         if (enumLiteral == null) {
           diagnostics.attributeError(owner, attribute, "Unknown enum literal '" + literal + "'.");

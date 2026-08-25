@@ -41,6 +41,7 @@ import {
   missingRequiredFeatures,
   nestedContainmentsForType,
   refIds,
+  impliedEnumValues,
 } from "./model-utils.js";
 import {
   captureConnectionUndoSnapshot,
@@ -315,6 +316,7 @@ function renderConfiguredConnectionFields(connection, source, target) {
     definition = null;
   }
   const sections = relationshipInspectorSections();
+  const impliedFields = new Set(Object.keys(impliedEnumValues(semanticType, definition)));
   sections.identity.appendChild(
     buildAttrField("kind", connection.kind, {
       fieldType: "text",
@@ -350,6 +352,10 @@ function renderConfiguredConnectionFields(connection, source, target) {
   ];
   fields.forEach((field) => {
     if (!field?.name || rendered.has(field.name) || field.readonly) {
+      return;
+    }
+    if (impliedFields.has(field.name)) {
+      rendered.add(field.name);
       return;
     }
     rendered.add(field.name);
@@ -506,9 +512,14 @@ function renderConfiguredAttributeFields(node, meta, definition) {
       fieldType: "reference",
     })),
   ];
+  const impliedFields = new Set(Object.keys(impliedEnumValues(node.type, definition)));
   configuredFields.forEach((field) => {
     const key = field?.name;
     if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+      return;
+    }
+    if (impliedFields.has(key)) {
+      rendered.add(key);
       return;
     }
     rendered.add(key);
@@ -582,9 +593,14 @@ function _renderRelationshipAttributeFields(node, meta, definition) {
       fieldType: "reference",
     })),
   ];
+  const impliedFields = new Set(Object.keys(impliedEnumValues(node.type, definition)));
   configuredFields.forEach((field) => {
     const key = field?.name;
     if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+      return;
+    }
+    if (impliedFields.has(key)) {
+      rendered.add(key);
       return;
     }
     rendered.add(key);
@@ -645,9 +661,14 @@ function _renderPlatformAttributeFields(node, meta, definition) {
       fieldType: "reference",
     })),
   ];
+  const impliedFields = new Set(Object.keys(impliedEnumValues(node.type, definition)));
   configuredFields.forEach((field) => {
     const key = field?.name;
     if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+      return;
+    }
+    if (impliedFields.has(key)) {
+      rendered.add(key);
       return;
     }
     rendered.add(key);
@@ -1453,14 +1474,23 @@ function containedFieldDefinition(child, fieldName) {
 
 function containedCellMarkup(child, fieldName) {
   const field = containedFieldDefinition(child, fieldName) || {};
-  const value = child[fieldName];
+  const value = normalizeEnumValue(field, child[fieldName]);
+  let implied = "";
+  try {
+    implied = impliedEnumValues(
+      child.eClass || child.type,
+      modelingElementDefinition(state.activeType, child.eClass || child.type),
+    )[fieldName];
+  } catch {
+    implied = "";
+  }
   if (fieldName === "id") {
     const fullId = overviewValueText(value);
     return `<span class="attr-contained-readonly attr-contained-id-excerpt" title="${escapeAttr(
       fullId,
     )}">${escapeAttr(shortIdExcerpt(fullId))}</span>`;
   }
-  if (field.readonly || READONLY_ATTR_KEYS.has(fieldName)) {
+  if (implied || field.readonly || READONLY_ATTR_KEYS.has(fieldName)) {
     return `<span class="attr-contained-readonly">${escapeAttr(overviewValueText(value))}</span>`;
   }
   if (field.kind === "reference" || field.fieldType === "reference") {
@@ -1992,6 +2022,7 @@ function appendCustomSelectControl(
 
 function buildAttrField(key, value, field) {
   let fieldType = field?.fieldType || inferFieldType(value);
+  const enumValue = normalizeEnumValue(field, value);
   const expressionField = isExpressionField(key, fieldType);
   if (expressionField && fieldType === "text") {
     fieldType = "textarea";
@@ -2046,7 +2077,7 @@ function buildAttrField(key, value, field) {
       const option = document.createElement("option");
       option.value = String(optionValue);
       option.textContent = String(optionValue);
-      option.selected = String(value ?? "") === String(optionValue);
+      option.selected = String(enumValue ?? "") === String(optionValue);
       input.appendChild(option);
     });
   } else if (fieldType === "date") {
@@ -2107,6 +2138,22 @@ function buildAttrField(key, value, field) {
     wrapper.appendChild(hint);
   }
   return wrapper;
+}
+
+/** Converts legacy numeric Ecore enum values to the literal used by XMI and the JSON model. */
+function normalizeEnumValue(field, value) {
+  const options = Array.isArray(field?.options) ? field.options : [];
+  if (!options.length || value == null || value === "") {
+    return value;
+  }
+  const text = String(value);
+  if (options.some((option) => String(option) === text)) {
+    return value;
+  }
+  if (/^\d+$/.test(text)) {
+    return options[Number(text)] ?? value;
+  }
+  return value;
 }
 
 function referenceValueId(value) {

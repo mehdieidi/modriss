@@ -17,6 +17,36 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+/**
+ * Returns enum values implied by a concrete type name, such as StartStep -> stepKind=START.
+ * A value is inferred only when exactly one declared enum option matches, so unrelated enums
+ * remain explicit user choices.
+ */
+export function impliedEnumValues(type, definition) {
+  const typeName = String(type || "")
+    .replace(/(Step|State)$/, "")
+    .replace(/([a-z])([A-Z])/g, "$1_$2")
+    .toUpperCase();
+  if (!typeName) {
+    return {};
+  }
+  const values = {};
+  for (const field of [
+    ...safeArray(definition?.attributes),
+    ...safeArray(definition?.references),
+  ]) {
+    const options = safeArray(field?.options).map(String);
+    if (!options.length || field?.many || field?.kind === "reference") {
+      continue;
+    }
+    const matches = options.filter((option) => option === typeName);
+    if (matches.length === 1) {
+      values[field.name] = matches[0];
+    }
+  }
+  return values;
+}
+
 function sanitizeIdPart(value) {
   return (
     String(value || "element")
@@ -748,7 +778,9 @@ export function createConfiguredElement(
     ) {
       return;
     }
-    element[field.name] = clone(field.defaultValue);
+    element[field.name] = clone(
+      field.defaultValue ?? impliedEnumValues(type, definition)[field.name] ?? null,
+    );
   });
   return element;
 }

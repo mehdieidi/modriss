@@ -151,11 +151,10 @@ public final class TransformationSynchronizationCoordinator {
           result(SynchronizationStatus.CONFLICTS, sessionId, working.id(), merge, List.of()));
     }
 
-    List<String> findings = validationFindings(targetLevel, merge.mergedWorkingXmi());
-    if (!findings.isEmpty()) {
-      return new CoordinatedResult(
-          working,
-          result(SynchronizationStatus.VALIDATION_FAILED, null, working.id(), merge, findings));
+    ModelService.ValidationResult validation =
+        models.validateGeneratedXmi(targetLevel, merge.mergedWorkingXmi());
+    if (!validation.valid()) {
+      throw new TransformationValidationException(validation.issues());
     }
     ModelRecord updated =
         store.inTransaction(
@@ -391,17 +390,10 @@ public final class TransformationSynchronizationCoordinator {
     return new SynchronizationResult(status, null, targetId, 0, 0, 0, 0, 0, 0, List.of(), findings);
   }
 
-  private List<String> validationFindings(ModelLevel level, byte[] modelXmi) {
-    ModelService.ValidationResult validation = models.validateGeneratedXmi(level, modelXmi);
-    return validation.valid()
-        ? List.of()
-        : validation.issues().stream().map(String::valueOf).toList();
-  }
-
   private void requireValid(ModelLevel level, byte[] modelXmi) {
-    List<String> findings = validationFindings(level, modelXmi);
-    if (!findings.isEmpty()) {
-      throw new PlatformException(422, "Synchronized model validation failed: " + findings);
+    ModelService.ValidationResult validation = models.validateGeneratedXmi(level, modelXmi);
+    if (!validation.valid()) {
+      throw new TransformationValidationException(validation.issues());
     }
   }
 

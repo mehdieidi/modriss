@@ -64,7 +64,7 @@ export function formatUserError(error, { prefix = "" } = {}) {
   if (error instanceof ApiError) {
     message = error.userMessage || error.message || GENERIC_ERROR;
   } else if (error instanceof Error) {
-    message = GENERIC_ERROR;
+    message = error.userMessage || GENERIC_ERROR;
   } else if (typeof error === "string" && error.trim()) {
     message = error.trim();
   }

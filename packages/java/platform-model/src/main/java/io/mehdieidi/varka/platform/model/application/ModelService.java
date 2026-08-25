@@ -755,7 +755,7 @@ public final class ModelService {
         "validation.sourceXmiReadMs", System.nanoTime() - phaseStarted);
     ValidationResult result;
     if (xmiBytes.isPresent()) {
-      result = validateGeneratedXmi(level, xmiBytes.get());
+      result = validateGeneratedXmi(level, xmiBytes.get(), model.modelJson());
       if (validationService.hasRecoverableStaleSourceError(result)) {
         ValidationResult repairedResult = validateRegeneratedSourceXmi(model);
         if (!validationService.hasRecoverableStaleSourceError(repairedResult)) {
@@ -797,7 +797,8 @@ public final class ModelService {
           importExport.canonicalSourceXmi(model.level(), model.modelJson(), null);
       validationService.addValidationTiming(
           "validation.sourceXmiRegenerateMs", System.nanoTime() - phaseStarted);
-      ValidationResult result = validateGeneratedXmi(model.level(), sourceXmi.bytes());
+      ValidationResult result =
+          validateGeneratedXmi(model.level(), sourceXmi.bytes(), model.modelJson());
       if (!validationService.hasRecoverableStaleSourceError(result)) {
         phaseStarted = System.nanoTime();
         importExport.attachSourceXmi(model, sourceXmi.bytes());
@@ -827,6 +828,11 @@ public final class ModelService {
    */
   public ValidationResult validateGeneratedXmi(ModelLevel level, byte[] xmiBytes) {
     return validationService.validateGeneratedXmi(level, xmiBytes);
+  }
+
+  private ValidationResult validateGeneratedXmi(
+      ModelLevel level, byte[] xmiBytes, JsonNode modelJson) {
+    return validationService.validateGeneratedXmi(level, xmiBytes, modelJson);
   }
 
   /**
@@ -1686,6 +1692,9 @@ public final class ModelService {
    * @param guidance optional remediation guidance
    * @param elementId related element id
    * @param elementName related element name or file
+   * @param sourceFile validation rule or source file, when known
+   * @param sourceLine one-based source line, or {@code -1}
+   * @param sourceColumn one-based source column, or {@code -1}
    */
   public record ValidationIssue(
       String severity,
@@ -1694,7 +1703,33 @@ public final class ModelService {
       String message,
       String guidance,
       String elementId,
-      String elementName) {}
+      String elementName,
+      String sourceFile,
+      int sourceLine,
+      int sourceColumn) {
+
+    /** Preserves the original constructor for model-level validation issues. */
+    public ValidationIssue(
+        String severity,
+        String constraint,
+        String issueClass,
+        String message,
+        String guidance,
+        String elementId,
+        String elementName) {
+      this(
+          severity,
+          constraint,
+          issueClass,
+          message,
+          guidance,
+          elementId,
+          elementName,
+          null,
+          -1,
+          -1);
+    }
+  }
 
   /**
    * Result produced after importing a model payload.

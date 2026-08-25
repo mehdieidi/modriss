@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
@@ -116,6 +117,149 @@ class ModelServiceXmiImportTest {
                     "RequiredAttribute".equals(issue.constraint())
                         && ("type".equals(missingFeature(issue))
                             || "kind".equals(missingFeature(issue)))));
+  }
+
+  /** Reports a missing command reference on the edited step before EVL attempts model loading. */
+  @Test
+  void reportsMissingCimCommandStepReferenceInUserFacingTerms() {
+    TestPlatformStore store = new TestPlatformStore(tempDir);
+    store.initialize();
+    AuthService authService = new AuthService(store, Duration.ofHours(1));
+    ProjectService projectService = new ProjectService(store, authService);
+    ModelService service = new ModelService(store, projectService);
+
+    ObjectNode model = minimalCimModel(store);
+    ObjectNode process = model.putArray("processes").addObject();
+    process.put("eClass", "BusinessProcess");
+    process.put("id", "process-1");
+    process.put("name", "Submit application");
+    ArrayNode steps = process.putArray("steps");
+    steps
+        .addObject()
+        .put("eClass", "StartStep")
+        .put("id", "start-1")
+        .put("name", "Start")
+        .put("stepKind", "START");
+    steps
+        .addObject()
+        .put("eClass", "CommandStep")
+        .put("id", "command-step-1")
+        .put("name", "Submit command")
+        .put("stepKind", "COMMAND");
+    steps
+        .addObject()
+        .put("eClass", "EndStep")
+        .put("id", "end-1")
+        .put("name", "End")
+        .put("stepKind", "END");
+
+    ModelService.ValidationResult validation = service.validate(ModelLevel.CIM, model);
+
+    ModelService.ValidationIssue issue =
+        validation.issues().stream()
+            .filter(candidate -> "RequiredReference".equals(candidate.constraint()))
+            .findFirst()
+            .orElseThrow();
+    assertFalse(validation.valid());
+    assertEquals("command-step-1", issue.elementId());
+    assertEquals("Submit command", issue.elementName());
+    assertEquals(
+        "The command step 'Submit command' is missing its required command.", issue.message());
+    assertEquals(
+        "Open this element and select the related command from the existing model elements.",
+        issue.guidance());
+    assertTrue(
+        validation.issues().stream()
+            .noneMatch(candidate -> candidate.message().contains("DynamicEObjectImpl")));
+  }
+
+  /** Reports an empty required process-step collection with precise user guidance. */
+  @Test
+  void reportsEmptyBusinessProcessStepsInUserFacingTerms() {
+    TestPlatformStore store = new TestPlatformStore(tempDir);
+    store.initialize();
+    AuthService authService = new AuthService(store, Duration.ofHours(1));
+    ProjectService projectService = new ProjectService(store, authService);
+    ModelService service = new ModelService(store, projectService);
+
+    ObjectNode model = minimalCimModel(store);
+    ObjectNode process = model.putArray("processes").addObject();
+    process.put("eClass", "BusinessProcess");
+    process.put("id", "process-empty-1");
+    process.put("name", "Empty process");
+    process.putArray("steps");
+
+    ModelService.ValidationResult validation = service.validate(ModelLevel.CIM, model);
+
+    ModelService.ValidationIssue issue =
+        validation.issues().stream()
+            .filter(candidate -> "RequiredReference".equals(candidate.constraint()))
+            .findFirst()
+            .orElseThrow();
+    assertFalse(validation.valid());
+    assertEquals("process-empty-1", issue.elementId());
+    assertEquals("Empty process", issue.elementName());
+    assertEquals(
+        "The business process 'Empty process' must contain at least one step.", issue.message());
+    assertEquals("Add a step to this element before validating the model again.", issue.guidance());
+  }
+
+  /** Concrete process-step types supply their inherited discriminator enum automatically. */
+  @Test
+  void doesNotRequireRedundantStepKindForConcreteProcessStep() {
+    TestPlatformStore store = new TestPlatformStore(tempDir);
+    store.initialize();
+    AuthService authService = new AuthService(store, Duration.ofHours(1));
+    ProjectService projectService = new ProjectService(store, authService);
+    ModelService service = new ModelService(store, projectService);
+
+    ObjectNode model = minimalCimModel(store);
+    ObjectNode process = model.putArray("processes").addObject();
+    process.put("eClass", "BusinessProcess");
+    process.put("id", "process-1");
+    process.put("name", "Submit application");
+    ObjectNode start = process.putArray("steps").addObject();
+    start.put("eClass", "StartStep");
+    start.put("id", "start-1");
+    start.put("name", "Start");
+
+    ModelService.ValidationResult validation = service.validate(ModelLevel.CIM, model);
+
+    assertTrue(
+        validation.issues().stream()
+            .noneMatch(
+                issue ->
+                    "RequiredAttribute".equals(issue.constraint())
+                        && "start-1".equals(issue.elementId())
+                        && issue.message().contains("step kind")));
+  }
+
+  /** Reproduces the XMI/Ecore collection diagnostic used by the validation drawer. */
+  @Test
+  void mapsEmptyProcessStructuralDiagnosticToItsElement() {
+    TestPlatformStore store = new TestPlatformStore(tempDir);
+    store.initialize();
+    AuthService authService = new AuthService(store, Duration.ofHours(1));
+    ProjectService projectService = new ProjectService(store, authService);
+    ModelService service = new ModelService(store, projectService);
+
+    ObjectNode model = minimalCimModel(store);
+    ObjectNode process = model.putArray("processes").addObject();
+    process.put("eClass", "BusinessProcess");
+    process.put("id", "process-empty-xmi-1");
+    process.put("name", "Empty process");
+    process.putArray("steps");
+
+    ModelService.ValidationResult validation =
+        service.validateGeneratedXmi(
+            ModelLevel.CIM, service.exportModel(ModelLevel.CIM, model, "xmi"));
+
+    ModelService.ValidationIssue issue =
+        validation.issues().stream()
+            .filter(candidate -> candidate.message().contains("must contain at least one step"))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError(validation.issues().toString()));
+    assertEquals("process-empty-xmi-1", issue.elementId(), validation.issues().toString());
   }
 
   /**
@@ -231,6 +375,26 @@ class ModelServiceXmiImportTest {
     goal.put("id", "goal-1");
     goal.put("name", "Improve customer retention");
     goal.put("priority", "");
+
+    byte[] exported = assertDoesNotThrow(() -> service.exportModel(ModelLevel.CIM, model, "xmi"));
+
+    assertTrue(exported.length > 0);
+  }
+
+  /** Accepts legacy numeric Ecore enum values while callers migrate to canonical enum names. */
+  @Test
+  void acceptsNumericEnumValuesDuringXmiExport() {
+    TestPlatformStore store = new TestPlatformStore(tempDir);
+    store.initialize();
+    AuthService authService = new AuthService(store, Duration.ofHours(1));
+    ProjectService projectService = new ProjectService(store, authService);
+    ModelService service = new ModelService(store, projectService);
+    ObjectNode model = minimalCimModel(store);
+    ObjectNode goal = model.putArray("goals").addObject();
+    goal.put("eClass", "BusinessGoal");
+    goal.put("id", "goal-1");
+    goal.put("name", "Improve customer retention");
+    goal.put("priority", "0");
 
     byte[] exported = assertDoesNotThrow(() -> service.exportModel(ModelLevel.CIM, model, "xmi"));
 

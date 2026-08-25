@@ -2592,7 +2592,10 @@ public final class ModelingConfigService {
         || type.contains("Int")
         || type.contains("Double")
         || type.contains("Float")) {
-      return 0;
+      // Ecore numeric attributes represented by boxed types (for example Integer) are nullable.
+      // Zero is a real value, not the unset marker, and assigning it to every new element creates
+      // false duplicate-order validation errors for optional orderIndex attributes.
+      return null;
     }
     return "";
   }
@@ -2620,7 +2623,8 @@ public final class ModelingConfigService {
         || type.contains("Int")
         || type.contains("Double")
         || type.contains("Float")) {
-      return 0;
+      // Keep optional numeric attributes unset until the user explicitly provides a value.
+      return null;
     }
     return "";
   }

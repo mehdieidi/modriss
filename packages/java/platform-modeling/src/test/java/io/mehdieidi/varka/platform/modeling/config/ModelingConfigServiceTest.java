@@ -375,6 +375,17 @@ class ModelingConfigServiceTest {
     assertTrue(stringList(priority.get("options")).contains("MEDIUM"));
   }
 
+  /** Optional boxed numeric attributes remain unset until a user assigns them. */
+  @Test
+  void leavesOptionalOrderIndexUnsetByDefault() {
+    Map<String, Object> startStep = element(listOfMaps(level("cim").get("elements")), "StartStep");
+    Map<String, Object> orderIndex = attribute(startStep, "orderIndex");
+
+    assertEquals("number", orderIndex.get("fieldType"));
+    assertFalse(Boolean.TRUE.equals(orderIndex.get("required")));
+    assertNull(orderIndex.get("defaultValue"));
+  }
+
   /** Verifies every graph-facing rule uses one declared canonical relationship vocabulary. */
   @Test
   void relationshipKindsAreCanonicalAndFullyConfigured() {

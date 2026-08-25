@@ -15,6 +15,7 @@ import io.mehdieidi.varka.platform.transformation.domain.MdeJobIndexRecord;
 import io.mehdieidi.varka.platform.transformation.domain.MdeJobOperation;
 import io.mehdieidi.varka.platform.transformation.domain.MdeJobRecord;
 import io.mehdieidi.varka.platform.transformation.domain.MdeJobStatus;
+import io.mehdieidi.varka.platform.transformation.synchronization.TransformationValidationException;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.time.Instant;
@@ -647,6 +648,18 @@ public final class MdeJobService implements AutoCloseable {
       if (failed.status() == MdeJobStatus.CANCELLED) {
         return;
       }
+      List<String> diagnostics;
+      Object validationResult = failed.validationResult();
+      if (ex instanceof TransformationValidationException validationFailure) {
+        diagnostics =
+            validationFailure.issues().stream()
+                .map(ModelService.ValidationIssue::message)
+                .filter(message -> message != null && !message.isBlank())
+                .toList();
+        validationResult = new ModelService.ValidationResult(false, validationFailure.issues());
+      } else {
+        diagnostics = List.of(message(ex));
+      }
       write(
           status(
               failed,
@@ -654,8 +667,8 @@ public final class MdeJobService implements AutoCloseable {
               100,
               failed.resultModelId(),
               failed.resultArtifactId(),
-              List.of(message(ex)),
-              failed.validationResult(),
+              diagnostics,
+              validationResult,
               mergeTimings(
                   failed.timings(),
                   Map.of("worker.totalMs", elapsedMs(failed.startedAt(), Instant.now()))),

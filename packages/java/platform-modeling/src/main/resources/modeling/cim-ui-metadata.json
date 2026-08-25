@@ -1003,8 +1003,7 @@
       "targetFeature": "target",
       "defaults": {
         "label": "",
-        "conditionExpression": "",
-        "orderIndex": 0
+        "conditionExpression": ""
       }
     },
     {

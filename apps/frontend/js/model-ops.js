@@ -30,7 +30,7 @@ import {
   scrollToConnectionAndHighlight,
   scrollToNodeAndHighlight,
 } from "./canvas.js";
-import { closeAttributePanel } from "./attr-panel.js";
+import { closeAttributePanel, openAttributePanel } from "./attr-panel.js";
 import { closeImpactPanel } from "./impact.js";
 import { loadArtifactById, loadArtifactRecord, loadCurrentProjectArtifact } from "./artifact.js";
 import { confirmAction } from "./confirm-action.js";
@@ -1057,7 +1057,7 @@ async function runTransformation(path, sourceModelId) {
     return result;
   }
   if (result?.id) {
-    return waitForTransformationJob(result.id);
+    return waitForTransformationJob(result.id, path);
   }
   return result;
 }
@@ -1106,7 +1106,7 @@ async function ensureStoredModelForBackendOperation(operationLabel, { requiredVi
   return Boolean(state.modelId);
 }
 
-async function waitForTransformationJob(jobId) {
+async function waitForTransformationJob(jobId, operationPath = "") {
   if (!jobId) {
     throw new Error("Transformation did not return a job id.");
   }
@@ -1119,6 +1119,18 @@ async function waitForTransformationJob(jobId) {
       return job;
     }
     if (status === "FAILED" || status === "CANCELLED") {
+      const validationIssues = job?.validationResult?.issues;
+      if (status === "FAILED" && Array.isArray(validationIssues) && validationIssues.length) {
+        const error = new Error(
+          "Generation failed because the generated model did not pass validation. Fix the listed validation issues, then try again.",
+        );
+        error.status = 422;
+        error.path = operationPath ? `/transformations/${operationPath}` : "";
+        error.issues = validationIssues;
+        error.userMessage =
+          "Generation failed because the generated model did not pass validation. Fix the listed validation issues, then try again.";
+        throw error;
+      }
       const diagnostics = Array.isArray(job?.diagnostics) ? job.diagnostics.join("; ") : "";
       throw new Error(diagnostics || `Transformation job ${status.toLowerCase()}.`);
     }
@@ -2248,6 +2260,16 @@ async function locateIssueTarget(detail) {
   }
   await activateViewForIssueTarget(candidates);
 
+  for (const candidate of candidates) {
+    if (state.nodesById?.has(candidate)) {
+      openAttributePanel(candidate);
+      if (state.diagram.nodes.some((node) => node.id === candidate)) {
+        scrollToNodeAndHighlight(candidate);
+      }
+      setStatus("Located issue element.");
+      return;
+    }
+  }
   for (const candidate of candidates) {
     if (state.diagram.nodes.some((node) => node.id === candidate)) {
       scrollToNodeAndHighlight(candidate);

@@ -38,6 +38,43 @@ function issueTargetIds(issue) {
   ];
 }
 
+function issueTitle(issue) {
+  const constraint = String(issue?.constraint || issue?.code || "").toUpperCase();
+  const severity = severityOf(issue);
+  if (constraint.startsWith("EVL_") || constraint.startsWith("ECORE_")) {
+    return severity === "WARNING"
+      ? "Model quality recommendation"
+      : "Model structure needs attention";
+  }
+  if (constraint === "REQUIREDREFERENCE") {
+    return "Required model link missing";
+  }
+  if (constraint === "REQUIREDATTRIBUTE") {
+    return "Required model value missing";
+  }
+  if (constraint === "UNKNOWNMODELELEMENT") {
+    return "Unsupported model element";
+  }
+  if (constraint.startsWith("XMI") || constraint.includes("EXECUTION")) {
+    return "Validation could not be completed";
+  }
+  return severity === "WARNING" ? "Model quality recommendation" : "Model validation issue";
+}
+
+function issueSourceLocation(issue) {
+  if (issueTargetIds(issue).length) {
+    return "";
+  }
+  const file = String(issue?.sourceFile || "").trim();
+  const line = Number(issue?.sourceLine);
+  const column = Number(issue?.sourceColumn);
+  if (!file) {
+    return "";
+  }
+  const position = line > 0 ? `, line ${line}${column > 0 ? `, column ${column}` : ""}` : "";
+  return `Validation rule location: ${file}${position}`;
+}
+
 function manualRequirementLabel(issue) {
   const rawClass = String(issue?.issueClass || issue?.code || "").toUpperCase();
   if (rawClass.includes("MANUAL_REQUIRED")) {
@@ -158,13 +195,17 @@ function renderIssues(issues) {
         ? "System Error"
         : "Validation";
     const severity = severityOf(issue);
-    const title = issue.constraint || issue.code || "Constraint";
+    const title = issueTitle(issue);
     const message = issue.message || "This item needs attention.";
     const guide =
       issue.guidance || issue.suggestedFix || "Review this item and make the required change.";
     const targetIds = issueTargetIds(issue);
     const targetId = targetIds[0] || "";
-    const element = issue.elementName || targetId || "";
+    const elementName = String(issue.elementName || "").trim();
+    const element =
+      elementName && targetId
+        ? `${elementName} (ID: ${targetId})`
+        : elementName || (targetId ? `ID: ${targetId}` : "");
     const toggle = manual
       ? `<label class="validation-manual-toggle"><input data-manual-task-id="${escapeHtml(
           issue.manualTaskId || "",
@@ -174,6 +215,15 @@ function renderIssues(issues) {
     const itemClass = `validation-issue-item validation-issue-${escapeHtml(sectionType)}${
       issue.resolved ? " validation-issue-item-resolved" : ""
     }`;
+    const sourceLocation = issueSourceLocation(issue);
+    const locateButton = targetIds.length
+      ? `<button class="validation-issue-locate"
+            data-issue-locate="${escapeHtml(targetId)}"
+            data-issue-target-ids="${escapeHtml(JSON.stringify(targetIds))}"
+            data-issue-element-name="${escapeHtml(issue.elementName || "")}"
+            data-issue-element-type="${escapeHtml(issue.elementType || "")}"
+            type="button">Locate</button>`
+      : "";
     return `<li class="${itemClass}">
       <div class="validation-issue-head-row">
         <div class="validation-issue-head">${escapeHtml(title)}</div>
@@ -183,14 +233,10 @@ function renderIssues(issues) {
             .join("")}
         </div>
         ${toggle}
-        <button class="validation-issue-locate"
-            data-issue-locate="${escapeHtml(targetId)}"
-            data-issue-target-ids="${escapeHtml(JSON.stringify(targetIds))}"
-            data-issue-element-name="${escapeHtml(issue.elementName || "")}"
-            data-issue-element-type="${escapeHtml(issue.elementType || "")}"
-            type="button">Locate</button>
+        ${locateButton}
       </div>
       ${element ? `<div class="validation-issue-element">${escapeHtml(element)}</div>` : ""}
+      ${sourceLocation ? `<div class="validation-issue-element">${escapeHtml(sourceLocation)}</div>` : ""}
       <div class="validation-issue-detail">
         <div class="validation-issue-detail-label">${manual ? "Task" : "What needs attention"}</div>
         <div class="validation-issue-message">${escapeHtml(message)}</div>
@@ -313,7 +359,10 @@ function renderValidationCenter() {
 
 export function isMethodologyValidationError(error) {
   return Boolean(
-    error && error.status === 400 && Array.isArray(error.issues) && error.issues.length > 0,
+    error &&
+      (error.status === 400 || error.status === 422) &&
+      Array.isArray(error.issues) &&
+      error.issues.length > 0,
   );
 }
 

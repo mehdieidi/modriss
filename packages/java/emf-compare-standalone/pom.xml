@@ -10,23 +10,26 @@
         <version>3.2.0</version>
         <executions>
           <execution>
-            <id>package-official-emf-compare-core</id>
+            <id>package-vendored-emf-compare-core</id>
             <phase>generate-resources</phase>
             <goals>
               <goal>run</goal>
             </goals>
             <configuration>
               <target>
-                <mkdir dir="${project.build.directory}/emf-compare-download" />
-                <get src="${emf.compare.bundle.url}"
-                  dest="${project.build.directory}/emf-compare-download/${emf.compare.bundle.file}"
-                  skipexisting="true"
-                  useragent="Varka-build/1.0" />
+                <available file="${emf.compare.bundle.path}" property="emf.compare.bundle.available" />
+                <fail message="The vendored official EMF Compare bundle is missing: ${emf.compare.bundle.path}">
+                  <condition>
+                    <not>
+                      <isset property="emf.compare.bundle.available" />
+                    </not>
+                  </condition>
+                </fail>
                 <checksum
-                  file="${project.build.directory}/emf-compare-download/${emf.compare.bundle.file}"
+                  file="${emf.compare.bundle.path}"
                   algorithm="SHA-256"
                   property="emf.compare.bundle.actual.sha256" />
-                <fail message="The downloaded official EMF Compare bundle failed SHA-256 verification.">
+                <fail message="The vendored official EMF Compare bundle failed SHA-256 verification.">
                   <condition>
                     <not>
                       <equals arg1="${emf.compare.bundle.actual.sha256}"
@@ -35,7 +38,7 @@
                   </condition>
                 </fail>
                 <unzip
-                  src="${project.build.directory}/emf-compare-download/${emf.compare.bundle.file}"
+                  src="${emf.compare.bundle.path}"
                   dest="${project.build.outputDirectory}">
                   <patternset>
                     <exclude name="META-INF/MANIFEST.MF" />
@@ -79,8 +82,8 @@
   </parent>
   <properties>
     <emf.compare.bundle.file>org.eclipse.emf.compare_3.5.3.202605071334.jar</emf.compare.bundle.file>
+    <emf.compare.bundle.path>${project.basedir}/vendor/${emf.compare.bundle.file}</emf.compare.bundle.path>
     <emf.compare.bundle.sha256>F4B25742EAFDA5EFFA4904BC028BC64638612B41AE9233B62956AE0EBF4F357C</emf.compare.bundle.sha256>
-    <emf.compare.bundle.url>https://www.eclipse.org/downloads/download.php?file=/modeling/emf/compare/updates/releases/3.3/R202605071334/core/plugins/${emf.compare.bundle.file}&amp;r=1</emf.compare.bundle.url>
     <emf.version>2.40.0</emf.version>
   </properties>
 </project>

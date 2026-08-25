@@ -17,7 +17,11 @@ import {
   serializeGraphAndViewsInto,
 } from "./graph-store.js";
 import { materializeActiveView } from "./view-materializer.js";
-import { semanticElementsFromRoot, semanticRelationshipsFromRoot } from "./model-utils.js";
+import {
+  impliedEnumValues,
+  semanticElementsFromRoot,
+  semanticRelationshipsFromRoot,
+} from "./model-utils.js";
 
 function connectionIdFor(_modelType, _index, _sourceId, _targetId, _kind) {
   return genId();
@@ -95,11 +99,12 @@ function cloneDefault(value) {
 }
 
 function applyDefinitionDefaults(meta, definition) {
+  const impliedValues = impliedEnumValues(meta.eClass, definition);
   for (const field of [...(definition?.attributes || []), ...(definition?.references || [])]) {
     if (!field?.name || field.readonly) {
       continue;
     }
-    meta[field.name] = cloneDefault(field.defaultValue);
+    meta[field.name] = cloneDefault(field.defaultValue ?? impliedValues[field.name] ?? null);
   }
 }
 

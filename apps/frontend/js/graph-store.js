@@ -464,7 +464,7 @@ function relationshipIdentity(typeKey, relationship, index) {
 
 function normalizeElement(element, _index) {
   const id = String(element?.id || genId("node")).trim();
-  return {
+  const normalized = {
     eClass: semanticType(element),
     id,
     name: semanticLabel(element),
@@ -474,6 +474,12 @@ function normalizeElement(element, _index) {
     ...clone(element),
     id,
   };
+  // Older UI metadata assigned 0 to optional EIntegerObject orderIndex fields. Treat that
+  // generated placeholder as unset when loading, while preserving explicit positive indexes.
+  if (normalized.orderIndex === 0) {
+    delete normalized.orderIndex;
+  }
+  return normalized;
 }
 
 function normalizeRelationship(typeKey, relationship, index) {
