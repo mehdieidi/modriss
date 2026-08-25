@@ -614,6 +614,74 @@ class TransformationServiceTest {
             .asText());
   }
 
+  @Test
+  void finalizesConflictWithGeneratedValueAndAdvancesBaseline() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "resolve@example.com", "Resolve", "Resolve");
+    ModelRecord cim = createClimateCim(services, context, "resolve-cim");
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+
+    ObjectNode userChanged = (ObjectNode) pim.modelJson().deepCopy();
+    userChanged.put("name", "User target name");
+    pim =
+        services
+            .models()
+            .update(
+                context.user(), ModelLevel.PIM, pim.id(), pim.name(), userChanged, pim.revision());
+    ObjectNode generatorChanged = (ObjectNode) cim.modelJson().deepCopy();
+    generatorChanged.put("name", "Generated target name");
+    cim =
+        services
+            .models()
+            .update(
+                context.user(),
+                ModelLevel.CIM,
+                cim.id(),
+                cim.name(),
+                generatorChanged,
+                cim.revision());
+    byte[] sourceXmi = services.models().sourceXmi(cim).orElseThrow();
+    services
+        .store()
+        .writeBytesAtomically(
+            Path.of("projects", context.project().id(), "models", "cim", cim.id() + ".xmi"),
+            new String(sourceXmi, StandardCharsets.UTF_8)
+                .replace(
+                    "name=\"ClimateReliefGrantsBusinessModel\"", "name=\"Generated target name\"")
+                .getBytes(StandardCharsets.UTF_8));
+
+    ModelRecord unchanged = services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult pending = TransformationService.consumeLastSynchronization();
+    assertEquals(SynchronizationStatus.CONFLICTS, pending.status());
+    TransformationSynchronizationCoordinator coordinator =
+        new TransformationSynchronizationCoordinator(services.store(), services.models());
+    pending
+        .conflictDetails()
+        .forEach(
+            conflict ->
+                coordinator.resolve(
+                    context.user(),
+                    context.project().id(),
+                    pending.sessionId(),
+                    conflict.conflictId(),
+                    ConflictResolution.TAKE_GENERATED));
+
+    ModelRecord finalized =
+        coordinator.finalizeSession(context.user(), context.project().id(), pending.sessionId());
+    assertEquals("Generated target name", finalized.modelJson().path("name").asText());
+    assertTrue(
+        new ModelBaselineRepository(services.store())
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .isPresent());
+    assertThrows(
+        PlatformException.class,
+        () -> coordinator.getSession(context.user(), context.project().id(), pending.sessionId()));
+    assertEquals(unchanged.id(), finalized.id());
+  }
+
   private ModelRecord createClimateCim(
       PlatformTestFixtures.ServiceStack services,
       PlatformTestFixtures.AuthenticatedContext context,
@@ -635,6 +703,15 @@ class TransformationServiceTest {
       }
     }
     return false;
+  }
+
+  private boolean hasGeneratedElement(JsonNode model, String eClass, String generatedFrom) {
+    return model.path("graph").path("elements").findValuesAsString("eClass").contains(eClass)
+        && model
+            .path("graph")
+            .path("elements")
+            .findValuesAsString("generatedFrom")
+            .contains(generatedFrom);
   }
 
   private boolean serviceContainmentHasApiRoutes(JsonNode model) {

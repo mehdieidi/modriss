@@ -305,6 +305,17 @@ final class ModelImportExportService {
   }
 
   /**
+   * Regenerates the authoritative source XMI from the current model projection. This is used after
+   * edits; unlike import canonicalization, an existing sidecar must never be preserved.
+   */
+  SourceXmiUpdate regenerateSourceXmi(ModelLevel level, JsonNode modelJson) {
+    byte[] bytes =
+        xmiImportService.exportModel(
+            level, hydrateSemanticReferences(withLayoutAnnotations(modelJson)));
+    return new SourceXmiUpdate(bytes, hashBytes(bytes), null);
+  }
+
+  /**
    * Checks whether diagram coordinates are present and should be preserved in source XMI
    * annotations.
    *

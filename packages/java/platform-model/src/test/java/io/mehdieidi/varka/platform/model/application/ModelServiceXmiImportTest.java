@@ -361,6 +361,40 @@ class ModelServiceXmiImportTest {
     assertEquals("climate-edited", summaries.get(0).name());
   }
 
+  @Test
+  void modelEditsRegenerateTheAuthoritativeSourceXmiEvenWhenLayoutExists() {
+    TestPlatformStore store = new TestPlatformStore(tempDir);
+    store.initialize();
+    AuthService authService = new AuthService(store, Duration.ofHours(1));
+    ProjectService projectService = new ProjectService(store, authService);
+    ModelService service = new ModelService(store, projectService);
+    UserRecord user = authService.register("xmi-source@example.com", "password123", "Owner").user();
+    ProjectRecord project = projectService.create(user, "XMI Source", "");
+
+    ObjectNode model =
+        (ObjectNode)
+            service
+                .importModel(
+                    ModelLevel.CIM,
+                    "cim.xmi",
+                    sampleCimXmi().getBytes(StandardCharsets.UTF_8),
+                    "xmi")
+                .modelJson();
+    model.putObject("diagram").putArray("elements").addObject().put("id", "goal-1").put("x", 10);
+    ModelRecord created = service.create(user, ModelLevel.CIM, project.id(), "cim", model);
+    String before = new String(service.sourceXmi(created).orElseThrow(), StandardCharsets.UTF_8);
+
+    ObjectNode edited = (ObjectNode) created.modelJson().deepCopy();
+    ((ObjectNode) edited.path("goals").get(0)).put("name", "Edited goal");
+    ModelRecord updated =
+        service.update(user, ModelLevel.CIM, created.id(), "cim", edited, created.revision());
+    String after = new String(service.sourceXmi(updated).orElseThrow(), StandardCharsets.UTF_8);
+
+    assertNotNull(updated.sourceXmiHash());
+    assertFalse(before.equals(after));
+    assertTrue(after.contains("Edited goal"));
+  }
+
   /**
    * Ensures JSON Patch updates the stored model incrementally while preserving platform-added model
    * metadata.

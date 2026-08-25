@@ -521,11 +521,7 @@ public final class ModelService {
           ModelImportExportService.SourceXmiUpdate sourceXmi =
               importExport.resolveSourceXmiUpdate(
                   user, existing.projectId(), level, normalizedModel, true);
-          if (!(sourceXmi.shouldPreserve()
-              && importExport.sourceXmi(existing).isPresent()
-              && !importExport.hasDiagramLayout(normalizedModel))) {
-            sourceXmi = importExport.canonicalSourceXmi(level, normalizedModel, sourceXmi);
-          }
+          sourceXmi = importExport.regenerateSourceXmi(level, normalizedModel);
           MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
           ModelRecord updated =
               new ModelRecord(
@@ -648,11 +644,7 @@ public final class ModelService {
           ModelImportExportService.SourceXmiUpdate sourceXmi =
               importExport.resolveSourceXmiUpdate(
                   user, existing.projectId(), level, normalizedModel, true);
-          if (!(sourceXmi.shouldPreserve()
-              && importExport.sourceXmi(existing).isPresent()
-              && !importExport.hasDiagramLayout(normalizedModel))) {
-            sourceXmi = importExport.canonicalSourceXmi(level, normalizedModel, sourceXmi);
-          }
+          sourceXmi = importExport.regenerateSourceXmi(level, normalizedModel);
           MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
           ModelRecord updated =
               new ModelRecord(

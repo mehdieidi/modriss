@@ -4,7 +4,7 @@ import com.google.common.base.Predicate;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -91,7 +91,11 @@ public final class ModelSynchronizationService {
     IComparisonScope scope = new DefaultComparisonScope(working, newGenerated, base);
     Comparison comparison = emfCompare.compare(scope, new BasicMonitor());
     Map<Conflict, ModelConflict> realConflicts = describeRealConflicts(comparison, direction);
-    Set<Diff> mergeable = new HashSet<>();
+    // Keep EMF Compare's dependency order. Containment additions/deletions are represented by
+    // several related diffs (container reference, child object, and nested references); feeding
+    // BatchMerger a HashSet makes that order nondeterministic and can leave nested generated
+    // objects behind or prevent an incoming subtree from being attached.
+    Set<Diff> mergeable = new LinkedHashSet<>();
     int incoming = 0;
     int additions = 0;
     int deletions = 0;

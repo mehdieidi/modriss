@@ -2,6 +2,7 @@ package io.mehdieidi.varka.platform.transformation.synchronization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,6 +34,7 @@ class ModelSynchronizationServiceTest {
   private EClass rootClass;
   private EClass nodeClass;
   private EReference nodes;
+  private EReference childNodes;
   private EReference peer;
 
   @BeforeEach
@@ -66,6 +68,9 @@ class ModelSynchronizationServiceTest {
         .add(attribute("generatedFrom", EcorePackage.Literals.ESTRING, false, false));
     nodeClass
         .getEStructuralFeatures()
+        .add(attribute("incomingTraces", EcorePackage.Literals.ESTRING, false, true));
+    nodeClass
+        .getEStructuralFeatures()
         .add(attribute("tags", EcorePackage.Literals.ESTRING, false, true));
     nodes = factory.createEReference();
     nodes.setName("nodes");
@@ -73,6 +78,12 @@ class ModelSynchronizationServiceTest {
     nodes.setUpperBound(-1);
     nodes.setEType(nodeClass);
     rootClass.getEStructuralFeatures().add(nodes);
+    childNodes = factory.createEReference();
+    childNodes.setName("children");
+    childNodes.setContainment(true);
+    childNodes.setUpperBound(-1);
+    childNodes.setEType(nodeClass);
+    nodeClass.getEStructuralFeatures().add(childNodes);
     peer = factory.createEReference();
     peer.setName("peer");
     peer.setEType(nodeClass);
@@ -103,6 +114,14 @@ class ModelSynchronizationServiceTest {
   }
 
   @Test
+  void sameUserAndGeneratedChangeConvergesWithoutConflict() {
+    var result = merge(model(512, "A"), model(1024, "A"), model(1024, "A"));
+    assertEquals(1024, value(result.mergedWorking(), "n1", "memory"));
+    assertTrue(result.conflicts().isEmpty());
+    assertEquals(1, result.incomingChanges());
+  }
+
+  @Test
   void scenario7ReportsAndResolvesSameFeatureConflictBothWays() {
     Resource base = model(30, "A");
     Resource local = model(60, "A");
@@ -111,6 +130,23 @@ class ModelSynchronizationServiceTest {
     assertEquals(60, value(pending.mergedWorking(), "n1", "memory"));
     assertEquals(1, pending.conflicts().size());
     assertEquals(30, pending.conflicts().get(0).baseValue().asInt());
+    assertEquals("n1", pending.conflicts().get(0).elementId());
+    assertEquals("Node", pending.conflicts().get(0).elementEClass());
+    assertEquals("memory", pending.conflicts().get(0).featureName());
+    assertEquals("/n1/memory", pending.conflicts().get(0).jsonPointer());
+    assertEquals(60, pending.conflicts().get(0).workingValue().asInt());
+    assertEquals(45, pending.conflicts().get(0).generatedValue().asInt());
+    assertNotEquals(
+        pending.conflicts().get(0).conflictId(),
+        service
+            .synchronize(
+                model(30, "A"),
+                model(60, "A"),
+                model(45, "A"),
+                TransformationDirection.PIM_TO_AWS_PSM)
+            .conflicts()
+            .get(0)
+            .conflictId());
 
     String conflictId = pending.conflicts().get(0).conflictId();
     var keepUser =
@@ -199,6 +235,55 @@ class ModelSynchronizationServiceTest {
   }
 
   @Test
+  void ignoresInverseTraceMetadataEvenWhenGeneratedChangesIt() {
+    Resource base = model(512, "A");
+    Resource local = model(512, "A");
+    Resource incoming = model(512, "A");
+    set(base, "n1", "incomingTraces", List.of("trace-a"));
+    set(local, "n1", "incomingTraces", List.of("trace-user"));
+    set(incoming, "n1", "incomingTraces", List.of("trace-generated"));
+
+    var result = merge(base, local, incoming);
+    assertEquals(List.of("trace-user"), value(result.mergedWorking(), "n1", "incomingTraces"));
+    assertTrue(result.conflicts().isEmpty());
+    assertEquals(0, result.incomingChanges());
+  }
+
+  @Test
+  void appliesGeneratedReferenceAddAndRemoval() {
+    Resource base = twoNodeModel("A");
+    Resource local = twoNodeModel("A");
+    Resource added = twoNodeModel("A");
+    find(added, "n1").eSet(peer, find(added, "n2"));
+    var addResult = merge(base, local, added);
+    assertEquals("n2", id((EObject) find(addResult.mergedWorking(), "n1").eGet(peer)));
+
+    Resource removed = twoNodeModel("A");
+    var removeResult = merge(added, addResult.mergedWorking(), removed);
+    assertNull(find(removeResult.mergedWorking(), "n1").eGet(peer));
+  }
+
+  @Test
+  void preservesManualNestedEditButReportsNestedDeleteChangeConflict() {
+    Resource base = modelWithChild("base-child");
+    Resource local = modelWithChild("user-child");
+    Resource incoming = model(512, "A");
+    var pending = merge(base, local, incoming);
+    assertFalse(pending.conflicts().isEmpty());
+    assertEquals("user-child", value(pending.mergedWorking(), "child", "name"));
+
+    String conflictId = pending.conflicts().get(0).conflictId();
+    var resolved =
+        service.synchronize(
+            base,
+            local,
+            incoming,
+            TransformationDirection.CIM_TO_PIM,
+            Map.of(conflictId, ConflictResolution.TAKE_GENERATED));
+    assertNull(find(resolved.mergedWorking(), "child"));
+  }
+
+  @Test
   void scenario15IsIdempotentAndDoesNotDuplicateElements() throws Exception {
     Resource incoming = model(512, "B");
     addNode(incoming, "n2", "Generated", 256, "new");
@@ -230,6 +315,23 @@ class ModelSynchronizationServiceTest {
     assertTrue(mergedTags.containsAll(List.of("manual", "generated")));
   }
 
+  @Test
+  void mergesGeneratedNestedSubtreeAdditionAndDeletion() {
+    Resource base = model(512, "A");
+    Resource working = model(1024, "A");
+    Resource incoming = model(512, "A");
+    addChild(incoming, "n1", "child", "Generated child");
+
+    var added = merge(base, working, incoming);
+    assertEquals("Generated child", value(added.mergedWorking(), "child", "description"));
+
+    Resource nextBase = incoming;
+    Resource nextWorking = loadUnchecked(added.mergedWorkingXmi(), "nested-delete-working");
+    Resource nextIncoming = model(512, "A");
+    var deleted = merge(nextBase, nextWorking, nextIncoming);
+    assertNull(find(deleted.mergedWorking(), "child"));
+  }
+
   private ModelSynchronizationService.MergeOutcome merge(
       Resource base, Resource working, Resource incoming) {
     return service.synchronize(base, working, incoming, TransformationDirection.CIM_TO_PIM);
@@ -238,6 +340,13 @@ class ModelSynchronizationServiceTest {
   private Resource model(int memory, String description) {
     Resource resource = emptyModel();
     addNode(resource, "n1", "Function", memory, description);
+    return resource;
+  }
+
+  private Resource modelWithChild(String childName) {
+    Resource resource = model(512, "A");
+    EObject child = addChild(resource, "n1", "child", "child");
+    child.eSet(feature("name"), childName);
     return resource;
   }
 
@@ -266,6 +375,17 @@ class ModelSynchronizationServiceTest {
     List<EObject> values = (List<EObject>) resource.getContents().get(0).eGet(nodes);
     values.add(node);
     return node;
+  }
+
+  private EObject addChild(Resource resource, String parentId, String id, String description) {
+    EObject child = modelPackage.getEFactoryInstance().create(nodeClass);
+    child.eSet(feature("id"), id);
+    child.eSet(feature("name"), id);
+    child.eSet(feature("description"), description);
+    @SuppressWarnings("unchecked")
+    List<EObject> values = (List<EObject>) find(resource, parentId).eGet(childNodes);
+    values.add(child);
+    return child;
   }
 
   private Resource resource(String name) {
@@ -297,10 +417,34 @@ class ModelSynchronizationServiceTest {
   }
 
   private EObject find(Resource resource, String expectedId) {
-    return contents(resource).stream()
-        .filter(node -> expectedId.equals(id(node)))
-        .findFirst()
-        .orElse(null);
+    for (EObject root : resource.getContents()) {
+      EObject found = findContained(root, expectedId);
+      if (found != null) {
+        return found;
+      }
+    }
+    return null;
+  }
+
+  private EObject findContained(EObject object, String expectedId) {
+    if (expectedId.equals(id(object))) {
+      return object;
+    }
+    for (var iterator = object.eAllContents(); iterator.hasNext(); ) {
+      EObject candidate = iterator.next();
+      if (expectedId.equals(id(candidate))) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  private Resource loadUnchecked(byte[] bytes, String name) {
+    try {
+      return load(bytes, name);
+    } catch (Exception ex) {
+      throw new IllegalStateException(ex);
+    }
   }
 
   private Object value(Resource resource, String id, String featureName) {
@@ -317,7 +461,8 @@ class ModelSynchronizationServiceTest {
   }
 
   private String id(EObject object) {
-    return String.valueOf(object.eGet(feature("id")));
+    var idFeature = object.eClass().getEStructuralFeature("id");
+    return idFeature == null ? "" : String.valueOf(object.eGet(idFeature));
   }
 
   private EAttribute attribute(
