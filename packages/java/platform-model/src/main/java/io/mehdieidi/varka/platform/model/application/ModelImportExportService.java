@@ -294,8 +294,8 @@ final class ModelImportExportService {
   SourceXmiUpdate canonicalSourceXmi(
       ModelLevel level, JsonNode modelJson, SourceXmiUpdate requestedSourceXmi) {
     if (requestedSourceXmi != null
-        && requestedSourceXmi.bytes() != null
-        && !hasDiagramLayout(modelJson)) {
+        && (requestedSourceXmi.shouldPreserve()
+            || (requestedSourceXmi.bytes() != null && requestedSourceXmi.bytes().length > 0))) {
       return requestedSourceXmi;
     }
     byte[] bytes =

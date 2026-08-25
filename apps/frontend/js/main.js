@@ -63,6 +63,7 @@ import { ensureAuthenticated, logout, updateDisplayName } from "./auth.js";
 import { initSvgIconMasks } from "./icons.js";
 import {
   isModelingLevel,
+  isArtifactLevel,
   loadModelingConfig,
   modelingLevelConfig,
   modelingLevelKeys,
@@ -267,7 +268,7 @@ function bindProfileMenuActions() {
 function bindCriticalActions() {
   // Generation
   el.generateContextBtn?.addEventListener("click", async () => {
-    if (state.activeType === "artifact") {
+    if (isArtifactLevel(state.activeType)) {
       downloadCurrentProject();
       return;
     }
@@ -497,7 +498,7 @@ function togglePaletteRail() {
     showPalettePane();
   } else if (state.leftPaneMode === "methodology") {
     showPalettePane();
-  } else if (state.activeType === "artifact") {
+  } else if (isArtifactLevel(state.activeType)) {
     // In the artifacts tab this control is the file explorer.  Keep the
     // current file and editor state intact rather than collapsing it.
     showPalettePane();
@@ -516,7 +517,7 @@ function toggleMethodologyRail() {
   const hidden = el.workspace.classList.contains("palette-hidden");
   const showingMethodology = state.leftPaneMode === "methodology" && !hidden;
   if (showingMethodology) {
-    if (state.activeType === "artifact") {
+    if (isArtifactLevel(state.activeType)) {
       showPalettePane();
     } else {
       el.workspace.classList.add("palette-hidden");

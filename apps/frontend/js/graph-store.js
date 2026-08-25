@@ -591,7 +591,8 @@ function synthesizeSemanticRefRelationships(graph, typeKey = state.activeType) {
         if (!matchesSemanticType(target, rule.targetType, typeKey)) {
           continue;
         }
-        const kind = String(rule.kind || "REFERENCES");
+        const kind = String(rule.kind || "").trim();
+        if (!kind) throw new Error(`Modeling config is missing a semantic relationship kind for '${rule.feature}'.`);
         const sourceId = rule.reverse ? targetId : element.id;
         const destinationId = rule.reverse ? element.id : targetId;
         const key = `${sourceId}|${destinationId}|${kind}`;
@@ -841,7 +842,8 @@ function synthesizeSemanticRefsForElement(graph, typeKey, elementId) {
       if (!matchesSemanticType(target, rule.targetType, typeKey)) {
         continue;
       }
-      const kind = String(rule.kind || "REFERENCES");
+      const kind = String(rule.kind || "").trim();
+      if (!kind) throw new Error(`Modeling config is missing a semantic relationship kind for '${rule.feature}'.`);
       const sourceId = rule.reverse ? targetId : elementId;
       const destinationId = rule.reverse ? elementId : targetId;
       if (hasSemanticRelationship(graph, sourceId, destinationId, kind)) {
@@ -2331,19 +2333,13 @@ function mainViewId(typeKey) {
 }
 
 function defaultViewDefinitionId(typeKey) {
-  const fallbacks = {
-    cim: "business-process",
-    pim: "pim-workflow-designer",
-    psm: "psm-workflow-asl",
-  };
-  try {
-    const configured = String(
-      modelingLevelConfig(typeKey).workbench?.defaultViewDefinitionId || "",
-    ).trim();
-    return configured || fallbacks[typeKey] || null;
-  } catch {
-    return fallbacks[typeKey] || null;
+  const configured = String(
+    modelingLevelConfig(typeKey).workbench?.defaultViewDefinitionId || "",
+  ).trim();
+  if (!configured) {
+    throw new Error(`Modeling config is missing the default view definition for '${typeKey}'.`);
   }
+  return configured;
 }
 
 function globalViewIdForDefinition(typeKey, definitionId) {

@@ -11,6 +11,7 @@ import { autoLayoutCurrentDiagram, loadModelById, saveCurrentModel } from "./mod
 import { syncMobileDockState } from "./mobile-ui.js";
 import { hasUnsavedModelChanges } from "./model-save-ui.js";
 import { applyTextDirection } from "./text-direction.js";
+import { modelingAssistantConfig, modelingLevelConfig } from "./modeling-config-data.js";
 
 const TERMINAL_WORKFLOW_STATES = new Set([
   "EXPLAINED",
@@ -166,10 +167,8 @@ const assistantModelApplyInFlight = new Map();
 let renderedChatScopeKey = null;
 
 const CHAT_HISTORY_DAYS = 3;
-const ASSISTANT_MODEL_TYPES = new Set(["cim", "pim"]);
-
 function assistantAvailableFor(typeKey = state.activeType) {
-  return ASSISTANT_MODEL_TYPES.has(String(typeKey || "").toLowerCase());
+  return modelingLevelConfig(String(typeKey || "").toLowerCase()).assistantEnabled === true;
 }
 
 function disconnectChatChannel(scopeKey) {
@@ -1242,7 +1241,7 @@ async function _ensureChatRealtime(scopeKey, typeKey, sessionId) {
 
 export async function ensureChatSession({ hydrate = true, ...options } = {}) {
   if (!assistantAvailableFor()) {
-    setStatus("AI modeling is available only for CIM and PIM levels.");
+    setStatus(modelingAssistantConfig().unavailableMessage);
     return null;
   }
   if (state.chat.available === false) {
@@ -1308,7 +1307,7 @@ export async function ensureChatSession({ hydrate = true, ...options } = {}) {
 export async function prepareChatWindow() {
   if (!assistantAvailableFor()) {
     closeChatWindow();
-    setStatus("AI modeling is available only for CIM and PIM levels.");
+    setStatus(modelingAssistantConfig().unavailableMessage);
     return null;
   }
   const scopeKey = chatScopeKey();

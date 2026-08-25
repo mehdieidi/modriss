@@ -521,7 +521,12 @@ public final class ModelService {
           ModelImportExportService.SourceXmiUpdate sourceXmi =
               importExport.resolveSourceXmiUpdate(
                   user, existing.projectId(), level, normalizedModel, true);
-          sourceXmi = importExport.regenerateSourceXmi(level, normalizedModel);
+          // A no-op save must not rewrite an imported XMI sidecar. Re-export only when the
+          // semantic JSON projection actually changed, so the uploaded model remains the
+          // authoritative transformation input until an edit is made.
+          if (!normalizedModel.equals(existing.modelJson())) {
+            sourceXmi = importExport.regenerateSourceXmi(level, normalizedModel);
+          }
           MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
           ModelRecord updated =
               new ModelRecord(

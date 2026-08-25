@@ -13,6 +13,8 @@ import {
   modelingImpactConfig,
   modelingLevelConfig,
   modelingLevelKeys,
+  isArtifactLevel,
+  modelingArtifactKey,
 } from "./modeling-config-data.js";
 
 function setImpactButtonState(active) {
@@ -115,7 +117,7 @@ async function enrichImpactWithArtifactFiles(data) {
   const artifacts = downstream.filter((item) => {
     const modelId = item?.modelId;
     return (
-      (item?.modelType || "").toLowerCase() === "artifact" &&
+      isArtifactLevel(item?.modelType) &&
       modelId != null &&
       String(modelId).trim() !== ""
     );
@@ -196,7 +198,7 @@ function configuredLevelForAncestor(ancestor) {
 }
 
 function tierBadgeClass(modelType) {
-  return String(modelType || "").toLowerCase() === "artifact"
+  return isArtifactLevel(modelType)
     ? "tier-badge-artifact"
     : "tier-badge-model";
 }
@@ -373,7 +375,7 @@ function buildDownstreamBranchHtml(nodes, artifactFilesById) {
     .map((node) => {
       const item = node.item;
       const modelType = String(item.modelType || "").toLowerCase();
-      const files = modelType === "artifact" ? artifactFilesById[String(item.modelId)] || [] : [];
+      const files = isArtifactLevel(modelType) ? artifactFilesById[String(item.modelId)] || [] : [];
 
       const row = buildTreeNodeRow(item, { direction: "downstream" });
 
@@ -429,9 +431,9 @@ function buildTreeNodeRow(item, { direction, isFocal = false } = {}) {
   const modelType = String(item?.modelType || "").toLowerCase();
   const elementName = item?.elementName || item?.elementId || item?.modelName || "Unnamed";
   const elementType =
-    item?.elementType || (modelType === "artifact" ? "Generated Artifact" : "Model Element");
-  const canNavigateModel = !!item?.modelId && modelType !== "artifact";
-  const canOpenArtifact = !!item?.modelId && modelType === "artifact";
+    item?.elementType || (isArtifactLevel(modelType) ? "Generated Artifact" : "Model Element");
+  const canNavigateModel = !!item?.modelId && !isArtifactLevel(modelType);
+  const canOpenArtifact = !!item?.modelId && isArtifactLevel(modelType);
 
   const action = canNavigateModel
     ? `<button class="impact-tree-action" data-impact-action="open-model" data-model-id="${escapeHtml(

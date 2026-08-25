@@ -49,11 +49,12 @@ public final class ModelingConfigService {
     Map<String, Object> levels = new LinkedHashMap<>();
     for (String key : configuredLevelOrder(platform, configuredLevels)) {
       Map<String, Object> configuredLevel = optionalMap(configuredLevels, key);
-      Map<String, Object> mergedLevel = new LinkedHashMap<>(configuredLevel);
-      mergeInto(mergedLevel, level(key));
+      // Ecore/CVS metadata supplies the structural base. Explicit platform configuration is
+      // authoritative for UI/runtime behavior and must not be erased by an empty derived field.
+      Map<String, Object> mergedLevel = new LinkedHashMap<>(level(key));
+      mergeInto(mergedLevel, configuredLevel);
       mergedLevel.putIfAbsent("apiType", key);
       mergedLevel.putIfAbsent("chatType", key.toUpperCase());
-      mergedLevel.putIfAbsent("modelNameTemplate", key + "-model");
       levels.put(key, mergedLevel);
     }
     return Map.ofEntries(
@@ -64,6 +65,9 @@ public final class ModelingConfigService {
         Map.entry("defaultLevel", platform.getOrDefault("defaultLevel", firstKey(levels))),
         Map.entry("levelOrder", new ArrayList<>(levels.keySet())),
         Map.entry("levels", levels),
+        Map.entry("artifact", optionalMap(platform, "artifact")),
+        Map.entry("assistant", optionalMap(platform, "assistant")),
+        Map.entry("methodology", optionalMap(platform, "methodology")),
         Map.entry("transformations", optionalMap(platform, "transformations")),
         Map.entry("artifactAction", optionalMap(platform, "artifactAction")),
         Map.entry("impactAnalysis", optionalMap(platform, "impactAnalysis")),

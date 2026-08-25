@@ -67,6 +67,8 @@ import {
 } from "./model-save-ui.js";
 import {
   isModelingLevel,
+  isArtifactLevel,
+  modelingArtifactKey,
   modelingDefaultLayoutStrategy,
   modelingLevelListLabel,
   transformationForLevel,
@@ -82,10 +84,9 @@ export function isModelSaveInFlight() {
 // ── Model list (sidebar select) ───────────────────────────────────────────────
 
 function defaultModelName(typeKey = state.activeType) {
-  return (
-    state.modelingConfig.config?.levels?.[typeKey]?.modelNameTemplate ||
-    `${typeKey || "model"}-model`
-  );
+  const configured = state.modelingConfig.config?.levels?.[typeKey]?.modelNameTemplate;
+  if (!configured) throw new Error(`Modeling config is missing a model name template for '${typeKey}'.`);
+  return configured;
 }
 
 function isModelingType(typeKey = state.activeType) {
@@ -1469,7 +1470,7 @@ export function updateGenerateButtonState() {
   const transformation = transformationForLevel(state.activeType);
   const artifactAction = state.modelingConfig.config?.artifactAction || {};
   const buttonConfig =
-    state.activeType === "artifact"
+    isArtifactLevel(state.activeType)
       ? {
           label: artifactAction.buttonLabel || "Download Project",
           title: artifactAction.buttonTitle || "Download the generated project",
@@ -1483,7 +1484,7 @@ export function updateGenerateButtonState() {
   const isVisible = Boolean(buttonConfig);
   el.generateContextBtn.classList.toggle("hidden", !isVisible);
   el.generateContextBtn.disabled = !isVisible;
-  el.generateContextBtn.classList.toggle("topbar-download-btn", state.activeType === "artifact");
+  el.generateContextBtn.classList.toggle("topbar-download-btn", isArtifactLevel(state.activeType));
   if (!buttonConfig) {
     return;
   }
@@ -1524,7 +1525,7 @@ async function executeConfiguredTransformation(transformation) {
     setBusy(transformation.busyLabel || "Generating...");
     setGenerationProgressPhase(transformation.runningLabel || "Running backend generation...", 68);
     const result = await runTransformation(operation, state.modelId);
-    if (targetLevel === "artifact") {
+    if (targetLevel === modelingArtifactKey()) {
       if (transformation.loadingStatus) {
         setStatus(transformation.loadingStatus);
       }
@@ -1626,7 +1627,7 @@ export async function generateNextConfiguredTransformation() {
 export async function generateArtifactConfiguredTransformation() {
   await executeConfiguredTransformation(
     Object.values(state.modelingConfig.config?.transformations || {}).find(
-      (transformation) => transformation?.targetLevel === "artifact",
+      (transformation) => transformation?.targetLevel === modelingArtifactKey(),
     ),
   );
 }
@@ -1670,7 +1671,7 @@ export async function switchTab(type) {
   );
   updateGenerateButtonState();
 
-  const isArtifact = type === "artifact";
+  const isArtifact = isArtifactLevel(type);
   const isReadonlyEditor = isArtifact;
   const topbar = document.querySelector(".topbar");
   el.workspace?.classList.toggle("artifact-mode", isArtifact);
@@ -1732,7 +1733,7 @@ export async function switchTab(type) {
 }
 
 export async function validateCurrentModel() {
-  if (state.activeType === "artifact") {
+  if (isArtifactLevel(state.activeType)) {
     setStatus(`Validation is available for ${modelingLevelListLabel()}.`);
     return;
   }

@@ -11,6 +11,9 @@ const EMPTY_CONFIG = Object.freeze({
   defaultLevel: "",
   levelOrder: Object.freeze([]),
   levels: Object.freeze({}),
+  artifact: Object.freeze({}),
+  assistant: Object.freeze({}),
+  methodology: Object.freeze({}),
   transformations: Object.freeze({}),
   artifactAction: Object.freeze({}),
   impactAnalysis: Object.freeze({}),
@@ -86,6 +89,9 @@ function ensureConfigShape(raw) {
   normalized.version = Number(raw.version || 0);
   normalized.dynamicPersistenceEnabled = raw.dynamicPersistenceEnabled !== false;
   normalized.defaultLevel = String(raw.defaultLevel || "");
+  normalized.artifact = raw.artifact && typeof raw.artifact === "object" ? raw.artifact : {};
+  normalized.assistant = raw.assistant && typeof raw.assistant === "object" ? raw.assistant : {};
+  normalized.methodology = raw.methodology && typeof raw.methodology === "object" ? raw.methodology : {};
   normalized.artifactAction =
     raw.artifactAction && typeof raw.artifactAction === "object" ? raw.artifactAction : {};
   normalized.impactAnalysis =
@@ -205,9 +211,7 @@ function ensureConfigShape(raw) {
         incoming.cvsMetamodelRef && typeof incoming.cvsMetamodelRef === "object"
           ? incoming.cvsMetamodelRef
           : {},
-      strictnessModes: Array.isArray(incoming.strictnessModes)
-        ? incoming.strictnessModes
-        : ["exploration", "methodology", "production"],
+      strictnessModes: Array.isArray(incoming.strictnessModes) ? incoming.strictnessModes : [],
       constraints: Array.isArray(incoming.constraints) ? incoming.constraints : [],
       rootTemplate:
         incoming.rootTemplate && typeof incoming.rootTemplate === "object"
@@ -219,8 +223,7 @@ function ensureConfigShape(raw) {
           : null,
       apiType: String(incoming.apiType || level),
       chatType: String(incoming.chatType || level.toUpperCase()),
-      modelNameTemplate: String(incoming.modelNameTemplate || `${level}-model`),
-      fallbackActiveModel: Boolean(incoming.fallbackActiveModel),
+      modelNameTemplate: String(incoming.modelNameTemplate || ""),
     };
   }
 
@@ -269,7 +272,7 @@ function emptyTabState(typeKey, level) {
     modelRevision: 0,
     baseModel: null,
     diagram: emptyDiagram(typeKey),
-    modelName: level.modelNameTemplate || `${typeKey}-model`,
+    modelName: level.modelNameTemplate,
     graph: null,
     views: null,
     fragments: null,
@@ -315,6 +318,32 @@ export function modelingLevelKeys() {
   return Array.isArray(config?.levelOrder) && config.levelOrder.length
     ? [...config.levelOrder]
     : Object.keys(config?.levels || {});
+}
+
+export function modelingArtifactKey() {
+  const key = String(state.modelingConfig.config?.artifact?.key || "").trim();
+  if (!key) throw configLoadError("Backend modeling config does not define an artifact level key.");
+  return key;
+}
+
+export function isArtifactLevel(typeKey = state.activeType) {
+  return String(typeKey || "") === modelingArtifactKey();
+}
+
+export function modelingAssistantConfig() {
+  const assistant = state.modelingConfig.config?.assistant;
+  if (!assistant || typeof assistant !== "object") {
+    throw configLoadError("Backend modeling config does not define assistant settings.");
+  }
+  return assistant;
+}
+
+export function modelingMethodologyConfig() {
+  const methodology = state.modelingConfig.config?.methodology;
+  if (!methodology || typeof methodology !== "object") {
+    throw configLoadError("Backend modeling config does not define methodology settings.");
+  }
+  return methodology;
 }
 
 export function modelingImpactConfig() {

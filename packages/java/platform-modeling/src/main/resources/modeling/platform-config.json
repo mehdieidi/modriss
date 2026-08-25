@@ -8,19 +8,45 @@
       "apiType": "cim",
       "chatType": "CIM",
       "modelNameTemplate": "cim-model",
-      "fallbackActiveModel": true
+      "assistantEnabled": true,
+      "workbench": {
+        "defaultViewDefinitionId": "business-process"
+      }
     },
     "pim": {
       "apiType": "pim",
       "chatType": "PIM",
       "modelNameTemplate": "pim-model",
-      "fallbackActiveModel": false
+      "assistantEnabled": true,
+      "workbench": {
+        "defaultViewDefinitionId": "pim-workflow-designer"
+      }
     },
     "psm": {
       "apiType": "psm",
       "chatType": "PSM",
       "modelNameTemplate": "psm-model",
-      "fallbackActiveModel": false
+      "assistantEnabled": false,
+      "workbench": {
+        "defaultViewDefinitionId": "psm-workflow-asl"
+      }
+    }
+  },
+  "artifact": {
+    "key": "artifact",
+    "displayName": "Generated Artifacts",
+    "methodologyEnabled": true,
+    "paletteEnabled": false,
+    "assistantEnabled": false
+  },
+  "assistant": {
+    "unavailableMessage": "AI modeling is not enabled for this modeling level."
+  },
+  "methodology": {
+    "endToEndPhaseByLevel": {
+      "cim": "e2e.p1.cim-modeling",
+      "pim": "e2e.p3.pim-refinement",
+      "psm": "e2e.p5.psm-refinement"
     }
   },
   "transformations": {

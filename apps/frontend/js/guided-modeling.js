@@ -5,8 +5,11 @@ import { escapeHtml } from "./utils.js";
 import { setStatus } from "./status.js";
 import {
   isModelingLevel,
+  isArtifactLevel,
   modelingElementDefinition,
   modelingLevelKeys,
+  modelingArtifactKey,
+  modelingMethodologyConfig,
 } from "./modeling-config-data.js";
 import { applyDefinitionAccent, renderPalette, syncPaletteCollapsedUi } from "./canvas.js";
 import {
@@ -150,7 +153,7 @@ function processForActiveLevel() {
 }
 
 function isMethodologyLevel(level) {
-  return isModelingLevel(level) || level === "artifact";
+  return isModelingLevel(level) || isArtifactLevel(level);
 }
 
 function phaseProgress(process, progress) {
@@ -251,7 +254,7 @@ export function switchLeftPaneMode(mode) {
   if (!el.workspace) return;
   const next = mode === "methodology" ? "methodology" : "palette";
   state.leftPaneMode = next;
-  const isArtifact = state.activeType === "artifact";
+  const isArtifact = isArtifactLevel(state.activeType);
   if (isArtifact) {
     el.modelingPanel?.classList.toggle("hidden", next !== "methodology");
     el.artifactPanel?.classList.toggle("hidden", next === "methodology");
@@ -282,7 +285,7 @@ export function syncMethodologyRailState() {
   el.paletteRailToggleBtn?.classList.toggle("active", !hidden && mode === "palette");
   el.methodologyRailBtn?.classList.toggle("active", !hidden && mode === "methodology");
   if (el.paletteRailToggleBtn) {
-    const isArtifact = state.activeType === "artifact";
+    const isArtifact = isArtifactLevel(state.activeType);
     el.paletteRailToggleBtn.title = isArtifact ? "File explorer" : "Toggle Palette";
     el.paletteRailToggleBtn.setAttribute(
       "aria-label",
@@ -295,7 +298,7 @@ export async function loadGuidedModelingDefinitions() {
   if (state.guidedModeling.loading) return;
   state.guidedModeling.loading = true;
   try {
-    const levels = [...modelingLevelKeys(), "artifact"];
+    const levels = [...modelingLevelKeys(), modelingArtifactKey()];
     const results = await Promise.all(
       levels.map(async (level) => {
         const def = await api(`/modeling/process/${level}`);
@@ -759,12 +762,7 @@ function _renderEndToEndBar(host) {
   const cycle = e2e?.processEngine?.cycle || e2e?.phases;
   if (!cycle?.length) return;
 
-  const levelPhaseMap = {
-    cim: "e2e.p1.cim-modeling",
-    pim: "e2e.p3.pim-refinement",
-    psm: "e2e.p5.psm-refinement",
-  };
-  const activeE2eId = levelPhaseMap[state.activeType];
+  const activeE2eId = modelingMethodologyConfig().endToEndPhaseByLevel?.[state.activeType];
 
   const label = document.createElement("div");
   label.className = "methodology-stage-label";
@@ -1059,13 +1057,13 @@ export function onGuidedModelingContextChanged() {
 
 export function showMethodologyPane() {
   switchLeftPaneMode("methodology");
-  if (state.activeType === "artifact") {
+  if (isArtifactLevel(state.activeType)) {
     openMethodologyMap();
   }
 }
 
 export function showPalettePane() {
-  if (state.activeType === "artifact") {
+  if (isArtifactLevel(state.activeType)) {
     closeMethodologyMap();
   }
   switchLeftPaneMode("palette");

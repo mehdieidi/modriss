@@ -31,7 +31,9 @@ const getElementTarget = (event) => (event.target instanceof Element ? event.tar
 const LAST_PROJECT_STORAGE_PREFIX = "varka.lastProjectId";
 
 function defaultModelName(typeKey) {
-  return state.modelingConfig.config?.levels?.[typeKey]?.modelNameTemplate || `${typeKey}-model`;
+  const configured = state.modelingConfig.config?.levels?.[typeKey]?.modelNameTemplate;
+  if (!configured) throw new Error(`Modeling config is missing a model name template for '${typeKey}'.`);
+  return configured;
 }
 
 function resetModelingTab(typeKey) {
@@ -679,10 +681,7 @@ export async function loadProject(project) {
       const activeModelId =
         normalizedProject.activeModelIds?.[type] ||
         normalizedProject.activeModelIds?.[type.toUpperCase()];
-      const fallbackModelId = state.modelingConfig.config?.levels?.[type]?.fallbackActiveModel
-        ? recordsByType[type]?.[0]?.id || null
-        : null;
-      const modelIdToLoad = activeModelId || fallbackModelId;
+      const modelIdToLoad = activeModelId;
       if (modelIdToLoad) {
         try {
           const record = await api(`/${MODEL_TYPES[type].apiType}/${modelIdToLoad}`);
