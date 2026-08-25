@@ -494,6 +494,51 @@ class TransformationServiceTest {
   }
 
   @Test
+  void regenerationPreservesIssueBoardTasksAcrossBothTransformationLevels() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "issues@example.com", "Issues", "Issues");
+    ModelRecord cim = createClimateCim(services, context, "issues-cim");
+
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    Set<String> pimTaskIds = taskIds(pim.modelJson());
+    assertFalse(pimTaskIds.isEmpty());
+    ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
+    Set<String> psmTaskIds = taskIds(psm.modelJson());
+    assertFalse(psmTaskIds.isEmpty());
+
+    ModelRecord regeneratedPim = services.transformations().cimToPim(context.user(), cim.id());
+    ModelRecord regeneratedPsm = services.transformations().pimToPsm(context.user(), pim.id());
+
+    assertEquals(pimTaskIds, taskIds(regeneratedPim.modelJson()));
+    assertEquals(
+        regeneratedPim.modelJson().path("manualBacklog").size(),
+        regeneratedPim.modelJson().path("graph").path("manualBacklog").size());
+    assertEquals(psmTaskIds, taskIds(regeneratedPsm.modelJson()));
+    assertEquals(
+        regeneratedPsm.modelJson().path("manualBacklog").size(),
+        regeneratedPsm.modelJson().path("graph").path("manualBacklog").size());
+
+    services.models().validate(context.user(), ModelLevel.PIM, regeneratedPim.id());
+    services.models().validate(context.user(), ModelLevel.PSM, regeneratedPsm.id());
+    assertEquals(
+        pimTaskIds,
+        taskIds(
+            services
+                .models()
+                .get(context.user(), ModelLevel.PIM, regeneratedPim.id())
+                .modelJson()));
+    assertEquals(
+        psmTaskIds,
+        taskIds(
+            services
+                .models()
+                .get(context.user(), ModelLevel.PSM, regeneratedPsm.id())
+                .modelJson()));
+  }
+
+  @Test
   void legacyWorkingModelWithoutBaselineIsNeverOverwritten() throws Exception {
     PlatformTestFixtures.ServiceStack services =
         PlatformTestFixtures.createServicesWithTransformations(tempDir);
@@ -693,6 +738,12 @@ class TransformationServiceTest {
     return services
         .models()
         .create(context.user(), ModelLevel.CIM, context.project().id(), name, imported.modelJson());
+  }
+
+  private Set<String> taskIds(JsonNode model) {
+    Set<String> ids = new HashSet<>();
+    model.path("manualBacklog").forEach(task -> ids.add(task.path("id").asText()));
+    return ids;
   }
 
   private boolean serviceContainmentNonEmpty(JsonNode model, String childField) {

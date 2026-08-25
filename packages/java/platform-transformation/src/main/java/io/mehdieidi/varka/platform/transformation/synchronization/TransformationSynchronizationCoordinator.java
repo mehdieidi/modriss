@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantLock;
 import org.eclipse.emf.ecore.resource.Resource;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 /** Coordinates fresh generation, EMF comparison, baselines, sessions, and canonical updates. */
@@ -329,6 +330,7 @@ public final class TransformationSynchronizationCoordinator {
     }
     copyPlatformMetadata(working, merged);
     copyPlatformMetadata(generated, merged);
+    mergeManualBacklog(working, generated, merged);
     return merged;
   }
 
@@ -342,6 +344,59 @@ public final class TransformationSynchronizationCoordinator {
         target.set(field, value.deepCopy());
       }
     }
+  }
+
+  /**
+   * Reconciles issue-board tasks around the XMI merge.
+   *
+   * <p>The manual backlog is platform metadata and is intentionally not part of the domain XMI.
+   * Rebuilding the JSON model from the merged XMI therefore cannot be allowed to replace it with
+   * the empty backlog emitted by the XMI importer. Generated tasks are identified by their stable
+   * transformation categories; all other tasks are user-owned and are retained.
+   */
+  private void mergeManualBacklog(JsonNode working, JsonNode generated, ObjectNode merged) {
+    Map<String, JsonNode> workingTasks = backlogById(working);
+    Map<String, JsonNode> generatedTasks = backlogById(generated);
+    ArrayNode backlog = store.objectMapper().createArrayNode();
+
+    workingTasks.forEach(
+        (id, task) -> {
+          String category = task.path("category").asText("");
+          if (!isGeneratedBacklogTask(category) || generatedTasks.containsKey(id)) {
+            backlog.add(task.deepCopy());
+          }
+        });
+    generatedTasks.forEach(
+        (id, task) -> {
+          if (!workingTasks.containsKey(id)) {
+            backlog.add(task.deepCopy());
+          }
+        });
+
+    merged.set("manualBacklog", backlog);
+    merged.withObject("graph").set("manualBacklog", backlog.deepCopy());
+  }
+
+  private Map<String, JsonNode> backlogById(JsonNode model) {
+    Map<String, JsonNode> tasks = new LinkedHashMap<>();
+    JsonNode backlog = model == null ? null : model.get("manualBacklog");
+    if (backlog == null || !backlog.isArray()) {
+      backlog = model == null ? null : model.path("graph").get("manualBacklog");
+    }
+    if (backlog != null && backlog.isArray()) {
+      backlog.forEach(
+          task -> {
+            String id = task.path("id").asText("");
+            if (!id.isBlank()) {
+              tasks.putIfAbsent(id, task);
+            }
+          });
+    }
+    return tasks;
+  }
+
+  private boolean isGeneratedBacklogTask(String category) {
+    return "ETL_MANUAL_DECISION".equals(category) || "MANUAL_MODELING".equals(category);
   }
 
   private GeneratedBaseline newBaseline(
