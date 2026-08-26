@@ -523,8 +523,16 @@ function renderConfiguredAttributeFields(node, meta, definition) {
       return;
     }
     rendered.add(key);
-    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key] : field.defaultValue;
-    semanticSectionForField(sections, key, field).appendChild(buildAttrField(key, value, field));
+    const editableField = editableParentReferenceField(node, field);
+    const configuredValue = Object.prototype.hasOwnProperty.call(meta, key)
+      ? meta[key]
+      : field.defaultValue;
+    const value = editableField.parentContainment
+      ? configuredValue || meta.__ownerId || null
+      : configuredValue;
+    semanticSectionForField(sections, key, editableField).appendChild(
+      buildAttrField(key, value, editableField),
+    );
   });
 
   Object.entries(meta).forEach(([key, value]) => {
@@ -549,6 +557,31 @@ function renderConfiguredAttributeFields(node, meta, definition) {
   appendEmptyHints(sections);
   renderAttrTabs(sections);
   bindContainmentSectionActions();
+}
+
+/**
+ * A contained child's inverse reference is derived/read-only in Ecore, but it
+ * is still the useful way to choose the child's parent in the inspector.
+ * Editing it is applied to the mutable containment feature on the parent.
+ */
+function editableParentReferenceField(node, field) {
+  if (!isContainmentParentReference(node?.type, field)) {
+    return field;
+  }
+  return { ...field, readonly: false, parentContainment: true };
+}
+
+function isContainmentParentReference(type, field) {
+  if (!field?.readonly || !field?.opposite || !field?.targetType) {
+    return false;
+  }
+  const opposite = referenceDefinition(field.targetType, oppositeFeatureName(field.opposite));
+  return Boolean(opposite?.containment && !opposite.readonly);
+}
+
+function oppositeFeatureName(opposite) {
+  const value = String(opposite || "").replace(/^#/, "");
+  return value.includes("/") ? value.slice(value.lastIndexOf("/") + 1) : value;
 }
 
 function identityFieldForNode(node, definition) {
@@ -2181,17 +2214,41 @@ function elementMatchesReferenceTarget(element, targetType) {
 }
 
 function referenceOptions(targetType) {
-  const options = [];
-  state.graph?.elementsById?.forEach((element) => {
-    if (elementMatchesReferenceTarget(element, targetType)) {
-      options.push({
-        id: element.id,
-        label: element.name || element.label || element.id,
-        type: element.eClass || element.type || "Element",
-      });
+  const candidates = new Map();
+  const addCandidate = (element) => {
+    if (element?.id) {
+      candidates.set(element.id, element);
     }
+  };
+  state.graph?.elementsById?.forEach((element) => {
+    addCandidate(element);
   });
-  return options.sort((a, b) => a.type.localeCompare(b.type) || a.label.localeCompare(b.label));
+  state.nodesById?.forEach(addCandidate);
+  // Focused views can omit the parent container from the runtime graph even
+  // though it remains present in the persisted model.
+  [state.baseModel?.graph?.elements, state.baseModel?.diagram?.elements].forEach((elements) => {
+    (Array.isArray(elements) ? elements : []).forEach(addCandidate);
+  });
+  const visited = new Set();
+  const collectModelElements = (value) => {
+    if (!value || typeof value !== "object" || visited.has(value)) {
+      return;
+    }
+    visited.add(value);
+    if (value.id && (value.eClass || value.type)) {
+      addCandidate(value);
+    }
+    Object.values(value).forEach(collectModelElements);
+  };
+  collectModelElements(state.baseModel);
+  return [...candidates.values()]
+    .filter((element) => elementMatchesReferenceTarget(element, targetType))
+    .map((element) => ({
+      id: element.id,
+      label: element.name || element.label || element.id,
+      type: element.eClass || element.type || "Element",
+    }))
+    .sort((a, b) => a.type.localeCompare(b.type) || a.label.localeCompare(b.label));
 }
 
 function buildReferenceInput(key, value, field) {
@@ -2280,6 +2337,7 @@ export function applyAttributePanel() {
       }
     });
     syncActiveViewFromVisibleGraph({ rebuildIndexes: false });
+    synchronizeContainmentParent(node);
     synchronizeOppositeReferences(node);
     markGraphRelationshipsDirty();
   } catch {
@@ -2414,9 +2472,10 @@ function removeElementReference(element, key, sourceId, many) {
 
 function referenceDefinition(type, name) {
   try {
+    const featureName = oppositeFeatureName(name);
     return (
       (modelingElementDefinition(state.activeType, type)?.references || []).find(
-        (reference) => reference.name === name,
+        (reference) => reference.name === featureName,
       ) || null
     );
   } catch {
@@ -2459,6 +2518,43 @@ function synchronizeOppositeReferences(node) {
         visibleTarget.meta[opposite] = targetElement[opposite];
       }
     });
+  }
+}
+
+function synchronizeContainmentParent(node) {
+  if (!node?.type || !node?.meta) {
+    return;
+  }
+  const definition = modelingElementDefinition(state.activeType, node.type);
+  for (const reference of definition?.references || []) {
+    if (!isContainmentParentReference(node.type, reference)) {
+      continue;
+    }
+    const parentId = referenceValueId(node.meta[reference.name]);
+    let selectedParent = null;
+    state.graph?.elementsById?.forEach((parent) => {
+      if (!elementMatchesReferenceTarget(parent, reference.targetType)) {
+        return;
+      }
+      const parentNode = state.nodesById?.get(parent.id);
+      const opposite = oppositeFeatureName(reference.opposite);
+      const nextIds = refIds(parent[opposite]).filter((id) => id !== node.id);
+      if (parent.id === parentId) {
+        selectedParent = parent;
+        nextIds.push(node.id);
+      }
+      parent[opposite] = [...new Set(nextIds)];
+      if (parentNode?.meta) {
+        parentNode.meta[opposite] = parent[opposite];
+      }
+    });
+    if (selectedParent) {
+      node.meta.__ownerId = selectedParent.id;
+      node.meta.__containmentFeature = reference.opposite;
+    } else if (parentId) {
+      delete node.meta.__ownerId;
+      delete node.meta.__containmentFeature;
+    }
   }
 }
 
