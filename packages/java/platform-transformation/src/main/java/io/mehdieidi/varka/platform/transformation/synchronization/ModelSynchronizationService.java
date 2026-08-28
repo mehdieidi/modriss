@@ -91,6 +91,8 @@ public final class ModelSynchronizationService {
     IComparisonScope scope = new DefaultComparisonScope(working, newGenerated, base);
     Comparison comparison = emfCompare.compare(scope, new BasicMonitor());
     Map<Conflict, ModelConflict> realConflicts = describeRealConflicts(comparison, direction);
+    Set<String> locallyPreservedDeletionClosure =
+        locallyPreservedDeletionClosure(comparison, working, realConflicts, decisions);
     // Keep EMF Compare's dependency order. Containment additions/deletions are represented by
     // several related diffs (container reference, child object, and nested references); feeding
     // BatchMerger a HashSet makes that order nondeterministic and can leave nested generated
@@ -102,6 +104,14 @@ public final class ModelSynchronizationService {
 
     for (Diff difference : comparison.getDifferences()) {
       if (difference.getSource() != DifferenceSource.RIGHT) {
+        continue;
+      }
+      // A generated containment deletion is represented by a set of dependent differences.  When
+      // the user rejects that deletion, applying otherwise non-conflicting child/reference
+      // deletions would retain only a fragment of the local object graph.  Besides violating the
+      // user's choice, that commonly produces an invalid model (for example, a Workflow without
+      // its required steps).  Treat the locally retained subtree and links to it as one unit.
+      if (isChangeTouchingLocallyPreservedDeletion(difference, locallyPreservedDeletionClosure)) {
         continue;
       }
       MergeFeaturePolicy featurePolicy = policy.policyFor(feature(difference));
@@ -156,6 +166,168 @@ public final class ModelSynchronizationService {
         mergeable.size(),
         additions,
         deletions);
+  }
+
+  private Set<String> locallyPreservedDeletionClosure(
+      Comparison comparison,
+      Resource working,
+      Map<Conflict, ModelConflict> conflicts,
+      Map<String, ConflictResolution> decisions) {
+    Set<String> preserved = new LinkedHashSet<>();
+    for (Conflict conflict : comparison.getConflicts()) {
+      ModelConflict description = conflicts.get(conflict);
+      if (description == null
+          || decisions.get(description.conflictId()) != ConflictResolution.KEEP_USER
+          || conflict.getDifferences().stream()
+              .noneMatch(
+                  difference ->
+                      difference.getSource() == DifferenceSource.RIGHT
+                          && difference.getKind() == DifferenceKind.DELETE)) {
+        continue;
+      }
+      boolean foundContainedRoot = false;
+      for (Diff difference : conflict.getDifferences()) {
+        if (difference instanceof ReferenceChange change
+            && change.getReference() != null
+            && change.getReference().isContainment()
+            && change.getValue() != null) {
+          Match contained = comparison.getMatch(change.getValue());
+          if (contained != null && contained.getLeft() != null) {
+            addContainmentClosure(contained.getLeft(), preserved);
+            foundContainedRoot = true;
+          }
+        }
+      }
+      // A containment-reference difference is matched on its parent. Only use that parent as a
+      // fallback when EMF Compare cannot expose the contained target match; otherwise retaining a
+      // single deleted child would accidentally shield every deletion in the entire model.
+      if (foundContainedRoot) {
+        continue;
+      }
+      for (Diff difference : conflict.getDifferences()) {
+        Match match = difference.getMatch();
+        if (match != null && match.getLeft() != null) {
+          addContainmentClosure(match.getLeft(), preserved);
+        }
+      }
+    }
+    expandReferenceClosure(working, preserved);
+    return preserved;
+  }
+
+  /**
+   * Keeps the complete local reference-connected component of a retained deletion.
+   *
+   * <p>Containment alone is insufficient for Varka models. A retained generated element can depend
+   * on sibling support objects (for example a Step Function's IAM role and logging configuration),
+   * while other siblings can point back to it (for example service memberships and trace links).
+   * Both directions must be retained; otherwise applying the remaining generated deletions leaves a
+   * syntactically exportable but semantically incomplete local version.
+   */
+  private void expandReferenceClosure(Resource working, Set<String> ids) {
+    boolean expanded;
+    do {
+      expanded = false;
+      for (EObject candidate : allObjects(working)) {
+        if (ids.contains(id(candidate))) {
+          // The retained object can be nested in a container whose other contained elements are
+          // required support resources. eContainer is not guaranteed to be exposed as a normal
+          // non-derived EReference, so include containment ancestors explicitly.
+          EObject container = candidate.eContainer();
+          if (container != null) {
+            int size = ids.size();
+            addContainmentClosure(container, ids);
+            expanded |= ids.size() != size;
+          }
+          for (var reference : candidate.eClass().getEAllReferences()) {
+            if (reference.isContainment()
+                || reference.isDerived()
+                || reference.isTransient()
+                || reference.isVolatile()) {
+              continue;
+            }
+            Object value = candidate.eGet(reference, false);
+            if (value instanceof EObject target) {
+              int size = ids.size();
+              addContainmentClosure(target, ids);
+              expanded |= ids.size() != size;
+            } else if (value instanceof List<?> values) {
+              for (Object item : values) {
+                if (item instanceof EObject target) {
+                  int size = ids.size();
+                  addContainmentClosure(target, ids);
+                  expanded |= ids.size() != size;
+                }
+              }
+            }
+          }
+          continue;
+        }
+        if (!referencesAny(candidate, ids)) {
+          continue;
+        }
+        int size = ids.size();
+        addContainmentClosure(candidate, ids);
+        expanded |= ids.size() != size;
+      }
+    } while (expanded);
+  }
+
+  private List<EObject> allObjects(Resource resource) {
+    List<EObject> objects = new java.util.ArrayList<>();
+    for (EObject root : resource.getContents()) {
+      objects.add(root);
+      for (var contents = root.eAllContents(); contents.hasNext(); ) {
+        objects.add(contents.next());
+      }
+    }
+    return objects;
+  }
+
+  private boolean referencesAny(EObject candidate, Set<String> ids) {
+    for (var reference : candidate.eClass().getEAllReferences()) {
+      if (reference.isContainment()
+          || reference.isDerived()
+          || reference.isTransient()
+          || reference.isVolatile()) {
+        continue;
+      }
+      Object value = candidate.eGet(reference, false);
+      if (value instanceof EObject object && ids.contains(id(object))) {
+        return true;
+      }
+      if (value instanceof List<?> values
+          && values.stream()
+              .filter(EObject.class::isInstance)
+              .map(EObject.class::cast)
+              .map(this::id)
+              .anyMatch(ids::contains)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void addContainmentClosure(EObject root, Set<String> ids) {
+    ids.add(id(root));
+    for (var contents = root.eAllContents(); contents.hasNext(); ) {
+      ids.add(id(contents.next()));
+    }
+  }
+
+  private boolean isChangeTouchingLocallyPreservedDeletion(
+      Diff difference, Set<String> preservedIds) {
+    if (preservedIds.isEmpty()) {
+      return false;
+    }
+    Match match = difference.getMatch();
+    if (match != null && match.getLeft() != null && preservedIds.contains(id(match.getLeft()))) {
+      return true;
+    }
+    if (difference instanceof ReferenceChange change && change.getValue() != null) {
+      return preservedIds.contains(id(change.getValue()));
+    }
+    return false;
   }
 
   private Map<Conflict, ModelConflict> describeRealConflicts(

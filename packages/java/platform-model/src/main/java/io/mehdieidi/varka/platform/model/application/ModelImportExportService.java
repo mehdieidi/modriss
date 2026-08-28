@@ -15,13 +15,19 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
@@ -239,6 +245,205 @@ final class ModelImportExportService {
     }
     return copy;
   }
+
+  /**
+   * Removes references made dangling by an interactive deletion and cascades required dependent
+   * objects such as trace links and ownership memberships.
+   *
+   * <p>The editor submits a complete JSON projection after removing a diagram/model element. Its
+   * separately contained support objects are not necessarily selected by the UI deletion, so they
+   * must not be left pointing to an object that no longer exists. This is Ecore-driven rather than
+   * a list of PIM/PSM-specific field names.
+   */
+  JsonNode removeDanglingReferences(ModelLevel level, JsonNode modelJson) {
+    if (!(modelJson instanceof ObjectNode model)) {
+      return modelJson;
+    }
+    Map<String, EClass> classes = eClassesByName(level);
+    boolean changed;
+    do {
+      List<SemanticObject> objects = semanticObjects(model, classes);
+      Set<String> ids =
+          objects.stream()
+              .map(item -> text(item.node(), "id", ""))
+              .filter(value -> !value.isBlank())
+              .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+      Set<String> removeIds = new LinkedHashSet<>();
+      changed = false;
+      for (SemanticObject item : objects) {
+        String objectId = text(item.node(), "id", "");
+        if (isTraceLinkWithDanglingEndpoint(item.node(), ids)) {
+          markForRemoval(objectId, removeIds);
+          continue;
+        }
+        for (EReference reference : item.eClass().getEAllReferences()) {
+          if (reference.isContainment()
+              || reference.isContainer()
+              || reference.isDerived()
+              || reference.isTransient()
+              || reference.isVolatile()) {
+            continue;
+          }
+          JsonNode value = item.node().get(reference.getName());
+          if (value == null || value.isNull()) {
+            continue;
+          }
+          if (reference.isMany()) {
+            ArrayNode retained = store.objectMapper().createArrayNode();
+            int supplied = 0;
+            for (JsonNode entry : value) {
+              String referenceId = referenceId(entry);
+              if (referenceId.isBlank() || ids.contains(referenceId)) {
+                retained.add(entry.deepCopy());
+              } else {
+                supplied++;
+              }
+            }
+            if (supplied == 0) {
+              continue;
+            }
+            if (retained.size() < reference.getLowerBound()) {
+              markForRemoval(objectId, removeIds);
+            } else {
+              item.node().set(reference.getName(), retained);
+              changed = true;
+            }
+          } else {
+            String referenceId = referenceId(value);
+            if (!referenceId.isBlank() && !ids.contains(referenceId)) {
+              if (reference.getLowerBound() > 0) {
+                markForRemoval(objectId, removeIds);
+              } else {
+                item.node().remove(reference.getName());
+                changed = true;
+              }
+            }
+          }
+        }
+      }
+      if (!removeIds.isEmpty()) {
+        removeSemanticObjects(model, removeIds, classes);
+        changed = true;
+      }
+    } while (changed);
+    return model;
+  }
+
+  private Map<String, EClass> eClassesByName(ModelLevel level) {
+    Map<String, EClass> classes = new HashMap<>();
+    metamodelResolver
+        .resolve(level)
+        .packages()
+        .forEach(
+            ePackage ->
+                ePackage.getEClassifiers().stream()
+                    .filter(EClass.class::isInstance)
+                    .map(EClass.class::cast)
+                    .forEach(eClass -> classes.putIfAbsent(eClass.getName(), eClass)));
+    return classes;
+  }
+
+  private List<SemanticObject> semanticObjects(JsonNode model, Map<String, EClass> classes) {
+    List<SemanticObject> objects = new ArrayList<>();
+    collectSemanticObjects(model, classes, objects);
+    return objects;
+  }
+
+  private void collectSemanticObjects(
+      JsonNode node, Map<String, EClass> classes, List<SemanticObject> objects) {
+    if (node instanceof ObjectNode object) {
+      EClass eClass = classes.get(text(object, "eClass", ""));
+      if (eClass != null) {
+        objects.add(new SemanticObject(object, eClass));
+      }
+      object
+          .properties()
+          .forEach(
+              entry -> {
+                if (!isTransportField(entry.getKey())) {
+                  collectSemanticObjects(entry.getValue(), classes, objects);
+                }
+              });
+    } else if (node instanceof ArrayNode array) {
+      array.forEach(child -> collectSemanticObjects(child, classes, objects));
+    }
+  }
+
+  private void removeSemanticObjects(
+      JsonNode node, Set<String> removeIds, Map<String, EClass> classes) {
+    if (node instanceof ObjectNode object) {
+      List<String> fields = new ArrayList<>();
+      object.properties().forEach(entry -> fields.add(entry.getKey()));
+      for (String field : fields) {
+        if (isTransportField(field)) {
+          continue;
+        }
+        JsonNode child = object.get(field);
+        if (child instanceof ObjectNode childObject
+            && classes.containsKey(text(childObject, "eClass", ""))
+            && removeIds.contains(text(childObject, "id", ""))) {
+          object.remove(field);
+        } else {
+          removeSemanticObjects(child, removeIds, classes);
+        }
+      }
+    } else if (node instanceof ArrayNode array) {
+      for (int index = array.size() - 1; index >= 0; index--) {
+        JsonNode child = array.get(index);
+        if (child instanceof ObjectNode childObject
+            && classes.containsKey(text(childObject, "eClass", ""))
+            && removeIds.contains(text(childObject, "id", ""))) {
+          array.remove(index);
+        } else {
+          removeSemanticObjects(child, removeIds, classes);
+        }
+      }
+    }
+  }
+
+  private boolean isTransportField(String field) {
+    return Set.of(
+            "graph",
+            "diagram",
+            "views",
+            "manualBacklog",
+            "validationIssues",
+            "_sourceXmiBase64",
+            "_sourceXmiToken")
+        .contains(field);
+  }
+
+  private void markForRemoval(String id, Set<String> removeIds) {
+    if (!id.isBlank()) {
+      removeIds.add(id);
+    }
+  }
+
+  private boolean isTraceLinkWithDanglingEndpoint(ObjectNode object, Set<String> ids) {
+    if (!"TraceLink".equals(text(object, "eClass", ""))) {
+      return false;
+    }
+    return endpointIsDangling(object, "source", "sourceElementId", ids)
+        || endpointIsDangling(object, "target", "targetElementId", ids);
+  }
+
+  private boolean endpointIsDangling(
+      ObjectNode object, String referenceField, String idField, Set<String> ids) {
+    String endpoint = referenceId(object.get(referenceField));
+    if (endpoint.isBlank()) {
+      endpoint = text(object, idField, "");
+    }
+    return !endpoint.isBlank() && !ids.contains(endpoint);
+  }
+
+  private String referenceId(JsonNode value) {
+    if (value == null || value.isNull()) {
+      return "";
+    }
+    return value.isObject() ? text(value, "id", "") : value.asText("");
+  }
+
+  private record SemanticObject(ObjectNode node, EClass eClass) {}
 
   /**
    * Reads the stored source XMI sidecar for a model.

@@ -787,6 +787,56 @@ class ModelServiceXmiImportTest {
         validation.issues().stream().anyMatch(issue -> "XmiExport".equals(issue.constraint())));
   }
 
+  @Test
+  void deletingPimWorkflowCascadesDanglingMembershipAndTraceLink() {
+    TestPlatformStore store = new TestPlatformStore(tempDir);
+    store.initialize();
+    AuthService authService = new AuthService(store, Duration.ofHours(1));
+    ProjectService projectService = new ProjectService(store, authService);
+    ModelService service = new ModelService(store, projectService);
+    UserRecord user =
+        authService.register("pim-delete-owner@example.com", "password123", "Owner").user();
+    ProjectRecord project = projectService.create(user, "PIM deletion", "");
+    ObjectNode pim =
+        (ObjectNode)
+            service
+                .importModel(
+                    ModelLevel.PIM,
+                    "pim.xmi",
+                    samplePimXmi().getBytes(StandardCharsets.UTF_8),
+                    "xmi")
+                .modelJson()
+                .deepCopy();
+    ObjectNode membership = pim.withArray("serviceMemberships").addObject();
+    membership.put("eClass", "ServiceElementMembership");
+    membership.put("id", "workflow-membership");
+    membership.put("ownershipKind", "OWNS");
+    membership.put("service", "svc-main");
+    membership.put("element", "workflow-main");
+    ObjectNode trace = pim.putObject("traceModel");
+    trace.put("eClass", "TraceModel");
+    trace.put("id", "trace-model");
+    ObjectNode link = trace.putArray("links").addObject();
+    link.put("eClass", "TraceLink");
+    link.put("id", "workflow-trace");
+    link.put("linkType", "DERIVES_FROM");
+    link.put("confidence", "HIGH");
+    link.put("source", "svc-main");
+    link.put("sourceElementId", "svc-main");
+    link.put("target", "workflow-main");
+    link.put("targetElementId", "workflow-main");
+    ModelRecord created = service.create(user, ModelLevel.PIM, project.id(), "pim", pim);
+
+    ObjectNode edited = (ObjectNode) created.modelJson().deepCopy();
+    ((ArrayNode) edited.path("services").path(0).path("workflows")).remove(0);
+    ModelRecord updated =
+        assertDoesNotThrow(() -> service.update(user, ModelLevel.PIM, created.id(), "pim", edited));
+
+    assertTrue(updated.modelJson().path("serviceMemberships").isEmpty());
+    assertTrue(updated.modelJson().path("traceModel").path("links").isEmpty());
+    assertDoesNotThrow(() -> service.exportModel(ModelLevel.PIM, updated.modelJson(), "xmi"));
+  }
+
   /** Ensures patching a PIM model does not discard the stored source XMI fallback. */
   @Test
   void patchPreservesStoredXmiWhenJsonHasStaleReferences() {

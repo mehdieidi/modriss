@@ -1,6 +1,7 @@
 package io.mehdieidi.varka.backend.api;
 
 import io.mehdieidi.varka.platform.kernel.PlatformException;
+import io.mehdieidi.varka.platform.transformation.synchronization.TransformationValidationException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +36,18 @@ public class GlobalExceptionHandler {
       log.warn("Request rejected [{}]: {}", errorId(), ex.getMessage());
     }
     return ResponseEntity.status(ex.status()).body(error(ex.status(), ex.getMessage(), List.of()));
+  }
+
+  /** Returns target-model findings when a synchronization finalization cannot be committed. */
+  @ExceptionHandler(TransformationValidationException.class)
+  ResponseEntity<ApiErrorResponse> transformationValidation(TransformationValidationException ex) {
+    log.warn("Request rejected [{}]: {}", errorId(), ex.getMessage());
+    return ResponseEntity.status(ex.status())
+        .body(
+            error(
+                ex.status(),
+                ex.getMessage(),
+                ex.issues().stream().map(this::validationIssue).toList()));
   }
 
   /**
@@ -80,6 +93,16 @@ public class GlobalExceptionHandler {
   private ApiErrorResponse error(int status, String detailMessage, List<?> issues) {
     return new ApiErrorResponse(
         clientMessage(status, detailMessage), status, Instant.now(), issues, errorId());
+  }
+
+  private String validationIssue(
+      io.mehdieidi.varka.platform.model.application.ModelService.ValidationIssue issue) {
+    String element =
+        issue.elementName() == null || issue.elementName().isBlank()
+            ? issue.elementId()
+            : issue.elementName();
+    String location = element == null || element.isBlank() ? "" : element + ": ";
+    return location + issue.constraint() + ": " + issue.message();
   }
 
   private String clientMessage(int status, String detailMessage) {

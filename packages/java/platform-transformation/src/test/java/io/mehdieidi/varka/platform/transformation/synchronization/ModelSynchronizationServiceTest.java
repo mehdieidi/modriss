@@ -284,6 +284,46 @@ class ModelSynchronizationServiceTest {
   }
 
   @Test
+  void keepingUserVersionOfDeletedContainerKeepsItsCompleteLocalSubtree() throws Exception {
+    Resource base = modelWithChild("generated-child");
+    Resource local = modelWithChild("generated-child");
+    // This mirrors a user refinement of a generated workflow before its source process is
+    // removed. The child itself is unchanged, so EMF Compare exposes its deletion separately.
+    set(local, "n1", "description", "manual workflow refinement");
+    find(base, "child").eSet(peer, find(base, "n1"));
+    find(local, "child").eSet(peer, find(local, "n1"));
+    // A sibling reference models a ServiceElementMembership/trace record: it is not contained by
+    // the workflow but must remain when the workflow is retained.
+    addNode(base, "membership", "Membership", 0, "generated support").eSet(peer, find(base, "n1"));
+    addNode(local, "membership", "Membership", 0, "generated support")
+        .eSet(peer, find(local, "n1"));
+    Resource incoming = emptyModel();
+    byte[] rawBase = bytes(base);
+    byte[] rawLocal = bytes(local);
+    byte[] rawIncoming = bytes(incoming);
+
+    var pending = merge(base, local, incoming);
+    assertFalse(pending.conflicts().isEmpty());
+    String conflictId = pending.conflicts().get(0).conflictId();
+
+    // A pending comparison is intentionally allowed to merge safe changes into its temporary
+    // working resource. A resolution always starts from the separately persisted raw snapshots.
+    var kept =
+        service.synchronize(
+            load(rawBase, "keep-user-base"),
+            load(rawLocal, "keep-user-local"),
+            load(rawIncoming, "keep-user-incoming"),
+            TransformationDirection.CIM_TO_PIM,
+            Map.of(conflictId, ConflictResolution.KEEP_USER));
+
+    assertTrue(kept.conflicts().isEmpty());
+    assertEquals("manual workflow refinement", value(kept.mergedWorking(), "n1", "description"));
+    assertEquals("generated-child", value(kept.mergedWorking(), "child", "name"));
+    assertEquals("n1", id((EObject) find(kept.mergedWorking(), "child").eGet(peer)));
+    assertEquals("n1", id((EObject) find(kept.mergedWorking(), "membership").eGet(peer)));
+  }
+
+  @Test
   void scenario15IsIdempotentAndDoesNotDuplicateElements() throws Exception {
     Resource incoming = model(512, "B");
     addNode(incoming, "n2", "Generated", 256, "new");

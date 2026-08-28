@@ -517,7 +517,9 @@ public final class ModelService {
           requireExpectedRevision(existing, expectedRevision);
           ProjectRecord project = projectService.get(user, existing.projectId());
           projectService.requireEditor(project, user.id());
-          JsonNode normalizedModel = importExport.normalizeModel(name, level, modelJson);
+          JsonNode normalizedModel =
+              importExport.removeDanglingReferences(
+                  level, importExport.normalizeModel(name, level, modelJson));
           ModelImportExportService.SourceXmiUpdate sourceXmi =
               importExport.resolveSourceXmiUpdate(
                   user, existing.projectId(), level, normalizedModel, true);
@@ -637,8 +639,10 @@ public final class ModelService {
             applyPatchOperation(patchedModel, operation);
           }
           JsonNode normalizedModel =
-              importExport.normalizeModel(
-                  name == null ? existing.name() : name, level, patchedModel);
+              importExport.removeDanglingReferences(
+                  level,
+                  importExport.normalizeModel(
+                      name == null ? existing.name() : name, level, patchedModel));
           if (requireStructuralValidity) {
             ValidationResult structural = validateStructural(level, normalizedModel);
             if (!structural.valid()) {
