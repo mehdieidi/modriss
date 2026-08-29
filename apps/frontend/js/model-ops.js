@@ -34,6 +34,7 @@ import { closeAttributePanel, openAttributePanel } from "./attr-panel.js";
 import { closeImpactPanel } from "./impact.js";
 import { loadArtifactById, loadArtifactRecord, loadCurrentProjectArtifact } from "./artifact.js";
 import { confirmAction } from "./confirm-action.js";
+import { resolveSynchronizationConflicts } from "./synchronization-conflicts.js";
 import { requireActiveProject } from "./project-guards.js";
 import {
   completeGenerationProgress,
@@ -1164,42 +1165,21 @@ async function handleSynchronizationResult(job) {
   const conflicts = Array.isArray(synchronization.conflictDetails)
     ? synchronization.conflictDetails
     : [];
-  for (const conflict of conflicts) {
-    const generated = await confirmAction({
-      title: `Model conflict: ${conflict.elementName || conflict.elementEClass || "element"}`,
-      message: [
-        `Feature: ${conflict.featureName || "unknown"}`,
-        `Base: ${displayConflictValue(conflict.baseValue)}`,
-        `Your value: ${displayConflictValue(conflict.workingValue)}`,
-        `Generated value: ${displayConflictValue(conflict.generatedValue)}`,
-      ].join("\n"),
-      confirmLabel: "Use generated value",
-      cancelLabel: "Keep my value",
-    });
-    await api(`/synchronizations/${projectId}/${synchronization.sessionId}/resolutions`, {
-      method: "POST",
-      body: JSON.stringify({
-        conflictId: conflict.conflictId,
-        resolution: generated ? "TAKE_GENERATED" : "KEEP_USER",
-      }),
-    });
+  const decisions = await resolveSynchronizationConflicts(conflicts);
+  if (!decisions) {
+    await api(`/synchronizations/${projectId}/${synchronization.sessionId}`, { method: "DELETE" });
+    setStatus("Model synchronization conflict resolution canceled");
+    return;
   }
+  const resolutions = Object.fromEntries(decisions);
+  await api(`/synchronizations/${projectId}/${synchronization.sessionId}/resolutions/batch`, {
+    method: "POST",
+    body: JSON.stringify({ resolutions }),
+  });
   await api(`/synchronizations/${projectId}/${synchronization.sessionId}/finalize`, {
     method: "POST",
   });
   setStatus("Model synchronization conflicts resolved");
-}
-
-function displayConflictValue(value) {
-  if (value === null || value === undefined) {
-    return "(deleted / absent)";
-  }
-  return typeof value === "string" ? value : JSON.stringify(value);
-}
-
-function isTransformationApiError(error, path) {
-  const expected = `/transformations/${path}`;
-  return typeof error?.path === "string" && error.path === expected;
 }
 
 function rememberModelSummary(typeKey, record) {
@@ -1581,7 +1561,10 @@ async function executeConfiguredTransformation(transformation) {
     });
   } catch (error) {
     if (isMethodologyValidationError(error)) {
-      if (targetLevel && targetLevel !== "artifact" && isTransformationApiError(error, operation)) {
+      // Conflict finalization uses the synchronization endpoint, not the transformation endpoint.
+      // Its validation errors describe the target model that was being generated, so keep the
+      // issue board and the visible tab in that target context regardless of the endpoint.
+      if (targetLevel && targetLevel !== "artifact") {
         await switchTab(targetLevel);
       }
       applyValidationIssues(error.issues, { openOnFirst: true });

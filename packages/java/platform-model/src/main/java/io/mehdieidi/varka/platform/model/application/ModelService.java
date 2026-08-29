@@ -839,7 +839,15 @@ public final class ModelService {
     return validationService.validateGeneratedXmi(level, xmiBytes);
   }
 
-  private ValidationResult validateGeneratedXmi(
+  /**
+   * Validates generated XMI while retaining its JSON projection for human-readable diagnostics.
+   *
+   * @param level generated model level
+   * @param xmiBytes generated XMI
+   * @param modelJson matching generated model JSON
+   * @return structural validation result
+   */
+  public ValidationResult validateGeneratedXmi(
       ModelLevel level, byte[] xmiBytes, JsonNode modelJson) {
     return validationService.validateGeneratedXmi(level, xmiBytes, modelJson);
   }

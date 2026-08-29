@@ -8,6 +8,7 @@ import io.mehdieidi.varka.platform.transformation.synchronization.Transformation
 import io.mehdieidi.varka.platform.transformation.synchronization.TransformationSynchronizationCoordinator;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.List;
@@ -56,6 +57,17 @@ public class SynchronizationController {
             auth.user(token), projectId, sessionId, request.conflictId(), request.resolution()));
   }
 
+  /** Stores all submitted choices with one durable write for large conflict sessions. */
+  @PostMapping("/{projectId}/{sessionId}/resolutions/batch")
+  SynchronizationSessionResponse resolveBatch(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable String projectId,
+      @PathVariable String sessionId,
+      @Valid @RequestBody BatchResolutionRequest request) {
+    return SynchronizationSessionResponse.from(
+        synchronization.resolveAll(auth.user(token), projectId, sessionId, request.resolutions()));
+  }
+
   @PostMapping("/{projectId}/{sessionId}/finalize")
   ModelRecord finalizeSession(
       @RequestHeader("X-Auth-Token") String token,
@@ -75,6 +87,9 @@ public class SynchronizationController {
 
   public record ResolutionRequest(
       @NotBlank String conflictId, @NotNull ConflictResolution resolution) {}
+
+  public record BatchResolutionRequest(
+      @NotEmpty Map<@NotBlank String, @NotNull ConflictResolution> resolutions) {}
 
   /** Public pending-session view; raw merge resources remain durable server-side state. */
   public record SynchronizationSessionResponse(

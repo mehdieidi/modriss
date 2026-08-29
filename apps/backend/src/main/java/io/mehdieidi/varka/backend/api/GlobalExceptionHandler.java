@@ -43,11 +43,7 @@ public class GlobalExceptionHandler {
   ResponseEntity<ApiErrorResponse> transformationValidation(TransformationValidationException ex) {
     log.warn("Request rejected [{}]: {}", errorId(), ex.getMessage());
     return ResponseEntity.status(ex.status())
-        .body(
-            error(
-                ex.status(),
-                ex.getMessage(),
-                ex.issues().stream().map(this::validationIssue).toList()));
+        .body(error(ex.status(), ex.getMessage(), ex.issues()));
   }
 
   /**
@@ -93,16 +89,6 @@ public class GlobalExceptionHandler {
   private ApiErrorResponse error(int status, String detailMessage, List<?> issues) {
     return new ApiErrorResponse(
         clientMessage(status, detailMessage), status, Instant.now(), issues, errorId());
-  }
-
-  private String validationIssue(
-      io.mehdieidi.varka.platform.model.application.ModelService.ValidationIssue issue) {
-    String element =
-        issue.elementName() == null || issue.elementName().isBlank()
-            ? issue.elementId()
-            : issue.elementName();
-    String location = element == null || element.isBlank() ? "" : element + ": ";
-    return location + issue.constraint() + ": " + issue.message();
   }
 
   private String clientMessage(int status, String detailMessage) {

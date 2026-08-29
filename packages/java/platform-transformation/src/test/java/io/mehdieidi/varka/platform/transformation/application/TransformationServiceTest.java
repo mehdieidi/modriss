@@ -11,6 +11,7 @@ import io.mehdieidi.varka.platform.kernel.ModelLevel;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import io.mehdieidi.varka.platform.model.application.ModelService;
 import io.mehdieidi.varka.platform.model.domain.ModelRecord;
+import io.mehdieidi.varka.platform.modeling.xmi.XmiModelImportService;
 import io.mehdieidi.varka.platform.transformation.synchronization.ConflictResolution;
 import io.mehdieidi.varka.platform.transformation.synchronization.GeneratedBaseline;
 import io.mehdieidi.varka.platform.transformation.synchronization.ModelBaselineRepository;
@@ -18,12 +19,18 @@ import io.mehdieidi.varka.platform.transformation.synchronization.Synchronizatio
 import io.mehdieidi.varka.platform.transformation.synchronization.SynchronizationStatus;
 import io.mehdieidi.varka.platform.transformation.synchronization.TransformationDirection;
 import io.mehdieidi.varka.platform.transformation.synchronization.TransformationSynchronizationCoordinator;
+import io.mehdieidi.varka.platform.transformation.synchronization.TransformationValidationException;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.eclipse.emf.common.util.TreeIterator;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.Execution;
@@ -725,6 +732,265 @@ class TransformationServiceTest {
         PlatformException.class,
         () -> coordinator.getSession(context.user(), context.project().id(), pending.sessionId()));
     assertEquals(unchanged.id(), finalized.id());
+  }
+
+  @Test
+  void cimAddEditDeleteWorkflowThenPimToPsmRegenerationCompletes() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "journey@example.com", "Journey", "Journey");
+    ModelRecord cim = createClimateCim(services, context, "journey-cim");
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    services.transformations().pimToPsm(context.user(), pim.id());
+    TransformationService.consumeLastSynchronization();
+
+    String addedProcessId = "journey-added-process";
+    cim =
+        cloneCimProcessIntoSourceXmi(
+            services, context, cim, "proc-appeal-lifecycle", addedProcessId);
+    pim = services.transformations().cimToPim(context.user(), cim.id());
+    assertEquals(
+        SynchronizationStatus.APPLIED, TransformationService.consumeLastSynchronization().status());
+    ObjectNode refined = (ObjectNode) pim.modelJson().deepCopy();
+    ObjectNode addedWorkflow = findGeneratedElement(refined, "Workflow", addedProcessId);
+    assertTrue(addedWorkflow != null, "The added CIM process must create a PIM workflow.");
+    addedWorkflow.put("name", "Manual workflow refinement");
+    pim =
+        services
+            .models()
+            .update(context.user(), ModelLevel.PIM, pim.id(), pim.name(), refined, pim.revision());
+
+    cim = deleteCimProcessFromSourceXmi(services, context, cim, addedProcessId);
+    services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult pending = TransformationService.consumeLastSynchronization();
+    assertEquals(SynchronizationStatus.CONFLICTS, pending.status());
+    TransformationSynchronizationCoordinator coordinator =
+        new TransformationSynchronizationCoordinator(services.store(), services.models());
+    coordinator.resolveAll(
+        context.user(),
+        context.project().id(),
+        pending.sessionId(),
+        pending.conflictDetails().stream()
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    conflict -> conflict.conflictId(), conflict -> ConflictResolution.KEEP_USER)));
+    try {
+      pim =
+          coordinator.finalizeSession(context.user(), context.project().id(), pending.sessionId());
+    } catch (TransformationValidationException ex) {
+      throw new AssertionError("PIM finalization issues: " + ex.issues(), ex);
+    }
+    assertTrue(
+        services
+            .models()
+            .validateGeneratedXmi(ModelLevel.PIM, services.models().sourceXmi(pim).orElseThrow())
+            .valid());
+
+    ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
+    SynchronizationResult psmResult = TransformationService.consumeLastSynchronization();
+    if (psmResult.status() == SynchronizationStatus.CONFLICTS) {
+      coordinator.resolveAll(
+          context.user(),
+          context.project().id(),
+          psmResult.sessionId(),
+          psmResult.conflictDetails().stream()
+              .collect(
+                  java.util.stream.Collectors.toMap(
+                      conflict -> conflict.conflictId(),
+                      conflict -> ConflictResolution.TAKE_GENERATED)));
+      psm =
+          coordinator.finalizeSession(
+              context.user(), context.project().id(), psmResult.sessionId());
+    }
+    assertTrue(
+        services
+            .models()
+            .validateGeneratedXmi(ModelLevel.PSM, services.models().sourceXmi(psm).orElseThrow())
+            .valid(),
+        "The full CIM/PIM synchronization journey must leave a valid PSM after generated choices.");
+  }
+
+  @Test
+  void savedPsmStepFunctionEditThenDeletedPimWorkflowCreatesOneResolvableConflict()
+      throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "psm-delete@example.com", "PSM", "Delete");
+    ModelRecord cim = createClimateCim(services, context, "psm-delete-cim");
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
+    TransformationService.consumeLastSynchronization();
+
+    String processId = "psm-delete-process";
+    cim = cloneCimProcessIntoSourceXmi(services, context, cim, "proc-appeal-lifecycle", processId);
+    pim = services.transformations().cimToPim(context.user(), cim.id());
+    assertEquals(
+        SynchronizationStatus.APPLIED, TransformationService.consumeLastSynchronization().status());
+    psm = services.transformations().pimToPsm(context.user(), pim.id());
+    assertEquals(
+        SynchronizationStatus.APPLIED, TransformationService.consumeLastSynchronization().status());
+
+    ObjectNode workflow = findGeneratedElement(pim.modelJson(), "Workflow", processId);
+    assertTrue(workflow != null, "The added process must generate a PIM workflow.");
+    String workflowId = workflow.path("id").asText();
+    ObjectNode refinedPsm = (ObjectNode) psm.modelJson().deepCopy();
+    ObjectNode stateMachine =
+        findGeneratedElement(refinedPsm, "StepFunctionStateMachine", workflowId);
+    assertTrue(stateMachine != null, "The workflow must generate a Step Function state machine.");
+    stateMachine.put("name", "User-refined state machine");
+    psm =
+        services
+            .models()
+            .update(
+                context.user(), ModelLevel.PSM, psm.id(), psm.name(), refinedPsm, psm.revision());
+
+    Resource pimXmi = loadSourceXmi(services, ModelLevel.PIM, pim, "delete-pim-workflow");
+    EObject workflowObject = findById(pimXmi, workflowId);
+    assertTrue(workflowObject != null, "Expected generated PIM workflow " + workflowId);
+    EcoreUtil.delete(workflowObject, true);
+    pim = saveChangedSourceXmi(services, context, pim, ModelLevel.PIM, pimXmi, "delete workflow");
+
+    ModelRecord unchanged = services.transformations().pimToPsm(context.user(), pim.id());
+    SynchronizationResult pending = TransformationService.consumeLastSynchronization();
+    assertEquals(psm.id(), unchanged.id(), "A conflict must not replace the saved PSM.");
+    assertEquals(SynchronizationStatus.CONFLICTS, pending.status());
+    assertEquals(
+        1,
+        pending.conflictDetails().size(),
+        "A deleted state machine and its nested generated helpers are one logical conflict.");
+    assertEquals("DELETE", pending.conflictDetails().get(0).differenceKind());
+
+    // The API returns a pending synchronization session rather than failing the generation or
+    // publishing the dependent EMF diagnostics to the issue board. Resolution is intentionally
+    // tested separately: it operates on the same durable session without mutating this PSM.
+    TransformationSynchronizationCoordinator coordinator =
+        new TransformationSynchronizationCoordinator(services.store(), services.models());
+    coordinator.cancel(context.user(), context.project().id(), pending.sessionId());
+  }
+
+  private ModelRecord cloneCimProcessIntoSourceXmi(
+      PlatformTestFixtures.ServiceStack services,
+      PlatformTestFixtures.AuthenticatedContext context,
+      ModelRecord cim,
+      String sourceProcessId,
+      String copiedProcessId)
+      throws Exception {
+    Resource resource = loadSourceXmi(services, ModelLevel.CIM, cim, "clone-cim-process");
+    EObject original = findById(resource, sourceProcessId);
+    assertTrue(original != null, "Expected source process " + sourceProcessId);
+    EObject copy = EcoreUtil.copy(original);
+    replaceIds(copy, copiedProcessId);
+    @SuppressWarnings("unchecked")
+    List<EObject> processes =
+        (List<EObject>)
+            resource
+                .getContents()
+                .get(0)
+                .eGet(resource.getContents().get(0).eClass().getEStructuralFeature("processes"));
+    processes.add(copy);
+    return saveChangedSourceXmi(services, context, cim, ModelLevel.CIM, resource, "add process");
+  }
+
+  private ModelRecord deleteCimProcessFromSourceXmi(
+      PlatformTestFixtures.ServiceStack services,
+      PlatformTestFixtures.AuthenticatedContext context,
+      ModelRecord cim,
+      String processId)
+      throws Exception {
+    Resource resource = loadSourceXmi(services, ModelLevel.CIM, cim, "delete-cim-process");
+    EObject process = findById(resource, processId);
+    assertTrue(process != null, "Expected added process " + processId);
+    EcoreUtil.delete(process, true);
+    return saveChangedSourceXmi(services, context, cim, ModelLevel.CIM, resource, "delete process");
+  }
+
+  private ModelRecord saveChangedSourceXmi(
+      PlatformTestFixtures.ServiceStack services,
+      PlatformTestFixtures.AuthenticatedContext context,
+      ModelRecord model,
+      ModelLevel level,
+      Resource resource,
+      String summary)
+      throws Exception {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    resource.save(output, Map.of());
+    // This mirrors the frontend: persist both its editable JSON graph and the XMI sidecar from
+    // the same saved model. Keeping the old JSON while replacing only XMI can make a subsequent
+    // synchronization combine two different PIM revisions.
+    ObjectNode changed =
+        (ObjectNode)
+            services
+                .models()
+                .importModel(
+                    level, "changed-" + level.apiName() + ".xmi", output.toByteArray(), "xmi")
+                .modelJson()
+                .deepCopy();
+    changed.put("summary", summary);
+    ModelRecord updated =
+        services
+            .models()
+            .update(context.user(), level, model.id(), model.name(), changed, model.revision());
+    services
+        .store()
+        .writeBytesAtomically(
+            Path.of(
+                "projects",
+                context.project().id(),
+                "models",
+                level.apiName(),
+                updated.id() + ".xmi"),
+            output.toByteArray());
+    return updated;
+  }
+
+  private Resource loadSourceXmi(
+      PlatformTestFixtures.ServiceStack services,
+      ModelLevel level,
+      ModelRecord model,
+      String purpose) {
+    return new XmiModelImportService(services.store().objectMapper())
+        .loadResource(level, services.models().sourceXmi(model).orElseThrow(), purpose);
+  }
+
+  private void replaceIds(EObject root, String rootId) {
+    setId(root, rootId);
+    int index = 0;
+    for (TreeIterator<EObject> iterator = root.eAllContents(); iterator.hasNext(); ) {
+      setId(iterator.next(), rootId + "-" + (++index));
+    }
+  }
+
+  private void setId(EObject object, String id) {
+    var idFeature = object.eClass().getEStructuralFeature("id");
+    if (idFeature != null) {
+      object.eSet(idFeature, id);
+    }
+  }
+
+  private EObject findById(Resource resource, String id) {
+    for (EObject root : resource.getContents()) {
+      if (id.equals(EcoreUtil.getID(root))) return root;
+      for (TreeIterator<EObject> iterator = root.eAllContents(); iterator.hasNext(); ) {
+        EObject candidate = iterator.next();
+        if (id.equals(EcoreUtil.getID(candidate))) return candidate;
+      }
+    }
+    return null;
+  }
+
+  private ObjectNode findGeneratedElement(JsonNode node, String eClass, String generatedFrom) {
+    if (node instanceof ObjectNode object
+        && eClass.equals(object.path("eClass").asText())
+        && generatedFrom.equals(object.path("generatedFrom").asText())) return object;
+    for (JsonNode child : node) {
+      ObjectNode found = findGeneratedElement(child, eClass, generatedFrom);
+      if (found != null) return found;
+    }
+    return null;
   }
 
   private ModelRecord createClimateCim(

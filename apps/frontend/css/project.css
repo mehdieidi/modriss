@@ -31,6 +31,137 @@
   box-shadow: var(--shadow-lg);
 }
 
+.synchronization-conflict-dialog {
+  width: min(900px, 96vw);
+  max-height: 92vh;
+  overflow: auto;
+}
+
+.synchronization-conflict-header,
+.synchronization-conflict-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.synchronization-conflict-eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent-light);
+  font: 700 10px/1.2 var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.synchronization-conflict-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.synchronization-conflict-meta-item {
+  padding: 4px 7px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.synchronization-conflict-diff {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.synchronization-conflict-value {
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 78%, var(--surface-3) 22%);
+}
+
+.synchronization-conflict-value h4 {
+  margin: 0;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-strong);
+  font-size: 12px;
+}
+
+.synchronization-conflict-value-manual h4 {
+  color: var(--accent-light);
+}
+.synchronization-conflict-value-generated h4 {
+  color: #59c9a5;
+}
+
+.synchronization-conflict-value pre {
+  max-height: 220px;
+  margin: 0;
+  padding: 10px;
+  overflow: auto;
+  color: var(--text);
+  font: 12px/1.45 var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.synchronization-conflict-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.synchronization-conflict-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.synchronization-conflict-bulk-action {
+  min-height: 1px;
+}
+
+.synchronization-conflict-bulk-action .btn {
+  width: 100%;
+}
+
+.synchronization-conflict-option {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.synchronization-conflict-option strong {
+  font-size: 13px;
+}
+.synchronization-conflict-option span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.synchronization-conflict-option.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent-glow) 42%, var(--surface-2) 58%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+@media (max-width: 720px) {
+  .synchronization-conflict-diff,
+  .synchronization-conflict-choice {
+    grid-template-columns: 1fr;
+  }
+  .synchronization-conflict-actions {
+    flex-wrap: wrap;
+  }
+}
+
 .project-dialog {
   width: min(860px, 96vw);
   max-height: 92vh;

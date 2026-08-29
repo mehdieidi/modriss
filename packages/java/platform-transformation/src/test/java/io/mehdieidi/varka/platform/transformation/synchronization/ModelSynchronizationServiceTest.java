@@ -3,6 +3,7 @@ package io.mehdieidi.varka.platform.transformation.synchronization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -10,6 +11,7 @@ import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.compare.utils.UseIdentifiers;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
@@ -96,6 +98,32 @@ class ModelSynchronizationServiceTest {
   void scenario4PreservesManualRefinement() {
     var result = merge(model(512, "A"), model(1024, "A"), model(512, "A"));
     assertEquals(1024, value(result.mergedWorking(), "n1", "memory"));
+    assertTrue(result.conflicts().isEmpty());
+  }
+
+  @Test
+  void legacyIdentityMigrationMatchesGeneratedObjectsWhoseIdsPredateStableGeneration()
+      throws Exception {
+    Resource base = model(512, "A");
+    Resource local = load(bytes(base), "legacy-local");
+    Resource incoming = load(bytes(base), "legacy-incoming");
+    set(base, "n1", "generatedFrom", "source-workflow");
+    set(local, "n1", "generatedFrom", "source-workflow");
+    set(incoming, "n1", "generatedFrom", "source-workflow");
+    set(base, "n1", "id", "legacy-generated-id");
+    set(local, "n1", "id", "legacy-generated-id");
+    set(incoming, "n1", "id", "stable-generated-id");
+    set(local, "legacy-generated-id", "memory", 1024);
+    set(incoming, "stable-generated-id", "description", "B");
+
+    ModelSynchronizationService migrationMerger =
+        new ModelSynchronizationService(
+            new ObjectMapper(), new SemanticMergePolicy(), UseIdentifiers.NEVER);
+    var result =
+        migrationMerger.synchronize(base, local, incoming, TransformationDirection.PIM_TO_AWS_PSM);
+
+    assertEquals(1024, value(result.mergedWorking(), "legacy-generated-id", "memory"));
+    assertEquals("B", value(result.mergedWorking(), "legacy-generated-id", "description"));
     assertTrue(result.conflicts().isEmpty());
   }
 
@@ -284,6 +312,53 @@ class ModelSynchronizationServiceTest {
   }
 
   @Test
+  void acceptingGeneratedDeletionRemovesTheEntireGeneratedIamLikeSubtree() throws Exception {
+    Resource base = model(512, "A");
+    set(base, "n1", "generatedFrom", "workflow-source");
+    Resource local = load(bytes(base), "iam-local");
+    set(local, "n1", "description", "manual workflow role refinement");
+    // This role represents a sibling resource retained by an earlier KEEP_USER decision. It is
+    // absent from the new baseline and fresh generation, but still carries its generator source.
+    EObject role = addNode(local, "iam-role", "Workflow execution role", 0, "generated role");
+    role.eSet(feature("generatedFrom"), "workflow-source");
+    EObject inlinePolicy = addChild(local, "iam-role", "inline-policy", "Event invoke");
+    inlinePolicy.eSet(feature("generatedFrom"), "workflow-source");
+    EObject policyDocument = addChild(local, "inline-policy", "policy-document", "Policy document");
+    policyDocument.eSet(feature("generatedFrom"), "workflow-source");
+    EObject statement = addChild(local, "policy-document", "statement", "Allow StartExecution");
+    statement.eSet(feature("generatedFrom"), "workflow-source");
+    EObject eventTarget = addNode(local, "event-target", "Event target", 0, "generated support");
+    eventTarget.eSet(feature("generatedFrom"), "workflow-source");
+    eventTarget.eSet(peer, role);
+    Resource incoming = emptyModel();
+    byte[] rawBase = bytes(base);
+    byte[] rawLocal = bytes(local);
+    byte[] rawIncoming = bytes(incoming);
+
+    var pending =
+        service.synchronize(base, local, incoming, TransformationDirection.PIM_TO_AWS_PSM);
+    assertEquals(1, pending.conflicts().size());
+    String conflictId = pending.conflicts().get(0).conflictId();
+
+    var resolved =
+        service.synchronize(
+            load(rawBase, "iam-resolve-base"),
+            load(rawLocal, "iam-resolve-local"),
+            load(rawIncoming, "iam-resolve-incoming"),
+            TransformationDirection.PIM_TO_AWS_PSM,
+            Map.of(conflictId, ConflictResolution.TAKE_GENERATED));
+
+    assertTrue(resolved.conflicts().isEmpty());
+    assertNull(find(resolved.mergedWorking(), "n1"));
+    assertNull(find(resolved.mergedWorking(), "iam-role"));
+    assertNull(find(resolved.mergedWorking(), "inline-policy"));
+    assertNull(find(resolved.mergedWorking(), "policy-document"));
+    assertNull(find(resolved.mergedWorking(), "statement"));
+    EObject remainingEventTarget = find(resolved.mergedWorking(), "event-target");
+    assertTrue(remainingEventTarget == null || remainingEventTarget.eGet(peer) == null);
+  }
+
+  @Test
   void keepingUserVersionOfDeletedContainerKeepsItsCompleteLocalSubtree() throws Exception {
     Resource base = modelWithChild("generated-child");
     Resource local = modelWithChild("generated-child");
@@ -321,6 +396,74 @@ class ModelSynchronizationServiceTest {
     assertEquals("generated-child", value(kept.mergedWorking(), "child", "name"));
     assertEquals("n1", id((EObject) find(kept.mergedWorking(), "child").eGet(peer)));
     assertEquals("n1", id((EObject) find(kept.mergedWorking(), "membership").eGet(peer)));
+
+    // The raw baseline advances without the retained workflow. A later, unrelated generated
+    // deletion must still apply; KEEP_USER must not make the model root/reference graph sticky.
+    Resource nextBase = emptyModel();
+    addNode(nextBase, "obsolete", "Obsolete generated resource", 1, "old");
+    Resource nextWorking = load(kept.mergedWorkingXmi(), "next-working");
+    addNode(nextWorking, "obsolete", "Obsolete generated resource", 1, "old");
+    var next = merge(nextBase, nextWorking, emptyModel());
+    assertNull(find(next.mergedWorking(), "obsolete"));
+    assertNotNull(find(next.mergedWorking(), "n1"));
+    assertTrue(next.conflicts().isEmpty());
+  }
+
+  @Test
+  void reportsOneReadableConflictForADeletedGeneratedSubtree() {
+    Resource base = modelWithChild("generated-child");
+    Resource local = modelWithChild("generated-child");
+    set(local, "n1", "description", "manual workflow refinement");
+    for (int index = 0; index < 24; index++) {
+      addChild(base, "n1", "child-" + index, "Generated support " + index);
+      addChild(local, "n1", "child-" + index, "Generated support " + index);
+    }
+
+    var pending = merge(base, local, emptyModel());
+
+    assertEquals(1, pending.conflicts().size());
+    var conflict = pending.conflicts().get(0);
+    assertEquals("generated element", conflict.featureName());
+    assertEquals("DELETE", conflict.differenceKind());
+    assertTrue(conflict.description().contains("upstream source deleted"));
+    assertEquals("Function", conflict.workingValue().path("name").asText());
+    assertEquals("Node", conflict.workingValue().path("type").asText());
+    assertTrue(conflict.generatedValue().isNull());
+  }
+
+  @Test
+  void resolvesAConflictingMoveWhenTheLocalParentWasAddedOnBothSides() throws Exception {
+    Resource base = model(512, "A");
+    addChild(base, "n1", "statement", "Assume role");
+    Resource local = loadUnchecked(bytes(base), "move-local");
+    Resource incoming = loadUnchecked(bytes(base), "move-incoming");
+    EObject localPolicy = addNode(local, "policy", "Policy document", 0, "local container");
+    addNode(incoming, "policy", "Policy document", 0, "generated container");
+    EObject incomingPolicy = addNode(incoming, "generated-policy", "Generated policy", 0, "target");
+    moveChild(local, "n1", localPolicy, "statement");
+    moveChild(incoming, "n1", incomingPolicy, "statement");
+    byte[] rawBase = bytes(base);
+    byte[] rawLocal = bytes(local);
+    byte[] rawIncoming = bytes(incoming);
+
+    var pending =
+        service.synchronize(base, local, incoming, TransformationDirection.PIM_TO_AWS_PSM);
+    assertFalse(pending.conflicts().isEmpty());
+    Map<String, ConflictResolution> decisions = new java.util.LinkedHashMap<>();
+    pending
+        .conflicts()
+        .forEach(
+            conflict -> decisions.put(conflict.conflictId(), ConflictResolution.TAKE_GENERATED));
+    var resolved =
+        service.synchronize(
+            load(rawBase, "move-resolve-base"),
+            load(rawLocal, "move-resolve-local"),
+            load(rawIncoming, "move-resolve-incoming"),
+            TransformationDirection.PIM_TO_AWS_PSM,
+            decisions);
+
+    assertTrue(resolved.conflicts().isEmpty());
+    assertEquals("generated-policy", id(find(resolved.mergedWorking(), "statement").eContainer()));
   }
 
   @Test
@@ -426,6 +569,16 @@ class ModelSynchronizationServiceTest {
     List<EObject> values = (List<EObject>) find(resource, parentId).eGet(childNodes);
     values.add(child);
     return child;
+  }
+
+  private void moveChild(Resource resource, String oldParentId, EObject newParent, String childId) {
+    @SuppressWarnings("unchecked")
+    List<EObject> oldParent = (List<EObject>) find(resource, oldParentId).eGet(childNodes);
+    EObject child = find(resource, childId);
+    oldParent.remove(child);
+    @SuppressWarnings("unchecked")
+    List<EObject> newChildren = (List<EObject>) newParent.eGet(childNodes);
+    newChildren.add(child);
   }
 
   private Resource resource(String name) {

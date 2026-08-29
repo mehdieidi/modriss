@@ -1421,6 +1421,55 @@
       </div>
 
       <div
+        aria-labelledby="synchronizationConflictTitle"
+        aria-modal="true"
+        class="modal-overlay hidden"
+        id="synchronizationConflictOverlay"
+        role="dialog"
+      >
+        <div class="modal-dialog synchronization-conflict-dialog">
+          <div class="synchronization-conflict-header">
+            <div>
+              <p class="synchronization-conflict-eyebrow" id="synchronizationConflictProgress"></p>
+              <h3 class="modal-title" id="synchronizationConflictTitle">Resolve model conflict</h3>
+            </div>
+            <button
+              aria-label="Cancel conflict resolution"
+              class="btn btn-icon-only btn-secondary"
+              id="synchronizationConflictCloseBtn"
+              type="button"
+            >
+              ×
+            </button>
+          </div>
+          <p class="modal-subtitle" id="synchronizationConflictSummary"></p>
+          <div class="synchronization-conflict-meta" id="synchronizationConflictMeta"></div>
+          <div class="synchronization-conflict-diff" id="synchronizationConflictDiff"></div>
+          <p class="synchronization-conflict-help">
+            Choose which value should be kept for this change. You can move between conflicts and
+            revise a choice before applying all decisions. After choosing a value, you can apply
+            that choice to every conflict and still override individual choices as needed.
+          </p>
+          <div class="synchronization-conflict-choice" id="synchronizationConflictChoices"></div>
+          <div
+            class="synchronization-conflict-bulk-action"
+            id="synchronizationConflictBulkAction"
+          ></div>
+          <div class="modal-actions synchronization-conflict-actions">
+            <button class="btn btn-secondary" id="synchronizationConflictPreviousBtn" type="button">
+              Previous
+            </button>
+            <button class="btn btn-secondary" id="synchronizationConflictNextBtn" type="button">
+              Next
+            </button>
+            <button class="btn btn-primary" id="synchronizationConflictApplyBtn" type="button">
+              Apply decisions
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div
         aria-labelledby="unsavedModelTitle"
         aria-modal="true"
         class="modal-overlay hidden"

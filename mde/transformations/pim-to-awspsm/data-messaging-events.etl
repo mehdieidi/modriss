@@ -769,7 +769,9 @@ operation createUnresolvedScheduleTarget(s) {
   t.name = s.name + " unresolved target";
   t.targetId = pascalCase(firstText(s.name, s.id)) + "Target";
   t.targetKind = AWSPSMENUMS!EventBridgeTargetKind#OTHER_AWS_RESOURCE;
-  t.arnExpression = "";
+  // Keep the generated model structurally resolvable while preserving the
+  // explicit review marker that the schedule still needs a concrete target.
+  t.arnExpression = unresolvedTargetArn(s);
   return t;
 }
 
