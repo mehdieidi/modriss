@@ -7,9 +7,12 @@ import io.mehdieidi.varka.platform.model.application.ModelService;
 import io.mehdieidi.varka.platform.model.domain.ModelRecord;
 import io.mehdieidi.varka.platform.modeling.xmi.XmiModelImportService;
 import io.mehdieidi.varka.platform.storage.api.PlatformStore;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
@@ -23,8 +26,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantLock;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.compare.utils.UseIdentifiers;
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EReference;
+import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.emf.ecore.xmi.XMLResource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
@@ -103,7 +111,14 @@ public final class TransformationSynchronizationCoordinator {
         return new CoordinatedResult(
             legacy, emptyResult(SynchronizationStatus.BOOTSTRAP_REQUIRED, legacy.id(), List.of()));
       }
-      requireValid(targetLevel, rawGeneratedXmi, rawGenerated);
+      Resource generatedResource =
+          loadSynchronizationResource(targetLevel, rawGeneratedXmi, "generated-baseline");
+      repairDuplicateIds(generatedResource);
+      canonicalizeResource(generatedResource, targetName, rootTraceName(source.name(), targetName));
+      byte[] canonicalGeneratedXmi = saveResource(generatedResource);
+      ObjectNode canonicalGenerated =
+          (ObjectNode) xmi.importGeneratedModel(targetLevel, canonicalGeneratedXmi);
+      requireValid(targetLevel, canonicalGeneratedXmi, canonicalGenerated);
       ModelRecord created =
           store.inTransaction(
               () -> {
@@ -113,10 +128,16 @@ public final class TransformationSynchronizationCoordinator {
                         targetLevel,
                         source.projectId(),
                         targetName,
-                        rawGenerated,
-                        rawGeneratedXmi);
+                        canonicalGenerated,
+                        canonicalGeneratedXmi);
                 baselines.save(
-                    newBaseline(source, direction, model.id(), 1, rawGenerated, rawGeneratedXmi));
+                    newBaseline(
+                        source,
+                        direction,
+                        model.id(),
+                        1,
+                        canonicalGenerated,
+                        canonicalGeneratedXmi));
                 return model;
               });
       return new CoordinatedResult(
@@ -124,16 +145,55 @@ public final class TransformationSynchronizationCoordinator {
     }
 
     ModelRecord working = models.get(user, targetLevel, baseline.targetModelId());
+    if (baseline.sourceRevision() == source.revision()
+        && baseline.sourceFingerprint().equals(fingerprint(source.modelJson()))) {
+      ModelRecord repaired =
+          restoreMissingGeneratedBacklog(user, targetLevel, working, rawGenerated);
+      return new CoordinatedResult(
+          repaired, emptyResult(SynchronizationStatus.APPLIED, repaired.id(), List.of()));
+    }
     byte[] workingXmi = xmi.exportModel(targetLevel, working.modelJson());
-    Resource baseResource = xmi.loadResource(targetLevel, baseline.rawGeneratedXmi(), "sync-base");
-    Resource workingResource = xmi.loadResource(targetLevel, workingXmi, "sync-working");
+    Resource baseResource =
+        loadSynchronizationResource(targetLevel, baseline.rawGeneratedXmi(), "sync-base");
+    Resource workingResource = loadSynchronizationResource(targetLevel, workingXmi, "sync-working");
     Resource incomingResource =
-        xmi.loadResource(targetLevel, rawGeneratedXmi, "sync-new-generated");
+        loadSynchronizationResource(targetLevel, rawGeneratedXmi, "sync-new-generated");
+    repairDuplicateIds(baseResource);
+    repairDuplicateIds(workingResource);
+    repairDuplicateIds(incomingResource);
+    // The generated root is a technical identity, but older persisted baselines and working
+    // models can contain different IDs for the same logical transformation result.  Align all
+    // three comparison participants before EMF Compare sees them; aligning only the working
+    // model still makes base -> incoming look like a root deletion on an otherwise unchanged run.
+    alignRootIdentifier(baseResource, incomingResource);
+    alignRootIdentifier(workingResource, incomingResource);
+    alignGeneratedTraceModelIdentifier(baseResource, incomingResource);
+    alignGeneratedTraceModelIdentifier(workingResource, incomingResource);
+    repairGeneratedTraceLinks(workingResource, incomingResource);
+    repairGeneratedSamGlobals(workingResource, incomingResource);
+    canonicalizeGeneratedMetadata(
+        baseResource, workingResource, incomingResource, targetName, source.name());
+    byte[] normalizedBaseXmi = saveResource(baseResource);
+    byte[] normalizedWorkingXmi = saveResource(workingResource);
+    byte[] normalizedIncomingXmi = saveResource(incomingResource);
+    // rawGenerated has already been imported and structurally validated by the transformation
+    // service.  Re-importing a merely metadata-normalized copy here can turn a valid one-root
+    // generated XMI into a rejected multi-root resource in EMF's serializer.  Keep the validated
+    // generated JSON for comparison/session presentation and only normalize the actual merged
+    // resource when it is going to be persisted.
+    ObjectNode normalizedGenerated = rawGenerated.deepCopy();
+    Resource mergeIncoming =
+        Arrays.equals(normalizedWorkingXmi, normalizedIncomingXmi)
+            ? workingResource
+            : incomingResource;
     ModelSynchronizationService.MergeOutcome merge =
-        mergerFor(baseResource, incomingResource, baseline.transformationFingerprint())
-            .synchronize(baseResource, workingResource, incomingResource, direction);
+        mergerFor(baseResource, mergeIncoming, baseline.transformationFingerprint())
+            .synchronize(baseResource, workingResource, mergeIncoming, direction);
+    // Always repair IDs on the serialized merge. Legacy IAM/security graphs can contain duplicate
+    // IDs even when their differences are intentionally ignored as generated metadata.
+    byte[] normalizedMergedXmi = normalizeXmi(targetLevel, merge.mergedWorkingXmi());
     ObjectNode mergedJson =
-        mergedJson(targetLevel, merge.mergedWorkingXmi(), working.modelJson(), rawGenerated);
+        mergedJson(targetLevel, normalizedMergedXmi, working.modelJson(), normalizedGenerated);
 
     if (!merge.conflicts().isEmpty()) {
       String sessionId = UUID.randomUUID().toString();
@@ -152,11 +212,11 @@ public final class TransformationSynchronizationCoordinator {
               baseline.transformationFingerprint(),
               Instant.now(),
               mergedJson,
-              baseline.rawGeneratedXmi(),
+              normalizedBaseXmi,
               workingXmi,
-              merge.mergedWorkingXmi(),
-              rawGenerated.deepCopy(),
-              rawGeneratedXmi,
+              normalizedMergedXmi,
+              normalizedGenerated.deepCopy(),
+              normalizedIncomingXmi,
               merge.conflicts(),
               Map.of());
       sessions.save(session);
@@ -165,7 +225,7 @@ public final class TransformationSynchronizationCoordinator {
           result(SynchronizationStatus.CONFLICTS, sessionId, working.id(), merge, List.of()));
     }
 
-    requireValid(targetLevel, merge.mergedWorkingXmi(), mergedJson);
+    requireValid(targetLevel, normalizedMergedXmi, mergedJson);
     ModelRecord updated =
         store.inTransaction(
             () -> {
@@ -183,8 +243,8 @@ public final class TransformationSynchronizationCoordinator {
                       direction,
                       working.id(),
                       baseline.baselineVersion() + 1,
-                      rawGenerated,
-                      rawGeneratedXmi));
+                      normalizedGenerated,
+                      normalizedIncomingXmi));
               return model;
             });
     return new CoordinatedResult(
@@ -290,9 +350,21 @@ public final class TransformationSynchronizationCoordinator {
       // Re-import the XMI so graph/index references are normalized instead of treating repeated
       // JSON references to one EObject as repeated contained objects during validation.
       mergedJson = (ObjectNode) xmi.importGeneratedModel(level, mergedXmi);
+      // The incoming XMI is authoritative when every conflict was resolved as TAKE_GENERATED.
+      // Do not run EMF Compare's filtered merger in this branch: containment/reference conflicts
+      // can make it attempt a child move before its generated parent, even though the requested
+      // result is simply the already complete generated resource.
       merge =
-          mergerFor(base, incoming, session.transformationFingerprint())
-              .synchronize(base, local, incoming, session.direction(), session.resolutions());
+          new ModelSynchronizationService.MergeOutcome(
+              incoming,
+              mergedXmi,
+              List.of(),
+              session.conflicts(),
+              0,
+              0,
+              0,
+              0,
+              0);
       requireValid(level, mergedXmi, mergedJson);
     } else {
       merge =
@@ -395,6 +467,273 @@ public final class TransformationSynchronizationCoordinator {
     return merged;
   }
 
+  private void canonicalizeGeneratedMetadata(
+      Resource base, Resource working, Resource incoming, String targetName, String sourceName) {
+    EObject workingRoot = root(working);
+    String canonicalRootName = stringFeature(workingRoot, "name");
+    if (canonicalRootName.isBlank()) {
+      canonicalRootName = targetName;
+    }
+    String canonicalTraceName = traceLinkName(working, sourceName, canonicalRootName);
+    canonicalizeResource(base, canonicalRootName, canonicalTraceName);
+    canonicalizeResource(working, canonicalRootName, canonicalTraceName);
+    canonicalizeResource(incoming, canonicalRootName, canonicalTraceName);
+  }
+
+  /**
+   * TraceModel.links is generated provenance, not an editable architecture collection. Older
+   * persisted PSMs can lose this container during conflict finalization; treating that loss as a
+   * user deletion creates one false MOVE conflict per trace link on the next generation. Restore
+   * the fresh generated links before the three-way comparison when the working trace model is
+   * generated and its link collection is missing or empty.
+   */
+  private void repairGeneratedTraceLinks(Resource working, Resource incoming) {
+    EObject incomingTraceModel = generatedTraceModel(incoming);
+    EObject workingTraceModel = generatedTraceModel(working);
+    if (incomingTraceModel == null || workingTraceModel == null) return;
+    EStructuralFeature incomingLinksFeature =
+        incomingTraceModel.eClass().getEStructuralFeature("links");
+    EStructuralFeature workingLinksFeature =
+        workingTraceModel.eClass().getEStructuralFeature("links");
+    if (!(incomingLinksFeature instanceof EReference incomingLinks)
+        || !(workingLinksFeature instanceof EReference workingLinks)
+        || !incomingLinks.isContainment()
+        || !workingLinks.isContainment()) return;
+    Object incomingValue = incomingTraceModel.eGet(incomingLinks, false);
+    Object workingValue = workingTraceModel.eGet(workingLinks, false);
+    if (!(incomingValue instanceof List<?> generatedLinks)
+        || !(workingValue instanceof List<?> existingLinks)
+        || generatedLinks.isEmpty()
+        || !existingLinks.isEmpty()) return;
+    @SuppressWarnings("unchecked")
+    List<EObject> writableLinks = (List<EObject>) workingValue;
+    for (Object generatedLink : generatedLinks) {
+      if (generatedLink instanceof EObject object) {
+        writableLinks.add(EcoreUtil.copy(object));
+      }
+    }
+  }
+
+  private EObject generatedTraceModel(Resource resource) {
+    for (EObject object : allObjects(resource)) {
+      if ("TraceModel".equals(object.eClass().getName())
+          && "true".equalsIgnoreCase(stringFeature(object, "generatedByTransformation"))) {
+        return object;
+      }
+    }
+    return null;
+  }
+
+  private void repairGeneratedSamGlobals(Resource working, Resource incoming) {
+    EObject workingGlobals = generatedObject(working, "SamGlobals");
+    EObject incomingGlobals = generatedObject(incoming, "SamGlobals");
+    if (workingGlobals == null || incomingGlobals == null) return;
+    for (EStructuralFeature feature : workingGlobals.eClass().getEAllContainments()) {
+      EStructuralFeature incomingFeature =
+          incomingGlobals.eClass().getEStructuralFeature(feature.getName());
+      if (incomingFeature == null) continue;
+      Object generatedValue = incomingGlobals.eGet(incomingFeature, false);
+      if (feature.isMany() && generatedValue instanceof List<?> values) {
+        @SuppressWarnings("unchecked")
+        List<EObject> target = (List<EObject>) workingGlobals.eGet(feature, false);
+        target.clear();
+        for (Object value : values) {
+          if (value instanceof EObject object) target.add(EcoreUtil.copy(object));
+        }
+      } else if (generatedValue instanceof EObject object) {
+        workingGlobals.eSet(feature, EcoreUtil.copy(object));
+      } else {
+        workingGlobals.eUnset(feature);
+      }
+    }
+  }
+
+  private EObject generatedObject(Resource resource, String eClassName) {
+    for (EObject object : allObjects(resource)) {
+      if (eClassName.equals(object.eClass().getName())
+          && "true".equalsIgnoreCase(stringFeature(object, "generatedByTransformation"))) {
+        return object;
+      }
+    }
+    return null;
+  }
+
+  private void alignGeneratedTraceModelIdentifier(Resource resource, Resource generated) {
+    EObject target = generatedTraceModel(resource);
+    EObject source = generatedTraceModel(generated);
+    if (target == null || source == null) return;
+    String generatedId = objectId(source);
+    if (generatedId == null || generatedId.isBlank()) return;
+    setStringFeature(target, "id", generatedId);
+    if (resource instanceof XMLResource xmlResource) {
+      xmlResource.setID(target, generatedId);
+    }
+  }
+
+  private void repairDuplicateIds(Resource resource) {
+    Map<String, EObject> seen = new HashMap<>();
+    List<EObject> objects = new java.util.ArrayList<>();
+    EObject root = root(resource);
+    if (root != null) {
+      objects.add(root);
+      resource.getAllContents().forEachRemaining(objects::add);
+    }
+    for (EObject object : objects) {
+      String modelId = stringFeature(object, "id");
+      String xmiId = EcoreUtil.getID(object);
+      String id = xmiId == null || xmiId.isBlank() ? modelId : xmiId;
+      if (id.isBlank()) {
+        continue;
+      }
+      boolean duplicate = seen.containsKey(id) || (!modelId.isBlank() && seen.containsKey(modelId));
+      if (!duplicate) {
+        seen.put(id, object);
+        if (!modelId.isBlank()) {
+          seen.put(modelId, object);
+        }
+        continue;
+      }
+      String candidate =
+          UUID.nameUUIDFromBytes(
+                  (id + "\u0000" + object.eClass().getName() + "\u0000" + containmentPath(object))
+                      .getBytes(StandardCharsets.UTF_8))
+              .toString();
+      int suffix = 2;
+      while (seen.containsKey(candidate)) {
+        candidate = id + "-duplicate-" + suffix++;
+      }
+      setStringFeature(object, "id", candidate);
+      if (resource instanceof XMLResource xmlResource) {
+        xmlResource.setID(object, candidate);
+      }
+      seen.putIfAbsent(id, seen.get(id));
+      seen.put(candidate, object);
+    }
+  }
+
+  private String containmentPath(EObject object) {
+    if (object.eContainer() == null) {
+      return "/root";
+    }
+    EObject parent = object.eContainer();
+    EStructuralFeature feature = object.eContainingFeature();
+    int index = 0;
+    if (feature != null && feature.isMany()) {
+      Object value = parent.eGet(feature);
+      if (value instanceof List<?> values) {
+        index = values.indexOf(object);
+      }
+    }
+    return containmentPath(parent)
+        + "/"
+        + (feature == null ? "unknown" : feature.getName())
+        + "["
+        + index
+        + "]";
+  }
+
+  private void canonicalizeResource(Resource resource, String rootName, String traceName) {
+    EObject root = root(resource);
+    if (root == null) {
+      return;
+    }
+    setStringFeature(root, "name", rootName);
+    TreeIterator<EObject> iterator = resource.getAllContents();
+    while (iterator.hasNext()) {
+      EObject object = iterator.next();
+      if ("TraceLink".equals(object.eClass().getName())
+          && "PIMModel2AwsPsmModel".equals(stringFeature(object, "transformationRule"))) {
+        setStringFeature(object, "name", traceName);
+      }
+    }
+  }
+
+  private void alignRootIdentifier(Resource resource, Resource generated) {
+    EObject resourceRoot = root(resource);
+    EObject generatedRoot = root(generated);
+    if (resourceRoot == null || generatedRoot == null) return;
+    String generatedId = EcoreUtil.getID(generatedRoot);
+    if (generatedId == null || generatedId.isBlank()) {
+      generatedId = stringFeature(generatedRoot, "id");
+    }
+    if (generatedId == null || generatedId.isBlank()) return;
+    setStringFeature(resourceRoot, "id", generatedId);
+    if (resource instanceof XMLResource xmlResource) {
+      xmlResource.setID(resourceRoot, generatedId);
+    }
+  }
+
+  private String traceLinkName(Resource resource, String sourceName, String rootName) {
+    TreeIterator<EObject> iterator = resource.getAllContents();
+    while (iterator.hasNext()) {
+      EObject object = iterator.next();
+      if ("TraceLink".equals(object.eClass().getName())
+          && "PIMModel2AwsPsmModel".equals(stringFeature(object, "transformationRule"))) {
+        String existing = stringFeature(object, "name");
+        if (!existing.isBlank()) {
+          return existing;
+        }
+      }
+    }
+    return "PIMModel2AwsPsmModel:" + sourceName + "->" + rootName;
+  }
+
+  private String rootTraceName(String sourceName, String targetName) {
+    return "PIMModel2AwsPsmModel:" + sourceName + "->" + targetName;
+  }
+
+  private EObject root(Resource resource) {
+    return resource == null || resource.getContents().isEmpty()
+        ? null
+        : resource.getContents().get(0);
+  }
+
+  private String stringFeature(EObject object, String featureName) {
+    if (object == null) {
+      return "";
+    }
+    EStructuralFeature feature = object.eClass().getEStructuralFeature(featureName);
+    Object value = feature == null ? null : object.eGet(feature);
+    return value == null ? "" : value.toString();
+  }
+
+  private void setStringFeature(EObject object, String featureName, String value) {
+    if (object == null) {
+      return;
+    }
+    EStructuralFeature feature = object.eClass().getEStructuralFeature(featureName);
+    if (feature instanceof EAttribute && !feature.isMany()) {
+      object.eSet(feature, value);
+    }
+  }
+
+  private byte[] normalizeXmi(ModelLevel level, byte[] bytes) {
+    Resource resource = loadSynchronizationResource(level, bytes, "merged-normalization");
+    repairDuplicateIds(resource);
+    return saveResource(resource);
+  }
+
+  private Resource loadSynchronizationResource(ModelLevel level, byte[] bytes, String purpose) {
+    try {
+      return xmi.loadResource(level, bytes, purpose);
+    } catch (PlatformException ex) {
+      throw new PlatformException(
+          ex.status(),
+          "Synchronization XMI stage '" + purpose + "' failed: " + ex.getMessage(),
+          ex);
+    }
+  }
+
+  private byte[] saveResource(Resource resource) {
+    try {
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      resource.save(output, Map.of());
+      return output.toByteArray();
+    } catch (Exception ex) {
+      throw new PlatformException(500, "Could not serialize canonical generated model.", ex);
+    }
+  }
+
   private void copyPlatformMetadata(JsonNode source, ObjectNode target) {
     if (source == null || !source.isObject()) {
       return;
@@ -436,6 +775,22 @@ public final class TransformationSynchronizationCoordinator {
 
     merged.set("manualBacklog", backlog);
     merged.withObject("graph").set("manualBacklog", backlog.deepCopy());
+  }
+
+  private ModelRecord restoreMissingGeneratedBacklog(
+      UserRecord user, ModelLevel level, ModelRecord working, JsonNode generated) {
+    JsonNode generatedBacklog = generated == null ? null : generated.get("manualBacklog");
+    JsonNode currentBacklog = working.modelJson().get("manualBacklog");
+    if (generatedBacklog == null
+        || !generatedBacklog.isArray()
+        || generatedBacklog.isEmpty()
+        || (currentBacklog != null && currentBacklog.isArray() && !currentBacklog.isEmpty())) {
+      return working;
+    }
+    ObjectNode repaired = (ObjectNode) working.modelJson().deepCopy();
+    repaired.set("manualBacklog", generatedBacklog.deepCopy());
+    repaired.withObject("graph").set("manualBacklog", generatedBacklog.deepCopy());
+    return models.update(user, level, working.id(), working.name(), repaired, working.revision());
   }
 
   private Map<String, JsonNode> backlogById(JsonNode model) {
@@ -507,8 +862,7 @@ public final class TransformationSynchronizationCoordinator {
   }
 
   private void requireValid(ModelLevel level, byte[] modelXmi, ObjectNode modelJson) {
-    ModelService.ValidationResult validation =
-        models.validateGeneratedXmi(level, modelXmi, modelJson);
+    ModelService.ValidationResult validation = models.validateGeneratedXmi(level, modelXmi);
     if (!validation.valid()) {
       throw new TransformationValidationException(validation.issues());
     }
@@ -544,10 +898,39 @@ public final class TransformationSynchronizationCoordinator {
     // making aggregate XMI ID overlap an unreliable signal.  The generated-source/EClass groups
     // directly test the identity invariant instead: old ETL output has shared provenance but
     // different object IDs, while deterministic output retains the IDs for existing objects.
-    return sharesGeneratedSources(base, incoming)
-            && (overlap < 0.60d || hasIncompatibleGeneratedIdentities(base, incoming))
+    return hasIncompatibleGeneratedIdentities(base, incoming)
+            || hasIncompatibleTraceLinkIdentities(base, incoming)
+            || (sharesGeneratedSources(base, incoming) && overlap < 0.60d)
         ? legacyIdentityMigrationMerger
         : merger;
+  }
+
+  private boolean hasIncompatibleTraceLinkIdentities(Resource base, Resource incoming) {
+    Map<String, Set<String>> baseLinks = traceLinkIdentities(base);
+    Map<String, Set<String>> incomingLinks = traceLinkIdentities(incoming);
+    long comparable = 0;
+    long shared = 0;
+    for (Map.Entry<String, Set<String>> entry : baseLinks.entrySet()) {
+      Set<String> incomingIds = incomingLinks.get(entry.getKey());
+      if (incomingIds == null || incomingIds.isEmpty()) continue;
+      comparable += Math.min(entry.getValue().size(), incomingIds.size());
+      Set<String> intersection = new HashSet<>(entry.getValue());
+      intersection.retainAll(incomingIds);
+      shared += intersection.size();
+    }
+    return comparable >= 20 && ((double) shared / comparable) < 0.80d;
+  }
+
+  private Map<String, Set<String>> traceLinkIdentities(Resource resource) {
+    Map<String, Set<String>> result = new HashMap<>();
+    for (EObject object : allObjects(resource)) {
+      if (!"TraceLink".equals(object.eClass().getName())) continue;
+      String name = stringFeature(object, "name");
+      String objectId = objectId(object);
+      if (name.isBlank() || objectId == null || objectId.isBlank()) continue;
+      result.computeIfAbsent(name, ignored -> new HashSet<>()).add(objectId);
+    }
+    return result;
   }
 
   private boolean hasIncompatibleGeneratedIdentities(Resource base, Resource incoming) {
@@ -592,6 +975,17 @@ public final class TransformationSynchronizationCoordinator {
     if (feature == null) return null;
     Object value = object.eGet(feature, false);
     return value == null || String.valueOf(value).isBlank() ? null : String.valueOf(value);
+  }
+
+  private List<EObject> allObjects(Resource resource) {
+    List<EObject> objects = new java.util.ArrayList<>();
+    for (EObject root : resource.getContents()) {
+      objects.add(root);
+      for (TreeIterator<EObject> iterator = root.eAllContents(); iterator.hasNext(); ) {
+        objects.add(iterator.next());
+      }
+    }
+    return objects;
   }
 
   private String objectId(EObject object) {

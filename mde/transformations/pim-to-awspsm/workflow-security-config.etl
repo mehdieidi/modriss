@@ -3,6 +3,8 @@ rule Workflow2StepFunctionStateMachine
   transform w : WORKFLOW!Workflow
   to sm : AWSPSMWORKFLOW!StepFunctionStateMachine {
 
+  guard : w.steps.notEmpty()
+
   copyAwsResource(w, sm, "StateMachine", "AWS::Serverless::StateMachine");
   sm.id = idFor("state_machine", w);
   sm.stateMachineName = sm.physicalName;
@@ -33,6 +35,28 @@ rule Workflow2StepFunctionStateMachine
     sm.metadata.add(nativeText("CompensationRequired", "true", KERNEL!StructuredFormat#TEXT, true, false));
   }
   createTrace(w, sm, "Workflow2StepFunctionStateMachine", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+/** Resolves workflow task references after all PIM resources have been transformed. */
+operation resolveWorkflowTaskTargets() {
+  for (w in WORKFLOW!Workflow.all) {
+    var sm = awsEquivalent(w);
+    if (sm.isUndefined() or sm.aslDocument.isUndefined()) {
+      continue;
+    }
+    for (ws in w.steps) {
+      var outState = sm.aslDocument.states.selectOne(s | s.name = ws.name);
+      if (outState.isUndefined() or not outState.isKindOf(AWSPSMWORKFLOW!AslTaskState)) {
+        continue;
+      }
+      if (ws.invokesFunction.isDefined()) {
+        outState.resource = "arn:aws:states:::lambda:invoke";
+      }
+      else if (ws.nestedWorkflow.isDefined()) {
+        outState.resource = "arn:aws:states:::states:startExecution.sync";
+      }
+    }
+  }
 }
 
 /** Transforms Identity Provider elements into Cognito User Pool elements. */
@@ -241,12 +265,10 @@ operation createAslState(w, ws) {
   st.outputPath = aslJsonPathOrRoot(ws.outputMapping);
   st.end = ws.isKindOf(PIM!SuccessEndStep) or ws.isKindOf(PIM!FailureEndStep);
   if (st.isKindOf(AWSPSMWORKFLOW!AslTaskState) and ws.invokesFunction.isDefined()) {
-    st.invokedResource = awsEquivalent(ws.invokesFunction);
     st.resource = "arn:aws:states:::lambda:invoke";
   }
   else {
     if (st.isKindOf(AWSPSMWORKFLOW!AslTaskState) and ws.nestedWorkflow.isDefined()) {
-      st.invokedResource = awsEquivalent(ws.nestedWorkflow);
       st.resource = "arn:aws:states:::states:startExecution.sync";
     }
     else {

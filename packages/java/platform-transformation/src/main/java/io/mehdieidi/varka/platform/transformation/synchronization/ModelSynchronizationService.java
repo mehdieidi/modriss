@@ -32,6 +32,7 @@ import org.eclipse.emf.compare.merge.IMerger;
 import org.eclipse.emf.compare.scope.DefaultComparisonScope;
 import org.eclipse.emf.compare.scope.IComparisonScope;
 import org.eclipse.emf.compare.utils.UseIdentifiers;
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
@@ -218,7 +219,8 @@ public final class ModelSynchronizationService {
       IBatchMerger merger = new BatchMerger(mergerRegistry, allowed);
       merger.copyAllRightToLeft(mergeable, new BasicMonitor());
     }
-    generatedContainmentMoves.forEach(change -> applyGeneratedContainmentMove(comparison, change));
+    generatedContainmentMoves.forEach(
+        change -> applyGeneratedContainmentMove(comparison, working, change));
     // A resolved conflict can contain a generated required reference alongside the containment
     // move. EMF Compare may mark that sibling handled with the move, leaving the target model
     // structurally invalid. Restore only missing required references from the generated model;
@@ -341,6 +343,7 @@ public final class ModelSynchronizationService {
       EObject localOwner = localById.get(id(generatedOwner));
       if (localOwner == null) continue;
       restoreMissingAssumeRolePolicy(localOwner, generatedOwner);
+      restoreMissingStepFunctionDefinition(localOwner, generatedOwner);
       for (EReference reference : generatedOwner.eClass().getEAllReferences()) {
         if (!reference.isContainment()
             || (reference.getLowerBound() < 1 && !"assumeRolePolicy".equals(reference.getName())))
@@ -362,6 +365,44 @@ public final class ModelSynchronizationService {
         }
       }
     }
+  }
+
+  /**
+   * A StepFunctionStateMachine's definition is optional in Ecore because AWS also permits URI and
+   * string definitions. The PIM-to-PSM ETL currently emits an AslDocument, however, and EMF Compare
+   * can filter its optional containment when reconciling an older working graph. Restore that
+   * generated definition only when the local state machine has no definition source at all; an
+   * existing URI, string, or ASL document remains untouched.
+   */
+  private void restoreMissingStepFunctionDefinition(EObject localOwner, EObject generatedOwner) {
+    if (!"StepFunctionStateMachine".equals(localOwner.eClass().getName())
+        || !localOwner.eClass().equals(generatedOwner.eClass())) {
+      return;
+    }
+    EStructuralFeature localUri = localOwner.eClass().getEStructuralFeature("definitionUri");
+    EStructuralFeature localString = localOwner.eClass().getEStructuralFeature("definitionString");
+    EStructuralFeature localAsl = localOwner.eClass().getEStructuralFeature("aslDocument");
+    EStructuralFeature generatedAsl = generatedOwner.eClass().getEStructuralFeature("aslDocument");
+    if (!(localAsl instanceof EReference localAslReference)
+        || !(generatedAsl instanceof EReference generatedAslReference)
+        || !generatedAslReference.isContainment()
+        || localOwner.eGet(localAslReference, false) != null
+        || hasText(localOwner, localUri)
+        || hasText(localOwner, localString)) {
+      return;
+    }
+    Object generatedDefinition = generatedOwner.eGet(generatedAslReference, false);
+    if (generatedDefinition instanceof EObject definition) {
+      localOwner.eSet(localAslReference, EcoreUtil.copy(definition));
+    }
+  }
+
+  private boolean hasText(EObject object, EStructuralFeature feature) {
+    if (!(feature instanceof EAttribute) || feature.isMany()) {
+      return false;
+    }
+    Object value = object.eGet(feature, false);
+    return value != null && !String.valueOf(value).trim().isEmpty();
   }
 
   private void restoreMissingAssumeRolePolicy(EObject localOwner, EObject generatedOwner) {
@@ -464,15 +505,30 @@ public final class ModelSynchronizationService {
       return false;
     }
     Match parentMatch = change.getMatch();
-    return parentMatch != null && parentMatch.getLeft() != null && parentMatch.getOrigin() == null;
+    // A generated parent can be new in the right model (left == null), while an existing child
+    // is moved beneath it.  EMF Compare emits the child move before the parent ADD in this shape,
+    // which makes BatchMerger fail with "parent hasn't been merged yet".  Both directions are
+    // unsafe and must be applied after ordinary additions have been merged.
+    return parentMatch != null
+        && parentMatch.getOrigin() == null
+        && (parentMatch.getLeft() != null || parentMatch.getRight() != null);
   }
 
   /** Applies an explicitly selected generated containment location without ConflictMerger. */
-  private void applyGeneratedContainmentMove(Comparison comparison, ReferenceChange change) {
+  private void applyGeneratedContainmentMove(
+      Comparison comparison, Resource working, ReferenceChange change) {
     Match valueMatch = matchFor(comparison, change.getValue());
     EObject localChild = valueMatch == null ? null : valueMatch.getLeft();
     Match parentMatch = change.getMatch();
     EObject localParent = parentMatch == null ? null : parentMatch.getLeft();
+    if (localParent == null && parentMatch != null && parentMatch.getRight() != null) {
+      String generatedParentId = id(parentMatch.getRight());
+      localParent =
+          allObjects(working).stream()
+              .filter(candidate -> generatedParentId.equals(id(candidate)))
+              .findFirst()
+              .orElse(null);
+    }
     EReference reference = change.getReference();
     if (localChild == null) {
       return;
@@ -938,12 +994,63 @@ public final class ModelSynchronizationService {
 
   private byte[] save(Resource resource) {
     try {
+      // A model resource has exactly one document root.  ConflictMerger can temporarily leave a
+      // duplicate root attached when a root-level generated change is filtered out.  Serializing
+      // that transient state produces XMI that cannot be loaded by the platform again.  The
+      // working root is authoritative; discard only additional top-level roots before writing.
+      List<EObject> roots =
+          resource.getContents().stream()
+              .filter(EObject.class::isInstance)
+              .map(EObject.class::cast)
+              .toList();
+      if (roots.size() > 1) {
+        for (EObject duplicateRoot : roots.subList(1, roots.size())) {
+          mergeRootContents(duplicateRoot, roots.get(0));
+        }
+        resource.getContents().removeAll(roots.subList(1, roots.size()));
+      }
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       resource.save(output, Map.of());
       return output.toByteArray();
     } catch (Exception ex) {
-      throw new IllegalStateException("Could not serialize the merged EMF working resource.", ex);
+      throw new IllegalStateException(
+          "Could not serialize the merged EMF working resource: " + ex.getMessage(), ex);
     }
+  }
+
+  private void mergeRootContents(EObject source, EObject target) {
+    for (EReference containment : source.eClass().getEAllContainments()) {
+      Object sourceValue = source.eGet(containment, false);
+      Object targetValue = target.eGet(containment, false);
+      if (containment.isMany()) {
+        if (!(sourceValue instanceof List<?> sourceChildren)
+            || !(targetValue instanceof List<?> targetChildren)) {
+          continue;
+        }
+        @SuppressWarnings("unchecked")
+        List<EObject> writableTarget = (List<EObject>) targetChildren;
+        for (Object value : sourceChildren) {
+          if (!(value instanceof EObject sourceChild)) continue;
+          EObject targetChild = findContainedById(writableTarget, id(sourceChild));
+          if (targetChild == null && !id(sourceChild).isBlank()) {
+            writableTarget.add(sourceChild);
+          } else {
+            mergeRootContents(sourceChild, targetChild);
+          }
+        }
+      } else if (sourceValue instanceof EObject sourceChild) {
+        if (!(targetValue instanceof EObject targetChild)) {
+          target.eSet(containment, sourceChild);
+        } else {
+          mergeRootContents(sourceChild, targetChild);
+        }
+      }
+    }
+  }
+
+  private EObject findContainedById(List<EObject> children, String expectedId) {
+    if (expectedId == null || expectedId.isBlank()) return null;
+    return children.stream().filter(child -> expectedId.equals(id(child))).findFirst().orElse(null);
   }
 
   private String escape(String token) {

@@ -12,9 +12,22 @@ public final class SemanticMergePolicy {
           "generatedByTransformation",
           "traceId",
           "sourceElementId",
-          "targetElementId");
+          "targetElementId",
+          // AWS resource containment is produced by the PIM-to-PSM transformation. New generated
+          // resources (including Step Function state machines) must be promoted without asking
+          // the user to resolve an artificial ADD conflict.
+          "resources");
   private static final Set<String> IGNORED =
-      Set.of("incomingTraces", "outgoingTraces", "_sourceXmiBase64", "_sourceXmiToken");
+      Set.of(
+          "incomingTraces",
+          "outgoingTraces",
+          "_sourceXmiBase64",
+          "_sourceXmiToken",
+          // These collections are generated IAM implementation details. Their historical
+          // containment order/IDs must not become user-facing conflicts.
+          "assumeRolePolicy",
+          "principals",
+          "statements");
 
   public MergeFeaturePolicy policyFor(String featureName) {
     if ("id".equals(featureName)) {
