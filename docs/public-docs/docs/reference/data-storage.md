@@ -6,14 +6,15 @@ versioned repository assets rather than database records.
 
 ## Core Data
 
-| Area      | Tables                                                 | Notes                                                |
-| --------- | ------------------------------------------------------ | ---------------------------------------------------- |
-| Identity  | `users`, `auth_sessions`                               | Password hashes, salts, session expiry               |
-| Projects  | `projects`, `project_members`, `project_active_models` | Ownership, roles, active level models                |
-| Models    | `models`                                               | JSON model, source XMI, metamodel metadata, revision |
-| Imports   | `staged_imports`, `staged_import_payloads`             | Temporary XMI import payloads with expiry            |
-| Artifacts | `artifacts`, `artifact_files`                          | Generated project metadata and file content          |
-| Jobs      | `mde_jobs`, `mde_job_diagnostics`                      | Operation status, progress, result IDs, diagnostics  |
+| Area            | Tables                                                 | Notes                                                |
+| --------------- | ------------------------------------------------------ | ---------------------------------------------------- |
+| Identity        | `users`, `auth_sessions`                               | Password hashes, salts, session expiry               |
+| Projects        | `projects`, `project_members`, `project_active_models` | Ownership, roles, active level models                |
+| Models          | `models`                                               | JSON model, source XMI, metamodel metadata, revision |
+| Imports         | `staged_imports`, `staged_import_payloads`             | Temporary XMI import payloads with expiry            |
+| Artifacts       | `artifacts`, `artifact_files`                          | Generated project metadata and file content          |
+| Jobs            | `mde_jobs`, `mde_job_diagnostics`                      | Operation status, progress, result IDs, diagnostics  |
+| Synchronization | `model_synchronization_records`                        | JSONB raw generated baselines and pending sessions   |
 
 Project deletion cascades through project-owned models, artifacts, jobs, membership, staged imports,
 and assistant state. User and project references use foreign keys, while level and role values use
@@ -34,6 +35,18 @@ A persisted model records:
 The metamodel hash detects that a stored model was created against a different runtime metamodel.
 Detection does not itself migrate a model; breaking language changes require a compatibility or
 migration policy.
+
+## Transformation Synchronization Records
+
+`model_synchronization_records` is created by `V32__model_synchronization_baselines_and_sessions.sql`.
+It stores `BASELINE` records for raw generated JSON/XMI and `SESSION` records for pending conflicts,
+including the Base, Working, and NewGenerated XMI participants, safe merged candidate, decisions,
+and revision/fingerprint metadata. Baselines are keyed by project, direction, and source model;
+sessions are keyed by project and session ID.
+
+Resolutions update only a pending session. Working and the raw baseline advance only after target
+semantic validation, in one transaction. Cancelling, failing, or rejecting a stale session leaves
+both canonical records unchanged. Project deletion cascades synchronization records.
 
 ## Assistant Data
 

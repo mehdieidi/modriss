@@ -92,7 +92,8 @@ V1__create_platform_schema.sql
 
 MDE job metadata extensions are in `V5__mde_job_async_metadata.sql` under
 `platform-storage-postgres`; project-member custom roles are in
-`V9__project_member_custom_roles.sql`. Assistant durable-turn tables are introduced by
+`V9__project_member_custom_roles.sql`. Model transformation baselines and pending conflict
+sessions are stored by `V32__model_synchronization_baselines_and_sessions.sql`. Assistant durable-turn tables are introduced by
 `V14__assistant_baseline.sql` and currently refined through
 `V29__idempotent_assistant_provider_call_audit.sql`. Assistant migrations V24-V29 add
 continuation/provenance lineage, context caching, source blueprints, provider prompt audit, durable

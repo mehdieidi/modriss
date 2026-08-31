@@ -20,9 +20,15 @@ Flyway migrations create tables for:
 - Models and staged XMI imports
 - Artifacts and artifact files
 - MDE jobs and diagnostics
+- Model-transformation baselines and pending synchronization sessions (`model_synchronization_records`)
 
 Models use `jsonb` for browser-facing model data and may retain source XMI as `bytea`. Generated
 artifact files are stored by relative path and text content.
+
+Transformation baselines and pending conflict sessions are stored as typed JSONB payloads in
+`model_synchronization_records`; the application maps them to `GeneratedBaseline` and
+`SynchronizationSession` through `PlatformStore`. A successful synchronization transaction
+updates Working, advances the raw baseline, and closes a resolved session together.
 
 ## Assistant Persistence
 

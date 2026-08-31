@@ -269,6 +269,11 @@ For the first transformation, when neither Base nor Working exists, the validate
 model becomes both initial Working and raw Base. If Working exists but Base does not, the operation
 returns `BOOTSTRAP_REQUIRED`; it never guesses history or overwrites the legacy model.
 
+When normalized Base and Working are byte-for-byte equal, the fresh generated resource is adopted
+as the exact result without a filtered EMF copy. During finalization, if every decision is
+`TAKE_GENERATED`, the complete raw incoming resource is adopted as the candidate. Both are
+implementation optimizations with the same target validation and atomic commit guarantees.
+
 ## Conflict sessions and manual resolution
 
 A real conflict is never resolved with “latest wins.” The coordinator applies safe incoming changes
@@ -315,12 +320,13 @@ sequenceDiagram
 
 The conflict API is:
 
-| Method   | Path                                                        | Purpose                                    |
-| -------- | ----------------------------------------------------------- | ------------------------------------------ |
-| `GET`    | `/api/synchronizations/{projectId}/{sessionId}`             | Read conflict summaries and decisions      |
-| `POST`   | `/api/synchronizations/{projectId}/{sessionId}/resolutions` | Store `KEEP_USER` or `TAKE_GENERATED`      |
-| `POST`   | `/api/synchronizations/{projectId}/{sessionId}/finalize`    | Recompare, validate, and atomically commit |
-| `DELETE` | `/api/synchronizations/{projectId}/{sessionId}`             | Cancel and remove the pending session      |
+| Method   | Path                                                              | Purpose                                    |
+| -------- | ----------------------------------------------------------------- | ------------------------------------------ |
+| `GET`    | `/api/synchronizations/{projectId}/{sessionId}`                   | Read conflict summaries and decisions      |
+| `POST`   | `/api/synchronizations/{projectId}/{sessionId}/resolutions`       | Store `KEEP_USER` or `TAKE_GENERATED`      |
+| `POST`   | `/api/synchronizations/{projectId}/{sessionId}/resolutions/batch` | Store multiple decisions atomically        |
+| `POST`   | `/api/synchronizations/{projectId}/{sessionId}/finalize`          | Recompare, validate, and atomically commit |
+| `DELETE` | `/api/synchronizations/{projectId}/{sessionId}`                   | Cancel and remove the pending session      |
 
 Transformation jobs report one of four synchronization outcomes:
 

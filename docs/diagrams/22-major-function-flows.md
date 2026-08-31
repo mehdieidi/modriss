@@ -67,14 +67,15 @@ flowchart TD
     p2p["PimToAwsPsmDefaults + EpsilonEtlExecutor"]
     p2a["AwsPsmToArtifactsDefaults + EpsilonEgxGenerator"]
     importModel["Import generated XMI to JSON and mark generated target"]
-    storeModel["Persist generated PIM/PSM model"]
+    syncModel["Compare fresh output with Base/Working"]
+    storeModel["Commit Working + raw Base, or persist conflict session"]
     readFiles["Read generated files and validate bounds/completeness"]
     storeArtifact["Persist artifact and files"]
     cleanup["Delete temp workspace"]
 
     start --> lock --> source --> temp --> sourceXmi --> budget --> op
-    op -- CIM to PIM --> c2p --> importModel --> storeModel --> cleanup
-    op -- PIM to PSM --> p2p --> importModel --> storeModel --> cleanup
+    op -- CIM to PIM --> c2p --> importModel --> syncModel --> storeModel --> cleanup
+    op -- PIM to PSM --> p2p --> importModel --> syncModel --> storeModel --> cleanup
     op -- PSM to artifact --> p2a --> readFiles --> storeArtifact --> cleanup
 ```
 

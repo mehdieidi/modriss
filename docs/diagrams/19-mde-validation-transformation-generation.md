@@ -91,7 +91,7 @@ flowchart TD
     etl["Run ETL and read target XMI"]
     egx["Run EGX and read generated files"]
     import["Import generated XMI to JSON"]
-    persistModel["Persist generated model"]
+    synchronize["Compare fresh output with Base/Working;<br/>persist Working + raw Base or session"]
     persistArtifact["Persist artifact bundle"]
     cleanup["Delete temp directory unless keep flag set"]
 
@@ -99,6 +99,6 @@ flowchart TD
     xmiChoice -- no --> export --> budget
     xmiChoice -- yes --> sidecar --> budget
     budget --> temp --> runner
-    runner -- CIM/PIM to model --> etl --> import --> persistModel --> cleanup
+    runner -- CIM/PIM to model --> etl --> import --> synchronize --> cleanup
     runner -- PSM to files --> egx --> persistArtifact --> cleanup
 ```

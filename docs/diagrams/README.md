@@ -6,12 +6,13 @@ Mermaid tooling.
 
 The diagrams were derived from:
 
-- Spring controllers, configuration, services, and assistant classes under `apps/backend`.
+- Spring controllers, configuration, services, and assistant classes under `apps/backend` and
+  feature modules under `packages/java`.
 - Browser client modules under `apps/frontend/js`.
 - Maven module POMs, `deploy/compose.yaml`, and backend configuration.
 - `PlatformStore`, `PostgresPlatformStore`, and Flyway migrations under
-  `platform-storage-postgres` (V1 platform schema, V5 MDE job metadata) and `platform-assistant`
-  (V14 durable-turn baseline and later assistant migrations through V28).
+  `platform-storage-postgres` (including V32 model synchronization records) and `platform-assistant`
+  (V14 durable-turn baseline and later assistant migrations through V29).
 - Emfatic/Ecore metamodels, EVL entry modules, ETL entry modules, and EGX/EGL generation assets.
 
 ## Diagram Index

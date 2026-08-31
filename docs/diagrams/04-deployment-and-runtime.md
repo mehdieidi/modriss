@@ -75,8 +75,8 @@ sequenceDiagram
     participant Health as Actuator
 
     Boot->>Flyway: Apply classpath db/migration
-    Flyway->>DB: Platform migrations V1, V5, V9
-    Flyway->>DB: Assistant migrations V14-V18 and V24-V28
+    Flyway->>DB: Platform migrations V1, V5, V9, V19-V23, V32
+    Flyway->>DB: Assistant migrations V14-V18 and V24-V29
     Boot->>Core: Construct service graph
     Core->>Meta: Resolve CIM, PIM, PSM metamodel descriptors
     Meta-->>Core: EPackages, versions, SHA-256 hashes

@@ -97,6 +97,22 @@ Transformation routes and saved-model validation job routes return `202 Accepted
 to safely retry the same request. Job records expose status, diagnostics, result ids, validation
 results, and phase timings.
 
+### Model Synchronization
+
+CIM→PIM and PIM→PSM use a durable three-way merge between raw Base, downstream Working, and fresh
+NewGenerated. Real conflicts create a pending session without changing canonical Working or Base.
+
+| Method   | Path                                                              | Purpose                            |
+| -------- | ----------------------------------------------------------------- | ---------------------------------- |
+| `GET`    | `/api/synchronizations/{projectId}/{sessionId}`                   | Read conflicts and decisions       |
+| `POST`   | `/api/synchronizations/{projectId}/{sessionId}/resolutions`       | Save one decision                  |
+| `POST`   | `/api/synchronizations/{projectId}/{sessionId}/resolutions/batch` | Save multiple decisions atomically |
+| `POST`   | `/api/synchronizations/{projectId}/{sessionId}/finalize`          | Recompare, validate, and commit    |
+| `DELETE` | `/api/synchronizations/{projectId}/{sessionId}`                   | Cancel the pending session         |
+
+Finalization rejects incomplete or stale sessions with `409`; an accepted commit advances Base to
+raw generated XMI, never to merged Working.
+
 ### Artifacts
 
 `/api/artifact` supports project-scoped listing, artifact retrieval, file reads, file updates, and

@@ -858,6 +858,34 @@ paths:
                 $ref: "#/components/schemas/SynchronizationSession"
         "409":
           $ref: "#/components/responses/Conflict"
+  /api/synchronizations/{projectId}/{sessionId}/resolutions/batch:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: sessionId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [Synchronizations]
+      summary: Record multiple conflict resolutions in one session update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchConflictResolutionRequest"
+      responses:
+        "200":
+          description: Updated pending synchronization session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SynchronizationSession"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/synchronizations/{projectId}/{sessionId}/finalize:
     parameters:
       - name: projectId
@@ -2241,6 +2269,16 @@ components:
         resolution:
           type: string
           enum: [KEEP_USER, TAKE_GENERATED]
+    BatchConflictResolutionRequest:
+      type: object
+      required: [resolutions]
+      properties:
+        resolutions:
+          type: object
+          minProperties: 1
+          additionalProperties:
+            type: string
+            enum: [KEEP_USER, TAKE_GENERATED]
     SynchronizationSession:
       type: object
       required:

@@ -1,6 +1,7 @@
 # Platform Storage ER Diagram
 
-This is the complete platform schema from Flyway migration V1.
+This is the complete platform schema from Flyway migrations V1, V5, V9, and V32 (with later
+platform migrations adding unrelated operational tables/columns).
 
 ```mermaid
 erDiagram
@@ -103,6 +104,13 @@ erDiagram
         integer position PK
         text diagnostic
     }
+    MODEL_SYNCHRONIZATION_RECORDS {
+        text project_id PK,FK
+        text record_kind PK
+        text record_id PK
+        jsonb payload
+        timestamptz updated_at
+    }
 
     USERS ||--o{ AUTH_SESSIONS : authenticates
     USERS ||--o{ PROJECTS : owns
@@ -118,6 +126,7 @@ erDiagram
     PROJECTS ||--o{ MDE_JOBS : tracks
     USERS ||--o{ MDE_JOBS : submits
     MDE_JOBS ||--o{ MDE_JOB_DIAGNOSTICS : reports
+    PROJECTS ||--o{ MODEL_SYNCHRONIZATION_RECORDS : owns
 ```
 
 ## Logical PlatformStore Mapping
@@ -129,7 +138,7 @@ flowchart LR
     store["PlatformStore port"]
     adapter["PostgresPlatformStore<br/>Maps record type/path to SQL"]
     tx["TransactionTemplate"]
-    tables[("V1 platform tables")]
+    tables[("Platform tables incl. V32 synchronization records")]
 
     services --> paths --> store --> adapter
     adapter --> tx --> tables

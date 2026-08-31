@@ -116,6 +116,25 @@ may send `Idempotency-Key`; replaying the same request returns the original job,
 key for a different request returns `409`. Job records expose status, diagnostics, result model or
 artifact ids, validation results, and phase timings.
 
+## Model Synchronization
+
+CIM→PIM and PIM→AWS-PSM transformations generate a fresh target candidate and synchronize it with
+the downstream Working model using Base/Working/NewGenerated three-way EMF comparison. Accepted
+runs update Working and store the raw generated candidate as the next Base. Real conflicts persist
+a pending session and leave canonical Working and Base unchanged until resolved.
+
+| Method   | Path                                                              | Body                       | Response              |
+| -------- | ----------------------------------------------------------------- | -------------------------- | --------------------- |
+| `GET`    | `/api/synchronizations/{projectId}/{sessionId}`                   | none                       | pending session       |
+| `POST`   | `/api/synchronizations/{projectId}/{sessionId}/resolutions`       | `conflictId`, `resolution` | updated session       |
+| `POST`   | `/api/synchronizations/{projectId}/{sessionId}/resolutions/batch` | `resolutions` map          | updated session       |
+| `POST`   | `/api/synchronizations/{projectId}/{sessionId}/finalize`          | none                       | updated `ModelRecord` |
+| `DELETE` | `/api/synchronizations/{projectId}/{sessionId}`                   | none                       | `204`                 |
+
+Supported decisions are `KEEP_USER` and `TAKE_GENERATED`. Finalization re-runs comparison, checks
+revisions/fingerprints and baseline version, validates the candidate, and commits Working plus the
+raw Base atomically. Stale or incomplete sessions return `409`.
+
 ## Artifacts
 
 | Method | Path                          | Query/Body                 | Response                  |

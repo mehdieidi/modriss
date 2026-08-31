@@ -15,10 +15,10 @@ sequenceDiagram
     T->>M: Load locked CIM source and verify revision
     T->>ETL: Execute CimToPimDefaults in temp workspace
     ETL-->>T: Generated PIM XMI + report
-    T->>M: Import and persist generated PIM
-    M->>DB: Insert PIM model and XMI
-    T-->>C: ModelRecord
-    C-->>Client: Successful TransformationResponse
+    T->>T: Synchronize fresh PIM with downstream Working/Base
+    T->>DB: Persist Working + raw Base, or pending conflict session
+    T-->>C: MdeJobRecord (async worker result)
+    C-->>Client: 202 JobResponse + Location header
 ```
 
 ## POST `/api/transformations/pim-to-psm`
@@ -36,10 +36,10 @@ sequenceDiagram
     T->>M: Load locked PIM source and verify revision
     T->>ETL: Execute PimToAwsPsmDefaults in temp workspace
     ETL-->>T: Generated AWS PSM XMI + report
-    T->>M: Import and persist generated PSM
-    M->>DB: Insert PSM model and XMI
-    T-->>C: ModelRecord
-    C-->>Client: Successful TransformationResponse
+    T->>T: Synchronize fresh PSM with downstream Working/Base
+    T->>DB: Persist Working + raw Base, or pending conflict session
+    T-->>C: MdeJobRecord (async worker result)
+    C-->>Client: 202 JobResponse + Location header
 ```
 
 ## POST `/api/transformations/psm-to-artifact`
@@ -61,7 +61,7 @@ sequenceDiagram
     T->>T: Validate file count, size, and completeness
     T->>A: create(projectId, artifact name, files)
     A->>DB: Insert artifact and files
-    C-->>Client: Successful TransformationResponse
+    C-->>Client: 202 JobResponse + Location header
 ```
 
 ## GET `/api/transformations/jobs/{id}`
