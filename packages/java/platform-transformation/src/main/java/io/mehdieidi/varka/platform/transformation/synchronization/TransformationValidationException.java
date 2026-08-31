@@ -13,8 +13,26 @@ public final class TransformationValidationException extends PlatformException {
     super(
         422,
         "Generated model validation failed. Fix the validation issues shown in the issue board,"
-            + " then run generation again.");
+            + " then run generation again."
+            + summarize(issues));
     this.issues = issues == null ? List.of() : List.copyOf(issues);
+  }
+
+  private static String summarize(List<ModelService.ValidationIssue> issues) {
+    if (issues == null || issues.isEmpty()) {
+      return "";
+    }
+    return " Issues: "
+        + issues.stream()
+            .limit(5)
+            .map(
+                issue ->
+                    issue.constraint()
+                        + (issue.elementId() == null ? "" : " [" + issue.elementId() + "]")
+                        + ": "
+                        + issue.message())
+            .collect(java.util.stream.Collectors.joining("; "))
+        + (issues.size() > 5 ? "; and " + (issues.size() - 5) + " more" : "");
   }
 
   public List<ModelService.ValidationIssue> issues() {

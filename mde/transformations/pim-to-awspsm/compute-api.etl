@@ -318,7 +318,7 @@ operation createLambdaTracing(f) {
 /** Creates create lambda logging. */
 operation createLambdaLogging(l) {
   var cfg = new AWSPSMCOMPUTE!LambdaLoggingConfig;
-  cfg.id = uniqueId("lambda_logging_" + slug(l.logicalId));
+  cfg.id = uniqueId("lambda_logging_" + slug(l.id));
   cfg.name = l.name + " logging";
   cfg.applicationLogLevel = "INFO";
   cfg.systemLogLevel = "INFO";

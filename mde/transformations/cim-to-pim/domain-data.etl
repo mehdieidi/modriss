@@ -98,12 +98,20 @@ rule DomainRelationship2SchemaReference
      constraint : CONTRACTS!SchemaConstraint {
 
   field.id = idFor("relationship_field", rel);
-  field.name = camelCase(rel.targetRole.orDefault(rel.target.name));
+  var targetFieldName = rel.targetRole.orDefault("reference");
+  if (rel.target.isDefined()) {
+    targetFieldName = rel.targetRole.orDefault(rel.target.name);
+  }
+  field.name = camelCase(targetFieldName);
   field.fieldType = PIMTYPES!FieldType#OBJECT;
   field.required = rel.sourceMultiplicity.hasMultiplicityBounds() and rel.sourceMultiplicity.lowerBound >= 1;
   field.nullable = not field.required;
   field.array = rel.targetMultiplicity.isMany();
-  field.descriptionForConsumers = "Reference generated from " + rel.relationshipType.asString() + " relationship to " + rel.target.name + ".";
+  var targetDescription = "unresolved target";
+  if (rel.target.isDefined()) {
+    targetDescription = rel.target.name;
+  }
+  field.descriptionForConsumers = "Reference generated from " + rel.relationshipType.asString() + " relationship to " + targetDescription + ".";
   var targetSchema = schemaForDomainConcept(rel.target);
   if (targetSchema.isDefined()) {
     field.objectSchema = targetSchema;
@@ -137,7 +145,11 @@ post AttachRelationshipDataFields {
     if (sourceStore.isDefined() and sourceStore.ownedDataModels.notEmpty()) {
       var dataField = new DATA!DataField;
       dataField.id = idFor("relationship_datafield", rel);
-      dataField.name = camelCase(rel.targetRole.orDefault(rel.target.name));
+      var targetFieldName = rel.targetRole.orDefault("reference");
+      if (rel.target.isDefined()) {
+        targetFieldName = rel.targetRole.orDefault(rel.target.name);
+      }
+      dataField.name = camelCase(targetFieldName);
       dataField.fieldType = PIMTYPES!FieldType#OBJECT;
       dataField.identifier = false;
       dataField.partitionKeyCandidate = false;

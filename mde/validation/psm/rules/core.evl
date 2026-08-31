@@ -134,7 +134,7 @@ context AWSPSM!AwsResource {
   /** Checks that logical id unique in stack. */
   constraint LogicalIdUniqueInStack {
     check : not duplicateResourceLogicalIdKeys().includes(self.stackLogicalIdKey())
-    message : 'Logical ID ' + self.logicalId + ' is duplicated in stack ' + self.stack.stackName + '. Fix: give each resource in a stack a unique logicalId.'
+    message : 'Logical ID ' + self.logicalId + ' is duplicated within its deployment scope. Fix: give each resource in a stack a unique logicalId.'
   }
 
   /** Checks that no direct self dependency. */

@@ -384,7 +384,7 @@ operation addDynamoAttribute(t, field) {
     return;
   }
   var a = new AWSPSMSTORAGE!DynamoDbAttributeDefinition;
-  a.id = uniqueId("dynamodb_attr_" + slug(t.logicalId + "_" + firstText(field.storageName, field.name)));
+  a.id = uniqueId("dynamodb_attr_" + slug(t.id + "_" + field.id));
   a.name = firstText(field.storageName, field.name);
   a.attributeName = a.name;
   a.attributeType = dynamoType(field.fieldType);
@@ -808,7 +808,7 @@ operation createDenyInsecureTransportPolicy(resource) {
   st.wildcardJustification = "Deny statement covers all actions only when aws:SecureTransport is false.";
   addWildcardPrincipal(st);
   var cond = new AWSPSMSECURITY!IamCondition;
-  cond.id = uniqueId("condition_secure_transport_" + slug(resource.logicalId));
+  cond.id = uniqueId("condition_secure_transport_" + slug(resource.id));
   cond.name = "Secure transport";
   cond.operator = "Bool";
   cond.key = "aws:SecureTransport";

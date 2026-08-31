@@ -295,5 +295,8 @@ volumes:
 
 networks:
   freellmapi:
-    external: true
+    # Create the network for a standalone Varka deployment. Set
+    # FREELLMAPI_NETWORK_EXTERNAL=true when attaching to an existing FreeLLM
+    # network instead.
+    external: ${FREELLMAPI_NETWORK_EXTERNAL:-false}
     name: ${FREELLMAPI_NETWORK:-freellmapi_default}

@@ -230,7 +230,13 @@ public final class XmiModelImportService {
       throw new PlatformException(400, "Uploaded XMI does not contain a model root.");
     }
     if (roots.size() > 1) {
-      throw new PlatformException(400, "Uploaded XMI must contain exactly one model root.");
+      String rootTypes =
+          roots.stream()
+              .map(root -> root.eClass().getName())
+              .distinct()
+              .collect(java.util.stream.Collectors.joining(", "));
+      throw new PlatformException(
+          400, "Uploaded XMI must contain exactly one model root (found: " + rootTypes + ").");
     }
     validateRoot(level, roots.get(0));
   }

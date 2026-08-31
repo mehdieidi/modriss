@@ -228,6 +228,10 @@ public final class ModelSynchronizationService {
     restoreRequiredReferences(working, requiredGeneratedReferences);
     restoreRequiredReferences(working, requiredWorkingReferences);
     restoreRequiredReferences(working, requiredLocalReferences);
+    collapseDuplicateRoots(working);
+    Set<String> baseObjectIds =
+        allObjects(base).stream().map(this::id).collect(java.util.stream.Collectors.toSet());
+    rebindGeneratedProxyReferences(working, newGenerated, baseObjectIds);
     // A "keep generated" decision for an upstream deletion applies to the whole generated
     // resource, not just the individual EMF differences that happened to be selected by the
     // batch merger.  In particular, an IAM role, its inline policy, policy document, and
@@ -331,6 +335,85 @@ public final class ModelSynchronizationService {
                 else if (!targets.isEmpty()) owner.eSet(reference, targets.get(0));
               });
         });
+  }
+
+  /**
+   * Rebinds references copied with a freshly generated subtree to the corresponding objects in the
+   * merged working resource.
+   *
+   * <p>EMF Compare can copy a non-containment reference before it attaches the referenced incoming
+   * object. The copied value then remains a proxy whose fragment points into the temporary incoming
+   * resource. Saving that graph makes the proxy permanent even though an object with the same
+   * stable model ID is present in the working resource. Resolve only those proxy slots, using the
+   * generated counterpart as the semantic source and stable IDs as the cross-resource key; valid
+   * local references and user edits are left untouched.
+   */
+  private void rebindGeneratedProxyReferences(
+      Resource working, Resource generated, Set<String> baseObjectIds) {
+    Map<String, EObject> workingById = new HashMap<>();
+    for (EObject object : allObjects(working)) workingById.put(id(object), object);
+    Set<EObject> reachableWorkingObjects =
+        java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    reachableWorkingObjects.addAll(allObjects(working));
+    Map<String, EObject> generatedById = new HashMap<>();
+    for (EObject object : allObjects(generated)) generatedById.put(id(object), object);
+
+    for (EObject owner : allObjects(working)) {
+      EObject generatedOwner = generatedById.get(id(owner));
+      if (generatedOwner == null
+          || !owner.eClass().getName().equals(generatedOwner.eClass().getName())
+          || !owner
+              .eClass()
+              .getEPackage()
+              .getNsURI()
+              .equals(generatedOwner.eClass().getEPackage().getNsURI())) continue;
+      for (EReference reference : owner.eClass().getEAllReferences()) {
+        if (reference.isContainment() || reference.isContainer()) continue;
+        Object localValue = owner.eGet(reference, false);
+        Object generatedValue = generatedOwner.eGet(reference, false);
+        boolean generatedAddition = !baseObjectIds.contains(id(owner));
+        if (reference.isMany()
+            && localValue instanceof List<?> localValues
+            && generatedValue instanceof List<?> generatedValues) {
+          @SuppressWarnings("unchecked")
+          List<EObject> writable = (List<EObject>) localValues;
+          if (generatedAddition) {
+            List<EObject> replacements =
+                generatedValues.stream()
+                    .filter(EObject.class::isInstance)
+                    .map(EObject.class::cast)
+                    .map(target -> workingById.get(id(target)))
+                    .filter(Objects::nonNull)
+                    .toList();
+            if (replacements.size() == generatedValues.size()) {
+              writable.clear();
+              writable.addAll(replacements);
+              continue;
+            }
+          }
+          for (int index = 0; index < writable.size(); index++) {
+            EObject localTarget = writable.get(index);
+            if (!isUnresolvedOrForeign(localTarget, reachableWorkingObjects)
+                || index >= generatedValues.size()) continue;
+            Object candidate = generatedValues.get(index);
+            if (candidate instanceof EObject generatedTarget) {
+              EObject replacement = workingById.get(id(generatedTarget));
+              if (replacement != null) writable.set(index, replacement);
+            }
+          }
+        } else if (localValue instanceof EObject localTarget
+            && (generatedAddition || isUnresolvedOrForeign(localTarget, reachableWorkingObjects))
+            && generatedValue instanceof EObject generatedTarget) {
+          EObject replacement = workingById.get(id(generatedTarget));
+          if (replacement != null) owner.eSet(reference, replacement);
+        }
+      }
+    }
+  }
+
+  private boolean isUnresolvedOrForeign(EObject target, Set<EObject> reachableWorkingObjects) {
+    if (target.eIsProxy()) return true;
+    return !reachableWorkingObjects.contains(target);
   }
 
   /**
@@ -998,17 +1081,7 @@ public final class ModelSynchronizationService {
       // duplicate root attached when a root-level generated change is filtered out.  Serializing
       // that transient state produces XMI that cannot be loaded by the platform again.  The
       // working root is authoritative; discard only additional top-level roots before writing.
-      List<EObject> roots =
-          resource.getContents().stream()
-              .filter(EObject.class::isInstance)
-              .map(EObject.class::cast)
-              .toList();
-      if (roots.size() > 1) {
-        for (EObject duplicateRoot : roots.subList(1, roots.size())) {
-          mergeRootContents(duplicateRoot, roots.get(0));
-        }
-        resource.getContents().removeAll(roots.subList(1, roots.size()));
-      }
+      collapseDuplicateRoots(resource);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       resource.save(output, Map.of());
       return output.toByteArray();
@@ -1016,6 +1089,19 @@ public final class ModelSynchronizationService {
       throw new IllegalStateException(
           "Could not serialize the merged EMF working resource: " + ex.getMessage(), ex);
     }
+  }
+
+  private void collapseDuplicateRoots(Resource resource) {
+    List<EObject> roots =
+        resource.getContents().stream()
+            .filter(EObject.class::isInstance)
+            .map(EObject.class::cast)
+            .toList();
+    if (roots.size() <= 1) return;
+    for (EObject duplicateRoot : roots.subList(1, roots.size())) {
+      mergeRootContents(duplicateRoot, roots.get(0));
+    }
+    resource.getContents().removeAll(roots.subList(1, roots.size()));
   }
 
   private void mergeRootContents(EObject source, EObject target) {

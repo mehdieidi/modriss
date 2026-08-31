@@ -118,6 +118,11 @@ public final class TransformationSynchronizationCoordinator {
       byte[] canonicalGeneratedXmi = saveResource(generatedResource);
       ObjectNode canonicalGenerated =
           (ObjectNode) xmi.importGeneratedModel(targetLevel, canonicalGeneratedXmi);
+      // XMI contains the domain model but not platform-only presentation metadata. Preserve the
+      // transformation provenance and manual issue-board backlog produced alongside the raw ETL
+      // output before creating the first canonical Working model and baseline.
+      copyPlatformMetadata(rawGenerated, canonicalGenerated);
+      mergeManualBacklog(null, rawGenerated, canonicalGenerated);
       requireValid(targetLevel, canonicalGeneratedXmi, canonicalGenerated);
       ModelRecord created =
           store.inTransaction(
@@ -152,7 +157,14 @@ public final class TransformationSynchronizationCoordinator {
       return new CoordinatedResult(
           repaired, emptyResult(SynchronizationStatus.APPLIED, repaired.id(), List.of()));
     }
-    byte[] workingXmi = xmi.exportModel(targetLevel, working.modelJson());
+    // The frontend persists editable JSON and its canonical XMI sidecar together. Three-way EMF
+    // comparison must use that XMI graph: recreating it from JSON can turn valid typed
+    // cross-references in newly added subtrees into detached objects whose serializer URIs cannot
+    // be resolved after the merge. JSON export remains only for legacy records without a sidecar.
+    byte[] workingXmi =
+        models
+            .sourceXmi(working)
+            .orElseGet(() -> xmi.exportModel(targetLevel, working.modelJson()));
     Resource baseResource =
         loadSynchronizationResource(targetLevel, baseline.rawGeneratedXmi(), "sync-base");
     Resource workingResource = loadSynchronizationResource(targetLevel, workingXmi, "sync-working");
@@ -186,9 +198,19 @@ public final class TransformationSynchronizationCoordinator {
         Arrays.equals(normalizedWorkingXmi, normalizedIncomingXmi)
             ? workingResource
             : incomingResource;
-    ModelSynchronizationService.MergeOutcome merge =
-        mergerFor(baseResource, mergeIncoming, baseline.transformationFingerprint())
-            .synchronize(baseResource, workingResource, mergeIncoming, direction);
+    ModelSynchronizationService.MergeOutcome merge;
+    if (Arrays.equals(normalizedBaseXmi, normalizedWorkingXmi)) {
+      // There are no local changes to preserve. The mathematically exact three-way result is the
+      // fresh generated graph itself; avoiding a needless EMF copy also preserves all of its
+      // already validated cross-reference identities.
+      merge =
+          new ModelSynchronizationService.MergeOutcome(
+              incomingResource, normalizedIncomingXmi, List.of(), List.of(), 0, 0, 0, 0, 0);
+    } else {
+      merge =
+          mergerFor(baseResource, mergeIncoming, baseline.transformationFingerprint())
+              .synchronize(baseResource, workingResource, mergeIncoming, direction);
+    }
     // Always repair IDs on the serialized merge. Legacy IAM/security graphs can contain duplicate
     // IDs even when their differences are intentionally ignored as generated metadata.
     byte[] normalizedMergedXmi = normalizeXmi(targetLevel, merge.mergedWorkingXmi());
@@ -213,7 +235,10 @@ public final class TransformationSynchronizationCoordinator {
               Instant.now(),
               mergedJson,
               normalizedBaseXmi,
-              workingXmi,
+              // Finalization must replay the exact normalized comparison participants used to
+              // create the conflict IDs. Persisting the pre-normalization working side makes the
+              // same decisions appear stale after root/trace identity alignment.
+              normalizedWorkingXmi,
               normalizedMergedXmi,
               normalizedGenerated.deepCopy(),
               normalizedIncomingXmi,
@@ -356,15 +381,7 @@ public final class TransformationSynchronizationCoordinator {
       // result is simply the already complete generated resource.
       merge =
           new ModelSynchronizationService.MergeOutcome(
-              incoming,
-              mergedXmi,
-              List.of(),
-              session.conflicts(),
-              0,
-              0,
-              0,
-              0,
-              0);
+              incoming, mergedXmi, List.of(), session.conflicts(), 0, 0, 0, 0, 0);
       requireValid(level, mergedXmi, mergedJson);
     } else {
       merge =

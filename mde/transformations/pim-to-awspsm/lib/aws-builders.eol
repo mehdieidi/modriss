@@ -94,7 +94,7 @@ operation refValue(resource) {
     return literalValue("REVIEW_REQUIRED_RESOURCE_REF", false);
   }
   var v = new AWSPSMCORE!ValueExpression;
-  v.id = uniqueId("ref_" + slug(resource.logicalId));
+  v.id = uniqueId("ref_" + slug(resource.id));
   v.name = "Ref " + resource.logicalId;
   v.sourceKind = AWSPSMENUMS!ValueSourceKind#CLOUDFORMATION_REF;
   v.resource = resource;
@@ -107,7 +107,7 @@ operation getAtt(resource, attributeName : String) {
     return literalValue("REVIEW_REQUIRED_RESOURCE_GETATT_" + attributeName, false);
   }
   var v = new AWSPSMCORE!ValueExpression;
-  v.id = uniqueId("getatt_" + slug(resource.logicalId + "_" + attributeName));
+  v.id = uniqueId("getatt_" + slug(resource.id + "_" + attributeName));
   v.name = "GetAtt " + resource.logicalId + "." + attributeName;
   v.sourceKind = AWSPSMENUMS!ValueSourceKind#CLOUDFORMATION_GETATT;
   v.resource = resource;
@@ -340,7 +340,7 @@ operation modelTagValue(element, key : String) {
 operation createLogGroupFor(source, logicalSeed : String, logName : String) {
   var g = new AWSPSMOBSERVABILITY!CloudWatchLogGroup;
   registerAwsGeneratedResource(g);
-  g.id = generatedId("log_group", source, logicalSeed);
+  g.id = generatedId("log_group", source, source.id);
   g.name = firstText(source.name, logicalSeed) + " Log Group";
   g.generatedFrom = source.id;
   g.generatedByTransformation = true;
@@ -460,7 +460,9 @@ operation createLambdaPermissionFor(prefix : String, origin, fn, principal : Str
   }
   var p = new AWSPSMCOMPUTE!LambdaPermission;
   copyAwsResource(origin, p, prefix + "Permission", "AWS::Lambda::Permission");
-  p.id = generatedId("lambda_permission", origin, prefix + "_" + fn.logicalId);
+  // Logical IDs are name-derived and may change when a PIM function is renamed. Keep generated
+  // object identity tied to immutable model IDs so synchronization matches the existing object.
+  p.id = generatedId("lambda_permission", origin, prefix + "_" + fn.id);
   p.action = "lambda:InvokeFunction";
   p.principal = principal;
   p.sourceArn = sourceArnExpression;
@@ -755,7 +757,7 @@ operation generateRelationshipViews() {
   for (route in cachedApiGatewayRoutesWithLambdaIntegration) {
     if (route.integration.isDefined() and route.integration.lambdaTarget.isDefined()) {
       var v = new AWSPSMINTEGRATIONS!ApiGatewayLambdaIntegrationView;
-      v.id = uniqueId("view_api_lambda_" + slug(route.logicalId + "_" + route.integration.lambdaTarget.logicalId));
+      v.id = uniqueId("view_api_lambda_" + slug(route.id + "_" + route.integration.lambdaTarget.id));
       v.name = route.name + " to " + route.integration.lambdaTarget.name;
       v.generated = true;
       v.source = route;
@@ -773,7 +775,7 @@ operation generateRelationshipViews() {
       continue;
     }
     var sqsView = new AWSPSMINTEGRATIONS!SqsLambdaEventSourceView;
-    sqsView.id = uniqueId("view_sqs_lambda_" + slug(m.queue.logicalId + "_" + mappedFunction.logicalId));
+    sqsView.id = uniqueId("view_sqs_lambda_" + slug(m.queue.id + "_" + mappedFunction.id));
     sqsView.name = m.queue.name + " to " + mappedFunction.name;
     sqsView.generated = true;
     sqsView.source = m.queue;
@@ -786,7 +788,7 @@ operation generateRelationshipViews() {
   for (sub in cachedSnsLambdaSubscriptions) {
     if (sub.protocol = AWSPSMENUMS!SnsProtocol#LAMBDA and sub.endpointResource.isDefined()) {
       var snsView = new AWSPSMINTEGRATIONS!SnsLambdaSubscriptionView;
-      snsView.id = uniqueId("view_sns_lambda_" + slug(sub.topic.logicalId + "_" + sub.endpointResource.logicalId));
+      snsView.id = uniqueId("view_sns_lambda_" + slug(sub.topic.id + "_" + sub.endpointResource.id));
       snsView.name = sub.topic.name + " to " + sub.endpointResource.name;
       snsView.generated = true;
       snsView.source = sub.topic;
@@ -802,7 +804,7 @@ operation generateRelationshipViews() {
     for (targetRow in er.targets) {
       if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#LAMBDA and targetRow.targetResource.isDefined()) {
         var ebView = new AWSPSMINTEGRATIONS!EventBridgeLambdaTargetView;
-        ebView.id = uniqueId("view_event_lambda_" + slug(er.logicalId + "_" + targetRow.targetResource.logicalId));
+        ebView.id = uniqueId("view_event_lambda_" + slug(er.id + "_" + targetRow.targetResource.id));
         ebView.name = er.name + " to " + targetRow.targetResource.name;
         ebView.generated = true;
         ebView.source = er;
@@ -815,7 +817,7 @@ operation generateRelationshipViews() {
       }
       if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#STEP_FUNCTIONS and targetRow.targetResource.isDefined()) {
         var sfView = new AWSPSMINTEGRATIONS!StepFunctionEventBridgeTargetView;
-        sfView.id = uniqueId("view_event_sfn_" + slug(er.logicalId + "_" + targetRow.targetResource.logicalId));
+        sfView.id = uniqueId("view_event_sfn_" + slug(er.id + "_" + targetRow.targetResource.id));
         sfView.name = er.name + " to " + targetRow.targetResource.name;
         sfView.generated = true;
         sfView.source = er;
@@ -1089,7 +1091,7 @@ operation createSqsLambdaMapping(origin, queue, fn, batchPolicy, resilience) {
   }
   var m = new AWSPSMCOMPUTE!SqsLambdaEventSourceMapping;
   copyAwsResource(origin, m, "SqsLambdaMapping", "AWS::Lambda::EventSourceMapping");
-  m.id = generatedId("sqs_lambda_mapping", origin, queue.logicalId + "_" + fn.logicalId);
+  m.id = generatedId("sqs_lambda_mapping", origin, queue.id + "_" + fn.id);
   m.batchSize = ifDefinedInt(batchPolicy, "batchSize", 10);
   m.maximumBatchingWindowSeconds = ifDefinedInt(batchPolicy, "maxBatchingWindowSeconds", 0);
   m.maximumRetryAttempts = retryAttempts(resilience, 3);
@@ -1125,7 +1127,7 @@ operation createDynamoLambdaMapping(origin, table, fn, batchPolicy, resilience) 
   }
   var m = new AWSPSMCOMPUTE!DynamoDbStreamLambdaEventSourceMapping;
   copyAwsResource(origin, m, "DynamoStreamMapping", "AWS::Lambda::EventSourceMapping");
-  m.id = generatedId("dynamodb_lambda_mapping", origin, table.logicalId + "_" + fn.logicalId);
+  m.id = generatedId("dynamodb_lambda_mapping", origin, table.id + "_" + fn.id);
   m.batchSize = ifDefinedInt(batchPolicy, "batchSize", 100);
   m.maximumBatchingWindowSeconds = ifDefinedInt(batchPolicy, "maxBatchingWindowSeconds", 1);
   m.startingPosition = AWSPSMENUMS!StartingPosition#LATEST;
@@ -1149,7 +1151,7 @@ operation createSnsLambdaSubscription(origin, topic, fn) {
   }
   var sub = new AWSPSMMESSAGING!SnsSubscription;
   copyAwsResource(origin, sub, "Subscription", "AWS::SNS::Subscription");
-  sub.id = generatedId("sns_subscription", origin, topic.logicalId + "_" + fn.logicalId);
+  sub.id = generatedId("sns_subscription", origin, topic.id + "_" + fn.id);
   sub.topic = topic;
   sub.protocol = AWSPSMENUMS!SnsProtocol#LAMBDA;
   sub.endpointResource = fn;
@@ -1172,7 +1174,7 @@ operation createSnsQueueSubscription(origin, topic, queue) {
   }
   var sub = new AWSPSMMESSAGING!SnsSubscription;
   copyAwsResource(origin, sub, "QueueSubscription", "AWS::SNS::Subscription");
-  sub.id = generatedId("sns_queue_subscription", origin, topic.logicalId + "_" + queue.logicalId);
+  sub.id = generatedId("sns_queue_subscription", origin, topic.id + "_" + queue.id);
   sub.topic = topic;
   sub.protocol = AWSPSMENUMS!SnsProtocol#SQS;
   sub.endpointResource = queue;
@@ -1196,7 +1198,7 @@ operation addS3LambdaNotification(origin, bucket, fn) {
     bucket.notificationConfiguration = cfg;
   }
   var rule = new AWSPSMSTORAGE!S3NotificationRule;
-  rule.id = generatedId("s3_notification_rule", origin, fn.logicalId);
+  rule.id = generatedId("s3_notification_rule", origin, fn.id);
   rule.name = bucket.name + " to " + fn.name;
   rule.eventTypes.add("s3:ObjectCreated:*");
   rule.destination = fn;

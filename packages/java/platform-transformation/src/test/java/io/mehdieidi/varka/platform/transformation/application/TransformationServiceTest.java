@@ -114,6 +114,10 @@ class TransformationServiceTest {
         pim.modelJson().path("readiness").path("manualDecisions").size(),
         pim.modelJson().path("manualBacklog").size(),
         "Only explicit ETL manual decisions should be mirrored into the frontend backlog.");
+    assertEquals(
+        pim.modelJson().path("manualBacklog").size(),
+        pim.modelJson().path("graph").path("manualBacklog").size(),
+        "The issue board must receive the same generated tasks from root and graph metadata.");
     assertFalse(
         pim.modelJson().path("readiness").path("findings").isEmpty(),
         "Readiness findings should remain on the readiness assessment.");
@@ -267,6 +271,9 @@ class TransformationServiceTest {
         psm.modelJson().path("manualBacklog").size(),
         psm.modelJson().path("graph").path("manualBacklog").size(),
         "Root and graph manual backlog counts should stay in sync.");
+    assertFalse(
+        psm.modelJson().path("manualBacklog").isEmpty(),
+        "Generated PSM manual decisions must be visible to the frontend issue board.");
     assertTrue(
         psm.modelJson()
             .path("graph")

@@ -666,12 +666,14 @@ public final class TransformationService {
    * @return source XMI bytes
    */
   private byte[] sourceCimXmi(ModelRecord model) {
-    return modelService
-        .sourceXmi(model)
-        .orElseGet(
-            () ->
-                xmiModelIo.exportModel(
-                    ModelLevel.CIM, hydrateSemanticReferences(model.modelJson())));
+    byte[] sourceBytes =
+        modelService
+            .sourceXmi(model)
+            .orElseGet(
+                () ->
+                    xmiModelIo.exportModel(
+                        ModelLevel.CIM, hydrateSemanticReferences(model.modelJson())));
+    return sourceBytes;
   }
 
   /**
