@@ -68,7 +68,6 @@ model.
 | L-03 | Base and Working exist and upstream is unchanged                     | Idempotent no-op; no duplicates, conflicts, or semantic changes                                                                    |
 | L-04 | Upstream revision changed but fresh output is semantically unchanged | No-op merge; advance source metadata safely if required                                                                            |
 | L-05 | Transformation is repeated after an accepted merge                   | Use the last raw NewGenerated as Base and the accepted result as Working                                                           |
-| L-06 | Transformation or metamodel version changes                          | Compare only when identity and compatibility are trustworthy; otherwise require migration/bootstrap handling                       |
 | L-07 | Working model was deleted                                            | Handle as an explicit lifecycle condition; do not silently recreate it against stale baseline history                              |
 | L-08 | Source model was deleted                                             | Transformation relationship can no longer run; retain or explicitly clean downstream history according to project lifecycle policy |
 | L-09 | Base record is missing or corrupted                                  | Fail safely; canonical Working remains unchanged                                                                                   |

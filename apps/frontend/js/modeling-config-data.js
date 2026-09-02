@@ -282,7 +282,7 @@ function emptyTabState(typeKey, level) {
   };
 }
 
-function initializeModelingRuntimeState(config) {
+export function initializeModelingRuntimeState(config) {
   rebuildModelingConfigIndexes(config);
   const levels = config?.levels || {};
   const order = Array.isArray(config?.levelOrder) ? config.levelOrder : Object.keys(levels);

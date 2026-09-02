@@ -24,6 +24,7 @@ class MdeJobServiceTest {
   @TempDir Path tempDir;
 
   @Test
+  /** Catalog F-12: retrying an identical request reuses the original logical job. */
   void idempotencyKeyReplaysOriginalJobForSameFingerprint() throws Exception {
     TestContext context = context();
     MdeJobRecord first =
@@ -51,6 +52,7 @@ class MdeJobServiceTest {
   }
 
   @Test
+  /** Catalog F-13: an idempotency key cannot be reused for different input. */
   void idempotencyKeyRejectsDifferentFingerprint() throws Exception {
     TestContext context = context();
     context

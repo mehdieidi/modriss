@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import org.eclipse.emf.common.util.BasicMonitor;
+import org.eclipse.emf.common.util.Diagnostic;
 import org.eclipse.emf.common.util.Enumerator;
 import org.eclipse.emf.compare.AttributeChange;
 import org.eclipse.emf.compare.Comparison;
@@ -32,11 +33,11 @@ import org.eclipse.emf.compare.merge.IMerger;
 import org.eclipse.emf.compare.scope.DefaultComparisonScope;
 import org.eclipse.emf.compare.scope.IComparisonScope;
 import org.eclipse.emf.compare.utils.UseIdentifiers;
-import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.util.Diagnostician;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -108,22 +109,22 @@ public final class ModelSynchronizationService {
     IComparisonScope scope = new DefaultComparisonScope(working, newGenerated, base);
     Comparison comparison = emfCompare.compare(scope, new BasicMonitor());
     Map<Conflict, ModelConflict> realConflicts = describeRealConflicts(comparison, direction);
+    Map<Match, ModelConflict> addAddConflicts = describeAddAddConflicts(comparison, direction);
+    Map<String, ModelConflict> orderedConflicts =
+        describeOrderedConflicts(base, working, newGenerated, direction);
+    Map<String, List<String>> originalOrderedValues = orderedFeatureValues(working);
     Set<EObject> generatedDeletionRoots =
         generatedDeletionRootsSelectedForRemoval(comparison, working, realConflicts, decisions);
     Set<String> locallyPreservedDeletionClosure =
         locallyPreservedDeletionClosure(comparison, working, realConflicts, decisions);
-    Set<String> workingObjectIds =
-        allObjects(working).stream().map(this::id).collect(java.util.stream.Collectors.toSet());
-    Map<String, Map<String, List<String>>> requiredWorkingReferences =
-        requiredReferenceSnapshot(working, workingObjectIds);
-    Map<String, Map<String, List<String>>> requiredLocalReferences =
-        requiredReferenceSnapshot(working, locallyPreservedDeletionClosure);
-    Set<String> generatedObjectIds =
-        allObjects(newGenerated).stream()
-            .map(this::id)
-            .collect(java.util.stream.Collectors.toSet());
-    Map<String, Map<String, List<String>>> requiredGeneratedReferences =
-        requiredReferenceSnapshot(newGenerated, generatedObjectIds);
+    boolean hasPendingGeneratedDeletion =
+        realConflicts.values().stream()
+            .distinct()
+            .anyMatch(
+                conflict ->
+                    "DELETE".equals(conflict.differenceKind())
+                        && decisions.get(conflict.conflictId())
+                            != ConflictResolution.TAKE_GENERATED);
     // Keep EMF Compare's dependency order. Containment additions/deletions are represented by
     // several related diffs (container reference, child object, and nested references); feeding
     // BatchMerger a HashSet makes that order nondeterministic and can leave nested generated
@@ -138,6 +139,16 @@ public final class ModelSynchronizationService {
       if (difference.getSource() != DifferenceSource.RIGHT) {
         continue;
       }
+      // Until a logical generated deletion is resolved, keep incoming changes out of the pending
+      // merge copy. EMF Compare can distribute one generated resource deletion over
+      // shared, separately contained support trees whose provenance is not identical (IAM policy
+      // documents are a common example), and ConflictMerger expands a selected non-delete sibling
+      // to those deletion diffs internally. Applying a partial incoming set can therefore violate
+      // required Ecore containment before the user has made any deletion decision. The comparison
+      // is rerun after resolution, so accepted changes and deletions are then applied atomically.
+      if (hasPendingGeneratedDeletion) {
+        continue;
+      }
       // A generated containment deletion is represented by a set of dependent differences.  When
       // the user rejects that deletion, applying otherwise non-conflicting child/reference
       // deletions would retain only a fragment of the local object graph.  Besides violating the
@@ -150,6 +161,15 @@ public final class ModelSynchronizationService {
         continue;
       }
       MergeFeaturePolicy featurePolicy = policy.policyFor(feature(difference));
+      ModelConflict orderedConflict = orderedConflicts.get(orderedFeatureKey(difference));
+      if (orderedConflict != null) {
+        if (decisions.get(orderedConflict.conflictId()) != ConflictResolution.TAKE_GENERATED) {
+          continue;
+        }
+        // Ordering is applied as a complete feature value after ordinary EMF differences. This
+        // prevents a partial sequence of list diffs from defeating the user's single order choice.
+        continue;
+      }
       if (featurePolicy == MergeFeaturePolicy.IGNORE
           || featurePolicy == MergeFeaturePolicy.USER_OWNED
           || featurePolicy == MergeFeaturePolicy.IMMUTABLE) {
@@ -164,7 +184,7 @@ public final class ModelSynchronizationService {
       Conflict conflict = difference.getConflict();
       ModelConflict description =
           conflict == null || conflict.getKind() != ConflictKind.REAL
-              ? null
+              ? addAddConflictFor(comparison, difference, addAddConflicts)
               : realConflicts.get(conflict);
       ConflictResolution decision =
           description == null ? null : decisions.get(description.conflictId());
@@ -177,7 +197,7 @@ public final class ModelSynchronizationService {
         generatedContainmentMoves.add((ReferenceChange) difference);
         continue;
       }
-      if (conflict == null || conflict.getKind() != ConflictKind.REAL) {
+      if (description == null) {
         mergeable.add(difference);
         continue;
       }
@@ -221,14 +241,7 @@ public final class ModelSynchronizationService {
     }
     generatedContainmentMoves.forEach(
         change -> applyGeneratedContainmentMove(comparison, working, change));
-    // A resolved conflict can contain a generated required reference alongside the containment
-    // move. EMF Compare may mark that sibling handled with the move, leaving the target model
-    // structurally invalid. Restore only missing required references from the generated model;
-    // existing local values remain untouched.
-    restoreRequiredReferences(working, requiredGeneratedReferences);
-    restoreRequiredReferences(working, requiredWorkingReferences);
-    restoreRequiredReferences(working, requiredLocalReferences);
-    collapseDuplicateRoots(working);
+    applyGeneratedOrders(working, newGenerated, orderedConflicts, decisions, originalOrderedValues);
     Set<String> baseObjectIds =
         allObjects(base).stream().map(this::id).collect(java.util.stream.Collectors.toSet());
     rebindGeneratedProxyReferences(working, newGenerated, baseObjectIds);
@@ -238,15 +251,19 @@ public final class ModelSynchronizationService {
     // statements form one containment tree. Removing only some of those differences produces
     // orphaned PSM infrastructure that cannot be repaired sensibly in the UI.
     generatedDeletionRoots.forEach(root -> EcoreUtil.delete(root, true));
-    // Deletion-root cleanup can remove an old mandatory child while retaining its owner. Perform
-    // the generated-child recovery last so it cannot itself be deleted by that cleanup.
-    restoreMissingRequiredContainments(working, newGenerated);
-
+    validateStructuralResult(working);
     // A containment deletion can create dozens of EMF Compare Conflict instances: one for the
     // resource, its contained configuration, and the references that point to it. They are one
     // user decision, not dozens of unrelated conflicts. The map deliberately assigns those raw
     // conflicts the same stable id; expose each logical conflict once to callers.
-    List<ModelConflict> logicalConflicts = realConflicts.values().stream().distinct().toList();
+    List<ModelConflict> logicalConflicts =
+        java.util.stream.Stream.of(
+                realConflicts.values().stream(),
+                addAddConflicts.values().stream(),
+                orderedConflicts.values().stream())
+            .flatMap(java.util.function.Function.identity())
+            .distinct()
+            .toList();
     List<ModelConflict> unresolved =
         logicalConflicts.stream()
             .filter(conflict -> !decisions.containsKey(conflict.conflictId()))
@@ -287,54 +304,6 @@ public final class ModelSynchronizationService {
         }
       }
     } while (changed);
-  }
-
-  private Map<String, Map<String, List<String>>> requiredReferenceSnapshot(
-      Resource working, Set<String> preservedIds) {
-    Map<String, Map<String, List<String>>> result = new HashMap<>();
-    for (EObject object : allObjects(working)) {
-      if (!preservedIds.contains(id(object))) continue;
-      Map<String, List<String>> references = new HashMap<>();
-      for (EReference reference : object.eClass().getEAllReferences()) {
-        if (reference.getLowerBound() < 1) continue;
-        Object value = object.eGet(reference, false);
-        List<String> targets = new java.util.ArrayList<>();
-        if (value instanceof EObject target) targets.add(id(target));
-        else if (value instanceof List<?> values)
-          values.stream()
-              .filter(EObject.class::isInstance)
-              .map(EObject.class::cast)
-              .map(this::id)
-              .forEach(targets::add);
-        if (!targets.isEmpty()) references.put(reference.getName(), targets);
-      }
-      if (!references.isEmpty()) result.put(id(object), references);
-    }
-    return result;
-  }
-
-  private void restoreRequiredReferences(
-      Resource working, Map<String, Map<String, List<String>>> snapshot) {
-    Map<String, EObject> objects = new HashMap<>();
-    for (EObject object : allObjects(working)) objects.put(id(object), object);
-    snapshot.forEach(
-        (ownerId, references) -> {
-          EObject owner = objects.get(ownerId);
-          if (owner == null) return;
-          references.forEach(
-              (name, targetIds) -> {
-                EStructuralFeature feature = owner.eClass().getEStructuralFeature(name);
-                if (!(feature instanceof EReference reference) || reference.getLowerBound() < 1)
-                  return;
-                Object current = owner.eGet(reference, false);
-                if (current instanceof EObject
-                    || current instanceof List<?> values && !values.isEmpty()) return;
-                List<EObject> targets =
-                    targetIds.stream().map(objects::get).filter(Objects::nonNull).toList();
-                if (reference.isMany()) owner.eSet(reference, new java.util.ArrayList<>(targets));
-                else if (!targets.isEmpty()) owner.eSet(reference, targets.get(0));
-              });
-        });
   }
 
   /**
@@ -416,93 +385,6 @@ public final class ModelSynchronizationService {
     return !reachableWorkingObjects.contains(target);
   }
 
-  /**
-   * Restores an absent mandatory containment from the generated counterpart without overwriting.
-   */
-  private void restoreMissingRequiredContainments(Resource working, Resource generated) {
-    Map<String, EObject> localById = new HashMap<>();
-    for (EObject object : allObjects(working)) localById.put(id(object), object);
-    for (EObject generatedOwner : allObjects(generated)) {
-      EObject localOwner = localById.get(id(generatedOwner));
-      if (localOwner == null) continue;
-      restoreMissingAssumeRolePolicy(localOwner, generatedOwner);
-      restoreMissingStepFunctionDefinition(localOwner, generatedOwner);
-      for (EReference reference : generatedOwner.eClass().getEAllReferences()) {
-        if (!reference.isContainment()
-            || (reference.getLowerBound() < 1 && !"assumeRolePolicy".equals(reference.getName())))
-          continue;
-        Object localValue = localOwner.eGet(reference, false);
-        if (localValue instanceof EObject
-            || localValue instanceof List<?> values && !values.isEmpty()) continue;
-        Object generatedValue = generatedOwner.eGet(reference, false);
-        if (reference.isMany() && generatedValue instanceof List<?> values) {
-          List<EObject> copies =
-              values.stream()
-                  .filter(EObject.class::isInstance)
-                  .map(EObject.class::cast)
-                  .map(EcoreUtil::copy)
-                  .toList();
-          if (!copies.isEmpty()) localOwner.eSet(reference, new java.util.ArrayList<>(copies));
-        } else if (generatedValue instanceof EObject child) {
-          localOwner.eSet(reference, EcoreUtil.copy(child));
-        }
-      }
-    }
-  }
-
-  /**
-   * A StepFunctionStateMachine's definition is optional in Ecore because AWS also permits URI and
-   * string definitions. The PIM-to-PSM ETL currently emits an AslDocument, however, and EMF Compare
-   * can filter its optional containment when reconciling an older working graph. Restore that
-   * generated definition only when the local state machine has no definition source at all; an
-   * existing URI, string, or ASL document remains untouched.
-   */
-  private void restoreMissingStepFunctionDefinition(EObject localOwner, EObject generatedOwner) {
-    if (!"StepFunctionStateMachine".equals(localOwner.eClass().getName())
-        || !localOwner.eClass().equals(generatedOwner.eClass())) {
-      return;
-    }
-    EStructuralFeature localUri = localOwner.eClass().getEStructuralFeature("definitionUri");
-    EStructuralFeature localString = localOwner.eClass().getEStructuralFeature("definitionString");
-    EStructuralFeature localAsl = localOwner.eClass().getEStructuralFeature("aslDocument");
-    EStructuralFeature generatedAsl = generatedOwner.eClass().getEStructuralFeature("aslDocument");
-    if (!(localAsl instanceof EReference localAslReference)
-        || !(generatedAsl instanceof EReference generatedAslReference)
-        || !generatedAslReference.isContainment()
-        || localOwner.eGet(localAslReference, false) != null
-        || hasText(localOwner, localUri)
-        || hasText(localOwner, localString)) {
-      return;
-    }
-    Object generatedDefinition = generatedOwner.eGet(generatedAslReference, false);
-    if (generatedDefinition instanceof EObject definition) {
-      localOwner.eSet(localAslReference, EcoreUtil.copy(definition));
-    }
-  }
-
-  private boolean hasText(EObject object, EStructuralFeature feature) {
-    if (!(feature instanceof EAttribute) || feature.isMany()) {
-      return false;
-    }
-    Object value = object.eGet(feature, false);
-    return value != null && !String.valueOf(value).trim().isEmpty();
-  }
-
-  private void restoreMissingAssumeRolePolicy(EObject localOwner, EObject generatedOwner) {
-    EStructuralFeature generatedFeature =
-        generatedOwner.eClass().getEStructuralFeature("assumeRolePolicy");
-    EStructuralFeature localFeature = localOwner.eClass().getEStructuralFeature("assumeRolePolicy");
-    if (!(generatedFeature instanceof EReference generatedReference)
-        || !(localFeature instanceof EReference localReference)) {
-      return;
-    }
-    if (localOwner.eGet(localReference, false) instanceof EObject) return;
-    Object generatedValue = generatedOwner.eGet(generatedReference, false);
-    if (generatedValue instanceof EObject policy) {
-      localOwner.eSet(localReference, EcoreUtil.copy(policy));
-    }
-  }
-
   /** Finds complete local generated resources whose deletion the user accepted. */
   private Set<EObject> generatedDeletionRootsSelectedForRemoval(
       Comparison comparison,
@@ -526,35 +408,7 @@ public final class ModelSynchronizationService {
         roots.add(root);
       }
     }
-    // A prior KEEP_USER decision can leave sibling generated AWS resources in the working model
-    // after the baseline has advanced without them. They no longer have a comparison diff in a
-    // later session, so BatchMerger cannot remove them. Generated PSM resources share the source
-    // element in generatedFrom; delete those stale siblings with the accepted generated deletion.
-    Set<String> sourceIds =
-        roots.stream()
-            .map(this::generatedFrom)
-            .filter(value -> !value.isBlank())
-            .collect(java.util.stream.Collectors.toSet());
-    if (!sourceIds.isEmpty()) {
-      for (EObject candidate : allObjects(working)) {
-        if (sourceIds.contains(generatedFrom(candidate))) {
-          roots.add(candidate);
-        }
-      }
-    }
     return roots;
-  }
-
-  private String generatedFrom(EObject object) {
-    if (object == null) {
-      return "";
-    }
-    EStructuralFeature feature = object.eClass().getEStructuralFeature("generatedFrom");
-    if (feature == null) {
-      return "";
-    }
-    Object value = object.eGet(feature, false);
-    return value == null ? "" : String.valueOf(value).trim();
   }
 
   /** Applies an explicitly selected generated containment location without ConflictMerger. */
@@ -614,6 +468,20 @@ public final class ModelSynchronizationService {
     }
     EReference reference = change.getReference();
     if (localChild == null) {
+      if (change.getKind() == DifferenceKind.ADD
+          && localParent != null
+          && change.getValue() != null) {
+        EObject copiedChild = EcoreUtil.copy(change.getValue());
+        if (reference.isMany()) {
+          @SuppressWarnings("unchecked")
+          List<EObject> children = (List<EObject>) localParent.eGet(reference);
+          if (children.stream().noneMatch(child -> id(child).equals(id(copiedChild)))) {
+            children.add(copiedChild);
+          }
+        } else {
+          localParent.eSet(reference, copiedChild);
+        }
+      }
       return;
     }
     // A DELETE with a matching right object is one half of a move; the matching ADD/MOVE places
@@ -690,7 +558,7 @@ public final class ModelSynchronizationService {
     for (Conflict conflict : comparison.getConflicts()) {
       ModelConflict description = conflicts.get(conflict);
       if (description == null
-          || decisions.get(description.conflictId()) != ConflictResolution.KEEP_USER
+          || decisions.get(description.conflictId()) == ConflictResolution.TAKE_GENERATED
           || conflict.getDifferences().stream()
               .noneMatch(
                   difference ->
@@ -698,22 +566,36 @@ public final class ModelSynchronizationService {
                           && difference.getKind() == DifferenceKind.DELETE)) {
         continue;
       }
+      // A deletion conflict may be represented by a containment change whose value is only
+      // available on the generated side.  Resolve the stable identity at the resource boundary as
+      // well, so KEEP_USER always retains the complete local generated subtree.
+      EObject generatedRoot = deletionRoot(conflict);
+      if (generatedRoot != null) {
+        EObject localRoot =
+            allObjects(working).stream()
+                .filter(candidate -> id(generatedRoot).equals(id(candidate)))
+                .findFirst()
+                .orElse(null);
+        if (localRoot != null) {
+          addContainmentClosure(localRoot, preserved);
+        }
+      }
       boolean foundContainedRoot = false;
       for (Diff difference : conflict.getDifferences()) {
         if (difference instanceof ReferenceChange change
             && change.getReference() != null
             && change.getReference().isContainment()
             && change.getValue() != null) {
-          Match contained = comparison.getMatch(change.getValue());
+          Match contained = matchFor(comparison, change.getValue());
           if (contained != null && contained.getLeft() != null) {
             addContainmentClosure(contained.getLeft(), preserved);
             foundContainedRoot = true;
           }
         }
       }
-      // A containment-reference difference is matched on its parent. Only use that parent as a
-      // fallback when EMF Compare cannot expose the contained target match; otherwise retaining a
-      // single deleted child would accidentally shield every deletion in the entire model.
+      // A containment-reference difference is matched on its parent. Use the parent match only
+      // when EMF Compare exposes no contained target match; otherwise retaining one deleted child
+      // would accidentally shield every deletion in the entire model.
       if (foundContainedRoot) {
         continue;
       }
@@ -724,8 +606,34 @@ public final class ModelSynchronizationService {
         }
       }
     }
+    expandGeneratedProvenanceClosure(working, preserved);
     expandReferenceClosure(working, preserved);
     return preserved;
+  }
+
+  /** Keeps separately contained generated resources that belong to the retained source element. */
+  private void expandGeneratedProvenanceClosure(Resource working, Set<String> ids) {
+    Set<String> sourceIds = new LinkedHashSet<>();
+    for (EObject candidate : allObjects(working)) {
+      if (!ids.contains(id(candidate))) continue;
+      EStructuralFeature generatedFrom = candidate.eClass().getEStructuralFeature("generatedFrom");
+      if (generatedFrom == null) continue;
+      Object value = candidate.eGet(generatedFrom, false);
+      if (value != null && !String.valueOf(value).isBlank()) sourceIds.add(String.valueOf(value));
+    }
+    if (sourceIds.isEmpty()) return;
+    for (EObject candidate : allObjects(working)) {
+      EStructuralFeature generatedFrom = candidate.eClass().getEStructuralFeature("generatedFrom");
+      EStructuralFeature generated =
+          candidate.eClass().getEStructuralFeature("generatedByTransformation");
+      if (generatedFrom == null
+          || generated == null
+          || !Boolean.TRUE.equals(candidate.eGet(generated, false))) continue;
+      Object value = candidate.eGet(generatedFrom, false);
+      if (value != null && sourceIds.contains(String.valueOf(value))) {
+        addContainmentClosure(candidate, ids);
+      }
+    }
   }
 
   /**
@@ -857,6 +765,94 @@ public final class ModelSynchronizationService {
     return owner != null && owner.getLeft() != null && owner.getRight() != null;
   }
 
+  /**
+   * Classifies incompatible same-identity additions on both sides of an empty ancestor.
+   *
+   * <p>EMF Compare correctly matches the two added EObjects by their Ecore ID, but represents
+   * differing feature values as ordinary left/right differences rather than a REAL conflict when
+   * the match has no origin. Applying the incoming difference would silently overwrite the local
+   * addition. This post-classification uses only the EMF match and its Ecore feature values; it
+   * neither constructs model content nor contains domain-specific class or feature rules.
+   */
+  private Map<Match, ModelConflict> describeAddAddConflicts(
+      Comparison comparison, TransformationDirection direction) {
+    Map<Match, ModelConflict> result = new HashMap<>();
+    for (Match match : allMatches(comparison)) {
+      if (match == null
+          || match.getOrigin() != null
+          || match.getLeft() == null
+          || match.getRight() == null) continue;
+      JsonNode localValue = semanticState(match.getLeft());
+      JsonNode generatedValue = semanticState(match.getRight());
+      if (Objects.equals(localValue, generatedValue)) continue;
+      EObject element = match.getLeft();
+      String elementId = id(element);
+      String featureName = "added element";
+      String stableKey = "add-add:" + elementId;
+      String conflictId =
+          UUID.nameUUIDFromBytes(
+                  (direction.name() + "\u0000" + stableKey).getBytes(StandardCharsets.UTF_8))
+              .toString();
+      result.put(
+          match,
+          new ModelConflict(
+              conflictId,
+              direction,
+              elementId,
+              element.eClass().getName(),
+              name(element),
+              featureName,
+              "ADD",
+              "/" + escape(elementId) + "/" + escape(featureName),
+              NullNode.getInstance(),
+              localValue,
+              generatedValue,
+              "The working model and fresh generation independently added the same identity with"
+                  + " different "
+                  + featureName
+                  + " values.",
+              List.of(ConflictResolution.KEEP_USER, ConflictResolution.TAKE_GENERATED)));
+    }
+    return result;
+  }
+
+  private ModelConflict addAddConflictFor(
+      Comparison comparison, Diff difference, Map<Match, ModelConflict> conflicts) {
+    ModelConflict direct = conflicts.get(difference.getMatch());
+    if (direct != null) return direct;
+    if (difference instanceof ReferenceChange change && change.getValue() != null) {
+      return conflicts.get(comparison.getMatch(change.getValue()));
+    }
+    return null;
+  }
+
+  private List<Match> allMatches(Comparison comparison) {
+    List<Match> matches = new java.util.ArrayList<>();
+    java.util.function.Consumer<Match> collect =
+        new java.util.function.Consumer<>() {
+          @Override
+          public void accept(Match match) {
+            matches.add(match);
+            match.getSubmatches().forEach(this);
+          }
+        };
+    comparison.getMatches().forEach(collect);
+    return matches;
+  }
+
+  private JsonNode semanticState(EObject object) {
+    ObjectNode state = mapper.createObjectNode();
+    for (EStructuralFeature feature : object.eClass().getEAllStructuralFeatures()) {
+      if (feature.isDerived()
+          || feature.isTransient()
+          || feature.isVolatile()
+          || feature instanceof EReference reference && reference.isContainer()
+          || "id".equals(feature.getName())) continue;
+      state.set(feature.getName(), value(object, feature));
+    }
+    return state;
+  }
+
   private Map<Conflict, ModelConflict> describeRealConflicts(
       Comparison comparison, TransformationDirection direction) {
     Map<Conflict, ModelConflict> result = new HashMap<>();
@@ -929,6 +925,155 @@ public final class ModelSynchronizationService {
     return result;
   }
 
+  private Map<String, ModelConflict> describeOrderedConflicts(
+      Resource base, Resource working, Resource generated, TransformationDirection direction) {
+    Map<String, EObject> baseById = objectsById(base);
+    Map<String, EObject> workingById = objectsById(working);
+    Map<String, EObject> generatedById = objectsById(generated);
+    Map<String, ModelConflict> result = new HashMap<>();
+    for (Map.Entry<String, EObject> entry : workingById.entrySet()) {
+      EObject origin = baseById.get(entry.getKey());
+      EObject right = generatedById.get(entry.getKey());
+      if (origin == null || right == null || !sameType(entry.getValue(), right)) continue;
+      for (EStructuralFeature structuralFeature :
+          entry.getValue().eClass().getEAllStructuralFeatures()) {
+        if (!structuralFeature.isMany()
+            || !structuralFeature.isOrdered()
+            || policy.policyFor(structuralFeature) != MergeFeaturePolicy.THREE_WAY) continue;
+        List<String> baseOrder = orderedValues(origin, structuralFeature);
+        List<String> workingOrder = orderedValues(entry.getValue(), structuralFeature);
+        List<String> generatedOrder = orderedValues(right, structuralFeature);
+        if (baseOrder.equals(workingOrder)
+            || baseOrder.equals(generatedOrder)
+            || workingOrder.equals(generatedOrder)
+            || !sameMembers(baseOrder, workingOrder)
+            || !sameMembers(baseOrder, generatedOrder)) continue;
+        String key = entry.getKey() + "\u0000" + structuralFeature.getName();
+        String conflictId =
+            UUID.nameUUIDFromBytes(
+                    (direction.name() + "\u0000order:" + key).getBytes(StandardCharsets.UTF_8))
+                .toString();
+        result.put(
+            key,
+            new ModelConflict(
+                conflictId,
+                direction,
+                entry.getKey(),
+                entry.getValue().eClass().getName(),
+                name(entry.getValue()),
+                structuralFeature.getName(),
+                "CHANGE",
+                "/" + escape(entry.getKey()) + "/" + escape(structuralFeature.getName()),
+                orderedValueJson(baseOrder),
+                orderedValueJson(workingOrder),
+                orderedValueJson(generatedOrder),
+                "The working model and fresh generation reordered an ordered feature differently.",
+                List.of(ConflictResolution.KEEP_USER, ConflictResolution.TAKE_GENERATED)));
+      }
+    }
+    return result;
+  }
+
+  private void applyGeneratedOrders(
+      Resource working,
+      Resource generated,
+      Map<String, ModelConflict> conflicts,
+      Map<String, ConflictResolution> decisions,
+      Map<String, List<String>> originalOrderedValues) {
+    Map<String, EObject> workingById = objectsById(working);
+    Map<String, EObject> generatedById = objectsById(generated);
+    for (Map.Entry<String, ModelConflict> entry : conflicts.entrySet()) {
+      ConflictResolution decision = decisions.get(entry.getValue().conflictId());
+      String[] parts = entry.getKey().split("\u0000", 2);
+      EObject local = workingById.get(parts[0]);
+      EObject incoming = generatedById.get(parts[0]);
+      if (local == null || incoming == null) continue;
+      EStructuralFeature feature = featureByName(local, parts[1]);
+      if (feature == null || !feature.isMany() || !feature.isOrdered()) continue;
+      Object localValue = local.eGet(feature);
+      Object incomingValue = incoming.eGet(feature);
+      if (localValue instanceof List<?> localList
+          && incomingValue instanceof List<?> incomingList) {
+        @SuppressWarnings("unchecked")
+        List<Object> writable = (List<Object>) localList;
+        writable.clear();
+        if (decision != ConflictResolution.TAKE_GENERATED) {
+          for (String value : originalOrderedValues.getOrDefault(entry.getKey(), List.of())) {
+            EObject original = workingById.get(value);
+            writable.add(original == null ? value : original);
+          }
+        } else {
+          for (Object value : incomingList) {
+            writable.add(value instanceof EObject object ? workingById.get(id(object)) : value);
+          }
+        }
+      }
+    }
+  }
+
+  private Map<String, List<String>> orderedFeatureValues(Resource resource) {
+    Map<String, List<String>> result = new HashMap<>();
+    for (EObject object : allObjects(resource)) {
+      String objectId = id(object);
+      if (objectId == null || objectId.isBlank()) continue;
+      for (EStructuralFeature feature : object.eClass().getEAllStructuralFeatures()) {
+        if (feature.isMany() && feature.isOrdered()) {
+          result.put(objectId + "\u0000" + feature.getName(), orderedValues(object, feature));
+        }
+      }
+    }
+    return result;
+  }
+
+  private Map<String, EObject> objectsById(Resource resource) {
+    Map<String, EObject> result = new HashMap<>();
+    for (EObject object : allObjects(resource)) {
+      String objectId = id(object);
+      if (objectId != null && !objectId.isBlank()) result.put(objectId, object);
+    }
+    return result;
+  }
+
+  private boolean sameType(EObject left, EObject right) {
+    return left.eClass().getName().equals(right.eClass().getName())
+        && left.eClass().getEPackage().getNsURI().equals(right.eClass().getEPackage().getNsURI());
+  }
+
+  private EStructuralFeature featureByName(EObject object, String name) {
+    return object == null ? null : object.eClass().getEStructuralFeature(name);
+  }
+
+  private List<String> orderedValues(EObject object, EStructuralFeature feature) {
+    if (object == null || feature == null) return List.of();
+    Object raw = object.eGet(feature, false);
+    if (!(raw instanceof List<?> values)) return List.of();
+    return values.stream()
+        .map(
+            value -> value instanceof EObject objectValue ? id(objectValue) : String.valueOf(value))
+        .toList();
+  }
+
+  private boolean sameMembers(List<String> left, List<String> right) {
+    return left.size() == right.size()
+        && new java.util.HashSet<>(left).equals(new java.util.HashSet<>(right));
+  }
+
+  private JsonNode orderedValueJson(List<String> values) {
+    ArrayNode result = mapper.createArrayNode();
+    values.forEach(result::add);
+    return result;
+  }
+
+  private String orderedFeatureKey(Diff difference) {
+    EStructuralFeature structuralFeature = feature(difference);
+    EObject owner = difference.getMatch() == null ? null : difference.getMatch().getLeft();
+    if (structuralFeature == null
+        || owner == null
+        || !structuralFeature.isMany()
+        || !structuralFeature.isOrdered()) return "";
+    return id(owner) + "\u0000" + structuralFeature.getName();
+  }
+
   /**
    * Returns the generated resource affected by a delete/change conflict.
    *
@@ -949,17 +1094,7 @@ public final class ModelSynchronizationService {
       if (affected == null) {
         continue;
       }
-      EObject candidate = affected;
-      String sourceId = generatedFrom(candidate);
-      // Nested generated configuration and trace objects inherit their source identity from the
-      // generated resource. Climb only through that same identity; a containing stack, service,
-      // or model belongs to a broader source and must remain outside this deletion decision.
-      while (!sourceId.isBlank()
-          && candidate.eContainer() != null
-          && sourceId.equals(generatedFrom(candidate.eContainer()))) {
-        candidate = candidate.eContainer();
-      }
-      return candidate;
+      return affected;
     }
     return null;
   }
@@ -1077,11 +1212,12 @@ public final class ModelSynchronizationService {
 
   private byte[] save(Resource resource) {
     try {
-      // A model resource has exactly one document root.  ConflictMerger can temporarily leave a
-      // duplicate root attached when a root-level generated change is filtered out.  Serializing
-      // that transient state produces XMI that cannot be loaded by the platform again.  The
-      // working root is authoritative; discard only additional top-level roots before writing.
-      collapseDuplicateRoots(resource);
+      if (resource.getContents().size() != 1) {
+        throw new IllegalStateException(
+            "EMF synchronization produced "
+                + resource.getContents().size()
+                + " document roots; refusing to repair or persist the invalid merge.");
+      }
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       resource.save(output, Map.of());
       return output.toByteArray();
@@ -1091,52 +1227,21 @@ public final class ModelSynchronizationService {
     }
   }
 
-  private void collapseDuplicateRoots(Resource resource) {
-    List<EObject> roots =
-        resource.getContents().stream()
-            .filter(EObject.class::isInstance)
-            .map(EObject.class::cast)
-            .toList();
-    if (roots.size() <= 1) return;
-    for (EObject duplicateRoot : roots.subList(1, roots.size())) {
-      mergeRootContents(duplicateRoot, roots.get(0));
-    }
-    resource.getContents().removeAll(roots.subList(1, roots.size()));
-  }
-
-  private void mergeRootContents(EObject source, EObject target) {
-    for (EReference containment : source.eClass().getEAllContainments()) {
-      Object sourceValue = source.eGet(containment, false);
-      Object targetValue = target.eGet(containment, false);
-      if (containment.isMany()) {
-        if (!(sourceValue instanceof List<?> sourceChildren)
-            || !(targetValue instanceof List<?> targetChildren)) {
-          continue;
-        }
-        @SuppressWarnings("unchecked")
-        List<EObject> writableTarget = (List<EObject>) targetChildren;
-        for (Object value : sourceChildren) {
-          if (!(value instanceof EObject sourceChild)) continue;
-          EObject targetChild = findContainedById(writableTarget, id(sourceChild));
-          if (targetChild == null && !id(sourceChild).isBlank()) {
-            writableTarget.add(sourceChild);
-          } else {
-            mergeRootContents(sourceChild, targetChild);
-          }
-        }
-      } else if (sourceValue instanceof EObject sourceChild) {
-        if (!(targetValue instanceof EObject targetChild)) {
-          target.eSet(containment, sourceChild);
-        } else {
-          mergeRootContents(sourceChild, targetChild);
-        }
+  /** Rejects structurally invalid candidates using the Ecore validator only. */
+  private void validateStructuralResult(Resource resource) {
+    for (EObject root : resource.getContents()) {
+      Diagnostic diagnostic = Diagnostician.INSTANCE.validate(root);
+      if (diagnostic.getSeverity() >= Diagnostic.ERROR) {
+        throw new IllegalStateException(
+            "EMF synchronization produced a structurally invalid model: "
+                + diagnostic.getMessage()
+                + diagnostic.getChildren().stream()
+                    .map(Diagnostic::getMessage)
+                    .filter(message -> message != null && !message.isBlank())
+                    .distinct()
+                    .collect(java.util.stream.Collectors.joining("; ", " [", "]")));
       }
     }
-  }
-
-  private EObject findContainedById(List<EObject> children, String expectedId) {
-    if (expectedId == null || expectedId.isBlank()) return null;
-    return children.stream().filter(child -> expectedId.equals(id(child))).findFirst().orElse(null);
   }
 
   private String escape(String token) {

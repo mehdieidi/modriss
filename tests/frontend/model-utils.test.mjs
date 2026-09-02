@@ -12,6 +12,7 @@ const { state } = await import("../../apps/frontend/js/state.js");
 const { applyModelingRuntimeConfig } = await import("../../apps/frontend/js/config.js");
 const {
   modelingRelationshipElementTypes,
+  initializeModelingRuntimeState,
 } = await import("../../apps/frontend/js/modeling-config-data.js");
 const { relationshipSemanticCopy } = await import("../../apps/frontend/js/model-utils.js");
 const {
@@ -186,4 +187,109 @@ test("preserves semantic root assumptions in the async save serializer", async (
   await serializeGraphAndViewsIntoAsync(root, { syncView: false });
 
   assert.deepEqual(root.assumptions, [{ id: "semantic-assumption-async" }]);
+});
+
+test("serializes a newly drawn contained transition under its common semantic owner", async () => {
+  const cimLevel = {
+    apiType: "CIM",
+    rootTemplate: { eClass: "CIMModel" },
+    relationshipSemantics: { containmentKind: "CONTAINS", containmentKinds: ["CONTAINS"] },
+    workbench: { defaultViewDefinitionId: "main" },
+    viewDefinitions: [{ id: "main", viewType: "main" }],
+    elements: [
+      {
+        type: "CIMModel",
+        references: [{ name: "processes", targetType: "BusinessProcess", containment: true, many: true }],
+      },
+      {
+        type: "BusinessProcess",
+        references: [
+          { name: "steps", targetType: "ProcessStep", containment: true, many: true },
+          { name: "transitions", targetType: "ProcessTransition", containment: true, many: true },
+        ],
+      },
+      { type: "ProcessStep" },
+      { type: "StartStep", supertypes: ["ProcessStep"] },
+      { type: "CommandStep", supertypes: ["ProcessStep"] },
+      { type: "EndStep", supertypes: ["ProcessStep"] },
+      {
+        type: "ProcessTransition",
+        relationshipElement: true,
+        references: [
+          { name: "source", targetType: "ProcessStep" },
+          { name: "target", targetType: "ProcessStep" },
+        ],
+      },
+    ],
+    semanticEdgeObjectRules: [
+      {
+        eClass: "ProcessTransition",
+        matchKinds: ["TRANSITION"],
+        sourceType: "ProcessStep",
+        targetType: "ProcessStep",
+        rootFeature: "transitions",
+        sourceFeature: "source",
+        targetFeature: "target",
+      },
+    ],
+  };
+  const cimConfig = { levelOrder: ["cim"], levels: { cim: cimLevel } };
+  state.modelingConfig.config = cimConfig;
+  initializeModelingRuntimeState(cimConfig);
+  state.activeType = "cim";
+
+  const model = {
+    eClass: "CIMModel",
+    processes: [
+      {
+        eClass: "BusinessProcess",
+        id: "process-1",
+        name: "Process 1",
+        steps: [
+          { eClass: "StartStep", id: "start-1", name: "Start" },
+          { eClass: "CommandStep", id: "command-1", name: "Command" },
+          { eClass: "EndStep", id: "end-1", name: "End" },
+        ],
+        transitions: [],
+      },
+    ],
+  };
+  const { installGraphAndViews, addConnectionToGraphAndActiveView } = await import(
+    "../../apps/frontend/js/graph-store.js"
+  );
+  installGraphAndViews("cim", model, "process-model");
+
+  // Simulate the scoped editor path: endpoint nodes are present, but their transient owner
+  // fields are unavailable. The containment graph still carries the authoritative ownership.
+  ["start-1", "command-1", "end-1"].forEach((id) => {
+    const element = state.graph.elementsById.get(id);
+    delete element.__ownerId;
+    delete element.__containmentFeature;
+  });
+  state.graph.parentByChild.set("start-1", "process-1");
+  state.graph.parentByChild.set("command-1", "process-1");
+  state.graph.parentByChild.set("end-1", "process-1");
+
+  addConnectionToGraphAndActiveView({
+    id: "transition-1",
+    sourceId: "start-1",
+    targetId: "command-1",
+    kind: "TRANSITION",
+  });
+  addConnectionToGraphAndActiveView({
+    id: "transition-2",
+    sourceId: "command-1",
+    targetId: "end-1",
+    kind: "TRANSITION",
+  });
+
+  const root = { eClass: "CIMModel" };
+  serializeGraphAndViewsInto(root, { syncView: false });
+  assert.deepEqual(
+    root.processes[0].transitions.map(({ source, target }) => ({ source, target })),
+    [
+      { source: "start-1", target: "command-1" },
+      { source: "command-1", target: "end-1" },
+    ],
+  );
 });

@@ -5,14 +5,18 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -84,6 +88,51 @@ public final class EpsilonEgxGenerator {
    *     finalization fails
    */
   public EgxGenerationReport generate(EgxGenerationRequest request) throws EgxGenerationException {
+    Path output = request.outputDirectory().toAbsolutePath().normalize();
+    Path parent = output.getParent();
+    if (parent == null) {
+      return generateInPlace(request);
+    }
+    Path staging = parent.resolve("." + output.getFileName() + ".staging-" + UUID.randomUUID());
+    Path backup = parent.resolve("." + output.getFileName() + ".backup-" + UUID.randomUUID());
+    try {
+      validatePublishTarget(request);
+      copyTree(output, staging);
+      EgxGenerationRequest stagedRequest =
+          new EgxGenerationRequest(
+              request.moduleFile(),
+              request.templateRoot(),
+              staging,
+              request.models(),
+              false,
+              request.captureOutput());
+      EgxGenerationReport stagedReport = generateInPlace(stagedRequest);
+      publish(staging, output, backup);
+      return new EgxGenerationReport(
+          stagedReport.status(),
+          stagedReport.moduleFile(),
+          output,
+          stagedReport.startedAt(),
+          stagedReport.finishedAt(),
+          stagedReport.duration(),
+          stagedReport.phaseTiming(),
+          stagedReport.diagnostics(),
+          listGeneratedFiles(output),
+          stagedReport.standardOutput(),
+          stagedReport.warningOutput(),
+          stagedReport.errorOutput());
+    } catch (EgxGenerationException ex) {
+      deleteTree(staging);
+      throw ex;
+    } catch (Exception ex) {
+      deleteTree(staging);
+      throw new EgxGenerationException(
+          "Could not stage or publish EGX generation output.", null, ex);
+    }
+  }
+
+  private EgxGenerationReport generateInPlace(EgxGenerationRequest request)
+      throws EgxGenerationException {
     Instant startedAt = Instant.now();
     long startedNanos = System.nanoTime();
     EgxPhaseTiming phaseTiming = new EgxPhaseTiming();
@@ -140,6 +189,8 @@ public final class EpsilonEgxGenerator {
       }
 
       phaseStarted = System.nanoTime();
+      Set<String> previousGeneratedPaths = generatedArtifactPaths(request.outputDirectory());
+      validateExistingProtectedRegions(request.outputDirectory());
       executeModule(module);
       phaseTiming.addExecute(System.nanoTime() - phaseStarted);
       phaseStarted = System.nanoTime();
@@ -148,6 +199,9 @@ public final class EpsilonEgxGenerator {
       phaseStarted = System.nanoTime();
       finalizeGeneratedTraceFiles(request);
       phaseTiming.addTraceFinalization(System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      removeObsoleteGeneratedArtifacts(request.outputDirectory(), previousGeneratedPaths);
+      phaseTiming.addArtifactDiscovery(System.nanoTime() - phaseStarted);
       return report(
           GenerationStatus.SUCCEEDED,
           request,
@@ -250,6 +304,143 @@ public final class EpsilonEgxGenerator {
       }
       phaseTiming.addDispose(System.nanoTime() - disposeStarted);
       phaseTiming.setTotal(System.nanoTime() - startedNanos);
+    }
+  }
+
+  /** Returns paths owned by the previous generator run according to its trace. */
+  private Set<String> generatedArtifactPaths(Path outputDirectory) throws Exception {
+    Set<String> paths = new java.util.HashSet<>();
+    Path trace = outputDirectory.resolve("generated/trace/artifact-trace.json");
+    if (!Files.isRegularFile(trace)) return paths;
+    for (String line : Files.readAllLines(trace, StandardCharsets.UTF_8)) {
+      String trimmed = line.trim();
+      if (!trimmed.startsWith("\"path\"")) continue;
+      String pathText = jsonStringValue(trimmed);
+      if (!pathText.isBlank()) paths.add(pathText);
+    }
+    return paths;
+  }
+
+  /** Removes paths owned by the previous run that the current trace no longer owns. */
+  private void removeObsoleteGeneratedArtifacts(Path outputDirectory, Set<String> previousPaths)
+      throws Exception {
+    Set<String> currentPaths = generatedArtifactPaths(outputDirectory);
+    Path trace = outputDirectory.resolve("generated/trace/artifact-trace.json");
+    for (String pathText : previousPaths) {
+      if (currentPaths.contains(pathText)) continue;
+      Path artifact = outputDirectory.resolve(pathText).normalize();
+      if (!artifact.startsWith(outputDirectory.toAbsolutePath().normalize())
+          || artifact.equals(trace.toAbsolutePath().normalize())) continue;
+      Files.deleteIfExists(artifact);
+    }
+  }
+
+  private void validateExistingProtectedRegions(Path outputDirectory) throws Exception {
+    Path trace = outputDirectory.resolve("generated/trace/artifact-trace.json");
+    if (!Files.isRegularFile(trace)) return;
+    for (String line : Files.readAllLines(trace, StandardCharsets.UTF_8)) {
+      String trimmed = line.trim();
+      if (!trimmed.startsWith("\"path\"")) continue;
+      String pathText = jsonStringValue(trimmed);
+      if (pathText.isBlank()) continue;
+      Path artifact = outputDirectory.resolve(pathText).normalize();
+      if (!artifact.startsWith(outputDirectory.toAbsolutePath().normalize())
+          || !Files.isRegularFile(artifact)) continue;
+      Map<String, Integer> begins = new java.util.HashMap<>();
+      Map<String, Integer> ends = new java.util.HashMap<>();
+      Map<String, Integer> markerLines = new java.util.HashMap<>();
+      for (String artifactLine : Files.readAllLines(artifact, StandardCharsets.UTF_8)) {
+        String lowerLine = artifactLine.toLowerCase(java.util.Locale.ROOT);
+        if (lowerLine.contains("protected")
+            && (lowerLine.contains("begin") || lowerLine.contains("end"))) {
+          markerLines.merge(artifactLine.trim(), 1, Integer::sum);
+        }
+        int marker = artifactLine.indexOf("<!-- protected region ");
+        if (marker < 0) continue;
+        String value = artifactLine.substring(marker + "<!-- protected region ".length());
+        if (value.endsWith(" on begin -->")) {
+          String id = value.substring(0, value.length() - " on begin -->".length()).trim();
+          begins.merge(id, 1, Integer::sum);
+        } else if (value.endsWith(" end -->")) {
+          String id = value.substring(0, value.length() - " end -->".length()).trim();
+          ends.merge(id, 1, Integer::sum);
+        }
+      }
+      if (markerLines.values().stream().anyMatch(count -> count > 1)) {
+        throw new IllegalArgumentException(
+            "Malformed or duplicated protected region in " + pathText);
+      }
+      Set<String> ids = new java.util.HashSet<>();
+      ids.addAll(begins.keySet());
+      ids.addAll(ends.keySet());
+      for (String id : ids) {
+        if (begins.getOrDefault(id, 0) != 1 || ends.getOrDefault(id, 0) != 1) {
+          throw new IllegalArgumentException(
+              "Malformed or duplicated protected region '" + id + "' in " + pathText);
+        }
+      }
+    }
+  }
+
+  private void validatePublishTarget(EgxGenerationRequest request) throws Exception {
+    if (Files.exists(request.outputDirectory())
+        && request.failIfOutputDirectoryIsNotEmpty()
+        && isNotEmpty(request.outputDirectory())) {
+      throw new IllegalArgumentException("Output directory is not empty.");
+    }
+  }
+
+  private void copyTree(Path source, Path target) throws Exception {
+    if (!Files.exists(source)) {
+      Files.createDirectories(target);
+      return;
+    }
+    try (Stream<Path> paths = Files.walk(source)) {
+      for (Path path : paths.toList()) {
+        Path destination = target.resolve(source.relativize(path));
+        if (Files.isDirectory(path)) {
+          Files.createDirectories(destination);
+        } else {
+          Files.createDirectories(destination.getParent());
+          Files.copy(path, destination, StandardCopyOption.COPY_ATTRIBUTES);
+        }
+      }
+    }
+  }
+
+  private void publish(Path staging, Path output, Path backup) throws Exception {
+    boolean hadOutput = Files.exists(output);
+    if (hadOutput) {
+      Files.move(output, backup, StandardCopyOption.ATOMIC_MOVE);
+    }
+    try {
+      Files.move(staging, output, StandardCopyOption.ATOMIC_MOVE);
+      deleteTree(backup);
+    } catch (Exception ex) {
+      if (hadOutput && Files.exists(backup) && !Files.exists(output)) {
+        Files.move(backup, output, StandardCopyOption.ATOMIC_MOVE);
+      }
+      throw ex;
+    }
+  }
+
+  private void deleteTree(Path root) {
+    if (!Files.exists(root)) {
+      return;
+    }
+    try (Stream<Path> paths = Files.walk(root)) {
+      paths
+          .sorted(Comparator.reverseOrder())
+          .forEach(
+              path -> {
+                try {
+                  Files.deleteIfExists(path);
+                } catch (Exception ignored) {
+                  // Cleanup cannot change the already determined generation outcome.
+                }
+              });
+    } catch (Exception ignored) {
+      // Cleanup cannot change the already determined generation outcome.
     }
   }
 

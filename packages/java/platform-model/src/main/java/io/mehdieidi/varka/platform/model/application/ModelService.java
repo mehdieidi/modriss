@@ -517,9 +517,25 @@ public final class ModelService {
           requireExpectedRevision(existing, expectedRevision);
           ProjectRecord project = projectService.get(user, existing.projectId());
           projectService.requireEditor(project, user.id());
+          java.util.Set<String> deletedSemanticIds =
+              new java.util.HashSet<>(importExport.semanticIds(level, existing.modelJson()));
+          deletedSemanticIds.removeAll(importExport.semanticIds(level, modelJson));
+          deletedSemanticIds.addAll(
+              importExport.removedReferenceTargets(level, existing.modelJson(), modelJson));
+          deletedSemanticIds.addAll(
+              importExport.generatedObjectsEmptiedByReferenceRemoval(
+                  level, existing.modelJson(), modelJson));
+          deletedSemanticIds.addAll(
+              importExport.removedGeneratedSources(level, existing.modelJson(), modelJson));
           JsonNode normalizedModel =
               importExport.removeDanglingReferences(
-                  level, importExport.normalizeModel(name, level, modelJson));
+                  level, importExport.normalizeModel(name, level, modelJson), deletedSemanticIds);
+          // Normalization can rehydrate graph-backed references after the first pass. Re-run the
+          // Ecore-driven deletion closure on that canonical projection so cross-container
+          // generated dependents and required relationship records cannot be reintroduced by the
+          // JSON/XMI bridge.
+          normalizedModel =
+              importExport.removeDanglingReferences(level, normalizedModel, deletedSemanticIds);
           ModelImportExportService.SourceXmiUpdate sourceXmi =
               importExport.resolveSourceXmiUpdate(
                   user, existing.projectId(), level, normalizedModel, true);
@@ -764,7 +780,24 @@ public final class ModelService {
         "validation.sourceXmiReadMs", System.nanoTime() - phaseStarted);
     ValidationResult result;
     if (xmiBytes.isPresent()) {
-      result = validateGeneratedXmi(level, xmiBytes.get(), model.modelJson());
+      boolean sidecarMatchesRecord =
+          model.sourceXmiHash() == null
+              || model.sourceXmiHash().isBlank()
+              || model.sourceXmiHash().equals(importExport.hashBytes(xmiBytes.get()));
+      result =
+          sidecarMatchesRecord
+              ? validateGeneratedXmi(level, xmiBytes.get(), model.modelJson())
+              : validateRegeneratedSourceXmi(model);
+      if (result.issues().stream()
+          .anyMatch(issue -> "RequiredReference".equals(issue.constraint()))) {
+        JsonNode repairedModel =
+            importExport.removeDanglingReferences(
+                level, importExport.hydrateSemanticReferences(model.modelJson()));
+        ValidationResult repairedResult = validate(level, repairedModel);
+        if (repairedResult.valid()) {
+          result = repairedResult;
+        }
+      }
       if (validationService.hasRecoverableStaleSourceError(result)) {
         ValidationResult repairedResult = validateRegeneratedSourceXmi(model);
         if (!validationService.hasRecoverableStaleSourceError(repairedResult)) {
@@ -794,10 +827,7 @@ public final class ModelService {
   }
 
   /**
-   * Regenerates a source XMI sidecar for validation when stored XMI appears stale but recoverable.
-   *
-   * @param model stored model
-   * @return validation result from regenerated XMI or JSON fallback
+   * Validates an in-memory serialization of current semantic JSON without changing stored state.
    */
   private ValidationResult validateRegeneratedSourceXmi(ModelRecord model) {
     try {
@@ -806,23 +836,7 @@ public final class ModelService {
           importExport.canonicalSourceXmi(model.level(), model.modelJson(), null);
       validationService.addValidationTiming(
           "validation.sourceXmiRegenerateMs", System.nanoTime() - phaseStarted);
-      ValidationResult result =
-          validateGeneratedXmi(model.level(), sourceXmi.bytes(), model.modelJson());
-      if (!validationService.hasRecoverableStaleSourceError(result)) {
-        phaseStarted = System.nanoTime();
-        importExport.attachSourceXmi(model, sourceXmi.bytes());
-        validationService.addValidationTiming(
-            "validation.sourceXmiAttachMs", System.nanoTime() - phaseStarted);
-        return result;
-      }
-      // The semantic JSON already contains the hydrated graph endpoints used by the editor. If a
-      // regenerated sidecar still cannot resolve them, validate that canonical in-memory model
-      // instead of surfacing duplicate stale-XMI endpoint errors to the user.
-      ValidationResult jsonResult = validate(model.level(), model.modelJson());
-      if (validationService.hasOnlyRecoverableStaleSourceErrors(jsonResult)) {
-        return new ValidationResult(true, List.of());
-      }
-      return jsonResult;
+      return validateGeneratedXmi(model.level(), sourceXmi.bytes(), model.modelJson());
     } catch (RuntimeException ex) {
       return validate(model.level(), model.modelJson());
     }

@@ -27,6 +27,7 @@ final class TestPlatformStore implements PlatformStore {
 
   private final ObjectMapper mapper;
   private final Map<String, Object> values = new LinkedHashMap<>();
+  private int writesBeforeFailure = -1;
 
   public TestPlatformStore(Path ignored) {
     JsonFactory factory =
@@ -39,6 +40,26 @@ final class TestPlatformStore implements PlatformStore {
 
   public void initialize() {
     // Test stores have no external resources to initialize.
+  }
+
+  void failAfterWrites(int writes) {
+    if (writes < 0) throw new IllegalArgumentException("writes must be non-negative");
+    writesBeforeFailure = writes;
+  }
+
+  @Override
+  public <T> T inTransaction(java.util.function.Supplier<T> operation) {
+    Map<String, Object> snapshot = new LinkedHashMap<>(values);
+    try {
+      T result = operation.get();
+      writesBeforeFailure = -1;
+      return result;
+    } catch (RuntimeException ex) {
+      values.clear();
+      values.putAll(snapshot);
+      writesBeforeFailure = -1;
+      throw ex;
+    }
   }
 
   @Override
@@ -54,11 +75,13 @@ final class TestPlatformStore implements PlatformStore {
 
   @Override
   public void write(Path path, Object value) {
+    failIfConfigured();
     values.put(key(path), value);
   }
 
   @Override
   public void writeBytesAtomically(Path path, byte[] bytes) {
+    failIfConfigured();
     byte[] payload = bytes == null ? new byte[0] : bytes.clone();
     if (path.toString().endsWith(".json")) {
       try {
@@ -69,6 +92,13 @@ final class TestPlatformStore implements PlatformStore {
       }
     }
     values.put(key(path), payload);
+  }
+
+  private void failIfConfigured() {
+    if (writesBeforeFailure == 0) {
+      throw new PlatformException(500, "Injected persistence failure.");
+    }
+    if (writesBeforeFailure > 0) writesBeforeFailure--;
   }
 
   @Override

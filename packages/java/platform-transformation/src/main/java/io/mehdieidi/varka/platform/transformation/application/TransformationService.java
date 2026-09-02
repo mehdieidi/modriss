@@ -198,6 +198,7 @@ public final class TransformationService {
           ModelRecord source =
               modelService.getForTransformation(user, ModelLevel.CIM, sourceModelId);
           requireSourceRevision(source, expectedRevision);
+          requireSourceValid(user, ModelLevel.CIM, source.id());
           GeneratedModel generated = formalCimToPimModel(source);
           generated.model().put("sourceModelId", source.id());
           generated.model().put("sourceModelRevision", source.revision());
@@ -247,6 +248,7 @@ public final class TransformationService {
           ModelRecord source =
               modelService.getForTransformation(user, ModelLevel.PIM, sourceModelId);
           requireSourceRevision(source, expectedRevision);
+          requireSourceValid(user, ModelLevel.PIM, source.id());
           GeneratedModel generated = formalPimToPsmModel(source);
           generated.model().put("sourceModelId", source.id());
           generated.model().put("sourceModelRevision", source.revision());
@@ -870,6 +872,21 @@ public final class TransformationService {
     }
     if (source.revision() != expectedRevision.longValue()) {
       throw new PlatformException(409, "Source model changed before the MDE operation could run.");
+    }
+  }
+
+  /** Prevents an invalid source from entering a formal transformation pipeline. */
+  private void requireSourceValid(UserRecord user, ModelLevel level, String sourceModelId) {
+    ModelService.ValidationResult validation = modelService.validate(user, level, sourceModelId);
+    if (!validation.valid()) {
+      throw new PlatformException(
+          422,
+          "Source model validation failed. Fix the validation issues shown in the issue board,"
+              + " then run transformation again."
+              + validation.issues().stream()
+                  .limit(5)
+                  .map(issue -> " " + issue.constraint() + ": " + issue.message())
+                  .collect(java.util.stream.Collectors.joining()));
     }
   }
 

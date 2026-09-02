@@ -299,11 +299,13 @@ final class ModelValidationService {
             .anyMatch(
                 issue ->
                     "ERROR".equals(issue.severity())
-                        && "EVL_MODEL_LOADING".equals(issue.constraint())
-                        && (issue.message().contains("required feature 'source'")
-                            || issue.message().contains("required feature 'target'")
-                            || issue.message().contains("missing its required source")
-                            || issue.message().contains("missing its required target")));
+                            && "EVL_MODEL_LOADING".equals(issue.constraint())
+                            && (issue.message().contains("required feature 'source'")
+                                || issue.message().contains("required feature 'target'")
+                                || issue.message().contains("missing its required source")
+                                || issue.message().contains("missing its required target"))
+                        || ("ERROR".equals(issue.severity())
+                            && "RequiredReference".equals(issue.constraint())));
   }
 
   /**

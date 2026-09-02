@@ -3432,24 +3432,55 @@ function materializeSemanticEdgeObject(edge, relationship) {
     rootFeature: spec.rootFeature,
     visualOnly: false,
   };
-  if (spec.ownerType && spec.rootFeature) {
-    let owner = [...state.graph.elementsById.values()].find((element) =>
+  const containmentAncestors = (elementId) => {
+    const ancestors = [];
+    const seen = new Set();
+    let currentId = String(elementId || "").trim();
+    while (currentId && !seen.has(currentId)) {
+      seen.add(currentId);
+      const parentId = state.graph.parentByChild?.get(currentId);
+      if (!parentId) {
+        break;
+      }
+      const parent = state.graph.elementsById.get(parentId);
+      if (!parent) {
+        break;
+      }
+      ancestors.push(parent);
+      currentId = parent.id;
+    }
+    return ancestors;
+  };
+  const commonOwner = () => {
+    const sourceAncestors = containmentAncestors(source.id);
+    const targetAncestorIds = new Set([
+      ...containmentAncestors(target?.id).map((ancestor) => ancestor.id),
+    ]);
+    return sourceAncestors.find((candidate) => targetAncestorIds.has(candidate?.id)) || null;
+  };
+  const owner = commonOwner();
+  if (
+    owner &&
+    spec.rootFeature &&
+    (!spec.ownerType || matchesSemanticType(owner, spec.ownerType, state.activeType))
+  ) {
+    materialized.__ownerId = owner.id;
+    materialized.__containmentFeature = spec.rootFeature;
+  } else if (spec.ownerType && spec.rootFeature) {
+    let typedOwner = [...state.graph.elementsById.values()].find((element) =>
       matchesSemanticType(element, spec.ownerType, state.activeType),
     );
-    if (!owner) {
-      owner = normalizeElement({
+    if (!typedOwner) {
+      typedOwner = normalizeElement({
         id: genId(),
         eClass: spec.ownerType,
         name:
           modelingElementDefinition(state.activeType, spec.ownerType)?.displayName ||
           spec.ownerType,
       });
-      state.graph.elementsById.set(owner.id, owner);
+      state.graph.elementsById.set(typedOwner.id, typedOwner);
     }
-    materialized.__ownerId = owner.id;
-    materialized.__containmentFeature = spec.rootFeature;
-  } else if (source?.__ownerId && source.__ownerId === target?.__ownerId && spec.rootFeature) {
-    materialized.__ownerId = source.__ownerId;
+    materialized.__ownerId = typedOwner.id;
     materialized.__containmentFeature = spec.rootFeature;
   } else if (spec.ownerAsSource && spec.rootFeature) {
     materialized.__ownerId = source.id;

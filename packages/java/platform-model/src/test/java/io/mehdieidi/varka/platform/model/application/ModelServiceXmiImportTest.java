@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.platform.model.application;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -236,6 +237,7 @@ class ModelServiceXmiImportTest {
 
   /** Reproduces the XMI/Ecore collection diagnostic used by the validation drawer. */
   @Test
+  /** Catalog V-04: EVL-invalid automatic candidates are reported and not accepted. */
   void mapsEmptyProcessStructuralDiagnosticToItsElement() {
     TestPlatformStore store = new TestPlatformStore(tempDir);
     store.initialize();
@@ -307,12 +309,10 @@ class ModelServiceXmiImportTest {
                             || issue.message().contains("required feature 'target'"))));
   }
 
-  /**
-   * Ensures validate-by-id repairs stale source XMI when the stored JSON has only frontend
-   * relationship endpoint IDs.
-   */
+  /** Ensures validate-by-id uses current semantic JSON without mutating a stale source sidecar. */
   @Test
-  void validateByIdRepairsStaleSourceXmiFromFrontendEndpointIds() {
+  /** Catalog V-10: explicit validation observes the stored model without mutating canonical XMI. */
+  void validateByIdDoesNotMutateStaleSourceXmiFromFrontendEndpointIds() {
     TestPlatformStore store = new TestPlatformStore(tempDir);
     store.initialize();
     AuthService authService = new AuthService(store, Duration.ofHours(1));
@@ -325,17 +325,16 @@ class ModelServiceXmiImportTest {
     ObjectNode model = frontendEndpointOnlyRelationshipModel(service);
     ModelRecord created =
         service.create(user, ModelLevel.CIM, project.id(), "relationships", model);
-    service.attachSourceXmi(
-        created, sampleCimRelationshipXmiWithoutEndpoints().getBytes(StandardCharsets.UTF_8));
+    byte[] staleSource =
+        sampleCimRelationshipXmiWithoutEndpoints().getBytes(StandardCharsets.UTF_8);
+    service.attachSourceXmi(created, staleSource);
 
     ModelService.ValidationResult validation = service.validate(user, ModelLevel.CIM, created.id());
 
     assertNoRelationshipEndpointLoadingError(validation);
-    ModelService.ValidationResult repairedSourceValidation =
-        service.validateGeneratedXmi(
-            ModelLevel.CIM,
-            service.sourceXmi(service.get(user, ModelLevel.CIM, created.id())).orElseThrow());
-    assertNoRelationshipEndpointLoadingError(repairedSourceValidation);
+    assertArrayEquals(
+        staleSource,
+        service.sourceXmi(service.get(user, ModelLevel.CIM, created.id())).orElseThrow());
   }
 
   /** Verifies strict export diagnostics for enum literals outside the metamodel. */
@@ -401,7 +400,7 @@ class ModelServiceXmiImportTest {
     assertTrue(exported.length > 0);
   }
 
-  /** Verifies strict export diagnostics for unresolved model references. */
+  /** Catalog V-08: unresolved identity references are rejected before synchronization matching. */
   @Test
   void rejectsUnresolvedReferencesDuringXmiExport() {
     TestPlatformStore store = new TestPlatformStore(tempDir);
@@ -447,6 +446,27 @@ class ModelServiceXmiImportTest {
                     "XmiExport".equals(issue.constraint())
                         && issue.guidance() != null
                         && issue.guidance().contains("Unresolved reference id 'missing-goal'")));
+  }
+
+  /** Catalog V-07: an XMI load/proxy failure is a structural validation failure. */
+  @Test
+  void validationReportsMalformedOrProxyXmiAsStructuralFailure() {
+    TestPlatformStore store = new TestPlatformStore(tempDir);
+    store.initialize();
+    AuthService authService = new AuthService(store, Duration.ofHours(1));
+    ProjectService projectService = new ProjectService(store, authService);
+    ModelService service = new ModelService(store, projectService);
+
+    ModelService.ValidationResult validation =
+        service.validateGeneratedXmi(
+            ModelLevel.CIM,
+            "<cim:CIMModel xmlns:cim=\"urn:varka:cim\" name=\"broken\">"
+                .getBytes(StandardCharsets.UTF_8));
+
+    assertFalse(validation.valid());
+    assertTrue(
+        validation.issues().stream().anyMatch(issue -> "XmiLoad".equals(issue.constraint())),
+        () -> "Expected an XMI load failure, found: " + validation.issues());
   }
 
   /** Verifies strict export diagnostics for containment type mismatches. */
@@ -720,7 +740,9 @@ class ModelServiceXmiImportTest {
             .anyMatch(
                 issue ->
                     issue.constraint().startsWith("EVL_")
-                        || issue.constraint().startsWith("PIM-")));
+                        || issue.constraint().startsWith("PIM-")
+                        || issue.constraint().equals("RequiredReference")),
+        () -> "Expected a PIM validation issue but got " + pimValidation.issues());
     assertFalse(psmValidation.valid());
     assertFalse(psmValidation.issues().isEmpty());
     assertTrue(
@@ -729,7 +751,9 @@ class ModelServiceXmiImportTest {
                 issue ->
                     issue.constraint().startsWith("EVL_")
                         || issue.constraint().startsWith("AWS-")
-                        || issue.constraint().startsWith("PSM-")));
+                        || issue.constraint().startsWith("PSM-")
+                        || issue.constraint().equals("RequiredReference")),
+        () -> "Expected a PSM validation issue but got " + psmValidation.issues());
   }
 
   /**

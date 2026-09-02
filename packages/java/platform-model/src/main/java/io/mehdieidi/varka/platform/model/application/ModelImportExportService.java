@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EReference;
+import org.eclipse.emf.ecore.EStructuralFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
@@ -256,9 +257,15 @@ final class ModelImportExportService {
    * a list of PIM/PSM-specific field names.
    */
   JsonNode removeDanglingReferences(ModelLevel level, JsonNode modelJson) {
+    return removeDanglingReferences(level, modelJson, Set.of());
+  }
+
+  JsonNode removeDanglingReferences(
+      ModelLevel level, JsonNode modelJson, Set<String> deletedSemanticIds) {
     if (!(modelJson instanceof ObjectNode model)) {
       return modelJson;
     }
+    hydrateGraphReferencesForCleanup(model);
     Map<String, EClass> classes = eClassesByName(level);
     boolean changed;
     do {
@@ -285,6 +292,15 @@ final class ModelImportExportService {
             continue;
           }
           JsonNode value = item.node().get(reference.getName());
+          if (requiredReferenceMissing(reference, value)) {
+            // Interactive EMF deletion clears required non-containment references on dependent
+            // relationship objects. Remove those objects from the JSON projection so the saved
+            // model remains Ecore-conformant instead of persisting an unusable shell.
+            if (item.node() != model) {
+              markForRemoval(objectId, removeIds);
+            }
+            continue;
+          }
           if (value == null || value.isNull()) {
             continue;
           }
@@ -304,6 +320,15 @@ final class ModelImportExportService {
             }
             if (retained.size() < reference.getLowerBound()) {
               markForRemoval(objectId, removeIds);
+            } else if (retained.isEmpty()
+                && supplied > 0
+                && isTransformationGenerated(item)
+                && referenceIds(value).stream().allMatch(deletedSemanticIds::contains)) {
+              // Optional multi-valued links can still be the semantic ownership of a generated
+              // support object (for example Schedule.targets or ManualDecision.affectedElements).
+              // Once every endpoint disappeared, retaining the generated shell is not useful and
+              // commonly violates an EVL cardinality that is intentionally stronger than Ecore.
+              markForRemoval(objectId, removeIds);
             } else {
               item.node().set(reference.getName(), retained);
               changed = true;
@@ -321,12 +346,151 @@ final class ModelImportExportService {
           }
         }
       }
+      // A direct deletion can remove a generated source without clearing any required reference
+      // first (for example, deleting a workflow leaves its sibling schedule and readiness
+      // decisions structurally present). Expand the deletion through generated provenance and
+      // references while the semantic object index is already in memory.
+      for (SemanticObject item : objects) {
+        if ((deletedSemanticIds.contains(text(item.node(), "id", ""))
+                && isTransformationGenerated(item))
+            || requiredReferenceTargetsDeletedObject(item, deletedSemanticIds)
+            || generatedObjectHasMissingSource(item, ids, deletedSemanticIds, removeIds)
+            || generatedObjectReferencesRemovedSource(item, deletedSemanticIds)) {
+          markForRemoval(text(item.node(), "id", ""), removeIds);
+        }
+      }
       if (!removeIds.isEmpty()) {
         removeSemanticObjects(model, removeIds, classes);
         changed = true;
       }
     } while (changed);
     return model;
+  }
+
+  /** Hydrates semantic relationship endpoints without discarding editor transport fields. */
+  private void hydrateGraphReferencesForCleanup(ObjectNode model) {
+    JsonNode relationships = model.path("graph").path("relationships");
+    if (!relationships.isArray() || relationships.isEmpty()) {
+      return;
+    }
+    Map<String, JsonNode> graphRelationships = new LinkedHashMap<>();
+    relationships.forEach(
+        relationship -> {
+          String id = text(relationship, "id", "");
+          if (!id.isBlank()) {
+            graphRelationships.put(id, relationship);
+          }
+        });
+    hydrateSemanticReferences(model, graphRelationships);
+  }
+
+  private boolean requiredReferenceMissing(EReference reference, JsonNode value) {
+    if (reference.getLowerBound() <= 0 || value == null || value.isNull()) {
+      return reference.getLowerBound() > 0 && (value == null || value.isNull());
+    }
+    if (reference.isMany()) {
+      return value.isArray() && value.size() < reference.getLowerBound();
+    }
+    return referenceId(value).isBlank();
+  }
+
+  private boolean generatedObjectHasMissingSource(
+      SemanticObject item, Set<String> ids, Set<String> deletedSemanticIds, Set<String> removeIds) {
+    EStructuralFeature generatedFrom = item.eClass().getEStructuralFeature("generatedFrom");
+    EStructuralFeature generatedByTransformation =
+        item.eClass().getEStructuralFeature("generatedByTransformation");
+    if (generatedFrom == null || generatedByTransformation == null) {
+      return false;
+    }
+    JsonNode generated = item.node().get(generatedFrom.getName());
+    JsonNode byTransformation = item.node().get(generatedByTransformation.getName());
+    return generated != null
+        && !generated.isNull()
+        && !referenceId(generated).isBlank()
+        && (deletedSemanticIds.contains(referenceId(generated))
+            || removeIds.contains(referenceId(generated)))
+        && byTransformation != null
+        && byTransformation.asBoolean(false);
+  }
+
+  private boolean isTransformationGenerated(SemanticObject item) {
+    EStructuralFeature feature = item.eClass().getEStructuralFeature("generatedByTransformation");
+    return feature != null && item.node().path(feature.getName()).asBoolean(false);
+  }
+
+  /**
+   * Returns whether a generated object is a cross-container dependent of an object removed by the
+   * same edit. Generated helpers are not always stamped with the directly deleted workflow id; for
+   * example, a schedule may be generated from a temporal constraint while targeting that workflow,
+   * and a readiness decision may affect one of its steps. Keeping such objects would leave a
+   * syntactically loadable but semantically invalid model after an interactive deletion.
+   */
+  private boolean generatedObjectReferencesRemovedSource(
+      SemanticObject item, Set<String> deletedSemanticIds) {
+    EStructuralFeature generatedByTransformation =
+        item.eClass().getEStructuralFeature("generatedByTransformation");
+    if (generatedByTransformation == null
+        || !item.node().path(generatedByTransformation.getName()).asBoolean(false)) {
+      return false;
+    }
+    for (EReference reference : item.eClass().getEAllReferences()) {
+      if (reference.isContainment()
+          || reference.isContainer()
+          || reference.isDerived()
+          || reference.isTransient()
+          || reference.isVolatile()) {
+        continue;
+      }
+      JsonNode value = item.node().get(reference.getName());
+      if (value == null || value.isNull()) {
+        continue;
+      }
+      if (reference.isMany()) {
+        for (JsonNode entry : value) {
+          String referencedId = referenceId(entry);
+          if (deletedSemanticIds.contains(referencedId)) {
+            return true;
+          }
+        }
+      } else {
+        String referencedId = referenceId(value);
+        if (deletedSemanticIds.contains(referencedId)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Removes non-containment relationship records whose required endpoint was explicitly deleted.
+   */
+  private boolean requiredReferenceTargetsDeletedObject(
+      SemanticObject item, Set<String> deletedSemanticIds) {
+    for (EReference reference : item.eClass().getEAllReferences()) {
+      if (reference.isContainment()
+          || reference.isContainer()
+          || reference.getLowerBound() == 0
+          || reference.isDerived()
+          || reference.isTransient()
+          || reference.isVolatile()) {
+        continue;
+      }
+      JsonNode value = item.node().get(reference.getName());
+      if (value == null || value.isNull()) {
+        continue;
+      }
+      if (reference.isMany()) {
+        for (JsonNode entry : value) {
+          if (deletedSemanticIds.contains(referenceId(entry))) {
+            return true;
+          }
+        }
+      } else if (deletedSemanticIds.contains(referenceId(value))) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private Map<String, EClass> eClassesByName(ModelLevel level) {
@@ -347,6 +511,142 @@ final class ModelImportExportService {
     List<SemanticObject> objects = new ArrayList<>();
     collectSemanticObjects(model, classes, objects);
     return objects;
+  }
+
+  Set<String> semanticIds(ModelLevel level, JsonNode model) {
+    return semanticObjects(model, eClassesByName(level)).stream()
+        .map(item -> text(item.node(), "id", ""))
+        .filter(value -> !value.isBlank())
+        .collect(java.util.stream.Collectors.toSet());
+  }
+
+  Set<String> removedReferenceTargets(ModelLevel level, JsonNode previous, JsonNode current) {
+    Map<String, SemanticObject> before =
+        semanticObjects(previous, eClassesByName(level)).stream()
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    item -> text(item.node(), "id", ""), item -> item, (first, ignored) -> first));
+    Map<String, SemanticObject> after =
+        semanticObjects(current, eClassesByName(level)).stream()
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    item -> text(item.node(), "id", ""), item -> item, (first, ignored) -> first));
+    Set<String> removed = new LinkedHashSet<>();
+    for (Map.Entry<String, SemanticObject> entry : before.entrySet()) {
+      SemanticObject oldObject = entry.getValue();
+      SemanticObject newObject = after.get(entry.getKey());
+      if (newObject == null) {
+        continue;
+      }
+      for (EReference reference : oldObject.eClass().getEAllReferences()) {
+        if (reference.isContainment()
+            || reference.isContainer()
+            || reference.isDerived()
+            || reference.isTransient()
+            || reference.isVolatile()) {
+          continue;
+        }
+        Set<String> oldTargets = referenceIds(oldObject.node().get(reference.getName()));
+        oldTargets.removeAll(referenceIds(newObject.node().get(reference.getName())));
+        removed.addAll(oldTargets);
+      }
+    }
+    return removed;
+  }
+
+  /** Returns generated support objects whose edited reference collection lost every endpoint. */
+  Set<String> generatedObjectsEmptiedByReferenceRemoval(
+      ModelLevel level, JsonNode previous, JsonNode current) {
+    Map<String, SemanticObject> before =
+        semanticObjects(previous, eClassesByName(level)).stream()
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    item -> text(item.node(), "id", ""), item -> item, (first, ignored) -> first));
+    Map<String, SemanticObject> after =
+        semanticObjects(current, eClassesByName(level)).stream()
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    item -> text(item.node(), "id", ""), item -> item, (first, ignored) -> first));
+    Set<String> result = new LinkedHashSet<>();
+    for (Map.Entry<String, SemanticObject> entry : after.entrySet()) {
+      SemanticObject oldObject = before.get(entry.getKey());
+      SemanticObject newObject = entry.getValue();
+      if (oldObject == null || !isTransformationGenerated(newObject)) {
+        continue;
+      }
+      for (EReference reference : newObject.eClass().getEAllReferences()) {
+        if (reference.isMany()
+            && !reference.isContainment()
+            && !reference.isContainer()
+            && !reference.isDerived()
+            && !reference.isTransient()
+            && !reference.isVolatile()
+            && !referenceIds(oldObject.node().get(reference.getName())).isEmpty()
+            && referenceIds(newObject.node().get(reference.getName())).isEmpty()) {
+          result.add(entry.getKey());
+          break;
+        }
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Returns the transformation-source identities represented by generated objects removed in the
+   * edit.
+   *
+   * <p>Several generated PIM objects can legitimately share one upstream identity. A workflow step
+   * and its separately contained handler function are one example. Computing a global set
+   * difference of provenance values therefore loses exactly the identity needed to remove the
+   * handler when the step is deleted: the surviving handler still contributes that value to the
+   * "after" set. Derive the closure from the objects that actually disappeared instead.
+   */
+  Set<String> removedGeneratedSources(ModelLevel level, JsonNode previous, JsonNode current) {
+    Map<String, EClass> classes = eClassesByName(level);
+    Set<String> currentIds =
+        semanticObjects(current, classes).stream()
+            .map(item -> text(item.node(), "id", ""))
+            .filter(value -> !value.isBlank())
+            .collect(java.util.stream.Collectors.toSet());
+    return generatedSourceIds(
+        semanticObjects(previous, classes).stream()
+            .filter(item -> !currentIds.contains(text(item.node(), "id", "")))
+            .toList());
+  }
+
+  private Set<String> generatedSourceIds(List<SemanticObject> objects) {
+    Set<String> result = new LinkedHashSet<>();
+    for (SemanticObject item : objects) {
+      EStructuralFeature generatedFrom = item.eClass().getEStructuralFeature("generatedFrom");
+      EStructuralFeature generated =
+          item.eClass().getEStructuralFeature("generatedByTransformation");
+      if (generatedFrom == null
+          || generated == null
+          || !item.node().path(generated.getName()).asBoolean(false)) {
+        continue;
+      }
+      String sourceId = referenceId(item.node().get(generatedFrom.getName()));
+      if (!sourceId.isBlank()) result.add(sourceId);
+    }
+    return result;
+  }
+
+  private Set<String> referenceIds(JsonNode value) {
+    Set<String> result = new LinkedHashSet<>();
+    if (value == null || value.isNull()) {
+      return result;
+    }
+    if (value.isArray()) {
+      value.forEach(
+          item -> {
+            String id = referenceId(item);
+            if (!id.isBlank()) result.add(id);
+          });
+    } else {
+      String id = referenceId(value);
+      if (!id.isBlank()) result.add(id);
+    }
+    return result;
   }
 
   private void collectSemanticObjects(

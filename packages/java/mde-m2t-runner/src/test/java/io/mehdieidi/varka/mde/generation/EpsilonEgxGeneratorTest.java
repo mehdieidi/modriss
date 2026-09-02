@@ -1,7 +1,9 @@
 package io.mehdieidi.varka.mde.generation;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -76,6 +78,16 @@ final class EpsilonEgxGeneratorTest {
   /** Temporary directory for generated source models and artifact projects. */
   @TempDir Path tempDir;
 
+  private Map<String, byte[]> generatedFileBytes(Path root) throws IOException {
+    Map<String, byte[]> files = new java.util.TreeMap<>();
+    try (Stream<Path> paths = Files.walk(root)) {
+      for (Path path : paths.filter(Files::isRegularFile).toList()) {
+        files.put(root.relativize(path).toString().replace('\\', '/'), Files.readAllBytes(path));
+      }
+    }
+    return files;
+  }
+
   /** Disposable Docker network used by the active LocalStack test container. */
   private String activeLocalStackNetworkName;
 
@@ -122,8 +134,8 @@ final class EpsilonEgxGeneratorTest {
   }
 
   /**
-   * Generates a project from a synthetic AWS PSM fixture and verifies the generated tree, reports,
-   * traces, scripts, and CI configuration.
+   * Catalog AR-01: generates the complete initial artifact set from a synthetic AWS PSM fixture.
+   * Verifies the generated tree, reports, traces, scripts, and CI configuration.
    *
    * @throws Exception when fixture creation or generation fails
    */
@@ -357,7 +369,9 @@ final class EpsilonEgxGeneratorTest {
     assertGeneratedFilesUseLfLineEndings(outputDirectory);
   }
 
-  /** Ensures merge-enabled EGL templates preserve developer-owned protected-region content. */
+  /**
+   * Catalog AR-06: merge-enabled EGL templates preserve developer-owned protected-region content.
+   */
   @Test
   void preservesProtectedRegionsWhenRegeneratingExistingArtifacts() throws Exception {
     Path sourceModel = tempDir.resolve("representative-aws-psm.xmi");
@@ -367,24 +381,219 @@ final class EpsilonEgxGeneratorTest {
     generateOrFail(
         AwsPsmToArtifactsDefaults.request(
             REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
-    Path handler = outputDirectory.resolve("src/functions/order-handler/handler.go");
-    String customLogic = "\treturn GeneratedResult{Status: \"developer-owned\"}, nil";
+    Path protectedFile = outputDirectory.resolve("src/functions/order-handler/handler.go");
+    String original = Files.readString(protectedFile);
+    int begin = original.indexOf("protected region ");
+    int contentStart = original.indexOf('\n', begin) + 1;
+    int end = original.indexOf("protected region ", contentStart);
+    int endMarkerStart = original.lastIndexOf("/*", end);
+    assertTrue(begin >= 0 && contentStart > 0 && endMarkerStart > contentStart);
+    String customLogic = "developer-owned protected content";
     Files.writeString(
-        handler,
-        Files.readString(handler)
-            .replace(
-                "\treturn mapKnownError(\n"
-                    + "\t\tshared.NewGeneratedHandlerError(\"NOT_IMPLEMENTED\", \"Business logic"
-                    + " has not been implemented yet.\"),\n"
-                    + "\t\tcorrelationID,\n"
-                    + "\t), nil",
-                customLogic));
+        protectedFile,
+        original.substring(0, contentStart)
+            + customLogic
+            + "\n"
+            + original.substring(endMarkerStart));
 
     generateOrFail(
         AwsPsmToArtifactsDefaults.request(
             REPOSITORY_ROOT, sourceModel, outputDirectory, false, true));
 
-    assertTrue(Files.readString(handler).contains(customLogic));
+    String regenerated = Files.readString(protectedFile);
+    assertTrue(
+        regenerated.contains(customLogic),
+        () -> "Protected content was not preserved in " + protectedFile + ":\n" + regenerated);
+  }
+
+  /** Catalog AR-07: generator-owned text outside protected regions may be replaced on replay. */
+  @Test
+  void regenerationReplacesUserTextOutsideProtectedRegions() throws Exception {
+    Path sourceModel = tempDir.resolve("owned-text-aws-psm.xmi");
+    Path outputDirectory = tempDir.resolve("owned-text-project");
+    createRepresentativeAwsPsmModel(sourceModel);
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
+    Path protectedFile = outputDirectory.resolve("src/functions/order-handler/handler.go");
+    String original = Files.readString(protectedFile);
+    String marker = "// user edit outside protected region";
+    int firstLineEnd = original.indexOf('\n');
+    assertTrue(firstLineEnd >= 0, "Expected generated handler to contain text lines.");
+    Files.writeString(
+        protectedFile,
+        original.substring(0, firstLineEnd + 1)
+            + marker
+            + "\n"
+            + original.substring(firstLineEnd + 1));
+
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, false, true));
+
+    assertFalse(
+        Files.readString(protectedFile).contains(marker),
+        "Generator-owned text outside a protected region must not become implicitly user-owned.");
+  }
+
+  /** Catalog AR-08: malformed protected-region markers fail without publishing a partial run. */
+  @Test
+  void malformedProtectedRegionMarkersAreRejectedSafely() throws Exception {
+    Path sourceModel = tempDir.resolve("malformed-regions-aws-psm.xmi");
+    Path outputDirectory = tempDir.resolve("malformed-regions-project");
+    createRepresentativeAwsPsmModel(sourceModel);
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
+    Path handler = outputDirectory.resolve("src/functions/order-handler/handler.go");
+    String content = Files.readString(handler);
+    String marker =
+        content
+            .lines()
+            .filter(line -> line.contains("protected") || line.contains("PROTECTED"))
+            .findFirst()
+            .orElseThrow();
+    Files.writeString(handler, content.replace(marker, marker + System.lineSeparator() + marker));
+    Map<String, byte[]> before = generatedFileBytes(outputDirectory);
+
+    assertThrows(
+        EgxGenerationException.class,
+        () ->
+            new EpsilonEgxGenerator()
+                .generate(
+                    AwsPsmToArtifactsDefaults.request(
+                        REPOSITORY_ROOT, sourceModel, outputDirectory, false, true)));
+    Map<String, byte[]> after = generatedFileBytes(outputDirectory);
+    assertEquals(before.keySet(), after.keySet());
+    before.forEach(
+        (path, bytes) ->
+            assertArrayEquals(
+                bytes, after.get(path), () -> "Published malformed artifact " + path));
+  }
+
+  /**
+   * Catalog AR-02: unchanged PSM regeneration is byte-equivalent and creates no duplicate paths.
+   */
+  @Test
+  void unchangedPsmRegenerationIsIdempotent() throws Exception {
+    Path sourceModel = tempDir.resolve("idempotent-aws-psm.xmi");
+    Path outputDirectory = tempDir.resolve("idempotent-project");
+    createRepresentativeAwsPsmModel(sourceModel);
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
+    Map<String, byte[]> first = generatedFileBytes(outputDirectory);
+
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, false, true));
+    Map<String, byte[]> second = generatedFileBytes(outputDirectory);
+
+    assertEquals(first.keySet(), second.keySet());
+    first.forEach(
+        (path, bytes) ->
+            assertArrayEquals(bytes, second.get(path), () -> "Changed unchanged artifact " + path));
+  }
+
+  /**
+   * Catalog AR-03/AR-04/AR-05: artifact paths follow generated resources across add/edit/delete.
+   */
+  @Test
+  void artifactSetTracksGeneratedResourceLifecycle() throws Exception {
+    Path sourceModel = tempDir.resolve("lifecycle-aws-psm.xmi");
+    Path outputDirectory = tempDir.resolve("lifecycle-project");
+    createMinimalGuardAwsPsmModel(sourceModel);
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
+    Map<String, byte[]> minimal = generatedFileBytes(outputDirectory);
+
+    createRepresentativeAwsPsmModel(sourceModel);
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, false, true));
+    Map<String, byte[]> expanded = generatedFileBytes(outputDirectory);
+    assertTrue(
+        expanded.size() > minimal.size(), "Adding generated PSM resources must add artifacts.");
+    Path handler = outputDirectory.resolve("src/functions/order-handler/handler.go");
+    assertTrue(Files.exists(handler));
+    String originalHandler = Files.readString(handler);
+
+    Files.writeString(
+        sourceModel,
+        Files.readString(sourceModel).replace("Order Handler", "Renamed Order Handler"));
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, false, true));
+    assertNotEquals(originalHandler, Files.readString(handler));
+
+    createMinimalGuardAwsPsmModel(sourceModel);
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, false, true));
+    assertFalse(
+        Files.exists(handler), "Deleting a generated PSM resource must remove its owned artifact.");
+  }
+
+  /** Catalog AR-09: regeneration never overwrites an independently owned, unknown file. */
+  @Test
+  void regenerationPreservesIndependentUserFiles() throws Exception {
+    Path sourceModel = tempDir.resolve("user-file-aws-psm.xmi");
+    Path outputDirectory = tempDir.resolve("user-file-project");
+    createRepresentativeAwsPsmModel(sourceModel);
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
+    Path userFile = outputDirectory.resolve("notes/developer-owned.txt");
+    Files.createDirectories(userFile.getParent());
+    Files.writeString(userFile, "developer-owned\n");
+
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, false, true));
+
+    assertEquals("developer-owned\n", Files.readString(userFile));
+  }
+
+  /** Catalog AR-10/F-11: a later EGL failure does not publish partial temporary output. */
+  @Test
+  void failedGenerationRetainsPreviouslyPublishedArtifactSet() throws Exception {
+    Path sourceModel = tempDir.resolve("atomic-aws-psm.xmi");
+    createRepresentativeAwsPsmModel(sourceModel);
+    Path outputDirectory = tempDir.resolve("atomic-project");
+    Files.createDirectories(outputDirectory);
+    Files.writeString(outputDirectory.resolve("published.txt"), "previous release\n");
+    Map<String, byte[]> before = generatedFileBytes(outputDirectory);
+
+    Path module = tempDir.resolve("atomic.egx");
+    Path templates = tempDir.resolve("atomic-templates");
+    Files.createDirectories(templates);
+    Files.writeString(
+        module,
+        "rule First {\n"
+            + "  template : \"first.egl\"\n"
+            + "  target : \"first.txt\"\n"
+            + "}\n"
+            + "rule Failing {\n"
+            + "  template : \"failing.egl\"\n"
+            + "  target : \"failing.txt\"\n"
+            + "}\n");
+    Files.writeString(templates.resolve("first.egl"), "new partial output\n");
+    Files.writeString(templates.resolve("failing.egl"), "[% throw \"deliberate failure\"; %]\n");
+    EgxGenerationRequest defaults =
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, false, true);
+    EgxGenerationRequest failing =
+        new EgxGenerationRequest(
+            module, templates, outputDirectory, defaults.models(), false, true);
+
+    assertThrows(EgxGenerationException.class, () -> new EpsilonEgxGenerator().generate(failing));
+    Map<String, byte[]> after = generatedFileBytes(outputDirectory);
+    assertEquals(before.keySet(), after.keySet());
+    before.forEach(
+        (path, bytes) ->
+            assertArrayEquals(bytes, after.get(path), () -> "Changed published artifact " + path));
+    assertFalse(Files.exists(outputDirectory.resolve("first.txt")));
   }
 
   /**
@@ -1588,9 +1797,13 @@ final class EpsilonEgxGeneratorTest {
     assertNotNull(runtimeApi, "Generated Runtime HTTP API should be discoverable.");
     String apiId = runtimeApi.path("ApiId").asText();
     String apiEndpoint = runtimeApi.path("ApiEndpoint").asText();
-    List<HttpEndpoint> apiCandidates =
-        new ArrayList<>(localStackHttpCandidates(apiEndpoint + "/runtime", endpoint));
+    // The API endpoint reported by LocalStack may resolve to its generic edge handler when the
+    // request is sent without the execute-api virtual-host routing header. Prefer the explicit
+    // edge execute-api path first so a successful response is guaranteed to exercise this API's
+    // deployed route rather than another edge handler returning HTTP 200.
+    List<HttpEndpoint> apiCandidates = new ArrayList<>();
     apiCandidates.add(new HttpEndpoint(endpoint + "/_aws/execute-api/" + apiId + "/runtime", null));
+    apiCandidates.addAll(localStackHttpCandidates(apiEndpoint + "/runtime", endpoint));
     HttpResponse<String> apiResponse =
         postJsonToFirstReachableUrl(apiCandidates, "{\"payload\":{\"source\":\"junit-http-api\"}}");
     assertGeneratedHttpEntrypointResponse(apiResponse, "API Gateway HTTP route");
@@ -1660,7 +1873,12 @@ final class EpsilonEgxGeneratorTest {
         HttpRequest request =
             requestBuilder.POST(HttpRequest.BodyPublishers.ofString(body)).build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 404 && response.statusCode() != 502) {
+        // LocalStack can return 403 for a URL candidate whose virtual-host routing does not match
+        // even when the model and generated template declare AuthType NONE. Try the remaining
+        // equivalent endpoint candidates before treating that routing response as the handler.
+        if (response.statusCode() != 403
+            && response.statusCode() != 404
+            && response.statusCode() != 502) {
           return response;
         }
         lastFailure =

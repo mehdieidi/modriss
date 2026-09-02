@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.platform.model.application;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -159,13 +160,12 @@ class ClimateReliefSampleXmiImportTest {
   }
 
   /**
-   * Confirms that stale source XMI without trace endpoints is repaired during validation so later
-   * source-XMI validation sees the restored endpoints.
+   * Confirms validation does not mutate stale source XMI while validating current semantic JSON.
    *
    * @throws Exception when sample import, persistence, or validation fails
    */
   @Test
-  void validateButtonPathRepairsStaleTraceLinkSourceXmi() throws Exception {
+  void validateButtonPathDoesNotRepairStaleTraceLinkSourceXmi() throws Exception {
     PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
     ModelService service = services.models();
     PlatformTestFixtures.AuthenticatedContext context =
@@ -177,22 +177,18 @@ class ClimateReliefSampleXmiImportTest {
         (ObjectNode) service.importModel(ModelLevel.CIM, "cim.xmi", sample, "xmi").modelJson();
     ModelRecord created =
         service.create(context.user(), ModelLevel.CIM, context.project().id(), "cim", model);
-    service.attachSourceXmi(
-        created,
+    byte[] staleSource =
         removeTraceLinkEndpoints(new String(sample))
-            .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    service.attachSourceXmi(created, staleSource);
 
     ModelService.ValidationResult validation =
         service.validate(context.user(), ModelLevel.CIM, created.id());
 
     assertNoTraceLinkEndpointErrors(validation);
-    ModelService.ValidationResult repairedSourceValidation =
-        service.validateGeneratedXmi(
-            ModelLevel.CIM,
-            service
-                .sourceXmi(service.get(context.user(), ModelLevel.CIM, created.id()))
-                .orElseThrow());
-    assertNoTraceLinkEndpointErrors(repairedSourceValidation);
+    assertArrayEquals(
+        staleSource,
+        service.sourceXmi(service.get(context.user(), ModelLevel.CIM, created.id())).orElseThrow());
   }
 
   /**
@@ -202,6 +198,7 @@ class ClimateReliefSampleXmiImportTest {
    * @throws Exception when export fails
    */
   @Test
+  /** Catalog V-05: warning-only readiness findings remain reportable without blocking export. */
   void validationExportPreservesCimAssumptions() throws Exception {
     PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
     ModelService service = services.models();

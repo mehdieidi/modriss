@@ -23,10 +23,14 @@ import io.mehdieidi.varka.platform.transformation.synchronization.Transformation
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -46,6 +50,185 @@ class TransformationServiceTest {
 
   /** Isolated repository root used by the JSON store for each test. */
   @TempDir Path tempDir;
+
+  /**
+   * Catalog F-01/V-01: an invalid source is rejected before ETL and creates no downstream model.
+   */
+  @Test
+  void invalidSourceIsRejectedBeforeCimToPimEtl() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "v01@example.com", "V01", "Validation");
+    ModelRecord cim = createClimateCim(services, context, "v01-cim");
+    ObjectNode invalid = (ObjectNode) cim.modelJson().deepCopy();
+    ObjectNode process = invalid.putArray("processes").addObject();
+    process.put("eClass", "BusinessProcess");
+    process.put("id", "v01-invalid-process");
+    process.put("name", "Invalid process");
+    process.putArray("steps");
+    cim =
+        services
+            .models()
+            .update(context.user(), ModelLevel.CIM, cim.id(), cim.name(), invalid, cim.revision());
+    String cimId = cim.id();
+
+    PlatformException failure =
+        assertThrows(
+            PlatformException.class,
+            () -> services.transformations().cimToPim(context.user(), cimId));
+
+    assertEquals(422, failure.status());
+    assertTrue(failure.getMessage().contains("Source model validation failed"));
+    assertFalse(
+        services
+            .projects()
+            .get(context.user(), context.project().id())
+            .activeModelIds()
+            .containsKey("pim"));
+  }
+
+  /** Catalog V-02: malformed fresh generated XMI is rejected before baseline creation. */
+  @Test
+  void malformedFreshGeneratedTargetDoesNotCreateModelOrAdvanceBaseline() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "v02@example.com", "V02", "Validation");
+    ModelRecord cim = createClimateCim(services, context, "v02-cim");
+    ObjectNode generated =
+        (ObjectNode)
+            services
+                .models()
+                .importModel(ModelLevel.PIM, "pim.xmi", PlatformTestFixtures.pimXmi(), "xmi")
+                .modelJson();
+    TransformationSynchronizationCoordinator coordinator =
+        new TransformationSynchronizationCoordinator(services.store(), services.models());
+
+    assertThrows(
+        TransformationValidationException.class,
+        () ->
+            coordinator.synchronize(
+                context.user(),
+                cim,
+                ModelLevel.PIM,
+                "v02-pim",
+                generated,
+                "not-xmi".getBytes(StandardCharsets.UTF_8),
+                TransformationDirection.CIM_TO_PIM));
+
+    assertFalse(
+        services
+            .projects()
+            .get(context.user(), context.project().id())
+            .activeModelIds()
+            .containsKey("pim"));
+    assertTrue(
+        new ModelBaselineRepository(services.store())
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .isEmpty());
+  }
+
+  /** Catalog F-07: concurrent requests for one source/direction serialize to one target state. */
+  @Test
+  void concurrentTransformationsForOneRelationshipAreSerialized() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "f07@example.com", "F07", "Failure");
+    ModelRecord cim = createClimateCim(services, context, "f07-cim");
+    ObjectNode generated =
+        (ObjectNode)
+            services
+                .models()
+                .importModel(ModelLevel.PIM, "pim.xmi", PlatformTestFixtures.pimXmi(), "xmi")
+                .modelJson();
+    TransformationSynchronizationCoordinator coordinator =
+        new TransformationSynchronizationCoordinator(services.store(), services.models());
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+    try {
+      Future<TransformationSynchronizationCoordinator.CoordinatedResult> first =
+          executor.submit(
+              () ->
+                  coordinator.synchronize(
+                      context.user(),
+                      cim,
+                      ModelLevel.PIM,
+                      "f07-pim",
+                      generated,
+                      services.models().exportModel(ModelLevel.PIM, generated, "xmi"),
+                      TransformationDirection.CIM_TO_PIM));
+      Future<TransformationSynchronizationCoordinator.CoordinatedResult> second =
+          executor.submit(
+              () ->
+                  coordinator.synchronize(
+                      context.user(),
+                      cim,
+                      ModelLevel.PIM,
+                      "f07-pim",
+                      generated.deepCopy(),
+                      services.models().exportModel(ModelLevel.PIM, generated, "xmi"),
+                      TransformationDirection.CIM_TO_PIM));
+
+      ModelRecord firstModel = first.get().model();
+      ModelRecord secondModel = second.get().model();
+      assertEquals(firstModel.id(), secondModel.id());
+      assertTrue(
+          new ModelBaselineRepository(services.store())
+              .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+              .isPresent());
+    } finally {
+      executor.shutdownNow();
+    }
+  }
+
+  /** Catalog F-08: a stale client revision is rejected before transformation commit. */
+  @Test
+  void staleSourceRevisionIsRejectedBeforeTransformationCommit() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "f08@example.com", "F08", "Failure");
+    ModelRecord cim = createClimateCim(services, context, "f08-cim");
+
+    PlatformException failure =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                services.transformations().cimToPim(context.user(), cim.id(), cim.revision() + 1));
+
+    assertEquals(409, failure.status());
+    assertFalse(
+        services
+            .projects()
+            .get(context.user(), context.project().id())
+            .activeModelIds()
+            .containsKey("pim"));
+  }
+
+  /** Catalog F-14: another project user cannot observe or mutate synchronization state. */
+  @Test
+  void unauthorizedTransformationDoesNotDiscloseOrChangeProjectState() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext owner =
+        PlatformTestFixtures.registerOwner(services, "f14-owner@example.com", "Owner", "Failure");
+    ModelRecord cim = createClimateCim(services, owner, "f14-cim");
+    var intruder =
+        services.auth().register("f14-intruder@example.com", "password123", "Intruder").user();
+
+    PlatformException failure =
+        assertThrows(
+            PlatformException.class, () -> services.transformations().cimToPim(intruder, cim.id()));
+
+    assertTrue(failure.status() == 403 || failure.status() == 404);
+    assertFalse(
+        services
+            .projects()
+            .get(owner.user(), owner.project().id())
+            .activeModelIds()
+            .containsKey("pim"));
+  }
 
   /**
    * Verifies that CIM-to-PIM invokes the formal ETL pipeline and returns PIM semantics rather than
@@ -468,6 +651,71 @@ class TransformationServiceTest {
             services.models().sourceXmi(working).orElseThrow(), baseline.rawGeneratedXmi()));
   }
 
+  /** Catalog L-03: an unchanged source is an idempotent synchronization no-op. */
+  @Test
+  void unchangedSourceDoesNotDuplicateOrRewriteWorkingModel() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "l03@example.com", "L03", "Lifecycle");
+    ModelRecord cim = createClimateCim(services, context, "l03-cim");
+    ModelRecord first = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    GeneratedBaseline before =
+        new ModelBaselineRepository(services.store())
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow();
+
+    ModelRecord repeated = services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult result = TransformationService.consumeLastSynchronization();
+
+    assertEquals(SynchronizationStatus.APPLIED, result.status());
+    assertEquals(first.id(), repeated.id());
+    assertEquals(first.revision(), repeated.revision());
+    assertEquals(first.modelJson(), repeated.modelJson());
+    assertEquals(
+        before.baselineVersion(),
+        new ModelBaselineRepository(services.store())
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow()
+            .baselineVersion());
+  }
+
+  /** Catalog L-04: source metadata/revision changes do not create semantic target changes. */
+  @Test
+  void sourceRevisionChangeWithEquivalentGeneratedOutputAdvancesBaselineSafely() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "l04@example.com", "L04", "Lifecycle");
+    ModelRecord cim = createClimateCim(services, context, "l04-cim");
+    ModelRecord first = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    GeneratedBaseline before =
+        new ModelBaselineRepository(services.store())
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow();
+    ObjectNode changed = (ObjectNode) cim.modelJson().deepCopy();
+    changed.put("summary", "equivalent generated target revision");
+    ModelRecord revised =
+        services
+            .models()
+            .update(context.user(), ModelLevel.CIM, cim.id(), cim.name(), changed, cim.revision());
+
+    ModelRecord repeated = services.transformations().cimToPim(context.user(), revised.id());
+    SynchronizationResult result = TransformationService.consumeLastSynchronization();
+    GeneratedBaseline after =
+        new ModelBaselineRepository(services.store())
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, revised.id())
+            .orElseThrow();
+
+    assertEquals(SynchronizationStatus.APPLIED, result.status());
+    assertEquals(first.id(), repeated.id());
+    assertTrue(result.conflicts() == 0);
+    assertEquals(revised.revision(), after.sourceRevision());
+    assertTrue(after.baselineVersion() >= before.baselineVersion());
+  }
+
   @Test
   void successfulSynchronizationKeepsUserRefinementButAdvancesRawBaseline() throws Exception {
     PlatformTestFixtures.ServiceStack services =
@@ -586,6 +834,198 @@ class TransformationServiceTest {
             .isEmpty());
   }
 
+  /** Catalog L-07: deleting Working is explicit failure, never stale-baseline recreation. */
+  @Test
+  void deletedWorkingModelIsNotSilentlyRecreated() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "l07@example.com", "L07", "Lifecycle");
+    ModelRecord cim = createClimateCim(services, context, "l07-cim");
+    ModelRecord working = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    ModelBaselineRepository repository = new ModelBaselineRepository(services.store());
+    GeneratedBaseline before =
+        repository
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow();
+    services.models().delete(context.user(), ModelLevel.PIM, working.id());
+
+    assertThrows(
+        PlatformException.class,
+        () -> services.transformations().cimToPim(context.user(), cim.id()));
+    assertEquals(
+        before.baselineVersion(),
+        repository
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow()
+            .baselineVersion());
+    assertThrows(
+        PlatformException.class,
+        () -> services.models().get(context.user(), ModelLevel.PIM, working.id()));
+  }
+
+  /** Catalog L-08: a deleted source stops the relationship without deleting downstream history. */
+  @Test
+  void deletedSourceStopsTransformationAndRetainsDownstreamHistory() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "l08@example.com", "L08", "Lifecycle");
+    ModelRecord cim = createClimateCim(services, context, "l08-cim");
+    ModelRecord working = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    ModelBaselineRepository repository = new ModelBaselineRepository(services.store());
+    GeneratedBaseline before =
+        repository
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow();
+    services.models().delete(context.user(), ModelLevel.CIM, cim.id());
+
+    assertThrows(
+        PlatformException.class,
+        () -> services.transformations().cimToPim(context.user(), cim.id()));
+    assertEquals(
+        working.id(), services.models().get(context.user(), ModelLevel.PIM, working.id()).id());
+    assertEquals(
+        before.baselineVersion(),
+        repository
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow()
+            .baselineVersion());
+  }
+
+  /** Catalog L-10: a JSON-only legacy Working model is reconstructed through the supported path. */
+  @Test
+  void missingWorkingXmiFallsBackToValidatedLegacyJsonImport() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "l10@example.com", "L10", "Lifecycle");
+    ModelRecord cim = createClimateCim(services, context, "l10-cim");
+    ModelRecord working = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    ObjectNode edited = (ObjectNode) working.modelJson().deepCopy();
+    edited.put("description", "legacy JSON refinement");
+    working =
+        services
+            .models()
+            .update(
+                context.user(),
+                ModelLevel.PIM,
+                working.id(),
+                working.name(),
+                edited,
+                working.revision());
+    services
+        .store()
+        .deleteIfExists(
+            Path.of(
+                "projects",
+                context.project().id(),
+                "models",
+                ModelLevel.PIM.apiName(),
+                working.id() + ".xmi"));
+    ObjectNode changed = (ObjectNode) cim.modelJson().deepCopy();
+    changed.put("summary", "trigger legacy working import");
+    cim =
+        services
+            .models()
+            .update(context.user(), ModelLevel.CIM, cim.id(), cim.name(), changed, cim.revision());
+
+    ModelRecord synchronizedWorking = services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult result = TransformationService.consumeLastSynchronization();
+
+    assertEquals(SynchronizationStatus.APPLIED, result.status());
+    assertEquals(
+        "legacy JSON refinement", synchronizedWorking.modelJson().path("description").asText());
+    assertTrue(services.models().sourceXmi(synchronizedWorking).isPresent());
+  }
+
+  /** Catalog L-09/F-02: a corrupt Base aborts comparison without changing canonical Working. */
+  @Test
+  void corruptedBaselineFailsSafelyWithoutChangingWorking() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "corrupt-base@example.com", "Corrupt", "Base");
+    ModelRecord cim = createClimateCim(services, context, "corrupt-base-cim");
+    ModelRecord working = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    ModelBaselineRepository repository = new ModelBaselineRepository(services.store());
+    GeneratedBaseline baseline =
+        repository
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow();
+    repository.save(
+        new GeneratedBaseline(
+            baseline.direction(),
+            baseline.projectId(),
+            baseline.sourceModelId(),
+            baseline.sourceRevision(),
+            baseline.sourceFingerprint(),
+            baseline.targetModelId(),
+            baseline.baselineVersion(),
+            baseline.transformationFingerprint(),
+            baseline.createdAt(),
+            baseline.rawGeneratedModel(),
+            "not-xmi".getBytes(StandardCharsets.UTF_8)));
+    ObjectNode changed = (ObjectNode) cim.modelJson().deepCopy();
+    changed.put("summary", "force a new synchronization attempt");
+    cim =
+        services
+            .models()
+            .update(context.user(), ModelLevel.CIM, cim.id(), cim.name(), changed, cim.revision());
+    ModelRecord changedCim = cim;
+
+    assertThrows(
+        PlatformException.class,
+        () -> services.transformations().cimToPim(context.user(), changedCim.id()));
+    ModelRecord unchanged = services.models().get(context.user(), ModelLevel.PIM, working.id());
+    assertEquals(working.revision(), unchanged.revision());
+    assertEquals(working.modelJson(), unchanged.modelJson());
+  }
+
+  /** Catalog F-04/F-05/F-06: persistence failure rolls back the canonical model and baseline. */
+  @Test
+  void persistenceFailureDoesNotAdvanceWorkingOrRawBaseline() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services, "tx@example.com", "Transaction", "Transaction");
+    ModelRecord cim = createClimateCim(services, context, "tx-cim");
+    ModelRecord working = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    ModelBaselineRepository baselines = new ModelBaselineRepository(services.store());
+    GeneratedBaseline before =
+        baselines
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow();
+    ObjectNode changed = (ObjectNode) cim.modelJson().deepCopy();
+    changed.put("summary", "transaction failure source revision");
+    cim =
+        services
+            .models()
+            .update(context.user(), ModelLevel.CIM, cim.id(), cim.name(), changed, cim.revision());
+    String cimId = cim.id();
+
+    services.store().failAfterWrites(1);
+    assertThrows(
+        PlatformException.class, () -> services.transformations().cimToPim(context.user(), cimId));
+
+    ModelRecord after = services.models().get(context.user(), ModelLevel.PIM, working.id());
+    GeneratedBaseline baselineAfter =
+        baselines
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow();
+    assertEquals(working.revision(), after.revision());
+    assertEquals(working.modelJson(), after.modelJson());
+    assertEquals(before.baselineVersion(), baselineAfter.baselineVersion());
+    assertEquals(before.rawGeneratedModel(), baselineAfter.rawGeneratedModel());
+  }
+
+  /** Catalog D-04: changing Working while pending makes the session stale. */
   @Test
   void modifyingWorkingModelMakesPendingConflictSessionStale() throws Exception {
     PlatformTestFixtures.ServiceStack services =
@@ -673,6 +1113,214 @@ class TransformationServiceTest {
             .asText());
   }
 
+  /** Catalog D-05: an upstream edit after conflict creation invalidates the pending session. */
+  @Test
+  void modifyingUpstreamModelMakesPendingConflictSessionStale() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services, "upstream-stale@example.com", "Upstream", "Stale");
+    ModelRecord cim = createClimateCim(services, context, "upstream-stale-cim");
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    ObjectNode local = (ObjectNode) pim.modelJson().deepCopy();
+    local.put("name", "local pending name");
+    services
+        .models()
+        .update(context.user(), ModelLevel.PIM, pim.id(), pim.name(), local, pim.revision());
+    ObjectNode source = (ObjectNode) cim.modelJson().deepCopy();
+    source.put("name", "generated pending name");
+    cim =
+        services
+            .models()
+            .update(context.user(), ModelLevel.CIM, cim.id(), cim.name(), source, cim.revision());
+    byte[] sourceXmi = services.models().sourceXmi(cim).orElseThrow();
+    services
+        .store()
+        .writeBytesAtomically(
+            Path.of("projects", context.project().id(), "models", "cim", cim.id() + ".xmi"),
+            new String(sourceXmi, StandardCharsets.UTF_8)
+                .replace(
+                    "name=\"ClimateReliefGrantsBusinessModel\"", "name=\"generated pending name\"")
+                .getBytes(StandardCharsets.UTF_8));
+
+    services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult pending = TransformationService.consumeLastSynchronization();
+    assertEquals(SynchronizationStatus.CONFLICTS, pending.status());
+    ObjectNode changedAgain = (ObjectNode) cim.modelJson().deepCopy();
+    changedAgain.put("summary", "changed after pending session");
+    cim =
+        services
+            .models()
+            .update(
+                context.user(), ModelLevel.CIM, cim.id(), cim.name(), changedAgain, cim.revision());
+    TransformationSynchronizationCoordinator coordinator =
+        new TransformationSynchronizationCoordinator(services.store(), services.models());
+    pending
+        .conflictDetails()
+        .forEach(
+            conflict ->
+                coordinator.resolve(
+                    context.user(),
+                    context.project().id(),
+                    pending.sessionId(),
+                    conflict.conflictId(),
+                    ConflictResolution.TAKE_GENERATED));
+    PlatformException stale =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                coordinator.finalizeSession(
+                    context.user(), context.project().id(), pending.sessionId()));
+    assertEquals(409, stale.status());
+  }
+
+  /** Catalog D-02/D-07: cancellation preserves state and a retry creates a new session. */
+  @Test
+  void cancelingSessionPreservesStateAndRetryCreatesNewSession() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "cancel@example.com", "Cancel", "Session");
+    ModelRecord cim = createClimateCim(services, context, "cancel-cim");
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    ModelBaselineRepository baselines = new ModelBaselineRepository(services.store());
+    GeneratedBaseline before =
+        baselines
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow();
+    ObjectNode local = (ObjectNode) pim.modelJson().deepCopy();
+    local.put("name", "Cancel user name");
+    pim =
+        services
+            .models()
+            .update(context.user(), ModelLevel.PIM, pim.id(), pim.name(), local, pim.revision());
+    ObjectNode source = (ObjectNode) cim.modelJson().deepCopy();
+    source.put("name", "Cancel generated name");
+    cim =
+        services
+            .models()
+            .update(context.user(), ModelLevel.CIM, cim.id(), cim.name(), source, cim.revision());
+    byte[] sourceXmi = services.models().sourceXmi(cim).orElseThrow();
+    services
+        .store()
+        .writeBytesAtomically(
+            Path.of("projects", context.project().id(), "models", "cim", cim.id() + ".xmi"),
+            new String(sourceXmi, StandardCharsets.UTF_8)
+                .replace(
+                    "name=\"ClimateReliefGrantsBusinessModel\"", "name=\"Cancel generated name\"")
+                .getBytes(StandardCharsets.UTF_8));
+
+    services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult pending = TransformationService.consumeLastSynchronization();
+    assertEquals(SynchronizationStatus.CONFLICTS, pending.status());
+    TransformationSynchronizationCoordinator coordinator =
+        new TransformationSynchronizationCoordinator(services.store(), services.models());
+    coordinator.cancel(context.user(), context.project().id(), pending.sessionId());
+
+    assertThrows(
+        PlatformException.class,
+        () -> coordinator.getSession(context.user(), context.project().id(), pending.sessionId()));
+    assertEquals(
+        "Cancel user name",
+        services
+            .models()
+            .get(context.user(), ModelLevel.PIM, pim.id())
+            .modelJson()
+            .path("name")
+            .asText());
+    assertEquals(
+        before.baselineVersion(),
+        baselines
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow()
+            .baselineVersion());
+
+    services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult retried = TransformationService.consumeLastSynchronization();
+    assertEquals(SynchronizationStatus.CONFLICTS, retried.status());
+    assertNotEquals(pending.sessionId(), retried.sessionId());
+  }
+
+  /** Catalog D-06: a session cannot finalize after its baseline version advances. */
+  @Test
+  void baselineAdvanceRejectsOldResolvedSession() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services, "baseline-stale@example.com", "Baseline", "Stale");
+    ModelRecord cim = createClimateCim(services, context, "baseline-stale-cim");
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    ObjectNode local = (ObjectNode) pim.modelJson().deepCopy();
+    local.put("name", "Baseline user name");
+    pim =
+        services
+            .models()
+            .update(context.user(), ModelLevel.PIM, pim.id(), pim.name(), local, pim.revision());
+    ObjectNode source = (ObjectNode) cim.modelJson().deepCopy();
+    source.put("name", "Baseline generated name");
+    cim =
+        services
+            .models()
+            .update(context.user(), ModelLevel.CIM, cim.id(), cim.name(), source, cim.revision());
+    byte[] sourceXmi = services.models().sourceXmi(cim).orElseThrow();
+    services
+        .store()
+        .writeBytesAtomically(
+            Path.of("projects", context.project().id(), "models", "cim", cim.id() + ".xmi"),
+            new String(sourceXmi, StandardCharsets.UTF_8)
+                .replace(
+                    "name=\"ClimateReliefGrantsBusinessModel\"", "name=\"Baseline generated name\"")
+                .getBytes(StandardCharsets.UTF_8));
+
+    services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult pending = TransformationService.consumeLastSynchronization();
+    assertEquals(SynchronizationStatus.CONFLICTS, pending.status());
+    TransformationSynchronizationCoordinator coordinator =
+        new TransformationSynchronizationCoordinator(services.store(), services.models());
+    pending
+        .conflictDetails()
+        .forEach(
+            conflict ->
+                coordinator.resolve(
+                    context.user(),
+                    context.project().id(),
+                    pending.sessionId(),
+                    conflict.conflictId(),
+                    ConflictResolution.TAKE_GENERATED));
+    ModelBaselineRepository baselines = new ModelBaselineRepository(services.store());
+    GeneratedBaseline baseline =
+        baselines
+            .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
+            .orElseThrow();
+    baselines.save(
+        new GeneratedBaseline(
+            baseline.direction(),
+            baseline.projectId(),
+            baseline.sourceModelId(),
+            baseline.sourceRevision(),
+            baseline.sourceFingerprint(),
+            baseline.targetModelId(),
+            baseline.baselineVersion() + 1,
+            baseline.transformationFingerprint(),
+            Instant.now(),
+            baseline.rawGeneratedModel(),
+            baseline.rawGeneratedXmi()));
+
+    PlatformException stale =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                coordinator.finalizeSession(
+                    context.user(), context.project().id(), pending.sessionId()));
+    assertEquals(409, stale.status());
+  }
+
+  /** Catalog F-09/F-10: finalization is one-shot and a fresh coordinator reloads durable state. */
   @Test
   void finalizesConflictWithGeneratedValueAndAdvancesBaseline() throws Exception {
     PlatformTestFixtures.ServiceStack services =
@@ -717,6 +1365,17 @@ class TransformationServiceTest {
     assertEquals(SynchronizationStatus.CONFLICTS, pending.status());
     TransformationSynchronizationCoordinator coordinator =
         new TransformationSynchronizationCoordinator(services.store(), services.models());
+    // Catalog D-01/D-03/F-03: an unresolved session is durable, cannot be finalized, and leaves
+    // the canonical Working model untouched.
+    assertEquals(
+        pending.sessionId(),
+        coordinator.getSession(context.user(), context.project().id(), pending.sessionId()).id());
+    assertEquals("User target name", unchanged.modelJson().path("name").asText());
+    assertThrows(
+        PlatformException.class,
+        () ->
+            coordinator.finalizeSession(
+                context.user(), context.project().id(), pending.sessionId()));
     pending
         .conflictDetails()
         .forEach(
@@ -738,6 +1397,11 @@ class TransformationServiceTest {
     assertThrows(
         PlatformException.class,
         () -> coordinator.getSession(context.user(), context.project().id(), pending.sessionId()));
+    assertThrows(
+        PlatformException.class,
+        () ->
+            coordinator.finalizeSession(
+                context.user(), context.project().id(), pending.sessionId()));
     assertEquals(unchanged.id(), finalized.id());
   }
 
@@ -760,6 +1424,19 @@ class TransformationServiceTest {
     pim = services.transformations().cimToPim(context.user(), cim.id());
     assertEquals(
         SynchronizationStatus.APPLIED, TransformationService.consumeLastSynchronization().status());
+    Resource regeneratedPim = loadSourceXmi(services, ModelLevel.PIM, pim, "added-process-pim");
+    EObject generatedWorkflow = findByGeneratedFrom(regeneratedPim, addedProcessId, "Workflow");
+    assertTrue(generatedWorkflow != null, "The ETL rule must generate the added workflow.");
+    assertFalse(
+        values(generatedWorkflow, "transitions").isEmpty(),
+        "The ETL-generated workflow must retain the CIM process transitions.");
+    for (EObject step : values(generatedWorkflow, "steps")) {
+      if ("StartStep".equals(step.eClass().getName())) continue;
+      assertTrue(
+          values(generatedWorkflow, "transitions").stream()
+              .anyMatch(transition -> reference(transition, "target") == step),
+          () -> step.eClass().getName() + " must be targeted by an ETL-generated transition.");
+    }
     ObjectNode refined = (ObjectNode) pim.modelJson().deepCopy();
     ObjectNode addedWorkflow = findGeneratedElement(refined, "Workflow", addedProcessId);
     assertTrue(addedWorkflow != null, "The added CIM process must create a PIM workflow.");
@@ -817,6 +1494,99 @@ class TransformationServiceTest {
             .validateGeneratedXmi(ModelLevel.PSM, services.models().sourceXmi(psm).orElseThrow())
             .valid(),
         "The full CIM/PIM synchronization journey must leave a valid PSM after generated choices.");
+  }
+
+  /** Catalog X-09: an upstream CIM edit completes CIM→PIM before PIM→PSM consumes it. */
+  @Test
+  void x09PropagatesUpstreamEditThroughBothValidatedBoundaries() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "x09@example.com", "X09", "Combined");
+    ModelRecord cim = createClimateCim(services, context, "x09-cim");
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    assertEquals(
+        SynchronizationStatus.APPLIED, TransformationService.consumeLastSynchronization().status());
+    services.transformations().pimToPsm(context.user(), pim.id());
+    assertEquals(
+        SynchronizationStatus.APPLIED, TransformationService.consumeLastSynchronization().status());
+
+    Resource cimXmi = loadSourceXmi(services, ModelLevel.CIM, cim, "x09-edit-cim");
+    EObject cimRoot = cimXmi.getContents().get(0);
+    cimRoot.eSet(
+        cimRoot.eClass().getEStructuralFeature("name"), "X09 Updated Climate Relief Model");
+    cim = saveChangedSourceXmi(services, context, cim, ModelLevel.CIM, cimXmi, "x09 upstream edit");
+
+    ModelRecord updatedPim = services.transformations().cimToPim(context.user(), cim.id());
+    SynchronizationResult pimResult = TransformationService.consumeLastSynchronization();
+    assertEquals(SynchronizationStatus.APPLIED, pimResult.status());
+    assertTrue(
+        services
+            .models()
+            .validateGeneratedXmi(
+                ModelLevel.PIM, services.models().sourceXmi(updatedPim).orElseThrow())
+            .valid());
+
+    ModelRecord updatedPsm = services.transformations().pimToPsm(context.user(), updatedPim.id());
+    SynchronizationResult psmResult = TransformationService.consumeLastSynchronization();
+    assertEquals(SynchronizationStatus.APPLIED, psmResult.status());
+    assertTrue(
+        services
+            .models()
+            .validateGeneratedXmi(
+                ModelLevel.PSM, services.models().sourceXmi(updatedPsm).orElseThrow())
+            .valid());
+  }
+
+  /** Catalog X-10: PIM and PSM refinements survive independent regeneration cycles. */
+  @Test
+  void x10PreservesIndependentPimAndPsmRefinementsAcrossCycles() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "x10@example.com", "X10", "Combined");
+    ModelRecord cim = createClimateCim(services, context, "x10-cim");
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
+    TransformationService.consumeLastSynchronization();
+
+    ObjectNode pimRefined = (ObjectNode) pim.modelJson().deepCopy();
+    pimRefined.put("description", "independent PIM refinement");
+    pim =
+        services
+            .models()
+            .update(
+                context.user(), ModelLevel.PIM, pim.id(), pim.name(), pimRefined, pim.revision());
+    ObjectNode psmRefined = (ObjectNode) psm.modelJson().deepCopy();
+    psmRefined.put("summary", "independent PSM refinement");
+    psm =
+        services
+            .models()
+            .update(
+                context.user(), ModelLevel.PSM, psm.id(), psm.name(), psmRefined, psm.revision());
+
+    ObjectNode sourceChanged = (ObjectNode) cim.modelJson().deepCopy();
+    sourceChanged.put("summary", "x10 third-cycle upstream revision");
+    cim =
+        services
+            .models()
+            .update(
+                context.user(),
+                ModelLevel.CIM,
+                cim.id(),
+                cim.name(),
+                sourceChanged,
+                cim.revision());
+
+    pim = services.transformations().cimToPim(context.user(), cim.id());
+    assertEquals(
+        SynchronizationStatus.APPLIED, TransformationService.consumeLastSynchronization().status());
+    assertEquals("independent PIM refinement", pim.modelJson().path("description").asText());
+    psm = services.transformations().pimToPsm(context.user(), pim.id());
+    assertEquals(
+        SynchronizationStatus.APPLIED, TransformationService.consumeLastSynchronization().status());
+    assertEquals("independent PSM refinement", psm.modelJson().path("summary").asText());
   }
 
   @Test
@@ -987,6 +1757,36 @@ class TransformationServiceTest {
       }
     }
     return null;
+  }
+
+  private EObject findByGeneratedFrom(Resource resource, String sourceId, String className) {
+    for (EObject root : resource.getContents()) {
+      EObject match = generatedFromMatch(root, sourceId, className);
+      if (match != null) return match;
+      for (TreeIterator<EObject> iterator = root.eAllContents(); iterator.hasNext(); ) {
+        EObject candidate = iterator.next();
+        match = generatedFromMatch(candidate, sourceId, className);
+        if (match != null) return match;
+      }
+    }
+    return null;
+  }
+
+  private EObject generatedFromMatch(EObject candidate, String sourceId, String className) {
+    var generatedFrom = candidate.eClass().getEStructuralFeature("generatedFrom");
+    if (className.equals(candidate.eClass().getName())
+        && generatedFrom != null
+        && sourceId.equals(candidate.eGet(generatedFrom))) return candidate;
+    return null;
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<EObject> values(EObject owner, String featureName) {
+    return (List<EObject>) owner.eGet(owner.eClass().getEStructuralFeature(featureName));
+  }
+
+  private EObject reference(EObject owner, String featureName) {
+    return (EObject) owner.eGet(owner.eClass().getEStructuralFeature(featureName));
   }
 
   private ObjectNode findGeneratedElement(JsonNode node, String eClass, String generatedFrom) {
