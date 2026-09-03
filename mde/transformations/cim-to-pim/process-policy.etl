@@ -7,7 +7,7 @@ import "lib/resolution.eol";
 
 /** Returns whether the receiver should generate workflow. */
 operation shouldGenerateWorkflow(bp : CIMPROCESS!BusinessProcess) {
-  return bp.longRunning or bp.humanApprovalPossible or bp.compensationExpected or
+  return isTrue(bp.longRunning) or isTrue(bp.humanApprovalPossible) or isTrue(bp.compensationExpected) or
     bp.processKind.asString() = "LONG_RUNNING" or bp.processKind.asString() = "HUMAN_INVOLVED" or
     bp.processKind.asString() = "CASE_MANAGEMENT" or bp.processKind.asString() = "SAGA_LIKE_BUSINESS_PROCESS" or
     bp.steps.size() > 2 or
@@ -380,10 +380,10 @@ rule BusinessProcess2Workflow
   wf.name = nameFor(bp, " Workflow");
   wf.workflowKind = mapWorkflowKind(bp);
   wf.executionSemantics = bp.businessTriggerDescription;
-  wf.longRunning = bp.longRunning;
-  wf.stateful = bp.longRunning or bp.steps.size() > 2;
-  wf.compensationRequired = bp.compensationExpected or bp.exceptions.exists(e | e.compensationRequired);
-  wf.humanApprovalRequired = bp.humanApprovalPossible or bp.steps.exists(s | s.isKindOf(CIMPROCESS!HumanTaskStep));
+  wf.longRunning = isTrue(bp.longRunning);
+  wf.stateful = isTrue(bp.longRunning) or bp.steps.size() > 2;
+  wf.compensationRequired = isTrue(bp.compensationExpected) or bp.exceptions.exists(e | isTrue(e.compensationRequired));
+  wf.humanApprovalRequired = isTrue(bp.humanApprovalPossible) or bp.steps.exists(s | s.isKindOf(CIMPROCESS!HumanTaskStep));
   wf.expectedMaxDurationSeconds = 0;
   wf.expressLowLatencyRequired = not wf.longRunning and (bp.criticality.asString() = "CORE" or bp.criticality.asString() = "MISSION_CRITICAL");
   wf.observability = createDefaultObservability(wf, "TR-110", true, wf.expressLowLatencyRequired);

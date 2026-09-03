@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
@@ -245,6 +246,38 @@ final class ModelImportExportService {
       copy.set("views", store.objectMapper().createArrayNode());
     }
     return copy;
+  }
+
+  /**
+   * Applies Ecore-defined scalar values from the browser graph projection to semantic objects with
+   * the same immutable identity. The graph is a transport projection, but browser editors can
+   * submit semantic attribute edits below {@code graph/elements}; exporting only the semantic root
+   * in that case would otherwise silently retain the old value in the authoritative XMI sidecar.
+   */
+  JsonNode synchronizeSemanticGraphProjection(ModelLevel level, JsonNode modelJson) {
+    if (!(modelJson instanceof ObjectNode model)
+        || !model.path("graph").path("elements").isArray()) {
+      return modelJson;
+    }
+    Map<String, EClass> classes = eClassesByName(level);
+    Map<String, SemanticObject> semanticById =
+        semanticObjects(model, classes).stream()
+            .filter(item -> !text(item.node(), "id", "").isBlank())
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    item -> text(item.node(), "id", ""), item -> item, (first, ignored) -> first));
+    for (JsonNode graphElement : model.path("graph").path("elements")) {
+      if (!(graphElement instanceof ObjectNode graphObject)) continue;
+      String id = text(graphObject, "id", "");
+      SemanticObject semantic = semanticById.get(id);
+      if (semantic == null) continue;
+      for (EAttribute attribute : semantic.eClass().getEAllAttributes()) {
+        String name = attribute.getName();
+        if ("id".equals(name) || !graphObject.has(name)) continue;
+        semantic.node().set(name, graphObject.get(name).deepCopy());
+      }
+    }
+    return model;
   }
 
   /**

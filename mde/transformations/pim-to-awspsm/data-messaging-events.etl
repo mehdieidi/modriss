@@ -758,7 +758,7 @@ operation createSchedulerRole(s) {
   role.id = generatedId("iam_role", s, "scheduler");
   role.roleName = physicalName(s, "scheduler-role", defaultStage());
   role.path = "/";
-  role.assumeRolePolicy = serviceAssumeRolePolicy("scheduler.amazonaws.com");
+  role.assumeRolePolicy = serviceAssumeRolePolicy("scheduler.amazonaws.com", s.id);
   return role;
 }
 
@@ -777,7 +777,7 @@ operation createUnresolvedScheduleTarget(s) {
 
 /** Creates create storage resource policy. */
 operation createStorageResourcePolicy(source, resource) {
-  var doc = policyDocument();
+  var doc = policyDocument(source.id + "::storage-policy");
   var st = allowStatement("DenyInsecureTransport");
   st.effect = AWSPSMENUMS!IamEffect#DENY;
   st.actions.add("*");
@@ -798,7 +798,7 @@ operation createStorageResourcePolicy(source, resource) {
 
 /** Creates create deny insecure transport policy. */
 operation createDenyInsecureTransportPolicy(resource) {
-  var doc = policyDocument();
+  var doc = policyDocument(resource.id + "::deny-transport");
   var st = allowStatement("DenyInsecureTransport");
   st.effect = AWSPSMENUMS!IamEffect#DENY;
   st.actions.add("*");

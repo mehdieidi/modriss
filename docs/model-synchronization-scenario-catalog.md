@@ -295,18 +295,29 @@ Validation and comparison answer different questions:
 - structural validation asks whether the EMF graph conforms to Ecore; and
 - explicit modeling-workflow EVL validation asks whether the model satisfies semantic rules.
 
-| ID   | Scenario                                                                | Expected behavior                                                            |
-| ---- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| V-01 | Source fails required transformation validation                         | Do not run/accept transformation; downstream states remain unchanged         |
-| V-02 | Fresh generated target is structurally invalid                          | Fail generation; do not compare or advance Base                              |
-| V-03 | Safe automatic merge is structurally invalid                            | Reject candidate; Working and Base remain unchanged                          |
-| V-04 | Safe automatic merge has EVL errors                                     | Return `VALIDATION_FAILED`; Working and Base remain unchanged                |
-| V-05 | Candidate has warnings only                                             | Report warnings and apply according to validation policy                     |
-| V-06 | Manually resolved candidate is invalid                                  | Reject finalization; retain pending session and canonical states             |
-| V-07 | Validation service cannot load XMI because of proxies                   | Treat as structural failure and report exact unresolved references           |
-| V-08 | Duplicate/missing IDs are found                                         | Reject before identity-based synchronization can corrupt matching            |
-| V-09 | Previously valid manual element becomes invalid after upstream deletion | Surface dependency validation/conflict; do not silently discard it           |
-| V-10 | Explicit user requests validation without transformation                | Validate current stored model without changing Base or synchronization state |
+| ID   | Scenario                                                                                                                                | Expected behavior                                                                                                                                                                                                                                     |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| V-01 | Source fails required transformation validation                                                                                         | Do not run/accept transformation; downstream states remain unchanged                                                                                                                                                                                  |
+| V-02 | Fresh generated target is structurally invalid                                                                                          | Fail generation; do not compare or advance Base                                                                                                                                                                                                       |
+| V-03 | Safe automatic merge is structurally invalid                                                                                            | Reject candidate; Working and Base remain unchanged                                                                                                                                                                                                   |
+| V-04 | Safe automatic merge has EVL errors                                                                                                     | Return `VALIDATION_FAILED`; Working and Base remain unchanged                                                                                                                                                                                         |
+| V-05 | Candidate has warnings only                                                                                                             | Report warnings and apply according to validation policy                                                                                                                                                                                              |
+| V-06 | Manually resolved candidate is invalid                                                                                                  | Reject finalization; retain pending session and canonical states                                                                                                                                                                                      |
+| V-07 | Validation service cannot load XMI because of proxies                                                                                   | Treat as structural failure and report exact unresolved references                                                                                                                                                                                    |
+| V-08 | Duplicate/missing IDs are found                                                                                                         | Reject before identity-based synchronization can corrupt matching                                                                                                                                                                                     |
+| V-09 | Previously valid manual element becomes invalid after upstream deletion                                                                 | Surface dependency validation/conflict; do not silently discard it                                                                                                                                                                                    |
+| V-10 | Explicit user requests validation without transformation                                                                                | Validate current stored model without changing Base or synchronization state                                                                                                                                                                          |
+| V-11 | Validate before and after a keep-user delete/change resolution                                                                          | Unrelated warning identities/counts and manual tasks remain unchanged                                                                                                                                                                                 |
+| V-12 | Resolve every conflict with the generated version                                                                                       | Preserve platform manual-task metadata while committing exact generated XMI                                                                                                                                                                           |
+| V-13 | ETL creates nested helpers required by an EVL critique                                                                                  | Raw XMI, stored XMI, and stored JSON retain the containment and EVL result                                                                                                                                                                            |
+| V-14 | Edit an unrelated generated element when a contained helper also has a view relationship projection                                     | Save exactly one EObject per semantic identity; retain nested helpers and invariant EVL results                                                                                                                                                       |
+| V-15 | Persist generated PSM through browser views before incremental PIM-to-PSM synchronization                                               | Every required nested policy document retains at least one statement before and after EMF Compare merge                                                                                                                                               |
+| V-16 | Generate artifacts, add a CIM business process with a linear start/command/end workflow, then generate PIM and immediately generate PSM | Artifact generation and the intervening transport persistence do not erase required nested PSM containment; PIM→PSM completes with structurally valid XMI                                                                                             |
+| V-17 | Save a semantic attribute through a `/graph/elements` browser patch                                                                     | The canonical XMI sidecar reflects the semantic edit; later transformations must not consume stale XMI                                                                                                                                                |
+| V-18 | Save a focused browser view where a required child exists only in the graph ownership index                                             | Rebuilt semantic containment restores the child exactly once; subsequent synchronization remains structurally valid                                                                                                                                   |
+| V-19 | Generated side introduces a new owner with an Ecore-required nested containment                                                         | Filtered EMF Compare application preserves the complete incoming containment subtree and never emits an invalid or duplicate-ID model                                                                                                                 |
+| V-20 | Async frontend save has containment ownership only in the graph ownership index                                                         | Async serialization must use the same Ecore containment ownership index as synchronous serialization, so contained generated objects are not re-emitted as roots and required nested values survive the API save                                      |
+| V-21 | A new upstream workflow causes many generated trust policies to be created before existing ones                                         | Every generated helper EObject, including policy documents, trust statements, and principals, has a unique identity derived from its owning source/resource; insertion order must not rematch existing helpers or produce an invalid merged statement |
 
 Transformation synchronization uses the explicit model-transformation validation workflow and may
 run the applicable semantic EVL profiles. This is separate from chatbot/LLM assistant apply,
@@ -389,6 +400,26 @@ journeys:
 14. Evolve CIM, PIM, and PSM through at least three accepted cycles and verify each raw baseline.
 15. Regenerate artifacts while preserving valid protected regions and removing obsolete generated
     output.
+16. Replay add/refine/delete/keep-user across CIM-to-PIM, then regenerate an untouched PSM; assert
+    no downstream conflict, invariant unrelated warnings, and preserved manual-task sets. New
+    warnings are allowed only for resources newly implied by the retained upstream workflow.
+17. Generate PIM, edit one workflow attribute through the browser serialization path, save, and
+    validate again; nested subscriptions/permissions and the pre-edit warning set must be unchanged.
+18. Generate PSM and persist its browser graph/view projection before the upstream add/refine/delete
+    cycle; assert that policy statements have unique identities and downstream synchronization is
+    structurally valid.
+19. Import CIM, generate PIM/PSM/artifacts, add a business process with trigger and
+    completionCriterion plus connected start/command/end steps, generate PIM, and immediately
+    generate PSM; assert the operation succeeds and every IAM policy document has statements.
+20. Save a semantic attribute through the browser graph patch API, reload the model, and transform
+    it; assert that the transformation consumes the edited semantic value rather than a stale XMI
+    sidecar projection.
+21. Save a focused view whose required policy statement is represented by graph ownership but absent
+    from the visible parent collection; assert that serialization restores the containment exactly
+    once and PIM→PSM validation succeeds.
+22. Generate PSM, add a CIM business process with a connected start/command/end workflow, regenerate
+    PIM and PSM, and assert that generated trust-policy helpers retain unique identities and the
+    final PSM passes structural and semantic validation.
 
 ## 17. Required invariants for every scenario
 

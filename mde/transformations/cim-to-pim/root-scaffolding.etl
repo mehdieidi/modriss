@@ -4,7 +4,7 @@ import "lib/mapping.eol";
 import "lib/trace-readiness.eol";
 
 operation inferArchitectureStyle(c : CIM!CIMModel) {
-  if (c.processes.exists(p | p.longRunning or p.humanApprovalPossible or p.compensationExpected)) {
+  if (c.processes.exists(p | isTrue(p.longRunning) or isTrue(p.humanApprovalPossible) or isTrue(p.compensationExpected))) {
     return PIMTYPES!ArchitectureStyle#WORKFLOW_ORCHESTRATED_SERVERLESS;
   }
   if (c.events.notEmpty() and c.events.size() >= (c.commands.size() + c.queries.size())) {

@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.Test;
@@ -45,6 +47,20 @@ class DeterministicGeneratedIdentityIntegrationTest {
     execute(PimToAwsPsmDefaults.request(REPOSITORY_ROOT, source, second, true, true));
 
     assertEquals(ids(first), ids(second));
+  }
+
+  @Test
+  void generatedAwsPsmIdsAreUniqueEvenWhenManyTrustPoliciesAreCreated() throws Exception {
+    Path source = REPOSITORY_ROOT.resolve("mde/samples/pim.xmi");
+    Path target = tempDir.resolve("unique.awspsm.xmi");
+
+    execute(PimToAwsPsmDefaults.request(REPOSITORY_ROOT, source, target, true, true));
+
+    List<String> trustStatementIds = trustStatementIds(target);
+    assertEquals(
+        trustStatementIds.size(),
+        new LinkedHashSet<>(trustStatementIds).size(),
+        "Generated trust-policy statements must have unique stable identities.");
   }
 
   @Test
@@ -94,16 +110,39 @@ class DeterministicGeneratedIdentityIntegrationTest {
   }
 
   private Set<String> ids(Path model) throws Exception {
+    return new LinkedHashSet<>(serializedIds(model));
+  }
+
+  private List<String> serializedIds(Path model) throws Exception {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
     var document = factory.newDocumentBuilder().parse(model.toFile());
-    Set<String> ids = new LinkedHashSet<>();
+    List<String> ids = new ArrayList<>();
     collectIds(document.getDocumentElement(), ids);
     assertFalse(ids.isEmpty(), "Expected transformation-generated model element IDs.");
     return ids;
   }
 
-  private void collectIds(Element element, Set<String> ids) {
+  private List<String> trustStatementIds(Path model) throws Exception {
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+    var document = factory.newDocumentBuilder().parse(model.toFile());
+    List<String> ids = new ArrayList<>();
+    collectTrustStatementIds(document.getDocumentElement(), ids);
+    assertFalse(ids.isEmpty(), "Expected generated IAM trust-policy statements.");
+    return ids;
+  }
+
+  private void collectTrustStatementIds(Element element, List<String> ids) {
+    if ("AssumeRole".equals(element.getAttribute("sid")) && element.hasAttribute("id")) {
+      ids.add(element.getAttribute("id"));
+    }
+    for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
+      if (child instanceof Element nested) collectTrustStatementIds(nested, ids);
+    }
+  }
+
+  private void collectIds(Element element, List<String> ids) {
     if (element.hasAttribute("id")) {
       ids.add(element.getAttribute("id"));
     }

@@ -128,8 +128,8 @@ operation inferComputeProfile(source) {
 /** Computes map workflow kind. */
 operation mapWorkflowKind(bp : CIMPROCESS!BusinessProcess) {
   if (bp.processKind.asString() = "SAGA_LIKE_BUSINESS_PROCESS") return PIMTYPES!WorkflowKind#SAGA;
-  if (bp.processKind.asString() = "HUMAN_INVOLVED" or bp.processKind.asString() = "CASE_MANAGEMENT" or bp.humanApprovalPossible) return PIMTYPES!WorkflowKind#HUMAN_APPROVAL;
-  if (bp.longRunning or bp.processKind.asString() = "LONG_RUNNING") return PIMTYPES!WorkflowKind#LONG_RUNNING_PROCESS;
+  if (bp.processKind.asString() = "HUMAN_INVOLVED" or bp.processKind.asString() = "CASE_MANAGEMENT" or isTrue(bp.humanApprovalPossible)) return PIMTYPES!WorkflowKind#HUMAN_APPROVAL;
+  if (isTrue(bp.longRunning) or bp.processKind.asString() = "LONG_RUNNING") return PIMTYPES!WorkflowKind#LONG_RUNNING_PROCESS;
   if (bp.processKind.asString() = "REPORTING_PROCESS") return PIMTYPES!WorkflowKind#BATCH_COORDINATION;
   return PIMTYPES!WorkflowKind#ORCHESTRATION;
 }

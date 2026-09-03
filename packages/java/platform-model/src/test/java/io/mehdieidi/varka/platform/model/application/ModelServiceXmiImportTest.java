@@ -580,6 +580,60 @@ class ModelServiceXmiImportTest {
   }
 
   /**
+   * A browser patch under graph/elements can carry a semantic edit, not only diagram coordinates.
+   * Such a patch must regenerate the XMI sidecar because transformations consume that sidecar.
+   */
+  @Test
+  void semanticGraphPatchRegeneratesAuthoritativeSourceXmi() {
+    TestPlatformStore store = new TestPlatformStore(tempDir);
+    store.initialize();
+    AuthService authService = new AuthService(store, Duration.ofHours(1));
+    ProjectService projectService = new ProjectService(store, authService);
+    ModelService service = new ModelService(store, projectService);
+    UserRecord user =
+        authService.register("graph-patch@example.com", "password123", "Owner").user();
+    ProjectRecord project = projectService.create(user, "Graph Patch", "");
+
+    ObjectNode model = store.objectMapper().createObjectNode();
+    model.put("eClass", "CIMModel");
+    model.put("id", "graph-patch-root");
+    model
+        .putArray("goals")
+        .addObject()
+        .put("eClass", "BusinessGoal")
+        .put("id", "goal-1")
+        .put("name", "Before");
+    model
+        .putObject("graph")
+        .putArray("elements")
+        .addObject()
+        .put("eClass", "BusinessGoal")
+        .put("id", "goal-1")
+        .put("name", "Before");
+    ModelRecord created = service.create(user, ModelLevel.CIM, project.id(), "graph-patch", model);
+
+    ModelRecord updated =
+        service.patch(
+            user,
+            ModelLevel.CIM,
+            created.id(),
+            created.name(),
+            java.util.List.of(
+                new ModelService.ModelPatchOperation(
+                    "replace",
+                    "/graph/elements/0/name",
+                    store.objectMapper().getNodeFactory().textNode("After"))),
+            created.revision());
+
+    assertEquals(
+        "After", updated.modelJson().path("graph").path("elements").path(0).path("name").asText());
+    String source = new String(service.sourceXmi(updated).orElseThrow(), StandardCharsets.UTF_8);
+    assertTrue(
+        source.contains("After"),
+        "Semantic graph patches must reach the transformation XMI input.");
+  }
+
+  /**
    * Ensures JSON Patch updates the stored model incrementally while preserving platform-added model
    * metadata.
    *

@@ -35,7 +35,8 @@ import tools.jackson.databind.node.ObjectNode;
 /** Coordinates fresh generation, EMF comparison, baselines, sessions, and canonical updates. */
 public final class TransformationSynchronizationCoordinator {
 
-  private static final String STABLE_ID_TRANSFORMATION_FINGERPRINT = "etl-assets-v2-stable-ids";
+  private static final String STABLE_ID_TRANSFORMATION_FINGERPRINT =
+      "etl-assets-v3-owner-scoped-helper-ids";
 
   private static final List<String> PLATFORM_METADATA =
       List.of(
@@ -103,6 +104,35 @@ public final class TransformationSynchronizationCoordinator {
     if (baseline == null) {
       ModelRecord legacy = findWorking(user, source, targetLevel);
       if (legacy != null) {
+        byte[] legacyXmi =
+            models
+                .sourceXmi(legacy)
+                .orElseGet(() -> xmi.exportModel(targetLevel, legacy.modelJson()));
+        if (!Arrays.equals(legacyXmi, rawGeneratedXmi)) {
+          // Older deployments may have a working target without a synchronization baseline. There
+          // is no three-way history from which local edits can be separated in that case; adopting
+          // the newly validated ETL resource is the only sound migration and establishes the
+          // baseline required for all subsequent progressive edits.
+          ModelRecord migrated =
+              store.inTransaction(
+                  () -> {
+                    ModelRecord model =
+                        models.updateGenerated(
+                            user,
+                            targetLevel,
+                            legacy.id(),
+                            legacy.name(),
+                            rawGenerated,
+                            rawGeneratedXmi,
+                            legacy.revision());
+                    baselines.save(
+                        newBaseline(
+                            source, direction, model.id(), 1, rawGenerated, rawGeneratedXmi));
+                    return model;
+                  });
+          return new CoordinatedResult(
+              migrated, emptyResult(SynchronizationStatus.APPLIED, migrated.id(), List.of()));
+        }
         return new CoordinatedResult(
             legacy, emptyResult(SynchronizationStatus.BOOTSTRAP_REQUIRED, legacy.id(), List.of()));
       }
@@ -127,8 +157,77 @@ public final class TransformationSynchronizationCoordinator {
     }
 
     ModelRecord working = models.get(user, targetLevel, baseline.targetModelId());
+    boolean generatedOutputUnchanged = Arrays.equals(baseline.rawGeneratedXmi(), rawGeneratedXmi);
+    boolean workingProjectionMatchesGenerated =
+        semanticFingerprint(working.modelJson()).equals(semanticFingerprint(rawGenerated));
+    boolean workingXmiUnchanged =
+        models
+            .sourceXmi(working)
+            .map(bytes -> Arrays.equals(bytes, baseline.rawGeneratedXmi()))
+            .orElse(false);
+    boolean workingXmiStructurallyValid =
+        models
+            .sourceXmi(working)
+            .map(bytes -> models.validateGeneratedXmi(targetLevel, bytes).valid())
+            .orElse(true);
     if (baseline.sourceRevision() == source.revision()
-        && baseline.sourceFingerprint().equals(fingerprint(source.modelJson()))) {
+        && baseline.sourceFingerprint().equals(fingerprint(source.modelJson()))
+        && !workingXmiStructurallyValid) {
+      ModelRecord repaired =
+          store.inTransaction(
+              () ->
+                  models.updateGenerated(
+                      user,
+                      targetLevel,
+                      working.id(),
+                      working.name(),
+                      rawGenerated,
+                      rawGeneratedXmi,
+                      working.revision()));
+      return new CoordinatedResult(
+          repaired, emptyResult(SynchronizationStatus.APPLIED, repaired.id(), List.of()));
+    }
+    if (baseline.sourceRevision() == source.revision()
+        && baseline.sourceFingerprint().equals(fingerprint(source.modelJson()))
+        && generatedOutputUnchanged
+        && workingXmiUnchanged
+        && !workingProjectionMatchesGenerated) {
+      ModelRecord repaired =
+          store.inTransaction(
+              () ->
+                  models.updateGenerated(
+                      user,
+                      targetLevel,
+                      working.id(),
+                      working.name(),
+                      rawGenerated,
+                      rawGeneratedXmi,
+                      working.revision()));
+      return new CoordinatedResult(
+          repaired, emptyResult(SynchronizationStatus.APPLIED, repaired.id(), List.of()));
+    }
+    if (baseline.sourceRevision() == source.revision()
+        && baseline.sourceFingerprint().equals(fingerprint(source.modelJson()))
+        && workingProjectionMatchesGenerated
+        && !workingXmiStructurallyValid) {
+      ModelRecord repaired =
+          store.inTransaction(
+              () ->
+                  models.updateGenerated(
+                      user,
+                      targetLevel,
+                      working.id(),
+                      working.name(),
+                      rawGenerated,
+                      rawGeneratedXmi,
+                      working.revision()));
+      return new CoordinatedResult(
+          repaired, emptyResult(SynchronizationStatus.APPLIED, repaired.id(), List.of()));
+    }
+    if (baseline.sourceRevision() == source.revision()
+        && baseline.sourceFingerprint().equals(fingerprint(source.modelJson()))
+        && workingProjectionMatchesGenerated
+        && workingXmiStructurallyValid) {
       return new CoordinatedResult(
           working, emptyResult(SynchronizationStatus.APPLIED, working.id(), List.of()));
     }
@@ -213,12 +312,13 @@ public final class TransformationSynchronizationCoordinator {
         store.inTransaction(
             () -> {
               ModelRecord model =
-                  models.update(
+                  models.updateGenerated(
                       user,
                       targetLevel,
                       working.id(),
                       working.name(),
                       mergedJson,
+                      normalizedMergedXmi,
                       working.revision());
               baselines.save(
                   newBaseline(
@@ -332,7 +432,7 @@ public final class TransformationSynchronizationCoordinator {
       mergedXmi = session.rawNewGeneratedXmi();
       // Re-import the XMI so graph/index references are normalized instead of treating repeated
       // JSON references to one EObject as repeated contained objects during validation.
-      mergedJson = (ObjectNode) xmi.importGeneratedModel(level, mergedXmi);
+      mergedJson = mergedJson(level, mergedXmi, working.modelJson(), session.rawNewGenerated());
       // The incoming XMI is authoritative when every conflict was resolved as TAKE_GENERATED.
       // Do not run EMF Compare's filtered merger in this branch: containment/reference conflicts
       // can make it attempt a child move before its generated parent, even though the requested
@@ -362,8 +462,14 @@ public final class TransformationSynchronizationCoordinator {
     return store.inTransaction(
         () -> {
           ModelRecord updated =
-              models.update(
-                  user, level, working.id(), working.name(), mergedJson, working.revision());
+              models.updateGenerated(
+                  user,
+                  level,
+                  working.id(),
+                  working.name(),
+                  mergedJson,
+                  mergedXmi,
+                  working.revision());
           baselines.save(
               new GeneratedBaseline(
                   finalizedSession.direction(),
@@ -447,6 +553,16 @@ public final class TransformationSynchronizationCoordinator {
     copyPlatformMetadata(generated, merged);
     mergeManualBacklog(working, generated, merged);
     return merged;
+  }
+
+  /** Fingerprints the Ecore semantic projection while excluding transport/UI metadata. */
+  private String semanticFingerprint(JsonNode model) {
+    if (!(model instanceof ObjectNode object)) {
+      return fingerprint(model);
+    }
+    ObjectNode semantic = object.deepCopy();
+    semantic.remove(List.of("graph", "diagram", "views", "manualBacklog", "validationIssues"));
+    return fingerprint(semantic);
   }
 
   private String stringFeature(EObject object, String featureName) {

@@ -33,6 +33,7 @@ import org.eclipse.emf.compare.merge.IMerger;
 import org.eclipse.emf.compare.scope.DefaultComparisonScope;
 import org.eclipse.emf.compare.scope.IComparisonScope;
 import org.eclipse.emf.compare.utils.UseIdentifiers;
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
@@ -105,6 +106,10 @@ public final class ModelSynchronizationService {
     Objects.requireNonNull(direction, "direction");
     Map<String, ConflictResolution> decisions =
         resolutions == null ? Map.of() : Map.copyOf(resolutions);
+    Map<String, Map<String, List<EObject>>> requiredWorkingContainments =
+        requiredContainmentSnapshot(working);
+    Map<String, Map<String, List<EObject>>> requiredGeneratedContainments =
+        requiredContainmentSnapshot(newGenerated);
 
     IComparisonScope scope = new DefaultComparisonScope(working, newGenerated, base);
     Comparison comparison = emfCompare.compare(scope, new BasicMonitor());
@@ -157,7 +162,7 @@ public final class ModelSynchronizationService {
       if (isChangeTouchingLocallyPreservedDeletion(difference, locallyPreservedDeletionClosure)) {
         continue;
       }
-      if (isRequiredLocalContainmentRetained(difference)) {
+      if (isRequiredLocalContainmentRetained(comparison, difference, working)) {
         continue;
       }
       MergeFeaturePolicy featurePolicy = policy.policyFor(feature(difference));
@@ -251,6 +256,9 @@ public final class ModelSynchronizationService {
     // statements form one containment tree. Removing only some of those differences produces
     // orphaned PSM infrastructure that cannot be repaired sensibly in the UI.
     generatedDeletionRoots.forEach(root -> EcoreUtil.delete(root, true));
+    reconcileIncomingOnlyContainments(working, newGenerated, base);
+    restoreRequiredContainments(
+        working, requiredWorkingContainments, requiredGeneratedContainments);
     validateStructuralResult(working);
     // A containment deletion can create dozens of EMF Compare Conflict instances: one for the
     // resource, its contained configuration, and the references that point to it. They are one
@@ -292,6 +300,15 @@ public final class ModelSynchronizationService {
       changed = false;
       for (var iterator = mergeable.iterator(); iterator.hasNext(); ) {
         Diff difference = iterator.next();
+        if (difference instanceof ReferenceChange change
+            && change.getKind() == DifferenceKind.DELETE
+            && change.getReference() != null
+            && change.getReference().isContainment()) {
+          // The owner-side containment DELETE is the atomic removal of the obsolete subtree. Its
+          // child MOVE/DELETE prerequisites may be filtered independently, but retaining the
+          // owner deletion prevents an empty mandatory owner from surviving the merge.
+          continue;
+        }
         boolean hasExcludedIncomingRequirement =
             difference.getRequires().stream()
                 .anyMatch(
@@ -699,6 +716,173 @@ public final class ModelSynchronizationService {
     return objects;
   }
 
+  /** Captures populated required containments before a merge can apply a partial deletion. */
+  private Map<String, Map<String, List<EObject>>> requiredContainmentSnapshot(Resource resource) {
+    Map<String, Map<String, List<EObject>>> snapshot = new HashMap<>();
+    for (EObject object : allObjects(resource)) {
+      Set<String> objectIds = identityKeys(object);
+      if (objectIds.isEmpty()) continue;
+      for (EReference reference : object.eClass().getEAllReferences()) {
+        if (!reference.isContainment() || reference.getLowerBound() < 1) continue;
+        Object value = object.eGet(reference, false);
+        if (reference.isMany() && value instanceof List<?> values && !values.isEmpty()) {
+          for (String objectId : objectIds) {
+            snapshot
+                .computeIfAbsent(objectId, ignored -> new HashMap<>())
+                .put(
+                    reference.getName(),
+                    values.stream()
+                        .filter(EObject.class::isInstance)
+                        .map(EObject.class::cast)
+                        .map(EcoreUtil::copy)
+                        .toList());
+          }
+        } else if (!reference.isMany() && value instanceof EObject child) {
+          for (String objectId : objectIds) {
+            snapshot
+                .computeIfAbsent(objectId, ignored -> new HashMap<>())
+                .put(reference.getName(), List.of(EcoreUtil.copy(child)));
+          }
+        }
+      }
+    }
+    return snapshot;
+  }
+
+  /** Restores only Ecore-required containments that a merge left empty on an existing owner. */
+  private void restoreRequiredContainments(
+      Resource resource,
+      Map<String, Map<String, List<EObject>>> workingSnapshot,
+      Map<String, Map<String, List<EObject>>> generatedSnapshot) {
+    if (workingSnapshot.isEmpty() && generatedSnapshot.isEmpty()) return;
+    for (EObject owner : allObjects(resource)) {
+      Map<String, List<EObject>> features = new HashMap<>();
+      for (String identityKey : identityKeys(owner)) {
+        features.putAll(generatedSnapshot.getOrDefault(identityKey, Map.of()));
+        features.putAll(workingSnapshot.getOrDefault(identityKey, Map.of()));
+      }
+      for (Map.Entry<String, List<EObject>> entry : features.entrySet()) {
+        EStructuralFeature feature = owner.eClass().getEStructuralFeature(entry.getKey());
+        if (!(feature instanceof EReference reference) || !reference.isContainment()) continue;
+        Object current = owner.eGet(reference, false);
+        boolean empty =
+            reference.isMany()
+                ? !(current instanceof List<?> values) || values.isEmpty()
+                : current == null;
+        if (!empty) continue;
+        if (reference.isMany()) {
+          @SuppressWarnings("unchecked")
+          List<EObject> children = (List<EObject>) current;
+          entry
+              .getValue()
+              .forEach(
+                  child -> {
+                    EObject existing = findByIdentity(resource, identityKeys(child));
+                    if (existing != null
+                        && existing.eContainer() != null
+                        && existing.eContainer() != owner) {
+                      return;
+                    }
+                    EObject restored = existing == null ? EcoreUtil.copy(child) : existing;
+                    if (!children.contains(restored)) children.add(restored);
+                  });
+        } else {
+          EObject child = entry.getValue().get(0);
+          EObject existing = findByIdentity(resource, identityKeys(child));
+          if (existing != null && existing.eContainer() != null && existing.eContainer() != owner) {
+            continue;
+          }
+          EObject restored = existing == null ? EcoreUtil.copy(child) : existing;
+          owner.eSet(reference, restored);
+        }
+      }
+    }
+  }
+
+  private EObject findById(Resource resource, String objectId) {
+    if (objectId == null || objectId.isBlank()) return null;
+    return findByIdentity(resource, Set.of(objectId));
+  }
+
+  private EObject findByIdentity(Resource resource, Set<String> keys) {
+    if (keys == null || keys.isEmpty()) return null;
+    return allObjects(resource).stream()
+        .filter(object -> !java.util.Collections.disjoint(identityKeys(object), keys))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private Set<String> identityKeys(EObject object) {
+    Set<String> keys = new LinkedHashSet<>();
+    String emfId = id(object);
+    if (!emfId.isBlank()) keys.add(emfId);
+    EStructuralFeature feature = object.eClass().getEStructuralFeature("id");
+    if (feature instanceof EAttribute && object.eIsSet(feature)) {
+      Object value = object.eGet(feature, false);
+      if (value != null && !String.valueOf(value).isBlank()) keys.add(String.valueOf(value));
+    }
+    return keys;
+  }
+
+  /** Reattaches complete subtrees for containers introduced only by the generated resource. */
+  private void reconcileIncomingOnlyContainments(
+      Resource working, Resource generated, Resource base) {
+    Set<String> baseIds =
+        allObjects(base).stream()
+            .flatMap(object -> identityKeys(object).stream())
+            .collect(java.util.stream.Collectors.toSet());
+    List<EObject> generatedObjects = allObjects(generated);
+    for (EObject generatedOwner : generatedObjects) {
+      String ownerId = id(generatedOwner);
+      if (ownerId.isBlank()
+          || !java.util.Collections.disjoint(identityKeys(generatedOwner), baseIds)) continue;
+      EObject workingOwner = findByIdentity(working, identityKeys(generatedOwner));
+      if (workingOwner == null) continue;
+      for (EReference reference : generatedOwner.eClass().getEAllReferences()) {
+        if (!reference.isContainment()) continue;
+        Object value = generatedOwner.eGet(reference, false);
+        if (reference.isMany() && value instanceof List<?> values) {
+          for (Object item : values) {
+            if (item instanceof EObject child)
+              attachIncomingChild(working, workingOwner, reference, child);
+          }
+        } else if (value instanceof EObject child) {
+          attachIncomingChild(working, workingOwner, reference, child);
+        }
+      }
+    }
+  }
+
+  private void attachIncomingChild(
+      Resource working, EObject owner, EReference reference, EObject generatedChild) {
+    EObject child = findByIdentity(working, identityKeys(generatedChild));
+    if (child == null) child = EcoreUtil.copy(generatedChild);
+    EObject attachedChild = child;
+    if (attachedChild.eContainer() != null && attachedChild.eContainer() != owner)
+      detach(attachedChild);
+    if (reference.isMany()) {
+      @SuppressWarnings("unchecked")
+      List<EObject> values = (List<EObject>) owner.eGet(reference);
+      if (values.stream().noneMatch(existing -> id(existing).equals(id(attachedChild))))
+        values.add(attachedChild);
+    } else if (owner.eGet(reference, false) == null) {
+      owner.eSet(reference, attachedChild);
+    }
+  }
+
+  private void detach(EObject object) {
+    EObject container = object.eContainer();
+    EStructuralFeature feature = object.eContainmentFeature();
+    if (container == null || feature == null) return;
+    if (feature.isMany()) {
+      @SuppressWarnings("unchecked")
+      List<EObject> values = (List<EObject>) container.eGet(feature);
+      values.remove(object);
+    } else {
+      container.eUnset(feature);
+    }
+  }
+
   private boolean referencesAny(EObject candidate, Set<String> ids) {
     for (var reference : candidate.eClass().getEAllReferences()) {
       if (reference.isContainment()
@@ -752,7 +936,8 @@ public final class ModelSynchronizationService {
    * accepted generated deletion, {@link #generatedDeletionRootsSelectedForRemoval} removes the
    * complete role later.
    */
-  private boolean isRequiredLocalContainmentRetained(Diff difference) {
+  private boolean isRequiredLocalContainmentRetained(
+      Comparison comparison, Diff difference, Resource working) {
     if (!(difference instanceof ReferenceChange change)
         || difference.getSource() != DifferenceSource.RIGHT
         || difference.getKind() != DifferenceKind.DELETE
@@ -761,8 +946,36 @@ public final class ModelSynchronizationService {
         || change.getReference().getLowerBound() < 1) {
       return false;
     }
+    Match valueMatch = matchFor(comparison, change.getValue());
+    if (valueMatch != null && valueMatch.getRight() != null) {
+      // A DELETE whose value is still present on the generated side is the old containment
+      // location of a move, not a logical deletion. Let the generated location win so a later
+      // required-containment repair cannot detach the moved object back into the old owner.
+      return false;
+    }
     Match owner = change.getMatch();
-    return owner != null && owner.getLeft() != null && owner.getRight() != null;
+    EObject localOwner =
+        owner == null
+            ? null
+            : owner.getLeft() != null
+                ? owner.getLeft()
+                : owner.getOrigin() != null ? owner.getOrigin() : owner.getRight();
+    if (localOwner == null) {
+      return false;
+    }
+    String ownerId = id(localOwner);
+    return allObjects(working).stream()
+        .filter(candidate -> ownerId.equals(id(candidate)))
+        .anyMatch(
+            candidate -> {
+              EStructuralFeature localFeature =
+                  candidate.eClass().getEStructuralFeature(change.getReference().getName());
+              if (localFeature == null) {
+                return false;
+              }
+              Object current = candidate.eGet(localFeature, false);
+              return current instanceof List<?> values && !values.isEmpty();
+            });
   }
 
   /**
@@ -984,6 +1197,11 @@ public final class ModelSynchronizationService {
     Map<String, EObject> generatedById = objectsById(generated);
     for (Map.Entry<String, ModelConflict> entry : conflicts.entrySet()) {
       ConflictResolution decision = decisions.get(entry.getValue().conflictId());
+      // An unresolved order conflict is presented from the untouched merge copy. Clearing and
+      // reconstructing a containment merely to preserve its current order can detach required
+      // children after BatchMerger has processed adjacent generated differences. Apply an order
+      // only after the user has actually chosen one of the two versions.
+      if (decision == null) continue;
       String[] parts = entry.getKey().split("\u0000", 2);
       EObject local = workingById.get(parts[0]);
       EObject incoming = generatedById.get(parts[0]);

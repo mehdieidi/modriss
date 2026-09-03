@@ -1035,7 +1035,6 @@ class TransformationServiceTest {
     ModelRecord cim = createClimateCim(services, context, "stale-cim");
     ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
     TransformationService.consumeLastSynchronization();
-
     ObjectNode userChanged = (ObjectNode) pim.modelJson().deepCopy();
     userChanged.put("name", "User target name");
     pim =
@@ -1330,6 +1329,7 @@ class TransformationServiceTest {
     ModelRecord cim = createClimateCim(services, context, "resolve-cim");
     ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
     TransformationService.consumeLastSynchronization();
+    int manualTaskCount = pim.modelJson().path("manualBacklog").size();
 
     ObjectNode userChanged = (ObjectNode) pim.modelJson().deepCopy();
     userChanged.put("name", "User target name");
@@ -1390,6 +1390,10 @@ class TransformationServiceTest {
     ModelRecord finalized =
         coordinator.finalizeSession(context.user(), context.project().id(), pending.sessionId());
     assertEquals("Generated target name", finalized.modelJson().path("name").asText());
+    assertEquals(
+        manualTaskCount,
+        finalized.modelJson().path("manualBacklog").size(),
+        "Taking every generated conflict must not erase platform manual tasks.");
     assertTrue(
         new ModelBaselineRepository(services.store())
             .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
@@ -1414,8 +1418,81 @@ class TransformationServiceTest {
     ModelRecord cim = createClimateCim(services, context, "journey-cim");
     ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
     TransformationService.consumeLastSynchronization();
-    services.transformations().pimToPsm(context.user(), pim.id());
+    Set<String> initialPimWarnings =
+        warningSignatures(services.models().validate(context.user(), ModelLevel.PIM, pim.id()));
+    assertFalse(
+        initialPimWarnings.stream()
+            .anyMatch(
+                warning ->
+                    warning.startsWith("FilteringTopicShouldUseSubscriptionFilters::")
+                        || warning.startsWith("PrivilegedPrincipalNeedsPermissions::")),
+        () -> "Fresh ETL output lost generated nested elements: " + initialPimWarnings);
+    Resource initialPim = loadSourceXmi(services, ModelLevel.PIM, pim, "fresh-pim-containment");
+    for (String eventId :
+        List.of(
+            "evt-submitted", "evt-approved", "evt-disbursement-scheduled", "evt-appeal-filed")) {
+      EObject topic = findByGeneratedFrom(initialPim, eventId, "Topic");
+      assertTrue(topic != null, () -> "Expected topic generated from " + eventId);
+      assertFalse(
+          values(topic, "subscriptions").isEmpty(),
+          () -> "Expected generated subscriptions for topic from " + eventId);
+      ObjectNode topicJson = findGeneratedElement(pim.modelJson(), "Topic", eventId);
+      assertTrue(topicJson != null, () -> "Expected stored JSON topic generated from " + eventId);
+      assertFalse(
+          topicJson.path("subscriptions").isEmpty(),
+          () -> "Stored JSON lost generated subscriptions for topic from " + eventId);
+    }
+    for (String principalSourceId :
+        List.of(
+            "actor-senior-reviewer", "actor-finance-lead", "rolesenior-review", "role-finance")) {
+      EObject principal = findByGeneratedFrom(initialPim, principalSourceId, "Principal");
+      assertTrue(principal != null, () -> "Expected principal generated from " + principalSourceId);
+      assertFalse(
+          values(principal, "permissions").isEmpty(),
+          () -> "Expected generated permissions for principal from " + principalSourceId);
+      ObjectNode principalJson =
+          findGeneratedElement(pim.modelJson(), "Principal", principalSourceId);
+      assertTrue(
+          principalJson != null,
+          () -> "Expected stored JSON principal generated from " + principalSourceId);
+      assertFalse(
+          principalJson.path("permissions").isEmpty(),
+          () -> "Stored JSON lost generated permissions for principal from " + principalSourceId);
+    }
+    int initialPimTasks = pim.modelJson().path("manualBacklog").size();
+    ModelRecord initialPsm = services.transformations().pimToPsm(context.user(), pim.id());
     TransformationService.consumeLastSynchronization();
+    // The browser persists generated PSM view/layout state before the upstream iterative edit.
+    // This transport-only patch must not re-export the semantic resource.
+    initialPsm =
+        services
+            .models()
+            .patch(
+                context.user(),
+                ModelLevel.PSM,
+                initialPsm.id(),
+                initialPsm.name(),
+                List.of(
+                    new ModelService.ModelPatchOperation(
+                        "add", "/views/-", services.store().objectMapper().createObjectNode())),
+                initialPsm.revision());
+    Resource roundTrippedPsm =
+        loadSourceXmi(services, ModelLevel.PSM, initialPsm, "round-trip-psm");
+    roundTrippedPsm
+        .getAllContents()
+        .forEachRemaining(
+            object -> {
+              if (!"IamPolicyDocument".equals(object.eClass().getName())) return;
+              assertFalse(
+                  values(object, "statements").isEmpty(),
+                  () ->
+                      "Browser PSM persistence emptied required policy document "
+                          + object.eGet(object.eClass().getEStructuralFeature("id")));
+            });
+    Set<String> initialPsmWarnings =
+        warningSignatures(
+            services.models().validate(context.user(), ModelLevel.PSM, initialPsm.id()));
+    int initialPsmTasks = initialPsm.modelJson().path("manualBacklog").size();
 
     String addedProcessId = "journey-added-process";
     cim =
@@ -1437,14 +1514,38 @@ class TransformationServiceTest {
               .anyMatch(transition -> reference(transition, "target") == step),
           () -> step.eClass().getName() + " must be targeted by an ETL-generated transition.");
     }
-    ObjectNode refined = (ObjectNode) pim.modelJson().deepCopy();
-    ObjectNode addedWorkflow = findGeneratedElement(refined, "Workflow", addedProcessId);
-    assertTrue(addedWorkflow != null, "The added CIM process must create a PIM workflow.");
-    addedWorkflow.put("name", "Manual workflow refinement");
-    pim =
+    // Exact shorter failure path: after adding the CIM process, PIM→PSM must succeed before any
+    // PIM refinement or deletion. This catches empty required IAM policy statements immediately.
+    ModelRecord psmAfterAddedProcess =
+        services.transformations().pimToPsm(context.user(), pim.id());
+    SynchronizationResult addedProcessPsmResult =
+        TransformationService.consumeLastSynchronization();
+    assertEquals(SynchronizationStatus.APPLIED, addedProcessPsmResult.status());
+    assertTrue(
         services
             .models()
-            .update(context.user(), ModelLevel.PIM, pim.id(), pim.name(), refined, pim.revision());
+            .validateGeneratedXmi(
+                ModelLevel.PSM, services.models().sourceXmi(psmAfterAddedProcess).orElseThrow())
+            .valid(),
+        "PIM→PSM after adding a CIM business process must preserve required IAM statements.");
+    psmAfterAddedProcess
+        .modelJson()
+        .path("elements")
+        .forEach(
+            element -> {
+              if (!"IamPolicyDocument".equals(element.path("type").asText())) return;
+              assertTrue(
+                  element.path("statements").size() > 0,
+                  "Generated IAM policy documents must contain at least one statement.");
+            });
+    Resource refinedPim = loadSourceXmi(services, ModelLevel.PIM, pim, "refine-added-workflow");
+    EObject addedWorkflow = findByGeneratedFrom(refinedPim, addedProcessId, "Workflow");
+    assertTrue(addedWorkflow != null, "The added CIM process must create a PIM workflow.");
+    addedWorkflow.eSet(
+        addedWorkflow.eClass().getEStructuralFeature("executionSemantics"),
+        "Manually refined execution semantics");
+    pim =
+        saveChangedSourceXmi(services, context, pim, ModelLevel.PIM, refinedPim, "refine workflow");
 
     cim = deleteCimProcessFromSourceXmi(services, context, cim, addedProcessId);
     services.transformations().cimToPim(context.user(), cim.id());
@@ -1471,29 +1572,44 @@ class TransformationServiceTest {
             .models()
             .validateGeneratedXmi(ModelLevel.PIM, services.models().sourceXmi(pim).orElseThrow())
             .valid());
+    assertEquals(initialPimTasks, pim.modelJson().path("manualBacklog").size());
+    assertEquals(
+        initialPimWarnings,
+        warningSignatures(services.models().validate(context.user(), ModelLevel.PIM, pim.id())),
+        "Keeping a locally refined workflow must not alter unrelated PIM warnings.");
 
     ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
     SynchronizationResult psmResult = TransformationService.consumeLastSynchronization();
-    if (psmResult.status() == SynchronizationStatus.CONFLICTS) {
-      coordinator.resolveAll(
-          context.user(),
-          context.project().id(),
-          psmResult.sessionId(),
-          psmResult.conflictDetails().stream()
-              .collect(
-                  java.util.stream.Collectors.toMap(
-                      conflict -> conflict.conflictId(),
-                      conflict -> ConflictResolution.TAKE_GENERATED)));
-      psm =
-          coordinator.finalizeSession(
-              context.user(), context.project().id(), psmResult.sessionId());
-    }
+    assertEquals(
+        SynchronizationStatus.APPLIED,
+        psmResult.status(),
+        () ->
+            "An untouched PSM must not conflict after the upstream keep-user merge: "
+                + psmResult.conflictDetails());
+    assertEquals(initialPsmTasks, psm.modelJson().path("manualBacklog").size());
+    Set<String> regeneratedPsmWarnings =
+        warningSignatures(services.models().validate(context.user(), ModelLevel.PSM, psm.id()));
+    assertTrue(
+        regeneratedPsmWarnings.containsAll(initialPsmWarnings),
+        "Regeneration must not lose warnings for the unchanged PSM subgraph; the retained workflow"
+            + " may add warnings for newly generated resources.");
     assertTrue(
         services
             .models()
             .validateGeneratedXmi(ModelLevel.PSM, services.models().sourceXmi(psm).orElseThrow())
             .valid(),
         "The full CIM/PIM synchronization journey must leave a valid PSM after generated choices.");
+  }
+
+  private Set<String> warningSignatures(ModelService.ValidationResult result) {
+    Set<String> signatures = new HashSet<>();
+    result.issues().stream()
+        .filter(issue -> "WARNING".equals(issue.severity()))
+        .forEach(
+            issue ->
+                signatures.add(
+                    issue.constraint() + "::" + issue.elementId() + "::" + issue.message()));
+    return signatures;
   }
 
   /** Catalog X-09: an upstream CIM edit completes CIM→PIM before PIM→PSM consumes it. */

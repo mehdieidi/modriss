@@ -651,6 +651,7 @@ export function stripRuntimeFields(typeKey, element) {
 function childElementsForContainment(parent, entry, graph, typeKey) {
   const ids = new Set(refIds(parent?.[entry.feature]));
   const children = [];
+  const childIds = new Set();
   const addCandidate = (candidate) => {
     if (!candidate?.id || candidate.id === parent.id) {
       return;
@@ -660,8 +661,13 @@ function childElementsForContainment(parent, entry, graph, typeKey) {
     }
     if (
       (candidate.__ownerId === parent.id && candidate.__containmentFeature === entry.feature) ||
-      ids.has(candidate.id)
+      ids.has(candidate.id) ||
+      (graph.parentByChild?.get(candidate.id) === parent.id && ids.size === 0)
     ) {
+      if (childIds.has(candidate.id)) {
+        return;
+      }
+      childIds.add(candidate.id);
       children.push(candidate);
     }
   };
@@ -711,7 +717,7 @@ export function populateRootContainments(typeKey, root, graph) {
     root[entry.feature] = entry.singleton ? null : [];
   });
   graph.elementsById.forEach((element) => {
-    if (element.__ownerId) {
+    if (element.__ownerId || graph.parentByChild?.has(element.id)) {
       return;
     }
     const containment = rootContainmentForType(typeKey, modelTypeOf(element));
@@ -760,7 +766,7 @@ export async function populateRootContainmentsAsync(typeKey, root, graph) {
   });
   let processed = 0;
   for (const element of graph.elementsById.values()) {
-    if (element.__ownerId) {
+    if (element.__ownerId || graph.parentByChild?.has(element.id)) {
       continue;
     }
     const containment = rootContainmentForType(typeKey, modelTypeOf(element));

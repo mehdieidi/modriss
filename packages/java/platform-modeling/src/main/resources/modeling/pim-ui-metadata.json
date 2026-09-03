@@ -2491,6 +2491,15 @@
         "shape": "decision-table",
         "lineFields": ["hitPolicy", "defaultOutcome"]
       },
+      "references": [
+        {
+          "name": "rules",
+          "targetType": "DecisionRule",
+          "containment": true,
+          "many": true,
+          "required": true
+        }
+      ],
       "processPhaseId": "pim.ph5",
       "processTaskIds": ["pim.ph5.st2.ss3.t2"],
       "processStageId": "pim.ph5.st2.ss3"
@@ -2507,6 +2516,22 @@
         "shape": "decision-rule-row",
         "lineFields": ["priorityOrder", "condition", "outcome"]
       },
+      "references": [
+        {
+          "name": "condition",
+          "targetType": "Expression",
+          "containment": true,
+          "many": false,
+          "required": true
+        },
+        {
+          "name": "outcome",
+          "targetType": "Expression",
+          "containment": true,
+          "many": false,
+          "required": true
+        }
+      ],
       "containedOnly": true,
       "creatable": false,
       "processPhaseId": "pim.ph5",

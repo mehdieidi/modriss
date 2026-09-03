@@ -102,13 +102,13 @@ rule Principal2IamRole
   role.path = "/";
   role.maxSessionDuration = 3600;
   role.descriptionText = firstText(p.summary, "IAM role generated from PIM principal.");
-  role.assumeRolePolicy = serviceAssumeRolePolicy(firstText(p.externalRef, "lambda.amazonaws.com"));
+  role.assumeRolePolicy = serviceAssumeRolePolicy(firstText(p.externalRef, "lambda.amazonaws.com"), p.id);
   if (p.permissions.notEmpty()) {
     var pol = new AWSPSMSECURITY!IamInlinePolicy;
     pol.id = generatedId("inline_policy", p, "permissions");
     pol.name = p.name + " permissions";
     pol.policyName = pascalCase(p.name) + "Policy";
-    pol.document = policyDocument();
+    pol.document = policyDocument(p.id + "::permissions");
     for (perm in p.permissions) {
       var statementObj = permissionStatement(perm);
       if (statementObj.isDefined()) {
@@ -343,6 +343,20 @@ operation aslJsonPathOrRoot(mapping) {
 }
 
 /** Computes complete asl state transitions. */
+operation nextOrderedWorkflowStep(w, current) {
+  var ordered = w.steps.sortBy(s | s.orderIndex);
+  var found = false;
+  for (candidate in ordered) {
+    if (found) {
+      return candidate;
+    }
+    if (candidate = current) {
+      found = true;
+    }
+  }
+  return null;
+}
+
 operation completeAslStateTransitions(w, stateByPimId) {
   for (ws in w.steps) {
     var st = stateByPimId.get(cacheKeyFor(ws));
@@ -366,6 +380,23 @@ operation completeAslStateTransitions(w, stateByPimId) {
           "Resolve target state for workflow transition " + firstText(out.first().name, out.first().id) + ".",
           KERNEL!Severity#ERROR, true, Sequence{w, out.first()},
           "Ensure WorkflowTransition.target references a state in the same transformed workflow.");
+      }
+    }
+    else if (st.isDefined() and out.isEmpty() and not st.end and not st.isKindOf(AWSPSMWORKFLOW!AslChoiceState)) {
+      var inferredNext = nextOrderedWorkflowStep(w, ws);
+      var resolvedInferredNext = null;
+      if (inferredNext.isDefined()) {
+        resolvedInferredNext = stateByPimId.get(cacheKeyFor(inferredNext));
+      }
+      if (resolvedInferredNext.isDefined()) {
+        st.nextState = resolvedInferredNext;
+        st.nextStateName = resolvedInferredNext.stateName;
+      }
+      else {
+        manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
+          "Resolve the next ordered state for workflow state " + ws.name + ".",
+          KERNEL!Severity#ERROR, true, Sequence{w, ws},
+          "Add an explicit workflow transition or ensure ordered workflow steps form a complete path.");
       }
     }
     else {
@@ -462,7 +493,7 @@ operation createStateMachineRole(w) {
   role.id = generatedId("iam_role", w, "states");
   role.roleName = physicalName(w, "states-role", defaultStage());
   role.path = "/";
-  role.assumeRolePolicy = serviceAssumeRolePolicy("states.amazonaws.com");
+  role.assumeRolePolicy = serviceAssumeRolePolicy("states.amazonaws.com", w.id);
   return role;
 }
 

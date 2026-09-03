@@ -371,21 +371,24 @@ operation createLogGroupFor(source, logicalSeed : String, logName : String) {
 }
 
 /** Computes policy document. */
-operation policyDocument() {
+operation policyDocument(ownerKey : String) {
   var doc = new AWSPSMSECURITY!IamPolicyDocument;
-  doc.id = uniqueId("policy_doc_generated");
+  doc.id = modelElementIdGenerator.deterministicId("pim-to-awspsm-helper", "policy_document::" + ownerKey);
   doc.name = "Policy document";
   doc.version = "2012-10-17";
   return doc;
 }
 
 /** Computes service assume role policy. */
-operation serviceAssumeRolePolicy(service : String) {
-  var doc = policyDocument();
+operation serviceAssumeRolePolicy(service : String, ownerKey : String) {
+  var trustKey = "trust_policy::" + firstText(ownerKey, service);
+  var doc = policyDocument(ownerKey + "::trust");
   var st = allowStatement("AssumeRole");
+  st.id = modelElementIdGenerator.deterministicId("pim-to-awspsm-helper", trustKey + "::statement::AssumeRole");
+  st.id = modelElementIdGenerator.deterministicId("pim-to-awspsm-helper", trustKey + "::statement::AssumeRole");
   st.actions.add("sts:AssumeRole");
   var p = new AWSPSMSECURITY!IamPrincipal;
-  p.id = uniqueId("principal_" + slug(service));
+  p.id = modelElementIdGenerator.deterministicId("pim-to-awspsm-helper", trustKey + "::principal::" + service);
   p.name = service;
   p.principalType = "Service";
   p.identifiers.add(service);
@@ -718,7 +721,7 @@ operation generateIamStatements() {
       pol.id = generatedId("inline_policy", f, "generated_access");
       pol.name = f.name + " generated access";
       pol.policyName = pascalCase(f.name) + "GeneratedAccess";
-      pol.document = policyDocument();
+      pol.document = policyDocument(f.id + "::generated-access");
       for (s in f.reads) {
         addResourceStatement(pol.document, s, true, false);
       }
@@ -1222,12 +1225,12 @@ operation createEventInvokeRole(origin, targetResource, action : String) {
   if (origin.isDefined() and origin.eClass().getName() = "EventBridgeSchedule") {
     servicePrincipal = "scheduler.amazonaws.com";
   }
-  role.assumeRolePolicy = serviceAssumeRolePolicy(servicePrincipal);
+  role.assumeRolePolicy = serviceAssumeRolePolicy(servicePrincipal, origin.id);
   var pol = new AWSPSMSECURITY!IamInlinePolicy;
   pol.id = generatedId("inline_policy", origin, roleSeed);
   pol.name = "Event invoke";
   pol.policyName = pascalCase("EventInvoke " + targetSeed);
-  pol.document = policyDocument();
+  pol.document = policyDocument(origin.id + "::" + roleSeed);
   var st = allowStatement("InvokeTarget");
   st.actions.add(action);
   if (targetResource.isDefined()) {

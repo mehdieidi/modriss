@@ -492,6 +492,55 @@ public final class ModelService {
   }
 
   /**
+   * Updates a generated/synchronized model while preserving the exact EMF resource produced by the
+   * transformation merge as its authoritative XMI sidecar.
+   *
+   * <p>Synchronization has already normalized and structurally checked this resource. Routing the
+   * merged JSON through the ordinary editor update path would export it a second time and can lose
+   * reference-valued state that is represented more precisely in XMI.
+   */
+  public ModelRecord updateGenerated(
+      UserRecord user,
+      ModelLevel level,
+      String id,
+      String name,
+      ObjectNode modelJson,
+      byte[] sourceXmiBytes,
+      Long expectedRevision) {
+    return modelLocks.withModelLock(
+        id,
+        Duration.ofSeconds(30),
+        () -> {
+          ModelRecord existing = get(user, level, id);
+          requireExpectedRevision(existing, expectedRevision);
+          ProjectRecord project = projectService.get(user, existing.projectId());
+          projectService.requireEditor(project, user.id());
+          ObjectNode normalizedModel =
+              modelJson == null ? store.objectMapper().createObjectNode() : modelJson;
+          ModelImportExportService.SourceXmiUpdate sourceXmi =
+              new ModelImportExportService.SourceXmiUpdate(
+                  sourceXmiBytes, importExport.hashBytes(sourceXmiBytes), null);
+          MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
+          ModelRecord updated =
+              new ModelRecord(
+                  existing.id(),
+                  existing.projectId(),
+                  level,
+                  requireName(name, level),
+                  normalizedModel,
+                  metamodel.version(),
+                  metamodel.sha256(),
+                  nextRevision(existing),
+                  sourceXmi.hash(),
+                  "CURRENT",
+                  existing.createdAt(),
+                  Instant.now());
+          persistModelAndSourceXmi(existing, updated, sourceXmi);
+          return generatedClientRecord(updated);
+        });
+  }
+
+  /**
    * Updates a model and its XMI sidecar under a model lock.
    *
    * @param user requesting user
@@ -654,6 +703,7 @@ public final class ModelService {
           for (ModelPatchOperation operation : operations) {
             applyPatchOperation(patchedModel, operation);
           }
+          importExport.synchronizeSemanticGraphProjection(level, patchedModel);
           JsonNode normalizedModel =
               importExport.removeDanglingReferences(
                   level,
@@ -669,7 +719,12 @@ public final class ModelService {
           ModelImportExportService.SourceXmiUpdate sourceXmi =
               importExport.resolveSourceXmiUpdate(
                   user, existing.projectId(), level, normalizedModel, true);
-          sourceXmi = importExport.regenerateSourceXmi(level, normalizedModel);
+          // View/layout and issue-board persistence is transport-only. Re-exporting the semantic
+          // model for those changes can turn a valid nested EMF containment into a lossy JSON
+          // projection, so retain the authoritative XMI sidecar in that case.
+          if (!onlyTransportPatch(operations)) {
+            sourceXmi = importExport.regenerateSourceXmi(level, normalizedModel);
+          }
           MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
           ModelRecord updated =
               new ModelRecord(
@@ -688,6 +743,20 @@ public final class ModelService {
           persistModelAndSourceXmi(existing, updated, sourceXmi);
           return clientRecord(updated);
         });
+  }
+
+  private boolean onlyTransportPatch(List<ModelPatchOperation> operations) {
+    return operations.stream()
+        .allMatch(
+            operation -> {
+              String path = operation == null || operation.path() == null ? "" : operation.path();
+              return path.equals("/activeViewId")
+                  || path.matches("/graph/elements/\\d+/(x|y)")
+                  || path.startsWith("/views")
+                  || path.startsWith("/fragments")
+                  || path.startsWith("/manualBacklog")
+                  || path.startsWith("/validationIssues");
+            });
   }
 
   /**

@@ -40,6 +40,9 @@ class ModelSynchronizationServiceTest {
   private EReference nodes;
   private EReference childNodes;
   private EReference peer;
+  private EClass requiredNodeClass;
+  private EReference requiredNodes;
+  private EReference requiredNodeChildren;
 
   @BeforeEach
   void createMetamodel() {
@@ -96,8 +99,28 @@ class ModelSynchronizationServiceTest {
     peer.setName("peer");
     peer.setEType(nodeClass);
     nodeClass.getEStructuralFeatures().add(peer);
+    requiredNodeClass = factory.createEClass();
+    requiredNodeClass.setName("RequiredNode");
+    requiredNodeClass
+        .getEStructuralFeatures()
+        .add(attribute("id", EcorePackage.Literals.ESTRING, true, false));
+    requiredNodeChildren = factory.createEReference();
+    requiredNodeChildren.setName("children");
+    requiredNodeChildren.setContainment(true);
+    requiredNodeChildren.setLowerBound(1);
+    requiredNodeChildren.setUpperBound(-1);
+    requiredNodeChildren.setEType(nodeClass);
+    requiredNodeClass.getEStructuralFeatures().add(requiredNodeChildren);
+    requiredNodes = factory.createEReference();
+    requiredNodes.setName("requiredNodes");
+    requiredNodes.setContainment(true);
+    requiredNodes.setLowerBound(0);
+    requiredNodes.setUpperBound(-1);
+    requiredNodes.setEType(requiredNodeClass);
+    rootClass.getEStructuralFeatures().add(requiredNodes);
     modelPackage.getEClassifiers().add(rootClass);
     modelPackage.getEClassifiers().add(nodeClass);
+    modelPackage.getEClassifiers().add(requiredNodeClass);
   }
 
   @Test
@@ -838,6 +861,22 @@ class ModelSynchronizationServiceTest {
 
     assertTrue(result.conflicts().isEmpty());
     assertEquals("new-parent", id(find(result.mergedWorking(), "movable").eContainer()));
+  }
+
+  /** Regression: an incoming-only owner must retain its Ecore-required nested containment. */
+  @Test
+  void incomingOnlyOwnerRetainsRequiredNestedContainment() {
+    requiredNodes.setLowerBound(1);
+    Resource base = model(512, "A");
+    addRequiredNode(base, "base-required", "base-child");
+    Resource working = loadUnchecked(bytesUnchecked(base), "required-incoming-working");
+    Resource generated = loadUnchecked(bytesUnchecked(base), "required-incoming-generated");
+    addRequiredNode(generated, "required-parent", "required-child");
+
+    var result = merge(base, working, generated);
+
+    assertNotNull(find(result.mergedWorking(), "required-parent"));
+    assertEquals(2, requiredNodeValues(result.mergedWorking()).size());
   }
 
   /** Catalog T-09: deleting a parent cannot leave a newly introduced reference dangling. */
@@ -1643,6 +1682,10 @@ class ModelSynchronizationServiceTest {
     reorderNodes(differentGenerated, "n3", "n2", "n1");
     var conflict = merge(base, differentWorking, differentGenerated);
     assertEquals(1, conflict.conflicts().size());
+    assertEquals(
+        List.of("n2", "n3", "n1"),
+        ids(conflict.mergedWorking()),
+        "An unresolved order conflict must not detach and rebuild required containment children.");
     String conflictId = conflict.conflicts().get(0).conflictId();
     var keep =
         service.synchronize(
@@ -1827,6 +1870,25 @@ class ModelSynchronizationServiceTest {
     List<EObject> values = (List<EObject>) resource.getContents().get(0).eGet(nodes);
     values.add(node);
     return node;
+  }
+
+  private EObject addRequiredNode(Resource resource, String id, String childId) {
+    EObject required = modelPackage.getEFactoryInstance().create(requiredNodeClass);
+    required.eSet(requiredNodeClass.getEStructuralFeature("id"), id);
+    EObject child = modelPackage.getEFactoryInstance().create(nodeClass);
+    child.eSet(feature("id"), childId);
+    child.eSet(feature("name"), childId);
+    @SuppressWarnings("unchecked")
+    List<EObject> children = (List<EObject>) required.eGet(requiredNodeChildren);
+    children.add(child);
+    @SuppressWarnings("unchecked")
+    List<EObject> values = (List<EObject>) resource.getContents().get(0).eGet(requiredNodes);
+    values.add(required);
+    return required;
+  }
+
+  private List<?> requiredNodeValues(Resource resource) {
+    return (List<?>) resource.getContents().get(0).eGet(requiredNodes);
   }
 
   private EObject addChild(Resource resource, String parentId, String id, String description) {

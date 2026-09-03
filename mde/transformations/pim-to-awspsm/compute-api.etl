@@ -389,7 +389,7 @@ operation createLambdaRole(f) {
   role.path = "/";
   role.maxSessionDuration = 3600;
   role.descriptionText = "Execution role for " + f.name;
-  role.assumeRolePolicy = serviceAssumeRolePolicy("lambda.amazonaws.com");
+  role.assumeRolePolicy = serviceAssumeRolePolicy("lambda.amazonaws.com", f.id);
   return role;
 }
 
