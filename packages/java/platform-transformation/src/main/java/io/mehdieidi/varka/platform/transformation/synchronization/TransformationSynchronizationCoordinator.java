@@ -104,35 +104,10 @@ public final class TransformationSynchronizationCoordinator {
     if (baseline == null) {
       ModelRecord legacy = findWorking(user, source, targetLevel);
       if (legacy != null) {
-        byte[] legacyXmi =
-            models
-                .sourceXmi(legacy)
-                .orElseGet(() -> xmi.exportModel(targetLevel, legacy.modelJson()));
-        if (!Arrays.equals(legacyXmi, rawGeneratedXmi)) {
-          // Older deployments may have a working target without a synchronization baseline. There
-          // is no three-way history from which local edits can be separated in that case; adopting
-          // the newly validated ETL resource is the only sound migration and establishes the
-          // baseline required for all subsequent progressive edits.
-          ModelRecord migrated =
-              store.inTransaction(
-                  () -> {
-                    ModelRecord model =
-                        models.updateGenerated(
-                            user,
-                            targetLevel,
-                            legacy.id(),
-                            legacy.name(),
-                            rawGenerated,
-                            rawGeneratedXmi,
-                            legacy.revision());
-                    baselines.save(
-                        newBaseline(
-                            source, direction, model.id(), 1, rawGenerated, rawGeneratedXmi));
-                    return model;
-                  });
-          return new CoordinatedResult(
-              migrated, emptyResult(SynchronizationStatus.APPLIED, migrated.id(), List.of()));
-        }
+        // Without an untouched generated ancestor there is no sound way to distinguish local
+        // refinements from generator changes. Never adopt the incoming model implicitly: require
+        // an explicit bootstrap/migration operation so the user's legacy working model remains
+        // recoverable.
         return new CoordinatedResult(
             legacy, emptyResult(SynchronizationStatus.BOOTSTRAP_REQUIRED, legacy.id(), List.of()));
       }
@@ -157,6 +132,9 @@ public final class TransformationSynchronizationCoordinator {
     }
 
     ModelRecord working = models.get(user, targetLevel, baseline.targetModelId());
+    boolean sourceUnchanged =
+        baseline.sourceRevision() == source.revision()
+            && baseline.sourceFingerprint().equals(fingerprint(source.modelJson()));
     boolean generatedOutputUnchanged = Arrays.equals(baseline.rawGeneratedXmi(), rawGeneratedXmi);
     boolean workingProjectionMatchesGenerated =
         semanticFingerprint(working.modelJson()).equals(semanticFingerprint(rawGenerated));
@@ -170,9 +148,7 @@ public final class TransformationSynchronizationCoordinator {
             .sourceXmi(working)
             .map(bytes -> models.validateGeneratedXmi(targetLevel, bytes).valid())
             .orElse(true);
-    if (baseline.sourceRevision() == source.revision()
-        && baseline.sourceFingerprint().equals(fingerprint(source.modelJson()))
-        && !workingXmiStructurallyValid) {
+    if (sourceUnchanged && !workingXmiStructurallyValid) {
       ModelRecord repaired =
           store.inTransaction(
               () ->
@@ -187,47 +163,29 @@ public final class TransformationSynchronizationCoordinator {
       return new CoordinatedResult(
           repaired, emptyResult(SynchronizationStatus.APPLIED, repaired.id(), List.of()));
     }
-    if (baseline.sourceRevision() == source.revision()
-        && baseline.sourceFingerprint().equals(fingerprint(source.modelJson()))
-        && generatedOutputUnchanged
-        && workingXmiUnchanged
-        && !workingProjectionMatchesGenerated) {
-      ModelRecord repaired =
-          store.inTransaction(
-              () ->
-                  models.updateGenerated(
-                      user,
-                      targetLevel,
-                      working.id(),
-                      working.name(),
-                      rawGenerated,
-                      rawGeneratedXmi,
-                      working.revision()));
+    if (generatedOutputUnchanged && workingXmiUnchanged && workingXmiStructurallyValid) {
+      if (sourceUnchanged) {
+        return new CoordinatedResult(
+            working, emptyResult(SynchronizationStatus.APPLIED, working.id(), List.of()));
+      }
+      // The source changed only in metadata that does not affect the generated target. Advance
+      // the raw-output baseline without rewriting Working or incrementing its revision.
+      store.inTransaction(
+          () -> {
+            baselines.save(
+                newBaseline(
+                    source,
+                    direction,
+                    working.id(),
+                    baseline.baselineVersion() + 1,
+                    rawGenerated,
+                    rawGeneratedXmi));
+            return null;
+          });
       return new CoordinatedResult(
-          repaired, emptyResult(SynchronizationStatus.APPLIED, repaired.id(), List.of()));
+          working, emptyResult(SynchronizationStatus.APPLIED, working.id(), List.of()));
     }
-    if (baseline.sourceRevision() == source.revision()
-        && baseline.sourceFingerprint().equals(fingerprint(source.modelJson()))
-        && workingProjectionMatchesGenerated
-        && !workingXmiStructurallyValid) {
-      ModelRecord repaired =
-          store.inTransaction(
-              () ->
-                  models.updateGenerated(
-                      user,
-                      targetLevel,
-                      working.id(),
-                      working.name(),
-                      rawGenerated,
-                      rawGeneratedXmi,
-                      working.revision()));
-      return new CoordinatedResult(
-          repaired, emptyResult(SynchronizationStatus.APPLIED, repaired.id(), List.of()));
-    }
-    if (baseline.sourceRevision() == source.revision()
-        && baseline.sourceFingerprint().equals(fingerprint(source.modelJson()))
-        && workingProjectionMatchesGenerated
-        && workingXmiStructurallyValid) {
+    if (sourceUnchanged && workingProjectionMatchesGenerated && workingXmiStructurallyValid) {
       return new CoordinatedResult(
           working, emptyResult(SynchronizationStatus.APPLIED, working.id(), List.of()));
     }
