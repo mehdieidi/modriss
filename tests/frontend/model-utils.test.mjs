@@ -148,6 +148,119 @@ test("does not classify contained-only relationship elements as root relationshi
   assert.deepEqual(modelingRelationshipElementTypes("pim"), ["DomainRelationship"]);
 });
 
+test("classifies contained edge primitives as relationships while keeping node primitives as elements", () => {
+  const pimConfig = {
+    apiType: "PIM",
+    elements: [
+      {
+        type: "WorkflowTransition",
+        relationshipElement: true,
+        containedOnly: true,
+        primitive: "state-transition-edge",
+      },
+      {
+        type: "Schedule",
+        relationshipElement: true,
+        containedOnly: true,
+        primitive: "schedule-card",
+      },
+    ],
+  };
+  state.modelingConfig.config.levels.pim = pimConfig;
+  applyModelingRuntimeConfig({ levels: { pim: pimConfig } });
+
+  assert.deepEqual(modelingRelationshipElementTypes("pim"), ["WorkflowTransition"]);
+});
+
+test("projects a contained transition to an edge without losing its terminal endpoint", async () => {
+  const cimLevel = {
+    apiType: "CIM",
+    rootTemplate: { eClass: "CIMModel" },
+    relationshipSemantics: { containmentKind: "CONTAINS", containmentKinds: ["CONTAINS"] },
+    workbench: { defaultViewDefinitionId: "main" },
+    viewDefinitions: [{ id: "main", viewType: "main" }],
+    elements: [
+      {
+        type: "CIMModel",
+        references: [{ name: "processes", targetType: "BusinessProcess", containment: true, many: true }],
+      },
+      {
+        type: "BusinessProcess",
+        references: [
+          { name: "steps", targetType: "ProcessStep", containment: true, many: true },
+          { name: "transitions", targetType: "ProcessTransition", containment: true, many: true },
+        ],
+      },
+      { type: "ProcessStep" },
+      { type: "StartStep", supertypes: ["ProcessStep"] },
+      { type: "CommandStep", supertypes: ["ProcessStep"] },
+      { type: "EndStep", supertypes: ["ProcessStep"] },
+      {
+        type: "ProcessTransition",
+        relationshipElement: true,
+        containedOnly: true,
+        primitive: "control-flow-edge",
+        references: [
+          { name: "source", targetType: "ProcessStep" },
+          { name: "target", targetType: "ProcessStep" },
+        ],
+      },
+    ],
+    semanticEdgeObjectRules: [
+      {
+        eClass: "ProcessTransition",
+        matchKinds: ["TRANSITION"],
+        sourceType: "ProcessStep",
+        targetType: "ProcessStep",
+        rootFeature: "transitions",
+        sourceFeature: "source",
+        targetFeature: "target",
+      },
+    ],
+  };
+  const config = { levelOrder: ["cim"], levels: { cim: cimLevel } };
+  state.modelingConfig.config = config;
+  initializeModelingRuntimeState(config);
+  state.activeType = "cim";
+
+  const model = {
+    eClass: "CIMModel",
+    processes: [
+      {
+        eClass: "BusinessProcess",
+        id: "process-1",
+        steps: [
+          { eClass: "StartStep", id: "start-1" },
+          { eClass: "CommandStep", id: "command-1" },
+          { eClass: "EndStep", id: "end-1" },
+        ],
+        transitions: [
+          { eClass: "ProcessTransition", id: "transition-1", source: "start-1", target: "command-1" },
+          { eClass: "ProcessTransition", id: "transition-2", source: "command-1", target: "end-1" },
+        ],
+      },
+    ],
+  };
+  const { installGraphAndViews } = await import("../../apps/frontend/js/graph-store.js");
+  const installed = installGraphAndViews("cim", model, "process-model", {
+    skipFragments: true,
+    skipClientLayout: true,
+  });
+
+  assert.equal(installed.graph.elementsById.has("transition-1"), false);
+  assert.equal(installed.graph.elementsById.has("transition-2"), false);
+  assert.deepEqual(
+    ["transition-1", "transition-2"].map((id) => {
+      const edge = installed.graph.relationshipsById.get(id);
+      return { source: edge?.sourceElementId, target: edge?.targetElementId };
+    }),
+    [
+      { source: "start-1", target: "command-1" },
+      { source: "command-1", target: "end-1" },
+    ],
+  );
+});
+
 test("preserves semantic root assumptions when the graph projection is empty", () => {
   state.activeType = "pim";
   state.modelingConfig.config = {

@@ -32,8 +32,9 @@
 }
 
 .synchronization-conflict-dialog {
-  width: min(900px, calc(100vw - 16px));
-  max-height: calc(100dvh - 16px);
+  width: min(900px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 20px;
   overflow: auto;
 }
 
@@ -43,6 +44,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.synchronization-conflict-header {
+  align-items: flex-start;
 }
 
 .synchronization-conflict-header > div {
@@ -124,10 +129,13 @@
 
 .synchronization-conflict-bulk-action {
   min-height: 1px;
+  margin-top: 10px;
 }
 
 .synchronization-conflict-bulk-action .btn {
   width: 100%;
+  white-space: normal;
+  text-align: center;
 }
 
 .synchronization-conflict-option {
@@ -158,11 +166,14 @@
 
 .modal-actions.synchronization-conflict-actions {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.8fr);
+  align-items: stretch;
+  margin-top: 14px;
 }
 
 .synchronization-conflict-actions .btn {
   min-width: 0;
+  width: 100%;
   white-space: normal;
   text-align: center;
 }
@@ -172,12 +183,39 @@
   .synchronization-conflict-choice {
     grid-template-columns: 1fr;
   }
+
+  .synchronization-conflict-dialog {
+    padding: 16px;
+  }
+
   .modal-actions.synchronization-conflict-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .synchronization-conflict-actions .btn-primary {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 420px) {
+  .synchronization-conflict-dialog {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+    padding: 14px;
+  }
+
+  .synchronization-conflict-header {
+    gap: 8px;
+  }
+
+  .synchronization-conflict-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .synchronization-conflict-actions .btn-primary {
+    grid-column: auto;
+    grid-row: auto;
   }
 }
 

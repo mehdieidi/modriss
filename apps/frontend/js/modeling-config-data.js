@@ -778,16 +778,34 @@ export function modelingConcreteTypesFor(typeKey, expectedType) {
   return result;
 }
 
+function isEdgePrimitive(value) {
+  const primitive = String(value || "")
+    .trim()
+    .toLowerCase();
+  return primitive === "edge" || primitive.endsWith("-edge");
+}
+
+function isEdgeOnlyElement(entry) {
+  if (entry?.relationshipElement !== true) {
+    return false;
+  }
+  // `containedOnly` describes where an EObject is stored, not how it is rendered. A
+  // contained semantic relationship can still be a real canvas edge (for example a
+  // process/workflow transition). Use the configured visual primitive to distinguish
+  // those from contained relationship-shaped nodes such as Schedule and Trigger.
+  if (entry?.containedOnly !== true) {
+    return true;
+  }
+  if (isEdgePrimitive(entry?.primitive)) {
+    return true;
+  }
+  return !entry?.primitive && isEdgePrimitive(entry?.notation?.shape);
+}
+
 export function modelingRelationshipElementTypes(typeKey = state.activeType) {
-  return (
-    (modelingLevelConfig(typeKey).elements || [])
-      // Some PIM classes are drawn as relationship-shaped nodes but are still real semantic
-      // containment objects (notably Schedule and Trigger). Only non-creatable relationship
-      // records are edge-only and may be omitted from the semantic element tree during Save/XMI
-      // reconstruction.
-      .filter((entry) => entry?.relationshipElement === true && entry?.containedOnly !== true)
-      .map((entry) => entry.type)
-  );
+  return (modelingLevelConfig(typeKey).elements || [])
+    .filter((entry) => isEdgeOnlyElement(entry))
+    .map((entry) => entry.type);
 }
 
 function containmentTitle(feature) {
