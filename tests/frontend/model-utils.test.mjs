@@ -671,3 +671,51 @@ test("preserves required decision rule expressions during async save", async () 
   assert.equal(saved.decisionModels[0].rules[0].condition.id, "condition-1");
   assert.equal(saved.decisionModels[0].rules[0].outcome.id, "outcome-1");
 });
+
+test("keeps explicit view canvas selections exact instead of expanding Ecore subtypes", async () => {
+  const cimLevel = {
+    apiType: "CIM",
+    rootTemplate: { eClass: "CIMModel" },
+    relationshipSemantics: { containmentKind: "CONTAINS", containmentKinds: ["CONTAINS"] },
+    workbench: { defaultViewDefinitionId: "requirements" },
+    viewDefinitions: [
+      {
+        id: "requirements",
+        displayName: "Requirements",
+        viewType: "REQUIREMENTS",
+        palette: ["Requirement"],
+        canvas: ["Requirement"],
+      },
+    ],
+    elements: [
+      {
+        type: "CIMModel",
+        references: [{ name: "requirements", targetType: "Requirement", containment: true, many: true }],
+      },
+      { type: "Requirement" },
+      { type: "ComplianceConstraint", supertypes: ["Requirement"] },
+    ],
+  };
+  const config = { levelOrder: ["cim"], levels: { cim: cimLevel } };
+  state.modelingConfig.config = config;
+  initializeModelingRuntimeState(config);
+  state.activeType = "cim";
+  const model = {
+    eClass: "CIMModel",
+    requirements: [
+      { eClass: "Requirement", id: "requirement-1" },
+      { eClass: "ComplianceConstraint", id: "compliance-1" },
+    ],
+  };
+  const { installGraphAndViews, selectElementIdsForView } = await import(
+    "../../apps/frontend/js/graph-store.js"
+  );
+  const installed = installGraphAndViews("cim", model, "requirements-model");
+  const view = [...installed.views.byId.values()].find((item) => item.definitionId === "requirements");
+
+  assert.ok(view);
+  assert.deepEqual(
+    selectElementIdsForView(installed.graph, view, "cim"),
+    ["requirement-1"],
+  );
+});

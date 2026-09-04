@@ -543,7 +543,7 @@ function relationshipDedupeKey(relationship) {
   ].join("|");
 }
 
-function elementMatchesFilterTypes(element, filterTypes, typeKey) {
+function elementMatchesFilterTypes(element, filterTypes, typeKey, { exact = false } = {}) {
   if (!filterTypes?.size) {
     return true;
   }
@@ -551,16 +551,16 @@ function elementMatchesFilterTypes(element, filterTypes, typeKey) {
     return false;
   }
   const type = semanticType(element);
-  return (
-    filterTypes.has(type) ||
-    [...filterTypes].some((expected) => {
-      try {
-        return matchesSemanticType(element, expected, typeKey);
-      } catch {
-        return false;
-      }
-    })
-  );
+  if (filterTypes.has(type) || exact) {
+    return filterTypes.has(type);
+  }
+  return [...filterTypes].some((expected) => {
+    try {
+      return matchesSemanticType(element, expected, typeKey);
+    } catch {
+      return false;
+    }
+  });
 }
 
 function synthesizeSemanticRefRelationships(graph, typeKey = state.activeType) {
@@ -1337,7 +1337,9 @@ function shouldIncludeRelationshipEndpointOnView(
   if (!filterTypes?.size) {
     return true;
   }
-  return elementMatchesFilterTypes(element, filterTypes, typeKey);
+  return elementMatchesFilterTypes(element, filterTypes, typeKey, {
+    exact: Array.isArray(view?.canvas),
+  });
 }
 
 function withRelationshipEndpoints(
@@ -1593,6 +1595,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
             graph.elementsById.get(elementId),
             new Set(canvasTypes),
             typeKey,
+            { exact: true },
           ),
         ),
       );
@@ -1634,7 +1637,8 @@ export function selectElementIdsForView(graph, view, typeKey) {
       return;
     }
     const includeByType = hasExplicitCanvas
-      ? filterTypes.size > 0 && elementMatchesFilterTypes(element, filterTypes, typeKey)
+      ? filterTypes.size > 0 &&
+        elementMatchesFilterTypes(element, filterTypes, typeKey, { exact: true })
       : elementMatchesFilterTypes(element, filterTypes, typeKey) ||
         elementId === view?.scope?.rootElementId;
     if (includeByType) {
@@ -1669,7 +1673,11 @@ export function selectElementIdsForView(graph, view, typeKey) {
         if (!parent || semanticType(parent) === rootScopeType(typeKey)) {
           break;
         }
-        if (!elementMatchesFilterTypes(parent, filterTypes, typeKey)) {
+        if (
+          !elementMatchesFilterTypes(parent, filterTypes, typeKey, {
+            exact: hasExplicitCanvas,
+          })
+        ) {
           parentId = graph.parentByChild.get(parentId);
           continue;
         }

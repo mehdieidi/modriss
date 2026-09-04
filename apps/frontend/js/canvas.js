@@ -1880,39 +1880,6 @@ function activeViewElementTypeFilter() {
   return new Set((activeView()?.filters?.elementTypes || []).map(String));
 }
 
-function isActionableScopedPaletteType(type, creatableTypes) {
-  return type !== modelingRootType(state.activeType) && creatableTypes.has(type);
-}
-
-function filterScopedPaletteTypes(typeKey, scopedTypes, allTypes) {
-  const creatableTypes = new Set(allTypes);
-  const result = [];
-  const seen = new Set();
-  const add = (type) => {
-    if (!type || seen.has(type)) {
-      return;
-    }
-    seen.add(type);
-    result.push(type);
-  };
-  scopedTypes.forEach((type) => {
-    if (isActionableScopedPaletteType(type, creatableTypes)) {
-      add(type);
-      return;
-    }
-    allTypes.forEach((candidate) => {
-      try {
-        if (modelingTypeMatches(typeKey, type, candidate)) {
-          add(candidate);
-        }
-      } catch {
-        // Ignore stale metadata entries; missing types cannot be created.
-      }
-    });
-  });
-  return result;
-}
-
 function availableConfiguredPaletteTypes(allTypes) {
   const view = activeView();
   if (!view || String(view.kind || "").toUpperCase() === "MAIN") {
@@ -1929,11 +1896,20 @@ function availableConfiguredPaletteTypes(allTypes) {
   }
   const configuredPalette = Array.isArray(view.palette) ? view.palette : null;
   const hasExplicitPalette = configuredPalette !== null;
-  const scoped = hasExplicitPalette ? [...configuredPalette] : [...activeViewElementTypeFilter()];
-  const filtered = filterScopedPaletteTypes(state.activeType, scoped, allTypes).filter((type) =>
-    modelingStandalonePaletteType(state.activeType, type),
+  if (hasExplicitPalette) {
+    const available = new Set(allTypes);
+    return configuredPalette.filter(
+      (type) => available.has(type) && modelingStandalonePaletteType(state.activeType, type),
+    );
+  }
+  const scoped = [...activeViewElementTypeFilter()];
+  if (!scoped.length) {
+    return allTypes;
+  }
+  const available = new Set(allTypes);
+  return scoped.filter(
+    (type) => available.has(type) && modelingStandalonePaletteType(state.activeType, type),
   );
-  return scoped.length ? filtered : allTypes;
 }
 
 function renderWizardActions() {
