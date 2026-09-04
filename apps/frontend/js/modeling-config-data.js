@@ -802,7 +802,22 @@ export function modelingConcreteTypesFor(typeKey, expectedType) {
 }
 
 function isEdgeOnlyElement(entry) {
-  return entry?.relationshipElement === true && entry?.visualRole === "relationship";
+  if (entry?.relationshipElement !== true) {
+    return false;
+  }
+  const visualRole = String(entry?.visualRole || "")
+    .trim()
+    .toLowerCase();
+  if (visualRole) {
+    return visualRole === "relationship";
+  }
+  if (entry?.containedOnly !== true) {
+    return true;
+  }
+  const primitive = String(entry?.primitive || "")
+    .trim()
+    .toLowerCase();
+  return /(^|[-_\s])(edge|relationship)([-_\s]|$)/.test(primitive);
 }
 
 export function modelingRelationshipElementTypes(typeKey = state.activeType) {

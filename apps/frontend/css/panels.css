@@ -915,84 +915,13 @@
   font-style: normal;
 }
 
-.attr-legal-relationships {
+.attr-outgoing-relationship-fields {
   display: grid;
   gap: 8px;
 }
 
-.attr-legal-relationship-list {
-  display: grid;
-  gap: 6px;
-  max-height: 230px;
-  overflow: auto;
-  padding-right: 2px;
-}
-
-.attr-relationship-draw-active {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 9px;
-  border: 1px solid color-mix(in srgb, var(--accent) 54%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--accent-glow) 26%, var(--surface-3) 74%);
-}
-
-.attr-relationship-draw-active span {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--text-strong);
-  font: 800 10px/1.2 var(--font-display);
-  letter-spacing: 0.05em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.attr-relationship-draw-selected {
-  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
-  background: color-mix(in srgb, var(--accent) 22%, var(--surface-high) 78%);
-  color: var(--text-strong);
-}
-
-.attr-relationship-draw-selected .attr-legal-relationship-body strong {
-  color: var(--accent-light);
-}
-
-.attr-legal-relationship-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 9px;
-  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
-}
-
-.attr-legal-relationship-body {
-  min-width: 0;
-  display: grid;
-  gap: 3px;
-}
-
-.attr-legal-relationship-body strong {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--text-strong);
-  font: 700 11px/1.2 var(--font-ui);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.attr-legal-relationship-body span {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--muted);
-  font: 600 10px/1.25 var(--font-ui);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.attr-outgoing-relationship-fields .attr-field {
+  margin: 0;
 }
 
 .attr-validation-summary {

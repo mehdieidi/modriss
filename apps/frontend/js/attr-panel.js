@@ -4,7 +4,6 @@ import { MODEL_TYPES } from "./config.js";
 import { api } from "./api.js";
 import { setStatus } from "./status.js";
 import {
-  startConnectionFromNode,
   cancelConnectionDraw,
   removeConnectionFromCanvas,
   removeNodeFromCanvas,
@@ -20,14 +19,15 @@ import {
   modelingContainmentsForType,
   modelingElementDefinition,
   isModelingLevel,
-  modelingLegalKinds,
   modelingLevelConfig,
   modelingRelationshipKindLabel,
   modelingRootType,
+  modelingSemanticReferenceRules,
   modelingSemanticEdgeObjectRules,
 } from "./modeling-config-data.js";
 import {
   addNodeToGraphAndActiveView,
+  addConnectionToGraphAndActiveView,
   markGraphRelationshipsDirty,
   reconcileElementRelationships,
   removeElementFromGraph,
@@ -67,28 +67,8 @@ function readManyAttributeValue(input) {
     .filter(Boolean);
 }
 
-function configuredTraceKind() {
-  return String(modelingLevelConfig(state.activeType).relationshipSemantics?.traceKind || "");
-}
-
-function isTraceRelationship(relationship) {
-  const traceKind = configuredTraceKind();
-  if (traceKind && relationship.kind === traceKind) {
-    return true;
-  }
-  const eClass = String(relationship.eClass || relationship.type || "");
-  if (!eClass || !traceKind) {
-    return false;
-  }
-  return modelingSemanticEdgeObjectRules(state.activeType).some(
-    (rule) =>
-      String(rule?.eClass || rule?.edgeObjectType || "") === eClass &&
-      safeArray(rule?.matchKinds).map(String).includes(traceKind),
-  );
-}
-
-// Fields managed by canvas – shown read-only
-const READONLY_ATTR_KEYS = new Set(["id", "eClass", "x", "y"]);
+// Fields that are shown read-only in the inspector.
+const READONLY_ATTR_KEYS = new Set(["id"]);
 // Fields skipped entirely (rendered via canvas label editing)
 const SKIP_ATTR_KEYS = new Set(["label", "name", "tags", "status"]);
 const ROOT_SKIP_ATTR_KEYS = new Set([
@@ -116,6 +96,39 @@ const TRACE_ATTR_KEYS = new Set([
   "reviewNotes",
   "manuallyMaintained",
 ]);
+// Internal, layout, and trace metadata are used by the model/graph layer but
+// are intentionally not exposed as editable inspector fields.
+const HIDDEN_ATTR_KEYS = new Set([
+  "eclass",
+  "x",
+  "y",
+  "__ownerid",
+  "__containmentfeature",
+  "incomingtraces",
+  "outgoingtraces",
+  ...[...TRACE_ATTR_KEYS].map((key) => key.toLowerCase()),
+]);
+
+function isHiddenAttributeKey(key) {
+  return HIDDEN_ATTR_KEYS.has(
+    String(key || "")
+      .trim()
+      .toLowerCase(),
+  );
+}
+
+function isInspectorHiddenRelationshipKind(kind) {
+  const configuredTraceKind = String(
+    modelingLevelConfig(state.activeType).relationshipSemantics?.traceKind || "",
+  ).trim();
+  return Boolean(
+    configuredTraceKind &&
+      String(kind || "")
+        .trim()
+        .toUpperCase() === configuredTraceKind.toUpperCase(),
+  );
+}
+
 let attrFieldSeq = 0;
 
 function resetAttrFieldIds() {
@@ -351,7 +364,12 @@ function renderConfiguredConnectionFields(connection, source, target) {
     })),
   ];
   fields.forEach((field) => {
-    if (!field?.name || rendered.has(field.name) || field.readonly) {
+    if (
+      !field?.name ||
+      rendered.has(field.name) ||
+      field.readonly ||
+      isHiddenAttributeKey(field.name)
+    ) {
       return;
     }
     if (impliedFields.has(field.name)) {
@@ -368,6 +386,7 @@ function renderConfiguredConnectionFields(connection, source, target) {
   Object.entries(relationship).forEach(([key, value]) => {
     if (
       rendered.has(key) ||
+      isHiddenAttributeKey(key) ||
       [
         "sourceElementId",
         "targetElementId",
@@ -381,7 +400,7 @@ function renderConfiguredConnectionFields(connection, source, target) {
     ) {
       return;
     }
-    const section = TRACE_ATTR_KEYS.has(key) ? sections.trace : sections.core;
+    const section = sections.core;
     section.appendChild(
       buildAttrField(key, value, {
         fieldType: inferFieldType(value),
@@ -399,7 +418,7 @@ function renderConfiguredConnectionFields(connection, source, target) {
 function renderAttributeFields(node) {
   el.attrPanelBody.innerHTML = "";
   resetAttrFieldIds();
-  const meta = node.meta || {};
+  const meta = state.graph?.elementsById?.get(node.id) || node.meta || {};
   let definition = null;
   try {
     definition = modelingElementDefinition(state.activeType, node.type);
@@ -441,17 +460,9 @@ function renderRootModelFields(root, definition) {
     }),
   );
   rendered.add("id");
-  sections.identity.appendChild(
-    buildAttrField("eClass", root.eClass || rootType, {
-      fieldType: "text",
-      readonly: true,
-    }),
-  );
-  rendered.add("eClass");
-
   rootEditableFields(definition).forEach((field) => {
     const key = field.name;
-    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
       return;
     }
     rendered.add(key);
@@ -464,6 +475,7 @@ function renderRootModelFields(root, definition) {
       rendered.has(key) ||
       ROOT_SKIP_ATTR_KEYS.has(key) ||
       SKIP_ATTR_KEYS.has(key) ||
+      isHiddenAttributeKey(key) ||
       Array.isArray(value) ||
       (value && typeof value === "object")
     ) {
@@ -510,12 +522,13 @@ function renderConfiguredAttributeFields(node, meta, definition) {
     ...(definition?.references || []).map((reference) => ({
       ...reference,
       fieldType: "reference",
+      relationshipSelector: !reference.containment,
     })),
   ];
   const impliedFields = new Set(Object.keys(impliedEnumValues(node.type, definition)));
   configuredFields.forEach((field) => {
     const key = field?.name;
-    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
       return;
     }
     if (impliedFields.has(key)) {
@@ -524,6 +537,10 @@ function renderConfiguredAttributeFields(node, meta, definition) {
     }
     rendered.add(key);
     const editableField = editableParentReferenceField(node, field);
+    if (editableField?.fieldType === "reference" && editableField.readonly) {
+      rendered.add(key);
+      return;
+    }
     const configuredValue = Object.prototype.hasOwnProperty.call(meta, key)
       ? meta[key]
       : field.defaultValue;
@@ -536,7 +553,7 @@ function renderConfiguredAttributeFields(node, meta, definition) {
   });
 
   Object.entries(meta).forEach(([key, value]) => {
-    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
       return;
     }
     rendered.add(key);
@@ -552,7 +569,6 @@ function renderConfiguredAttributeFields(node, meta, definition) {
   });
   appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.relationships);
-  appendTraceabilitySection(node, sections.trace, { includeTitle: false, rendered });
   appendConfiguredValidationSummary(sections.validation, meta, node.type);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
@@ -629,7 +645,7 @@ function _renderRelationshipAttributeFields(node, meta, definition) {
   const impliedFields = new Set(Object.keys(impliedEnumValues(node.type, definition)));
   configuredFields.forEach((field) => {
     const key = field?.name;
-    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
       return;
     }
     if (impliedFields.has(key)) {
@@ -644,7 +660,7 @@ function _renderRelationshipAttributeFields(node, meta, definition) {
   });
 
   Object.entries(meta).forEach(([key, value]) => {
-    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
       return;
     }
     rendered.add(key);
@@ -660,7 +676,6 @@ function _renderRelationshipAttributeFields(node, meta, definition) {
   });
   appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.relationships);
-  appendTraceabilitySection(node, sections.trace, { includeTitle: false, rendered });
   appendConfiguredValidationSummary(sections.validation, meta, node.type);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
@@ -697,7 +712,7 @@ function _renderPlatformAttributeFields(node, meta, definition) {
   const impliedFields = new Set(Object.keys(impliedEnumValues(node.type, definition)));
   configuredFields.forEach((field) => {
     const key = field?.name;
-    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
       return;
     }
     if (impliedFields.has(key)) {
@@ -710,7 +725,7 @@ function _renderPlatformAttributeFields(node, meta, definition) {
   });
 
   Object.entries(meta).forEach(([key, value]) => {
-    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
       return;
     }
     rendered.add(key);
@@ -726,7 +741,6 @@ function _renderPlatformAttributeFields(node, meta, definition) {
   });
   appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.containment);
-  appendTraceabilitySection(node, sections.trace, { includeTitle: false, rendered });
   appendPlatformValidationSummary(sections.validation, meta, node.type);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
@@ -740,7 +754,6 @@ function relationshipInspectorSections() {
     core: createAttrTabSection("core", "Core Properties"),
     relationships: createAttrTabSection("relationships", "Relationships"),
     policies: createAttrTabSection("policies", "Policies / Security"),
-    trace: createAttrTabSection("trace", "Trace & Review"),
     validation: createAttrTabSection("validation", "Validation"),
   };
 }
@@ -751,8 +764,6 @@ function semanticInspectorSections() {
     identity: createAttrTabSection("identity", "Identity"),
     core: createAttrTabSection("core", "Business Fields"),
     relationships: createAttrTabSection("relationships", "Relationships"),
-    governance: createAttrTabSection("governance", "Governance"),
-    trace: createAttrTabSection("trace", "Trace & Review"),
     validation: createAttrTabSection("validation", "Validation"),
   };
 }
@@ -765,7 +776,6 @@ function platformInspectorSections() {
     security: createAttrTabSection("security", "Security"),
     relationships: createAttrTabSection("relationships", "References"),
     containment: createAttrTabSection("containment", "Contained Details"),
-    trace: createAttrTabSection("trace", "Trace & Review"),
     validation: createAttrTabSection("validation", "Validation"),
   };
 }
@@ -780,9 +790,6 @@ function createAttrTabSection(tab, title) {
 }
 
 function relationshipSectionForField(sections, key, field = {}) {
-  if (TRACE_ATTR_KEYS.has(key)) {
-    return sections.trace;
-  }
   if (IDENTITY_FIELDS.has(key)) {
     return sections.identity;
   }
@@ -796,14 +803,11 @@ function relationshipSectionForField(sections, key, field = {}) {
 }
 
 function semanticSectionForField(sections, key, field = {}) {
-  if (TRACE_ATTR_KEYS.has(key)) {
-    return sections.trace;
-  }
   if (IDENTITY_FIELDS.has(key)) {
     return sections.identity;
   }
   if (isGovernanceField(key, field)) {
-    return sections.governance;
+    return sections.relationships;
   }
   if (field.fieldType === "reference" || field.kind === "reference") {
     return sections.relationships;
@@ -812,9 +816,6 @@ function semanticSectionForField(sections, key, field = {}) {
 }
 
 function platformSectionForField(sections, key, field = {}) {
-  if (TRACE_ATTR_KEYS.has(key)) {
-    return sections.trace;
-  }
   if (field.containment) {
     return sections.containment;
   }
@@ -1102,208 +1103,192 @@ function buildAttrSectionTitle(title) {
   return section;
 }
 
-function appendTraceabilitySection(
-  node,
-  host = el.attrPanelBody,
-  { includeTitle = true, rendered = null } = {},
-) {
-  if (!isModelingLevel(state.activeType)) {
-    return;
+function renderLegalOutgoingRelationshipsSection(node) {
+  const rules = outgoingRelationshipSelectorRules(node);
+  if (!rules.length) {
+    return null;
   }
-  if (includeTitle) {
-    host.appendChild(buildAttrSectionTitle("Traceability / Review"));
-  }
-  const traceLinks = [];
-  state.graph?.relationshipsById?.forEach((relationship) => {
-    if (!isTraceRelationship(relationship)) {
+  const section = document.createElement("div");
+  section.className = "attr-outgoing-relationship-fields";
+  rules.forEach((rule) => {
+    const inputValue = relationshipSelectorValue(node, rule);
+    const wrapper = buildAttrField(rule.key, inputValue, {
+      fieldType: "reference",
+      kind: "reference",
+      targetType: rule.targetType,
+      many: rule.many,
+    });
+    const label = wrapper.querySelector("label");
+    if (label) {
+      label.textContent = rule.label;
+    }
+    const input = wrapper.querySelector("[data-attr-key]");
+    if (!input) {
       return;
     }
-    if (
-      relationship.sourceElementId === node.id ||
-      relationship.targetElementId === node.id ||
-      relationship.source === node.id ||
-      relationship.target === node.id
-    ) {
-      traceLinks.push(relationship);
-    }
+    delete input.dataset.attrKey;
+    input.dataset.outgoingRelationshipKind = rule.kind;
+    input.addEventListener("change", () => {
+      synchronizeOutgoingRelationshipSelector(node, rule, input);
+    });
+    section.appendChild(wrapper);
   });
-  const summary = document.createElement("div");
-  summary.className = "attr-trace-summary";
-  summary.innerHTML = traceLinks.length
-    ? traceLinks
-        .map((link) => {
-          const direction =
-            (link.sourceElementId || link.source) === node.id ? "outgoing" : "incoming";
-          const otherId =
-            direction === "outgoing"
-              ? link.targetElementId || link.target
-              : link.sourceElementId || link.source;
-          const other = state.graph?.elementsById?.get(otherId);
-          return `<div class="attr-trace-row"><span>${direction}</span><strong>${escapeAttr(
-            link.linkType || link.kind || configuredTraceKind(),
-          )}</strong><em>${escapeAttr(
-            other?.name || other?.label || otherId || "external",
-          )}</em></div>`;
-        })
-        .join("")
-    : `<div class="attr-field-hint">No trace links for this element.</div>`;
-  host.appendChild(summary);
-  TRACE_ATTR_KEYS.forEach((key) => {
-    if (rendered?.has(key) || host.querySelector(`[data-attr-key="${CSS.escape(key)}"]`)) {
-      return;
-    }
-    const booleanField = key === "generatedByTransformation" || key === "manuallyMaintained";
-    if (!Object.prototype.hasOwnProperty.call(node.meta || {}, key)) {
-      node.meta[key] = booleanField ? false : "";
-    }
-    rendered?.add(key);
-    host.appendChild(
-      buildAttrField(key, node.meta?.[key], {
-        fieldType: booleanField ? "boolean" : inferFieldType(node.meta?.[key]),
-      }),
-    );
-  });
+  return section;
 }
 
-function legalOutgoingRelationshipOptions(node) {
-  if (!node || !isModelingLevel(state.activeType)) {
-    return [];
-  }
-  let level = null;
+function outgoingRelationshipSelectorRules(node) {
+  const rules = [];
+  const seen = new Set();
+  const directKinds = new Set();
   try {
-    level = modelingLevelConfig(state.activeType);
-  } catch {
-    return [];
-  }
-  const targetTypes = (level.elements || [])
-    .map((entry) => String(entry?.type || "").trim())
-    .filter(Boolean)
-    .filter((type) => {
-      try {
-        const definition = modelingElementDefinition(state.activeType, type);
-        return (
-          !definition?.relationshipElement && !definition?.abstract && !definition?.supportOnly
-        );
-      } catch {
-        return true;
-      }
-    });
-  const byKind = new Map();
-  targetTypes.forEach((targetType) => {
-    let kinds = [];
-    try {
-      kinds = modelingLegalKinds(state.activeType, node.type, targetType);
-    } catch {
-      kinds = [];
-    }
-    kinds.forEach((kind) => {
-      const key = String(kind || "").trim();
-      if (!key) {
+    modelingSemanticReferenceRules(state.activeType).forEach((rule) => {
+      if (
+        rule?.reverse ||
+        !rule?.feature ||
+        !modelTypeMatches(state.activeType, node, rule.sourceType)
+      ) {
         return;
       }
-      const entry = byKind.get(key) || {
-        kind: key,
-        label: modelingRelationshipKindLabel(state.activeType, key),
-        targets: new Set(),
-      };
-      entry.targets.add(targetType);
-      byKind.set(key, entry);
+      const kind = String(rule.kind || "").trim();
+      if (!isInspectorHiddenRelationshipKind(kind)) {
+        directKinds.add(kind.toUpperCase());
+      }
     });
-  });
-  return [...byKind.values()]
-    .map((entry) => ({
-      ...entry,
-      targets: [...entry.targets].sort((a, b) => a.localeCompare(b)),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label) || a.kind.localeCompare(b.kind));
-}
-
-function connectionDrawActiveForNode(nodeId) {
-  return Boolean(
-    state.connectMode && state.connectSourceId === nodeId && state.preferredConnectionKind,
+  } catch {
+    // The ordinary Ecore reference fields remain available as a fallback.
+  }
+  try {
+    modelingSemanticEdgeObjectRules(state.activeType).forEach((rule) => {
+      if (!modelTypeMatches(state.activeType, node, rule.sourceType)) {
+        return;
+      }
+      const targetType = String(rule.targetType || "*");
+      const kinds = safeArray(rule.matchKinds || rule.kinds || rule.allowedKinds);
+      kinds.forEach((kind) => {
+        const normalizedKind = String(kind || "").trim();
+        if (
+          !normalizedKind ||
+          isInspectorHiddenRelationshipKind(normalizedKind) ||
+          directKinds.has(normalizedKind.toUpperCase())
+        ) {
+          return;
+        }
+        const key = `${normalizedKind.toUpperCase()}|${rule.eClass || "edge"}|${targetType}`;
+        if (seen.has(key)) {
+          return;
+        }
+        seen.add(key);
+        rules.push({
+          key: `__relationship_${normalizedKind}_${rule.eClass || "edge"}`,
+          kind: normalizedKind,
+          label: modelingRelationshipKindLabel(state.activeType, normalizedKind),
+          targetType,
+          many: relationshipObjectMany(rule),
+          edgeType: rule.eClass,
+        });
+      });
+    });
+  } catch {
+    // Some non-modeling levels have no edge-object metadata.
+  }
+  return rules.sort(
+    (a, b) => a.label.localeCompare(b.label) || a.targetType.localeCompare(b.targetType),
   );
 }
 
-function buildLegalRelationshipDrawBanner(_node) {
-  const kind = state.preferredConnectionKind;
-  const label = modelingRelationshipKindLabel(state.activeType, kind);
-  const banner = document.createElement("div");
-  banner.className = "attr-relationship-draw-active";
-  banner.setAttribute("role", "status");
-  banner.dataset.legalRelationshipDrawBanner = "true";
-
-  const text = document.createElement("span");
-  text.textContent = `Drawing ${label} — click a highlighted target on the canvas`;
-
-  const cancel = document.createElement("button");
-  cancel.type = "button";
-  cancel.className = "btn btn-secondary btn-sm";
-  cancel.textContent = "Cancel";
-  cancel.title = "Exit draw mode (Esc)";
-  cancel.addEventListener("click", () => {
-    cancelConnectionDraw();
-  });
-
-  banner.append(text, cancel);
-  return banner;
+function relationshipObjectMany(rule) {
+  try {
+    const rootDefinition = modelingElementDefinition(
+      state.activeType,
+      modelingRootType(state.activeType),
+    );
+    const rootReference = rootDefinition?.references?.find(
+      (reference) => reference.name === rule.rootFeature,
+    );
+    return rootReference ? rootReference.many !== false : true;
+  } catch {
+    return true;
+  }
 }
 
-function renderLegalOutgoingRelationshipsSection(node) {
-  const options = legalOutgoingRelationshipOptions(node);
-  const section = document.createElement("div");
-  section.className = "attr-section attr-legal-relationships";
-  section.appendChild(buildAttrSectionTitle("Legal Outgoing Relationships"));
-
-  const drawActive = connectionDrawActiveForNode(node.id);
-  if (drawActive) {
-    section.appendChild(buildLegalRelationshipDrawBanner(node));
-  }
-
-  if (!options.length) {
-    const hint = document.createElement("div");
-    hint.className = "attr-field-hint";
-    hint.textContent = "No legal outgoing relationship types for this element.";
-    section.appendChild(hint);
-    return section;
-  }
-
-  const list = document.createElement("div");
-  list.className = "attr-legal-relationship-list";
-  options.forEach((option) => {
-    const isActiveKind = drawActive && option.kind === state.preferredConnectionKind;
-    const row = document.createElement("div");
-    row.className = "attr-legal-relationship-row";
-    if (isActiveKind) {
-      row.classList.add("attr-relationship-draw-selected");
-    }
-    const body = document.createElement("div");
-    body.className = "attr-legal-relationship-body";
-    const title = document.createElement("strong");
-    title.textContent = option.label || option.kind;
-    const targets = document.createElement("span");
-    const visibleTargets = option.targets.slice(0, 5).join(", ");
-    targets.textContent = `${visibleTargets}${
-      option.targets.length > 5 ? ` +${option.targets.length - 5}` : ""
-    }`;
-    body.append(title, targets);
-    const action = document.createElement("button");
-    action.type = "button";
-    action.className = isActiveKind ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm";
-    action.textContent = isActiveKind ? "Cancel" : "Draw";
-    action.title = isActiveKind ? `Cancel drawing ${option.kind}` : `Draw ${option.kind}`;
-    action.setAttribute("aria-pressed", isActiveKind ? "true" : "false");
-    action.addEventListener("click", () => {
-      if (isActiveKind) {
-        cancelConnectionDraw();
-        return;
+function outgoingRelationshipsForKind(nodeId, rule) {
+  const ids = state.graph?.relationshipsBySource?.get(nodeId) || [];
+  return [...ids]
+    .map((id) => state.graph?.relationshipsById?.get(id))
+    .filter((relationship) => {
+      if (
+        !relationship ||
+        String(relationship.kind).toUpperCase() !== String(rule.kind).toUpperCase()
+      ) {
+        return false;
       }
-      startConnectionFromNode(node.id, option.kind);
+      return !rule.edgeType || !relationship.eClass || relationship.eClass === rule.edgeType;
     });
-    row.append(body, action);
-    list.appendChild(row);
+}
+
+function relationshipSelectorValue(node, rule) {
+  const targets = outgoingRelationshipsForKind(node.id, rule).map(
+    (relationship) => relationship.targetElementId || relationship.target,
+  );
+  return rule.many ? targets : targets[0] || null;
+}
+
+function synchronizeOutgoingRelationshipSelector(node, rule, input) {
+  const rawValue = readInputValue(input);
+  const selectedIds = new Set(Array.isArray(rawValue) ? rawValue : rawValue ? [rawValue] : []);
+  const existing = outgoingRelationshipsForKind(node.id, rule);
+  existing
+    .filter((relationship) => !selectedIds.has(relationship.targetElementId || relationship.target))
+    .forEach((relationship) => removeRelationshipFromGraph(relationship.id));
+  const currentTargets = new Set(
+    existing.map((relationship) => relationship.targetElementId || relationship.target),
+  );
+  selectedIds.forEach((targetId) => {
+    if (currentTargets.has(targetId)) {
+      return;
+    }
+    addConnectionToGraphAndActiveView(
+      {
+        id: `${rule.key}-${node.id}-${targetId}`,
+        sourceId: node.id,
+        targetId,
+        kind: rule.kind,
+      },
+      { addToActiveView: false },
+    );
   });
-  section.appendChild(list);
-  return section;
+  markModelDirty();
+  syncDiagramRenderer({});
+  setStatus(`${rule.label} targets updated`);
+}
+
+function synchronizeRelationshipReferenceInput(input, key) {
+  const node = state.nodesById.get(state.selectedNodeId);
+  const element = state.graph?.elementsById?.get(node?.id);
+  if (!node || !element || !key) {
+    return;
+  }
+  const value = readInputValue(input);
+  const selectedIds = new Set(Array.isArray(value) ? value : value ? [value] : []);
+  element[key] = value;
+  node.meta = element;
+  const relationshipIds = state.graph?.relationshipsBySource?.get(node.id) || [];
+  [...relationshipIds]
+    .map((id) => state.graph?.relationshipsById?.get(id))
+    .filter(
+      (relationship) =>
+        relationship?.semanticFeature === key &&
+        (relationship.semanticSourceElementId || relationship.sourceElementId) === node.id,
+    )
+    .filter((relationship) => !selectedIds.has(relationship.targetElementId || relationship.target))
+    .forEach((relationship) => removeRelationshipFromGraph(relationship.id));
+  synchronizeOppositeReferences(node);
+  reconcileElementRelationships(node.id, state.activeType);
+  markGraphRelationshipsDirty();
+  syncActiveViewFromVisibleGraph({ rebuildIndexes: false });
+  syncDiagramRenderer({});
+  markModelDirty({ viewSynced: true });
+  setStatus(`${key} targets updated`);
 }
 
 function syncLegalRelationshipDrawSection() {
@@ -1315,18 +1300,58 @@ function syncLegalRelationshipDrawSection() {
   if (!node) {
     return;
   }
-  const existing = el.attrPanelBody?.querySelector(".attr-legal-relationships");
+  const existing = el.attrPanelBody?.querySelector(".attr-outgoing-relationship-fields");
   if (!existing) {
     return;
   }
-  if (connectionDrawActiveForNode(nodeId)) {
-    activateAttrTab("relationships");
+  const replacement = renderLegalOutgoingRelationshipsSection(node);
+  if (replacement) {
+    existing.replaceWith(replacement);
+  } else {
+    existing.remove();
   }
-  existing.replaceWith(renderLegalOutgoingRelationshipsSection(node));
+}
+
+function syncRelationshipPaneFromGraph() {
+  const nodeId = state.selectedNodeId;
+  if (
+    !nodeId ||
+    state.selectedRootModel ||
+    state.selectedConnectionId ||
+    el.attributePanel?.classList.contains("hidden")
+  ) {
+    return;
+  }
+  const node = state.nodesById.get(nodeId);
+  const element = state.graph?.elementsById?.get(nodeId);
+  if (!node || !element) {
+    return;
+  }
+  el.attrPanelBody?.querySelectorAll(".attr-reference-select").forEach((input) => {
+    if (input.dataset.outgoingRelationshipKind) {
+      return;
+    }
+    const key = input.dataset.attrReferenceName;
+    if (!key || !Object.prototype.hasOwnProperty.call(element, key)) {
+      return;
+    }
+    const selectedIds = new Set(referenceValueIds(element[key]));
+    [...input.options].forEach((option) => {
+      option.selected = selectedIds.has(option.value) || (!selectedIds.size && !option.value);
+    });
+    const root = input.closest(".attr-field")?.querySelector(".attr-custom-select");
+    if (root) {
+      syncCustomSelectState(root, input, "No reference");
+    }
+  });
+  syncLegalRelationshipDrawSection();
 }
 
 function appendLegalOutgoingRelationships(node, host = el.attrPanelBody) {
-  host.appendChild(renderLegalOutgoingRelationshipsSection(node));
+  const section = renderLegalOutgoingRelationshipsSection(node);
+  if (section) {
+    host.appendChild(section);
+  }
 }
 
 function containmentEntriesForType(type) {
@@ -1905,6 +1930,18 @@ function syncCustomSelectState(root, select, emptyLabel) {
     optionButton.classList.toggle("is-active", active);
     optionButton.setAttribute("aria-selected", String(active));
   });
+  const optionsContainer =
+    root.querySelector(".attr-custom-select-options") ||
+    root.querySelector(".attr-custom-select-menu");
+  if (optionsContainer) {
+    [...root.querySelectorAll(".attr-custom-select-option")]
+      .sort((a, b) => {
+        const aSelected = selectedValues.has(a.dataset.selectValue || "");
+        const bSelected = selectedValues.has(b.dataset.selectValue || "");
+        return Number(bSelected) - Number(aSelected);
+      })
+      .forEach((optionButton) => optionsContainer.appendChild(optionButton));
+  }
 }
 
 function resetCustomSelectSearch(root) {
@@ -2154,6 +2191,11 @@ function buildAttrField(key, value, field) {
       emptyLabel: fieldType === "reference" ? "No reference" : "Select...",
       searchable: fieldType === "reference",
     });
+    if (field?.relationshipSelector === true) {
+      input.addEventListener("change", () => {
+        synchronizeRelationshipReferenceInput(input, key);
+      });
+    }
   }
   if (field?.kind === "reference" && field?.targetType) {
     const hint = document.createElement("div");
@@ -2289,6 +2331,10 @@ export function applyAttributePanel() {
   const node = state.nodesById.get(state.selectedNodeId);
   if (!node) {
     return false;
+  }
+  const liveElement = state.graph?.elementsById?.get(node.id);
+  if (liveElement) {
+    node.meta = liveElement;
   }
 
   const labelKey = identityFieldForNode(
@@ -2657,4 +2703,5 @@ export async function deleteSelectedConnection() {
 
 export function bindConnectionDrawStateListener() {
   window.addEventListener("connection-draw-state-change", syncLegalRelationshipDrawSection);
+  window.addEventListener("relationship-graph-change", syncRelationshipPaneFromGraph);
 }

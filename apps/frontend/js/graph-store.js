@@ -3532,7 +3532,13 @@ function materializeSemanticEdgeObject(edge, relationship) {
   return materialized;
 }
 
-export function addConnectionToGraphAndActiveView(edge) {
+function notifyRelationshipGraphChanged() {
+  if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+    window.dispatchEvent(new Event("relationship-graph-change"));
+  }
+}
+
+export function addConnectionToGraphAndActiveView(edge, { addToActiveView = true } = {}) {
   if (!edge?.id || edge.bundle) {
     return;
   }
@@ -3587,10 +3593,15 @@ export function addConnectionToGraphAndActiveView(edge) {
   }
   state.graph.relationshipsById.set(edge.id, relationship);
   const view = activeView();
-  if (view && !safeArray(view.edges).some((entry) => entry.relationshipId === edge.id)) {
+  if (
+    addToActiveView &&
+    view &&
+    !safeArray(view.edges).some((entry) => entry.relationshipId === edge.id)
+  ) {
     view.edges.push({ relationshipId: edge.id, visible: true });
   }
   addRelationshipToGraphIndexes(state.graph, relationship);
+  notifyRelationshipGraphChanged();
 }
 
 export function removeRelationshipFromGraph(relationshipId) {
@@ -3607,6 +3618,9 @@ export function removeRelationshipFromGraph(relationshipId) {
     });
   }
   state.graph.relationshipsById.delete(id);
+  if (state.diagram?.connections) {
+    state.diagram.connections = state.diagram.connections.filter((edge) => edge.id !== id);
+  }
   state.views.byId.forEach((view) => {
     view.edges = safeArray(view.edges).filter((edge) => edge.relationshipId !== id);
     if (view.hidden) {
@@ -3616,6 +3630,7 @@ export function removeRelationshipFromGraph(relationshipId) {
     }
   });
   removeRelationshipFromGraphIndexes(state.graph, relationship);
+  notifyRelationshipGraphChanged();
 }
 
 export function persistEdgeLayoutInActiveView(edgeId, layout) {

@@ -204,6 +204,12 @@ function configuredEdgeLabel(edge) {
   }
 }
 
+function elementAttributePanelIsActive() {
+  return Boolean(
+    state.selectedNodeId && el.attributePanel && !el.attributePanel.classList.contains("hidden"),
+  );
+}
+
 function _configuredEdgePresentation(edge) {
   if (!isModelingLevel(state.activeType)) {
     return { className: "", markerStart: "", markerEnd: "arrow" };
@@ -3433,7 +3439,9 @@ export function addConnection(
   pushDiagramUndoSnapshot(captureAddConnectionUndoSnapshot(edge.id));
   state.diagram.connections.push(edge);
   addConnectionToGraphAndActiveView(edge);
-  state.selectedConnectionId = edge.id;
+  if (!elementAttributePanelIsActive()) {
+    state.selectedConnectionId = edge.id;
+  }
   connectionsById.set(edge.id, edge);
   [edge.sourceId, edge.targetId].forEach((nodeId) => {
     if (!edgeIdsByNodeId.has(nodeId)) {
