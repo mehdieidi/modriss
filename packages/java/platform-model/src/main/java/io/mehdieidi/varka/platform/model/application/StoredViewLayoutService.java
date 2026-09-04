@@ -50,8 +50,11 @@ public final class StoredViewLayoutService {
   /** Distance between candidate edge corridors while avoiding previously routed edges. */
   private static final double ROUTE_LANE_STEP = 34.0d;
 
-  /** Maximum number of alternative corridors considered for one edge. */
-  private static final int MAX_ROUTE_ATTEMPTS = 512;
+  /** Maximum number of nearby alternative corridors considered for one edge. */
+  private static final int MAX_ROUTE_ATTEMPTS = 32;
+
+  /** Version of the persisted node/edge coordinate contract used by the canvas renderer. */
+  private static final int LAYOUT_GEOMETRY_VERSION = 2;
 
   /** Model service used to load and persist model JSON. */
   private final ModelService models;
@@ -93,7 +96,9 @@ public final class StoredViewLayoutService {
     ObjectNode model =
         requireObject(stored.modelJson(), "Stored model JSON is invalid.").deepCopy();
     ObjectNode view = findView(model, viewId);
-    if (!force && view.path("autoLayoutApplied").asBoolean(false)) {
+    if (!force
+        && view.path("autoLayoutApplied").asBoolean(false)
+        && view.path("layoutGeometryVersion").asInt(0) == LAYOUT_GEOMETRY_VERSION) {
       return response(stored, view, false, List.of());
     }
 
@@ -248,22 +253,21 @@ public final class StoredViewLayoutService {
     result.edges().forEach(edge -> edgesById.put(edge.id(), edge));
     Map<String, LayoutService.LayoutEdge> requestsById = new HashMap<>();
     request.edges().forEach(edge -> requestsById.put(edge.id(), edge));
-    boolean denseDashboard = shouldUseDenseDashboardGrid(view, request);
     Map<String, EdgeRoute> routesById = new HashMap<>();
-    if (!denseDashboard) {
-      List<EdgeRoute> routes = new ArrayList<>();
-      for (LayoutService.LayoutEdge edgeRequest : request.edges()) {
-        NodeBox source = nodesById.get(edgeRequest.sourceNodeId());
-        NodeBox target = nodesById.get(edgeRequest.targetNodeId());
-        if (source == null || target == null) {
-          continue;
-        }
-        routes.add(orthogonalRoute(edgeRequest, source, target));
+    List<EdgeRoute> routes = new ArrayList<>();
+    // Route against the final node positions. In particular, dashboard views may have been
+    // moved into semantic columns after ELK returned, so ELK's original bend points are stale.
+    for (LayoutService.LayoutEdge edgeRequest : request.edges()) {
+      NodeBox source = nodesById.get(edgeRequest.sourceNodeId());
+      NodeBox target = nodesById.get(edgeRequest.targetNodeId());
+      if (source == null || target == null) {
+        continue;
       }
-      spreadAnchors(nodesById, routes);
-      assignSeparatedPinPoints(nodesById, routes);
-      routes.forEach(route -> routesById.put(route.id, route));
+      routes.add(orthogonalRoute(edgeRequest, source, target));
     }
+    spreadAnchors(nodesById, routes);
+    assignSeparatedPinPoints(nodesById, routes);
+    routes.forEach(route -> routesById.put(route.id, route));
     for (JsonNode edge : view.path("edges")) {
       if (!(edge instanceof ObjectNode objectEdge)) {
         continue;
@@ -276,10 +280,6 @@ public final class StoredViewLayoutService {
       NodeBox source = nodesById.get(edgeRequest.sourceNodeId());
       NodeBox target = nodesById.get(edgeRequest.targetNodeId());
       if (source == null || target == null) {
-        continue;
-      }
-      if (denseDashboard) {
-        writeLayoutServiceEdge(objectEdge, edgesById.get(id), source, target);
         continue;
       }
       EdgeRoute routed = routesById.get(id);
@@ -298,6 +298,7 @@ public final class StoredViewLayoutService {
     }
     view.put("autoLayoutApplied", true);
     view.put("layoutStrategy", strategy);
+    view.put("layoutGeometryVersion", LAYOUT_GEOMETRY_VERSION);
   }
 
   /**
@@ -456,27 +457,22 @@ public final class StoredViewLayoutService {
     List<RouteSegment> occupiedSegments = new ArrayList<>();
     List<EdgeRoute> ordered = new ArrayList<>(routes);
     ordered.sort(Comparator.comparing(route -> route.id));
-    int routeIndex = 0;
     for (EdgeRoute route : ordered) {
       NodeBox source = nodesById.get(route.sourceNodeId);
       NodeBox target = nodesById.get(route.targetNodeId);
       if (source == null || target == null) {
         continue;
       }
-      int attemptOffset = routeIndex * 5;
-      routeIndex += 1;
       List<Point> selected = null;
       for (int attempt = 0; attempt < MAX_ROUTE_ATTEMPTS; attempt++) {
-        List<Point> candidate =
-            candidatePath(route, source, target, attempt + attemptOffset, routeIndex);
+        List<Point> candidate = candidatePath(route, source, target, attempt);
         if (!overlapsExistingSegments(candidate, occupiedSegments)) {
           selected = candidate;
           break;
         }
       }
       if (selected == null) {
-        selected =
-            candidatePath(route, source, target, MAX_ROUTE_ATTEMPTS + attemptOffset, routeIndex);
+        selected = candidatePath(route, source, target, MAX_ROUTE_ATTEMPTS);
       }
       route.pinPoints.clear();
       route.pinPoints.addAll(selected.subList(1, selected.size() - 1));
@@ -493,8 +489,7 @@ public final class StoredViewLayoutService {
    * @param attempt candidate attempt
    * @return full path including endpoints
    */
-  private List<Point> candidatePath(
-      EdgeRoute route, NodeBox source, NodeBox target, int attempt, int routeIndex) {
+  private List<Point> candidatePath(EdgeRoute route, NodeBox source, NodeBox target, int attempt) {
     Point start = pointForAnchor(source, route.sourceAnchor);
     Point end = pointForAnchor(target, route.targetAnchor);
     int lane = lane(attempt / 2);
@@ -512,7 +507,7 @@ public final class StoredViewLayoutService {
               new Point(end.x, loopY),
               end));
     }
-    double corridorY = corridorY(source, target, start, end, lane, jitter, routeIndex);
+    double corridorY = corridorY(source, target, start, end, lane, jitter);
     double detour = ROUTE_STUB + Math.abs(lane) * ROUTE_LANE_STEP + jitter;
     double sourceX = start.x + detour;
     double targetX = end.x - detour;
@@ -560,25 +555,16 @@ public final class StoredViewLayoutService {
    * @return corridor y
    */
   private double corridorY(
-      NodeBox source,
-      NodeBox target,
-      Point start,
-      Point end,
-      int lane,
-      double jitter,
-      int routeIndex) {
-    double routeBand = routeIndex * ROUTE_LANE_STEP;
+      NodeBox source, NodeBox target, Point start, Point end, int lane, double jitter) {
     if (Math.abs(start.y - end.y) > 80.0d) {
-      return Math.round((start.y + end.y) / 2.0d + lane * ROUTE_LANE_STEP + jitter + routeBand);
+      return Math.round((start.y + end.y) / 2.0d + lane * ROUTE_LANE_STEP + jitter);
     }
     double top = Math.min(source.y, target.y);
     double bottom = Math.max(source.y + source.height, target.y + target.height);
     if (lane == 0 || lane > 0) {
-      return Math.round(
-          top - ROUTE_STUB - Math.max(0, lane - 1) * ROUTE_LANE_STEP - jitter - routeBand);
+      return Math.round(top - ROUTE_STUB - Math.max(0, lane - 1) * ROUTE_LANE_STEP - jitter);
     }
-    return Math.round(
-        bottom + ROUTE_STUB + Math.abs(lane + 1) * ROUTE_LANE_STEP + jitter + routeBand);
+    return Math.round(bottom + ROUTE_STUB + Math.abs(lane + 1) * ROUTE_LANE_STEP + jitter);
   }
 
   /**

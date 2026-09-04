@@ -13,7 +13,7 @@ import {
   setActiveViewId,
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
-import { materializeActiveView } from "./view-materializer.js";
+import { materializeActiveView, viewNeedsAutoLayout } from "./view-materializer.js";
 import {
   isModelingLevel,
   modelingDefaultLayoutStrategy,
@@ -689,7 +689,7 @@ export async function openWorkbenchView(viewId) {
     // A generated/imported view has no durable arrangement until its first activation.
     // Thereafter `autoLayoutApplied` is persisted by the backend (or set by a user drag),
     // making ordinary view switches strictly read-only.
-    if (!view?.autoLayoutApplied && state.diagram.nodes.length) {
+    if (viewNeedsAutoLayout(view) && state.diagram.nodes.length) {
       const { autoLayoutCurrentDiagram } = await import("./model-ops.js");
       await autoLayoutCurrentDiagram({
         progress: true,

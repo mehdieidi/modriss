@@ -20,6 +20,18 @@ function defaultNodeSize(typeKey) {
   };
 }
 
+function explicitNodeSize(nodeOrType) {
+  if (!nodeOrType || typeof nodeOrType !== "object") {
+    return null;
+  }
+  const width = Number(nodeOrType.width);
+  const height = Number(nodeOrType.height);
+  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
+    return null;
+  }
+  return { width, height };
+}
+
 let cssVarCacheKey = "";
 const cssVarCache = new Map();
 
@@ -29,6 +41,10 @@ function currentCssVarCacheKey() {
 }
 
 export function nodeSizeForDiagram(typeKey = state.activeType, nodeOrType = null) {
+  const explicit = explicitNodeSize(nodeOrType);
+  if (explicit) {
+    return explicit;
+  }
   const type = typeof nodeOrType === "string" ? nodeOrType : nodeOrType?.type;
   const label =
     nodeOrType && typeof nodeOrType === "object" ? nodeOrType.label || nodeOrType.id || "" : "";

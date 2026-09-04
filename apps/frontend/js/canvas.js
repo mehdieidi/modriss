@@ -12,7 +12,11 @@ import {
   prepareViewNodeIndex,
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
-import { isContainerElement, materializeActiveView } from "./view-materializer.js";
+import {
+  CURRENT_LAYOUT_GEOMETRY_VERSION,
+  isContainerElement,
+  materializeActiveView,
+} from "./view-materializer.js";
 import {
   modelingElementDefinition,
   modelingContainerDefinition,
@@ -2754,6 +2758,7 @@ function endG6NodeDrag(nodeId, position, { moved = false } = {}) {
     // replace the user's saved arrangement later.
     if (view) {
       view.autoLayoutApplied = true;
+      view.layoutGeometryVersion = CURRENT_LAYOUT_GEOMETRY_VERSION;
     }
     commitUndoSnapshot(state.dragNode?.undoSnapshot);
     persistNodePositionInActiveView(node);

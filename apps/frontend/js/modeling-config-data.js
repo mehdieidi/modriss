@@ -223,6 +223,7 @@ function ensureConfigShape(raw) {
       apiType: String(incoming.apiType || level),
       chatType: String(incoming.chatType || level.toUpperCase()),
       modelNameTemplate: String(incoming.modelNameTemplate || ""),
+      assistantEnabled: incoming.assistantEnabled !== false,
     };
   }
 

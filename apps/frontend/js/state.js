@@ -1,5 +1,28 @@
 import { emptyDiagram } from "./utils.js";
 
+const LAST_MODELING_TYPE_STORAGE_PREFIX = "varka.lastModelingType";
+
+function modelingTypeStorageKey(projectId) {
+  const userId = state.auth?.user?.id || state.auth?.user?.email || "anonymous";
+  return `${LAST_MODELING_TYPE_STORAGE_PREFIX}:${String(userId).toLowerCase()}:${String(
+    projectId || "",
+  )}`;
+}
+
+export function saveLastModelingType(projectId, type) {
+  if (!projectId || !type || typeof window === "undefined" || !window.localStorage) {
+    return;
+  }
+  window.localStorage.setItem(modelingTypeStorageKey(projectId), String(type));
+}
+
+export function readLastModelingType(projectId) {
+  if (!projectId || typeof window === "undefined" || !window.localStorage) {
+    return "";
+  }
+  return window.localStorage.getItem(modelingTypeStorageKey(projectId)) || "";
+}
+
 // ── Mutable application state (singleton) ─────────────────────────────────────
 export const state = {
   auth: {

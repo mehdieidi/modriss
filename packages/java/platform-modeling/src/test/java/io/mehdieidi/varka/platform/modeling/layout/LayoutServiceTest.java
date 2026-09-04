@@ -136,6 +136,47 @@ class LayoutServiceTest {
     assertNoOverlappingSegments(response);
   }
 
+  /** Verifies that dense parallel edges do not drift away based on their edge-list position. */
+  @Test
+  void keepsDenseParallelRoutesNearTheirNodes() {
+    List<LayoutService.LayoutEdge> edges = new ArrayList<>();
+    for (int index = 0; index < 20; index++) {
+      edges.add(
+          new LayoutService.LayoutEdge(
+              "parallel-" + index, "flow", "source", "target", null, null));
+    }
+
+    LayoutService.LayoutResponse response =
+        service.layout(
+            new LayoutService.LayoutRequest(
+                "view-dense-parallel",
+                "DEFAULT_LAYERED",
+                false,
+                List.of(),
+                Map.of("layoutStrategy", "SPACIOUS_LAYERED"),
+                List.of(
+                    new LayoutService.LayoutNode("source", "Source", 180, 90, 0.0, 0.0, List.of()),
+                    new LayoutService.LayoutNode("target", "Target", 180, 90, 0.0, 0.0, List.of())),
+                edges));
+
+    double minNodeY =
+        response.nodes().stream().mapToDouble(LayoutService.LaidOutNode::y).min().orElse(0);
+    double maxNodeY =
+        response.nodes().stream().mapToDouble(node -> node.y() + node.height()).max().orElse(0);
+    response.edges().stream()
+        .flatMap(edge -> edge.sections().stream())
+        .flatMap(section -> routePoints(section).stream())
+        .forEach(
+            point -> {
+              assertTrue(
+                  point.y() >= minNodeY - 500,
+                  () -> "Route escaped above the node cluster: " + point.y() + " < " + minNodeY);
+              assertTrue(
+                  point.y() <= maxNodeY + 500,
+                  () -> "Route escaped below the node cluster: " + point.y() + " > " + maxNodeY);
+            });
+  }
+
   /**
    * Verifies that non-layered strategies invoke distinct ELK algorithms instead of falling back to
    * the same layered coordinates.
@@ -183,6 +224,15 @@ class LayoutServiceTest {
         .map(node -> node.id() + "=" + Math.round(node.x()) + "," + Math.round(node.y()))
         .sorted()
         .reduce("", (left, right) -> left + "|" + right);
+  }
+
+  /** Returns every point in one routed edge section. */
+  private List<LayoutService.LayoutPoint> routePoints(LayoutService.EdgeSection section) {
+    List<LayoutService.LayoutPoint> points = new ArrayList<>();
+    points.add(section.startPoint());
+    points.addAll(section.bendPoints());
+    points.add(section.endPoint());
+    return points;
   }
 
   /**

@@ -1,4 +1,4 @@
-import { state } from "./state.js";
+import { readLastModelingType, saveLastModelingType, state } from "./state.js";
 import { el } from "./dom.js";
 import { api, apiAuthHeaders } from "./api.js";
 import { setBusy, setError, setStatus } from "./status.js";
@@ -13,8 +13,8 @@ import {
 } from "./canvas.js";
 import { updateGenerateButtonState } from "./model-ops.js";
 import { renderViewWorkbench } from "./view-explorer.js";
-import { restoreTabGraphState } from "./graph-store.js";
-import { materializeActiveView } from "./view-materializer.js";
+import { activeView, restoreTabGraphState } from "./graph-store.js";
+import { materializeActiveView, viewNeedsAutoLayout } from "./view-materializer.js";
 import { clearArtifactState } from "./artifact.js";
 import { resetChatForProjectChange } from "./chat.js?v=chat-provenance-ui-20260718a";
 import { apiUrl, MODEL_TYPES } from "./config.js";
@@ -682,7 +682,8 @@ export async function loadProject(project) {
       const activeModelId =
         normalizedProject.activeModelIds?.[type] ||
         normalizedProject.activeModelIds?.[type.toUpperCase()];
-      const modelIdToLoad = activeModelId;
+      const fallbackModelId = recordsByType[type]?.find((record) => record?.id)?.id;
+      const modelIdToLoad = activeModelId || fallbackModelId;
       if (modelIdToLoad) {
         try {
           const record = await api(`/${MODEL_TYPES[type].apiType}/${modelIdToLoad}`);
@@ -704,18 +705,28 @@ export async function loadProject(project) {
       }
     }
 
-    // Apply default modeling tab state
+    // Restore a populated modeling tab. The default level can be empty while another level
+    // still has the project's active model, which otherwise leaves the canvas blank after a
+    // browser refresh.
     const defaultLevel = defaultModelingLevel();
-    state.activeType = defaultLevel;
-    state.modelId = state.tabs[defaultLevel]?.modelId || null;
-    state.modelRevision = state.tabs[defaultLevel]?.modelRevision || 0;
-    state.baseModel = state.tabs[defaultLevel]?.baseModel || null;
-    state.diagram = state.tabs[defaultLevel]?.diagram || emptyDiagram(defaultLevel);
-    restoreTabGraphState(defaultLevel);
+    const rememberedLevel = readLastModelingType(projectId);
+    const initialLevel =
+      typeKeys.includes(rememberedLevel) && state.tabs[rememberedLevel]?.modelId
+        ? rememberedLevel
+        : state.tabs[defaultLevel]?.modelId
+          ? defaultLevel
+          : typeKeys.find((type) => state.tabs[type]?.modelId) || defaultLevel;
+    saveLastModelingType(projectId, initialLevel);
+    state.activeType = initialLevel;
+    state.modelId = state.tabs[initialLevel]?.modelId || null;
+    state.modelRevision = state.tabs[initialLevel]?.modelRevision || 0;
+    state.baseModel = state.tabs[initialLevel]?.baseModel || null;
+    state.diagram = state.tabs[initialLevel]?.diagram || emptyDiagram(initialLevel);
+    restoreTabGraphState(initialLevel);
     materializeActiveView();
 
     Array.from(el.modelTabs.querySelectorAll(".tab")).forEach((t) =>
-      t.classList.toggle("active", t.dataset.type === defaultLevel),
+      t.classList.toggle("active", t.dataset.type === initialLevel),
     );
     const topbar = document.querySelector(".topbar");
     topbar?.classList.remove("artifact-mode");
@@ -732,6 +743,20 @@ export async function loadProject(project) {
     try {
       await renderDiagramAsync();
       await fitViewportToDiagram({ fit: true });
+      if (state.modelId && state.diagram.nodes.length && viewNeedsAutoLayout(activeView())) {
+        try {
+          const { autoLayoutCurrentDiagram } = await import("./model-ops.js");
+          await autoLayoutCurrentDiagram({
+            progress: false,
+            status: false,
+            busy: false,
+            force: false,
+          });
+          renderViewWorkbench();
+        } catch (error) {
+          console.warn("Stored view layout repair failed after project load.", error);
+        }
+      }
     } catch (error) {
       diagramWarning = true;
       console.warn("Diagram renderer failed after project load.", error);

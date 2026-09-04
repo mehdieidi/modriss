@@ -61,8 +61,8 @@ public final class LayoutService {
   /** Distance between candidate edge corridors while avoiding previously routed edges. */
   private static final double ROUTE_LANE_STEP = 34.0d;
 
-  /** Maximum number of alternative corridors considered for one edge. */
-  private static final int MAX_ROUTE_ATTEMPTS = 512;
+  /** Maximum number of nearby alternative corridors considered for one edge. */
+  private static final int MAX_ROUTE_ATTEMPTS = 32;
 
   /** ELK id for the layered algorithm. */
   private static final String LAYERED_ALGORITHM = "org.eclipse.elk.layered";
@@ -631,21 +631,10 @@ public final class LayoutService {
     List<RouteSegment> occupiedSegments = new ArrayList<>();
     List<LayoutEdge> orderedEdges = new ArrayList<>(request.edges());
     orderedEdges.sort(Comparator.comparing(LayoutEdge::id));
-    int routeIndex = 0;
     for (LayoutEdge edgeRequest : orderedEdges) {
-      int attemptOffset = routeIndex * 5;
-      routeIndex += 1;
       EdgeSection section =
           separatedSection(
-              edgeRequest,
-              nodeBoxes,
-              sourceAnchors,
-              targetAnchors,
-              occupiedSegments,
-              attemptOffset,
-              routeIndex,
-              orderedEdges.size(),
-              warnings);
+              edgeRequest, nodeBoxes, sourceAnchors, targetAnchors, occupiedSegments, warnings);
       if (section == null) {
         ElkEdge edge = edgesById.get(edgeRequest.id());
         section = elkSection(edge);
@@ -725,9 +714,6 @@ public final class LayoutService {
    * @param sourceAnchors source anchors keyed by edge id
    * @param targetAnchors target anchors keyed by edge id
    * @param occupiedSegments segments already claimed by earlier edges
-   * @param attemptOffset per-edge lane offset so parallel routes do not share corridors
-   * @param routeIndex stable edge ordering index for corridor band separation
-   * @param edgeCount total routed edge count for extended lane search
    * @param warnings mutable warning sink when routing cannot avoid overlap
    * @return separated edge section or {@code null} when endpoints are missing
    */
@@ -737,9 +723,6 @@ public final class LayoutService {
       Map<String, RouteAnchor> sourceAnchors,
       Map<String, RouteAnchor> targetAnchors,
       List<RouteSegment> occupiedSegments,
-      int attemptOffset,
-      int routeIndex,
-      int edgeCount,
       List<String> warnings) {
     NodeBox source = nodesById.get(edge.sourceNodeId());
     NodeBox target = nodesById.get(edge.targetNodeId());
@@ -753,49 +736,16 @@ public final class LayoutService {
     List<LayoutPoint> selected = null;
     for (int attempt = 0; attempt < MAX_ROUTE_ATTEMPTS; attempt++) {
       List<LayoutPoint> candidate =
-          candidatePath(
-              edge.id(),
-              source,
-              target,
-              sourceAnchor,
-              targetAnchor,
-              attempt + attemptOffset,
-              routeIndex);
+          candidatePath(edge.id(), source, target, sourceAnchor, targetAnchor, attempt);
       if (!overlapsExistingSegments(candidate, occupiedSegments)) {
         selected = candidate;
         break;
       }
     }
     if (selected == null) {
-      for (int attempt = MAX_ROUTE_ATTEMPTS;
-          attempt < MAX_ROUTE_ATTEMPTS + edgeCount * 32;
-          attempt++) {
-        List<LayoutPoint> candidate =
-            candidatePath(
-                edge.id(),
-                source,
-                target,
-                sourceAnchor,
-                targetAnchor,
-                attempt + attemptOffset,
-                routeIndex + attempt);
-        if (!overlapsExistingSegments(candidate, occupiedSegments)) {
-          selected = candidate;
-          break;
-        }
-      }
-    }
-    if (selected == null) {
       warnings.add("Edge '" + edge.id() + "' could not be routed without overlap.");
       selected =
-          candidatePath(
-              edge.id(),
-              source,
-              target,
-              sourceAnchor,
-              targetAnchor,
-              MAX_ROUTE_ATTEMPTS + attemptOffset,
-              routeIndex);
+          candidatePath(edge.id(), source, target, sourceAnchor, targetAnchor, MAX_ROUTE_ATTEMPTS);
     }
     occupiedSegments.addAll(segments(edge.id(), selected));
     return new EdgeSection(
@@ -813,7 +763,6 @@ public final class LayoutService {
    * @param sourceAnchor source anchor
    * @param targetAnchor target anchor
    * @param attempt candidate attempt
-   * @param routeIndex stable edge ordering index for corridor band separation
    * @return full path including endpoints
    */
   private List<LayoutPoint> candidatePath(
@@ -822,8 +771,7 @@ public final class LayoutService {
       NodeBox target,
       RouteAnchor sourceAnchor,
       RouteAnchor targetAnchor,
-      int attempt,
-      int routeIndex) {
+      int attempt) {
     LayoutPoint start = pointForAnchor(source, sourceAnchor);
     LayoutPoint end = pointForAnchor(target, targetAnchor);
     int lane = lane(attempt / 2);
@@ -841,7 +789,7 @@ public final class LayoutService {
               new LayoutPoint(end.x(), loopY),
               end));
     }
-    double corridorY = corridorY(source, target, start, end, lane, jitter, routeIndex);
+    double corridorY = corridorY(source, target, start, end, lane, jitter);
     double detour = ROUTE_STUB + Math.abs(lane) * ROUTE_LANE_STEP + jitter;
     double sourceX = start.x() + detour;
     double targetX = end.x() - detour;
@@ -886,29 +834,19 @@ public final class LayoutService {
    * @param end end point
    * @param lane signed lane index
    * @param jitter stable route jitter
-   * @param routeIndex stable edge ordering index for corridor band separation
    * @return corridor y
    */
   private double corridorY(
-      NodeBox source,
-      NodeBox target,
-      LayoutPoint start,
-      LayoutPoint end,
-      int lane,
-      double jitter,
-      int routeIndex) {
-    double routeBand = routeIndex * ROUTE_LANE_STEP;
+      NodeBox source, NodeBox target, LayoutPoint start, LayoutPoint end, int lane, double jitter) {
     if (Math.abs(start.y() - end.y()) > 80.0d) {
-      return Math.round((start.y() + end.y()) / 2.0d + lane * ROUTE_LANE_STEP + jitter + routeBand);
+      return Math.round((start.y() + end.y()) / 2.0d + lane * ROUTE_LANE_STEP + jitter);
     }
     double top = Math.min(source.y(), target.y());
     double bottom = Math.max(source.y() + source.height(), target.y() + target.height());
     if (lane == 0 || lane > 0) {
-      return Math.round(
-          top - ROUTE_STUB - Math.max(0, lane - 1) * ROUTE_LANE_STEP - jitter - routeBand);
+      return Math.round(top - ROUTE_STUB - Math.max(0, lane - 1) * ROUTE_LANE_STEP - jitter);
     }
-    return Math.round(
-        bottom + ROUTE_STUB + Math.abs(lane + 1) * ROUTE_LANE_STEP + jitter + routeBand);
+    return Math.round(bottom + ROUTE_STUB + Math.abs(lane + 1) * ROUTE_LANE_STEP + jitter);
   }
 
   /**

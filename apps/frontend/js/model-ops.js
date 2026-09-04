@@ -1,5 +1,5 @@
 import { apiUrl, MODEL_TYPES } from "./config.js";
-import { state } from "./state.js";
+import { saveLastModelingType, state } from "./state.js";
 import { el } from "./dom.js";
 import { api, apiAuthHeaders } from "./api.js";
 import { flushCurrentModelPatch, prepareModelForSave } from "./model-patch.js";
@@ -16,7 +16,7 @@ import {
   setActiveViewId,
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
-import { materializeActiveView } from "./view-materializer.js";
+import { materializeActiveView, viewNeedsAutoLayout } from "./view-materializer.js";
 import {
   iconAnchorBoundsFromNodeRect,
   measureIconNodeSize,
@@ -901,7 +901,7 @@ export async function loadModelById(
       await centerCurrentDiagram();
     }
     resetModelSaveState();
-    if (autoLayout && !activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
+    if (autoLayout && viewNeedsAutoLayout(activeView()) && state.diagram.nodes.length) {
       await autoLayoutCurrentDiagram({
         progress: true,
         status: false,
@@ -981,7 +981,7 @@ async function loadModelRecord(
     renderViewWorkbench();
     await centerCurrentDiagram();
     resetModelSaveState();
-    if (autoLayout && !activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
+    if (autoLayout && viewNeedsAutoLayout(activeView()) && state.diagram.nodes.length) {
       await autoLayoutCurrentDiagram({
         progress: true,
         status: false,
@@ -1026,7 +1026,7 @@ async function autoLayoutGeneratedModel(typeLabel) {
     await finalizePresentation();
     return;
   }
-  if (view.autoLayoutApplied) {
+  if (!viewNeedsAutoLayout(view)) {
     await finalizePresentation();
     return;
   }
@@ -1649,6 +1649,9 @@ export async function switchTab(type) {
   }
 
   state.activeType = type;
+  if (!isArtifactLevel(type)) {
+    saveLastModelingType(state.project?.id, type);
+  }
   Array.from(el.modelTabs.querySelectorAll(".tab")).forEach((t) =>
     t.classList.toggle("active", t.dataset.type === type),
   );

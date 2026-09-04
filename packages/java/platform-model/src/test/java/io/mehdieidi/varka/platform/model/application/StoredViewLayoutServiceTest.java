@@ -61,6 +61,7 @@ class StoredViewLayoutServiceTest {
             context.user(), ModelLevel.CIM, created.id(), "view-test", false, "SPACIOUS_LAYERED");
     assertTrue(first.layoutApplied());
     assertTrue(first.view().path("autoLayoutApplied").asBoolean());
+    assertEquals(2, first.view().path("layoutGeometryVersion").asInt());
     assertTrue(first.view().path("nodes").findValuesAsString("x").size() >= 2);
     JsonNode edge = first.view().path("edges").path(0);
     assertEquals("right", edge.path("sourceAnchor").path("side").asText());
@@ -133,6 +134,7 @@ class StoredViewLayoutServiceTest {
     assertEquals("SPACIOUS_LAYERED", spacious.view().path("layoutStrategy").asText());
     assertEquals("TREE", tree.view().path("layoutStrategy").asText());
     assertEquals("RADIAL", radial.view().path("layoutStrategy").asText());
+    assertOrthogonalPins(spacious.view().path("edges").path(0));
     assertNotEquals(nodeGeometrySignature(spacious.view()), nodeGeometrySignature(tree.view()));
     assertNotEquals(nodeGeometrySignature(spacious.view()), nodeGeometrySignature(radial.view()));
   }

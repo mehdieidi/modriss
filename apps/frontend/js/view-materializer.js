@@ -13,6 +13,15 @@ import {
   modelingLevelConfig,
 } from "./modeling-config-data.js";
 
+export const CURRENT_LAYOUT_GEOMETRY_VERSION = 2;
+
+export function viewNeedsAutoLayout(view) {
+  return (
+    !view?.autoLayoutApplied ||
+    Number(view?.layoutGeometryVersion) !== CURRENT_LAYOUT_GEOMETRY_VERSION
+  );
+}
+
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -127,6 +136,8 @@ function runtimeNode(elementId, viewNode) {
     label: elementLabel(element),
     x,
     y,
+    width: Number.isFinite(Number(viewNode?.width)) ? Number(viewNode.width) : undefined,
+    height: Number.isFinite(Number(viewNode?.height)) ? Number(viewNode.height) : undefined,
     meta: element,
   };
 }

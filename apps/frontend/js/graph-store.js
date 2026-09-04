@@ -2150,6 +2150,9 @@ function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } 
     sourceViewId: String(view?.sourceViewId || ""),
     savedAt: String(view?.savedAt || ""),
     autoLayoutApplied: Boolean(view?.autoLayoutApplied),
+    layoutGeometryVersion: Number.isFinite(Number(view?.layoutGeometryVersion))
+      ? Number(view.layoutGeometryVersion)
+      : 0,
     camera:
       view?.camera && typeof view.camera === "object"
         ? {
@@ -2535,6 +2538,9 @@ export function refreshViewContent(
   }
   const preserved = {
     autoLayoutApplied: Boolean(view.autoLayoutApplied),
+    layoutGeometryVersion: Number.isFinite(Number(view.layoutGeometryVersion))
+      ? Number(view.layoutGeometryVersion)
+      : 0,
     layoutStrategy: view.layoutStrategy,
     camera: view.camera ? clone(view.camera) : undefined,
     hidden: view.hidden ? clone(view.hidden) : refreshed.hidden,

@@ -5,11 +5,7 @@ import {
   modelingRelationshipKindLabel,
   modelingRelationshipPresentation,
 } from "../modeling-config-data.js";
-import {
-  resolveIconSource,
-  measureIconNodeSize,
-  routePointOnIconAnchor,
-} from "./icon-node-layout.js";
+import { measureIconNodeSize, resolveIconSource } from "./icon-node-layout.js";
 import {
   canvasBackgroundColor,
   cssVar,
@@ -200,26 +196,28 @@ function routeEndpoint(node, anchor, typeKey, fallbackSide = "right") {
   if (!node) {
     return null;
   }
+  const size = nodeSizeForDiagram(typeKey, node);
+  const side = anchor?.side === "left" || anchor?.side === "right" ? anchor.side : fallbackSide;
+  const requestedOffsetY = Number(anchor?.offsetY);
+  const offsetY = Number.isFinite(requestedOffsetY)
+    ? Math.max(8, Math.min(size.height - 8, requestedOffsetY))
+    : size.height / 2;
+  return {
+    x: Math.round(Number(node.x || 0) + (side === "right" ? size.width : 0)),
+    y: Math.round(Number(node.y || 0) + offsetY),
+  };
+}
+
+function renderedNodeSize(node, typeKey, detailLevel) {
   const configured = nodeSizeForDiagram(typeKey, node);
-  const low = false;
+  if (Number.isFinite(Number(node?.width)) && Number.isFinite(Number(node?.height))) {
+    return configured;
+  }
   const measured = measureIconNodeSize(node.label || node.id || "", {
     width: configured.width,
-    low,
+    low: detailLevel === "low",
   });
-  const size = { width: configured.width, height: measured.height };
-  const side = anchor?.side === "left" || anchor?.side === "right" ? anchor.side : fallbackSide;
-  const offsetY = Number(anchor?.offsetY);
-  const bounds = routePointOnIconAnchor(
-    node.x,
-    node.y,
-    size.width,
-    size.height,
-    side,
-    Number.isFinite(offsetY) ? offsetY : undefined,
-    low,
-    node.label || node.id || "",
-  );
-  return bounds;
+  return { width: configured.width, height: measured.height };
 }
 
 export function mapNodeToG6(
@@ -232,12 +230,7 @@ export function mapNodeToG6(
     viewProfile = "",
   } = {},
 ) {
-  const configured = nodeSizeForDiagram(typeKey, node);
-  const measured = measureIconNodeSize(node.label || node.id || "", {
-    width: configured.width,
-    low: detailLevel === "low",
-  });
-  const size = { width: configured.width, height: measured.height };
+  const size = renderedNodeSize(node, typeKey, detailLevel);
   const definition = cachedElementDefinition(typeKey, node.type);
   const notation = notationFromDefinition(typeKey, node, definition);
   const accent = nodeAccent(node, definition);
