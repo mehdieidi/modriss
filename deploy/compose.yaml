@@ -3,8 +3,10 @@ name: varka
 # Run from the repository root so Compose can substitute ${VAR} from ./.env:
 #   docker compose up --build
 #
-# After changing files under mde/ (transformations, validation, metamodels), rebuild the backend
-# image so /app/mde inside the container picks up the changes:
+# The repository's mde directory is mounted into the backend so CVS activation writes the active
+# notation directly into the Git-tracked working tree. Backups are written below mde/notation/backup.
+# After changing files under mde/ (transformations, validation, metamodels), recreate the backend
+# container so the mounted files are reloaded:
 #   docker compose up --build --force-recreate backend
 #
 # The backend exposes modeling config via GET /api/modeling/config → diagramEditor.
@@ -81,6 +83,7 @@ services:
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     volumes:
+      - ../mde:/app/mde
       - varka-backend-uploads:/app/uploads
       - varka-backend-logs:/app/logs
     depends_on:

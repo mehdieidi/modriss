@@ -23,6 +23,7 @@ import tools.jackson.databind.ObjectMapper;
 public class AdminNotationService {
 
   private static final List<String> LEVELS = List.of("cim", "pim", "psm");
+  private static final String BACKUP_DIRECTORY = "backup";
 
   private final MdeRuntimePaths paths;
   private final ObjectMapper mapper;
@@ -57,12 +58,14 @@ public class AdminNotationService {
     validate(level, persisted);
     Path file = notationFile(level);
     Path backup = null;
+    Path backupDirectory = file.getParent().resolve(BACKUP_DIRECTORY);
     Path temporary = file.resolveSibling(file.getFileName() + ".tmp");
     try {
       Files.createDirectories(file.getParent());
       Files.writeString(
           temporary, mapper.writerWithDefaultPrettyPrinter().writeValueAsString(persisted) + "\n");
       if (Files.isRegularFile(file)) {
+        Files.createDirectories(backupDirectory);
         int suffix = 1;
         do {
           String fileName = file.getFileName().toString();
@@ -73,7 +76,7 @@ public class AdminNotationService {
                       + suffix
                       + ".json"
                   : fileName + ".old" + suffix;
-          backup = file.resolveSibling(backupName);
+          backup = backupDirectory.resolve(backupName);
           suffix++;
         } while (Files.exists(backup));
         Files.move(file, backup, StandardCopyOption.REPLACE_EXISTING);
@@ -86,7 +89,7 @@ public class AdminNotationService {
       }
       return new ActivationResult(
           file.getFileName().toString(),
-          backup == null ? null : backup.getFileName().toString(),
+          backup == null ? null : backupDirectory.getFileName() + "/" + backup.getFileName(),
           Instant.now().toString());
     } catch (Exception ex) {
       try {

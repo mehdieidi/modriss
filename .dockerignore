@@ -9,6 +9,7 @@ node_modules
 **/node_modules
 logs
 storage
+mde/notation/backup
 
 apps/frontend
 apps/landing
