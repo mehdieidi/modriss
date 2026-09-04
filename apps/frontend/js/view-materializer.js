@@ -8,6 +8,7 @@ import {
 } from "./graph-store.js";
 import {
   modelingContainmentsForType,
+  modelingContainerDefinition,
   modelingElementDefinition,
   modelingLevelConfig,
 } from "./modeling-config-data.js";
@@ -76,7 +77,7 @@ function hasContainmentCapacity(typeKey, type, definition) {
   if (containments.some((entry) => !entry.relationshipOnly)) {
     return true;
   }
-  if (safeArray(definition.containmentPaletteExtras).length) {
+  if (modelingContainerDefinition(typeKey, elementType(element))) {
     return true;
   }
   const palette = modelingLevelConfig(typeKey).containmentPalettes?.[type];

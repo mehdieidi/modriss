@@ -102,20 +102,12 @@ public final class CvsV2Loader {
       if (type.isBlank()) {
         continue;
       }
-      Map<String, Object> notation = optionalMap(element, "notation");
       Map<String, Object> mapping = new LinkedHashMap<>();
       mapping.put("match", Map.of("eClass", type));
       mapping.put("visualRole", element.getOrDefault("visualRole", "node"));
-      mapping.put("primitive", notation.getOrDefault("shape", "concept-card"));
       mapping.put("icon", element.get("icon"));
       mapping.put("color", element.get("color"));
       mapping.put("category", element.get("category"));
-      mapping.put(
-          "card",
-          Map.of(
-              "tag", notation.getOrDefault("tag", type),
-              "lineFields", notation.getOrDefault("lineFields", List.of()),
-              "detailFields", notation.getOrDefault("detailFields", List.of())));
       mappings.add(mapping);
     }
     return mappings;
@@ -143,8 +135,14 @@ public final class CvsV2Loader {
               + ", found "
               + configuredLevel);
     }
-    if (optionalList(cvs, "viewpoints").isEmpty()) {
-      throw new PlatformException(500, "CVS document for " + level + " must define viewpoints.");
+    if (optionalList(cvs, "elements").isEmpty()) {
+      throw new PlatformException(500, "CVS document for " + level + " must define elements.");
+    }
+    if (optionalList(cvs, "views").isEmpty()) {
+      throw new PlatformException(500, "CVS document for " + level + " must define views.");
+    }
+    if (cvs.get("containers") == null) {
+      throw new PlatformException(500, "CVS document for " + level + " must define containers.");
     }
     if (optionalMap(cvs, "canvasPolicy").isEmpty()) {
       throw new PlatformException(500, "CVS document for " + level + " must define canvasPolicy.");
@@ -180,12 +178,16 @@ public final class CvsV2Loader {
     metadata.put("displayName", cvs.getOrDefault("displayName", ""));
     metadata.put("boundedContext", cvs.getOrDefault("boundedContext", Map.of()));
     metadata.put("elementVisualDefaults", cvs.getOrDefault("elementVisualDefaults", Map.of()));
-    metadata.put(
-        "notationPrimitives",
-        cvs.getOrDefault("notationPrimitives", cvs.getOrDefault("primitives", Map.of())));
+    List<Map<String, Object>> elements = optionalListOfMaps(cvs, "elements");
+    for (Map<String, Object> element : elements) {
+      normalizeLegacyColor(element);
+    }
+    metadata.put("elements", elements);
     metadata.put("badgeRules", cvs.getOrDefault("badgeRules", List.of()));
     metadata.put("elementVisualRules", cvs.getOrDefault("elementVisualRules", List.of()));
-    metadata.put("elements", overridesToElements(optionalList(cvs, "elementOverrides")));
+    if (optionalList(cvs, "elements").isEmpty()) {
+      metadata.put("elements", overridesToElements(optionalList(cvs, "elementOverrides")));
+    }
     metadata.put("relationshipRules", cvs.getOrDefault("relationshipRules", List.of()));
     metadata.put("relationshipKinds", cvs.getOrDefault("relationshipKinds", List.of()));
     metadata.put("relationshipSemantics", cvs.getOrDefault("relationshipSemantics", Map.of()));
@@ -201,7 +203,13 @@ public final class CvsV2Loader {
     metadata.put(
         "semanticReferenceExclusions", cvs.getOrDefault("semanticReferenceExclusions", List.of()));
     metadata.put("shortcutConnectorRules", cvs.getOrDefault("shortcutConnectorRules", List.of()));
-    metadata.put("viewDefinitions", viewpointsToViewDefinitions(optionalList(cvs, "viewpoints")));
+    List<Map<String, Object>> views = viewsToViewDefinitions(optionalList(cvs, "views"));
+    metadata.put("views", views);
+    // Keep the existing runtime metadata name as an internal compatibility alias. CVS itself
+    // exposes only `views`; the frontend config now also exposes the canonical `views` field.
+    metadata.put("viewDefinitions", views);
+    metadata.put("containers", optionalListOfMaps(cvs, "containers"));
+    metadata.put("containmentPalettes", containersToPalettes(optionalList(cvs, "containers")));
     metadata.put("canvasPolicy", cvs.getOrDefault("canvasPolicy", Map.of()));
     metadata.put("complexityManagement", cvs.getOrDefault("complexityManagement", List.of()));
     metadata.put("workbench", cvs.getOrDefault("workbench", Map.of()));
@@ -210,17 +218,43 @@ public final class CvsV2Loader {
     metadata.put(
         "strictnessModes",
         cvs.getOrDefault("strictnessModes", List.of("exploration", "methodology", "production")));
-    metadata.put("universalSyntax", cvs.getOrDefault("universalSyntax", List.of()));
-    metadata.put("kernelSyntax", cvs.getOrDefault("kernelSyntax", List.of()));
-    metadata.put("kernelNotation", cvs.getOrDefault("kernelNotation", List.of()));
     metadata.put("rootTemplate", requireField(cvs, "rootTemplate"));
     metadata.put("starterTemplate", cvs.get("starterTemplate"));
     metadata.put("cvsVersion", cvs.get("cvsVersion"));
-    metadata.put("cvsPrimitives", cvs.getOrDefault("primitives", Map.of()));
     metadata.put("cvsReferenceMappings", cvs.getOrDefault("referenceMappings", List.of()));
     metadata.put("cvsRelationshipMappings", cvs.getOrDefault("relationshipMappings", List.of()));
     metadata.put("cvsMetamodelRef", cvs.getOrDefault("metamodelRef", Map.of()));
     return metadata;
+  }
+
+  private List<Map<String, Object>> optionalListOfMaps(Map<String, Object> document, String field) {
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Object item : optionalList(document, field)) {
+      if (item instanceof Map<?, ?> raw) {
+        result.add(stringKeyMap(raw));
+      }
+    }
+    return result;
+  }
+
+  private Map<String, Object> containersToPalettes(List<?> containers) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    for (Object item : containers) {
+      if (!(item instanceof Map<?, ?> raw)) {
+        continue;
+      }
+      Map<String, Object> container = stringKeyMap(raw);
+      String type = String.valueOf(container.getOrDefault("elementType", ""));
+      if (type.isBlank()) {
+        continue;
+      }
+      Map<String, Object> palette = new LinkedHashMap<>();
+      palette.put("types", optionalList(container, "palette"));
+      palette.put("canvas", optionalList(container, "canvas"));
+      palette.put("features", optionalList(container, "features"));
+      result.put(type, palette);
+    }
+    return result;
   }
 
   private List<Map<String, Object>> overridesToElements(List<?> overrides) {
@@ -273,11 +307,14 @@ public final class CvsV2Loader {
     }
   }
 
-  private List<Map<String, Object>> viewpointsToViewDefinitions(List<?> viewpoints) {
+  private List<Map<String, Object>> viewsToViewDefinitions(List<?> viewpoints) {
     List<Map<String, Object>> views = new ArrayList<>();
     for (Object item : viewpoints) {
       if (item instanceof Map<?, ?> raw) {
-        views.add(stringKeyMap(raw));
+        Map<String, Object> view = stringKeyMap(raw);
+        List<?> canvas = optionalList(view, "canvas");
+        view.put("elementTypes", new ArrayList<>(canvas));
+        views.add(view);
       }
     }
     return views;

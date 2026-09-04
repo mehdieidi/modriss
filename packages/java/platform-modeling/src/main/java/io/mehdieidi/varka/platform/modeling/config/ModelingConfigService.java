@@ -158,7 +158,8 @@ public final class ModelingConfigService {
       }
     }
     Map<String, Object> containmentPalettes =
-        buildContainmentPalettes(elementMaps, relationshipElementTypes);
+        buildContainmentPalettes(
+            elementMaps, relationshipElementTypes, configuredContainmentProfiles(metadata));
     cvsLoader.validateElementCoverage(key, elementMaps);
     List<Map<String, Object>> elementMappings = cvsLoader.buildElementMappings(elementMaps);
     List<Map<String, Object>> cvsReferenceMappings =
@@ -194,20 +195,15 @@ public final class ModelingConfigService {
         Map.entry("workbench", metadata.getOrDefault("workbench", Map.of())),
         Map.entry("scaffoldRecipes", metadata.getOrDefault("scaffoldRecipes", List.of())),
         Map.entry("boundedContext", metadata.getOrDefault("boundedContext", Map.of())),
+        Map.entry("views", requireList(metadata, "views", key)),
         Map.entry("viewDefinitions", requireList(metadata, "viewDefinitions", key)),
-        Map.entry("universalSyntax", metadata.getOrDefault("universalSyntax", List.of())),
-        Map.entry("kernelSyntax", metadata.getOrDefault("kernelSyntax", List.of())),
-        Map.entry(
-            "kernelNotation",
-            metadata.getOrDefault(
-                "kernelNotation", metadata.getOrDefault("kernelSyntax", List.of()))),
         Map.entry("complexityManagement", metadata.getOrDefault("complexityManagement", List.of())),
         Map.entry("canvasPolicy", completeCanvasPolicy(metadata)),
+        Map.entry("containers", metadata.getOrDefault("containers", List.of())),
         Map.entry("containmentPalettes", containmentPalettes),
         Map.entry("syntaxCoverage", syntaxCoverage),
         Map.entry("elementMappings", elementMappings),
         Map.entry("cvsVersion", metadata.getOrDefault("cvsVersion", 1)),
-        Map.entry("cvsPrimitives", metadata.getOrDefault("cvsPrimitives", Map.of())),
         Map.entry("cvsReferenceMappings", cvsReferenceMappings),
         Map.entry(
             "cvsRelationshipMappings", metadata.getOrDefault("cvsRelationshipMappings", List.of())),
@@ -269,12 +265,13 @@ public final class ModelingConfigService {
             semanticEdgeObjectRules,
             objectStringList(metadata.get("relationshipKinds")),
             metamodel.semanticReferenceRules()));
-    merged.put(
-        "viewDefinitions",
+    List<Map<String, Object>> normalizedViews =
         normalizeViewDefinitions(
-            requireList(metadata, "viewDefinitions", key),
+            requireList(metadata, "views", key),
             requireList(merged, "elements", key),
-            standalonePaletteRoles(optionalMap(metadata, "canvasPolicy"))));
+            standalonePaletteRoles(optionalMap(metadata, "canvasPolicy")));
+    merged.put("views", normalizedViews);
+    merged.put("viewDefinitions", normalizedViews);
     merged.put(
         "relationshipKinds",
         mergeRelationshipKinds(metadata, requireList(merged, "relationshipRules", key)));
@@ -283,7 +280,7 @@ public final class ModelingConfigService {
         relationshipKindLabels(
             requireMap(metadata, "relationshipKindLabels", key),
             requireList(merged, "relationshipKinds", key)));
-    requireList(merged, "viewDefinitions", key);
+    requireList(merged, "views", key);
     requireMap(merged, "rootTemplate", key);
     return merged;
   }
@@ -342,11 +339,30 @@ public final class ModelingConfigService {
       }
       Map<String, Object> view = stringKeyMap(raw);
       List<String> configuredPalette = objectStringList(view.get("palette"));
+      List<String> configuredCanvas = objectStringList(view.get("canvas"));
       List<String> scopeTypes = objectStringList(view.get("scopeTypes"));
       LinkedHashSet<String> relatedTypes =
-          new LinkedHashSet<>(objectStringList(view.get("elementTypes")));
+          new LinkedHashSet<>(
+              view.containsKey("canvas")
+                  ? configuredCanvas
+                  : objectStringList(view.get("elementTypes")));
       LinkedHashSet<String> palette = new LinkedHashSet<>();
-      if (!configuredPalette.isEmpty()) {
+      if (view.containsKey("canvas")) {
+        // CVS explicitly separates the draggable palette from the rendered canvas population.
+        // Do not derive either list from broad metamodel scopes.
+        configuredPalette.stream()
+            .filter(
+                type ->
+                    standalonePaletteElement(elementsByType.get(type), standalonePaletteRoles)
+                        || (scopeTypes.contains(type)
+                            && paletteEntryTypeAllowed(elementsByType.get(type))))
+            .forEach(palette::add);
+        relatedTypes.removeIf(
+            type ->
+                !standalonePaletteElement(elementsByType.get(type), standalonePaletteRoles)
+                    && !(scopeTypes.contains(type)
+                        && paletteEntryTypeAllowed(elementsByType.get(type))));
+      } else if (!configuredPalette.isEmpty()) {
         for (String type : configuredPalette) {
           Map<String, Object> element = elementsByType.get(type);
           if (element == null) {
@@ -379,6 +395,7 @@ public final class ModelingConfigService {
       }
       view.put("elementTypes", new ArrayList<>(relatedTypes));
       view.put("palette", new ArrayList<>(palette));
+      view.put("canvas", new ArrayList<>(relatedTypes));
       result.add(view);
     }
     return result;
@@ -506,8 +523,10 @@ public final class ModelingConfigService {
   private boolean isMembershipContainmentReference(
       Map<String, Object> owner, Map<String, Object> reference) {
     String shape = String.valueOf(optionalMap(owner, "notation").getOrDefault("shape", ""));
+    String ownerType = String.valueOf(owner.getOrDefault("type", ""));
     String feature = String.valueOf(reference.getOrDefault("name", ""));
-    return "stack-container".equals(shape) && "resources".equals(feature);
+    return ("stack-container".equals(shape) || "SamStack".equals(ownerType))
+        && "resources".equals(feature);
   }
 
   /**
@@ -595,18 +614,21 @@ public final class ModelingConfigService {
    * @return owner type to palette types and containment features
    */
   private Map<String, Object> buildContainmentPalettes(
-      List<Map<String, Object>> elements, Set<String> relationshipElementTypes) {
+      List<Map<String, Object>> elements,
+      Set<String> relationshipElementTypes,
+      Map<String, Object> configuredContainers) {
     Map<String, Map<String, Object>> elementsByType = new LinkedHashMap<>();
     for (Map<String, Object> element : elements) {
       elementsByType.put(String.valueOf(element.get("type")), element);
     }
     Map<String, Object> palettes = new LinkedHashMap<>();
     for (Map<String, Object> owner : elements) {
-      boolean hasPaletteExtras = !optionalList(owner, "containmentPaletteExtras").isEmpty();
-      if (!hasContainment(owner) && !hasPaletteExtras) {
+      String ownerType = String.valueOf(owner.get("type"));
+      Map<String, Object> configured = optionalMap(configuredContainers, ownerType);
+      boolean hasConfiguredContainer = configuredContainers.containsKey(ownerType);
+      if (!hasContainment(owner) && !hasConfiguredContainer) {
         continue;
       }
-      String ownerType = String.valueOf(owner.get("type"));
       LinkedHashSet<String> paletteTypes = new LinkedHashSet<>();
       List<Map<String, Object>> features = new ArrayList<>();
       for (Object item : optionalList(owner, "references")) {
@@ -643,47 +665,61 @@ public final class ModelingConfigService {
                     "many",
                     reference.get("many") == null || Boolean.TRUE.equals(reference.get("many")))));
       }
-      paletteTypes.addAll(
-          containmentPaletteExtras(owner, elementsByType, relationshipElementTypes));
+      if (hasConfiguredContainer) {
+        paletteTypes.clear();
+        paletteTypes.addAll(
+            objectStringList(configured.get("types")).stream()
+                .filter(
+                    type ->
+                        containmentPaletteElement(
+                            elementsByType.get(type), relationshipElementTypes))
+                .toList());
+      }
       if (!paletteTypes.isEmpty()) {
+        List<String> canvasTypes =
+            objectStringList(configured.get("canvas")).stream()
+                .filter(
+                    type ->
+                        containmentPaletteElement(
+                            elementsByType.get(type), relationshipElementTypes))
+                .toList();
         palettes.put(
             ownerType,
             Map.ofEntries(
                 Map.entry("types", new ArrayList<>(paletteTypes)),
+                Map.entry("canvas", canvasTypes),
+                Map.entry("features", features)));
+      } else if (hasConfiguredContainer) {
+        palettes.put(
+            ownerType,
+            Map.ofEntries(
+                Map.entry("types", List.of()),
+                Map.entry("canvas", objectStringList(configured.get("canvas"))),
                 Map.entry("features", features)));
       }
     }
     return palettes;
   }
 
-  /**
-   * Adds UI-configured palette types for referenced concepts that are edited inside a focus
-   * container even when they are not val-owned by that container.
-   *
-   * @param owner owner element metadata
-   * @param elementsByType element lookup by type
-   * @param relationshipElementTypes relationship object types excluded from palettes
-   * @return extra palette type names
-   */
-  private Set<String> containmentPaletteExtras(
-      Map<String, Object> owner,
-      Map<String, Map<String, Object>> elementsByType,
-      Set<String> relationshipElementTypes) {
-    LinkedHashSet<String> paletteTypes = new LinkedHashSet<>();
-    for (Object item : optionalList(owner, "containmentPaletteExtras")) {
-      String extraType = String.valueOf(item);
-      if (extraType.isBlank()) {
+  /** Converts canonical CVS container profiles to the indexed shape used by runtime helpers. */
+  private Map<String, Object> configuredContainmentProfiles(Map<String, Object> metadata) {
+    Map<String, Object> profiles =
+        new LinkedHashMap<>(optionalMap(metadata, "containmentPalettes"));
+    for (Object item : optionalList(metadata, "containers")) {
+      if (!(item instanceof Map<?, ?> raw)) {
         continue;
       }
-      List<String> types =
-          concreteTypesFor(elementsByType, extraType).stream()
-              .filter(
-                  type ->
-                      containmentPaletteElement(elementsByType.get(type), relationshipElementTypes))
-              .toList();
-      paletteTypes.addAll(types);
+      Map<String, Object> profile = stringKeyMap(raw);
+      String elementType = String.valueOf(profile.getOrDefault("elementType", "")).trim();
+      if (elementType.isBlank()) {
+        continue;
+      }
+      Map<String, Object> indexed = new LinkedHashMap<>(profile);
+      indexed.put("types", objectStringList(profile.get("palette")));
+      indexed.put("canvas", objectStringList(profile.get("canvas")));
+      profiles.put(elementType, indexed);
     }
-    return paletteTypes;
+    return profiles;
   }
 
   private List<String> concreteTypesFor(
@@ -896,12 +932,8 @@ public final class ModelingConfigService {
       element.put(
           "notation",
           Map.of(
-              "tag",
-              stereotypeToken(type),
-              "shape",
-              "concept-card",
-              "lineFields",
-              element.getOrDefault("visibleFields", List.of())));
+              "lineFields", element.getOrDefault("visibleFields", List.of()),
+              "detailFields", element.getOrDefault("visibleFields", List.of())));
     }
     if (!element.containsKey("creatable")) {
       element.put("creatable", !Boolean.TRUE.equals(element.get("abstract")));
@@ -910,43 +942,6 @@ public final class ModelingConfigService {
     element.putIfAbsent("containedOnly", Boolean.FALSE);
     element.putIfAbsent("supportOnly", Boolean.FALSE);
     element.putIfAbsent("visualRole", visualRole(element));
-    completeNotationMetadata(element, metadata);
-  }
-
-  /**
-   * Completes the executable notation contract consumed by the generic canvas renderer.
-   *
-   * @param element merged element metadata
-   * @param metadata level metadata containing canvas and primitive policies
-   */
-  private void completeNotationMetadata(Map<String, Object> element, Map<String, Object> metadata) {
-    Map<String, Object> notation = new LinkedHashMap<>(optionalMap(element, "notation"));
-    Map<String, Object> primitive =
-        optionalMap(
-            optionalMap(metadata, "notationPrimitives"), String.valueOf(notation.get("shape")));
-    mergeMissing(notation, primitive);
-
-    Map<String, Object> canvasPolicy = optionalMap(metadata, "canvasPolicy");
-    Map<String, Object> roleSizes = optionalMap(canvasPolicy, "roleSizes");
-    Map<String, Object> roleSize =
-        optionalMap(roleSizes, String.valueOf(element.getOrDefault("visualRole", "node")));
-    if (roleSize.isEmpty()) {
-      roleSize = optionalMap(roleSizes, "node");
-    }
-    if (!notation.containsKey("size") && !roleSize.isEmpty()) {
-      notation.put("size", new LinkedHashMap<>(roleSize));
-    }
-    notation.putIfAbsent("geometry", "rectangle");
-    notation.putIfAbsent("cornerRadius", 8);
-    notation.putIfAbsent("detailFields", notation.getOrDefault("lineFields", List.of()));
-    element.put("notation", notation);
-  }
-
-  /** Adds values that are not already defined by type-specific notation metadata. */
-  private void mergeMissing(Map<String, Object> target, Map<String, Object> defaults) {
-    for (Map.Entry<String, Object> entry : defaults.entrySet()) {
-      target.putIfAbsent(entry.getKey(), entry.getValue());
-    }
   }
 
   /**
@@ -1128,25 +1123,6 @@ public final class ModelingConfigService {
         Map.entry("uncoveredContainmentFields", uncoveredContainmentFields),
         Map.entry("uncoveredRelationshipObjectTypes", uncoveredRelationshipObjectTypes),
         Map.entry("unknownViewRelationshipKinds", unknownViewRelationshipKinds));
-  }
-
-  /**
-   * Derives a short stereotype-like token from a CamelCase type name.
-   *
-   * @param type element type name
-   * @return uppercase stereotype token
-   */
-  private String stereotypeToken(String type) {
-    StringBuilder token = new StringBuilder();
-    for (String word : type.split("(?=[A-Z])")) {
-      if (!word.isBlank()) {
-        token.append(Character.toUpperCase(word.charAt(0)));
-      }
-      if (token.length() == 4) {
-        break;
-      }
-    }
-    return token.isEmpty() ? type.toUpperCase() : token.toString();
   }
 
   /**
@@ -1839,6 +1815,11 @@ public final class ModelingConfigService {
       if (!(elements instanceof List<?> list) || list.isEmpty()) {
         throw new PlatformException(500, "Modeling UI metadata contains no elements: " + resource);
       }
+      // Legacy classpath resources remain readable during packaged deployments that do not ship
+      // the repository-level CVS directory. Normalize their names into the canonical contract.
+      metadata.putIfAbsent("views", metadata.getOrDefault("viewDefinitions", List.of()));
+      metadata.putIfAbsent("viewDefinitions", metadata.getOrDefault("views", List.of()));
+      metadata.putIfAbsent("containers", List.of());
       return metadata;
     } catch (PlatformException ex) {
       throw ex;

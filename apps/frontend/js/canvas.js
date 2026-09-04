@@ -15,6 +15,7 @@ import {
 import { isContainerElement, materializeActiveView } from "./view-materializer.js";
 import {
   modelingElementDefinition,
+  modelingContainerDefinition,
   modelingCanvasPaletteTypes,
   modelingContainmentEntryForChildType,
   modelingContainerFocusPolicy,
@@ -773,6 +774,9 @@ function activeContainerFocus() {
 function createContainerFocusView(node) {
   const previousView = activeView();
   const focusPolicy = modelingContainerFocusPolicy(state.activeType);
+  const containerProfile = modelingContainerDefinition(state.activeType, node.type) || {};
+  const configuredCanvas = safeArray(containerProfile.canvas).map(String).filter(Boolean);
+  const configuredPalette = safeArray(containerProfile.palette).map(String).filter(Boolean);
   const descendantIds = [...collectContainedDescendantIds(node.id)];
   const descendantSet = new Set(descendantIds);
   const portalIds = new Set();
@@ -862,7 +866,12 @@ function createContainerFocusView(node) {
       scopeKind: String(focusPolicy.scopeKind || "CONTAINER"),
       depth: 999,
     },
-    filters: { elementTypes: [], relationshipKinds: [] },
+    filters: {
+      elementTypes: configuredCanvas,
+      relationshipKinds: safeArray(containerProfile.relationshipKinds),
+    },
+    palette: configuredPalette,
+    canvas: configuredCanvas,
     layoutProfile: String(focusPolicy.layoutProfile || "CONTAINER_FOCUS"),
     autoLayoutApplied: false,
     nodes: focusNodes.map((entry) => {

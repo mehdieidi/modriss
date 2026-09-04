@@ -140,7 +140,7 @@ function migrateDoc(doc) {
       rule.metadata.color = migrateColorValue(rule.metadata.color);
     }
   });
-  (doc.elementOverrides || []).forEach((entry) => {
+  (doc.elements || []).forEach((entry) => {
     if (entry.color) {
       entry.color = migrateColorValue(entry.color);
     }

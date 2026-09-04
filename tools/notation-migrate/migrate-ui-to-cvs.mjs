@@ -26,14 +26,6 @@ const METAMODEL = {
   },
 };
 
-function enrichPrimitives(notationPrimitives = {}) {
-  const primitives = {};
-  for (const [key, value] of Object.entries(notationPrimitives)) {
-    primitives[key] = { ...value };
-  }
-  return primitives;
-}
-
 function referenceMappingsFromRules(semanticReferenceRules = []) {
   return semanticReferenceRules.map((rule) => ({
     sourceType: rule.sourceType,
@@ -54,24 +46,25 @@ function relationshipMappingsFromRules(semanticEdgeObjectRules = []) {
   }));
 }
 
-function viewpointsFromViewDefinitions(viewDefinitions = []) {
-  return viewDefinitions.map((view) => ({
-    id: view.id,
-    displayName: view.displayName,
-    viewType: view.viewType,
-    viewpoint: view.viewpoint,
-    elementTypes: view.elementTypes || [],
-    palette: view.palette || [],
-    relationshipKinds: view.relationshipKinds || [],
-    layoutHint: view.layoutHint,
-  }));
+function viewsFromViewDefinitions(viewDefinitions = []) {
+  return viewDefinitions.map((view) => {
+    const visibleTypes = view.palette?.length ? view.palette : view.elementTypes || [];
+    return {
+      id: view.id,
+      displayName: view.displayName,
+      viewType: view.viewType,
+      palette: visibleTypes,
+      canvas: visibleTypes,
+      relationshipKinds: view.relationshipKinds || [],
+      layoutHint: view.layoutHint,
+    };
+  });
 }
 
-function elementOverridesFromUiElements(elements = []) {
+function elementsFromUiElements(elements = []) {
   return elements
     .filter((item) => item && item.type)
     .map((item) => {
-      const notation = item.notation || {};
       return {
         type: item.type,
         label: item.label,
@@ -84,14 +77,29 @@ function elementOverridesFromUiElements(elements = []) {
         supportOnly: item.supportOnly,
         containedOnly: item.containedOnly,
         relationshipElement: item.relationshipElement,
-        primitive: notation.shape,
-        card: {
-          tag: notation.tag,
-          lineFields: notation.lineFields || [],
-          detailFields: notation.detailFields || notation.lineFields || [],
-        },
+        visibleFields: item.visibleFields || item.notation?.lineFields || [],
       };
     });
+}
+
+function elementVisualRulesFromUiRules(rules = []) {
+  return rules.map((rule) => {
+    const metadata = { ...(rule.metadata || {}) };
+    delete metadata.notation;
+    return { ...rule, metadata };
+  });
+}
+
+function containersFromUiElements(elements = []) {
+  return elements
+    .filter((item) => item && item.type && (item.visualRole === "container" || item.containmentPaletteExtras))
+    .map((item) => ({
+      elementType: item.type,
+      palette: item.containmentPaletteExtras || [],
+      canvas: item.containmentPaletteExtras || [],
+      relationshipKinds: [],
+      layoutHint: "CONTAINER",
+    }));
 }
 
 function migrateLevel(level) {
@@ -106,8 +114,6 @@ function migrateLevel(level) {
     throw new Error(`Unknown level: ${level}`);
   }
 
-  const primitives = enrichPrimitives(ui.notationPrimitives || {});
-
   const cvs = {
     cvsVersion: 2,
     displayName: ui.displayName || level.toUpperCase(),
@@ -116,11 +122,13 @@ function migrateLevel(level) {
       ecore: meta.ecore,
       nsUri: meta.nsUri,
     },
-    primitives,
-    notationPrimitives: ui.notationPrimitives || {},
-    elementVisualDefaults: ui.elementVisualDefaults || {},
-    elementVisualRules: ui.elementVisualRules || [],
-    elementOverrides: elementOverridesFromUiElements(ui.elements || []),
+    elementVisualDefaults: (() => {
+      const defaults = { ...(ui.elementVisualDefaults || {}) };
+      delete defaults.notation;
+      return defaults;
+    })(),
+    elements: elementsFromUiElements(ui.elements || []),
+    containers: containersFromUiElements(ui.elements || []),
     badgeRules: ui.badgeRules || [],
     referenceMappings: referenceMappingsFromRules(ui.semanticReferenceRules || []),
     relationshipMappings: relationshipMappingsFromRules(ui.semanticEdgeObjectRules || []),
@@ -135,9 +143,8 @@ function migrateLevel(level) {
     semanticReferenceKindMappings: ui.semanticReferenceKindMappings || {},
     semanticReferenceExclusions: ui.semanticReferenceExclusions || [],
     shortcutConnectorRules: ui.shortcutConnectorRules || [],
-    relationshipSemantics: ui.relationshipSemantics || {},
-    relationshipLabelFields: ui.relationshipLabelFields || ["name"],
-    viewpoints: viewpointsFromViewDefinitions(ui.viewDefinitions || []),
+    views: viewsFromViewDefinitions(ui.viewDefinitions || []),
+    elementVisualRules: elementVisualRulesFromUiRules(ui.elementVisualRules || []),
     canvasPolicy: ui.canvasPolicy || {},
     boundedContext: ui.boundedContext || {},
     complexityManagement: ui.complexityManagement || [],
@@ -145,9 +152,6 @@ function migrateLevel(level) {
     scaffoldRecipes: ui.scaffoldRecipes || [],
     constraints: ui.constraints || [],
     strictnessModes: ui.strictnessModes || ["exploration", "methodology", "production"],
-    universalSyntax: ui.universalSyntax || [],
-    kernelSyntax: ui.kernelSyntax || [],
-    kernelNotation: ui.kernelNotation || ui.kernelSyntax || [],
     rootTemplate: ui.rootTemplate,
     starterTemplate: ui.starterTemplate,
   };

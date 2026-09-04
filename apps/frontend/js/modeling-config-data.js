@@ -41,12 +41,11 @@ function emptyLevel(displayName) {
     workbench: {},
     scaffoldRecipes: [],
     boundedContext: {},
+    views: [],
     viewDefinitions: [],
-    universalSyntax: [],
-    kernelSyntax: [],
-    kernelNotation: [],
     complexityManagement: [],
     canvasPolicy: {},
+    containers: [],
     containmentPalettes: {},
     syntaxCoverage: {},
     strictnessModes: ["exploration", "methodology", "production"],
@@ -173,13 +172,15 @@ function ensureConfigShape(raw) {
         incoming.boundedContext && typeof incoming.boundedContext === "object"
           ? incoming.boundedContext
           : {},
-      viewDefinitions: Array.isArray(incoming.viewDefinitions) ? incoming.viewDefinitions : [],
-      universalSyntax: Array.isArray(incoming.universalSyntax) ? incoming.universalSyntax : [],
-      kernelSyntax: Array.isArray(incoming.kernelSyntax) ? incoming.kernelSyntax : [],
-      kernelNotation: Array.isArray(incoming.kernelNotation)
-        ? incoming.kernelNotation
-        : Array.isArray(incoming.kernelSyntax)
-          ? incoming.kernelSyntax
+      views: Array.isArray(incoming.views)
+        ? incoming.views
+        : Array.isArray(incoming.viewDefinitions)
+          ? incoming.viewDefinitions
+          : [],
+      viewDefinitions: Array.isArray(incoming.views)
+        ? incoming.views
+        : Array.isArray(incoming.viewDefinitions)
+          ? incoming.viewDefinitions
           : [],
       complexityManagement: Array.isArray(incoming.complexityManagement)
         ? incoming.complexityManagement
@@ -192,16 +193,13 @@ function ensureConfigShape(raw) {
         incoming.containmentPalettes && typeof incoming.containmentPalettes === "object"
           ? incoming.containmentPalettes
           : {},
+      containers: Array.isArray(incoming.containers) ? incoming.containers : [],
       syntaxCoverage:
         incoming.syntaxCoverage && typeof incoming.syntaxCoverage === "object"
           ? incoming.syntaxCoverage
           : {},
       elementMappings: Array.isArray(incoming.elementMappings) ? incoming.elementMappings : [],
       cvsVersion: Number(incoming.cvsVersion || 0),
-      cvsPrimitives:
-        incoming.cvsPrimitives && typeof incoming.cvsPrimitives === "object"
-          ? incoming.cvsPrimitives
-          : {},
       cvsReferenceMappings: Array.isArray(incoming.cvsReferenceMappings)
         ? incoming.cvsReferenceMappings
         : [],
@@ -513,6 +511,10 @@ export function modelingContainmentPalette(typeKey, ownerType) {
       return entry.types.map(String).filter(Boolean);
     }
   }
+  const configured = modelingContainerDefinition(typeKey, ownerKey);
+  if (configured) {
+    return safeStrings(configured.palette);
+  }
   const types = new Set();
   modelingContainmentsForType(typeKey, ownerKey)
     .filter((entry) => !entry.relationshipOnly)
@@ -524,6 +526,26 @@ export function modelingContainmentPalette(typeKey, ownerType) {
       });
     });
   return [...types];
+}
+
+function safeStrings(value) {
+  return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
+}
+
+/** Returns the explicit CVS container profile for an element type. */
+export function modelingContainerDefinition(typeKey, ownerType) {
+  const ownerKey = String(ownerType || "");
+  const containers = modelingLevelConfig(typeKey).containers;
+  if (Array.isArray(containers)) {
+    const configured = containers.find(
+      (entry) => String(entry?.elementType || entry?.type || "") === ownerKey,
+    );
+    if (configured) {
+      return configured;
+    }
+  }
+  const palette = modelingLevelConfig(typeKey).containmentPalettes?.[ownerKey];
+  return palette ? { elementType: ownerKey, palette: palette.types, canvas: palette.canvas } : null;
 }
 
 export function modelingContainmentEntryForChildType(typeKey, ownerType, childType) {
@@ -594,7 +616,8 @@ function normalizeViewDefinitionName(value) {
 }
 
 export function modelingViewDefinition(typeKey, view) {
-  const definitions = modelingLevelConfig(typeKey).viewDefinitions || [];
+  const definitions =
+    modelingLevelConfig(typeKey).views || modelingLevelConfig(typeKey).viewDefinitions || [];
   const definitionId = String(view?.definitionId || view?.sourceDefinitionId || "")
     .trim()
     .toLowerCase();
@@ -778,28 +801,8 @@ export function modelingConcreteTypesFor(typeKey, expectedType) {
   return result;
 }
 
-function isEdgePrimitive(value) {
-  const primitive = String(value || "")
-    .trim()
-    .toLowerCase();
-  return primitive === "edge" || primitive.endsWith("-edge");
-}
-
 function isEdgeOnlyElement(entry) {
-  if (entry?.relationshipElement !== true) {
-    return false;
-  }
-  // `containedOnly` describes where an EObject is stored, not how it is rendered. A
-  // contained semantic relationship can still be a real canvas edge (for example a
-  // process/workflow transition). Use the configured visual primitive to distinguish
-  // those from contained relationship-shaped nodes such as Schedule and Trigger.
-  if (entry?.containedOnly !== true) {
-    return true;
-  }
-  if (isEdgePrimitive(entry?.primitive)) {
-    return true;
-  }
-  return !entry?.primitive && isEdgePrimitive(entry?.notation?.shape);
+  return entry?.relationshipElement === true && entry?.visualRole === "relationship";
 }
 
 export function modelingRelationshipElementTypes(typeKey = state.activeType) {

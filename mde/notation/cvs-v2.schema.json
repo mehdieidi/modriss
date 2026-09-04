@@ -4,7 +4,15 @@
   "title": "Varka Concrete Visual Syntax v2",
   "description": "Formal concrete visual syntax specification derived from Ecore metamodels.",
   "type": "object",
-  "required": ["cvsVersion", "metamodelRef", "primitives", "viewpoints", "canvasPolicy"],
+  "required": [
+    "cvsVersion",
+    "metamodelRef",
+    "elements",
+    "views",
+    "containers",
+    "canvasPolicy",
+    "rootTemplate"
+  ],
   "additionalProperties": true,
   "$defs": {
     "themeColor": {
@@ -54,34 +62,7 @@
       },
       "additionalProperties": false
     },
-    "primitives": {
-      "type": "object",
-      "additionalProperties": {
-        "type": "object",
-        "properties": {
-          "geometry": {
-            "type": "string"
-          },
-          "cornerRadius": {
-            "type": "number"
-          },
-          "description": {
-            "type": "string"
-          }
-        },
-        "additionalProperties": true
-      }
-    },
-    "elementVisualDefaults": {
-      "type": "object"
-    },
-    "elementVisualRules": {
-      "type": "array",
-      "items": {
-        "type": "object"
-      }
-    },
-    "elementOverrides": {
+    "elements": {
       "type": "array",
       "items": {
         "type": "object",
@@ -90,44 +71,11 @@
           "type": {
             "type": "string"
           },
-          "visualRole": {
+          "displayName": {
             "type": "string"
           },
-          "primitive": {
+          "label": {
             "type": "string"
-          },
-          "card": {
-            "type": "object"
-          }
-        }
-      }
-    },
-    "elementMappings": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["match", "visualRole"],
-        "properties": {
-          "match": {
-            "type": "object",
-            "properties": {
-              "eClass": {
-                "type": "string"
-              },
-              "package": {
-                "type": "string"
-              }
-            }
-          },
-          "visualRole": {
-            "type": "string",
-            "enum": ["node", "container", "relationship", "detail", "support"]
-          },
-          "primitive": {
-            "type": "string"
-          },
-          "card": {
-            "type": "object"
           },
           "icon": {
             "type": "string"
@@ -137,80 +85,35 @@
           },
           "category": {
             "type": "string"
-          }
-        }
-      }
-    },
-    "referenceMappings": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["eReference", "edgeKind"],
-        "properties": {
-          "sourceType": {
-            "type": "string"
-          },
-          "targetType": {
-            "type": "string"
-          },
-          "eReference": {
-            "type": "string"
-          },
-          "edgeKind": {
-            "type": "string"
-          },
-          "directed": {
-            "type": "boolean"
-          }
-        }
-      }
-    },
-    "relationshipMappings": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "eClass": {
-            "type": "string"
           },
           "visualRole": {
-            "type": "string"
+            "type": "string",
+            "enum": ["node", "container", "relationship", "detail", "support"]
           },
-          "edgeKind": {
-            "type": "string"
+          "creatable": {
+            "type": "boolean"
+          },
+          "containedOnly": {
+            "type": "boolean"
+          },
+          "supportOnly": {
+            "type": "boolean"
+          },
+          "relationshipElement": {
+            "type": "boolean"
+          },
+          "visibleFields": {
+            "type": "array",
+            "items": { "type": "string" }
           }
         }
       }
     },
-    "relationshipRules": {
-      "type": "array"
-    },
-    "relationshipKinds": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "relationshipKindLabels": {
-      "type": "object"
-    },
-    "relationshipVisualRules": {
-      "type": "array"
-    },
-    "semanticReferenceRules": {
-      "type": "array"
-    },
-    "semanticEdgeObjectRules": {
-      "type": "array"
-    },
-    "badgeRules": {
-      "type": "array"
-    },
-    "viewpoints": {
+    "views": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "displayName"],
+        "required": ["id", "displayName", "palette", "canvas"],
         "properties": {
           "id": {
             "type": "string"
@@ -221,30 +124,34 @@
           "viewType": {
             "type": "string"
           },
-          "viewpoint": {
-            "type": "string"
-          },
-          "elementTypes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "palette": {
             "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "items": { "type": "string" }
+          },
+          "canvas": {
+            "type": "array",
+            "items": { "type": "string" }
           },
           "relationshipKinds": {
             "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "items": { "type": "string" }
           },
-          "layoutHint": {
-            "type": "string"
-          }
+          "layoutHint": { "type": "string" },
+          "semanticDashboardColumns": { "type": "array" }
+        }
+      }
+    },
+    "containers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["elementType", "palette", "canvas"],
+        "properties": {
+          "elementType": { "type": "string" },
+          "palette": { "type": "array", "items": { "type": "string" } },
+          "canvas": { "type": "array", "items": { "type": "string" } },
+          "relationshipKinds": { "type": "array", "items": { "type": "string" } },
+          "layoutHint": { "type": "string" }
         }
       }
     },
@@ -252,9 +159,6 @@
       "type": "object"
     },
     "boundedContext": {
-      "type": "object"
-    },
-    "notationPrimitives": {
       "type": "object"
     },
     "complexityManagement": {

@@ -188,7 +188,7 @@ function canvasFocusToolMarkup() {
 
 function metadataViewKeys() {
   try {
-    return safeArray(modelingLevelConfig(state.activeType).viewDefinitions).map((definition) =>
+    return safeArray(modelingLevelConfig(state.activeType).views).map((definition) =>
       normalizeLabel(
         [definition?.displayName, definition?.name, definition?.id].filter(Boolean).join(" "),
       ),
@@ -208,7 +208,7 @@ function viewMetadataKey(view) {
 
 function metadataViewDefinitionIds() {
   try {
-    return safeArray(modelingLevelConfig(state.activeType).viewDefinitions).map((definition) =>
+    return safeArray(modelingLevelConfig(state.activeType).views).map((definition) =>
       normalizeLabel(String(definition?.id || "")),
     );
   } catch {

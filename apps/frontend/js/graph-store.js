@@ -3,6 +3,7 @@ import { emptyDiagram, genId, yieldToMain } from "./utils.js";
 import { ensureReadableLayout, nodeSizeForType } from "./layout-engine.js";
 import {
   modelingContainmentsForType,
+  modelingContainerDefinition,
   modelingElementDefinition,
   isModelingLevel,
   modelingLevelConfig,
@@ -83,7 +84,7 @@ function scopeElementHasContainmentCapacity(typeKey, element) {
     if (containments.some((entry) => !entry.relationshipOnly)) {
       return true;
     }
-    if (safeArray(definition.containmentPaletteExtras).length) {
+    if (modelingContainerDefinition(typeKey, type)) {
       return true;
     }
     const palette = modelingLevelConfig(typeKey).containmentPalettes?.[type];
@@ -1205,7 +1206,8 @@ function buildGraph(typeKey, modelJson) {
 
 function viewDefinitions(typeKey) {
   try {
-    return safeArray(modelingLevelConfig(typeKey).viewDefinitions);
+    const config = modelingLevelConfig(typeKey);
+    return safeArray(config.views || config.viewDefinitions);
   } catch {
     return [];
   }
@@ -1296,6 +1298,10 @@ function edgeIdsForElementIds(graph, elementIds, relationshipKinds = []) {
 }
 
 function surfaceElementTypesForView(view) {
+  const canvasTypes = safeArray(view?.canvas).map(String).filter(Boolean);
+  if (canvasTypes.length || Array.isArray(view?.canvas)) {
+    return new Set(canvasTypes);
+  }
   if (!isContainerScopeView(view)) {
     const paletteTypes = safeArray(view?.palette).map(String).filter(Boolean);
     if (paletteTypes.length) {
@@ -1324,6 +1330,9 @@ function shouldIncludeRelationshipEndpointOnView(
   }
   if (elementId === view?.scope?.rootElementId) {
     return true;
+  }
+  if (Array.isArray(view?.canvas) && !filterTypes?.size) {
+    return false;
   }
   if (!filterTypes?.size) {
     return true;
@@ -1549,6 +1558,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
   const hidden = new Set(safeArray(view?.hidden?.elementIds));
   const pinned = new Set(safeArray(view?.pinnedElementIds).map(String));
   const filterTypes = surfaceElementTypesForView(view);
+  const hasExplicitCanvas = Array.isArray(view?.canvas);
   const metadataBacked = Boolean(matchingViewDefinition(typeKey, view));
   let candidates;
   const explicitNodeIds = safeArray(view?.nodes)
@@ -1573,6 +1583,20 @@ export function selectElementIdsForView(graph, view, typeKey) {
     candidates = new Set(explicitNodeIds);
   } else if (isContainerScope) {
     candidates = containedDescendantElementIds(graph, view.scope.rootElementId);
+    const containerType = semanticType(graph.elementsById.get(view.scope.rootElementId));
+    const container = modelingContainerDefinition(typeKey, containerType);
+    const canvasTypes = safeArray(container?.canvas).map(String).filter(Boolean);
+    if (canvasTypes.length) {
+      candidates = new Set(
+        [...candidates].filter((elementId) =>
+          elementMatchesFilterTypes(
+            graph.elementsById.get(elementId),
+            new Set(canvasTypes),
+            typeKey,
+          ),
+        ),
+      );
+    }
     safeArray(view.nodes)
       .filter((node) => node?.portal === true)
       .map((node) => String(node?.elementId || node?.id || ""))
@@ -1609,14 +1633,21 @@ export function selectElementIdsForView(graph, view, typeKey) {
       selected.push(elementId);
       return;
     }
-    const includeByType =
-      elementMatchesFilterTypes(element, filterTypes, typeKey) ||
-      elementId === view?.scope?.rootElementId;
+    const includeByType = hasExplicitCanvas
+      ? filterTypes.size > 0 && elementMatchesFilterTypes(element, filterTypes, typeKey)
+      : elementMatchesFilterTypes(element, filterTypes, typeKey) ||
+        elementId === view?.scope?.rootElementId;
     if (includeByType) {
       selected.push(elementId);
     }
   });
-  if (!selected.length && typeKey && !filterTypes.size && !view?.scope?.rootElementId) {
+  if (
+    !selected.length &&
+    typeKey &&
+    !filterTypes.size &&
+    !hasExplicitCanvas &&
+    !view?.scope?.rootElementId
+  ) {
     return [...graph.elementsById.keys()].filter(
       (elementId) =>
         !hidden.has(elementId) &&
@@ -1896,6 +1927,9 @@ function buildViewFromDefinition(
     viewpoint: String(definition.viewpoint || ""),
     description: String(definition.description || ""),
     palette: safeArray(definition.palette),
+    canvas: Array.isArray(definition.canvas)
+      ? safeArray(definition.canvas)
+      : safeArray(definition.palette),
     pinnedElementIds: [],
     edgeLayers: safeArray(definition.edgeLayers),
     layoutProfile: definition.layoutProfile || definition.layoutHint || "DEFAULT_LAYERED",
@@ -2050,6 +2084,9 @@ function buildViewSkeletonFromDefinition(typeKey, definition) {
     viewpoint: String(definition.viewpoint || ""),
     description: String(definition.description || ""),
     palette: safeArray(definition.palette),
+    canvas: Array.isArray(definition.canvas)
+      ? safeArray(definition.canvas)
+      : safeArray(definition.palette),
     pinnedElementIds: [],
     edgeLayers: safeArray(definition.edgeLayers),
     layoutProfile: definition.layoutProfile || definition.layoutHint || "DEFAULT_LAYERED",
@@ -2122,6 +2159,7 @@ function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } 
           }
         : null,
     palette: safeArray(view?.palette).map(String),
+    canvas: Array.isArray(view?.canvas) ? safeArray(view.canvas).map(String) : undefined,
     pinnedElementIds: safeArray(view?.pinnedElementIds).map(String),
     edgeLayers: safeArray(view?.edgeLayers).map(String),
     layoutProfile: String(view?.layoutProfile || "DEFAULT_LAYERED"),
@@ -2169,6 +2207,11 @@ function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } 
     }
     if (!safeArray(normalized.palette).length) {
       normalized.palette = safeArray(definition.palette).map(String);
+    }
+    if (!Array.isArray(normalized.canvas)) {
+      normalized.canvas = Array.isArray(definition.canvas)
+        ? safeArray(definition.canvas).map(String)
+        : [...normalized.palette];
     }
     normalized.filters.elementTypes = [
       ...new Set([

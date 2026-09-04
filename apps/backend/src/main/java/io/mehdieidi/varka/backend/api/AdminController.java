@@ -169,12 +169,12 @@ public class AdminController {
   }
 
   @PostMapping("/notation/{level}")
-  ResponseEntity<Void> saveNotation(
+  AdminNotationService.ActivationResult saveNotation(
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String level,
       @Valid @RequestBody NotationSaveRequest request) {
     AdminPrincipal principal = access.requireOwner(auth.user(token));
-    notation.save(level, request.document());
+    AdminNotationService.ActivationResult activation = notation.save(level, request.document());
     access.audit(
         principal,
         "CVS_NOTATION_UPDATED",
@@ -182,7 +182,7 @@ public class AdminController {
         level,
         request.reason(),
         Map.of("level", level));
-    return ResponseEntity.noContent().build();
+    return activation;
   }
 
   @GetMapping("/theme-profiles")

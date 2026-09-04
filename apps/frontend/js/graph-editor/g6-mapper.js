@@ -1,6 +1,5 @@
 import { state } from "../state.js";
 import {
-  modelingDefaultNotation,
   modelingElementDefinition,
   modelingLevelConfig,
   modelingRelationshipKindLabel,
@@ -21,14 +20,6 @@ import {
   nodeSizeForDiagram,
   stickyColor,
 } from "./g6-style.js";
-
-function fallbackNotation() {
-  const defaults = modelingDefaultNotation();
-  return {
-    shape: String(defaults.shape || ""),
-    geometry: String(defaults.geometry || ""),
-  };
-}
 
 const elementDefinitionCache = new Map();
 
@@ -268,8 +259,6 @@ export function mapNodeToG6(
       meta: node.meta || {},
       diagramType: typeKey,
       notation: notation?.tag || "",
-      notationShape: definition?.notation?.shape || fallbackNotation().shape,
-      notationGeometry: definition?.notation?.geometry || fallbackNotation().geometry,
       iconSrc,
       kindText,
       detailText,
@@ -304,8 +293,6 @@ export function mapNodeToG6(
       fullTypeText: node.type,
       notationText: detailText,
       notation: notation?.tag || "",
-      notationShape: definition?.notation?.shape || fallbackNotation().shape,
-      notationGeometry: definition?.notation?.geometry || fallbackNotation().geometry,
       iconSrc,
       badges,
       showHandles: Boolean(node.showHandles),
@@ -314,7 +301,7 @@ export function mapNodeToG6(
       fill: "transparent",
       stroke: "transparent",
       lineWidth: 0,
-      radius: Number(definition?.notation?.cornerRadius ?? 8),
+      radius: 8,
       shadowColor: "transparent",
       shadowBlur: 0,
       detailLevel,

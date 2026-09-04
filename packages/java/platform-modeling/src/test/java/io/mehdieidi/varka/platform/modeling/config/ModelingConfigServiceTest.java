@@ -86,22 +86,13 @@ class ModelingConfigServiceTest {
       assertFalse(stringList(level.get("relationshipLabelFields")).isEmpty());
       for (Map<String, Object> element : listOfMaps(level.get("elements"))) {
         Map<String, Object> notation = map(element.get("notation"));
-        assertFalse(String.valueOf(notation.get("geometry")).isBlank());
         assertNotNull(notation.get("detailFields"));
-        Map<String, Object> size = map(notation.get("size"));
-        assertTrue(((Number) size.get("width")).intValue() >= 48);
-        assertTrue(((Number) size.get("height")).intValue() >= 40);
       }
     }
 
     List<Map<String, Object>> psmElements = listOfMaps(level("psm").get("elements"));
     assertEquals("container", element(psmElements, "AwsStage").get("visualRole"));
     assertEquals("container", element(psmElements, "SamStack").get("visualRole"));
-    assertEquals(
-        "stage-container", map(element(psmElements, "AwsStage").get("notation")).get("shape"));
-
-    Map<String, Object> command = element(listOfMaps(level("cim").get("elements")), "Command");
-    assertEquals("hexagon", map(command.get("notation")).get("geometry"));
   }
 
   /** Verifies attributes, enums, references, and containments all have generic editor coverage. */
@@ -274,8 +265,22 @@ class ModelingConfigServiceTest {
       assertTrue(((Number) coverage.get("referenceCount")).intValue() > 0);
       assertTrue(((Number) coverage.get("containmentCount")).intValue() > 0);
       assertTrue(((Number) coverage.get("containerCount")).intValue() > 0);
-      List<String> uncovered = stringList(coverage.get("uncoveredViewTypes"));
-      assertTrue(uncovered.isEmpty(), key.toUpperCase() + " uncovered view types: " + uncovered);
+      List<Map<String, Object>> views = listOfMaps(level.get("views"));
+      assertFalse(views.isEmpty(), key.toUpperCase() + " must define at least one view");
+      for (Map<String, Object> view : views) {
+        assertEquals(
+            stringList(view.get("palette")),
+            stringList(view.get("canvas")),
+            key.toUpperCase() + " palette/canvas mismatch for " + view.get("id"));
+      }
+      for (Map<String, Object> container : listOfMaps(level.get("containers"))) {
+        assertEquals(
+            stringList(container.get("palette")),
+            stringList(container.get("canvas")),
+            key.toUpperCase()
+                + " container palette/canvas mismatch for "
+                + container.get("elementType"));
+      }
       for (String gapField :
           List.of(
               "uncoveredEnumFields",
