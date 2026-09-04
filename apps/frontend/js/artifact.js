@@ -402,9 +402,19 @@ function ensureMonacoLoaded() {
     }
     window.MonacoEnvironment = {
       getWorkerUrl: () => {
+        // Workers created from a data URL have an opaque origin and cannot resolve
+        // root-relative URLs passed to importScripts. Resolve both URLs against
+        // the document so the bootstrap works with the static frontend server.
+        const workerMainUrl = new URL(
+          `${MONACO_VS_PATH}/base/worker/workerMain.js`,
+          document.baseURI,
+        ).href;
+        // workerMain resolves AMD modules as `${baseUrl}/vs/...`; the base is
+        // therefore the Monaco package root, one level above its `vs` folder.
+        const workerBaseUrl = new URL("../", new URL(`${MONACO_VS_PATH}/`, document.baseURI)).href;
         const workerSource = `
-self.MonacoEnvironment = { baseUrl: '${MONACO_VS_PATH}/' };
-importScripts('${MONACO_VS_PATH}/base/worker/workerMain.js');
+self.MonacoEnvironment = { baseUrl: ${JSON.stringify(workerBaseUrl)} };
+importScripts(${JSON.stringify(workerMainUrl)});
 `;
         return `data:text/javascript;charset=utf-8,${encodeURIComponent(workerSource)}`;
       },

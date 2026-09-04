@@ -3,12 +3,31 @@ import { apiUrl } from "./config.js";
 const APP_NAME = "frontend";
 const MAX_MESSAGE = 300;
 
+function telemetryEnabled() {
+  if (typeof window.VARKA_FRONTEND_TELEMETRY_ENABLED === "boolean") {
+    return window.VARKA_FRONTEND_TELEMETRY_ENABLED;
+  }
+  const localHosts = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"]);
+  if (localHosts.has(window.location.hostname)) {
+    return false;
+  }
+  try {
+    const backendHost = new URL(window.VARKA_BACKEND_BASE_URL || window.location.href).hostname;
+    return !localHosts.has(backendHost);
+  } catch {
+    return true;
+  }
+}
+
 function truncate(value, max = MAX_MESSAGE) {
   const text = value == null ? "" : String(value);
   return text.length <= max ? text : text.slice(0, max);
 }
 
 function sendTelemetry(kind, payload = {}) {
+  if (!telemetryEnabled()) {
+    return;
+  }
   const body = JSON.stringify({
     app: APP_NAME,
     kind,

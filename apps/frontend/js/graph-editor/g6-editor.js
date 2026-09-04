@@ -1,6 +1,6 @@
 import { state } from "../state.js";
 import { el } from "../dom.js";
-import { modelingPlaceholderIcon } from "../modeling-config-data.js";
+import { isModelingLevel, modelingPlaceholderIcon } from "../modeling-config-data.js";
 import { getCanvasFitArea } from "../canvas-viewport-fit.js";
 import { mapDiagramToG6, mapEdgeToG6, mapNodeToG6 } from "./g6-mapper.js";
 import {
@@ -2021,6 +2021,9 @@ export function setG6Data(nodes, edges) {
 }
 
 export function syncG6FromState({ full = false } = {}) {
+  if (!isModelingLevel(state.activeType)) {
+    return;
+  }
   if (!editor?.graph) {
     updateDebugState({ lastError: "syncG6FromState before mount" });
     return;
@@ -2031,7 +2034,7 @@ export function syncG6FromState({ full = false } = {}) {
   editor.lastShowLabels = options.showLabels;
   resizeGraphToHost();
   return prepareGraphData(options).then((data) => {
-    if (!editor?.graph) {
+    if (!editor?.graph || !isModelingLevel(state.activeType)) {
       return;
     }
     updateDebugState({ lastSync: { full, nodes: data.nodes.length, edges: data.edges.length } });
@@ -2843,7 +2846,7 @@ function cancelPendingLodUpdate() {
 }
 
 function applyG6Lod(nextLod, showLabels) {
-  if (!editor?.graph) {
+  if (!editor?.graph || !isModelingLevel(state.activeType)) {
     return;
   }
   cancelPendingLodUpdate();
@@ -2874,7 +2877,7 @@ function scheduleG6LodUpdate(nextLod, showLabels) {
 }
 
 export function updateG6Lod({ defer = false } = {}) {
-  if (!editor?.graph) {
+  if (!editor?.graph || !isModelingLevel(state.activeType)) {
     return;
   }
   const zoom = currentZoom();

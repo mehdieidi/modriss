@@ -1411,6 +1411,9 @@ function diagramBounds({ forFit = false } = {}) {
 }
 
 function applyViewportFit({ fit = false } = {}) {
+  if (!isModelingLevel(state.activeType)) {
+    return false;
+  }
   const bounds = diagramBounds({ forFit: fit });
   if (!bounds) {
     return false;
@@ -1434,6 +1437,9 @@ export function centerViewportOnDiagram({ fit = false } = {}) {
 }
 
 export async function fitViewportToDiagram({ fit = true, frames = 2, retry = true } = {}) {
+  if (!isModelingLevel(state.activeType)) {
+    return false;
+  }
   if (!Array.isArray(state.diagram?.nodes) || !state.diagram.nodes.length) {
     resetCanvasView();
     return false;
@@ -1444,9 +1450,15 @@ export async function fitViewportToDiagram({ fit = true, frames = 2, retry = tru
     console.warn("fitViewportToDiagram: render failed", error);
   }
   await waitForViewportPaint(frames);
+  if (!isModelingLevel(state.activeType)) {
+    return false;
+  }
   let applied = applyViewportFit({ fit });
   if (!applied && retry) {
     await waitForViewportPaint(1);
+    if (!isModelingLevel(state.activeType)) {
+      return false;
+    }
     applied = applyViewportFit({ fit });
   }
   return applied;
@@ -2533,10 +2545,16 @@ export function renderDiagramAsync(options = {}) {
 }
 
 async function renderDiagramNow({ full = false } = {}) {
+  if (!isModelingLevel(state.activeType)) {
+    return;
+  }
   try {
     await ensureCanvas();
   } catch (error) {
     console.warn("ensureCanvas failed", error);
+    return;
+  }
+  if (!isModelingLevel(state.activeType)) {
     return;
   }
   syncCanvasIndexesFromState();
@@ -2569,6 +2587,9 @@ async function renderDiagramNow({ full = false } = {}) {
 // The public name is kept for existing callers, but the modeling surface is
 // G6-only: this applies a diff to the graph renderer.
 export function syncDiagramRenderer({ full = false } = {}) {
+  if (!isModelingLevel(state.activeType)) {
+    return;
+  }
   materializeActiveView();
   ensureCanvas();
   syncCanvasIndexesFromState();
