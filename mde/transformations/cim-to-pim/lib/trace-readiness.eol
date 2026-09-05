@@ -186,7 +186,7 @@ operation manualDecision(ruleId : String, question : String, severity, blocking 
   d.id = id;
   var shortQuestion = question;
   if (shortQuestion.length() > 80) {
-    shortQuestion = shortQuestion.substring(0, 80);
+    shortQuestion = shortQuestion.substring(0, 80) + "...";
   }
   d.name = "Manual decision - " + shortQuestion;
   d.question = question;

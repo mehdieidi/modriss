@@ -554,18 +554,23 @@ rule ProcessTransition2WorkflowTransition
   if (t.condition.isDefined()) {
     wt.condition = cloneKernelExpression(t.condition, "wf_transition_condition", t);
   }
-  if (hasText(t.conditionExpression)) {
+  // A transition label is explanatory prose; when the CIM supplies a condition
+  // reference, preserve its executable expression for the PIM workflow.
+  if (t.conditionRef.isDefined()) {
+    wt.conditionExpression = expressionText(t.conditionRef);
+  }
+  else if (hasText(t.conditionExpression)) {
     wt.conditionExpression = t.conditionExpression;
   }
-  else {
-    if (t.condition.isDefined()) {
-      wt.conditionExpression = expressionText(t.condition);
-    }
-    else {
-      wt.conditionExpression = "";
-    }
+  else if (t.condition.isDefined()) {
+    wt.conditionExpression = expressionText(t.condition);
   }
-  wt.defaultTransition = not hasText(t.conditionExpression) and t.condition.isUndefined();
+  else {
+    wt.conditionExpression = "";
+  }
+  // Use the effective expression above. A conditionRef may carry the only
+  // executable expression while the transition's prose fields remain empty.
+  wt.defaultTransition = not hasText(wt.conditionExpression);
   traceGenerated(t, wt, "TR-130", "HIGH");
 }
 

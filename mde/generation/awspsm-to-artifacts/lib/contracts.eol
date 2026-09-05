@@ -257,19 +257,26 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
   var stateTypeText = self.aslStateTypeName();
   var outText = spaces(indentCount) + self.stateName.jsonString() + ": {\n";
   outText = outText + spaces(indentCount + 2) + "\"Type\": " + stateTypeText.toLowerCase().firstToUpperCase().jsonString();
-  if (self.isKindOf(AWSPSMWORKFLOW!AslTaskState) and self.invokedResource.isDefined()) {
+  if (self.queryLanguage.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"QueryLanguage\": " + self.queryLanguage.jsonString();
+  }
+  if (self.isKindOf(AWSPSMWORKFLOW!AslTaskState) and self.invokedResource.isDefined()
+      and self.resource <> "arn:aws:states:::states:startExecution.sync") {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Resource\": " + ("${" + self.invokedResource.cfnLogicalId() + "Arn}").jsonString();
   }
   else if (self.resource.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Resource\": " + self.resource.jsonString();
   }
-  if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL" and self.inputPath.isPresent()) {
+  if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL"
+      and self.queryLanguage.orElseText("JSONPath") <> "JSONata" and self.inputPath.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"InputPath\": " + self.inputPath.jsonString();
   }
-  if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL" and self.outputPath.isPresent()) {
+  if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL"
+      and self.queryLanguage.orElseText("JSONPath") <> "JSONata" and self.outputPath.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"OutputPath\": " + self.outputPath.jsonString();
   }
-  if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL" and self.resultPath.isPresent()) {
+  if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL"
+      and self.queryLanguage.orElseText("JSONPath") <> "JSONata" and self.resultPath.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"ResultPath\": " + self.resultPath.jsonString();
   }
   if (stateTypeText <> "SUCCEED" and stateTypeText <> "FAIL" and self.parametersJson.isPresent()) {
@@ -321,7 +328,7 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
     outText = outText + spaces(indentCount + 2) + "]";
   }
   if (self.isKindOf(AWSPSMWORKFLOW!AslWaitState)) {
-    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Seconds\": 0";
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Seconds\": " + self.timeoutSeconds.orElseText("0");
   }
   if (stateTypeText = "PARALLEL" and self.branches.notEmpty()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Branches\": [\n";
@@ -436,7 +443,10 @@ operation AWSPSMWORKFLOW!AslCatchRule emitAslCatchJson(indentCount : Integer) : 
 /** Renders emit asl choice json. */
 operation AWSPSMWORKFLOW!AslChoiceRule emitAslChoiceJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "{\n";
-  if (self.conditionExpression.isPresent()) {
+  if (self.conditionExpression.isPresent() and self.conditionExpression.startsWith("{%")) {
+    outText = outText + spaces(indentCount + 2) + "\"Condition\": " + self.conditionExpression.jsonString() + ",\n";
+  }
+  else if (self.conditionExpression.isPresent()) {
     outText = outText + spaces(indentCount + 2) + "\"Variable\": " + self.variable.orElseText("$.condition").jsonString() + ",\n";
     outText = outText + spaces(indentCount + 2) + "\"StringEquals\": " + self.conditionExpression.jsonString() + ",\n";
   }

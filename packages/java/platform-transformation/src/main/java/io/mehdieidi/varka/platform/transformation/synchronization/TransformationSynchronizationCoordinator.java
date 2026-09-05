@@ -146,7 +146,7 @@ public final class TransformationSynchronizationCoordinator {
     boolean workingXmiStructurallyValid =
         models
             .sourceXmi(working)
-            .map(bytes -> models.validateGeneratedXmi(targetLevel, bytes).valid())
+            .map(bytes -> models.validateStructural(targetLevel, bytes).valid())
             .orElse(true);
     if (sourceUnchanged && !workingXmiStructurallyValid) {
       ModelRecord repaired =
@@ -576,24 +576,62 @@ public final class TransformationSynchronizationCoordinator {
   private void mergeManualBacklog(JsonNode working, JsonNode generated, ObjectNode merged) {
     Map<String, JsonNode> workingTasks = backlogById(working);
     Map<String, JsonNode> generatedTasks = backlogById(generated);
+    Map<String, JsonNode> workingTasksBySemanticKey = new LinkedHashMap<>();
+    workingTasks.forEach(
+        (id, task) -> {
+          if (isGeneratedBacklogTask(task.path("category").asText(""))) {
+            workingTasksBySemanticKey.putIfAbsent(backlogSemanticKey(task), task);
+          }
+        });
     ArrayNode backlog = store.objectMapper().createArrayNode();
 
     workingTasks.forEach(
         (id, task) -> {
           String category = task.path("category").asText("");
-          if (!isGeneratedBacklogTask(category) || generatedTasks.containsKey(id)) {
+          if (!isGeneratedBacklogTask(category)) {
             backlog.add(task.deepCopy());
           }
         });
     generatedTasks.forEach(
         (id, task) -> {
-          if (!workingTasks.containsKey(id)) {
-            backlog.add(task.deepCopy());
+          JsonNode previous = workingTasks.get(id);
+          if (previous == null) {
+            previous = workingTasksBySemanticKey.get(backlogSemanticKey(task));
           }
+          ObjectNode mergedTask = (ObjectNode) task.deepCopy();
+          if (previous != null) {
+            copyTaskReviewState(previous, mergedTask);
+          }
+          backlog.add(mergedTask);
         });
 
     merged.set("manualBacklog", backlog);
     merged.withObject("graph").set("manualBacklog", backlog.deepCopy());
+  }
+
+  private String backlogSemanticKey(JsonNode task) {
+    return task.path("category").asText("")
+        + "\u0000"
+        + task.path("rationale").asText("")
+        + "\u0000"
+        + task.path("affectedElements").toString();
+  }
+
+  private void copyTaskReviewState(JsonNode source, ObjectNode target) {
+    for (String field :
+        List.of(
+            "status",
+            "completionNotes",
+            "decision",
+            "decisionOwner",
+            "reviewStatus",
+            "reviewedAt",
+            "reviewer")) {
+      JsonNode value = source.get(field);
+      if (value != null) {
+        target.set(field, value.deepCopy());
+      }
+    }
   }
 
   private Map<String, JsonNode> backlogById(JsonNode model) {
@@ -665,9 +703,14 @@ public final class TransformationSynchronizationCoordinator {
   }
 
   private void requireValid(ModelLevel level, byte[] modelXmi, ObjectNode modelJson) {
-    ModelService.ValidationResult validation = models.validateGeneratedXmi(level, modelXmi);
-    if (!validation.valid()) {
-      throw new TransformationValidationException(validation.issues());
+    ModelService.ValidationResult jsonValidation = models.validateStructural(level, modelJson);
+    if (!jsonValidation.valid()) {
+      throw new TransformationValidationException(jsonValidation.issues());
+    }
+    ModelService.ValidationResult xmiValidation =
+        models.validateStructural(level, modelXmi, modelJson);
+    if (!xmiValidation.valid()) {
+      throw new TransformationValidationException(xmiValidation.issues());
     }
   }
 

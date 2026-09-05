@@ -8,6 +8,12 @@ rule Function2AwsLambdaFunction
   l.functionName = l.physicalName;
   l.descriptionText = firstText(firstText(f.handlerResponsibility, f.responsibility), f.summary);
   l.code = createLambdaCodeConfig(f, pimRoot().implementationProfile);
+  if (l.code.isKindOf(AWSPSMCOMPUTE!LambdaZipCodeConfig) and isTrue(l.code.generatedByTransformation)) {
+    manualDecision("LAMBDA_BUSINESS_LOGIC_IMPLEMENTATION_REQUIRED",
+      "Implement and test the generated business logic for Lambda " + f.name + ".",
+      KERNEL!Severity#BLOCKER, true, Sequence{f, l},
+      "Replace the generated NOT_IMPLEMENTED business-logic region with the behavior derived from the reviewed CIM/PIM model and add unit/integration tests before deployment.");
+  }
   if (l.code.eClass().getName() = "LambdaImageCodeConfig") {
     l.packageType = AWSPSMENUMS!PackageType#IMAGE;
   }

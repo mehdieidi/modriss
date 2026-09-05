@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.platform.modeling.xmi;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mehdieidi.varka.platform.kernel.ModelLevel;
@@ -131,6 +132,26 @@ class XmiModelImportServiceTest {
               && !relationship.path("target").asText().isBlank(),
           "Missing target for " + relationship.path("id").asText());
     }
+  }
+
+  @Test
+  void importsSmartMakerspaceCimWithForwardReferences() throws Exception {
+    XmiModelImportService service = new XmiModelImportService(new ObjectMapper());
+    Path sample =
+        Path.of(
+                "..",
+                "..",
+                "..",
+                "mde",
+                "samples",
+                "smart-makerspace-operations",
+                "smart-makerspace.cim.xmi")
+            .normalize();
+    JsonNode model = service.importModel(ModelLevel.CIM, Files.readAllBytes(sample));
+    assertEquals("CIMModel", model.path("eClass").asText());
+    assertTrue(model.path("events").size() >= 8);
+    assertTrue(model.path("commands").size() >= 5);
+    assertTrue(model.path("graph").path("relationships").size() > 10);
   }
 
   /** One sample fixture and its expected model level. */

@@ -104,7 +104,7 @@ rule DomainRelationship2SchemaReference
   }
   field.name = camelCase(targetFieldName);
   field.fieldType = PIMTYPES!FieldType#OBJECT;
-  field.required = rel.sourceMultiplicity.hasMultiplicityBounds() and rel.sourceMultiplicity.lowerBound >= 1;
+  field.required = rel.targetMultiplicity.hasMultiplicityBounds() and rel.targetMultiplicity.lowerBound >= 1;
   field.nullable = not field.required;
   field.array = rel.targetMultiplicity.isMany();
   var targetDescription = "unresolved target";
@@ -150,12 +150,17 @@ post AttachRelationshipDataFields {
         targetFieldName = rel.targetRole.orDefault(rel.target.name);
       }
       dataField.name = camelCase(targetFieldName);
-      dataField.fieldType = PIMTYPES!FieldType#OBJECT;
+      if (rel.targetMultiplicity.isMany()) {
+        dataField.fieldType = PIMTYPES!FieldType#ARRAY;
+      }
+      else {
+        dataField.fieldType = PIMTYPES!FieldType#OBJECT;
+      }
       dataField.identifier = false;
       dataField.partitionKeyCandidate = false;
       dataField.sortKeyCandidate = false;
       dataField.indexedCandidate = rel.navigableFromSource;
-      dataField.required = rel.sourceMultiplicity.hasMultiplicityBounds() and rel.sourceMultiplicity.lowerBound >= 1;
+      dataField.required = rel.targetMultiplicity.hasMultiplicityBounds() and rel.targetMultiplicity.lowerBound >= 1;
       dataField.personalData = false;
       dataField.sensitiveData = false;
       dataField.storageName = dataField.name;

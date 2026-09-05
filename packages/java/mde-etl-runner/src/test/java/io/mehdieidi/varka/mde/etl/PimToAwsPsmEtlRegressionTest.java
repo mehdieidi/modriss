@@ -127,17 +127,122 @@ final class PimToAwsPsmEtlRegressionTest {
         "CloudWatchLogGroup",
         "Expected CloudWatch log groups for generated compute/API/workflow resources.");
 
+    assertTrue(
+        resources.stream()
+            .filter(r -> "StepFunctionStateMachine".equals(r.eClass().getName()))
+            .flatMap(r -> values(reference(r, "aslDocument"), "states").stream())
+            .filter(s -> "AslTaskState".equals(s.eClass().getName()))
+            .allMatch(s -> reference(s, "invokedResource") != null),
+        "Every function-backed sample workflow task must retain its Lambda target.");
+    assertTrue(
+        resources.stream()
+            .filter(r -> "StepFunctionStateMachine".equals(r.eClass().getName()))
+            .flatMap(r -> values(reference(r, "aslDocument"), "states").stream())
+            .filter(s -> "AslTaskState".equals(s.eClass().getName()))
+            .allMatch(s -> !get(s, "resultPath").toString().isBlank()),
+        "Every Lambda-backed sample workflow task must preserve or explicitly map its result.");
+    assertTrue(
+        allObjects(root).stream()
+            .filter(s -> "AslWaitState".equals(s.eClass().getName()))
+            .anyMatch(s -> Integer.valueOf(432000).equals(get(s, "timeoutSeconds"))),
+        "The five-day business wait must become 432000 ASL seconds.");
+    List<EObject> choiceStates =
+        resources.stream()
+            .filter(r -> "StepFunctionStateMachine".equals(r.eClass().getName()))
+            .flatMap(r -> values(reference(r, "aslDocument"), "states").stream())
+            .filter(s -> "AslChoiceState".equals(s.eClass().getName()))
+            .toList();
+    assertEquals(
+        3,
+        choiceStates.size(),
+        "The sample decision steps should become three executable ASL choices.");
+    EObject readiness = reference(root, "readiness");
+    assertTrue(readiness != null, "Expected readiness assessment.");
+    for (EObject choice : choiceStates) {
+      EObject evaluator =
+          resources.stream()
+              .filter(r -> "StepFunctionStateMachine".equals(r.eClass().getName()))
+              .flatMap(r -> values(reference(r, "aslDocument"), "states").stream())
+              .filter(s -> "AslTaskState".equals(s.eClass().getName()))
+              .filter(
+                  s -> (get(s, "stateName") + "").equals(get(choice, "stateName") + " Evaluator"))
+              .findFirst()
+              .orElseThrow(
+                  () ->
+                      new AssertionError(
+                          "Every choice with a decision function needs an evaluator Task state."));
+      assertTrue(
+          reference(evaluator, "invokedResource") != null,
+          "The choice evaluator Task must invoke its generated Lambda.");
+      assertEquals(
+          get(choice, "stateName"),
+          get(evaluator, "nextStateName"),
+          "The evaluator Task must continue into the corresponding Choice state.");
+      assertEquals(
+          "$.decisionEvaluation",
+          get(evaluator, "resultPath"),
+          "The evaluator result must be retained without replacing the business input.");
+      assertEquals(
+          "JSONata",
+          get(choice, "queryLanguage"),
+          "Only Choice states should opt into JSONata for concrete conditions.");
+      assertTrue(
+          ((String) get(choice, "inputPath")).isBlank()
+              && ((String) get(choice, "outputPath")).isBlank(),
+          "JSONata Choice states must not retain JSONPath-only input/output fields.");
+    }
+    assertEquals(
+        3,
+        values(readiness, "manualDecisions").stream()
+            .filter(
+                decision ->
+                    get(decision, "question")
+                        .toString()
+                        .startsWith("Define how decision evaluator outcomes select branches"))
+            .count(),
+        "Every function-backed choice must expose the missing outcome-to-branch mapping as a"
+            + " blocker.");
+
     assertFalse(
         values(root, "relationshipViews").isEmpty(),
         "Expected generated relationship views for API/event/message integrations.");
     assertGeneratedIdsAreUuids(root);
 
-    EObject readiness = reference(root, "readiness");
-    assertTrue(readiness != null, "Expected readiness assessment.");
     assertFalse(
         values(readiness, "manualDecisions").isEmpty(),
         "The sample's open AWS-specific decisions should remain visible.");
     assertFalse(values(readiness, "checks").isEmpty(), "Expected generated readiness checks.");
+    assertEquals(
+        3,
+        values(readiness, "manualDecisions").stream()
+            .filter(
+                decision ->
+                    get(decision, "question")
+                        .toString()
+                        .startsWith("Choose an executable AWS integration"))
+            .count(),
+        "Every adapter-backed workflow task must produce an explicit integration blocker.");
+    assertEquals(
+        20,
+        values(readiness, "manualDecisions").stream()
+            .filter(
+                decision ->
+                    get(decision, "question")
+                        .toString()
+                        .startsWith("Implement and test the generated business logic for Lambda"))
+            .count(),
+        "Every generator-managed sample Lambda must produce an explicit implementation blocker.");
+    assertEquals(
+        12,
+        values(readiness, "manualDecisions").stream()
+            .filter(
+                decision ->
+                    get(decision, "question")
+                        .toString()
+                        .startsWith("Define how the output of workflow task"))
+            .count(),
+        "Every ordinary function-backed workflow task with TBD output mapping must require"
+            + " review.");
   }
 
   /**
@@ -258,8 +363,16 @@ final class PimToAwsPsmEtlRegressionTest {
     assertEquals("live", get(stateMachine, "aliasName"));
     EObject asl = reference(stateMachine, "aslDocument");
     assertTrue(get(asl, "content").toString().contains("\"StartAt\": \"Start\""));
+    assertEquals("JSONPath", get(asl, "queryLanguage"));
     assertTrue(
         values(asl, "states").stream().anyMatch(s -> "AslTaskState".equals(s.eClass().getName())));
+    EObject workflowTask = first(values(asl, "states"), "AslTaskState", "Invoke Create Order");
+    assertEquals(lambda, reference(workflowTask, "invokedResource"));
+    assertEquals(
+        "$",
+        get(workflowTask, "resultPath"),
+        "An explicit root output mapping must be honored for a workflow task.");
+    assertTrue(get(asl, "content").toString().contains("\"Resource\": \"${"));
 
     EObject userPool = first(resources, "CognitoUserPool", "Customer Identity");
     assertEquals("ON", enumLabel(get(userPool, "mfaConfiguration")));
@@ -383,14 +496,12 @@ final class PimToAwsPsmEtlRegressionTest {
     assertTrue(schemaJson.contains("\"items\""));
 
     EObject readiness = reference(root, "readiness");
-    List<String> decisions =
-        values(readiness, "manualDecisions").stream().map(d -> get(d, "name").toString()).toList();
-    assertTrue(decisions.contains("LAMBDA_TIMEOUT_REDESIGN_REQUIRED"));
-    assertTrue(decisions.contains("FIFO_ORDERING_KEY_REQUIRED"));
-    assertTrue(decisions.contains("S3_NOTIFICATION_DESTINATION_REQUIRED"));
-    assertTrue(decisions.contains("WORKFLOW_TASK_TARGET_REQUIRED"));
-    assertTrue(decisions.contains("EXTERNAL_ADAPTER_CREDENTIALS_REQUIRED"));
-    assertTrue(decisions.contains("ALARM_THRESHOLD_NUMERIC_REQUIRED"));
+    assertDecisionRule(readiness, "LAMBDA_TIMEOUT_REDESIGN_REQUIRED");
+    assertDecisionRule(readiness, "FIFO_ORDERING_KEY_REQUIRED");
+    assertDecisionRule(readiness, "S3_NOTIFICATION_DESTINATION_REQUIRED");
+    assertDecisionRule(readiness, "WORKFLOW_TASK_TARGET_REQUIRED");
+    assertDecisionRule(readiness, "EXTERNAL_ADAPTER_CREDENTIALS_REQUIRED");
+    assertDecisionRule(readiness, "ALARM_THRESHOLD_NUMERIC_REQUIRED");
 
     assertFalse(values(root, "relationshipViews").isEmpty());
     assertGeneratedIdsAreUuids(root);
@@ -417,6 +528,18 @@ final class PimToAwsPsmEtlRegressionTest {
     EObject root = loadModel(psmMetamodel, psmModel).getContents().get(0);
     List<EObject> all = allObjects(root);
     List<EObject> resources = containedAwsResources(root);
+
+    EObject advancedStateMachine =
+        first(resources, "StepFunctionStateMachine", "Advanced Workflow");
+    EObject advancedAsl = reference(advancedStateMachine, "aslDocument");
+    EObject choiceState = first(values(advancedAsl, "states"), "AslChoiceState", "Choose");
+    EObject evaluator = first(values(advancedAsl, "states"), "AslTaskState", "Choose Evaluator");
+    assertEquals("Helper Handler", get(reference(evaluator, "invokedResource"), "name"));
+    assertEquals("Choose", get(evaluator, "nextStateName"));
+    EObject outcomeRule = values(choiceState, "choices").stream().findFirst().orElseThrow();
+    assertEquals(
+        "{% $states.input.decisionEvaluation.outcome = \"APPROVE\" %}",
+        get(outcomeRule, "conditionExpression"));
 
     EObject defaultStage = first(all, "AwsStage", "dev");
     assertEquals("dev", get(defaultStage, "stageName"));
@@ -471,6 +594,27 @@ final class PimToAwsPsmEtlRegressionTest {
             .anyMatch(s -> "AslChoiceState".equals(s.eClass().getName())));
     assertTrue(
         values(asl, "states").stream().anyMatch(s -> "AslFailState".equals(s.eClass().getName())));
+    EObject rootReadiness = reference(root, "readiness");
+    assertTrue(
+        values(rootReadiness, "manualDecisions").stream()
+            .anyMatch(
+                decision ->
+                    Boolean.TRUE.equals(get(decision, "blocking"))
+                        && get(decision, "question") != null
+                        && get(decision, "question")
+                            .toString()
+                            .contains("exactly one default path")),
+        "Multiple Choice defaults must be a blocking review item.");
+    assertTrue(
+        values(rootReadiness, "manualDecisions").stream()
+            .anyMatch(
+                decision ->
+                    Boolean.TRUE.equals(get(decision, "blocking"))
+                        && get(decision, "question") != null
+                        && get(decision, "question")
+                            .toString()
+                            .contains("Define wait duration or callback semantics")),
+        "Unsupported waits must be a blocking review item rather than an immediate wait.");
 
     EObject missingModelTable = first(resources, "DynamoDbTable", "Missing Model Store");
     assertTrue(values(missingModelTable, "keySchema").isEmpty());
@@ -505,23 +649,21 @@ final class PimToAwsPsmEtlRegressionTest {
     assertTrue(get(schemaDoc, "content").toString().contains("\"$ref\""));
 
     EObject readiness = reference(root, "readiness");
-    List<String> decisions =
-        values(readiness, "manualDecisions").stream().map(d -> get(d, "name").toString()).toList();
-    assertTrue(decisions.contains("PACKAGING_UNASSIGNED"));
-    assertTrue(decisions.contains("COST_ALARM_ACCOUNT_SCOPE"));
-    assertTrue(decisions.contains("DYNAMO_DATA_MODEL_REQUIRED"));
-    assertTrue(decisions.contains("DYNAMO_INDEX_KEY_FIELD_REQUIRED"));
-    assertTrue(decisions.contains("SCHEDULE_TARGET_REQUIRED"));
-    assertTrue(decisions.contains("EVENTBRIDGE_TARGET_INVOKE_ROLE_REQUIRED"));
-    assertTrue(decisions.contains("EXTERNAL_ADAPTER_ENDPOINT_REQUIRED"));
-    assertTrue(decisions.contains("IAM_PERMISSION_AWS_BINDING_REQUIRED"));
-    assertTrue(decisions.contains("IAM_WILDCARD_REVIEW"));
-    assertTrue(decisions.contains("AUTH_SCHEME_REQUIRED"));
-    assertTrue(decisions.contains("API_ROUTE_AUTHORIZER_MISSING"));
-    assertTrue(decisions.contains("COGNITO_FEDERATION_DETAILS_REQUIRED"));
-    assertTrue(decisions.contains("SECRET_PARAMETER_VALUE_REQUIRED"));
-    assertTrue(decisions.contains("WORKFLOW_PARALLEL_BRANCH_DESIGN"));
-    assertTrue(decisions.contains("WORKFLOW_MAP_PROCESSOR_DESIGN"));
+    assertDecisionRule(readiness, "PACKAGING_UNASSIGNED");
+    assertDecisionRule(readiness, "COST_ALARM_ACCOUNT_SCOPE");
+    assertDecisionRule(readiness, "DYNAMO_DATA_MODEL_REQUIRED");
+    assertDecisionRule(readiness, "DYNAMO_INDEX_KEY_FIELD_REQUIRED");
+    assertDecisionRule(readiness, "SCHEDULE_TARGET_REQUIRED");
+    assertDecisionRule(readiness, "EVENTBRIDGE_TARGET_INVOKE_ROLE_REQUIRED");
+    assertDecisionRule(readiness, "EXTERNAL_ADAPTER_ENDPOINT_REQUIRED");
+    assertDecisionRule(readiness, "IAM_PERMISSION_AWS_BINDING_REQUIRED");
+    assertDecisionRule(readiness, "IAM_WILDCARD_REVIEW");
+    assertDecisionRule(readiness, "AUTH_SCHEME_REQUIRED");
+    assertDecisionRule(readiness, "API_ROUTE_AUTHORIZER_MISSING");
+    assertDecisionRule(readiness, "COGNITO_FEDERATION_DETAILS_REQUIRED");
+    assertDecisionRule(readiness, "SECRET_PARAMETER_VALUE_REQUIRED");
+    assertDecisionRule(readiness, "WORKFLOW_PARALLEL_BRANCH_DESIGN");
+    assertDecisionRule(readiness, "WORKFLOW_MAP_PROCESSOR_DESIGN");
 
     assertFalse(values(root, "relationshipViews").isEmpty());
   }
@@ -1297,6 +1439,7 @@ final class PimToAwsPsmEtlRegressionTest {
 
     EObject start = step(metamodelResource, "StartStep", "step_adv_start", "Start", 1);
     EObject choice = step(metamodelResource, "ChoiceStep", "step_adv_choice", "Choose", 2);
+    set(choice, "invokesFunction", helperFunction);
     EObject task = step(metamodelResource, "TaskStep", "step_adv_task", "Invoke Helper", 3);
     set(task, "invokesFunction", helperFunction);
     set(task, "retry", retry);
@@ -1324,10 +1467,14 @@ final class PimToAwsPsmEtlRegressionTest {
         transition(metamodelResource, "tr_start_choice", start, choice));
     EObject choiceToTask = transition(metamodelResource, "tr_choice_task", choice, task);
     set(choiceToTask, "conditionExpression", "$.approved == true");
+    set(choiceToTask, "decisionOutcome", "APPROVE");
     add(advancedWorkflow, "transitions", choiceToTask);
     EObject choiceToSuccess = transition(metamodelResource, "tr_choice_success", choice, success);
     set(choiceToSuccess, "defaultTransition", true);
     add(advancedWorkflow, "transitions", choiceToSuccess);
+    EObject choiceToFailure = transition(metamodelResource, "tr_choice_failure", choice, failure);
+    set(choiceToFailure, "defaultTransition", true);
+    add(advancedWorkflow, "transitions", choiceToFailure);
     add(
         advancedWorkflow,
         "transitions",
@@ -1348,6 +1495,17 @@ final class PimToAwsPsmEtlRegressionTest {
     base(mapWorkflow, "wf_map", "Map Workflow");
     set(mapWorkflow, "workflowKind", enumValue(metamodelResource, "WorkflowKind", "ORCHESTRATION"));
     add(mapWorkflow, "steps", mapStep);
+
+    EObject unsupportedWait =
+        step(metamodelResource, "WaitStep", "step_unsupported_wait", "Unsupported Wait", 1);
+    set(unsupportedWait, "conditionExpression", "next business event");
+    EObject unsupportedWaitWorkflow = create(metamodelResource, "Workflow");
+    base(unsupportedWaitWorkflow, "wf_unsupported_wait", "Unsupported Wait Workflow");
+    set(
+        unsupportedWaitWorkflow,
+        "workflowKind",
+        enumValue(metamodelResource, "WorkflowKind", "ORCHESTRATION"));
+    add(unsupportedWaitWorkflow, "steps", unsupportedWait);
 
     EObject unresolvedSchedule = create(metamodelResource, "Schedule");
     base(unresolvedSchedule, "schedule_unresolved", "Unresolved Schedule");
@@ -1404,6 +1562,7 @@ final class PimToAwsPsmEtlRegressionTest {
     add(service, "workflows", advancedWorkflow);
     add(service, "workflows", parallelWorkflow);
     add(service, "workflows", mapWorkflow);
+    add(service, "workflows", unsupportedWaitWorkflow);
     add(service, "schedules", unresolvedSchedule);
     add(service, "adapters", adapter);
 
@@ -1818,6 +1977,21 @@ final class PimToAwsPsmEtlRegressionTest {
           object.eClass().getName() + " has no feature " + featureName);
     }
     return feature;
+  }
+
+  /** Asserts that the readiness backlog contains a decision with the stable rule identifier. */
+  private void assertDecisionRule(EObject readiness, String ruleId) {
+    assertTrue(
+        values(readiness, "findings").stream()
+            .anyMatch(finding -> ruleId.equals(get(finding, "ruleId"))),
+        "Expected readiness decision rule " + ruleId);
+    assertTrue(
+        values(readiness, "manualDecisions").stream()
+            .anyMatch(
+                decision ->
+                    get(decision, "question") != null
+                        && !get(decision, "question").toString().isBlank()),
+        "Expected an actionable question for readiness decision rule " + ruleId);
   }
 
   /**

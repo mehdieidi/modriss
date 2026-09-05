@@ -329,13 +329,7 @@ export function mapEdgeToG6(
   const label = edgeLabel(edge, typeKey);
   const sourceNode = nodesById?.get?.(edge.sourceId);
   const targetNode = nodesById?.get?.(edge.targetId);
-  const routeStart = routeEndpoint(
-    sourceNode,
-    edge.sourceAnchor,
-    typeKey,
-    "right",
-    detailLevel,
-  );
+  const routeStart = routeEndpoint(sourceNode, edge.sourceAnchor, typeKey, "right", detailLevel);
   const routeEnd = routeEndpoint(targetNode, edge.targetAnchor, typeKey, "left", detailLevel);
   return {
     id: edge.id,

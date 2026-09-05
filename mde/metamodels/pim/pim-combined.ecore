@@ -1816,6 +1816,8 @@
     <eClassifiers xsi:type="ecore:EClass" name="WorkflowTransition" eSuperTypes="#/1/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="conditionExpression"
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="decisionOutcome"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="defaultTransition" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="condition" eType="#/1/Expression"
           containment="true"/>

@@ -45,17 +45,49 @@ operation resolveWorkflowTaskTargets() {
       continue;
     }
     for (ws in w.steps) {
-      var outState = sm.aslDocument.states.selectOne(s | s.name = ws.name);
+      var targetStateName = ws.name;
+      if (ws.isKindOf(PIM!ChoiceStep) and ws.invokesFunction.isDefined()) {
+        targetStateName = ws.name + " Evaluator";
+      }
+      var outState = sm.aslDocument.states.selectOne(s | s.name = targetStateName);
       if (outState.isUndefined() or not outState.isKindOf(AWSPSMWORKFLOW!AslTaskState)) {
         continue;
       }
       if (ws.invokesFunction.isDefined()) {
-        outState.resource = "arn:aws:states:::lambda:invoke";
+        var functionResource = awsEquivalent(ws.invokesFunction);
+        if (functionResource.isDefined()) {
+          outState.invokedResource = functionResource;
+          outState.resource = "";
+        }
+        else {
+          manualDecision("WORKFLOW_TASK_TARGET_REQUIRED",
+            "Resolve the AWS Lambda target for workflow task " + ws.name + ".",
+            KERNEL!Severity#BLOCKER, true, Sequence{w, ws},
+            "Ensure TaskStep.invokesFunction resolves to a generated AwsLambdaFunction before artifact generation.");
+        }
       }
       else if (ws.nestedWorkflow.isDefined()) {
-        outState.resource = "arn:aws:states:::states:startExecution.sync";
+        var nestedResource = awsEquivalent(ws.nestedWorkflow);
+        if (nestedResource.isDefined()) {
+          outState.resource = "arn:aws:states:::states:startExecution.sync";
+          outState.invokedResource = nestedResource;
+          outState.argumentsJson = "{ \"StateMachineArn\": \"${" + nestedResource.logicalId + "Arn}\" }";
+        }
+        else {
+          manualDecision("WORKFLOW_NESTED_TARGET_REQUIRED",
+            "Resolve the nested state machine target for workflow task " + ws.name + ".",
+            KERNEL!Severity#BLOCKER, true, Sequence{w, ws, ws.nestedWorkflow},
+            "Ensure TaskStep.nestedWorkflow resolves to a generated StepFunctionStateMachine before artifact generation.");
+        }
+      }
+      else if (ws.invokesAdapter.isDefined()) {
+        manualDecision("WORKFLOW_EXTERNAL_ADAPTER_IMPLEMENTATION_REQUIRED",
+          "Choose an executable AWS integration for external workflow task " + ws.name + ".",
+          KERNEL!Severity#BLOCKER, true, Sequence{w, ws, ws.invokesAdapter},
+          "Implement the adapter as a Lambda task, an AWS service integration, or a callback-token design; do not deploy the generated placeholder Pass state as the business operation.");
       }
     }
+    sm.aslDocument.content = renderAsl(sm.aslDocument);
   }
 }
 
@@ -227,6 +259,8 @@ operation createAslDocument(w) {
   d.format = KERNEL!StructuredFormat#ASL_JSON;
   d.content = "{}";
   d.comment = firstText(w.summary, "Generated from PIM workflow " + w.name);
+  // Keep JSONPath as the document default because the generated input/output
+  // path fields are JSONPath fields. Choice states opt into JSONata below.
   d.queryLanguage = "JSONPath";
   if (w.steps.isEmpty()) {
     manualDecision("WORKFLOW_STEPS_REQUIRED",
@@ -244,14 +278,55 @@ operation createAslDocument(w) {
     d.startAt = firstText(w.steps.first().name, "Start");
   }
   var stateByPimId = new Map;
+  var entryByPimId = new Map;
   for (ws in w.steps) {
     var aslState = createAslState(w, ws);
     d.states.add(aslState);
     stateByPimId.put(cacheKeyFor(ws), aslState);
+    var entryState = aslState;
+    if (ws.isKindOf(PIM!ChoiceStep) and ws.invokesFunction.isDefined()) {
+      var evaluator = createChoiceEvaluatorState(w, ws);
+      evaluator.nextState = aslState;
+      evaluator.nextStateName = aslState.stateName;
+      d.states.add(evaluator);
+      entryState = evaluator;
+      manualDecision("WORKFLOW_CHOICE_OUTCOME_MAPPING_REQUIRED",
+        "Define how decision evaluator outcomes select branches for workflow choice " + ws.name + ".",
+        KERNEL!Severity#BLOCKER, true, Sequence{w, ws, ws.invokesFunction},
+        "Add an explicit mapping from the evaluator output outcome to each WorkflowTransition, or explicitly remove the evaluator and make the reviewed input predicate authoritative before deployment.");
+    }
+    entryByPimId.put(cacheKeyFor(ws), entryState);
   }
-  completeAslStateTransitions(w, stateByPimId);
+  if (startStep.isDefined()) {
+    var startEntry = entryByPimId.get(cacheKeyFor(startStep));
+    if (startEntry.isDefined()) {
+      d.startAt = startEntry.stateName;
+    }
+  }
+  completeAslStateTransitions(w, stateByPimId, entryByPimId);
   d.content = renderAsl(d);
   return d;
+}
+
+/** Creates the Lambda evaluator task that supplies input to a function-backed choice. */
+operation createChoiceEvaluatorState(w, ws) {
+  var st = new AWSPSMWORKFLOW!AslTaskState;
+  st.id = generatedId("asl_choice_evaluator", ws, "state");
+  st.name = ws.name + " Evaluator";
+  st.stateName = ws.name + " Evaluator";
+  st.resource = "";
+  // The evaluator result must not replace the business input consumed by the
+  // following Choice. This is valid because evaluator Tasks use JSONPath,
+  // inherited from the state-machine default.
+  st.resultPath = "$.decisionEvaluation";
+  st.timeoutSeconds = ws.timeoutSeconds;
+  st.inputPath = aslJsonPathOrRoot(ws.inputMapping);
+  // A ChoiceStep output mapping belongs to the workflow-level decision, not
+  // to the evaluator invocation. Filtering here could remove `outcome` before
+  // ResultPath stores the evaluator result.
+  st.outputPath = "$";
+  st.end = false;
+  return st;
 }
 
 /** Creates create asl state. */
@@ -263,33 +338,73 @@ operation createAslState(w, ws) {
   st.timeoutSeconds = ws.timeoutSeconds;
   st.inputPath = aslJsonPathOrRoot(ws.inputMapping);
   st.outputPath = aslJsonPathOrRoot(ws.outputMapping);
-  st.end = ws.isKindOf(PIM!SuccessEndStep) or ws.isKindOf(PIM!FailureEndStep);
-  if (st.isKindOf(AWSPSMWORKFLOW!AslTaskState) and ws.invokesFunction.isDefined()) {
-    st.resource = "arn:aws:states:::lambda:invoke";
-  }
-  else {
-    if (st.isKindOf(AWSPSMWORKFLOW!AslTaskState) and ws.nestedWorkflow.isDefined()) {
-      st.resource = "arn:aws:states:::states:startExecution.sync";
+  if (ws.isKindOf(PIM!TaskStep)
+      and (ws.invokesFunction.isDefined() or ws.nestedWorkflow.isDefined())) {
+    if (hasExplicitWorkflowOutputMapping(ws.outputMapping)) {
+      st.resultPath = ws.outputMapping;
     }
     else {
-      if (st.isKindOf(AWSPSMWORKFLOW!AslTaskState)) {
-        var passState = new AWSPSMWORKFLOW!AslPassState;
-        passState.id = st.id;
-        passState.name = st.name;
-        passState.stateName = st.stateName;
-        passState.timeoutSeconds = st.timeoutSeconds;
-        passState.inputPath = st.inputPath;
-        passState.outputPath = st.outputPath;
-        passState.end = st.end;
-        delete st;
-        st = passState;
-        manualDecision("WORKFLOW_TASK_TARGET_REQUIRED",
-          "Provide an executable target for workflow task " + ws.name + ".",
-          KERNEL!Severity#ERROR, isProductionRoot(), Sequence{w, ws},
-          "Set TaskStep.invokesFunction or nestedWorkflow. The generated ASL uses a deployable Pass state until a target is modeled.");
-      }
+      // AWS defaults ResultPath to "$", which would replace the incoming workflow
+      // context with the step result. Preserve the context until a concrete PIM
+      // output mapping is supplied by the reviewer.
+      st.resultPath = defaultWorkflowResultPath(ws);
+      manualDecision("WORKFLOW_STEP_RESULT_MAPPING_REQUIRED",
+        "Define how the output of workflow task " + ws.name + " is merged into workflow context.",
+        KERNEL!Severity#BLOCKER, true, Sequence{w, ws},
+        "Set WorkflowStep.outputMapping to an explicit JSONPath and verify downstream steps; the draft stores the unmodeled result under " + st.resultPath + ".");
     }
   }
+  if (st.isKindOf(AWSPSMWORKFLOW!AslChoiceState)) {
+    st.queryLanguage = "JSONata";
+    // InputPath/OutputPath are JSONPath-only and must not be emitted on a
+    // JSONata Choice state.
+    st.inputPath = "";
+    st.outputPath = "";
+  }
+  st.end = ws.isKindOf(PIM!SuccessEndStep) or ws.isKindOf(PIM!FailureEndStep);
+  if (st.isKindOf(AWSPSMWORKFLOW!AslWaitState)) {
+    st.timeoutSeconds = waitSeconds(ws.conditionExpression);
+    if (not isSupportedWaitDuration(ws.conditionExpression, st.timeoutSeconds)) {
+      manualDecision("WORKFLOW_WAIT_SEMANTICS_REQUIRED",
+        "Define wait duration or callback semantics for workflow wait " + ws.name + ".",
+        KERNEL!Severity#BLOCKER, true, Sequence{w, ws},
+        "Set WaitStep.conditionExpression to a supported ISO-8601 duration from 0 to 99999999 seconds, or model an explicit callback/event completion design.");
+    }
+  }
+    if (st.isKindOf(AWSPSMWORKFLOW!AslTaskState) and ws.invokesFunction.isDefined()) {
+      st.resource = "";
+    }
+    else {
+      if (st.isKindOf(AWSPSMWORKFLOW!AslTaskState) and ws.nestedWorkflow.isDefined()) {
+        st.resource = "arn:aws:states:::states:startExecution.sync";
+      }
+      else {
+        if (st.isKindOf(AWSPSMWORKFLOW!AslTaskState)) {
+          var passState = new AWSPSMWORKFLOW!AslPassState;
+          passState.id = st.id;
+          passState.name = st.name;
+          passState.stateName = st.stateName;
+          passState.timeoutSeconds = st.timeoutSeconds;
+          passState.inputPath = st.inputPath;
+          passState.outputPath = st.outputPath;
+          passState.end = st.end;
+          delete st;
+          st = passState;
+          if (ws.invokesAdapter.isDefined()) {
+            manualDecision("WORKFLOW_EXTERNAL_ADAPTER_IMPLEMENTATION_REQUIRED",
+              "Choose an executable AWS integration for external workflow task " + ws.name + ".",
+              KERNEL!Severity#BLOCKER, true, Sequence{w, ws, ws.invokesAdapter},
+              "Implement the adapter as a Lambda task, an AWS service integration, or a callback-token design; do not deploy the generated placeholder Pass state as the business operation.");
+          }
+          else {
+            manualDecision("WORKFLOW_TASK_TARGET_REQUIRED",
+              "Provide an executable target for workflow task " + ws.name + ".",
+              KERNEL!Severity#ERROR, isProductionRoot(), Sequence{w, ws},
+              "Set TaskStep.invokesFunction or nestedWorkflow. The generated ASL uses a deployable Pass state until a target is modeled.");
+          }
+        }
+      }
+    }
   if (ws.retry.isDefined()) {
     st.retry.add(createAslRetry(ws.retry));
   }
@@ -342,6 +457,16 @@ operation aslJsonPathOrRoot(mapping) {
   return mapping;
 }
 
+/** Returns a stable per-step path for an output mapping that is still TBD. */
+operation defaultWorkflowResultPath(ws) {
+  return "$.stepResults.s" + asText(ws.id).replaceAll("[^A-Za-z0-9]", "");
+}
+
+/** Checks whether a workflow output mapping is explicit enough to honor directly. */
+operation hasExplicitWorkflowOutputMapping(mapping) {
+  return hasText(mapping) and mapping <> "TBD" and mapping.startsWith("$");
+}
+
 /** Computes complete asl state transitions. */
 operation nextOrderedWorkflowStep(w, current) {
   var ordered = w.steps.sortBy(s | s.orderIndex);
@@ -357,20 +482,47 @@ operation nextOrderedWorkflowStep(w, current) {
   return null;
 }
 
-operation completeAslStateTransitions(w, stateByPimId) {
+operation completeAslStateTransitions(w, stateByPimId, entryByPimId) {
   for (ws in w.steps) {
     var st = stateByPimId.get(cacheKeyFor(ws));
     var out = w.transitions.select(x | x.source = ws);
     if (st.isDefined() and st.isKindOf(AWSPSMWORKFLOW!AslChoiceState)) {
-      for (tr in out) {
-        var choiceRule = createAslChoice(tr, stateByPimId);
+      var defaultTransitions = out.select(tr | isTrue(tr.defaultTransition));
+      if (defaultTransitions.size() > 1) {
+        manualDecision("WORKFLOW_CHOICE_DEFAULT_AMBIGUOUS",
+          "Choose exactly one default path for workflow choice " + ws.name + ".",
+          KERNEL!Severity#BLOCKER, true, Sequence{w, ws},
+          "Mark exactly one outgoing WorkflowTransition as defaultTransition; AWS Step Functions supports one Choice Default target.");
+      }
+      else if (defaultTransitions.size() = 1) {
+        var defaultTransition = defaultTransitions.first();
+        var defaultState = entryByPimId.get(cacheKeyFor(defaultTransition.target));
+        if (defaultState.isDefined()) {
+          st.nextState = defaultState;
+          st.nextStateName = defaultState.stateName;
+        }
+        else {
+          manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
+            "Resolve target state for default choice transition " + firstText(defaultTransition.name, defaultTransition.id) + ".",
+            KERNEL!Severity#BLOCKER, true, Sequence{w, ws, defaultTransition},
+            "Ensure the default WorkflowTransition.target references a state in the same transformed workflow.");
+        }
+      }
+      for (tr in out.select(candidate | not isTrue(candidate.defaultTransition))) {
+        var choiceRule = createAslChoice(tr, entryByPimId, ws.invokesFunction.isDefined());
         if (choiceRule.isDefined()) {
           st.choices.add(choiceRule);
         }
       }
+      if (defaultTransitions.isEmpty()) {
+        manualDecision("WORKFLOW_CHOICE_DEFAULT_REQUIRED",
+          "Define a default path for workflow choice " + ws.name + ".",
+          KERNEL!Severity#BLOCKER, true, Sequence{w, ws},
+          "Mark one outgoing WorkflowTransition as defaultTransition so unmatched input cannot terminate with a States.NoChoiceMatched error.");
+      }
     }
     else if (st.isDefined() and out.size() = 1 and not st.end) {
-      var resolvedNextState = stateByPimId.get(cacheKeyFor(out.first().target));
+      var resolvedNextState = entryByPimId.get(cacheKeyFor(out.first().target));
       if (resolvedNextState.isDefined()) {
         st.nextState = resolvedNextState;
         st.nextStateName = resolvedNextState.stateName;
@@ -386,7 +538,7 @@ operation completeAslStateTransitions(w, stateByPimId) {
       var inferredNext = nextOrderedWorkflowStep(w, ws);
       var resolvedInferredNext = null;
       if (inferredNext.isDefined()) {
-        resolvedInferredNext = stateByPimId.get(cacheKeyFor(inferredNext));
+        resolvedInferredNext = entryByPimId.get(cacheKeyFor(inferredNext));
       }
       if (resolvedInferredNext.isDefined()) {
         st.nextState = resolvedInferredNext;
@@ -410,7 +562,7 @@ operation completeAslStateTransitions(w, stateByPimId) {
     if (st.isDefined()) {
       for (h in ws.catchHandlers) {
         if (h.nextStep.isDefined()) {
-          var catchRule = createAslCatch(h, stateByPimId);
+          var catchRule = createAslCatch(h, entryByPimId);
           if (catchRule.isDefined()) {
             st.catch.add(catchRule);
           }
@@ -421,8 +573,8 @@ operation completeAslStateTransitions(w, stateByPimId) {
 }
 
 /** Creates create asl choice. */
-operation createAslChoice(tr, stateByPimId) {
-  var resolvedNextState = stateByPimId.get(cacheKeyFor(tr.target));
+operation createAslChoice(tr, entryByPimId, evaluatorBacked) {
+  var resolvedNextState = entryByPimId.get(cacheKeyFor(tr.target));
   if (resolvedNextState.isUndefined()) {
     manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
       "Resolve target state for choice transition " + firstText(tr.name, tr.id) + ".",
@@ -433,14 +585,26 @@ operation createAslChoice(tr, stateByPimId) {
   var c = new AWSPSMWORKFLOW!AslChoiceRule;
   c.id = generatedId("asl_choice", tr, "choice");
   c.name = firstText(tr.name, "Choice");
-  c.conditionExpression = tr.conditionExpression;
-  c.variable = "$.condition";
+  if (hasText(tr.decisionOutcome)) {
+    c.conditionExpression = jsonataDecisionOutcomeCondition(tr.decisionOutcome);
+  }
+  else if (evaluatorBacked) {
+    // Do not silently route on input predicates when a decision evaluator is
+    // present. The missing outcome mapping must remain visibly incomplete.
+    c.conditionExpression = "";
+  }
+  else {
+    c.conditionExpression = jsonataCondition(tr.conditionExpression);
+  }
+  c.variable = "";
   c.nextState = resolvedNextState;
   if (not hasText(c.conditionExpression) and not isTrue(tr.defaultTransition)) {
     manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
       "Provide condition expression for choice transition " + tr.name + ".",
       KERNEL!Severity#ERROR, true, Sequence{tr},
       "Set WorkflowTransition.conditionExpression or mark it as defaultTransition.");
+    delete c;
+    return null;
   }
   return c;
 }
@@ -468,8 +632,8 @@ operation createAslRetry(p) {
 }
 
 /** Creates create asl catch. */
-operation createAslCatch(h, stateByPimId) {
-  var resolvedNextState = stateByPimId.get(cacheKeyFor(h.nextStep));
+operation createAslCatch(h, entryByPimId) {
+  var resolvedNextState = entryByPimId.get(cacheKeyFor(h.nextStep));
   if (resolvedNextState.isUndefined()) {
     manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
       "Resolve catch target step for " + firstText(h.name, h.id) + ".",
@@ -531,23 +695,43 @@ operation renderAsl(doc) {
     }
     states = states + "\"" + escapeJson(s.stateName) + "\": " + renderAslState(s);
   }
-  return "{ \"Comment\": \"" + escapeJson(doc.comment) + "\", \"StartAt\": \"" + escapeJson(doc.startAt) + "\", \"States\": { " + states + " } }";
+  return "{ \"Comment\": \"" + escapeJson(doc.comment) + "\", \"QueryLanguage\": \"" + escapeJson(doc.queryLanguage) + "\", \"StartAt\": \"" + escapeJson(doc.startAt) + "\", \"States\": { " + states + " } }";
 }
 
 /** Renders render asl state. */
 operation renderAslState(s) {
   var body = "{ \"Type\": \"" + aslTypeName(s) + "\"";
-  if (hasText(s.resource)) {
+  if (hasText(s.queryLanguage)) {
+    body = body + ", \"QueryLanguage\": \"" + escapeJson(s.queryLanguage) + "\"";
+  }
+  if (s.isKindOf(AWSPSMWORKFLOW!AslTaskState) and s.invokedResource.isDefined() and s.resource <> "arn:aws:states:::states:startExecution.sync") {
+    body = body + ", \"Resource\": \"${" + escapeJson(s.invokedResource.logicalId) + "Arn}\"";
+  }
+  else if (hasText(s.resource)) {
     body = body + ", \"Resource\": \"" + escapeJson(s.resource) + "\"";
   }
-  if (hasText(s.inputPath)) {
+  if (hasText(s.argumentsJson)) {
+    body = body + ", \"Arguments\": " + s.argumentsJson;
+  }
+  if (hasText(s.inputPath) and s.queryLanguage <> "JSONata") {
     body = body + ", \"InputPath\": \"" + escapeJson(s.inputPath) + "\"";
   }
-  if (hasText(s.outputPath)) {
+  if (hasText(s.outputPath) and s.queryLanguage <> "JSONata") {
     body = body + ", \"OutputPath\": \"" + escapeJson(s.outputPath) + "\"";
   }
+  if (hasText(s.resultPath) and s.queryLanguage <> "JSONata") {
+    body = body + ", \"ResultPath\": \"" + escapeJson(s.resultPath) + "\"";
+  }
   if (s.timeoutSeconds.isDefined() and s.timeoutSeconds > 0) {
-    body = body + ", \"TimeoutSeconds\": " + s.timeoutSeconds.asString();
+    if (s.isKindOf(AWSPSMWORKFLOW!AslWaitState)) {
+      body = body + ", \"Seconds\": " + s.timeoutSeconds.asString();
+    }
+    else {
+      body = body + ", \"TimeoutSeconds\": " + s.timeoutSeconds.asString();
+    }
+  }
+  else if (s.isKindOf(AWSPSMWORKFLOW!AslWaitState)) {
+    body = body + ", \"Seconds\": 0";
   }
   if (s.retry.notEmpty()) {
     body = body + ", \"Retry\": " + retryJson(s.retry);
@@ -557,6 +741,9 @@ operation renderAslState(s) {
   }
   if (s.choices.notEmpty()) {
     body = body + ", \"Choices\": " + choiceJson(s.choices);
+  }
+  if (s.isKindOf(AWSPSMWORKFLOW!AslChoiceState) and s.nextState.isDefined()) {
+    body = body + ", \"Default\": \"" + escapeJson(s.nextState.stateName) + "\"";
   }
   if (s.end) {
     body = body + ", \"End\": true";
@@ -643,6 +830,84 @@ operation stringArrayJson(items) {
     out = out + "\"" + escapeJson(item) + "\"";
   }
   return "[ " + out + " ]";
+}
+
+/** Converts the supported provider-independent boolean subset into a JSONata condition. */
+operation jsonataCondition(expression) {
+  if (not hasText(expression)) {
+    return "";
+  }
+  var text = expression.trim();
+  if (text.startsWith("{%")) {
+    return text;
+  }
+  if (not text.matches("^(\\$\\.)?[A-Za-z_][A-Za-z0-9_]*(\\s+(and|or)\\s+(\\$\\.)?[A-Za-z_][A-Za-z0-9_]*|\\s*(>=|<=|!=|==|=|>|<)\\s*(true|false|null|[0-9]+))+$")) {
+    return "";
+  }
+  // Source conditions are FEEL-like expressions. Prefix bare input fields while
+  // preserving boolean/null literals; unsupported prose remains a blocking review item.
+  var converted = text.replaceAll("\\$\\.", "VARKA_PATH_");
+  converted = converted.replaceAll("\\b(and|or|not)\\b", "VARKA_OPERATOR_$1");
+  converted = converted.replaceAll("\\b(true|false|null)\\b", "VARKA_LITERAL_$1");
+  converted = converted.replaceAll("\\b([A-Za-z_][A-Za-z0-9_]*)\\b", "VARKA_INPUT_$1");
+  converted = converted.replace("VARKA_INPUT_VARKA_OPERATOR_", "VARKA_OPERATOR_");
+  converted = converted.replace("VARKA_INPUT_VARKA_LITERAL_", "VARKA_LITERAL_");
+  converted = converted.replace("VARKA_OPERATOR_and", "and");
+  converted = converted.replace("VARKA_OPERATOR_or", "or");
+  converted = converted.replace("VARKA_OPERATOR_not", "not");
+  converted = converted.replace("VARKA_LITERAL_true", "true");
+  converted = converted.replace("VARKA_LITERAL_false", "false");
+  converted = converted.replace("VARKA_LITERAL_null", "null");
+  converted = converted.replace("VARKA_INPUT_VARKA_PATH_", "\\$states.input.");
+  converted = converted.replace("VARKA_INPUT_", "\\$states.input.");
+  converted = converted.replaceAll("==", "=");
+  return "{% " + converted + " %}";
+}
+
+/** Builds the JSONata predicate for an explicit evaluator outcome mapping. */
+operation jsonataDecisionOutcomeCondition(outcome) {
+  return "{% $states.input.decisionEvaluation.outcome = \"" + escapeJson(outcome) + "\" %}";
+}
+
+/** Converts supported ISO-8601 day/hour/minute durations to ASL seconds. */
+operation waitSeconds(value) {
+  if (not hasText(value)) {
+    return 0;
+  }
+  var text = value.trim().toUpperCase();
+  if (not (text.matches("^P[0-9]+D$") or text.matches("^PT[0-9]+[HMS]$"))) {
+    return 0;
+  }
+  var digits = "";
+  var collecting = false;
+  for (i in Sequence{1..text.length()}) {
+    var ch = text.substring(i - 1, i);
+    if ("0123456789".contains(ch)) {
+      digits = digits + ch;
+      collecting = true;
+    }
+    else if (collecting) {
+      break;
+    }
+  }
+  if (not hasText(digits)) {
+    return 0;
+  }
+  var amount = digits.asInteger();
+  if (text.contains("D")) return amount * 86400;
+  if (text.contains("H")) return amount * 3600;
+  if (text.contains("M")) return amount * 60;
+  return amount;
+}
+
+/** Returns whether a wait expression was parsed to an AWS-supported duration. */
+operation isSupportedWaitDuration(value, seconds) {
+  if (not hasText(value)) {
+    return false;
+  }
+  var text = value.trim().toUpperCase();
+  return (text.matches("^P[0-9]+D$") or text.matches("^PT[0-9]+[HMS]$")) and
+    seconds >= 0 and seconds <= 99999999;
 }
 
 /** Computes rotation days. */

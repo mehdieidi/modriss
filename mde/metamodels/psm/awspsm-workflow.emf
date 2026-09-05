@@ -34,6 +34,9 @@ class AslDocument extends kernel.StructuredDocument {
 
 abstract class AslState extends kernel.TraceableElement {
   attr String[1] stateName;
+  // Optional state-level override. The state-machine default remains JSONPath;
+  // JSONata states must not carry JSONPath-only path fields.
+  attr String queryLanguage;
   attr String resource;
   attr String nextStateName;
   attr Boolean end;

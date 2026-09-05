@@ -91,6 +91,38 @@ context AWSPSM!AslTaskState {
     check : self.resource.hasText() or self.invokedResource.isDefined()
     message : 'AslTaskState ' + self.stateName + ' has no resource or invokedResource. Fix: set the AWS service ARN/resource string or reference the invoked PSM resource.'
   }
+
+  /** Prevents the Lambda optimized integration from being emitted without a function target. */
+  constraint LambdaIntegrationHasFunctionTarget {
+    guard : self.resource = 'arn:aws:states:::lambda:invoke' or self.resource = 'arn:aws:states:::lambda:invoke.waitForTaskToken'
+    check : self.invokedResource.isDefined() or self.argumentsJson.hasText() or self.parametersJson.hasText()
+    message : 'ASL Lambda integration ' + self.stateName + ' has no function target. Fix: reference invokedResource or provide FunctionName in Arguments/Parameters.'
+  }
+
+  /** Prevents nested execution integration from omitting the target state machine ARN. */
+  constraint NestedExecutionHasStateMachineTarget {
+    guard : self.resource = 'arn:aws:states:::states:startExecution.sync'
+    check : self.invokedResource.isDefined() and self.argumentsJson.hasText()
+    message : 'ASL nested execution ' + self.stateName + ' has no target state machine arguments. Fix: reference the nested Step Functions resource and provide StateMachineArn in Arguments.'
+  }
+}
+
+/** Validates the query-language boundary used by generated ASL states. */
+context AWSPSM!AslState {
+  constraint JsonataStateDoesNotUseJsonPathFields {
+    guard : self.queryLanguage = 'JSONata'
+    check : not self.inputPath.hasText() and not self.outputPath.hasText() and
+      not self.resultPath.hasText() and not self.parametersJson.hasText()
+    message : 'JSONata ASL state ' + self.stateName + ' uses JSONPath-only fields. Fix: use Arguments/Output or change the state query language to JSONPath.'
+  }
+}
+
+/** Validates ASL wait timing. */
+context AWSPSM!AslWaitState {
+  constraint WaitStateHasTiming {
+    check : self.timeoutSeconds.isDefined() and self.timeoutSeconds >= 0
+    message : 'ASL wait state ' + self.stateName + ' has no timing value. Fix: provide a supported duration or model callback/event completion before deployment.'
+  }
 }
 
 /** Validates ASL Choice State elements. */

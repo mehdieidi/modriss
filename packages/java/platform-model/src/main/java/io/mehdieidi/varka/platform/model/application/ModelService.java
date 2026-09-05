@@ -804,6 +804,31 @@ public final class ModelService {
   }
 
   /**
+   * Validates generated XMI against the Ecore metamodel without executing EVL semantic rules.
+   *
+   * @param level model level
+   * @param xmiBytes generated XMI payload
+   * @return structural validation result
+   */
+  public ValidationResult validateStructural(ModelLevel level, byte[] xmiBytes) {
+    return validationService.validateStructuralGeneratedXmi(level, xmiBytes, null);
+  }
+
+  /**
+   * Validates generated XMI against Ecore while retaining its semantic JSON projection for
+   * diagnostics.
+   *
+   * @param level model level
+   * @param xmiBytes generated XMI payload
+   * @param modelJson matching semantic projection
+   * @return structural validation result
+   */
+  public ValidationResult validateStructural(
+      ModelLevel level, byte[] xmiBytes, JsonNode modelJson) {
+    return validationService.validateStructuralGeneratedXmi(level, xmiBytes, modelJson);
+  }
+
+  /**
    * Validates a stored model against the Ecore metamodel without executing EVL semantic
    * constraints.
    *

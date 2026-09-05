@@ -84,7 +84,9 @@ operation manualDecision(decisionId : String, question : String, severity, block
   cachedAwsReadinessDecisionIds.add(decisionBaseId);
   var d = new KERNEL!ManualDecision;
   d.id = uniqueId(decisionBaseId);
-  d.name = decisionId;
+  // Keep the rule id in the finding and decision id, but show reviewers the
+  // actionable question in the task title.
+  d.name = question;
   d.question = question;
   d.severity = severity;
   d.blocking = blocking;

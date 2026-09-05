@@ -121,6 +121,59 @@ final class CimToPimEtlRegressionTest {
   }
 
   /**
+   * Verifies that relationship cardinalities are preserved on both contract and storage
+   * projections.
+   *
+   * @throws Exception when fixture creation, ETL execution, or model loading fails
+   */
+  @Test
+  void preservesRelationshipTargetMultiplicityAcrossPimProjections() throws Exception {
+    Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
+    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
+    Path cimModel = tempDir.resolve("relationship-cardinality-cim.xmi");
+    Path pimModel = tempDir.resolve("relationship-cardinality-pim.xmi");
+
+    createCoverageCimModel(cimMetamodel, cimModel);
+    executeOrFail(CimToPimDefaults.request(REPOSITORY_ROOT, cimModel, pimModel, true, true));
+
+    EObject root = loadModel(pimMetamodel, pimModel).getContents().get(0);
+    EObject traceModel = reference(root, "traceModel");
+    assertRelationshipProjection(traceModel, "rel_product_inventory", false, true, "ARRAY");
+    assertRelationshipProjection(traceModel, "rel_product_inventory_required", true, true, "ARRAY");
+    assertRelationshipProjection(traceModel, "rel_product_inventory_single", true, false, "OBJECT");
+  }
+
+  /**
+   * Asserts requiredness and cardinality for the contract and storage projections of a relation.
+   */
+  private void assertRelationshipProjection(
+      EObject traceModel,
+      String sourceElementId,
+      boolean required,
+      boolean array,
+      String fieldType) {
+    EObject contractField =
+        values(traceModel, "links").stream()
+            .filter(link -> sourceElementId.equals(get(link, "sourceElementId")))
+            .filter(link -> "TR-040".equals(get(link, "transformationRule")))
+            .map(link -> reference(link, "target"))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Missing contract field for " + sourceElementId));
+    assertEquals(required, get(contractField, "required"));
+    assertEquals(array, get(contractField, "array"));
+
+    EObject storageField =
+        values(traceModel, "links").stream()
+            .filter(link -> sourceElementId.equals(get(link, "sourceElementId")))
+            .filter(link -> "TR-050".equals(get(link, "transformationRule")))
+            .map(link -> reference(link, "target"))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Missing storage field for " + sourceElementId));
+    assertEquals(fieldType, enumLabel(get(storageField, "fieldType")));
+    assertEquals(required, get(storageField, "required"));
+  }
+
+  /**
    * Runs the default profile against the canonical climate-relief sample and verifies spec-complete
    * PIM shape plus EVL semantic validity.
    *
@@ -141,6 +194,29 @@ final class CimToPimEtlRegressionTest {
 
     EObject root = loadModel(pimMetamodel, pimModel).getContents().get(0);
     assertEquals("PIMModel", root.eClass().getName());
+    EObject lifecycleWorkflow =
+        allObjects(root).stream()
+            .filter(object -> "Workflow".equals(object.eClass().getName()))
+            .filter(object -> "Emergency Grant Case Lifecycle Workflow".equals(get(object, "name")))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Missing generated case lifecycle workflow."));
+    EObject conditionalHumanTransition =
+        first(
+            values(lifecycleWorkflow, "transitions"),
+            "WorkflowTransition",
+            "Decision to Human Review");
+    EObject conditionalWaitTransition =
+        first(values(lifecycleWorkflow, "transitions"), "WorkflowTransition", "Decision to Wait");
+    assertFalse(
+        Boolean.TRUE.equals(get(conditionalHumanTransition, "defaultTransition")),
+        "A transition with a CIM conditionRef must not become the PIM default branch.");
+    assertFalse(
+        Boolean.TRUE.equals(get(conditionalWaitTransition, "defaultTransition")),
+        "A transition with a CIM conditionRef must not become the PIM default branch.");
+    assertEquals(
+        "incomeBandEligible and locationEligible and completenessSatisfied",
+        get(conditionalHumanTransition, "conditionExpression"));
+    assertEquals("missingEvidenceCount > 0", get(conditionalWaitTransition, "conditionExpression"));
     assertEquals(
         2,
         values(root, "services").size(),
@@ -989,6 +1065,29 @@ final class CimToPimEtlRegressionTest {
     set(relationship, "source", product);
     set(relationship, "target", inventory);
 
+    EObject requiredManyRelationship =
+        domainRelationship(
+            metamodelResource,
+            "rel_product_inventory_required",
+            "Required Product Inventory",
+            "requiredInventories",
+            product,
+            inventory,
+            1,
+            null,
+            true);
+    EObject singleRelationship =
+        domainRelationship(
+            metamodelResource,
+            "rel_product_inventory_single",
+            "Primary Product Inventory",
+            "primaryInventory",
+            product,
+            inventory,
+            1,
+            1,
+            false);
+
     EObject productAggregate = create(metamodelResource, "AggregateCandidate");
     set(productAggregate, "id", "aggregate_product");
     set(productAggregate, "name", "Product Aggregate");
@@ -1166,6 +1265,8 @@ final class CimToPimEtlRegressionTest {
     add(model, "entities", product);
     add(model, "entities", inventory);
     add(model, "relationships", relationship);
+    add(model, "relationships", requiredManyRelationship);
+    add(model, "relationships", singleRelationship);
     add(model, "aggregates", productAggregate);
     add(model, "aggregates", inventoryAggregate);
     add(model, "queries", query);
@@ -1260,6 +1361,47 @@ final class CimToPimEtlRegressionTest {
     set(multiplicity, "ordered", false);
     set(multiplicity, "unique", true);
     return multiplicity;
+  }
+
+  /** Creates a source-navigable association with a fixed 1..1 source end. */
+  private EObject domainRelationship(
+      Resource metamodelResource,
+      String id,
+      String name,
+      String targetRole,
+      EObject source,
+      EObject target,
+      int targetLowerBound,
+      Integer targetUpperBound,
+      boolean targetUnbounded) {
+    EObject relationship = create(metamodelResource, "DomainRelationship");
+    set(relationship, "id", id);
+    set(relationship, "name", name);
+    set(
+        relationship,
+        "relationshipType",
+        enumValue(metamodelResource, "DomainRelationshipType", "ASSOCIATION"));
+    set(relationship, "sourceRole", "product");
+    set(relationship, "targetRole", targetRole);
+    set(
+        relationship,
+        "sourceMultiplicity",
+        multiplicity(metamodelResource, id + "_source", 1, 1, false));
+    set(
+        relationship,
+        "targetMultiplicity",
+        multiplicity(
+            metamodelResource,
+            id + "_target",
+            targetLowerBound,
+            targetUpperBound,
+            targetUnbounded));
+    set(relationship, "ownership", false);
+    set(relationship, "navigableFromSource", true);
+    set(relationship, "navigableFromTarget", false);
+    set(relationship, "source", source);
+    set(relationship, "target", target);
+    return relationship;
   }
 
   /**

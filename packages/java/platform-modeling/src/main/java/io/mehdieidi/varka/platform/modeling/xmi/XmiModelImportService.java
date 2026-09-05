@@ -193,7 +193,7 @@ public final class XmiModelImportService {
               URI.createURI(
                   "memory:/" + sanitizePurpose(purpose) + "-" + level.apiName() + ".xmi"));
       try (ByteArrayInputStream input = new ByteArrayInputStream(bytes)) {
-        resource.load(input, Map.of(XMLResource.OPTION_DEFER_IDREF_RESOLUTION, Boolean.FALSE));
+        resource.load(input, Map.of(XMLResource.OPTION_DEFER_IDREF_RESOLUTION, Boolean.TRUE));
       }
       assertNoLoadErrors(resource);
       if (resolveAllReferences) {

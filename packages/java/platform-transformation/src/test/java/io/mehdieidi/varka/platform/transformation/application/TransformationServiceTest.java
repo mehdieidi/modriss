@@ -372,6 +372,22 @@ class TransformationServiceTest {
         40,
         generatedManualTasks,
         "Climate sample should expose the generated manual backlog once.");
+    for (int index = 0; index < generatedManualTasks; index++) {
+      String title = pim.modelJson().path("manualBacklog").path(index).path("title").asText();
+      String question =
+          pim.modelJson()
+              .path("readiness")
+              .path("manualDecisions")
+              .path(index)
+              .path("question")
+              .asText();
+      assertFalse(title.endsWith(" "), "Manual task titles must not end with a dangling space.");
+      if (title.startsWith("Manual decision -") && question.length() > 80) {
+        assertTrue(
+            title.endsWith("..."),
+            "Long manual decision titles must be visibly truncated: " + title);
+      }
+    }
     assertEquals(
         generatedManualTasks,
         manualDecisionIds.size(),
@@ -457,6 +473,20 @@ class TransformationServiceTest {
     assertFalse(
         psm.modelJson().path("manualBacklog").isEmpty(),
         "Generated PSM manual decisions must be visible to the frontend issue board.");
+    for (int index = 0; index < psm.modelJson().path("manualBacklog").size(); index++) {
+      String title = psm.modelJson().path("manualBacklog").path(index).path("title").asText();
+      String question =
+          psm.modelJson()
+              .path("readiness")
+              .path("manualDecisions")
+              .path(index)
+              .path("question")
+              .asText();
+      assertEquals(
+          question,
+          title,
+          "AWS manual task titles should present the reviewer question, not an internal rule id.");
+    }
     assertTrue(
         psm.modelJson()
             .path("graph")
@@ -769,6 +799,14 @@ class TransformationServiceTest {
     ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
     Set<String> psmTaskIds = taskIds(psm.modelJson());
     assertFalse(psmTaskIds.isEmpty());
+    ObjectNode reviewedPsm = (ObjectNode) psm.modelJson().deepCopy();
+    ((ObjectNode) reviewedPsm.path("manualBacklog").path(0)).put("id", "legacy-title-derived-id");
+    ((ObjectNode) reviewedPsm.path("manualBacklog").path(0)).put("status", "DONE");
+    ((ObjectNode) reviewedPsm.path("readiness").path("manualDecisions").path(0))
+        .put("blocking", false);
+    services
+        .models()
+        .update(context.user(), ModelLevel.PSM, psm.id(), psm.name(), reviewedPsm, psm.revision());
 
     ModelRecord regeneratedPim = services.transformations().cimToPim(context.user(), cim.id());
     ModelRecord regeneratedPsm = services.transformations().pimToPsm(context.user(), pim.id());
@@ -781,6 +819,8 @@ class TransformationServiceTest {
     assertEquals(
         regeneratedPsm.modelJson().path("manualBacklog").size(),
         regeneratedPsm.modelJson().path("graph").path("manualBacklog").size());
+    assertEquals(
+        "DONE", regeneratedPsm.modelJson().path("manualBacklog").path(0).path("status").asText());
 
     services.models().validate(context.user(), ModelLevel.PIM, regeneratedPim.id());
     services.models().validate(context.user(), ModelLevel.PSM, regeneratedPsm.id());

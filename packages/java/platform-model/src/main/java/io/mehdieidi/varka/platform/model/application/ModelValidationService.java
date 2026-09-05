@@ -193,6 +193,50 @@ final class ModelValidationService {
     return new ModelService.ValidationResult(valid, issues);
   }
 
+  /**
+   * Validates generated XMI against Ecore structural conformance without executing EVL.
+   *
+   * @param level model level
+   * @param xmiBytes XMI payload
+   * @param modelJson matching semantic projection, when available
+   * @return structural validation result
+   */
+  ModelService.ValidationResult validateStructuralGeneratedXmi(
+      ModelLevel level, byte[] xmiBytes, JsonNode modelJson) {
+    List<ModelService.ValidationIssue> issues;
+    try {
+      long phaseStarted = System.nanoTime();
+      metamodelResolver.resolve(level);
+      addValidationTiming("validation.metamodelResolveMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      Resource resource = xmiImportService.loadResource(level, xmiBytes, "structural-validation");
+      addValidationTiming("validation.xmiLoadResourceMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      issues =
+          EvlModelResourceDiagnostics.validate(resource, null).stream()
+              .map(diagnostic -> structuralValidationIssue(diagnostic, modelJson))
+              .toList();
+      addValidationTiming("validation.structuralValidationMs", System.nanoTime() - phaseStarted);
+    } catch (PlatformException ex) {
+      issues =
+          List.of(
+              issue(
+                  "ERROR",
+                  "XmiLoad",
+                  "The generated model could not be read for structural validation.",
+                  structuralExportGuidance(ex)));
+    } catch (Exception ex) {
+      issues =
+          List.of(
+              issue(
+                  "ERROR",
+                  "StructuralValidationExecution",
+                  "Structural validation could not be completed for the generated model."));
+    }
+    boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
+    return new ModelService.ValidationResult(valid, issues);
+  }
+
   /** Resets per-thread validation timing capture for a stored validation call. */
   void resetValidationTimings() {
     LAST_VALIDATION_TIMINGS.set(new LinkedHashMap<>());

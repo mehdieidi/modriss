@@ -90,6 +90,9 @@ class PassStep extends WorkflowStep {
 
 class WorkflowTransition extends kernel.TraceableElement {
   attr String conditionExpression;
+  // Literal outcome returned by a function-backed ChoiceStep evaluator.
+  // Missing values keep the branch explicitly incomplete for review.
+  attr String decisionOutcome;
   attr Boolean defaultTransition;
 
   val kernel.Expression[?] condition;

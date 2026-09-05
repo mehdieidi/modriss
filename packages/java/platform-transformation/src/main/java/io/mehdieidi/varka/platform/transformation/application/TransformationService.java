@@ -1208,7 +1208,11 @@ public final class TransformationService {
       String status,
       JsonNode affectedElements) {
     ObjectNode task = store.objectMapper().createObjectNode();
-    task.put("id", stablePlatformId(category + "::" + title + "::" + rationale));
+    String affectedKey =
+        affectedElements == null || affectedElements.isMissingNode() || affectedElements.isNull()
+            ? ""
+            : affectedElements.toString();
+    task.put("id", stablePlatformId(category + "::" + rationale + "::" + affectedKey));
     task.put("name", title);
     task.put("title", title);
     task.put("status", status);

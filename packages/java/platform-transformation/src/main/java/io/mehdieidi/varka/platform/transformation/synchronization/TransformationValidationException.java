@@ -27,7 +27,9 @@ public final class TransformationValidationException extends PlatformException {
             .limit(5)
             .map(
                 issue ->
-                    issue.constraint()
+                    issue.severity()
+                        + " "
+                        + issue.constraint()
                         + (issue.elementId() == null ? "" : " [" + issue.elementId() + "]")
                         + ": "
                         + issue.message())
