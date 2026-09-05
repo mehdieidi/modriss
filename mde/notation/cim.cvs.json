@@ -12,7 +12,94 @@
       "light": "#475569",
       "dark": "#94a3b8"
     },
-    "category": "CIM"
+    "category": "CIM",
+    "notation": {
+      "tag": "concept-card",
+      "lineFields": ["name"],
+      "detailFields": ["name"]
+    }
+  },
+  "notationPrimitives": {
+    "concept-card": {
+      "shape": "rounded-rectangle",
+      "purpose": "A named semantic concept with a compact summary."
+    },
+    "workspace-container": {
+      "shape": "large-rounded-rectangle",
+      "purpose": "A model or bounded scope that owns other semantic content."
+    },
+    "participant-card": {
+      "shape": "actor-card",
+      "purpose": "A human, organization, system, or stakeholder participating in the domain."
+    },
+    "capability-container": {
+      "shape": "container-card",
+      "purpose": "A business responsibility boundary; related concepts remain linked, not nested."
+    },
+    "class-card": {
+      "shape": "class-card",
+      "purpose": "A domain concept whose identity, lifecycle, and attributes matter."
+    },
+    "value-object-card": {
+      "shape": "value-object-card",
+      "purpose": "An immutable descriptive value without independent identity."
+    },
+    "command-lozenge": {
+      "shape": "hexagon",
+      "purpose": "An intent that changes business state."
+    },
+    "query-trapezoid": {
+      "shape": "trapezoid",
+      "purpose": "An information request that does not change business state."
+    },
+    "event-hexagon": {
+      "shape": "hexagon",
+      "purpose": "A business fact that has already occurred."
+    },
+    "error-octagon": {
+      "shape": "octagon",
+      "purpose": "A business-visible failure or rejection."
+    },
+    "condition-diamond": {
+      "shape": "diamond",
+      "purpose": "A predicate used to guard, branch, or validate behavior."
+    },
+    "decision-diamond": {
+      "shape": "diamond",
+      "purpose": "A process decision point."
+    },
+    "process-step": {
+      "shape": "process-step",
+      "purpose": "An executable or human step inside a business process."
+    },
+    "start-circle": {
+      "shape": "ellipse",
+      "purpose": "The start of a process."
+    },
+    "end-double-circle": {
+      "shape": "double-ellipse",
+      "purpose": "The end of a process."
+    },
+    "relationship-edge": {
+      "shape": "edge",
+      "purpose": "A semantic relationship represented by a connector rather than a node."
+    },
+    "badge": {
+      "shape": "badge",
+      "purpose": "A compact nested detail or classification."
+    }
+  },
+  "universalSyntax": {
+    "nodeRule": "Every visible canvas element has one semantic type, a stable label, a type token, and a small set of high-signal line fields.",
+    "edgeRule": "Use connectors for intentional cross-object semantics; edit attributes and high-cardinality details in the inspector.",
+    "containerRule": "Open only Ecore containment boundaries. Cross-boundary membership and references remain links or inspector values.",
+    "zoomRule": "At low zoom show type, name, status, and counts; reveal fields and edge labels progressively as the user zooms in.",
+    "complexityRule": "A view is a question-specific working surface, not a projection of every EClass in the metamodel."
+  },
+  "kernelSyntax": {
+    "traceRule": "TraceModel and TraceLink are an optional purple overlay; trace links are never confused with domain relationships.",
+    "readinessRule": "Production-readiness findings and checks are inspector/dashboard details, not ordinary domain nodes.",
+    "metadataRule": "Expressions, multiplicities, annotations, and other kernel support objects are edited through their owning element and are not palette concepts."
   },
   "badgeRules": [
     {
@@ -90,13 +177,7 @@
       "targetType": "*"
     }
   ],
-  "relationshipRules": [
-    {
-      "sourceType": "*",
-      "targetType": "*",
-      "allowedKinds": ["CONTAINS", "DEPENDS_ON", "SUPPORTS", "CONSTRAINS", "TRACE"]
-    }
-  ],
+  "relationshipRules": [],
   "relationshipKinds": [
     "CONTAINS",
     "CONTAINS_COMMAND",
@@ -158,6 +239,25 @@
     "DATA_ITEMS",
     "SCOPED_ELEMENTS",
     "AFFECTED_ELEMENTS",
+    "MEASURED_BY",
+    "REFINED_BY",
+    "OWNER",
+    "REALIZES_REQUIREMENTS",
+    "OWNS_PROCESSES",
+    "CONSTRAINED_BY",
+    "CLASSIFIED_AS",
+    "CONTEXT",
+    "USES_COMMAND",
+    "USES_QUERY",
+    "USES_EVENT",
+    "USES_POLICY",
+    "INTERACTS_WITH",
+    "RESPONSIBLE_ROLES",
+    "GUARDED_BY",
+    "RESULTING_COMMANDS",
+    "RESULTING_EVENTS",
+    "ERRORS",
+    "DATA_SUBJECTS",
     "TRACE"
   ],
   "relationshipSemantics": {
@@ -170,7 +270,8 @@
     "sourceRole",
     "targetRole",
     "relationshipType",
-    "dependencyType"
+    "dependencyReason",
+    "label"
   ],
   "relationshipKindLabels": {
     "CONTAINS": "contains",
@@ -233,9 +334,38 @@
     "DATA_ITEMS": "governs data items",
     "SCOPED_ELEMENTS": "scopes elements",
     "AFFECTED_ELEMENTS": "affects elements",
+    "MEASURED_BY": "measured by",
+    "REFINED_BY": "refined by",
+    "OWNER": "has owner",
+    "REALIZES_REQUIREMENTS": "realizes requirements",
+    "OWNS_PROCESSES": "owns processes",
+    "CONSTRAINED_BY": "constrained by",
+    "CLASSIFIED_AS": "classified as",
+    "CONTEXT": "belongs to context",
+    "USES_COMMAND": "uses command",
+    "USES_QUERY": "uses query",
+    "USES_EVENT": "uses event",
+    "USES_POLICY": "uses policy",
+    "INTERACTS_WITH": "interacts with",
+    "RESPONSIBLE_ROLES": "has responsible role",
+    "GUARDED_BY": "guarded by",
+    "RESULTING_COMMANDS": "results in commands",
+    "RESULTING_EVENTS": "results in events",
+    "ERRORS": "handles errors",
+    "DATA_SUBJECTS": "applies to data subjects",
     "TRACE": "trace"
   },
   "relationshipVisualRules": [
+    {
+      "matchKinds": ["CONFLICTS_WITH"],
+      "className": "edge-conflict",
+      "markerEnd": "conflict-cross",
+      "stroke": {
+        "light": "#dc2626",
+        "dark": "#f87171"
+      },
+      "lineDash": [8, 3, 2, 3]
+    },
     {
       "matchKinds": [
         "CONTAINS",
@@ -243,7 +373,12 @@
         "CONTAINS_QUERY",
         "CONTAINS_EVENT",
         "ROOT",
-        "MEMBER"
+        "MEMBER",
+        "OWNER",
+        "OWNS_PROCESSES",
+        "MANAGES",
+        "CLASSIFIED_AS",
+        "CONTEXT"
       ],
       "className": "edge-domain-ownership",
       "stroke": {
@@ -252,6 +387,27 @@
       },
       "lineDash": [4, 3],
       "lineWidth": 2.2
+    },
+    {
+      "matchKinds": [
+        "SUPPORTS",
+        "MEASURED_BY",
+        "REFINED_BY",
+        "REALIZES_REQUIREMENTS",
+        "PROVIDES_REQUIREMENTS",
+        "OWNS_GOALS",
+        "DEPENDS_ON",
+        "REFINES",
+        "DUPLICATES",
+        "DERIVES_FROM"
+      ],
+      "className": "edge-strategy",
+      "markerEnd": "arrow",
+      "stroke": {
+        "light": "#2563eb",
+        "dark": "#60a5fa"
+      },
+      "lineDash": [7, 4]
     },
     {
       "matchKinds": ["DOMAIN_RELATIONSHIP"],
@@ -290,22 +446,72 @@
       ]
     },
     {
-      "matchKinds": ["DEPENDS_ON", "USES", "SUPPORTS", "REFINES", "MANAGES"],
-      "matchEClasses": ["CapabilityDependency"],
-      "className": "edge-domain-dependency",
+      "matchKinds": [
+        "ISSUED_BY",
+        "TARGET_CAPABILITY",
+        "TARGET_AGGREGATE",
+        "HANDLED_COMMANDS",
+        "EMITTED_EVENTS",
+        "READS",
+        "PAYLOAD",
+        "AFFECTS",
+        "RESPONSIBLE_ROLES",
+        "EXCHANGED_INFORMATION",
+        "INTERACTS_WITH",
+        "USES",
+        "USES_COMMAND",
+        "USES_QUERY",
+        "USES_EVENT",
+        "USES_POLICY"
+      ],
+      "className": "edge-behavior",
       "stroke": {
         "light": "#0f766e",
         "dark": "#2dd4bf"
       },
-      "lineDash": [7, 4]
+      "markerEnd": "arrow"
     },
     {
-      "matchKinds": ["TRANSITION", "TRIGGERS", "RESULTS_IN"],
+      "matchKinds": [
+        "TRANSITION",
+        "TRIGGERS",
+        "TRIGGERED_BY",
+        "RESULTS_IN",
+        "RESULTING_COMMANDS",
+        "RESULTING_EVENTS",
+        "ERRORS",
+        "GUARDED_BY",
+        "DECISION_TABLE"
+      ],
       "className": "edge-process-transition",
       "stroke": {
         "light": "#0f766e",
         "dark": "#2dd4bf"
-      }
+      },
+      "markerEnd": "arrow"
+    },
+    {
+      "matchKinds": [
+        "CONSTRAINS",
+        "CONSTRAINED_BY",
+        "CONSTRAINED_ELEMENTS",
+        "CONSTRAINED_ACTORS",
+        "CONSTRAINED_COMMANDS",
+        "CONSTRAINED_QUERIES",
+        "CONSTRAINED_INFORMATION",
+        "CONSTRAINED_CONCEPTS",
+        "DATA_ITEMS",
+        "DATA_SUBJECTS",
+        "SCOPED_ELEMENTS",
+        "ATTACHED_TO"
+      ],
+      "className": "edge-governance",
+      "markerEnd": "arrow",
+      "stroke": {
+        "light": "#b45309",
+        "dark": "#fbbf24"
+      },
+      "lineDash": [8, 4]
     },
     {
       "matchKinds": ["TRACE"],
@@ -316,19 +522,16 @@
         "dark": "#a78bfa"
       },
       "lineDash": [2, 5]
-    },
-    {
-      "matchKinds": ["CONFLICTS_WITH", "CONSTRAINS", "ATTACHED_TO"],
-      "className": "edge-conflict",
-      "markerEnd": "conflict-cross",
-      "stroke": {
-        "light": "#dc2626",
-        "dark": "#f87171"
-      },
-      "lineDash": [8, 3, 2, 3]
     }
   ],
-  "semanticReferenceRules": [],
+  "semanticReferenceRules": [
+    {
+      "sourceType": "AggregateCandidate",
+      "targetType": "BoundedContextCandidate",
+      "feature": "context",
+      "kind": "CONTEXT"
+    }
+  ],
   "semanticEdgeObjectRules": [
     {
       "eClass": "RequirementRelationship",
@@ -399,29 +602,120 @@
     }
   ],
   "semanticReferenceKindMappings": {
-    "functionIntegration": "ROUTES_TO",
+    "supportsGoals": "SUPPORTS",
+    "constrains": "CONSTRAINS",
+    "measuredBy": "MEASURED_BY",
+    "refinedBy": "REFINED_BY",
+    "ownsGoals": "OWNS_GOALS",
+    "providesRequirements": "PROVIDES_REQUIREMENTS",
+    "playsRoles": "PLAYS_ROLES",
+    "issuesCommands": "ISSUES_COMMANDS",
+    "issuesQueries": "ISSUES_QUERIES",
+    "observesEvents": "OBSERVES_EVENTS",
+    "exchangedInformation": "EXCHANGED_INFORMATION",
+    "producedEvents": "PRODUCED_EVENTS",
+    "consumedEvents": "CONSUMED_EVENTS",
+    "owner": "OWNER",
+    "supports": "SUPPORTS",
+    "realizesRequirements": "REALIZES_REQUIREMENTS",
+    "containsCommands": "CONTAINS_COMMAND",
+    "containsQueries": "CONTAINS_QUERY",
+    "containsEvents": "CONTAINS_EVENT",
+    "managesEntities": "MANAGES",
+    "ownsProcesses": "OWNS_PROCESSES",
+    "constrainedBy": "CONSTRAINED_BY",
+    "capabilities": "MEMBER",
+    "entities": "MEMBER",
+    "commands": "MEMBER",
+    "queries": "MEMBER",
+    "events": "MEMBER",
+    "policies": "MEMBER",
+    "root": "ROOT",
+    "members": "MEMBER",
+    "handledCommands": "HANDLED_COMMANDS",
+    "emittedEvents": "EMITTED_EVENTS",
+    "classification": "CLASSIFIED_AS",
+    "issuedBy": "ISSUED_BY",
+    "targetCapability": "TARGET_CAPABILITY",
+    "targetAggregate": "TARGET_AGGREGATE",
+    "preconditions": "PRECONDITIONS",
+    "expectedEvents": "EXPECTED_EVENTS",
+    "rejectionEvents": "REJECTION_EVENTS",
+    "possibleErrors": "POSSIBLE_ERRORS",
     "reads": "READS",
-    "writes": "WRITES",
-    "publishes": "PUBLISHES",
-    "subscribesTo": "SUBSCRIBES_TO",
-    "invokesFunction": "INVOKES",
-    "invokedResource": "INVOKES",
-    "function": "INVOKES",
-    "startState": "STARTS_AT",
-    "nextState": "TRANSITION",
-    "endStates": "ENDS_AT",
-    "targetResource": "PERMISSION_TARGET",
-    "permissions": "PERMISSION",
-    "deploysStacks": "DEPLOYS",
-    "route": "USES_ROUTE",
-    "role": "USES_ROLE",
-    "logGroup": "WRITES_LOGS_TO"
+    "payload": "PAYLOAD",
+    "affects": "AFFECTS",
+    "triggeringActor": "TRIGGERED_BY",
+    "triggeringEvent": "TRIGGERED_BY",
+    "triggeringCommand": "TRIGGERED_BY",
+    "triggeredBy": "TRIGGERED_BY",
+    "guards": "GUARDS",
+    "constrainsQueries": "CONSTRAINS_QUERIES",
+    "emitsCommands": "EMITS_COMMANDS",
+    "emitsEvents": "EMITS_EVENTS",
+    "decisionTable": "DECISION_TABLE",
+    "referencedInformation": "REFERENCED_INFORMATION",
+    "referencedConcepts": "REFERENCED_CONCEPTS",
+    "constrainedConcepts": "CONSTRAINED_CONCEPTS",
+    "constrainedElements": "CONSTRAINED_ELEMENTS",
+    "constrainedActors": "CONSTRAINED_ACTORS",
+    "constrainedCommands": "CONSTRAINED_COMMANDS",
+    "constrainedQueries": "CONSTRAINED_QUERIES",
+    "constrainedInformation": "CONSTRAINED_INFORMATION",
+    "dataItems": "DATA_ITEMS",
+    "dataSubjects": "DATA_SUBJECTS",
+    "scopedElements": "SCOPED_ELEMENTS",
+    "attachedTo": "ATTACHED_TO",
+    "command": "USES_COMMAND",
+    "query": "USES_QUERY",
+    "event": "USES_EVENT",
+    "policy": "USES_POLICY",
+    "responsibleRoles": "RESPONSIBLE_ROLES",
+    "externalSystem": "INTERACTS_WITH",
+    "condition": "GUARDED_BY",
+    "resultingCommands": "RESULTING_COMMANDS",
+    "resultingEvents": "RESULTING_EVENTS",
+    "errors": "ERRORS"
   },
   "semanticReferenceExclusions": [
     "dependsOn",
     "conflictsWith",
     "outgoingRelationships",
-    "incomingRelationships"
+    "incomingRelationships",
+    "measures",
+    "owners",
+    "assignedTo",
+    "issuedBy",
+    "expectedByCommands",
+    "rejectedByCommands",
+    "causedByExternalSystems",
+    "consumedByExternalSystems",
+    "causedByPolicies",
+    "consumedByPolicies",
+    "consumedByProcesses",
+    "owningCapability",
+    "context",
+    "identityAttributes",
+    "primaryIdentityAttribute",
+    "attributes",
+    "equalityAttributes",
+    "input",
+    "output",
+    "privacyConstraints",
+    "complianceConstraints",
+    "postconditions",
+    "trigger",
+    "conditionRef",
+    "requiredDecisions",
+    "referencedElements",
+    "traceModel",
+    "incomingTraces",
+    "outgoingTraces",
+    "source",
+    "target",
+    "assessment",
+    "affectedElements",
+    "parent"
   ],
   "shortcutConnectorRules": [],
   "canvasPolicy": {
@@ -489,7 +783,24 @@
       "behavior": "Views persist filters, layout, camera positions, and edge-layer choices."
     }
   ],
-  "workbench": {},
+  "workbench": {
+    "defaultViewDefinitionId": "dashboard",
+    "viewOrder": [
+      "dashboard",
+      "strategy-goals",
+      "capability-map",
+      "domain-model",
+      "business-process",
+      "stakeholder-actor-map",
+      "aggregate-lifecycle",
+      "behavior-event-storming",
+      "policy-decision",
+      "governance-risk",
+      "traceability-readiness"
+    ],
+    "showRootAttributesAction": true,
+    "showRelationshipExplorerAction": true
+  },
   "scaffoldRecipes": [],
   "constraints": [],
   "strictnessModes": ["exploration", "methodology", "production"],
@@ -585,18 +896,6 @@
       "visibleFields": ["priority", "successCriterion", "businessValue"]
     },
     {
-      "type": "Objective",
-      "label": "Objective",
-      "icon": "track_changes",
-      "color": {
-        "light": "#2563eb",
-        "dark": "#60a5fa"
-      },
-      "category": "Intent",
-      "creatable": false,
-      "supportOnly": true
-    },
-    {
       "type": "KPI",
       "label": "KPI",
       "displayName": "KPI",
@@ -607,18 +906,6 @@
       },
       "category": "Goals and Requirements",
       "visibleFields": ["metricName", "operator", "targetValue", "unit"]
-    },
-    {
-      "type": "StakeholderConcern",
-      "label": "Stakeholder Concern",
-      "icon": "report",
-      "color": {
-        "light": "#2563eb",
-        "dark": "#60a5fa"
-      },
-      "category": "Intent",
-      "creatable": false,
-      "supportOnly": true
     },
     {
       "type": "Actor",
@@ -642,19 +929,7 @@
         "dark": "#a78bfa"
       },
       "category": "Stakeholder and Actor",
-      "visibleFields": ["roleType", "authorizationScope"]
-    },
-    {
-      "type": "Persona",
-      "label": "Persona",
-      "icon": "face",
-      "color": {
-        "light": "#7c3aed",
-        "dark": "#a78bfa"
-      },
-      "category": "People",
-      "creatable": false,
-      "supportOnly": true
+      "visibleFields": ["responsibility", "businessPermissionSummary", "privileged"]
     },
     {
       "type": "ExternalSystem",
@@ -666,7 +941,7 @@
         "dark": "#73c1ba"
       },
       "category": "Stakeholder and Actor",
-      "visibleFields": ["systemType", "trustLevel", "integrationExpectation"]
+      "visibleFields": ["actorType", "trustLevel", "interactionExpectation", "businessPurpose"]
     },
     {
       "type": "BusinessCapability",
@@ -678,7 +953,7 @@
         "dark": "#2dd4bf"
       },
       "category": "Capability",
-      "visibleFields": ["criticality", "maturity", "businessValue"]
+      "visibleFields": ["criticality", "maturity", "responsibility", "ownerName"]
     },
     {
       "type": "CapabilityDependency",
@@ -692,7 +967,7 @@
       "category": "Capability",
       "creatable": false,
       "relationshipElement": true,
-      "visibleFields": ["dependencyType", "criticalPath", "rationale"]
+      "visibleFields": ["dependencyReason", "criticalPath"]
     },
     {
       "type": "BoundedContextCandidate",
@@ -706,7 +981,7 @@
       "category": "Capability",
       "creatable": true,
       "visualRole": "container",
-      "visibleFields": ["boundaryRationale", "ownershipBoundary", "languageBoundary"]
+      "visibleFields": ["languageBoundary", "ownershipBoundary", "externalIntegrationBoundary"]
     },
     {
       "type": "AggregateCandidate",
@@ -718,7 +993,7 @@
         "dark": "#2dd4bf"
       },
       "category": "Aggregate",
-      "visibleFields": ["consistencyBoundaryRationale", "transactionBoundary", "root"]
+      "visibleFields": ["consistencyBoundaryRationale", "conflictResolutionPolicy", "root"]
     },
     {
       "type": "Command",
@@ -783,42 +1058,6 @@
       "visibleFields": ["stepKind", "responsibility", "orderIndex"]
     },
     {
-      "type": "Decision",
-      "label": "Decision",
-      "icon": "alt_route",
-      "color": {
-        "light": "#dc2626",
-        "dark": "#f87171"
-      },
-      "category": "Behavior",
-      "creatable": false,
-      "supportOnly": true
-    },
-    {
-      "type": "Precondition",
-      "label": "Precondition",
-      "icon": "rule",
-      "color": {
-        "light": "#dc2626",
-        "dark": "#f87171"
-      },
-      "category": "Behavior",
-      "creatable": false,
-      "supportOnly": true
-    },
-    {
-      "type": "Postcondition",
-      "label": "Postcondition",
-      "icon": "check_circle",
-      "color": {
-        "light": "#dc2626",
-        "dark": "#f87171"
-      },
-      "category": "Behavior",
-      "creatable": false,
-      "supportOnly": true
-    },
-    {
       "type": "ExceptionScenario",
       "label": "Exception Scenario",
       "displayName": "Exception Scenario",
@@ -876,7 +1115,7 @@
         "dark": "#22d3ee"
       },
       "category": "Domain Model",
-      "visibleFields": ["businessName", "valueType", "validationRule"]
+      "visibleFields": ["valueType", "immutable"]
     },
     {
       "type": "DomainRelationship",
@@ -901,7 +1140,7 @@
         "dark": "#22d3ee"
       },
       "category": "Domain Model",
-      "visibleFields": ["businessName", "dataType", "required", "personalData"]
+      "visibleFields": ["businessName", "type", "required", "collection"]
     },
     {
       "type": "DataClassification",
@@ -914,18 +1153,6 @@
       },
       "category": "Governance and Risk",
       "visibleFields": ["kind", "identifiability", "confidentialityLevel"]
-    },
-    {
-      "type": "ConsentRequirement",
-      "label": "Consent Requirement",
-      "icon": "task_alt",
-      "color": {
-        "light": "#0891b2",
-        "dark": "#22d3ee"
-      },
-      "category": "Domain",
-      "creatable": false,
-      "supportOnly": true
     },
     {
       "type": "NonFunctionalRequirement",
@@ -977,18 +1204,6 @@
       "visibleFields": ["law", "jurisdiction", "legalBasis", "retentionPeriod"]
     },
     {
-      "type": "RegulatoryConstraint",
-      "label": "Regulatory Constraint",
-      "icon": "balance",
-      "color": {
-        "light": "#ca8a04",
-        "dark": "#fbbf24"
-      },
-      "category": "Constraint",
-      "creatable": false,
-      "supportOnly": true
-    },
-    {
       "type": "Hotspot",
       "label": "Hotspot",
       "displayName": "Hotspot",
@@ -1001,18 +1216,6 @@
       "visibleFields": ["question", "impact", "blocksTransformation"]
     },
     {
-      "type": "OpenQuestion",
-      "label": "Open Question",
-      "icon": "help",
-      "color": {
-        "light": "#64748b",
-        "dark": "#cbd5e1"
-      },
-      "category": "Knowledge",
-      "creatable": false,
-      "supportOnly": true
-    },
-    {
       "type": "Risk",
       "label": "Risk",
       "displayName": "Risk",
@@ -1023,30 +1226,6 @@
       },
       "category": "Governance and Risk",
       "visibleFields": ["riskStatement", "probability", "impact"]
-    },
-    {
-      "type": "RequirementLink",
-      "label": "Requirement Link",
-      "icon": "link",
-      "color": {
-        "light": "#64748b",
-        "dark": "#cbd5e1"
-      },
-      "category": "Knowledge",
-      "creatable": false,
-      "supportOnly": true
-    },
-    {
-      "type": "GoalSatisfactionLink",
-      "label": "Goal Satisfaction Link",
-      "icon": "done_all",
-      "color": {
-        "light": "#64748b",
-        "dark": "#cbd5e1"
-      },
-      "category": "Knowledge",
-      "creatable": false,
-      "supportOnly": true
     },
     {
       "type": "Assumption",
@@ -1072,6 +1251,41 @@
       "category": "Overview",
       "creatable": false,
       "visibleFields": ["domainName", "businessScope", "organizationName"]
+    },
+    {
+      "type": "TraceModel",
+      "label": "Trace Model",
+      "displayName": "Trace Model",
+      "icon": "account_tree",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
+      "category": "Traceability and Readiness",
+      "creatable": true,
+      "supportOnly": false,
+      "visibleFields": ["name", "description"]
+    },
+    {
+      "type": "ProductionReadinessAssessment",
+      "label": "Production Readiness Assessment",
+      "displayName": "Production Readiness Assessment",
+      "icon": "fact_check",
+      "color": {
+        "light": "#64748b",
+        "dark": "#cbd5e1"
+      },
+      "category": "Traceability and Readiness",
+      "creatable": true,
+      "supportOnly": false,
+      "visibleFields": [
+        "assessedAt",
+        "assessedBy",
+        "transformationReady",
+        "deploymentReady",
+        "productionReady",
+        "readinessStatus"
+      ]
     },
     {
       "type": "Requirement",
@@ -1122,7 +1336,7 @@
         "dark": "#a78bfa"
       },
       "category": "Stakeholder and Actor",
-      "visibleFields": ["stakeholderType", "concern", "influence"]
+      "visibleFields": ["stakeholderType", "concern", "influenceLevel"]
     },
     {
       "type": "UbiquitousLanguageTerm",
@@ -1135,7 +1349,7 @@
       },
       "category": "Capability",
       "containedOnly": true,
-      "visibleFields": ["term", "definition", "aliases"]
+      "visibleFields": ["term", "definition", "synonyms"]
     },
     {
       "type": "DomainConcept",
@@ -1149,7 +1363,7 @@
       "category": "Domain Model",
       "creatable": false,
       "supportOnly": true,
-      "visibleFields": ["businessName", "definition"]
+      "visibleFields": ["glossaryDefinition", "examples", "businessOwner"]
     },
     {
       "type": "LifecycleStateDefinition",
@@ -1174,7 +1388,7 @@
         "dark": "#fbbf24"
       },
       "category": "Aggregate",
-      "visibleFields": ["naturalLanguage", "severity", "automatable"]
+      "visibleFields": ["naturalLanguageStatement", "violationSeverity", "expressionLanguage"]
     },
     {
       "type": "CommandOutcome",
@@ -1400,10 +1614,86 @@
   ],
   "containers": [
     {
+      "elementType": "Requirement",
+      "palette": ["AcceptanceCriterion"],
+      "canvas": ["AcceptanceCriterion"],
+      "relationshipKinds": [],
+      "layoutHint": "CONTAINER"
+    },
+    {
       "elementType": "BoundedContextCandidate",
       "palette": ["UbiquitousLanguageTerm"],
       "canvas": ["UbiquitousLanguageTerm"],
       "relationshipKinds": [],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "elementType": "Command",
+      "palette": ["CommandOutcome"],
+      "canvas": ["CommandOutcome"],
+      "relationshipKinds": ["EMITTED_EVENTS", "ERRORS"],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "elementType": "DomainEntity",
+      "palette": ["LifecycleStateDefinition", "BusinessInvariant"],
+      "canvas": ["LifecycleStateDefinition", "BusinessInvariant"],
+      "relationshipKinds": ["CONTAINS", "CONSTRAINED_CONCEPTS"],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "elementType": "ValueObject",
+      "palette": ["InformationItem"],
+      "canvas": ["InformationItem"],
+      "relationshipKinds": ["CONTAINS", "CLASSIFIED_AS"],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "elementType": "AggregateCandidate",
+      "palette": ["BusinessInvariant"],
+      "canvas": ["BusinessInvariant"],
+      "relationshipKinds": ["ROOT", "MEMBER", "HANDLED_COMMANDS", "EMITTED_EVENTS", "CONTAINS"],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "elementType": "InformationItem",
+      "palette": ["InformationItem"],
+      "canvas": ["InformationItem"],
+      "relationshipKinds": ["CONTAINS", "CLASSIFIED_AS"],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "elementType": "NonFunctionalRequirement",
+      "palette": ["QualityScenario"],
+      "canvas": ["QualityScenario"],
+      "relationshipKinds": ["CONTAINS", "CONSTRAINED_ELEMENTS"],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "elementType": "SecurityConstraint",
+      "palette": ["QualityScenario"],
+      "canvas": ["QualityScenario"],
+      "relationshipKinds": [
+        "CONTAINS",
+        "CONSTRAINED_ACTORS",
+        "CONSTRAINED_COMMANDS",
+        "CONSTRAINED_QUERIES",
+        "CONSTRAINED_INFORMATION"
+      ],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "elementType": "PrivacyConstraint",
+      "palette": ["QualityScenario"],
+      "canvas": ["QualityScenario"],
+      "relationshipKinds": ["CONTAINS", "DATA_ITEMS", "DATA_SUBJECTS"],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "elementType": "ComplianceConstraint",
+      "palette": ["QualityScenario"],
+      "canvas": ["QualityScenario"],
+      "relationshipKinds": ["CONTAINS", "SCOPED_ELEMENTS"],
       "layoutHint": "CONTAINER"
     },
     {
@@ -1438,7 +1728,18 @@
         "TemporalConstraint",
         "DecisionTable"
       ],
-      "relationshipKinds": [],
+      "relationshipKinds": [
+        "TRANSITION",
+        "USES_COMMAND",
+        "USES_QUERY",
+        "USES_EVENT",
+        "USES_POLICY",
+        "RESPONSIBLE_ROLES",
+        "TRIGGERED_BY",
+        "GUARDED_BY",
+        "DECISION_TABLE",
+        "RESULTS_IN"
+      ],
       "layoutHint": "CONTAINER"
     },
     {
@@ -1447,6 +1748,55 @@
       "canvas": ["DecisionRule"],
       "relationshipKinds": [],
       "layoutHint": "CONTAINER"
+    },
+    {
+      "elementType": "Policy",
+      "palette": [],
+      "canvas": [],
+      "relationshipKinds": [],
+      "layoutHint": "DETAIL"
+    },
+    {
+      "elementType": "Condition",
+      "palette": [],
+      "canvas": [],
+      "relationshipKinds": [],
+      "layoutHint": "DETAIL"
+    },
+    {
+      "elementType": "BusinessInvariant",
+      "palette": [],
+      "canvas": [],
+      "relationshipKinds": [],
+      "layoutHint": "DETAIL"
+    },
+    {
+      "elementType": "TemporalConstraint",
+      "palette": [],
+      "canvas": [],
+      "relationshipKinds": [],
+      "layoutHint": "DETAIL"
+    },
+    {
+      "elementType": "WaitStep",
+      "palette": [],
+      "canvas": [],
+      "relationshipKinds": [],
+      "layoutHint": "DETAIL"
+    },
+    {
+      "elementType": "TraceModel",
+      "palette": [],
+      "canvas": [],
+      "relationshipKinds": ["TRACE"],
+      "layoutHint": "DETAIL"
+    },
+    {
+      "elementType": "ProductionReadinessAssessment",
+      "palette": [],
+      "canvas": [],
+      "relationshipKinds": [],
+      "layoutHint": "DETAIL"
     }
   ],
   "views": [
@@ -1455,57 +1805,51 @@
       "displayName": "CIM Overview",
       "viewType": "DASHBOARD",
       "palette": [
-        "CIMModel",
         "BusinessGoal",
-        "Actor",
-        "BusinessCapability",
         "Requirement",
+        "BusinessCapability",
+        "BoundedContextCandidate",
+        "Actor",
+        "Stakeholder",
         "DomainEntity",
+        "AggregateCandidate",
         "Command",
+        "Query",
         "BusinessEvent",
+        "BusinessProcess",
         "Policy",
         "Risk",
         "Hotspot",
-        "ExceptionScenario",
-        "TemporalConstraint",
-        "ProductionReadinessAssessment",
         "TransformationProfile",
         "TraceModel"
       ],
       "relationshipKinds": [],
       "layoutHint": "DASHBOARD",
       "semanticDashboardColumns": [
-        ["CIMModel"],
-        ["BusinessGoal", "Requirement", "NonFunctionalRequirement"],
+        ["BusinessGoal", "Requirement"],
         ["BusinessCapability", "BoundedContextCandidate"],
-        ["Actor", "Stakeholder", "Role", "ExternalSystem"],
-        ["DomainEntity", "ValueObject", "AggregateCandidate"],
-        ["Command", "Query"],
-        ["BusinessEvent", "BusinessError"],
-        [
-          "Policy",
-          "Risk",
-          "Hotspot",
-          "TransformationProfile",
-          "ProductionReadinessAssessment",
-          "TraceModel"
-        ]
+        ["Actor", "Stakeholder"],
+        ["DomainEntity", "AggregateCandidate"],
+        ["Command", "Query", "BusinessEvent"],
+        ["BusinessProcess", "Policy"],
+        ["Risk", "Hotspot", "TransformationProfile", "TraceModel"]
       ],
       "canvas": [
-        "CIMModel",
         "BusinessGoal",
-        "Actor",
-        "BusinessCapability",
         "Requirement",
+        "BusinessCapability",
+        "BoundedContextCandidate",
+        "Actor",
+        "Stakeholder",
         "DomainEntity",
+        "AggregateCandidate",
         "Command",
+        "Query",
         "BusinessEvent",
+        "BusinessProcess",
         "Policy",
         "Risk",
         "Hotspot",
-        "ExceptionScenario",
-        "TemporalConstraint",
-        "ProductionReadinessAssessment",
         "TransformationProfile",
         "TraceModel"
       ]
@@ -1514,27 +1858,62 @@
       "id": "strategy-goals",
       "displayName": "Goals and Requirements",
       "viewType": "REQUIREMENTS_GOALS",
-      "palette": ["Requirement", "BusinessGoal", "KPI", "AcceptanceCriterion", "Stakeholder"],
-      "relationshipKinds": ["SUPPORTS", "CONSTRAINS", "DEPENDS_ON", "CONFLICTS_WITH", "REFINES"],
+      "palette": [
+        "Requirement",
+        "BusinessGoal",
+        "KPI",
+        "Stakeholder",
+        "NonFunctionalRequirement",
+        "SecurityConstraint",
+        "PrivacyConstraint",
+        "ComplianceConstraint"
+      ],
+      "relationshipKinds": [
+        "SUPPORTS",
+        "CONSTRAINS",
+        "DEPENDS_ON",
+        "CONFLICTS_WITH",
+        "REFINES",
+        "DUPLICATES",
+        "DERIVES_FROM",
+        "MEASURED_BY",
+        "REFINED_BY",
+        "OWNS_GOALS",
+        "PROVIDES_REQUIREMENTS",
+        "REALIZES_REQUIREMENTS"
+      ],
       "layoutHint": "DEFAULT_LAYERED",
-      "canvas": ["Requirement", "BusinessGoal", "KPI", "AcceptanceCriterion", "Stakeholder"]
+      "canvas": [
+        "Requirement",
+        "BusinessGoal",
+        "KPI",
+        "Stakeholder",
+        "NonFunctionalRequirement",
+        "SecurityConstraint",
+        "PrivacyConstraint",
+        "ComplianceConstraint"
+      ]
     },
     {
       "id": "capability-map",
       "displayName": "Capability",
       "viewType": "CAPABILITY_CONTEXT",
-      "palette": ["BusinessCapability", "CapabilityDependency", "BoundedContextCandidate"],
+      "palette": ["BusinessCapability", "BoundedContextCandidate", "Actor", "BusinessGoal"],
       "relationshipKinds": [
         "SUPPORTS",
-        "CONTAINS",
         "CONTAINS_COMMAND",
         "CONTAINS_QUERY",
         "CONTAINS_EVENT",
         "MANAGES",
-        "DEPENDS_ON"
+        "DEPENDS_ON",
+        "OWNER",
+        "OWNS_PROCESSES",
+        "CONSTRAINED_BY",
+        "REALIZES_REQUIREMENTS",
+        "MEMBER"
       ],
       "layoutHint": "CONTAINER",
-      "canvas": ["BusinessCapability", "CapabilityDependency", "BoundedContextCandidate"]
+      "canvas": ["BusinessCapability", "BoundedContextCandidate", "Actor", "BusinessGoal"]
     },
     {
       "id": "domain-model",
@@ -1544,33 +1923,58 @@
         "DomainEntity",
         "ValueObject",
         "InformationItem",
-        "DomainRelationship",
-        "DataClassification"
+        "DataClassification",
+        "AggregateCandidate"
       ],
-      "relationshipKinds": ["DOMAIN_RELATIONSHIP", "ROOT", "MEMBER", "CONTAINS"],
+      "relationshipKinds": [
+        "DOMAIN_RELATIONSHIP",
+        "ROOT",
+        "MEMBER",
+        "CONTAINS",
+        "CLASSIFIED_AS",
+        "CONTEXT"
+      ],
       "layoutHint": "DEFAULT_LAYERED",
       "canvas": [
         "DomainEntity",
         "ValueObject",
         "InformationItem",
-        "DomainRelationship",
-        "DataClassification"
+        "DataClassification",
+        "AggregateCandidate"
       ]
     },
     {
       "id": "business-process",
       "displayName": "Business Process",
       "viewType": "BUSINESS_PROCESS",
-      "palette": ["BusinessProcess"],
-      "relationshipKinds": ["TRANSITION", "USES", "RESULTS_IN", "TRIGGERS"],
+      "palette": ["BusinessProcess", "BusinessCapability", "Actor", "Command", "BusinessEvent"],
+      "relationshipKinds": [
+        "TRANSITION",
+        "TRIGGERED_BY",
+        "OWNER",
+        "OWNS_PROCESSES",
+        "USES_COMMAND",
+        "USES_EVENT"
+      ],
       "layoutHint": "PROCESS",
-      "canvas": ["BusinessProcess"]
+      "canvas": ["BusinessProcess", "BusinessCapability", "Actor", "Command", "BusinessEvent"]
     },
     {
       "id": "stakeholder-actor-map",
       "displayName": "Stakeholder and Actor",
       "viewType": "STAKEHOLDER_ACTOR_MAP",
-      "palette": ["Stakeholder", "Actor", "ExternalSystem", "Role"],
+      "palette": [
+        "Stakeholder",
+        "Actor",
+        "ExternalSystem",
+        "Role",
+        "BusinessGoal",
+        "Requirement",
+        "Command",
+        "Query",
+        "BusinessEvent",
+        "InformationItem"
+      ],
       "relationshipKinds": [
         "PLAYS_ROLES",
         "OWNS_GOALS",
@@ -1581,26 +1985,39 @@
         "PRODUCED_EVENTS",
         "CONSUMED_EVENTS",
         "EXCHANGED_INFORMATION",
-        "CONSTRAINS"
+        "CONSTRAINS",
+        "RESPONSIBLE_ROLES"
       ],
       "layoutHint": "DEFAULT_LAYERED",
-      "canvas": ["Stakeholder", "Actor", "ExternalSystem", "Role"]
+      "canvas": [
+        "Stakeholder",
+        "Actor",
+        "ExternalSystem",
+        "Role",
+        "BusinessGoal",
+        "Requirement",
+        "Command",
+        "Query",
+        "BusinessEvent",
+        "InformationItem"
+      ]
     },
     {
       "id": "aggregate-lifecycle",
       "displayName": "Aggregate",
       "viewType": "AGGREGATE_LIFECYCLE",
-      "palette": ["AggregateCandidate", "LifecycleStateDefinition", "BusinessInvariant"],
+      "palette": ["AggregateCandidate", "DomainEntity", "Command", "BusinessEvent", "Policy"],
       "relationshipKinds": [
         "ROOT",
         "MEMBER",
         "HANDLED_COMMANDS",
         "EMITTED_EVENTS",
-        "CONSTRAINED_CONCEPTS",
+        "CONTEXT",
+        "TRIGGERED_BY",
         "CONTAINS"
       ],
       "layoutHint": "CONTAINER",
-      "canvas": ["AggregateCandidate", "LifecycleStateDefinition", "BusinessInvariant"]
+      "canvas": ["AggregateCandidate", "DomainEntity", "Command", "BusinessEvent", "Policy"]
     },
     {
       "id": "behavior-event-storming",
@@ -1612,24 +2029,25 @@
         "BusinessEvent",
         "BusinessError",
         "Condition",
-        "CommandOutcome",
-        "Actor"
+        "Actor",
+        "BusinessCapability",
+        "AggregateCandidate",
+        "InformationItem"
       ],
       "relationshipKinds": [
-        "ISSUED_BY",
+        "ISSUES_COMMANDS",
+        "ISSUES_QUERIES",
+        "OBSERVES_EVENTS",
         "TARGET_CAPABILITY",
         "TARGET_AGGREGATE",
-        "INPUT",
-        "OUTPUT",
         "PRECONDITIONS",
         "EXPECTED_EVENTS",
         "REJECTION_EVENTS",
         "POSSIBLE_ERRORS",
-        "CONTAINS",
         "READS",
         "PAYLOAD",
         "AFFECTS",
-        "TRIGGERS"
+        "EMITTED_EVENTS"
       ],
       "layoutHint": "EVENT_FLOW",
       "canvas": [
@@ -1638,15 +2056,25 @@
         "BusinessEvent",
         "BusinessError",
         "Condition",
-        "CommandOutcome",
-        "Actor"
+        "Actor",
+        "BusinessCapability",
+        "AggregateCandidate",
+        "InformationItem"
       ]
     },
     {
       "id": "policy-decision",
       "displayName": "Policy and Decision",
       "viewType": "POLICY_DECISION",
-      "palette": ["Policy", "DecisionTable", "Condition"],
+      "palette": [
+        "Policy",
+        "DecisionTable",
+        "Condition",
+        "Command",
+        "Query",
+        "BusinessEvent",
+        "InformationItem"
+      ],
       "relationshipKinds": [
         "TRIGGERED_BY",
         "GUARDS",
@@ -1655,10 +2083,20 @@
         "EMITS_EVENTS",
         "DECISION_TABLE",
         "REFERENCED_INFORMATION",
-        "REFERENCED_CONCEPTS"
+        "REFERENCED_CONCEPTS",
+        "RESULTING_COMMANDS",
+        "RESULTING_EVENTS"
       ],
       "layoutHint": "TABLE",
-      "canvas": ["Policy", "DecisionTable", "Condition"]
+      "canvas": [
+        "Policy",
+        "DecisionTable",
+        "Condition",
+        "Command",
+        "Query",
+        "BusinessEvent",
+        "InformationItem"
+      ]
     },
     {
       "id": "governance-risk",
@@ -1673,7 +2111,9 @@
         "Assumption",
         "Hotspot",
         "DataClassification",
-        "TransformationProfile"
+        "TransformationProfile",
+        "ProductionReadinessAssessment",
+        "TraceModel"
       ],
       "relationshipKinds": [
         "CONSTRAINED_ELEMENTS",
@@ -1682,8 +2122,9 @@
         "CONSTRAINED_QUERIES",
         "CONSTRAINED_INFORMATION",
         "DATA_ITEMS",
+        "DATA_SUBJECTS",
         "SCOPED_ELEMENTS",
-        "AFFECTED_ELEMENTS",
+        "CONSTRAINED_BY",
         "ATTACHED_TO",
         "TRACE"
       ],
@@ -1697,7 +2138,32 @@
         "Assumption",
         "Hotspot",
         "DataClassification",
-        "TransformationProfile"
+        "TransformationProfile",
+        "ProductionReadinessAssessment",
+        "TraceModel"
+      ]
+    },
+    {
+      "id": "traceability-readiness",
+      "displayName": "Traceability and Readiness",
+      "viewType": "TRACEABILITY_READINESS",
+      "palette": [
+        "TraceModel",
+        "ProductionReadinessAssessment",
+        "TransformationProfile",
+        "Risk",
+        "Assumption",
+        "Hotspot"
+      ],
+      "relationshipKinds": ["TRACE", "ATTACHED_TO"],
+      "layoutHint": "GOVERNANCE",
+      "canvas": [
+        "TraceModel",
+        "ProductionReadinessAssessment",
+        "TransformationProfile",
+        "Risk",
+        "Assumption",
+        "Hotspot"
       ]
     }
   ],
@@ -1858,6 +2324,658 @@
       "metadata": {
         "supportOnly": true,
         "creatable": false
+      }
+    },
+    {
+      "match": {
+        "types": ["CIMModel"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "workspace-container",
+          "fragmentKind": "CIM_ROOT",
+          "lineFields": ["domainName", "businessScope", "organizationName"],
+          "detailFields": ["domainName", "businessScope", "organizationName", "language"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["BusinessGoal"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "goal-card",
+          "lineFields": ["priority", "successCriterion", "businessValue"],
+          "detailFields": ["priority", "successCriterion", "businessValue", "failureConsequence"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["KPI"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "metric-card",
+          "lineFields": ["metricName", "operator", "targetValue", "unit"],
+          "detailFields": ["metricName", "metricDefinition", "operator", "targetValue", "unit"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": [
+          "Requirement",
+          "NonFunctionalRequirement",
+          "SecurityConstraint",
+          "PrivacyConstraint",
+          "ComplianceConstraint"
+        ]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "requirement-card",
+          "lineFields": ["requirementType", "priority", "fitCriterion"],
+          "detailFields": ["requirementType", "priority", "fitCriterion", "metric", "target"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["Actor", "Stakeholder", "Role", "ExternalSystem"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "participant-card",
+          "lineFields": ["actorType", "stakeholderType", "trustLevel"],
+          "detailFields": [
+            "actorType",
+            "stakeholderType",
+            "trustLevel",
+            "concern",
+            "responsibility"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["BusinessCapability"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "capability-container",
+          "fragmentKind": "CAPABILITY",
+          "lineFields": ["criticality", "maturity", "responsibility"],
+          "detailFields": ["criticality", "maturity", "responsibility", "ownerName"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["BoundedContextCandidate"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "context-container",
+          "fragmentKind": "BOUNDED_CONTEXT",
+          "lineFields": ["languageBoundary", "ownershipBoundary"],
+          "detailFields": ["languageBoundary", "ownershipBoundary", "externalIntegrationBoundary"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["DomainEntity", "ValueObject", "AggregateCandidate"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "class-card",
+          "lineFields": ["identityDescription", "lifecycleDescription", "valueType"],
+          "detailFields": [
+            "identityDescription",
+            "lifecycleDescription",
+            "consistencyBoundaryRationale",
+            "valueType"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["InformationItem"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "field-row",
+          "lineFields": ["businessName", "type", "required", "collection"],
+          "detailFields": [
+            "businessName",
+            "type",
+            "required",
+            "collection",
+            "sourceOfTruth",
+            "businessValidationRule"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["Command"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "command-lozenge",
+          "lineFields": ["intent", "commandType", "priority"],
+          "detailFields": [
+            "intent",
+            "commandType",
+            "priority",
+            "idempotencyBusinessKey",
+            "authorizationRule"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["Query"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "query-trapezoid",
+          "lineFields": ["intent", "queryType", "freshnessNeed"],
+          "detailFields": [
+            "intent",
+            "queryType",
+            "freshnessNeed",
+            "confidentiality",
+            "paginationExpectation"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["BusinessEvent"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "event-hexagon",
+          "lineFields": ["semanticName", "occurredInPastTenseName", "semanticVersion"],
+          "detailFields": [
+            "semanticName",
+            "occurredInPastTenseName",
+            "businessMeaning",
+            "semanticVersion"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["BusinessError"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "error-octagon",
+          "lineFields": ["errorCode", "businessMeaning", "recoverable"],
+          "detailFields": ["errorCode", "businessMeaning", "userVisibleMessage", "recoverable"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["BusinessProcess"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "process-container",
+          "fragmentKind": "BUSINESS_PROCESS",
+          "lineFields": ["processKind", "criticality", "longRunning"],
+          "detailFields": ["processKind", "criticality", "longRunning", "completionCriterion"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["StartStep"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "start-circle",
+          "lineFields": ["orderIndex"],
+          "detailFields": ["orderIndex"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["EndStep"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "end-double-circle",
+          "lineFields": ["orderIndex"],
+          "detailFields": ["orderIndex"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": [
+          "CommandStep",
+          "QueryStep",
+          "EventStep",
+          "PolicyStep",
+          "HumanTaskStep",
+          "ExternalInteractionStep",
+          "WaitStep"
+        ]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "process-step",
+          "fragmentKind": "PROCESS_STEP",
+          "lineFields": ["stepKind", "responsibility", "orderIndex"],
+          "detailFields": [
+            "stepKind",
+            "responsibility",
+            "orderIndex",
+            "taskDescription",
+            "interactionPurpose",
+            "waitReason"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["DecisionStep", "Condition"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "condition-diamond",
+          "lineFields": ["naturalLanguage", "expressionLanguage", "mustBeAutomatable"],
+          "detailFields": ["naturalLanguage", "expressionLanguage", "mustBeAutomatable"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["Policy", "DecisionTable", "DecisionRule"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "policy-card",
+          "lineFields": ["policyType", "enforcementStrength", "violationSeverity", "hitPolicy"],
+          "detailFields": [
+            "policyType",
+            "naturalLanguageRule",
+            "enforcementStrength",
+            "violationSeverity",
+            "hitPolicy"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["Risk", "Hotspot", "Assumption", "DataClassification", "TransformationProfile"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "governance-card",
+          "lineFields": ["riskStatement", "question", "kind", "businessArea"],
+          "detailFields": ["riskStatement", "question", "impact", "kind", "businessArea"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["TraceModel"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "trace-container",
+          "fragmentKind": "TRACE_MODEL",
+          "lineFields": ["name", "description"],
+          "detailFields": ["name", "description"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["ProductionReadinessAssessment"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "readiness-card",
+          "fragmentKind": "READINESS_ASSESSMENT",
+          "lineFields": [
+            "readinessStatus",
+            "transformationReady",
+            "deploymentReady",
+            "productionReady"
+          ],
+          "detailFields": [
+            "assessedAt",
+            "assessedBy",
+            "readinessStatus",
+            "transformationReady",
+            "deploymentReady",
+            "productionReady"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["AggregateCandidate"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "aggregate-container",
+          "lineFields": ["consistencyBoundaryRationale", "conflictResolutionPolicy"],
+          "detailFields": [
+            "consistencyBoundaryRationale",
+            "conflictResolutionPolicy",
+            "consistencyExpectation",
+            "strongConsistencyRequired"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["ValueObject"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "value-object-card",
+          "lineFields": ["valueType", "immutable"],
+          "detailFields": ["valueType", "immutable"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["Role"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "role-badge",
+          "lineFields": ["responsibility", "privileged"],
+          "detailFields": ["responsibility", "businessPermissionSummary", "privileged"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["ExternalSystem"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "external-boundary",
+          "lineFields": ["actorType", "trustLevel", "interactionExpectation"],
+          "detailFields": [
+            "actorType",
+            "trustLevel",
+            "interactionExpectation",
+            "businessPurpose",
+            "contractualSla"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["SecurityConstraint", "PrivacyConstraint", "ComplianceConstraint"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "constraint-badge-card",
+          "lineFields": ["qualityType", "law", "regulation", "controlId"],
+          "detailFields": [
+            "qualityType",
+            "law",
+            "jurisdiction",
+            "regulation",
+            "controlId",
+            "auditFrequency"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["AcceptanceCriterion"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "checklist-row",
+          "lineFields": ["givenContext", "whenAction", "thenOutcome"],
+          "detailFields": [
+            "givenContext",
+            "whenAction",
+            "thenOutcome",
+            "measurableTarget",
+            "automatableTestCandidate"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["UbiquitousLanguageTerm"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "glossary-row",
+          "lineFields": ["term", "definition"],
+          "detailFields": ["term", "definition", "synonyms", "forbiddenSynonyms", "exampleUsage"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["LifecycleStateDefinition"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "state-node",
+          "lineFields": ["stateName", "initial", "terminal"],
+          "detailFields": ["stateName", "initial", "terminal", "entryCondition", "exitCondition"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["BusinessInvariant"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "constraint-note",
+          "lineFields": ["naturalLanguageStatement", "violationSeverity"],
+          "detailFields": ["naturalLanguageStatement", "violationSeverity", "expressionLanguage"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["CommandOutcome"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "outcome-row",
+          "lineFields": ["success", "resultDescription"],
+          "detailFields": ["success", "resultDescription"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["ExceptionScenario"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "exception-row",
+          "lineFields": ["scenario", "businessImpact", "recoverable"],
+          "detailFields": [
+            "scenario",
+            "businessImpact",
+            "expected",
+            "recoverable",
+            "recoveryAction"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["TemporalConstraint"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "clock-badge-card",
+          "lineFields": ["deadlineExpression", "durationExpression", "violationSeverity"],
+          "detailFields": [
+            "deadlineExpression",
+            "durationExpression",
+            "orderingExpression",
+            "violationSeverity"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["DecisionStep"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "decision-diamond",
+          "lineFields": ["stepKind", "orderIndex"],
+          "detailFields": ["stepKind", "orderIndex", "condition", "decisionTable"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["DecisionTable"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "decision-table",
+          "lineFields": ["hitPolicy", "complete"],
+          "detailFields": ["hitPolicy", "defaultOutcome", "complete"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["DecisionRule"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "decision-rule-row",
+          "lineFields": ["priorityOrder", "condition", "outcome"],
+          "detailFields": ["priorityOrder", "condition", "outcome"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["Risk"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "risk-triangle-card",
+          "lineFields": ["riskStatement", "probability", "impact"],
+          "detailFields": ["riskStatement", "probability", "impact", "mitigation"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["Hotspot"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "question-pin",
+          "lineFields": ["question", "impact", "blocksTransformation"],
+          "detailFields": [
+            "question",
+            "impact",
+            "owner",
+            "dueDate",
+            "blocksTransformation",
+            "blocksProduction"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["Assumption"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "assumption-note",
+          "lineFields": ["assumptionStatement", "accepted", "businessArea"],
+          "detailFields": [
+            "assumptionStatement",
+            "validationApproach",
+            "accepted",
+            "acceptedBy",
+            "businessArea"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["TransformationProfile"]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "settings-panel",
+          "lineFields": ["preferCapabilityAsServiceBoundary", "preferEventDrivenCollaboration"],
+          "detailFields": [
+            "preferCapabilityAsServiceBoundary",
+            "preferProcessAsWorkflowCandidate",
+            "preferEventDrivenCollaboration",
+            "requireExplicitActorAuthForCommands",
+            "generateReadModelsFromQueries"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": [
+          "RequirementRelationship",
+          "DomainRelationship",
+          "CapabilityDependency",
+          "ProcessTransition",
+          "TraceLink"
+        ]
+      },
+      "metadata": {
+        "notation": {
+          "tag": "relationship-edge",
+          "lineFields": ["kind", "relationshipType", "dependencyReason", "label", "linkType"],
+          "detailFields": [
+            "kind",
+            "relationshipType",
+            "dependencyReason",
+            "label",
+            "linkType",
+            "confidenceRationale"
+          ]
+        }
       }
     }
   ]
