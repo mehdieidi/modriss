@@ -5,7 +5,11 @@ import {
   modelingRelationshipKindLabel,
   modelingRelationshipPresentation,
 } from "../modeling-config-data.js";
-import { measureIconNodeSize, resolveIconSource } from "./icon-node-layout.js";
+import {
+  measureIconNodeSize,
+  resolveIconSource,
+  routePointOnIconAnchor,
+} from "./icon-node-layout.js";
 import {
   canvasBackgroundColor,
   cssVar,
@@ -192,20 +196,26 @@ export function edgePresentation(edge, typeKey = state.activeType) {
   return modelingRelationshipPresentation(typeKey, edge);
 }
 
-function routeEndpoint(node, anchor, typeKey, fallbackSide = "right") {
+function routeEndpoint(node, anchor, typeKey, fallbackSide = "right", detailLevel = "normal") {
   if (!node) {
     return null;
   }
-  const size = nodeSizeForDiagram(typeKey, node);
+  const size = renderedNodeSize(node, typeKey, detailLevel);
   const side = anchor?.side === "left" || anchor?.side === "right" ? anchor.side : fallbackSide;
   const requestedOffsetY = Number(anchor?.offsetY);
   const offsetY = Number.isFinite(requestedOffsetY)
     ? Math.max(8, Math.min(size.height - 8, requestedOffsetY))
-    : size.height / 2;
-  return {
-    x: Math.round(Number(node.x || 0) + (side === "right" ? size.width : 0)),
-    y: Math.round(Number(node.y || 0) + offsetY),
-  };
+    : undefined;
+  return routePointOnIconAnchor(
+    Number(node.x || 0),
+    Number(node.y || 0),
+    size.width,
+    size.height,
+    side,
+    offsetY,
+    detailLevel === "low",
+    node.label || node.id || "",
+  );
 }
 
 function renderedNodeSize(node, typeKey, detailLevel) {
@@ -307,6 +317,7 @@ export function mapEdgeToG6(
   edge,
   {
     typeKey = state.activeType,
+    detailLevel = "normal",
     showLabels = true,
     selected = false,
     hovered = false,
@@ -318,8 +329,14 @@ export function mapEdgeToG6(
   const label = edgeLabel(edge, typeKey);
   const sourceNode = nodesById?.get?.(edge.sourceId);
   const targetNode = nodesById?.get?.(edge.targetId);
-  const routeStart = routeEndpoint(sourceNode, edge.sourceAnchor, typeKey, "right");
-  const routeEnd = routeEndpoint(targetNode, edge.targetAnchor, typeKey, "left");
+  const routeStart = routeEndpoint(
+    sourceNode,
+    edge.sourceAnchor,
+    typeKey,
+    "right",
+    detailLevel,
+  );
+  const routeEnd = routeEndpoint(targetNode, edge.targetAnchor, typeKey, "left", detailLevel);
   return {
     id: edge.id,
     type: G6_BASE_EDGE_TYPE,
