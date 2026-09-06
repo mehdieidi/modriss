@@ -332,6 +332,19 @@ operation createChoiceEvaluatorState(w, ws) {
 /** Creates create asl state. */
 operation createAslState(w, ws) {
   var st = newAslStateForStep(ws);
+  if (ws.isKindOf(PIM!ChoiceStep) and not choiceRoutingIsComplete(w, ws)) {
+    // An unresolved choice must fail closed in the generated draft.  Keeping
+    // an empty AslChoiceState produces invalid ASL and can be mistaken for a
+    // usable branch.  The manual decision below keeps the missing business
+    // mapping visible while the terminal Fail state keeps the PSM structurally
+    // valid until the reviewer supplies explicit outcomes and a default path.
+    delete st;
+    st = new AWSPSMWORKFLOW!AslFailState;
+    manualDecision("WORKFLOW_CHOICE_ROUTING_REQUIRED",
+      "Define explicit outcome mappings and exactly one default path for workflow choice " + ws.name + ".",
+      KERNEL!Severity#BLOCKER, true, Sequence{w, ws},
+      "Set decisionOutcome on every non-default WorkflowTransition and mark exactly one transition as defaultTransition before deployment.");
+  }
   st.id = generatedId("asl_state", ws, "state");
   st.name = ws.name;
   st.stateName = firstText(ws.name, "State");
@@ -449,6 +462,15 @@ operation newAslStateForStep(ws) {
   return new AWSPSMWORKFLOW!AslPassState;
 }
 
+/** Checks whether a choice has enough explicit routing to emit executable ASL. */
+operation choiceRoutingIsComplete(w, ws) {
+  var out = w.transitions.select(x | x.source = ws);
+  var branches = out.select(tr | not isTrue(tr.defaultTransition));
+  return branches.notEmpty() and
+    out.select(tr | not isTrue(tr.defaultTransition)).forAll(tr |
+      hasText(tr.decisionOutcome) and tr.target.isDefined());
+}
+
 /** Returns a valid JSONPath root when an upstream mapping is absent or still a placeholder. */
 operation aslJsonPathOrRoot(mapping) {
   if (not hasText(mapping) or mapping = "TBD" or not mapping.startsWith("$")) {
@@ -520,6 +542,11 @@ operation completeAslStateTransitions(w, stateByPimId, entryByPimId) {
           KERNEL!Severity#BLOCKER, true, Sequence{w, ws},
           "Mark one outgoing WorkflowTransition as defaultTransition so unmatched input cannot terminate with a States.NoChoiceMatched error.");
       }
+    }
+    else if (st.isDefined() and ws.isKindOf(PIM!ChoiceStep)
+        and st.isKindOf(AWSPSMWORKFLOW!AslFailState)) {
+      // createAslState already recorded the unresolved routing decision and
+      // deliberately emitted a terminal fail-closed placeholder.
     }
     else if (st.isDefined() and out.size() = 1 and not st.end) {
       var resolvedNextState = entryByPimId.get(cacheKeyFor(out.first().target));

@@ -840,6 +840,91 @@ class TransformationServiceTest {
                 .modelJson()));
   }
 
+  /**
+   * The browser's position save is a transport-only patch. It must not make a later regeneration
+   * reuse a partially linked generated model or invalidate the PIM that is shown on the issue
+   * board.
+   */
+  @Test
+  void transportOnlyPositionEditsSurviveFullGenerationCycleWithoutSemanticIssues() {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services, "position-cycle@example.com", "Position", "Cycle");
+    ModelRecord cim = createClimateCim(services, context, "position-cycle-cim");
+
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
+    TransformationService.consumeLastSynchronization();
+    services.transformations().psmToArtifact(context.user(), psm.id());
+
+    cim = moveFirstGraphElement(services, context, ModelLevel.CIM, cim);
+    pim = moveFirstGraphElement(services, context, ModelLevel.PIM, pim);
+
+    ModelRecord regeneratedPim = services.transformations().cimToPim(context.user(), cim.id());
+    assertEquals(
+        SynchronizationStatus.APPLIED, TransformationService.consumeLastSynchronization().status());
+
+    ModelService.ValidationResult validation =
+        services.models().validate(context.user(), ModelLevel.PIM, regeneratedPim.id());
+    assertTrue(
+        validation.valid(),
+        () ->
+            "A transport-only edit must not expose stale generated references: "
+                + validation.issues());
+    assertTrue(
+        validation.issues().stream()
+            .noneMatch(
+                issue ->
+                    Set.of(
+                            "ApiHasRoutes",
+                            "TaskStepHasExactlyOneInvocation",
+                            "RequiredDeadLetterPolicyHasChannel",
+                            "GeneratedBlockingManualDecisionShouldHaveOwner")
+                        .contains(issue.constraint())),
+        () -> "Unexpected generated-model issues: " + validation.issues());
+  }
+
+  /**
+   * Reproduces the UI order: PIM layout save, CIM layout save, then PIM regeneration/validation.
+   */
+  @Test
+  void importedCimExactLayoutSaveOrderDoesNotCorruptRegeneratedPim() {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services, "exact-layout-order@example.com", "Exact", "Layout Order");
+    ModelRecord cim = createClimateCim(services, context, "exact-layout-order-cim");
+
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    assertTrue(services.models().validate(context.user(), ModelLevel.PIM, pim.id()).valid());
+    ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
+    services.transformations().psmToArtifact(context.user(), psm.id());
+
+    pim = moveFirstGraphElement(services, context, ModelLevel.PIM, pim);
+    cim = moveFirstGraphElement(services, context, ModelLevel.CIM, cim);
+
+    ModelRecord regeneratedPim = services.transformations().cimToPim(context.user(), cim.id());
+    ModelService.ValidationResult validation =
+        services.models().validate(context.user(), ModelLevel.PIM, regeneratedPim.id());
+
+    assertTrue(
+        validation.valid(),
+        () -> "Exact layout-save order produced PIM issues: " + validation.issues());
+    assertEquals(
+        0,
+        validation.issues().stream()
+            .filter(issue -> "ERROR".equalsIgnoreCase(issue.severity()))
+            .count(),
+        () -> "Exact layout-save order produced PIM errors: " + validation.issues());
+    assertTrue(
+        validation.issues().isEmpty(),
+        () -> "Exact layout-save order produced PIM warnings: " + validation.issues());
+  }
+
   @Test
   void legacyWorkingModelWithoutBaselineIsNeverOverwritten() throws Exception {
     PlatformTestFixtures.ServiceStack services =
@@ -1967,6 +2052,35 @@ class TransformationServiceTest {
     return services
         .models()
         .create(context.user(), ModelLevel.CIM, context.project().id(), name, imported.modelJson());
+  }
+
+  private ModelRecord moveFirstGraphElement(
+      PlatformTestFixtures.ServiceStack services,
+      PlatformTestFixtures.AuthenticatedContext context,
+      ModelLevel level,
+      ModelRecord model) {
+    JsonNode elements = model.modelJson().path("graph").path("elements");
+    for (int index = 0; index < elements.size(); index++) {
+      JsonNode element = elements.path(index);
+      if (!element.hasNonNull("id")) {
+        continue;
+      }
+      double x = element.path("x").asDouble(0.0d) + 7.0d;
+      return services
+          .models()
+          .patch(
+              context.user(),
+              level,
+              model.id(),
+              model.name(),
+              List.of(
+                  new ModelService.ModelPatchOperation(
+                      "add",
+                      "/graph/elements/" + index + "/x",
+                      services.store().objectMapper().getNodeFactory().numberNode(x))),
+              model.revision());
+    }
+    throw new AssertionError("Expected at least one positioned graph element in " + level);
   }
 
   private Set<String> taskIds(JsonNode model) {

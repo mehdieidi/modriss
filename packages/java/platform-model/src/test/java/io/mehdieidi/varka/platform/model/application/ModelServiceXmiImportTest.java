@@ -79,14 +79,13 @@ class ModelServiceXmiImportTest {
         relationship(
             result.modelJson().path("graph").path("relationships"), "cap-1", "goal-1", "SUPPORTS");
     assertNotNull(supports);
-    JsonNode rootContainsCapability =
+    JsonNode rootMembershipCapability =
         relationship(
-            result.modelJson().path("graph").path("relationships"),
-            "cim-root",
-            "cap-1",
-            "CONTAINS");
-    assertNotNull(rootContainsCapability);
-    assertTrue(rootContainsCapability.path("containment").asBoolean());
+            result.modelJson().path("graph").path("relationships"), "cim-root", "cap-1", "MEMBER");
+    assertNotNull(
+        rootMembershipCapability,
+        () -> result.modelJson().path("graph").path("relationships").toPrettyString());
+    assertTrue(rootMembershipCapability.path("containment").asBoolean());
     assertNotNull(result.issues());
   }
 
@@ -634,6 +633,115 @@ class ModelServiceXmiImportTest {
   }
 
   /**
+   * Layout-only graph patches must not run semantic projection cleanup or rewrite the XMI sidecar.
+   * The browser uses this path when a user moves a node and saves the canvas.
+   */
+  @Test
+  void layoutOnlyGraphPatchPreservesSemanticModelAndSourceXmi() {
+    TestPlatformStore store = new TestPlatformStore(tempDir);
+    store.initialize();
+    AuthService authService = new AuthService(store, Duration.ofHours(1));
+    ProjectService projectService = new ProjectService(store, authService);
+    ModelService service = new ModelService(store, projectService);
+    UserRecord user =
+        authService.register("layout-only-patch@example.com", "password123", "Owner").user();
+    ProjectRecord project = projectService.create(user, "Layout Only Patch", "");
+
+    ObjectNode model = store.objectMapper().createObjectNode();
+    model.put("eClass", "CIMModel");
+    model.put("id", "layout-only-root");
+    model
+        .putArray("goals")
+        .addObject()
+        .put("eClass", "BusinessGoal")
+        .put("id", "goal-1")
+        .put("name", "Before");
+    model
+        .putObject("graph")
+        .putArray("elements")
+        .addObject()
+        .put("eClass", "BusinessGoal")
+        .put("id", "goal-1")
+        .put("name", "Before")
+        .put("x", 10)
+        .put("y", 20);
+    ModelRecord created = service.create(user, ModelLevel.CIM, project.id(), "layout-only", model);
+    String sourceBefore =
+        new String(service.sourceXmi(created).orElseThrow(), StandardCharsets.UTF_8);
+
+    ModelRecord updated =
+        service.patch(
+            user,
+            ModelLevel.CIM,
+            created.id(),
+            created.name(),
+            java.util.List.of(
+                new ModelService.ModelPatchOperation(
+                    "replace",
+                    "/graph/elements/0/x",
+                    store.objectMapper().getNodeFactory().numberNode(37))),
+            created.revision());
+
+    assertEquals("Before", updated.modelJson().path("goals").path(0).path("name").asText());
+    assertEquals(37, updated.modelJson().path("graph").path("elements").path(0).path("x").asInt());
+    assertEquals(
+        sourceBefore,
+        new String(service.sourceXmi(updated).orElseThrow(), StandardCharsets.UTF_8),
+        "A layout-only save must retain the authoritative semantic XMI");
+
+    ObjectNode fullLayoutSave = (ObjectNode) updated.modelJson().deepCopy();
+    ((ObjectNode) fullLayoutSave.path("graph").path("elements").get(0)).put("x", 52);
+    fullLayoutSave
+        .putObject("diagram")
+        .putArray("elements")
+        .addObject()
+        .put("id", "goal-1")
+        .put("x", 52)
+        .put("y", 20);
+    ModelRecord fullUpdated =
+        service.update(
+            user, ModelLevel.CIM, updated.id(), updated.name(), fullLayoutSave, updated.revision());
+
+    assertEquals(
+        sourceBefore,
+        new String(service.sourceXmi(fullUpdated).orElseThrow(), StandardCharsets.UTF_8),
+        "A full layout save must retain the authoritative semantic XMI");
+
+    // The browser can canonicalize a generated graph on save: root graph objects are filtered,
+    // relationship projections are rebuilt, and trace metadata is materialized. Those transport
+    // differences must not turn an unchanged semantic root into a new XMI source.
+    ObjectNode frontendProjection = (ObjectNode) fullUpdated.modelJson().deepCopy();
+    ArrayNode projectionElements = store.objectMapper().createArrayNode();
+    projectionElements.add(frontendProjection.path("graph").path("elements").path(0).deepCopy());
+    frontendProjection.withObject("graph").set("elements", projectionElements);
+    frontendProjection.withObject("graph").putArray("relationships");
+    ModelRecord projectionUpdated =
+        service.patch(
+            user,
+            ModelLevel.CIM,
+            fullUpdated.id(),
+            fullUpdated.name(),
+            java.util.List.of(
+                new ModelService.ModelPatchOperation(
+                    "replace", "/graph/elements", projectionElements),
+                new ModelService.ModelPatchOperation(
+                    "add", "/graph/relationships", store.objectMapper().createArrayNode()),
+                new ModelService.ModelPatchOperation(
+                    "add", "/traceLinks", store.objectMapper().createArrayNode()),
+                new ModelService.ModelPatchOperation(
+                    "add", "/validationIssues", store.objectMapper().createArrayNode()),
+                new ModelService.ModelPatchOperation(
+                    "add",
+                    "/activeViewId",
+                    store.objectMapper().getNodeFactory().textNode("main"))),
+            fullUpdated.revision());
+    assertEquals(
+        sourceBefore,
+        new String(service.sourceXmi(projectionUpdated).orElseThrow(), StandardCharsets.UTF_8),
+        "A canonicalized graph projection must retain unchanged semantic XMI");
+  }
+
+  /**
    * Ensures JSON Patch updates the stored model incrementally while preserving platform-added model
    * metadata.
    *
@@ -748,7 +856,7 @@ class ModelServiceXmiImportTest {
     JsonNode workflowTransition = relationship(relationships, "wf-start", "wf-task", "TRANSITION");
     JsonNode principalPermission =
         relationship(relationships, "principal-resident", "fn-submit", "PERMISSION");
-    JsonNode rootContainsService = relationship(relationships, "pim-root", "svc-main", "CONTAINS");
+    JsonNode rootDeploysService = relationship(relationships, "pim-root", "svc-main", "DEPLOYS");
     JsonNode serviceContainsApi = relationship(relationships, "svc-main", "api-main", "CONTAINS");
     assertNotNull(routeToFunction, relationships::toPrettyString);
     assertEquals("functionIntegration", routeToFunction.path("semanticFeature").asText());
@@ -758,8 +866,8 @@ class ModelServiceXmiImportTest {
     assertEquals("WorkflowTransition", workflowTransition.path("eClass").asText());
     assertNotNull(principalPermission);
     assertEquals("Permission", principalPermission.path("eClass").asText());
-    assertNotNull(rootContainsService);
-    assertTrue(rootContainsService.path("containment").asBoolean());
+    assertNotNull(rootDeploysService, relationships::toPrettyString);
+    assertTrue(rootDeploysService.path("containment").asBoolean());
     assertNotNull(serviceContainsApi);
     assertTrue(serviceContainsApi.path("containment").asBoolean());
   }

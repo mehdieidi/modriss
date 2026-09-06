@@ -14,7 +14,10 @@ const {
   modelingRelationshipElementTypes,
   initializeModelingRuntimeState,
 } = await import("../../apps/frontend/js/modeling-config-data.js");
-const { relationshipSemanticCopy } = await import("../../apps/frontend/js/model-utils.js");
+const {
+  relationshipSemanticCopy,
+  semanticGraphHasChanges,
+} = await import("../../apps/frontend/js/model-utils.js");
 const {
   serializeGraphAndViewsInto,
   serializeGraphAndViewsIntoAsync,
@@ -300,6 +303,92 @@ test("preserves semantic root assumptions in the async save serializer", async (
   await serializeGraphAndViewsIntoAsync(root, { syncView: false });
 
   assert.deepEqual(root.assumptions, [{ id: "semantic-assumption-async" }]);
+});
+
+test("does not add an unsupported empty assumptions containment during layout serialization", () => {
+  state.activeType = "pim";
+  state.graph.assumptionsById = new Map();
+  state.graph.assumptions = [];
+  const root = { eClass: "PIMModel" };
+
+  serializeGraphAndViewsInto(root, { syncView: false });
+
+  assert.equal("assumptions" in root, false);
+});
+
+test("does not rebuild semantic root for a layout-only graph projection", async () => {
+  const pimLevel = {
+    apiType: "PIM",
+    rootTemplate: { eClass: "PIMModel" },
+    relationshipSemantics: { containmentKind: "CONTAINS", containmentKinds: ["CONTAINS"] },
+    workbench: { defaultViewDefinitionId: "main" },
+    viewDefinitions: [{ id: "main", viewType: "main" }],
+    elements: [
+      {
+        type: "PIMModel",
+        references: [{ name: "services", targetType: "ServerlessService", containment: true, many: true }],
+      },
+      {
+        type: "ServerlessService",
+        references: [{ name: "channels", targetType: "Topic", containment: true, many: true }],
+      },
+      { type: "Topic", containedOnly: true },
+    ],
+  };
+  const config = { levelOrder: ["pim"], levels: { pim: pimLevel } };
+  state.modelingConfig.config = config;
+  initializeModelingRuntimeState(config);
+  state.activeType = "pim";
+  const model = {
+    eClass: "PIMModel",
+    services: [
+      {
+        eClass: "ServerlessService",
+        id: "service-1",
+        ownerTeam: "Operations",
+        channels: [{ eClass: "Topic", id: "topic-1", name: "Events", topicName: "events" }],
+      },
+    ],
+    graph: {
+      elements: [
+        { eClass: "ServerlessService", id: "service-1", ownerTeam: "Operations" },
+        { eClass: "Topic", id: "topic-1", name: "Events", topicName: "events" },
+      ],
+      relationships: [],
+    },
+  };
+  const { installGraphAndViews } = await import("../../apps/frontend/js/graph-store.js");
+  installGraphAndViews("pim", model, "generated-pim", { skipClientLayout: true });
+  const saved = structuredClone(model);
+  await serializeGraphAndViewsIntoAsync(saved, { syncView: false });
+
+  assert.equal(saved.services[0].ownerTeam, "Operations");
+  assert.deepEqual(saved.services[0].channels, model.services[0].channels);
+});
+
+test("detects a removed semantic object as a graph change", async () => {
+  const model = {
+    eClass: "PIMModel",
+    services: [
+      {
+        eClass: "ServerlessService",
+        id: "service-removed-child-owner",
+        channels: [{ eClass: "Topic", id: "topic-removed" }],
+      },
+    ],
+    graph: {
+      elements: [
+        { eClass: "ServerlessService", id: "service-removed-child-owner" },
+        { eClass: "Topic", id: "topic-removed" },
+      ],
+      relationships: [],
+    },
+  };
+  const { installGraphAndViews } = await import("../../apps/frontend/js/graph-store.js");
+  installGraphAndViews("pim", model, "removed-object-model", { skipClientLayout: true });
+  state.graph.elementsById.delete("topic-removed");
+
+  assert.equal(semanticGraphHasChanges("pim", model, state.graph), true);
 });
 
 test("preserves non-diagram nested containments after an unrelated generated PIM edit", async () => {

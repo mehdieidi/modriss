@@ -22,6 +22,7 @@ import {
   removeReferenceValue,
   semanticEdgeObjectSpec,
   semanticRelationshipsFromRoot,
+  semanticGraphHasChanges,
   modelTypeMatches,
 } from "./model-utils.js";
 
@@ -3002,6 +3003,9 @@ export function serializeGraphAndViewsInto(
     reconcileGraphRelationships(state.activeType);
   }
   const graph = serializeRuntimeGraph();
+  const rebuildSemanticRoot =
+    isModelingLevel(state.activeType) &&
+    semanticGraphHasChanges(state.activeType, root, state.graph);
   const manualBacklog = mergeManualBacklog(root.manualBacklog, graph.manualBacklog);
   graph.manualBacklog = manualBacklog.map(clone);
   graph.validationIssues = [];
@@ -3021,13 +3025,13 @@ export function serializeGraphAndViewsInto(
   // `assumptions` is a semantic CIM root containment as well as a graph projection field.
   // An imported model can have semantic assumptions while the graph projection intentionally
   // has none. Never let an empty runtime projection erase those authoritative model objects.
-  if (!Array.isArray(root.assumptions) || root.assumptions.length === 0) {
+  if (Array.isArray(root.assumptions) && root.assumptions.length === 0) {
     root.assumptions = graph.assumptions;
   }
   root.validationIssues = [];
   root.manualBacklog = manualBacklog;
   delete root.diagram;
-  if (isModelingLevel(state.activeType)) {
+  if (rebuildSemanticRoot) {
     populateRootContainments(state.activeType, root, state.graph);
   }
   return root;
@@ -3048,6 +3052,9 @@ export async function serializeGraphAndViewsIntoAsync(
   }
   await yieldToMain();
   const graph = await serializeRuntimeGraphAsync();
+  const rebuildSemanticRoot =
+    isModelingLevel(state.activeType) &&
+    semanticGraphHasChanges(state.activeType, root, state.graph);
   const manualBacklog = mergeManualBacklog(root.manualBacklog, graph.manualBacklog);
   graph.manualBacklog = manualBacklog.map(clone);
   graph.validationIssues = [];
@@ -3066,13 +3073,13 @@ export async function serializeGraphAndViewsIntoAsync(
     ? focusBaseViewId || views[0]?.id || null
     : state.views.activeViewId;
   root.traceLinks = graph.traceLinks;
-  if (!Array.isArray(root.assumptions) || root.assumptions.length === 0) {
+  if (Array.isArray(root.assumptions) && root.assumptions.length === 0) {
     root.assumptions = graph.assumptions;
   }
   root.validationIssues = [];
   root.manualBacklog = manualBacklog;
   delete root.diagram;
-  if (isModelingLevel(state.activeType)) {
+  if (rebuildSemanticRoot) {
     await yieldToMain();
     await populateRootContainmentsAsync(state.activeType, root, state.graph);
   }

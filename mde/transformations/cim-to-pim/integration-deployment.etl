@@ -1045,7 +1045,7 @@ operation ensureGeneratedOperationalPolicies() {
     adapter.observability = createDefaultObservability(adapter, "TR-150", true, true);
   }
   for (channel in INTEGRATION!EventChannel.all.select(c | c.observability.isUndefined())) {
-    channel.observability = createDefaultObservability(channel, "TR-150", true, isTrue(c.deadLetterRequired));
+    channel.observability = createDefaultObservability(channel, "TR-150", true, isTrue(channel.deadLetterRequired));
   }
   for (trigger in COMPUTE!Trigger.all.select(t | t.invocationMode = PIMTYPES!InvocationMode#ASYNCHRONOUS and t.resilience.isUndefined())) {
     trigger.resilience = createDefaultResilience(trigger, "TR-150", true);
@@ -1158,8 +1158,110 @@ operation createHotspotManualDecision(h) {
   return decision;
 }
 
+/** Restores references whose generated target is produced by a later rule. */
+operation resolveGeneratedActionReferences() {
+  for (route in API!ApiRoute.all) {
+    var command = CIMBEHAVIOR!Command.all.selectOne(c | c.id = route.generatedFrom);
+    if (command.isDefined()) {
+      var fn = commandFunction(command);
+      if (fn.isDefined()) {
+        route.functionIntegration = fn;
+        if (fn.contract.isDefined()) {
+          route.requestSchema = fn.contract.inputSchema;
+          route.responseSchema = fn.contract.outputSchema;
+        }
+        if (route.authorization.isDefined()) {
+          if (not route.authorization.attachedTo.includes(fn)) {
+            route.authorization.attachedTo.add(fn);
+          }
+          if (not fn.securityPolicies.includes(route.authorization)) {
+            fn.securityPolicies.add(route.authorization);
+          }
+        }
+        if (fn.triggers.selectOne(t | t.source = route).isUndefined()) {
+          var commandTrigger = new COMPUTE!Trigger;
+          commandTrigger.id = idFor("trigger_route_cmd", command);
+          commandTrigger.name = command.name + " Route Trigger";
+          commandTrigger.triggerKind = "API_ROUTE";
+          commandTrigger.invocationMode = PIMTYPES!InvocationMode#SYNCHRONOUS;
+          commandTrigger.enabled = true;
+          commandTrigger.generatedFromFlow = false;
+          commandTrigger.source = route;
+          fn.triggers.add(commandTrigger);
+          traceGenerated(command, commandTrigger, "TR-070", "MEDIUM");
+        }
+      }
+      for (mapping in route.errorMappings) {
+        var error = command.possibleErrors.selectOne(e | e.errorCode = mapping.domainErrorCode);
+        if (error.isDefined()) {
+          var errorSchema = cachedEquivalent(error, "BusinessError2ErrorSchema");
+          if (errorSchema.isDefined()) {
+            mapping.errorSchema = errorSchema;
+          }
+        }
+      }
+    }
+
+    var query = CIMBEHAVIOR!Query.all.selectOne(q | q.id = route.generatedFrom);
+    if (query.isDefined()) {
+      var queryFn = queryFunction(query);
+      if (queryFn.isDefined()) {
+        route.functionIntegration = queryFn;
+        if (queryFn.contract.isDefined()) {
+          route.requestSchema = queryFn.contract.inputSchema;
+          route.responseSchema = queryFn.contract.outputSchema;
+        }
+        if (route.authorization.isDefined()) {
+          if (not route.authorization.attachedTo.includes(queryFn)) {
+            route.authorization.attachedTo.add(queryFn);
+          }
+          if (not queryFn.securityPolicies.includes(route.authorization)) {
+            queryFn.securityPolicies.add(route.authorization);
+          }
+        }
+        if (queryFn.triggers.selectOne(t | t.source = route).isUndefined()) {
+          var queryTrigger = new COMPUTE!Trigger;
+          queryTrigger.id = idFor("trigger_route_query", query);
+          queryTrigger.name = query.name + " Route Trigger";
+          queryTrigger.triggerKind = "API_ROUTE";
+          queryTrigger.invocationMode = PIMTYPES!InvocationMode#SYNCHRONOUS;
+          queryTrigger.enabled = true;
+          queryTrigger.generatedFromFlow = false;
+          queryTrigger.source = route;
+          queryFn.triggers.add(queryTrigger);
+          traceGenerated(query, queryTrigger, "TR-080", "MEDIUM");
+        }
+      }
+    }
+  }
+
+  for (task in WORKFLOW!TaskStep.all) {
+    var sourceStep = CIMPROCESS!ProcessStep.all.selectOne(s | s.id = task.generatedFrom);
+    if (sourceStep.isUndefined()) {
+      continue;
+    }
+    if (sourceStep.isKindOf(CIMPROCESS!CommandStep) and sourceStep.command.isDefined()) {
+      var commandFn = commandFunction(sourceStep.command);
+      if (commandFn.isDefined()) task.invokesFunction = commandFn;
+    }
+    if (sourceStep.isKindOf(CIMPROCESS!QueryStep) and sourceStep.query.isDefined()) {
+      var queryFn = queryFunction(sourceStep.query);
+      if (queryFn.isDefined()) task.invokesFunction = queryFn;
+    }
+    if (sourceStep.isKindOf(CIMPROCESS!PolicyStep) and sourceStep.policy.isDefined()) {
+      var policyFn = policyFunction(sourceStep.policy);
+      if (policyFn.isDefined()) task.invokesFunction = policyFn;
+    }
+    if (sourceStep.isKindOf(CIMPROCESS!ExternalInteractionStep) and sourceStep.externalSystem.isDefined()) {
+      var adapter = adapterFor(sourceStep.externalSystem);
+      if (adapter.isDefined()) task.invokesAdapter = adapter;
+    }
+  }
+}
+
 post LinkAndDerive {
   etlProfiler.mark("cim.link.start");
+  resolveGeneratedActionReferences();
   for (hotspot in CIMTRANSFORM!Hotspot.all) {
     createHotspotManualDecision(hotspot);
   }
@@ -1303,6 +1405,13 @@ post DeploymentAndConfiguration {
 
 post ValidationAndReadinessClosure {
   etlProfiler.mark("cim.validation.start");
+  // All post-processing stages have now created their target objects. Resolve the
+  // references that are derived from CIM actions one final time before readiness
+  // rules run. Earlier passes intentionally run before containment and helper
+  // creation, so relying on their order can leave a valid generated route or
+  // workflow task disconnected in the persisted XMI.
+  resolveGeneratedActionReferences();
+  ensureGeneratedOperationalPolicies();
   if (allServiceFunctions().isEmpty()) {
     var fn = new COMPUTE!Function;
     fn.id = "fn_tbd_manual_completion";

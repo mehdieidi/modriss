@@ -675,7 +675,227 @@ function childElementsForContainment(parent, entry, graph, typeKey) {
     graph.elementsById?.forEach(addCandidate);
   }
   graph.relationshipsById?.forEach(addCandidate);
+  // Trace links are kept in their own runtime index because they are not ordinary
+  // diagram relationships. They are nevertheless the authoritative children of a
+  // TraceModel containment and must be available when the semantic root is rebuilt.
+  if (entry.relationshipOnly) {
+    graph.traceLinksById?.forEach(addCandidate);
+  }
   return children;
+}
+
+const ROOT_TRANSPORT_FIELDS = new Set([
+  "graph",
+  "diagram",
+  "views",
+  "fragments",
+  "manualBacklog",
+  "traceLinks",
+  "validationIssues",
+  "activeViewId",
+  "_sourceXmiBase64",
+  "_sourceXmiToken",
+]);
+
+function indexSemanticObjects(value, index, { root = false } = {}) {
+  if (Array.isArray(value)) {
+    value.forEach((item) => indexSemanticObjects(item, index));
+    return;
+  }
+  if (!value || typeof value !== "object") {
+    return;
+  }
+  const id = String(value.id || "").trim();
+  if (id && !index.has(id)) {
+    index.set(id, value);
+  }
+  Object.entries(value).forEach(([key, child]) => {
+    if (root && ROOT_TRANSPORT_FIELDS.has(key)) {
+      return;
+    }
+    indexSemanticObjects(child, index);
+  });
+}
+
+function mergeSemanticObjectWithOriginal(copy, originalById, originalValue = null) {
+  if (Array.isArray(copy)) {
+    return copy.map((item) => mergeSemanticObjectWithOriginal(item, originalById));
+  }
+  if (!copy || typeof copy !== "object") {
+    return copy;
+  }
+  const id = String(copy.id || "").trim();
+  const original = (id ? originalById.get(id) : null) || originalValue;
+  const merged = original ? { ...clone(original), ...copy } : { ...copy };
+  Object.entries(copy).forEach(([key, value]) => {
+    merged[key] = mergeSemanticObjectWithOriginal(value, originalById, original?.[key]);
+  });
+  return merged;
+}
+
+function semanticOriginalIndex(root) {
+  const index = new Map();
+  indexSemanticObjects(root, index, { root: true });
+  return index;
+}
+
+function canonicalSemanticValue(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalSemanticValue).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalSemanticValue(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function graphComparisonValue(typeKey, value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => graphComparisonValue(typeKey, item));
+  }
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+  const copy = stripRuntimeFields(typeKey, value);
+  const type = modelTypeOf(copy);
+  const ignoredFields = new Set(["incomingTraces", "outgoingTraces"]);
+  try {
+    const references = modelingElementDefinition(typeKey, type)?.references || [];
+    references
+      .filter((reference) => reference?.containment)
+      .forEach((reference) => ignoredFields.add(reference.name));
+    references
+      .filter((reference) => reference?.name && !reference.containment)
+      .forEach((reference) => {
+        const value = copy[reference.name];
+        if (value !== undefined) {
+          copy[reference.name] = refIds(value);
+        }
+      });
+  } catch {
+    // Keep comparison useful for a partially loaded runtime configuration.
+  }
+  ignoredFields.forEach((field) => delete copy[field]);
+  Object.entries(copy).forEach(([key, child]) => {
+    if (child === undefined) {
+      delete copy[key];
+      return;
+    }
+    copy[key] = graphComparisonValue(typeKey, child);
+  });
+  return copy;
+}
+
+/**
+ * Reports whether the runtime graph contains a semantic edit that requires rebuilding root
+ * containments. Canvas coordinates and generated visual relationships are intentionally ignored.
+ */
+export function semanticGraphHasChanges(typeKey, root, graph) {
+  if (!graph?.elementsById || !root) {
+    return false;
+  }
+  if (!root.graph || typeof root.graph !== "object") {
+    return true;
+  }
+  const originalById = semanticOriginalIndex(root);
+  const originalEntityIds = new Set([
+    ...semanticElementsFromRoot(typeKey, root).map((element) => String(element?.id || "").trim()),
+    ...semanticRelationshipsFromRoot(typeKey, root).map((relationship) =>
+      String(relationship?.id || "").trim(),
+    ),
+  ]);
+  const runtimeEntityIds = new Set();
+  graph.elementsById.forEach((element) => {
+    const id = String(element?.id || "").trim();
+    if (id) {
+      runtimeEntityIds.add(id);
+    }
+  });
+  graph.relationshipsById?.forEach((relationship) => {
+    const id = String(relationship?.id || "").trim();
+    const semanticObjectId = String(relationship?.semanticObjectId || "").trim();
+    if (id) {
+      runtimeEntityIds.add(id);
+    }
+    if (semanticObjectId) {
+      runtimeEntityIds.add(semanticObjectId);
+    }
+  });
+  graph.traceLinksById?.forEach((traceLink) => {
+    const id = String(traceLink?.id || "").trim();
+    if (id) {
+      runtimeEntityIds.add(id);
+    }
+  });
+  graph.assumptionsById?.forEach((assumption) => {
+    const id = String(assumption?.id || "").trim();
+    if (id) {
+      runtimeEntityIds.add(id);
+    }
+  });
+  for (const id of originalEntityIds) {
+    if (id && !runtimeEntityIds.has(id)) {
+      return true;
+    }
+  }
+  for (const element of graph.elementsById.values()) {
+    if (isRelationshipElementType(typeKey, modelTypeOf(element))) {
+      continue;
+    }
+    const id = String(element?.id || "").trim();
+    const original = id ? originalById.get(id) : null;
+    if (!original) {
+      return true;
+    }
+    if (
+      canonicalSemanticValue(graphComparisonValue(typeKey, element)) !==
+      canonicalSemanticValue(graphComparisonValue(typeKey, original))
+    ) {
+      return true;
+    }
+  }
+  const baseRelationships = new Map(
+    safeArray(root.graph?.relationships)
+      .map((relationship) => [String(relationship?.id || "").trim(), relationship])
+      .filter(([id]) => id),
+  );
+  for (const relationship of graph.relationshipsById?.values() || []) {
+    if (relationship.visualOnly || relationship.containment) {
+      continue;
+    }
+    const id = String(relationship?.id || "").trim();
+    const semanticObjectId = String(relationship?.semanticObjectId || "").trim();
+    const baseRelationship = baseRelationships.get(id);
+    if (!baseRelationship && !originalById.has(id) && !semanticObjectId) {
+      return true;
+    }
+    const original =
+      (id ? originalById.get(id) : null) ||
+      (semanticObjectId ? originalById.get(semanticObjectId) : null);
+    if (!original) {
+      // A graph-only relationship is a projection and has no root semantic counterpart to
+      // rebuild. It cannot by itself indicate a semantic edit.
+      continue;
+    }
+    const currentComparison = relationshipSemanticCopy(typeKey, relationship, graph);
+    const originalComparison = relationshipSemanticCopy(typeKey, original, graph);
+    if (semanticObjectId) {
+      ["source", "target", "sourceElementId", "targetElementId"].forEach((field) => {
+        delete currentComparison[field];
+        delete originalComparison[field];
+      });
+    }
+    if (
+      canonicalSemanticValue(graphComparisonValue(typeKey, currentComparison)) !==
+      canonicalSemanticValue(graphComparisonValue(typeKey, originalComparison))
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function attachNestedContainments(typeKey, copy, sourceElement, graph, visited = new Set()) {
@@ -713,6 +933,7 @@ export function populateRootContainments(typeKey, root, graph) {
   if (rootType) {
     root.eClass ||= rootType;
   }
+  const originalById = semanticOriginalIndex(root);
   modelingRootContainments(typeKey).forEach((entry) => {
     root[entry.feature] = entry.singleton ? null : [];
   });
@@ -724,7 +945,10 @@ export function populateRootContainments(typeKey, root, graph) {
     if (!containment || containment.relationshipOnly) {
       return;
     }
-    const copy = stripRuntimeFields(typeKey, element);
+    const copy = mergeSemanticObjectWithOriginal(
+      stripRuntimeFields(typeKey, element),
+      originalById,
+    );
     attachNestedContainments(typeKey, copy, element, graph);
     if (containment.singleton) {
       root[containment.feature] = copy;
@@ -740,7 +964,10 @@ export function populateRootContainments(typeKey, root, graph) {
     if (!containment || !containment.relationshipOnly) {
       return;
     }
-    const copy = relationshipSemanticCopy(typeKey, relationship, graph);
+    const copy = mergeSemanticObjectWithOriginal(
+      relationshipSemanticCopy(typeKey, relationship, graph),
+      originalById,
+    );
     if (containment.singleton) {
       root[containment.feature] = copy;
     } else {
@@ -761,6 +988,7 @@ export async function populateRootContainmentsAsync(typeKey, root, graph) {
   if (rootType) {
     root.eClass ||= rootType;
   }
+  const originalById = semanticOriginalIndex(root);
   modelingRootContainments(typeKey).forEach((entry) => {
     root[entry.feature] = entry.singleton ? null : [];
   });
@@ -773,7 +1001,10 @@ export async function populateRootContainmentsAsync(typeKey, root, graph) {
     if (!containment || containment.relationshipOnly) {
       continue;
     }
-    const copy = stripRuntimeFields(typeKey, element);
+    const copy = mergeSemanticObjectWithOriginal(
+      stripRuntimeFields(typeKey, element),
+      originalById,
+    );
     attachNestedContainments(typeKey, copy, element, graph);
     if (containment.singleton) {
       root[containment.feature] = copy;
@@ -793,7 +1024,10 @@ export async function populateRootContainmentsAsync(typeKey, root, graph) {
     if (!containment || !containment.relationshipOnly) {
       continue;
     }
-    const copy = relationshipSemanticCopy(typeKey, relationship, graph);
+    const copy = mergeSemanticObjectWithOriginal(
+      relationshipSemanticCopy(typeKey, relationship, graph),
+      originalById,
+    );
     if (containment.singleton) {
       root[containment.feature] = copy;
     } else {

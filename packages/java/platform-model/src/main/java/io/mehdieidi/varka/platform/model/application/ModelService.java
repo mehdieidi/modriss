@@ -566,32 +566,45 @@ public final class ModelService {
           requireExpectedRevision(existing, expectedRevision);
           ProjectRecord project = projectService.get(user, existing.projectId());
           projectService.requireEditor(project, user.id());
+          JsonNode normalizedInput = importExport.normalizeModel(name, level, modelJson);
+          boolean semanticChanged =
+              !importExport.semanticModelEquals(existing.modelJson(), normalizedInput);
+          // A full browser save can contain both the semantic model and a graph projection. When
+          // the semantic model changed, it is authoritative; only use graph scalar synchronization
+          // when the semantic projection was otherwise unchanged (for graph-originated edits).
+          if (!semanticChanged) {
+            importExport.synchronizeSemanticGraphProjection(level, normalizedInput);
+            semanticChanged =
+                !importExport.semanticModelEquals(existing.modelJson(), normalizedInput);
+          }
           java.util.Set<String> deletedSemanticIds =
               new java.util.HashSet<>(importExport.semanticIds(level, existing.modelJson()));
-          deletedSemanticIds.removeAll(importExport.semanticIds(level, modelJson));
+          deletedSemanticIds.removeAll(importExport.semanticIds(level, normalizedInput));
           deletedSemanticIds.addAll(
-              importExport.removedReferenceTargets(level, existing.modelJson(), modelJson));
+              importExport.removedReferenceTargets(level, existing.modelJson(), normalizedInput));
           deletedSemanticIds.addAll(
               importExport.generatedObjectsEmptiedByReferenceRemoval(
-                  level, existing.modelJson(), modelJson));
+                  level, existing.modelJson(), normalizedInput));
           deletedSemanticIds.addAll(
-              importExport.removedGeneratedSources(level, existing.modelJson(), modelJson));
-          JsonNode normalizedModel =
-              importExport.removeDanglingReferences(
-                  level, importExport.normalizeModel(name, level, modelJson), deletedSemanticIds);
-          // Normalization can rehydrate graph-backed references after the first pass. Re-run the
-          // Ecore-driven deletion closure on that canonical projection so cross-container
-          // generated dependents and required relationship records cannot be reintroduced by the
-          // JSON/XMI bridge.
-          normalizedModel =
-              importExport.removeDanglingReferences(level, normalizedModel, deletedSemanticIds);
+              importExport.removedGeneratedSources(level, existing.modelJson(), normalizedInput));
+          JsonNode normalizedModel = normalizedInput;
+          if (semanticChanged) {
+            normalizedModel =
+                importExport.removeDanglingReferences(level, normalizedModel, deletedSemanticIds);
+            // Normalization can rehydrate graph-backed references after the first pass. Re-run the
+            // Ecore-driven deletion closure on that canonical projection so cross-container
+            // generated dependents and required relationship records cannot be reintroduced by the
+            // JSON/XMI bridge.
+            normalizedModel =
+                importExport.removeDanglingReferences(level, normalizedModel, deletedSemanticIds);
+          }
           ModelImportExportService.SourceXmiUpdate sourceXmi =
               importExport.resolveSourceXmiUpdate(
                   user, existing.projectId(), level, normalizedModel, true);
           // A no-op save must not rewrite an imported XMI sidecar. Re-export only when the
           // semantic JSON projection actually changed, so the uploaded model remains the
           // authoritative transformation input until an edit is made.
-          if (!normalizedModel.equals(existing.modelJson())) {
+          if (semanticChanged) {
             sourceXmi = importExport.regenerateSourceXmi(level, normalizedModel);
           }
           MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
@@ -703,12 +716,19 @@ public final class ModelService {
           for (ModelPatchOperation operation : operations) {
             applyPatchOperation(patchedModel, operation);
           }
-          importExport.synchronizeSemanticGraphProjection(level, patchedModel);
           JsonNode normalizedModel =
-              importExport.removeDanglingReferences(
-                  level,
-                  importExport.normalizeModel(
-                      name == null ? existing.name() : name, level, patchedModel));
+              importExport.normalizeModel(
+                  name == null ? existing.name() : name, level, patchedModel);
+          boolean semanticChanged =
+              !importExport.semanticModelEquals(existing.modelJson(), normalizedModel);
+          if (!semanticChanged) {
+            importExport.synchronizeSemanticGraphProjection(level, normalizedModel);
+            semanticChanged =
+                !importExport.semanticModelEquals(existing.modelJson(), normalizedModel);
+          }
+          if (semanticChanged) {
+            normalizedModel = importExport.removeDanglingReferences(level, normalizedModel);
+          }
           if (requireStructuralValidity) {
             ValidationResult structural = validateStructural(level, normalizedModel);
             if (!structural.valid()) {
@@ -719,10 +739,9 @@ public final class ModelService {
           ModelImportExportService.SourceXmiUpdate sourceXmi =
               importExport.resolveSourceXmiUpdate(
                   user, existing.projectId(), level, normalizedModel, true);
-          // View/layout and issue-board persistence is transport-only. Re-exporting the semantic
-          // model for those changes can turn a valid nested EMF containment into a lossy JSON
-          // projection, so retain the authoritative XMI sidecar in that case.
-          if (!onlyTransportPatch(operations)) {
+          // Re-export only after the normalized semantic projection has changed. A frontend save
+          // may replace graph projections while preserving the authoritative semantic model.
+          if (semanticChanged) {
             sourceXmi = importExport.regenerateSourceXmi(level, normalizedModel);
           }
           MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
@@ -743,20 +762,6 @@ public final class ModelService {
           persistModelAndSourceXmi(existing, updated, sourceXmi);
           return clientRecord(updated);
         });
-  }
-
-  private boolean onlyTransportPatch(List<ModelPatchOperation> operations) {
-    return operations.stream()
-        .allMatch(
-            operation -> {
-              String path = operation == null || operation.path() == null ? "" : operation.path();
-              return path.equals("/activeViewId")
-                  || path.matches("/graph/elements/\\d+/(x|y)")
-                  || path.startsWith("/views")
-                  || path.startsWith("/fragments")
-                  || path.startsWith("/manualBacklog")
-                  || path.startsWith("/validationIssues");
-            });
   }
 
   /**

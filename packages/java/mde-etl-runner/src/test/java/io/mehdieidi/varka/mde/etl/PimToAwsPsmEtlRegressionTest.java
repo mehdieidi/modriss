@@ -153,9 +153,26 @@ final class PimToAwsPsmEtlRegressionTest {
             .filter(s -> "AslChoiceState".equals(s.eClass().getName()))
             .toList();
     assertEquals(
-        3,
+        0,
         choiceStates.size(),
-        "The sample decision steps should become three executable ASL choices.");
+        "Unmapped evaluator-backed decisions must not emit executable ASL choices.");
+    List<EObject> failClosedDecisionStates =
+        resources.stream()
+            .filter(r -> "StepFunctionStateMachine".equals(r.eClass().getName()))
+            .flatMap(r -> values(reference(r, "aslDocument"), "states").stream())
+            .filter(s -> "AslFailState".equals(s.eClass().getName()))
+            .filter(
+                s ->
+                    List.of(
+                            "Eligibility Decision Step",
+                            "Recovery Decision Step",
+                            "Appeal Routing Decision Step")
+                        .contains(get(s, "stateName")))
+            .toList();
+    assertEquals(
+        3,
+        failClosedDecisionStates.size(),
+        "Every unmapped evaluator-backed decision must fail closed until its routing is modeled.");
     EObject readiness = reference(root, "readiness");
     assertTrue(readiness != null, "Expected readiness assessment.");
     for (EObject choice : choiceStates) {

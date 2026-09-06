@@ -124,9 +124,11 @@ operation cachedEquivalent(source, ruleName : String) {
   if (target.isDefined()) {
     cachedCimEquivalentByRule.put(key, target);
   }
-  else {
-    cachedCimEquivalentByRule.put(key, "__NONE__");
-  }
+  // Do not cache a miss.  ETL rules are evaluated in dependency order only
+  // where the source model requires it; a referenced target may legitimately
+  // be created by a later rule in the same transformation.  Caching the miss
+  // made resolution depend on rule ordering and permanently severed valid
+  // generated references.
   return target;
 }
 
@@ -147,9 +149,7 @@ operation cachedEquivalentOfClass(source, ruleName : String, className : String)
   if (target.isDefined()) {
     cachedCimEquivalentByRule.put(key, target);
   }
-  else {
-    cachedCimEquivalentByRule.put(key, "__NONE__");
-  }
+  // Keep unresolved values retryable for the same reason as cachedEquivalent.
   return target;
 }
 

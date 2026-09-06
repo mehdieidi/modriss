@@ -198,9 +198,12 @@ rule UserInitiatedCommand2ApiRoute
   route.descriptionForConsumers = cmd.intent;
   route.requestValidationRequired = true;
   route.responseValidationRequired = true;
-  route.requestSchema = commandFunction(cmd).contract.inputSchema;
-  route.responseSchema = commandFunction(cmd).contract.outputSchema;
-  route.functionIntegration = commandFunction(cmd);
+  var fn = commandFunction(cmd);
+  if (fn.isDefined()) {
+    route.requestSchema = fn.contract.inputSchema;
+    route.responseSchema = fn.contract.outputSchema;
+    route.functionIntegration = fn;
+  }
 
   if (route.authRequired) {
     var authz = new SECURITY!AuthorizationPolicy;
@@ -213,9 +216,13 @@ rule UserInitiatedCommand2ApiRoute
     authz.roleOrScopeRequired = cmd.authorizationRule;
     authz.resourceLevelAuthorization = hasText(cmd.authorizationRule);
     authz.attachedTo.add(route);
-    authz.attachedTo.add(route.functionIntegration);
+    if (fn.isDefined()) {
+      authz.attachedTo.add(fn);
+    }
     route.authorization = authz;
-    route.functionIntegration.securityPolicies.add(authz);
+    if (fn.isDefined()) {
+      fn.securityPolicies.add(authz);
+    }
     pimRoot().policies.add(authz);
     traceGenerated(cmd, authz, "TR-070", "MEDIUM");
   }
@@ -224,16 +231,18 @@ rule UserInitiatedCommand2ApiRoute
   api.authRequired = api.authRequired or route.authRequired;
   traceGenerated(cmd, route, "TR-070", "MEDIUM");
 
-  var trigger = new COMPUTE!Trigger;
-  trigger.id = idFor("trigger_route_cmd", cmd);
-  trigger.name = cmd.name + " Route Trigger";
-  trigger.triggerKind = "API_ROUTE";
-  trigger.invocationMode = PIMTYPES!InvocationMode#SYNCHRONOUS;
-  trigger.enabled = true;
-  trigger.generatedFromFlow = false;
-  trigger.source = route;
-  route.functionIntegration.triggers.add(trigger);
-  traceGenerated(cmd, trigger, "TR-070", "MEDIUM");
+  if (fn.isDefined()) {
+    var trigger = new COMPUTE!Trigger;
+    trigger.id = idFor("trigger_route_cmd", cmd);
+    trigger.name = cmd.name + " Route Trigger";
+    trigger.triggerKind = "API_ROUTE";
+    trigger.invocationMode = PIMTYPES!InvocationMode#SYNCHRONOUS;
+    trigger.enabled = true;
+    trigger.generatedFromFlow = false;
+    trigger.source = route;
+    fn.triggers.add(trigger);
+    traceGenerated(cmd, trigger, "TR-070", "MEDIUM");
+  }
 
   for (err in cmd.possibleErrors) {
     var mapping = new API!ErrorMapping;
@@ -317,9 +326,12 @@ rule Query2ApiRoute
   route.paginationStyle = q.paginationExpectation;
   route.requestValidationRequired = q.input.notEmpty();
   route.responseValidationRequired = true;
-  route.requestSchema = queryFunction(q).contract.inputSchema;
-  route.responseSchema = queryFunction(q).contract.outputSchema;
-  route.functionIntegration = queryFunction(q);
+  var fn = queryFunction(q);
+  if (fn.isDefined()) {
+    route.requestSchema = fn.contract.inputSchema;
+    route.responseSchema = fn.contract.outputSchema;
+    route.functionIntegration = fn;
+  }
 
   if (route.authRequired) {
     var authz = new SECURITY!AuthorizationPolicy;
@@ -332,9 +344,13 @@ rule Query2ApiRoute
     authz.roleOrScopeRequired = q.authorizationRule;
     authz.resourceLevelAuthorization = hasText(q.authorizationRule);
     authz.attachedTo.add(route);
-    authz.attachedTo.add(route.functionIntegration);
+    if (fn.isDefined()) {
+      authz.attachedTo.add(fn);
+    }
     route.authorization = authz;
-    route.functionIntegration.securityPolicies.add(authz);
+    if (fn.isDefined()) {
+      fn.securityPolicies.add(authz);
+    }
     pimRoot().policies.add(authz);
     traceGenerated(q, authz, "TR-080", "MEDIUM");
   }
@@ -343,16 +359,18 @@ rule Query2ApiRoute
   api.authRequired = api.authRequired or route.authRequired;
   traceGenerated(q, route, "TR-080", "MEDIUM");
 
-  var trigger = new COMPUTE!Trigger;
-  trigger.id = idFor("trigger_route_query", q);
-  trigger.name = q.name + " Route Trigger";
-  trigger.triggerKind = "API_ROUTE";
-  trigger.invocationMode = PIMTYPES!InvocationMode#SYNCHRONOUS;
-  trigger.enabled = true;
-  trigger.generatedFromFlow = false;
-  trigger.source = route;
-  route.functionIntegration.triggers.add(trigger);
-  traceGenerated(q, trigger, "TR-080", "MEDIUM");
+  if (fn.isDefined()) {
+    var trigger = new COMPUTE!Trigger;
+    trigger.id = idFor("trigger_route_query", q);
+    trigger.name = q.name + " Route Trigger";
+    trigger.triggerKind = "API_ROUTE";
+    trigger.invocationMode = PIMTYPES!InvocationMode#SYNCHRONOUS;
+    trigger.enabled = true;
+    trigger.generatedFromFlow = false;
+    trigger.source = route;
+    fn.triggers.add(trigger);
+    traceGenerated(q, trigger, "TR-080", "MEDIUM");
+  }
 
   if (route.authRequired and not hasText(q.authorizationRule)) {
     manualDecision("TR-080", "Confirm authorization policy for route generated from query '" + q.name + "'.", KERNEL!Severity#ERROR, true, Sequence{q, route});

@@ -32,6 +32,7 @@ import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.NullNode;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
@@ -245,6 +246,35 @@ final class ModelImportExportService {
     if (!copy.has("views") || !copy.get("views").isArray()) {
       copy.set("views", store.objectMapper().createArrayNode());
     }
+    return copy;
+  }
+
+  /**
+   * Compares the persisted Ecore projection while ignoring browser transport state. Canvas
+   * coordinates, views, issue-board state, and the graph projection are not authoritative semantic
+   * input for transformations and must not force a source-XMI rewrite on a layout-only save.
+   */
+  boolean semanticModelEquals(JsonNode left, JsonNode right) {
+    return semanticProjection(left).equals(semanticProjection(right));
+  }
+
+  private JsonNode semanticProjection(JsonNode modelJson) {
+    if (!(modelJson instanceof ObjectNode object)) {
+      return modelJson == null ? NullNode.getInstance() : modelJson.deepCopy();
+    }
+    ObjectNode copy = object.deepCopy();
+    copy.remove(
+        List.of(
+            "graph",
+            "diagram",
+            "views",
+            "fragments",
+            "manualBacklog",
+            "validationIssues",
+            "traceLinks",
+            "activeViewId",
+            "_sourceXmiBase64",
+            "_sourceXmiToken"));
     return copy;
   }
 
