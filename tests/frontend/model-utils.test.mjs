@@ -22,6 +22,7 @@ const {
   serializeGraphAndViewsInto,
   serializeGraphAndViewsIntoAsync,
 } = await import("../../apps/frontend/js/graph-store.js");
+const { buildSaveRootFromBase } = await import("../../apps/frontend/js/diagram.js");
 
 const modelingConfig = {
   levelOrder: ["pim"],
@@ -59,6 +60,19 @@ const modelingConfig = {
 state.modelingConfig.config = modelingConfig;
 applyModelingRuntimeConfig(modelingConfig);
 state.activeType = "pim";
+
+test("preserves the semantic root name when the record name is only a display name", () => {
+  const root = buildSaveRootFromBase("pim", "cim-pim", {
+    eClass: "PIMModel",
+    id: "pim-root-1",
+    name: "ClimateReliefGrantsBusinessModel",
+    domainName: "Climate Relief Grants",
+  });
+
+  assert.equal(root.name, "ClimateReliefGrantsBusinessModel");
+  assert.equal(root.id, "pim-root-1");
+  assert.equal(root.domainName, "Climate Relief Grants");
+});
 
 test("keeps one many-target semantic relationship as one XMI object", () => {
   const copy = relationshipSemanticCopy("pim", {

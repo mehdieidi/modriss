@@ -152,8 +152,8 @@ function sanitizeRootForType(typeKey, root) {
   return root;
 }
 
-function buildSaveRootFromBase(typeKey, name) {
-  const base = state.baseModel;
+export function buildSaveRootFromBase(typeKey, name, baseModel = state.baseModel) {
+  const base = baseModel;
   if (!base || typeof base !== "object") {
     return defaultRootModel(typeKey, name);
   }
@@ -161,10 +161,11 @@ function buildSaveRootFromBase(typeKey, name) {
   // then retain all persisted root attributes edited in the model panel.
   // Previously only id and eClass were copied, so fields such as domainName
   // disappeared from every save payload.
+  // The record name passed here is a display label and must not replace the
+  // semantic root name used by transformations.
   return {
     ...defaultRootModel(typeKey, name),
     ...structuredClone(base),
-    name,
   };
 }
 
