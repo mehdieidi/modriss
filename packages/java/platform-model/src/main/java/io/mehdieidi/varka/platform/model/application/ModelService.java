@@ -567,6 +567,8 @@ public final class ModelService {
           ProjectRecord project = projectService.get(user, existing.projectId());
           projectService.requireEditor(project, user.id());
           JsonNode normalizedInput = importExport.normalizeModel(name, level, modelJson);
+          importExport.preserveGraphOmittedSemanticObjects(
+              level, existing.modelJson(), normalizedInput);
           boolean semanticChanged =
               !importExport.semanticModelEquals(existing.modelJson(), normalizedInput);
           // A full browser save can contain both the semantic model and a graph projection. When
@@ -580,17 +582,27 @@ public final class ModelService {
           java.util.Set<String> deletedSemanticIds =
               new java.util.HashSet<>(importExport.semanticIds(level, existing.modelJson()));
           deletedSemanticIds.removeAll(importExport.semanticIds(level, normalizedInput));
-          deletedSemanticIds.addAll(
-              importExport.removedReferenceTargets(level, existing.modelJson(), normalizedInput));
-          deletedSemanticIds.addAll(
-              importExport.generatedObjectsEmptiedByReferenceRemoval(
-                  level, existing.modelJson(), normalizedInput));
-          deletedSemanticIds.addAll(
-              importExport.removedGeneratedSources(level, existing.modelJson(), normalizedInput));
+          // Reference cleanup is destructive: it removes generated dependents and clears
+          // references that do not resolve in the submitted semantic tree. A browser save can
+          // legitimately contain a partial/lazy graph projection while changing only a scalar
+          // attribute, so reference differences alone are not evidence of an interactive delete.
+          // Expand the deletion closure only after an actual semantic object disappeared.
+          if (!deletedSemanticIds.isEmpty()) {
+            deletedSemanticIds.addAll(
+                importExport.removedReferenceTargets(level, existing.modelJson(), normalizedInput));
+            deletedSemanticIds.addAll(
+                importExport.generatedObjectsEmptiedByReferenceRemoval(
+                    level, existing.modelJson(), normalizedInput));
+            deletedSemanticIds.addAll(
+                importExport.removedGeneratedSources(level, existing.modelJson(), normalizedInput));
+          }
           JsonNode normalizedModel = normalizedInput;
           if (semanticChanged) {
             normalizedModel =
-                importExport.removeDanglingReferences(level, normalizedModel, deletedSemanticIds);
+                deletedSemanticIds.isEmpty()
+                    ? importExport.removeDanglingReferences(level, normalizedModel)
+                    : importExport.removeDanglingReferences(
+                        level, normalizedModel, deletedSemanticIds);
             // Normalization can rehydrate graph-backed references after the first pass. Re-run the
             // Ecore-driven deletion closure on that canonical projection so cross-container
             // generated dependents and required relationship records cannot be reintroduced by the
@@ -719,6 +731,8 @@ public final class ModelService {
           JsonNode normalizedModel =
               importExport.normalizeModel(
                   name == null ? existing.name() : name, level, patchedModel);
+          importExport.preserveGraphOmittedSemanticObjects(
+              level, existing.modelJson(), normalizedModel);
           boolean semanticChanged =
               !importExport.semanticModelEquals(existing.modelJson(), normalizedModel);
           if (!semanticChanged) {
@@ -726,8 +740,24 @@ public final class ModelService {
             semanticChanged =
                 !importExport.semanticModelEquals(existing.modelJson(), normalizedModel);
           }
+          java.util.Set<String> deletedSemanticIds =
+              new java.util.HashSet<>(importExport.semanticIds(level, existing.modelJson()));
+          deletedSemanticIds.removeAll(importExport.semanticIds(level, normalizedModel));
+          if (!deletedSemanticIds.isEmpty()) {
+            deletedSemanticIds.addAll(
+                importExport.removedReferenceTargets(level, existing.modelJson(), normalizedModel));
+            deletedSemanticIds.addAll(
+                importExport.generatedObjectsEmptiedByReferenceRemoval(
+                    level, existing.modelJson(), normalizedModel));
+            deletedSemanticIds.addAll(
+                importExport.removedGeneratedSources(level, existing.modelJson(), normalizedModel));
+          }
           if (semanticChanged) {
-            normalizedModel = importExport.removeDanglingReferences(level, normalizedModel);
+            normalizedModel =
+                deletedSemanticIds.isEmpty()
+                    ? importExport.removeDanglingReferences(level, normalizedModel)
+                    : importExport.removeDanglingReferences(
+                        level, normalizedModel, deletedSemanticIds);
           }
           if (requireStructuralValidity) {
             ValidationResult structural = validateStructural(level, normalizedModel);

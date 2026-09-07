@@ -250,6 +250,158 @@ final class ModelImportExportService {
   }
 
   /**
+   * Restores semantic containment objects omitted by a partial browser graph projection.
+   *
+   * <p>The graph is a transport/view projection and does not necessarily contain generated or
+   * non-visual containment objects. A full save must not interpret those omitted objects as user
+   * deletions. Objects that were present in the previous graph but are absent from the submitted
+   * graph remain deletions and are intentionally not restored.
+   */
+  JsonNode preserveGraphOmittedSemanticObjects(
+      ModelLevel level, JsonNode previousModel, JsonNode currentModel) {
+    if (!(previousModel instanceof ObjectNode previous)
+        || !(currentModel instanceof ObjectNode current)
+        || !hasGraphProjection(previous)
+        || !hasGraphProjection(current)) {
+      return currentModel;
+    }
+    Map<String, EClass> classes = eClassesByName(level);
+    Set<String> previousGraphIds = graphProjectionIds(previous);
+    if (previousGraphIds.isEmpty()) {
+      // There is no prior graph inventory from which to distinguish a lazy omission from an
+      // explicit deletion. In that case the semantic root remains authoritative.
+      return currentModel;
+    }
+    if (previous.get("graph").equals(current.get("graph"))) {
+      // A semantic-only payload is authoritative when the graph did not change. This preserves
+      // explicit API/patch deletions while the browser path is handled when its graph projection
+      // records the corresponding editor change.
+      return currentModel;
+    }
+    Set<String> currentGraphIds = graphProjectionIds(current);
+    mergeOmittedContainments(
+        previous, current, classes, previousGraphIds, currentGraphIds, new java.util.HashSet<>());
+    return current;
+  }
+
+  private void mergeOmittedContainments(
+      ObjectNode previous,
+      ObjectNode current,
+      Map<String, EClass> classes,
+      Set<String> previousGraphIds,
+      Set<String> currentGraphIds,
+      Set<String> visited) {
+    EClass eClass = classes.get(text(previous, "eClass", ""));
+    if (eClass == null || eClass.getEAllContainments().isEmpty()) {
+      return;
+    }
+    String objectId = text(previous, "id", "");
+    String visitKey =
+        objectId.isBlank() ? Integer.toHexString(System.identityHashCode(previous)) : objectId;
+    if (!visited.add(visitKey)) {
+      return;
+    }
+    for (EReference containment : eClass.getEAllContainments()) {
+      JsonNode previousValue = previous.get(containment.getName());
+      JsonNode currentValue = current.get(containment.getName());
+      if (previousValue == null || previousValue.isNull()) {
+        continue;
+      }
+      if (containment.isMany()) {
+        if (!previousValue.isArray()) {
+          continue;
+        }
+        if (currentValue == null || !currentValue.isArray()) {
+          currentValue = store.objectMapper().createArrayNode();
+          current.set(containment.getName(), currentValue);
+        }
+        ArrayNode currentArray = (ArrayNode) currentValue;
+        for (JsonNode previousChild : previousValue) {
+          if (!(previousChild instanceof ObjectNode previousChildObject)) {
+            continue;
+          }
+          String childId = text(previousChildObject, "id", "");
+          JsonNode currentChild = findById(currentArray, childId);
+          if (currentChild != null) {
+            if (currentChild instanceof ObjectNode currentChildObject) {
+              mergeOmittedContainments(
+                  previousChildObject,
+                  currentChildObject,
+                  classes,
+                  previousGraphIds,
+                  currentGraphIds,
+                  visited);
+            }
+          } else if (!childId.isBlank()
+              && (!previousGraphIds.contains(childId) || currentGraphIds.contains(childId))) {
+            currentArray.add(previousChild.deepCopy());
+          }
+        }
+      } else if (previousValue instanceof ObjectNode previousChildObject) {
+        if (currentValue instanceof ObjectNode currentChildObject) {
+          mergeOmittedContainments(
+              previousChildObject,
+              currentChildObject,
+              classes,
+              previousGraphIds,
+              currentGraphIds,
+              visited);
+        } else {
+          String childId = text(previousChildObject, "id", "");
+          if (!childId.isBlank()
+              && (!previousGraphIds.contains(childId) || currentGraphIds.contains(childId))) {
+            current.set(containment.getName(), previousChildObject.deepCopy());
+          }
+        }
+      }
+    }
+  }
+
+  private JsonNode findById(ArrayNode array, String id) {
+    if (id.isBlank()) {
+      return null;
+    }
+    for (JsonNode item : array) {
+      if (id.equals(text(item, "id", ""))) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  private boolean hasGraphProjection(ObjectNode model) {
+    JsonNode graph = model.get("graph");
+    return graph instanceof ObjectNode
+        && (graph.get("elements") instanceof ArrayNode
+            || graph.get("relationships") instanceof ArrayNode);
+  }
+
+  private Set<String> graphProjectionIds(ObjectNode model) {
+    Set<String> ids = new java.util.HashSet<>();
+    JsonNode graph = model.get("graph");
+    if (!(graph instanceof ObjectNode)) {
+      return ids;
+    }
+    for (String field : List.of("elements", "relationships", "traceLinks", "assumptions")) {
+      JsonNode values = graph.get(field);
+      if (!(values instanceof ArrayNode)) {
+        continue;
+      }
+      for (JsonNode value : values) {
+        String id = text(value, "id", "");
+        if (!id.isBlank()) {
+          ids.add(id);
+        }
+        String semanticObjectId = text(value, "semanticObjectId", "");
+        if (!semanticObjectId.isBlank()) {
+          ids.add(semanticObjectId);
+        }
+      }
+    }
+    return ids;
+  }
+
+  /**
    * Compares the persisted Ecore projection while ignoring browser transport state. Canvas
    * coordinates, views, issue-board state, and the graph projection are not authoritative semantic
    * input for transformations and must not force a source-XMI rewrite on a layout-only save.
