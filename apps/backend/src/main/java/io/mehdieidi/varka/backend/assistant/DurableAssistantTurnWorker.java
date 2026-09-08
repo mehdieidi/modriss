@@ -45,6 +45,8 @@ public final class DurableAssistantTurnWorker {
   private final boolean workflowEngineV2;
   private final AssistantMode assistantMode;
   private final int maxSourceChunksPerTurn;
+  private final int maxProviderCallsPerTurn;
+  private final int maxProviderCallsSourceTurn;
   private final boolean automaticContinuationEnabled;
   private final String workerId = "assistant-" + UUID.randomUUID();
   // Documents up to 24k characters remain whole. Larger documents are segmented only at semantic
@@ -87,6 +89,8 @@ public final class DurableAssistantTurnWorker {
       @Value("${varka.ai.workflow-engine-v2:true}") boolean workflowEngineV2,
       @Value("${varka.ai.mode:unified}") String assistantMode,
       @Value("${varka.ai.max-source-chunks-per-turn:24}") int maxSourceChunksPerTurn,
+      @Value("${varka.ai.max-provider-calls-per-turn:24}") int maxProviderCallsPerTurn,
+      @Value("${varka.ai.max-provider-calls-source-turn:20}") int maxProviderCallsSourceTurn,
       @Value("${varka.ai.automatic-continuation-enabled:true}")
           boolean automaticContinuationEnabled) {
     this.turns = turns;
@@ -97,6 +101,8 @@ public final class DurableAssistantTurnWorker {
     this.workflowEngineV2 = workflowEngineV2;
     this.assistantMode = AssistantMode.parse(assistantMode);
     this.maxSourceChunksPerTurn = Math.max(1, maxSourceChunksPerTurn);
+    this.maxProviderCallsPerTurn = Math.max(1, maxProviderCallsPerTurn);
+    this.maxProviderCallsSourceTurn = Math.max(1, maxProviderCallsSourceTurn);
     this.automaticContinuationEnabled = automaticContinuationEnabled;
   }
 
@@ -548,7 +554,8 @@ public final class DurableAssistantTurnWorker {
           && progressivePhaseCompleted
           && state == AssistantTurn.State.PARTIAL
           && !turns.cancellationRequested(turn.id())
-          && Instant.now().isBefore(turn.deadlineAt())) {
+          && Instant.now().isBefore(turn.deadlineAt())
+          && providerCallsAvailable(turn, result.providerCalls())) {
         turns.continueProgressively(turn.id(), committedRevision[0], remainingWork);
         return;
       }
@@ -594,7 +601,8 @@ public final class DurableAssistantTurnWorker {
         if (automaticContinuationEnabled
             && (turnFailure.progressiveRecovery() || hasDurableConceptualProgress)
             && !turns.cancellationRequested(turn.id())
-            && Instant.now().isBefore(turn.deadlineAt())) {
+            && Instant.now().isBefore(turn.deadlineAt())
+            && providerCallsAvailable(turn, turnFailure.providerCalls())) {
           int recoveryCount =
               progressiveWorkflow
                   .map(item -> item.plan().path("automaticRecoveryCount").asInt(0))
@@ -842,6 +850,14 @@ public final class DurableAssistantTurnWorker {
     turns.saveWorkflow(
         new AssistantTurnStore.Workflow(
             saved.turnId(), saved.workflowKind(), "EXECUTING", nextWorkItemId, advancedPlan));
+  }
+
+  private boolean providerCallsAvailable(AssistantTurn turn, int currentExecutionCalls) {
+    int limit =
+        turn.sourceText() == null || turn.sourceText().isBlank()
+            ? maxProviderCallsPerTurn
+            : maxProviderCallsSourceTurn;
+    return Math.max(0, turn.providerCalls()) + Math.max(0, currentExecutionCalls) < limit;
   }
 
   private AgentTurnLoop.WorkflowMode route(AssistantTurn turn, String message) {

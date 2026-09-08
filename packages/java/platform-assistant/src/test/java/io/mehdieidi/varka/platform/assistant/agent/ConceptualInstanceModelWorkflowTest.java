@@ -1194,6 +1194,19 @@ class ConceptualInstanceModelWorkflowTest {
   }
 
   @Test
+  void restoresAnOmittedObjectTypeFromItsAuthoritativeBlueprintEntry() throws Exception {
+    var conceptual =
+        ConceptualInstanceModelWorkflow.ConceptualModel.parse(
+            mapper,
+            "{\"actor-1\":{\"attributes\":[],\"associations\":{\"compositions\":[],\"references\":[]}}}",
+            Map.of("actor-1", "Actor"));
+
+    var batch = conceptual.commands(emptyCim(), contracts, ModelLevel.CIM);
+
+    assertEquals("Actor", batch.creates().get(0).eClass());
+  }
+
+  @Test
   void compilesPaperParentToChildCompositionsInDependencyOrder() throws Exception {
     var conceptual =
         ConceptualInstanceModelWorkflow.ConceptualModel.parse(
@@ -1356,6 +1369,43 @@ class ConceptualInstanceModelWorkflowTest {
 
     assertTrue(error.getMessage().contains("not writable on Function"));
     assertTrue(error.getMessage().contains("Legal compositions"));
+  }
+
+  @Test
+  void dropsKnownReadonlyInverseAssociationWhileCompilingConceptualObjects() throws Exception {
+    var conceptual =
+        ConceptualInstanceModelWorkflow.ConceptualModel.parse(
+            mapper,
+            """
+{
+  "service": {
+    "type": "ServerlessService",
+    "attributes": [
+      {"dataType": "", "attributeName": "name", "value": "Orders"},
+      {"dataType": "", "attributeName": "boundaryType", "value": "CAPABILITY_BASED"}
+    ],
+    "associations": {"compositions": [], "references": []}
+  },
+  "function": {
+    "type": "Function",
+    "attributes": [
+      {"dataType": "", "attributeName": "name", "value": "Process order"},
+      {"dataType": "", "attributeName": "functionKind", "value": "COMMAND_HANDLER"}
+    ],
+    "associations": {
+      "compositions": [],
+      "references": [
+        {"associationName": "service", "associatedClassName": "ServerlessService", "instanceID": "service"}
+      ]
+    }
+  }
+}
+""");
+
+    var batch = conceptual.commands(emptyPim(), contracts, ModelLevel.PIM);
+
+    assertEquals(2, batch.creates().size());
+    assertTrue(batch.connections().isEmpty());
   }
 
   @Test

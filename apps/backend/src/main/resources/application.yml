@@ -91,7 +91,7 @@ varka:
     max-system-chars: ${VARKA_AI_MAX_SYSTEM_CHARS:14000}
     max-source-chunk-tokens: ${VARKA_AI_MAX_SOURCE_CHUNK_TOKENS:4000}
     max-source-chunks-per-turn: ${VARKA_AI_MAX_SOURCE_CHUNKS_PER_TURN:24}
-    max-provider-calls-per-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN:20}
+    max-provider-calls-per-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN:24}
     max-provider-calls-source-turn: ${VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN:20}
     max-completion-tokens: ${VARKA_AI_MAX_COMPLETION_TOKENS:6000}
     max-patch-creates: ${VARKA_AI_MAX_PATCH_CREATES:48}

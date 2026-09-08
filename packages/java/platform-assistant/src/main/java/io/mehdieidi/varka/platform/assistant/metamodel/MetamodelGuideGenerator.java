@@ -77,8 +77,34 @@ public final class MetamodelGuideGenerator {
             .append(String.join(",", unique.keySet()));
     unique.values().stream()
         .sorted(Comparator.comparing(TypeContract::eClass))
-        .forEach(type -> appendCompactType(guide, type));
+        .forEach(type -> appendGenerationType(guide, type));
     return guide.toString();
+  }
+
+  /**
+   * Rendering dedicated to model generation. The JSON field names are written literally so a
+   * provider does not have to remember that the compact index's c/r abbreviations map to the
+   * conceptual model's compositions/references arrays.
+   */
+  private void appendGenerationType(StringBuilder guide, TypeContract type) {
+    guide.append('\n').append(type.eClass());
+    if (!type.supertypes().isEmpty()) guide.append('<').append(String.join(",", type.supertypes()));
+    if (!type.attributes().isEmpty())
+      guide
+          .append("|attributes:")
+          .append(type.attributes().stream().map(this::attribute).collect(Collectors.joining(",")));
+    List<ReferenceContract> containments =
+        type.references().stream().filter(ReferenceContract::containment).toList();
+    if (!containments.isEmpty())
+      guide
+          .append("|compositions:")
+          .append(containments.stream().map(this::reference).collect(Collectors.joining(",")));
+    List<ReferenceContract> links =
+        type.references().stream().filter(reference -> !reference.containment()).toList();
+    if (!links.isEmpty())
+      guide
+          .append("|references:")
+          .append(links.stream().map(this::reference).collect(Collectors.joining(",")));
   }
 
   /** Returns whether a name is an exact EClass in the authoritative level metamodel. */

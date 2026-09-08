@@ -59,7 +59,7 @@ assistant context, but increase storage and processing costs.
 
 Set `VARKA_AI_ENABLED=true` to enable provider calls. The deployed configuration uses
 `VARKA_AI_PROVIDER=openai`, Arvan's `OPENAI_COMPATIBLE_BASE_URL` and
-`OPENAI_COMPATIBLE_API_KEY`, and `VARKA_AI_MODEL=DeepSeek-V4-Flash`. The code retains other provider
+`OPENAI_COMPATIBLE_API_KEY`, and `VARKA_AI_MODEL=Gemma-4-31B-IT`. The code retains other provider
 adapters, but they are not the validated production configuration described here.
 
 `VARKA_AI_MODE=unified` is the only normal mode. `agent-test` and `conceptual-test` are strict
@@ -76,7 +76,7 @@ Timeouts, token budgets, context limits, agent steps, provider-call limits, repa
 passes, rate limits, retries, and recent-message windows all trade completeness and resilience
 against latency, memory use, and provider cost. `VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN` and
 `VARKA_AI_SOURCE_TURN_TIMEOUT` are the separately configurable budgets used for source-backed
-attachment turns. The tested DeepSeek profile uses 20 calls for both normal and source turns, with
+attachment turns. The tested Gemma profile uses 24 calls for normal turns and 20 calls for source turns, with
 12- and 15-minute timeouts respectively. Increasing them allows more complex documents; lowering
 them makes failures faster and cheaper but can starve review or correction.
 `VARKA_AI_FALLBACK_PROVIDER` is used only after an HTTP 429 from the primary provider. The current
@@ -87,13 +87,13 @@ cannot apply duplicate work.
 
 Model selection uses one production model: `VARKA_AI_MODEL`. Tests and evaluations that need a
 different model can use `VARKA_AI_TEST_MODEL`; when it is empty, they fall back to
-`VARKA_AI_MODEL`. Production must set `DeepSeek-V4-Flash` explicitly rather than relying on an
+`VARKA_AI_MODEL`. Production must set `Gemma-4-31B-IT` explicitly rather than relying on an
 adapter default.
 
 For Arvan, use `VARKA_AI_OPENAI_PROTOCOL=json_schema`,
 `VARKA_AI_NATIVE_TOOLS_PREFERRED=false`, and
 `VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false`. Structured requests use temperature zero and the
-DeepSeek `thinking` disable object. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION` and
+model-family-specific generation controls. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION` and
 `VARKA_AI_LLM_CONTRACT_RERANK_ENABLED` can improve source/retrieval quality at the cost of extra
 provider calls. The proxy variables accept `DIRECT`, `HTTP`, or `SOCKS`; proxy settings affect AI
 provider traffic only.

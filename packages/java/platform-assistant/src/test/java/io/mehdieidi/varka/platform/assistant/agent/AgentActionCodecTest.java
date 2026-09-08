@@ -37,6 +37,14 @@ class AgentActionCodecTest {
   }
 
   @Test
+  void normalizesCompatibleProviderTerminalMessageWrappers() {
+    AgentAction action =
+        codec.parse("{\"action\":\"answer_user\",\"arguments\":{\"content\":{\"text\":\"Done\"}}}");
+
+    assertEquals("Done", action.arguments().path("message").asText());
+  }
+
+  @Test
   void rejectsActionWithoutObjectArguments() {
     assertThrows(
         PlatformException.class,

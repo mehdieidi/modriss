@@ -19,6 +19,11 @@ public final class ProviderCallBudget {
     CURRENT.remove();
   }
 
+  /** Returns whether a caller already owns the enclosing turn budget. */
+  public static boolean isBound() {
+    return CURRENT.get() != null;
+  }
+
   /** Returns consumed provider calls for the active turn, or zero when unbound. */
   public static int count() {
     State state = CURRENT.get();
@@ -29,6 +34,28 @@ public final class ProviderCallBudget {
   public static boolean hasRemaining() {
     State state = CURRENT.get();
     return state == null || state.count < state.limit;
+  }
+
+  /** Returns whether a failure was caused by this turn's provider-call budget. */
+  public static boolean isExceeded(Throwable failure) {
+    for (Throwable current = failure; current != null; current = current.getCause()) {
+      if (current instanceof PlatformException platform
+          && platform.status() == 429
+          && current.getMessage() != null
+          && current
+              .getMessage()
+              .toLowerCase(java.util.Locale.ROOT)
+              .replace('-', ' ')
+              .contains("provider call budget")) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Creates the canonical failure used when no provider reservation remains. */
+  public static PlatformException exceeded() {
+    return new PlatformException(429, "Assistant provider call budget exceeded for this turn.");
   }
 
   /**
@@ -42,7 +69,7 @@ public final class ProviderCallBudget {
       return;
     }
     if (state.count >= state.limit) {
-      throw new PlatformException(429, "Assistant provider call budget exceeded for this turn.");
+      throw exceeded();
     }
     CURRENT.set(new State(state.limit, state.count + 1));
   }

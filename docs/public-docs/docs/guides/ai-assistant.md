@@ -2,7 +2,7 @@
 
 Varka provides one durable conversational assistant for CIM and PIM. PSM assistant sessions are
 currently out of scope and are rejected by the API. The deployed provider is Arvan
-`DeepSeek-V4-Flash`.
+`Gemma-4-31B-IT`.
 
 ## What it does
 

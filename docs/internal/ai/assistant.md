@@ -8,7 +8,7 @@ assistant sessions with HTTP 422.
 
 ## Production configuration
 
-The only validated deployment provider/model pair is Arvan `DeepSeek-V4-Flash` through the
+The only validated deployment provider/model pair is Arvan `Gemma-4-31B-IT` through the
 OpenAI-compatible JSON-content adapter:
 
 ```dotenv
@@ -19,11 +19,11 @@ VARKA_AI_WORKFLOW_ENGINE_V2=true
 VARKA_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_BASE_URL=<Arvan endpoint>
 OPENAI_COMPATIBLE_API_KEY=<secret>
-VARKA_AI_MODEL=DeepSeek-V4-Flash
+VARKA_AI_MODEL=Gemma-4-31B-IT
 VARKA_AI_OPENAI_PROTOCOL=json_schema
 VARKA_AI_NATIVE_TOOLS_PREFERRED=false
 VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
-VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=20
+VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=24
 VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=20
 VARKA_AI_PROVIDER_RETRY_ATTEMPTS=0
 ```

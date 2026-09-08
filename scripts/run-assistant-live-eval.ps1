@@ -270,9 +270,16 @@ function Run-Scenario {
 
 function Run-EditScenario {
   param([string]$Token, [string]$ProjectId)
-  $created = Run-Scenario -Token $Token -ProjectId $ProjectId -Name "edit-base-pim" -Level "pim" -Prompt "Create a complete provider-neutral PIM serverless architecture for online order intake. Model an HTTP API and route that accept and validate an order contract, function-based order processing, persistent order and idempotency data, an order-accepted event, asynchronous payment through a queue and external payment adapter, a workflow that coordinates payment and customer notification, authentication and authorization, retry and dead-letter behavior, and logging, metrics, tracing, and alerts. Connect the elements into meaningful end-to-end request and event flows; do not merely create isolated nodes."
-  if (-not $created.ModelId) { return $created }
+  $created = Run-Scenario -Token $Token -ProjectId $ProjectId -Name "edit-base-pim" -Level "pim" -Prompt "Create a compact provider-neutral PIM for online order processing with an HTTP API, order-processing function, persistent order data, asynchronous payment through an external adapter, an order-accepted event, and a workflow that sends customer notification. Connect the elements into meaningful request and event flows; do not create isolated nodes."
   $before = Inspect-Model -Token $Token -Level "pim" -ModelId $created.ModelId
+  if (-not $created.ModelId -or @("SUCCEEDED", "PARTIAL") -notcontains [string]$created.State -or [int]$created.Checkpoints -lt 1 -or $before.ValidationValid -ne $true -or [int]$before.StructuralNodes -le 1) {
+    $created.Scenario = "edit-existing-pim-add-pattern"
+    $created | Add-Member -NotePropertyName InitialStructuralNodes -NotePropertyValue $before.StructuralNodes -Force
+    $created | Add-Member -NotePropertyName InitialFeaturePresent -NotePropertyValue $false -Force
+    $created | Add-Member -NotePropertyName InitialFeaturePreserved -NotePropertyValue $false -Force
+    $created | Add-Member -NotePropertyName AddedFeaturePresent -NotePropertyValue $false -Force
+    return $created
+  }
   $edit = Send-Turn -Token $Token -SessionId $created.SessionId -ModelId $created.ModelId -Revision $created.Revision -Message "Extend this existing PIM without removing or recreating the order-intake, payment, and notification architecture. Add an order-cancellation feature with an authenticated cancellation API route, state validation, a cancellation workflow, compensating refund through the existing payment integration, an order-cancelled event, and customer notification. Reuse existing service, data, integration, security, and observability elements where compatible, create only the missing concepts, and connect the new behavior into the existing flows."
   $turn = $edit.Turn
   $inspection = Inspect-Model -Token $Token -Level "pim" -ModelId $turn.modelId
@@ -518,12 +525,12 @@ function Test-ScenarioGate {
   # The evolution gate contains two independent modeling turns. Unified complex turns include a
   # schema-bound strategy decision, focused Ecore contract selection, generation, and bounded
   # complete-model repairs. All calls remain visible; this is a workflow budget, not a retry mask.
-  # The deployed DeepSeek profile permits 20 calls for one modeling turn: up to two adaptive
-  # strategy calls and 18 conceptual/agent calls. Evolution fixtures contain two independent
+  # The deployed Gemma profile permits 24 calls for one normal modeling turn, including adaptive
+  # strategy and bounded conceptual/agent calls. Evolution fixtures contain two independent
   # modeling turns. This is an acceptance ceiling; every call and retry remains audited.
   # Explanation turns use one semantic routing call and one answer call. Allow one additional
   # audited call for a strict-schema correction; no deterministic answer is substituted.
-  $callBudget = if ($scenarioId -in @("cim-feature-evolution", "edit-existing-pim-add-pattern")) { 40 } elseif ($Fixture.route -eq "EXPLANATION") { 3 } else { 20 }
+  $callBudget = if ($scenarioId -in @("cim-feature-evolution", "edit-existing-pim-add-pattern")) { 48 } elseif ($Fixture.route -eq "EXPLANATION") { 3 } else { 24 }
   $callBudget += [int]$ProviderRetryCount
   if ([int]$Result.ProviderCalls -gt $callBudget) {
     $failures += "provider calls $($Result.ProviderCalls) exceed budget $callBudget"

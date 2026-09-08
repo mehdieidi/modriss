@@ -51,7 +51,7 @@ VARKA_AI_ENABLED=true
 VARKA_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_BASE_URL=your_arvan_openai_compatible_base_url
 OPENAI_COMPATIBLE_API_KEY=your_api_key
-VARKA_AI_MODEL=DeepSeek-V4-Flash
+VARKA_AI_MODEL=Gemma-4-31B-IT
 VARKA_AI_MODE=unified
 VARKA_AI_OPENAI_PROTOCOL=json_schema
 VARKA_AI_NATIVE_TOOLS_PREFERRED=false
@@ -61,15 +61,15 @@ VARKA_AI_TURN_TIMEOUT=12m
 VARKA_AI_SOURCE_TURN_TIMEOUT=15m
 VARKA_AI_MAX_SYSTEM_CHARS=32000
 VARKA_AI_MAX_COMPLETION_TOKENS=16000
-VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=20
+VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=24
 VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=20
 VARKA_AI_PROVIDER_RETRY_ATTEMPTS=0
 docker compose up --build
 ```
 
-The validated deployment uses Arvan and `DeepSeek-V4-Flash`. `unified` automatically chooses the
+The validated deployment uses Arvan and `Gemma-4-31B-IT`. `unified` automatically chooses the
 internal modeling workflow; users and API clients do not select it. These limits are the tested
-DeepSeek profile: a standard turn reserves up to two calls for adaptive routing and exposes the
+Gemma profile: a standard turn reserves up to two calls for adaptive routing and exposes the
 remaining bounded budget to obligation planning, type selection, blueprinting, private slices,
 independent review, and corrections. The conceptual schema caps blueprints at 16 objects/types;
 required Ecore closure and call reserves can lower the effective capacity.

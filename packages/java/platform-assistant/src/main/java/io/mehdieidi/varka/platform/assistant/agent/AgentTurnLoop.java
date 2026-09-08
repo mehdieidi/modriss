@@ -259,15 +259,24 @@ public final class AgentTurnLoop {
       java.util.function.BooleanSupplier cancellationRequested,
       java.util.function.Supplier<PlatformException> stopReason) {
     if (mode == WorkflowMode.ADAPTIVE) {
-      return runAdaptive(
-          sessionId,
-          level,
-          userMessage,
-          sourceDocument,
-          workspace,
-          destructiveConfirmed,
-          cancellationRequested,
-          stopReason);
+      int adaptiveBudget =
+          sourceDocument == null || sourceDocument.isBlank()
+              ? Math.max(maxProviderCalls, 4)
+              : maxSourceProviderCalls;
+      ProviderCallBudget.bind(adaptiveBudget);
+      try {
+        return runAdaptive(
+            sessionId,
+            level,
+            userMessage,
+            sourceDocument,
+            workspace,
+            destructiveConfirmed,
+            cancellationRequested,
+            stopReason);
+      } finally {
+        ProviderCallBudget.clear();
+      }
     }
     Instant deadline =
         Instant.now()
@@ -297,15 +306,17 @@ public final class AgentTurnLoop {
     long completionTokens = 0;
     List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall>
         providerCallDetails = new ArrayList<>();
+    boolean ownsProviderBudget = !ProviderCallBudget.isBound();
     try {
-      ProviderCallBudget.bind(
-          sourceDocument == null || sourceDocument.isBlank()
-              // This is a safety limit, not an intent classifier. The model decides whether it
-              // needs to inspect, retrieve contracts, ask, answer, or commit. Four calls leave
-              // room for one discovery action, one exact-contract action, and a corrected final
-              // batch without treating an open-ended generation as a "small" request.
-              ? Math.max(maxProviderCalls, 4)
-              : maxSourceProviderCalls);
+      if (ownsProviderBudget)
+        ProviderCallBudget.bind(
+            sourceDocument == null || sourceDocument.isBlank()
+                // This is a safety limit, not an intent classifier. The model decides whether it
+                // needs to inspect, retrieve contracts, ask, answer, or commit. Four calls leave
+                // room for one discovery action, one exact-contract action, and a corrected final
+                // batch without treating an open-ended generation as a "small" request.
+                ? Math.max(maxProviderCalls, 4)
+                : maxSourceProviderCalls);
       publish(
           sessionId,
           "assistant.trace.started",
@@ -622,6 +633,22 @@ public final class AgentTurnLoop {
                       + " an existing compatible aggregate when one exists; ask only if a real"
                       + " business decision is still unspecified.";
               continue;
+            }
+            if (looksLikeProtocolArtifact(message)) {
+              if (ProviderCallBudget.hasRemaining()) {
+                user =
+                    followUpContext(userMessage, sourceDocument)
+                        + "\n\n"
+                        + "Your previous answer_user message was a protocol artifact, not a"
+                        + " user-facing answer. Return exactly one answer_user action whose"
+                        + " arguments.message is a concise plain-language summary of the completed"
+                        + " work. Do not include JSON, action/tool fields, markdown fences, or"
+                        + " internal protocol data. Do not mutate the model again.";
+                continue;
+              }
+              throw new PlatformException(
+                  422,
+                  "The provider returned a protocol artifact instead of a user-facing answer.");
             }
             return new TurnResult(
                 message,
@@ -1154,7 +1181,7 @@ public final class AgentTurnLoop {
       throw new TurnExecutionException(
           ex, ProviderCallBudget.count(), promptTokens, completionTokens, providerCallDetails);
     } finally {
-      ProviderCallBudget.clear();
+      if (ownsProviderBudget) ProviderCallBudget.clear();
       cancellations.remove(sessionId, canceled);
     }
   }
@@ -1198,7 +1225,6 @@ public final class AgentTurnLoop {
             + (sourceDocument == null || sourceDocument.isBlank()
                 ? ""
                 : "\nSource is present and will be supplied to the selected workflow.");
-    ProviderCallBudget.bind(2);
     List<io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore.ProviderCall> strategyCalls =
         new ArrayList<>();
     long strategyPromptTokens = 0;
@@ -1206,7 +1232,9 @@ public final class AgentTurnLoop {
     String strategy = "";
     String correction = "";
     try {
-      for (int attempt = 0; attempt < 2 && strategy.isBlank(); attempt++) {
+      for (int attempt = 0;
+          attempt < 2 && strategy.isBlank() && ProviderCallBudget.hasRemaining();
+          attempt++) {
         String attemptUser = user + correction;
         long started = System.nanoTime();
         AssistantModelProvider.AssistantReply decision;
@@ -1267,8 +1295,6 @@ public final class AgentTurnLoop {
               : new PlatformException(502, "Adaptive strategy selection failed.", failure);
       throw new TurnExecutionException(
           cause, calls, strategyPromptTokens, strategyCompletionTokens, strategyCalls);
-    } finally {
-      ProviderCallBudget.clear();
     }
     if (!conceptualSafe && "CONCEPTUAL_GENERATION".equals(strategy)) strategy = "INSPECT_AGENT";
     if (conceptualSafe && "INSPECT_AGENT".equals(strategy)) strategy = "CONCEPTUAL_GENERATION";
@@ -1304,7 +1330,7 @@ public final class AgentTurnLoop {
       failedCalls.addAll(failure.providerCallDetails());
       throw new TurnExecutionException(
           failure,
-          strategyCalls.size() + failure.providerCalls(),
+          ProviderCallBudget.count(),
           strategyPromptTokens + failure.promptTokens(),
           strategyCompletionTokens + failure.completionTokens(),
           failedCalls);
@@ -1321,7 +1347,7 @@ public final class AgentTurnLoop {
         result.provider(),
         result.model(),
         result.commandBatch(),
-        result.providerCalls() + strategyCalls.size(),
+        ProviderCallBudget.count(),
         result.promptTokens() + strategyPromptTokens,
         result.completionTokens() + strategyCompletionTokens,
         List.copyOf(calls),
@@ -1392,6 +1418,33 @@ public final class AgentTurnLoop {
             || intent.equalsIgnoreCase("ADD_FEATURES")
             || intent.equalsIgnoreCase("EDIT_MODEL");
     return mutating && turnTools.committedBatch() == null;
+  }
+
+  /** Detects structured tool envelopes accidentally rendered as the assistant's chat message. */
+  private boolean looksLikeProtocolArtifact(String message) {
+    String value = message == null ? "" : message.trim();
+    if (!(value.startsWith("{") || value.startsWith("["))) return false;
+    try {
+      JsonNode parsed = mapper.readTree(value);
+      return containsProtocolField(parsed);
+    } catch (RuntimeException ignored) {
+      return false;
+    }
+  }
+
+  private boolean containsProtocolField(JsonNode value) {
+    if (value == null || value.isNull()) return false;
+    if (value.isObject()) {
+      if (value.has("action") || value.has("tool") || value.has("arguments")) return true;
+      for (JsonNode child : value) {
+        if (containsProtocolField(child)) return true;
+      }
+    } else if (value.isArray()) {
+      for (JsonNode child : value) {
+        if (containsProtocolField(child)) return true;
+      }
+    }
+    return false;
   }
 
   public boolean cancel(String sessionId) {

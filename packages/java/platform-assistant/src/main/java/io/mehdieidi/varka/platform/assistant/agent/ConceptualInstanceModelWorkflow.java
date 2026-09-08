@@ -185,14 +185,21 @@ public final class ConceptualInstanceModelWorkflow {
     String durableTurnId = DurableTurnExecutionContext.turnId();
     boolean sourceBacked =
         request != null && request.contains("SOURCE SPECIFICATION (authoritative input)");
+    int configuredMaxCalls =
+        Math.max(
+            1,
+            sourceBacked
+                ? properties.maxProviderCallsSourceTurn()
+                : properties.maxProviderCallsPerTurn());
+    boolean ownsProviderBudget = !ProviderCallBudget.isBound();
     int maxCalls =
         Math.max(
-            4,
-            sourceBacked
-                ? properties.maxProviderCallsSourceTurn() - 2
-                : properties.maxProviderCallsPerTurn() - 2);
+            1,
+            ownsProviderBudget
+                ? configuredMaxCalls
+                : Math.min(configuredMaxCalls, Math.max(1, properties.maxProviderCallsPerTurn())));
     UsageAudit audit = new UsageAudit(durableTurnId, maxCalls);
-    ProviderCallBudget.bind(maxCalls);
+    if (ownsProviderBudget) ProviderCallBudget.bind(Math.max(1, audit.remainingCalls()));
     try {
       try {
         JsonNode current = workspace.snapshot();
@@ -246,11 +253,14 @@ public final class ConceptualInstanceModelWorkflow {
         persistObjects(durableTurnId, blueprint, generated);
         ConceptualModel conceptual = new ConceptualModel(generated);
         ModelCommandBatch batch = null;
+        ModelWorkspace.MutationResult mutation = null;
         int compilerCorrections = 0;
-        while (batch == null) {
+        while (mutation == null) {
           try {
             batch = conceptual.commands(current, contracts, level);
+            mutation = tools.commitModelBatch(batch, destructiveConfirmed);
           } catch (RuntimeException compilerFailure) {
+            if (ProviderCallBudget.isExceeded(compilerFailure)) throw compilerFailure;
             if (audit.totalCalls() >= maxCalls
                 || compilerCorrections >= Math.max(1, properties.maxRepairAttempts())) {
               throw new ProgressiveCompilationFailure(compilerFailure);
@@ -270,7 +280,6 @@ public final class ConceptualInstanceModelWorkflow {
             compilerCorrections++;
           }
         }
-        tools.commitModelBatch(batch, destructiveConfirmed);
         ModelService.ValidationResult validation = tools.validateModel();
         if (validation == null || !validation.valid()) {
           throw new PlatformException(
@@ -307,7 +316,7 @@ public final class ConceptualInstanceModelWorkflow {
             failure instanceof ProgressiveCompilationFailure);
       }
     } finally {
-      ProviderCallBudget.clear();
+      if (ownsProviderBudget) ProviderCallBudget.clear();
     }
   }
 
@@ -337,11 +346,13 @@ public final class ConceptualInstanceModelWorkflow {
             + " workflow steps, schemas, principals, policies, routes, or other structural support"
             + " unless the request explicitly requires that concept—the Ecore closure and"
             + " blueprint phases add necessary support. expectedEClasses is a required set, not a"
-            + " list of alternatives: include two"
-            + " channel and an event type for explicit publication/consumption). Reuse the same"
+            + " list of alternatives. Reuse the same"
             + " EClass across obligations when appropriate. Do not match words mechanically and"
             + " do not generate objects. Use"
-            + " stable IDs OBL-1, OBL-2, ... and return JSON only.";
+            + " stable IDs OBL-1, OBL-2, ... and return JSON only. Every obligation item must"
+            + " literally contain a non-empty string id, a non-empty string obligation,"
+            + " importance exactly MANDATORY or OPTIONAL, sourceUnitIds as an array, and"
+            + " expectedEClasses as a non-empty array of exact creatable EClass names.";
     String user =
         guides.index(level)
             + "\n\nMINIMUM ECORE CLOSURE COST PER TYPE:\n"
@@ -353,10 +364,15 @@ public final class ConceptualInstanceModelWorkflow {
             + "\n\nAVAILABLE SOURCE UNIT IDS: "
             + sourceUnitIds(request)
             + "\n\n"
+            + "The combined required containment closure of all expectedEClasses must fit within "
+            + blueprintCapacity(maxCalls)
+            + " non-root types. Prefer overlapping EClasses and omit structural helper types;"
+            + " the later blueprint phase adds required containment owners."
+            + "\n\n"
             + "Return {obligations:[{id,obligation,importance,sourceUnitIds,expectedEClasses}]}";
     RuntimeException lastFailure = null;
     String correction = "";
-    for (int attempt = 0; attempt < 4; attempt++) {
+    for (int attempt = 0; attempt < 5; attempt++) {
       try {
         var reply = audit.call(system, user + correction, "conceptual_obligation_ledger");
         ObligationLedger ledger =
@@ -368,8 +384,9 @@ public final class ConceptualInstanceModelWorkflow {
         validateObligationLedgerCapacity(level, ledger, blueprintCapacity(maxCalls));
         return ledger;
       } catch (RuntimeException failure) {
+        if (ProviderCallBudget.isExceeded(failure)) throw failure;
         lastFailure = failure;
-        if (attempt == 3) throw failure;
+        if (attempt == 4) throw failure;
         correction =
             "\n\nThe prior ledger was rejected: "
                 + safe(failure.getMessage())
@@ -436,16 +453,18 @@ public final class ConceptualInstanceModelWorkflow {
             + " the semantic type-selection pass at least once; never silently drop a selected"
             + " request concept. Plan at most "
             + blueprintCapacity(maxCalls)
-            + " semantically important objects total. Group semantically coherent objects"
-            + " together. Use only the closed"
-            + " focused EClass vocabulary plus the supplied concrete options for abstract required"
-            + " targets. Never instantiate an abstract/non-creatable EClass. The existing root is"
-            + " rootId and must not be planned as"
-            + " an object. Do not include prose or markdown.";
+            + " semantically important objects total. Group semantically coherent objects together."
+            + " Use only the closed focused EClass vocabulary plus the supplied concrete options"
+            + " for abstract required targets. For EVERY abstract EClass in the selected"
+            + " vocabulary, choose a semantically appropriate concrete subtype from the explicit"
+            + " options below; the abstract name may remain in types but must NEVER appear as an"
+            + " object's type. Never instantiate an abstract/non-creatable EClass. The existing"
+            + " root is rootId and must not be planned as an object. Do not include prose or"
+            + " markdown.";
     String user =
         "AUTHORITATIVE FOCUSED ECORE CONTRACTS (closed vocabulary):\n"
             + blueprintStructuralGuide(level, focusedContracts, focusedTypes)
-            + "\n\nCONCRETE OPTIONS FOR ABSTRACT REQUIRED TARGETS:\n"
+            + "\n\nCONCRETE OPTIONS FOR ABSTRACT SELECTED TYPES AND REQUIRED TARGETS:\n"
             + concreteRequiredOptionsGuide(level, focusedContracts)
             + "\n\nCURRENT MODEL TYPES:\n"
             + currentTypes(current)
@@ -471,6 +490,7 @@ public final class ConceptualInstanceModelWorkflow {
       try {
         reply = audit.call(system, user + correction, "conceptual_blueprint");
       } catch (RuntimeException failure) {
+        if (ProviderCallBudget.isExceeded(failure)) throw failure;
         lastFailure = failure;
         if (attempt < 4 && truncated(failure)) {
           correction +=
@@ -501,7 +521,11 @@ public final class ConceptualInstanceModelWorkflow {
                 .map(BlueprintObject::type)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
         Set<String> omittedSelectedTypes = new LinkedHashSet<>(selectedTypes);
-        omittedSelectedTypes.removeAll(plannedTypes);
+        omittedSelectedTypes.removeIf(
+            selectedType ->
+                plannedTypes.stream()
+                    .anyMatch(
+                        plannedType -> contracts.assignable(level, plannedType, selectedType)));
         if (!omittedSelectedTypes.isEmpty()) {
           throw new PlatformException(
               422,
@@ -569,9 +593,8 @@ public final class ConceptualInstanceModelWorkflow {
   }
 
   private int blueprintCapacity(int maxCalls) {
-    // Reserve type selection, blueprint, review, and one bounded recovery/correction call.
-    // DeepSeek uses one rich object per slice because repeated live two-object responses reached
-    // finish_reason length. Other providers may safely pack two with the same reserve.
+    // Reserve blueprint, review, and one bounded recovery/correction call. Gemma can safely pack
+    // two related objects when the prompt remains within the configured context budget.
     return Math.min(MAX_BLUEPRINT_OBJECTS, Math.max(1, maxCalls - 4) * defaultSliceSize());
   }
 
@@ -643,6 +666,14 @@ public final class ConceptualInstanceModelWorkflow {
   private Set<String> concreteRequiredOptions(
       ModelLevel level, List<TypeContract> focusedContracts) {
     LinkedHashSet<String> result = new LinkedHashSet<>();
+    for (TypeContract target : focusedContracts) {
+      if (target.creatable()) continue;
+      contracts.all(level).stream()
+          .filter(TypeContract::creatable)
+          .filter(candidate -> contracts.assignable(level, candidate.eClass(), target.eClass()))
+          .map(TypeContract::eClass)
+          .forEach(result::add);
+    }
     for (TypeContract owner : focusedContracts) {
       for (ReferenceContract reference : owner.references()) {
         if (!reference.required() || reference.readonly()) continue;
@@ -661,19 +692,22 @@ public final class ConceptualInstanceModelWorkflow {
   private String concreteRequiredOptionsGuide(
       ModelLevel level, List<TypeContract> focusedContracts) {
     List<String> lines = new ArrayList<>();
+    for (TypeContract target : focusedContracts) {
+      if (target.creatable()) continue;
+      List<String> options = concreteOptions(level, target.eClass());
+      lines.add(
+          "ABSTRACT SELECTED TYPE "
+              + target.eClass()
+              + " cannot be an object type; choose one concrete subtype from "
+              + options
+              + " for each planned instance.");
+    }
     for (TypeContract owner : focusedContracts) {
       for (ReferenceContract reference : owner.references()) {
         if (!reference.required() || reference.readonly()) continue;
         TypeContract target = contracts.require(level, reference.targetType());
         if (target.creatable()) continue;
-        List<String> options =
-            contracts.all(level).stream()
-                .filter(TypeContract::creatable)
-                .filter(
-                    candidate -> contracts.assignable(level, candidate.eClass(), target.eClass()))
-                .map(TypeContract::eClass)
-                .sorted()
-                .toList();
+        List<String> options = concreteOptions(level, target.eClass());
         lines.add(
             owner.eClass()
                 + "."
@@ -685,6 +719,15 @@ public final class ConceptualInstanceModelWorkflow {
       }
     }
     return lines.isEmpty() ? "none" : String.join("\n", lines);
+  }
+
+  private List<String> concreteOptions(ModelLevel level, String abstractType) {
+    return contracts.all(level).stream()
+        .filter(TypeContract::creatable)
+        .filter(candidate -> contracts.assignable(level, candidate.eClass(), abstractType))
+        .map(TypeContract::eClass)
+        .sorted()
+        .toList();
   }
 
   private Blueprint normalizeBlueprintPlacements(ModelLevel level, Blueprint blueprint) {
@@ -729,6 +772,7 @@ public final class ConceptualInstanceModelWorkflow {
     blueprint.objects().forEach(object -> objects.put(object.instanceId(), object));
     for (BlueprintObject object : blueprint.objects()) {
       TypeContract objectType = contracts.require(level, object.type());
+      boolean persistedRoot = object.type().equals(contracts.rootType(level));
       String ownerType;
       if ("rootId".equals(object.ownerInstanceId())) {
         ownerType = contracts.rootType(level);
@@ -737,14 +781,15 @@ public final class ConceptualInstanceModelWorkflow {
         ownerType = owner == null ? "" : owner.type();
       }
       boolean legal =
-          !ownerType.isBlank()
-              && contracts.require(level, ownerType).references().stream()
-                  .filter(ReferenceContract::containment)
-                  .filter(reference -> !reference.readonly())
-                  .filter(reference -> reference.name().equals(object.containment()))
-                  .anyMatch(
-                      reference ->
-                          contracts.assignable(level, object.type(), reference.targetType()));
+          persistedRoot
+              || (!ownerType.isBlank()
+                  && contracts.require(level, ownerType).references().stream()
+                      .filter(ReferenceContract::containment)
+                      .filter(reference -> !reference.readonly())
+                      .filter(reference -> reference.name().equals(object.containment()))
+                      .anyMatch(
+                          reference ->
+                              contracts.assignable(level, object.type(), reference.targetType())));
       if (!legal) {
         diagnostics.add(
             object.instanceId()
@@ -908,10 +953,17 @@ public final class ConceptualInstanceModelWorkflow {
               + " evidence. Every writable reference marked [required] in the authoritative"
               + " contracts MUST appear under compositions or references with its exact"
               + " associationName and a compatible associatedClassName."
+              + " Classify each link from the authoritative contract, not from the wording of the"
+              + " request: [containment] links belong ONLY in associations.compositions and"
+              + " [reference] links belong ONLY in associations.references. The feature name"
+              + " context is not a reason to place a link in references. Never copy a link into"
+              + " both arrays, and never invent a writable feature."
               + " It is valid to reference any ID declared in the blueprint even if"
               + " that target belongs to a later slice. Maximum objects in this response: "
               + slice.size()
-              + ". Association arrays contain only real links: associationName,"
+              + ". The allowed target-ID set is exactly the IDs in the blueprint plus persisted"
+              + " IDs shown in CURRENT PERSISTED MODEL; never invent, abbreviate, or rename a"
+              + " target ID. Association arrays contain only real links: associationName,"
               + " associatedClassName, and instanceID must each be a non-empty JSON string. Use"
               + " [] when no link exists; never emit a placeholder association whose instanceID"
               + " is an array, object, null, or blank. Return one JSON object and no prose.";
@@ -919,6 +971,7 @@ public final class ConceptualInstanceModelWorkflow {
       try {
         reply = audit.call(system, user, "conceptual_instance_slice");
       } catch (RuntimeException failure) {
+        if (ProviderCallBudget.isExceeded(failure)) throw failure;
         if (truncated(failure) && slice.size() > 1) {
           int middle = slice.size() / 2;
           persistSliceSize(durableTurnId, Math.max(1, middle), failure.getMessage());
@@ -970,7 +1023,9 @@ public final class ConceptualInstanceModelWorkflow {
                 + combinedDiagnostic
                 + " Return the same exact instance IDs with corrected COMPLETE objects. Every"
                 + " object must contain attributes as an array and associations as an object with"
-                + " separate compositions and references arrays. Do not omit valid content and do"
+                + " separate compositions and references arrays. Place each association in the"
+                + " array dictated by its authoritative contract: [containment] means"
+                + " compositions, [reference] means references. Do not omit valid content and do"
                 + " not return an action envelope or prose.";
         reply = audit.call(system, correctedUser, "conceptual_instance_slice");
       }
@@ -1014,7 +1069,15 @@ public final class ConceptualInstanceModelWorkflow {
       Blueprint blueprint,
       LinkedHashMap<String, JsonNode> generated,
       Set<String> allowedSourceUnitIds) {
-    ConceptualModel parsed = ConceptualModel.parse(mapper, content);
+    Map<String, String> expectedTypes =
+        slice.stream()
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    BlueprintObject::instanceId,
+                    BlueprintObject::type,
+                    (left, right) -> left,
+                    LinkedHashMap::new));
+    ConceptualModel parsed = ConceptualModel.parse(mapper, content, expectedTypes);
     Set<String> expected =
         new LinkedHashSet<>(slice.stream().map(BlueprintObject::instanceId).toList());
     if (!parsed.objects.keySet().equals(expected)) {
@@ -1039,10 +1102,12 @@ public final class ConceptualInstanceModelWorkflow {
                 + value.path("type")
                 + ".");
       }
+      normalizeAssociationBuckets(level, object.type(), value);
+      // Canonicalize redundant target metadata before required-reference checks consume it.
+      validateAssociations(level, object, value, current, blueprint);
       validateCompleteObject(object.instanceId(), value);
       validateRequiredAttributes(level, object.instanceId(), object.type(), value);
       validateRequiredReferences(level, object.instanceId(), object.type(), value);
-      validateAssociations(level, object, value, current, blueprint);
       validateSourceEvidence(object.instanceId(), value, allowedSourceUnitIds);
       if (generated.containsKey(object.instanceId())) {
         throw new PlatformException(
@@ -1051,6 +1116,58 @@ public final class ConceptualInstanceModelWorkflow {
     }
     for (BlueprintObject object : slice) {
       generated.put(object.instanceId(), parsed.objects.get(object.instanceId()));
+    }
+  }
+
+  /**
+   * Normalizes only the protocol bucket for a link whose exact Ecore feature is unambiguous. Gemma
+   * sometimes preserves a relationship but places a containment in {@code references} (or vice
+   * versa). Moving that link according to the live Ecore contract is structural decoding, not
+   * semantic inference; all IDs, types, names, writability, multiplicity, and ownership remain
+   * subject to the validators below and the compiler.
+   */
+  private void normalizeAssociationBuckets(ModelLevel level, String typeName, JsonNode value) {
+    if (!(value instanceof tools.jackson.databind.node.ObjectNode object)) return;
+    JsonNode associations = object.path("associations");
+    if (!(associations instanceof tools.jackson.databind.node.ObjectNode associationObject)) return;
+    if (!associations.path("compositions").isArray()
+        || !associations.path("references").isArray()) {
+      return;
+    }
+    var compositions = mapper.createArrayNode();
+    var references = mapper.createArrayNode();
+    for (JsonNode association : associations.path("compositions")) {
+      appendNormalizedAssociation(level, typeName, association, true, compositions, references);
+    }
+    for (JsonNode association : associations.path("references")) {
+      appendNormalizedAssociation(level, typeName, association, false, compositions, references);
+    }
+    associationObject.set("compositions", compositions);
+    associationObject.set("references", references);
+  }
+
+  private void appendNormalizedAssociation(
+      ModelLevel level,
+      String typeName,
+      JsonNode association,
+      boolean compositionBucket,
+      tools.jackson.databind.node.ArrayNode compositions,
+      tools.jackson.databind.node.ArrayNode references) {
+    String feature = association.path("associationName").asText("").trim();
+    var contract =
+        contracts.require(level, typeName).references().stream()
+            .filter(reference -> reference.name().equals(feature))
+            .findFirst()
+            .orElse(null);
+    // Inverse EReferences are exposed in the generated contract so the model can be explained,
+    // but EMF derives them from their writable opposite and the patch compiler must not receive
+    // them as mutation commands. Gemma occasionally echoes both sides of a relationship; retain
+    // the writable side and discard only this known, structurally impossible inverse.
+    if (contract != null && contract.readonly()) return;
+    if (contract != null && !contract.readonly() && contract.containment() != compositionBucket) {
+      (contract.containment() ? compositions : references).add(association);
+    } else {
+      (compositionBucket ? compositions : references).add(association);
     }
   }
 
@@ -1083,15 +1200,33 @@ public final class ConceptualInstanceModelWorkflow {
       Map<String, Integer> occurrences = new LinkedHashMap<>();
       for (JsonNode association : value.path("associations").path(kind)) {
         String feature = association.path("associationName").asText("").trim();
-        String declaredType = association.path("associatedClassName").asText("").trim();
         String targetId = association.path("instanceID").asText("").trim();
-        if (feature.isBlank() || declaredType.isBlank() || targetId.isBlank()) {
+        if (feature.isBlank() || targetId.isBlank()) {
           throw new PlatformException(
               422,
               "Association on conceptual object '"
                   + source.instanceId()
                   + "' requires non-empty associationName, associatedClassName, and instanceID.");
         }
+        String actualType = knownTypes.get(targetId);
+        if (actualType == null) {
+          throw new PlatformException(
+              422,
+              "Association '"
+                  + source.instanceId()
+                  + "."
+                  + feature
+                  + " targets unknown instance ID '"
+                  + targetId
+                  + "'.");
+        }
+        // associatedClassName is redundant provider metadata. The live target ID is authoritative;
+        // canonicalize an omitted or stale declaration while retaining all exact Ecore feature,
+        // target, multiplicity, and ownership checks below.
+        if (association instanceof tools.jackson.databind.node.ObjectNode associationObject) {
+          associationObject.put("associatedClassName", actualType);
+        }
+        String declaredType = actualType;
         var reference =
             contract.references().stream()
                 .filter(candidate -> candidate.name().equals(feature))
@@ -1107,29 +1242,10 @@ public final class ConceptualInstanceModelWorkflow {
                                 + "' is not a writable Ecore reference on "
                                 + source.type()
                                 + "."));
-        if (reference.readonly() || reference.containment() != containment) {
-          throw new PlatformException(
-              422,
-              "Association '"
-                  + source.instanceId()
-                  + "."
-                  + feature
-                  + "' must be emitted under "
-                  + (reference.containment() ? "compositions" : "references")
-                  + " and must be writable.");
-        }
-        String actualType = knownTypes.get(targetId);
-        if (actualType == null) {
-          throw new PlatformException(
-              422,
-              "Association '"
-                  + source.instanceId()
-                  + "."
-                  + feature
-                  + "' targets unknown instance ID '"
-                  + targetId
-                  + "'.");
-        }
+        // Inverse EReferences are valid for explanation but are derived by EMF and cannot be
+        // written by the assistant. The association normalizer normally removes them; retain
+        // this guard here as well for provider responses using a non-canonical bucket shape.
+        if (reference.readonly() || reference.containment() != containment) continue;
         if (!declaredType.equals(actualType)) {
           throw new PlatformException(
               422,
@@ -1326,7 +1442,15 @@ public final class ConceptualInstanceModelWorkflow {
   private String requiredAttributeDiagnostic(
       ModelLevel level, List<BlueprintObject> slice, String content) {
     try {
-      ConceptualModel parsed = ConceptualModel.parse(mapper, content);
+      Map<String, String> expectedTypes =
+          slice.stream()
+              .collect(
+                  java.util.stream.Collectors.toMap(
+                      BlueprintObject::instanceId,
+                      BlueprintObject::type,
+                      (left, right) -> left,
+                      LinkedHashMap::new));
+      ConceptualModel parsed = ConceptualModel.parse(mapper, content, expectedTypes);
       List<String> diagnostics = new ArrayList<>();
       for (BlueprintObject object : slice) {
         JsonNode value = parsed.objects.get(object.instanceId());
@@ -1415,6 +1539,7 @@ public final class ConceptualInstanceModelWorkflow {
         persistObligationReview(DurableTurnExecutionContext.turnId(), reply.content());
         return reply;
       } catch (RuntimeException failure) {
+        if (ProviderCallBudget.isExceeded(failure)) throw failure;
         if (safe(failure.getMessage())
             .startsWith("Mandatory requirement obligations were not satisfied:")) throw failure;
         lastFailure = failure;
@@ -1534,6 +1659,7 @@ public final class ConceptualInstanceModelWorkflow {
       return finishQualityReview(
           reply, level, request, metamodel, blueprint, generated, audit, maxCalls);
     } catch (RuntimeException failure) {
+      if (ProviderCallBudget.isExceeded(failure)) throw failure;
       if (audit.totalCalls() >= maxCalls) throw failure;
       String reducedUser =
           "REQUEST AND SOURCE:\n"
@@ -1607,6 +1733,7 @@ public final class ConceptualInstanceModelWorkflow {
       reply = audit.call(system, user, "conceptual_correction");
       applyReview(reply.content(), blueprint, generated, correctionIds.size());
     } catch (RuntimeException firstFailure) {
+      if (ProviderCallBudget.isExceeded(firstFailure)) throw firstFailure;
       if (audit.totalCalls() >= maxCalls) throw firstFailure;
       String retryUser =
           user
@@ -1650,7 +1777,15 @@ public final class ConceptualInstanceModelWorkflow {
     Map<String, BlueprintObject> planned = new LinkedHashMap<>();
     blueprint.objects().forEach(object -> planned.put(object.instanceId(), object));
     if (!corrections.isEmpty()) {
-      ConceptualModel parsed = ConceptualModel.parse(mapper, corrections.toString());
+      Map<String, String> expectedTypes =
+          planned.entrySet().stream()
+              .collect(
+                  java.util.stream.Collectors.toMap(
+                      Map.Entry::getKey,
+                      entry -> entry.getValue().type(),
+                      (left, right) -> left,
+                      LinkedHashMap::new));
+      ConceptualModel parsed = ConceptualModel.parse(mapper, corrections.toString(), expectedTypes);
       parsed.objects.forEach(
           (id, value) -> {
             BlueprintObject object = planned.get(id);
@@ -1989,11 +2124,13 @@ public final class ConceptualInstanceModelWorkflow {
         + "Use the paper IR exactly: each value has type, attributes:[{attributeName,value}]"
         + " (dataType is optional because Ecore is authoritative), and"
         + " associations:{compositions:[{associationName,associatedClassName,instanceID}],references:[...]}."
-        + " A composition is written on the PARENT object and instanceID identifies its CHILD. A"
-        + " reference is written on its source object and instanceID identifies its target. Do not"
-        + " reverse either edge. The existing model root is implicit and must not be generated."
-        + " When a new object has no incoming composition, the compiler may place it under the root"
-        + " only if Ecore admits one unambiguous root containment.\n"
+        + " Associations whose authoritative contract says read-only are derived inverse metadata"
+        + " for explanation only and MUST be omitted from both arrays; emit only writable Ecore"
+        + " associations. A composition is written on the PARENT object and instanceID identifies"
+        + " its CHILD. A reference is written on its source object and instanceID identifies its"
+        + " target. Do not reverse either edge. The existing model root is implicit and must not be"
+        + " generated. When a new object has no incoming composition, the compiler may place it"
+        + " under the root only if Ecore admits one unambiguous root containment.\n"
         + "Every associationName and associatedClassName must be exact and case-sensitive. All"
         + " referenced instance IDs must be keys in this complete response or exact persisted IDs."
         + " Objects are independent of JSON order. Omission never deletes an existing object,"
@@ -2104,6 +2241,7 @@ public final class ConceptualInstanceModelWorkflow {
                     : baseUser + correction,
                 "conceptual_type_selection");
       } catch (RuntimeException failure) {
+        if (ProviderCallBudget.isExceeded(failure)) throw failure;
         if (attempt == 4 || !truncated(failure)) throw failure;
         correction =
             correction
@@ -2312,10 +2450,8 @@ public final class ConceptualInstanceModelWorkflow {
 
     private AssistantModelProvider.AssistantReply call(
         String system, String user, String requiredTool) {
-      if (totalCalls() >= maxCalls) {
-        throw new PlatformException(
-            429, "Conceptual generation exhausted its durable provider-call budget.");
-      }
+      if (priorCalls + totalCalls() >= maxCalls) throw ProviderCallBudget.exceeded();
+      if (!ProviderCallBudget.hasRemaining()) throw ProviderCallBudget.exceeded();
       String callKey = java.util.UUID.randomUUID().toString();
       long started = System.nanoTime();
       AssistantModelProvider.AssistantReply reply;
@@ -2325,6 +2461,7 @@ public final class ConceptualInstanceModelWorkflow {
                 new AssistantModelProvider.AssistantPrompt(
                     system, user, List.of(), List.of(), requiredTool));
       } catch (RuntimeException failure) {
+        if (ProviderCallBudget.isExceeded(failure)) throw failure;
         long latency = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
         AssistantModelProvider.AssistantProviderMetadata metadata = provider.metadata();
         AssistantTurnStore.ProviderCall failed =
@@ -2385,6 +2522,10 @@ public final class ConceptualInstanceModelWorkflow {
 
     private int totalCalls() {
       return callDetails.size();
+    }
+
+    private int remainingCalls() {
+      return Math.max(0, maxCalls - priorCalls - totalCalls());
     }
 
     private String failureReason(RuntimeException failure) {
@@ -2491,6 +2632,11 @@ public final class ConceptualInstanceModelWorkflow {
     }
 
     static ConceptualModel parse(ObjectMapper mapper, String content) {
+      return parse(mapper, content, Map.of());
+    }
+
+    static ConceptualModel parse(
+        ObjectMapper mapper, String content, Map<String, String> expectedTypes) {
       String json = content == null ? "" : content.trim();
       if (json.startsWith("```")) {
         json = json.replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", "").trim();
@@ -2510,6 +2656,27 @@ public final class ConceptualInstanceModelWorkflow {
         throw new PlatformException(422, "Conceptual model must be a JSON object.");
       }
       Map<String, JsonNode> result = new LinkedHashMap<>();
+      // Some Gemma responses use the natural collection envelope even though the keyed paper IR
+      // is preferred. Handle that wrapper before iterating root properties; otherwise the
+      // collection itself is mistaken for a conceptual instance named "objects".
+      if (root.path("objects").isArray()) {
+        for (JsonNode item : root.path("objects")) {
+          if (!item.isObject()) continue;
+          String id = item.path("instanceId").asText(item.path("id").asText("")).trim();
+          if (id.isBlank()) continue;
+          JsonNode normalized = item;
+          String expectedType = expectedTypes.get(id);
+          if (expectedType != null
+              && (!item.path("type").isTextual() || item.path("type").asText("").isBlank())) {
+            normalized = item.deepCopy();
+            String emittedEClass = item.path("eClass").asText("").trim();
+            ((tools.jackson.databind.node.ObjectNode) normalized)
+                .put("type", emittedEClass.isBlank() ? expectedType : emittedEClass);
+          }
+          result.put(id, normalized);
+        }
+      }
+      if (!result.isEmpty()) return new ConceptualModel(result);
       root.properties()
           .forEach(
               entry -> {
@@ -2517,9 +2684,39 @@ public final class ConceptualInstanceModelWorkflow {
                 JsonNode value = entry.getValue();
                 if (id.isBlank())
                   throw new PlatformException(422, "Every instanceID must be non-empty.");
+                if (expectedTypes.containsKey(id)
+                    && value != null
+                    && value.isArray()
+                    && value.size() == 1
+                    && value.get(0).isObject()) {
+                  // Gemma occasionally wraps one keyed conceptual object in a singleton array.
+                  // Unwrap only that lossless protocol shape; the expected ID/type and every
+                  // required field remain authoritative and are validated below.
+                  value = value.get(0);
+                }
+                if (value != null
+                    && value.isObject()
+                    && expectedTypes.containsKey(id)
+                    && (!value.path("type").isTextual()
+                        || value.path("type").asText("").isBlank())) {
+                  var normalized = (tools.jackson.databind.node.ObjectNode) value.deepCopy();
+                  String emittedEClass = value.path("eClass").asText("").trim();
+                  normalized.put(
+                      "type", emittedEClass.isBlank() ? expectedTypes.get(id) : emittedEClass);
+                  value = normalized;
+                }
                 if (!value.isObject() || value.path("type").asText("").isBlank()) {
+                  String expectedType = expectedTypes.get(id);
                   throw new PlatformException(
-                      422, "Conceptual object '" + id + "' has no EClass type.");
+                      422,
+                      "Conceptual object '"
+                          + id
+                          + "' has no EClass type"
+                          + (expectedType == null
+                              ? "."
+                              : ". Expected the JSON object to contain type='"
+                                  + expectedType
+                                  + "'."));
                 }
                 if (value.path("attributes").isObject()) {
                   // Arvan occasionally preserves the conceptual meaning but emits a compact
@@ -2696,6 +2893,9 @@ public final class ConceptualInstanceModelWorkflow {
         }
       }
 
+      rejectOccupiedSingleValuedContainments(
+          current, creates, types, existingTypes, contracts, level, persistedRootType);
+
       List<ModelCommandBatch.Update> updates = new ArrayList<>();
       for (String id : effectiveObjects.keySet()) {
         if (existingTypes.containsKey(id) && !attributes.get(id).isEmpty()) {
@@ -2708,6 +2908,75 @@ public final class ConceptualInstanceModelWorkflow {
       }
       return new ModelCommandBatch(
           creates, updates, connections, List.of(), evidence, "Conceptual instance model", true);
+    }
+
+    /**
+     * Performs the structural part of patch compilation while the provider's stable IDs are still
+     * available. This turns a low-level JSON-patch diagnostic into a repairable diagnostic naming
+     * the exact conceptual object, and catches collisions before any workspace mutation.
+     */
+    private static void rejectOccupiedSingleValuedContainments(
+        JsonNode current,
+        List<ModelCommandBatch.Create> creates,
+        Map<String, TypeContract> responseTypes,
+        Map<String, String> existingTypes,
+        TypeContractService contracts,
+        ModelLevel level,
+        String persistedRootType) {
+      Map<String, String> assigned = new LinkedHashMap<>();
+      for (ModelCommandBatch.Create create : creates) {
+        String ownerId = create.owner();
+        String ownerTypeName =
+            "rootId".equals(ownerId)
+                ? persistedRootType
+                : responseTypes.containsKey(ownerId)
+                    ? responseTypes.get(ownerId).eClass()
+                    : existingTypes.get(ownerId);
+        if (ownerTypeName == null || ownerTypeName.isBlank()) continue;
+        TypeContract ownerType = contracts.require(level, ownerTypeName);
+        ReferenceContract containment =
+            ownerType.references().stream()
+                .filter(reference -> reference.name().equals(create.reference()))
+                .filter(ReferenceContract::containment)
+                .findFirst()
+                .orElse(null);
+        if (containment == null || containment.many()) continue;
+
+        String placement = ownerId + "." + containment.name();
+        String previous = assigned.putIfAbsent(placement, create.clientRef());
+        if (previous != null) {
+          throw new PlatformException(
+              422,
+              "Single-valued containment "
+                  + placement
+                  + " can contain only one new instance; objects '"
+                  + previous
+                  + "' and '"
+                  + create.clientRef()
+                  + "' both target it.");
+        }
+        JsonNode owner = "rootId".equals(ownerId) ? current : findById(current, ownerId);
+        if (owner != null && owner.hasNonNull(containment.name())) {
+          throw new PlatformException(
+              422,
+              "Single-valued containment "
+                  + placement
+                  + " is already occupied while creating conceptual object '"
+                  + create.clientRef()
+                  + "'. Preserve the existing child or choose a legal empty containment.");
+        }
+      }
+    }
+
+    private static JsonNode findById(JsonNode node, String id) {
+      if (node == null) return null;
+      if (node.isObject() && id.equals(node.path("id").asText(""))) return node;
+      if (!node.isContainer()) return null;
+      for (JsonNode child : node) {
+        JsonNode found = findById(child, id);
+        if (found != null) return found;
+      }
+      return null;
     }
 
     private void compileAssociations(
@@ -2766,6 +3035,15 @@ public final class ConceptualInstanceModelWorkflow {
                   + actualTarget
                   + ".");
         }
+        ReferenceContract declaredReference =
+            sourceType.references().stream()
+                .filter(item -> item.name().equals(name))
+                .findFirst()
+                .orElse(null);
+        // Read-only inverse EReferences are derived by EMF. They may be present in a provider
+        // response because the contract is also used for explanation, but they are never patch
+        // operations and must not make an otherwise valid conceptual model fail compilation.
+        if (declaredReference != null && declaredReference.readonly()) continue;
         ReferenceContract reference =
             sourceType.references().stream()
                 .filter(item -> item.name().equals(name))
@@ -3099,7 +3377,8 @@ public final class ConceptualInstanceModelWorkflow {
               422, "Every conceptual blueprint object needs a unique non-root instanceId.");
         }
         String exactType = contracts.require(level, type).eClass();
-        if (!contracts.require(level, exactType).creatable()) {
+        if (!contracts.require(level, exactType).creatable()
+            && !exactType.equals(contracts.rootType(level))) {
           throw new PlatformException(
               422,
               "Conceptual blueprint object '"

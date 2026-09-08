@@ -3,6 +3,7 @@ package io.mehdieidi.varka.platform.assistant.agent;
 import io.mehdieidi.varka.platform.kernel.PlatformException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Parses native structured-output fallback responses without accepting free-form actions. */
 public final class AgentActionCodec {
@@ -20,13 +21,60 @@ public final class AgentActionCodec {
           || !root.path("arguments").isObject()) {
         throw new IllegalArgumentException();
       }
-      return new AgentAction(
-          AgentAction.Kind.fromWire(root.path("action").asText(root.path("tool").asText())),
-          root.path("arguments"));
+      AgentAction.Kind kind =
+          AgentAction.Kind.fromWire(root.path("action").asText(root.path("tool").asText()));
+      return new AgentAction(kind, normalizeTerminalArguments(kind, root.path("arguments")));
     } catch (Exception ex) {
       throw new PlatformException(
           422, "Provider returned malformed AgentAction structured output.");
     }
+  }
+
+  /**
+   * Decodes common compatible-provider wrappers without inventing user-facing content. Some JSON
+   * gateways return a terminal answer as {@code content}, {@code text}, or a nested message even
+   * when the requested action contract names the field {@code message}.
+   */
+  private JsonNode normalizeTerminalArguments(AgentAction.Kind kind, JsonNode arguments) {
+    if (kind != AgentAction.Kind.ANSWER_USER && kind != AgentAction.Kind.ASK_USER) {
+      return arguments;
+    }
+    if (!(arguments instanceof ObjectNode object)) return arguments;
+    JsonNode message = object.get("message");
+    String text = terminalText(message);
+    if (text.isBlank()) {
+      for (String alias : new String[] {"content", "text", "answer", "response"}) {
+        text = terminalText(object.get(alias));
+        if (!text.isBlank()) break;
+      }
+    }
+    if (!text.isBlank() && (message == null || !message.isTextual())) {
+      object.put("message", text);
+    }
+    return object;
+  }
+
+  private String terminalText(JsonNode value) {
+    if (value == null || value.isNull()) return "";
+    if (value.isTextual()) return value.asText().trim();
+    if (value.isObject()) {
+      for (String field : new String[] {"message", "content", "text", "answer", "response"}) {
+        String text = terminalText(value.get(field));
+        if (!text.isBlank()) return text;
+      }
+    }
+    if (value.isArray()) {
+      StringBuilder result = new StringBuilder();
+      for (JsonNode item : value) {
+        String text = terminalText(item);
+        if (!text.isBlank()) {
+          if (result.length() > 0) result.append('\n');
+          result.append(text);
+        }
+      }
+      return result.toString();
+    }
+    return "";
   }
 
   /**
