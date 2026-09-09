@@ -43,16 +43,16 @@ Use `.env` for local overrides. Use a secret manager or orchestrator-managed sec
 
 Important values:
 
-| Variable                       | Purpose                                                                                           |
-| ------------------------------ | ------------------------------------------------------------------------------------------------- |
-| `POSTGRES_*`                   | PostgreSQL database, user, password, and published port.                                          |
-| `CADDY_HTTP_PORT`              | Published local port for the Caddy edge proxy.                                                    |
-| `VARKA_DB_*`                   | Backend JDBC connection settings.                                                                 |
-| `VARKA_ALLOWED_ORIGINS`        | CORS origins for browser apps.                                                                    |
-| `VARKA_ADMIN_BOOTSTRAP_EMAILS` | Initial admin role bootstrap emails.                                                              |
-| `VARKA_METRICS_ENABLED`        | Prometheus metrics export.                                                                        |
-| `GRAFANA_ADMIN_PASSWORD`       | Grafana local admin password.                                                                     |
-| `VARKA_AI_*`                   | Unified mode, Arvan/DeepSeek JSON protocol, budgets, timeouts, rate limits, and circuit behavior. |
+| Variable                       | Purpose                                                                                        |
+| ------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `POSTGRES_*`                   | PostgreSQL database, user, password, and published port.                                       |
+| `CADDY_HTTP_PORT`              | Published local port for the Caddy edge proxy.                                                 |
+| `VARKA_DB_*`                   | Backend JDBC connection settings.                                                              |
+| `VARKA_ALLOWED_ORIGINS`        | CORS origins for browser apps.                                                                 |
+| `VARKA_ADMIN_BOOTSTRAP_EMAILS` | Initial admin role bootstrap emails.                                                           |
+| `VARKA_METRICS_ENABLED`        | Prometheus metrics export.                                                                     |
+| `GRAFANA_ADMIN_PASSWORD`       | Grafana local admin password.                                                                  |
+| `VARKA_AI_*`                   | Unified mode, Arvan/Gemma JSON protocol, budgets, timeouts, rate limits, and circuit behavior. |
 
 ## Release Checklist
 

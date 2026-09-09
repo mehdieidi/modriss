@@ -12,13 +12,13 @@ flowchart LR
     Select --> Capacity["Deterministic combined closure/capacity gate"]
     Capacity --> Blueprint["LLM stable-ID blueprint"]
     Blueprint --> WorkItems["Private durable slice work items"]
-    WorkItems --> Review["Independent LLM obligation evidence review"]
+    WorkItems --> Review["Optional LLM obligation evidence review"]
 ```
 
 There is no business-semantic keyword mapper. The LLM owns the obligation text and candidate exact
 EClasses. Deterministic code verifies that candidates exist and are creatable, that mandatory
-obligations survive selection and blueprint allocation, and that final cited objects and
-relationship triples exist.
+obligations survive selection and blueprint allocation. When optional LLM review is enabled, it
+also verifies that cited objects and relationship triples exist.
 
 Lexical/embedding retrieval may help the inspect/contract action loop select relevant metamodel
 contracts. It is not a semantic fallback generator and does not replace exact live Ecore closure.
@@ -35,8 +35,9 @@ flowchart LR
     Inferred --> Provenance
 ```
 
-Source coverage is accounting, not EVL validity. Obligation coverage is a separate LLM judgment
-whose identifiers and evidence are deterministically checked. Both must be reported honestly.
+Source coverage is accounting, not EVL validity. When configured, obligation coverage adds a
+separate LLM judgment whose identifiers and evidence are deterministically checked. It is disabled
+in the currently validated Gemma profile.
 
 ## Durable memory
 

@@ -1,7 +1,7 @@
 # Assistant Storage ER Diagram
 
 This is the durable assistant schema from `V14__assistant_baseline.sql` through
-`V29__idempotent_assistant_provider_call_audit.sql`.
+`V31__reconcile_cancellation_race_outcomes.sql`.
 
 ```mermaid
 erDiagram
@@ -212,6 +212,10 @@ stable-ID blueprints, slice size, token/call counters, truncation diagnostics, a
 obligation-review verdicts. `assistant_work_items.payload` holds private generated slice objects
 until the final atomic checkpoint. `assistant_provider_calls(turn_id, call_key)` is unique when a
 call key is present, preventing duplicate audit rows during retry/resume.
+
+`V30` reconciles turn-level provider-call/token aggregates from the idempotent call ledger. `V31`
+repairs historical terminal-state races and preserves cancellation precedence over late worker or
+provider completion.
 
 `SPRING_AI_CHAT_MEMORY` and `ASSISTANT_RATE_LIMITS` have logical keys but intentionally no foreign
 keys to the application tables.

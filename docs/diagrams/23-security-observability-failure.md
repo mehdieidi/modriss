@@ -97,7 +97,7 @@ flowchart TD
     proxy["Validate optional AI proxy"]
     provider["Provider call with retry/circuit"]
     strategy{"Strict adaptive strategy<br/>structural allowlist"}
-    conceptual["Obligation ledger + private slices<br/>independent review + Ecore compiler"]
+    conceptual["Obligation ledger + private slices<br/>optional LLM review + Ecore compiler"]
     action["Inspect/contract AgentAction"]
     ground["Check type, feature, containment, evidence, and target IDs"]
     preview["Update workspace and validate"]

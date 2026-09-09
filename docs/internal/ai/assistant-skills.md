@@ -19,9 +19,10 @@ content hash to the provider prompt for auditability. `AgentTurnLoop` selects sk
 workflow state, model level, source presence, and whether the model contains elements. It does not
 classify user intent with keywords, regular expressions, or hard-coded content generation.
 
-The unified strategy router runs before this selection. Empty-model conceptual generation does not
-use a skill to decide business content; existing-model and selected/resumed/destructive mutation
-uses this skill-guided inspect/contract path.
+The unified strategy router runs before this selection. Conceptual generation/evolution does not
+use a skill to decide business content. When the LLM chooses the inspect strategy for an existing
+model, or when selected/resumed/destructive state requires it, mutation uses this skill-guided
+inspect/contract path.
 
 The selection is deliberately progressive:
 

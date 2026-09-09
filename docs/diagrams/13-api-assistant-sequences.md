@@ -48,9 +48,9 @@ sequenceDiagram
         W->>S: split source attachments when present
         W->>T: persist source units, coverage, provenance, provider calls
         W->>L: route from durable structural state
-        alt fresh turn without selection/destruction
+        alt adaptive turn without selection/destruction
             L->>L: strict LLM strategy decision
-            Note over L: Empty mutation -> obligation-gated conceptual<br/>Existing mutation -> inspect agent<br/>ANSWER -> read-only EXPLAIN_MODEL
+            Note over L: Empty model -> conceptual or answer<br/>Existing non-destructive -> conceptual, inspect, or answer<br/>ANSWER -> read-only EXPLAIN_MODEL
         else resumed, selected, or destructive turn
             Note over W,L: inspect/contract workflow
         end

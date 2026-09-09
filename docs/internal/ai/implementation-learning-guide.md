@@ -1,6 +1,6 @@
 # How the Varka AI assistant works
 
-Updated: 2026-08-13
+Updated: 2026-09-09
 
 ## Request-to-commit path
 
@@ -14,9 +14,10 @@ Updated: 2026-08-13
 
 ## Adaptive routing
 
-The allowlist is `CONCEPTUAL_GENERATION`, `INSPECT_AGENT`, and `ANSWER`. Fresh empty models may use
-conceptual generation. Existing models, selected elements, resumptions, and confirmed destructive
-turns use the inspect/contract agent. `ANSWER` maps to read-only `EXPLAIN_MODEL`.
+The allowlist is `CONCEPTUAL_GENERATION`, `INSPECT_AGENT`, and `ANSWER`. Fresh models may use
+conceptual generation. Non-empty, non-destructive models expose both conceptual evolution and the
+inspect/contract agent to the LLM. Selected-element, resumed, and confirmed destructive turns use
+the inspect/contract path. `ANSWER` maps to read-only `EXPLAIN_MODEL`.
 
 Routing does not inspect business keywords. The LLM owns intent interpretation; deterministic code
 only restricts the legal workflow based on model state and safety facts.
@@ -29,12 +30,13 @@ only restricts the legal workflow based on model state and safety facts.
    them to exact creatable candidate EClasses.
 2. `conceptual_type_selection` chooses exact EClasses. The backend verifies mandatory coverage and
    the actual combined required closure. There are four bounded selection attempts.
-3. `conceptual_blueprint` plans up to 16 stable object IDs/types, legal ownership, references,
+3. `conceptual_blueprint` plans up to 18 stable object IDs/types, legal ownership, references,
    obligation/source allocations, and slices.
 4. `conceptual_instance_slice` generates private object payloads. Large blueprints start at two
    objects per slice and fall back to one after a length truncation.
-5. `conceptual_obligation_review` independently judges every obligation and cites exact staged
-   object IDs and relationship triples.
+5. When `VARKA_AI_LLM_REVIEW_ENABLED=true`, `conceptual_obligation_review` independently judges
+   every obligation and cites exact staged object IDs and relationship triples. The validated Gemma
+   profile currently sets this to `false`.
 6. The compiler resolves IDs, attributes, containment, references, required features, and evidence
    into `ModelCommandBatch`.
 
@@ -48,8 +50,9 @@ revision until the final atomic checkpoint.
 
 ## Arvan behavior
 
-`OpenAiCompatibleAssistantModelProvider` uses JSON content, temperature zero, and DeepSeek's
-non-thinking request field. Arvan can still return extensive reasoning and `finish_reason=length`.
+`OpenAiCompatibleAssistantModelProvider` uses JSON content, temperature zero, and the provider's
+non-thinking request field when supported. The validated model is `Gemma-4-31B-IT`. Arvan can still
+return extensive reasoning and `finish_reason=length`.
 After type-selection truncation, the workflow sends a compact prompt containing only obligation
 candidates, exact closure costs, the request, and the latest diagnostic.
 
@@ -76,7 +79,7 @@ Assistant generation, review, repair, apply, and commit call only
 
 ## Current limitation
 
-The single conceptual checkpoint is bounded by a 16-object schema, required closure, and the
+The single conceptual checkpoint is bounded by an 18-object schema, required closure, and the
 provider-call budget. A coherent multi-increment design is still required for larger models. The
-latest obligation-gated PIM profile fails atomically and has not yet completed the repeated live
-campaigns needed for production readiness.
+latest existing-PIM evolution succeeded atomically, but repeated live campaigns and browser-level
+UX verification are still required for production-readiness claims.

@@ -60,7 +60,7 @@ mvn test -Pllm-provider-tests -Dgroups=llm-provider
 
 Live provider tests use the Arvan OpenAI-compatible configuration in the ignored `.env`:
 `VARKA_AI_PROVIDER=openai`, the Arvan `OPENAI_COMPATIBLE_BASE_URL` and key,
-`VARKA_AI_MODEL=DeepSeek-V4-Flash`, JSON schema protocol, native tools disabled, and unified mode.
+`VARKA_AI_MODEL=Gemma-4-31B-IT`, JSON schema protocol, native tools disabled, and unified mode.
 Use `VARKA_AI_TEST_MODEL` only for an intentional evaluation override.
 
 ## PostgreSQL integration tests
@@ -112,8 +112,8 @@ fetches the model, and records calls, tokens, latency, coverage, preservation, s
 validation evidence.
 
 Do not reduce acceptance to provider connectivity or one stochastic success. Preserve every failed
-and successful report. Current unified evidence passes feature evolution, source-backed pantry, and
-serverless PIM; the final library rerun failed on length-limited output. The assistant gates output
+and successful report. Current unified evidence includes explanation, source-backed CIM, fresh
+CIM/PIM, and preserved existing-PIM evolution; repeated campaigns remain required. The assistant gates output
 with structural Ecore/EMF validation only; run EVL separately only when a user-oriented test
 explicitly needs semantic review feedback.
 

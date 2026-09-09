@@ -9,7 +9,7 @@ sequenceDiagram
     participant T as AssistantTurnStore
     participant W as DurableAssistantTurnWorker
     participant L as AgentTurnLoop / workflow
-    participant P as Arvan DeepSeek-V4-Flash
+    participant P as Arvan Gemma-4-31B-IT
     participant M as ModelService
 
     C->>A: POST session message + idempotencyKey + expected revision

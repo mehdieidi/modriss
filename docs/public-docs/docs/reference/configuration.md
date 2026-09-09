@@ -93,12 +93,15 @@ adapter default.
 For Arvan, use `VARKA_AI_OPENAI_PROTOCOL=json_schema`,
 `VARKA_AI_NATIVE_TOOLS_PREFERRED=false`, and
 `VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false`. Structured requests use temperature zero and the
-model-family-specific generation controls. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION` and
+model-family-specific generation controls. The validated profile uses
+`VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION=true` and `VARKA_AI_LLM_REVIEW_ENABLED=false`: source
+interpretation remains LLM-based, while the optional second LLM judge is omitted to preserve the
+Gemma call and latency budget. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION` and
 `VARKA_AI_LLM_CONTRACT_RERANK_ENABLED` can improve source/retrieval quality at the cost of extra
 provider calls. The proxy variables accept `DIRECT`, `HTTP`, or `SOCKS`; proxy settings affect AI
 provider traffic only.
 
-The conceptual blueprint maximum (16 objects/types), obligation-ledger maximum (12 obligations),
+The conceptual blueprint maximum (18 objects/types), obligation-ledger maximum (12 obligations),
 type-selection attempts (4), and compact truncation-retry protocol are implementation invariants,
 not environment variables. Effective conceptual capacity is lower when required Ecore closure or
 the provider-call reserve consumes budget.

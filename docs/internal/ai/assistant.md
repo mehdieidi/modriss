@@ -1,6 +1,6 @@
 # AI assistant setup and architecture
 
-Updated: 2026-08-13
+Updated: 2026-09-09
 
 This is the implementation reference for Varka's modeling chatbot. The supported assistant scope is
 CIM and PIM. PSM modeling remains available elsewhere in Varka, but `ChatbotController` rejects PSM
@@ -26,6 +26,8 @@ VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
 VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=24
 VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=20
 VARKA_AI_PROVIDER_RETRY_ATTEMPTS=0
+VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION=true
+VARKA_AI_LLM_REVIEW_ENABLED=false
 ```
 
 `agent-test` and `conceptual-test` are acceptance-test overrides. `unified` is the sole normal
@@ -71,7 +73,7 @@ The LLM returns exactly one of `CONCEPTUAL_GENERATION`, `INSPECT_AGENT`, or `ANS
 state restricts the legal set:
 
 - Fresh empty CIM/PIM: conceptual generation or read-only answer.
-- Non-empty model: inspect agent or read-only answer.
+- Non-empty, non-destructive model: conceptual generation, inspect agent, or read-only answer.
 - Selected elements, resumptions, or confirmed destructive work: inspect/contract path.
 
 No prompt keyword, alias table, regex, or deterministic business template selects model meaning.
@@ -91,21 +93,22 @@ Production durable conceptual turns run these stages:
    obligation IDs, source-unit IDs, and slices. Every selected semantic type must appear.
 4. **Private slices.** Object payloads are generated into durable private work items. Large plans
    start at two objects per slice and fall back to one after length truncation.
-5. **Independent obligation review.** The LLM returns per-obligation states and exact object and
-   relationship evidence. Candidate EClasses are alternatives, not a conjunctive checklist.
+5. **Optional independent obligation review.** When enabled, the LLM returns per-obligation states
+   and exact object and relationship evidence. Candidate EClasses are alternatives, not a
+   conjunctive checklist. The validated Gemma deployment currently disables this extra judge call.
 6. **Compilation.** Deterministic code resolves stable IDs, attributes, containment, references,
    required features, ownership, multiplicity, and evidence into `ModelCommandBatch`.
 7. **Structural gate and commit.** The private candidate is structurally validated and committed as
    one expected-revision checkpoint.
 
-The schema maximum is 16 blueprint objects/types. Effective capacity can be lower because the
+The schema maximum is 18 blueprint objects/types. Effective capacity can be lower because the
 workflow reserves calls for routing/review/repair and required Ecore closure adds supporting types.
 Abstract required targets count toward capacity. The backend exposes exact creatable subtypes and
 the LLM chooses one; deterministic code never selects a business subtype.
 
-Every mandatory obligation must be allocated in the blueprint and independently marked
-`SATISFIED` with actual staged object evidence. Cited relationship triples are checked against the
-generated model. Missing/partial coverage prevents commit. There is no canned semantic fallback.
+Every mandatory obligation must be allocated in the blueprint. When LLM review is enabled, it must
+also be independently marked `SATISFIED` with actual staged object evidence, and cited relationship
+triples are checked against the generated model. There is no canned semantic fallback.
 
 ## Arvan-specific resilience
 
@@ -187,13 +190,14 @@ items so a worker restart can resume rather than reinterpret completed stages.
 
 ## Current acceptance status
 
-The latest obligation-gated PIM profile has not produced a clean live semantic acceptance pass.
-Recent Arvan runs have confirmed atomic failure, concrete abstract-target selection, obligation
-persistence, independent semantic rejection, compact retry prompts, exact token/call accounting,
-and unchanged models on failure. The latest fourth type-selection correction attempt is deployed
-and focused-test green but still requires live confirmation.
+The current Gemma profile has live successes for active-metamodel explanation, source attachment
+to CIM, fresh CIM, fresh PIM, existing CIM evolution through the earlier agent path, and existing
+PIM conceptual evolution. The latest PIM evolution preserved its 13-node order/payment/notification
+base and added 11 cancellation/refund nodes in one structurally valid checkpoint. The edit used 10
+provider calls and completed in 268 seconds. Focused routing and conceptual-workflow tests pass
+47/47.
 
 Do not describe the assistant as perfectly reliable or production-ready. Required ten-run
-campaigns, paraphrase campaigns, failure/restart matrices, existing-model preservation evidence,
-and visual UI verification remain incomplete. Exact evidence is recorded in
+campaigns, explanation paraphrase campaigns, failure/restart matrices, repeated CIM/PIM
+preservation evidence, latency work, and visual UI verification remain incomplete. Exact evidence is recorded in
 `live-eval-gate-report.md`.

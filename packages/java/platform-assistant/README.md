@@ -2,7 +2,7 @@
 
 `platform-assistant` is the provider-neutral runtime behind Varka's single modeling chatbot. The
 supported product scope is CIM and PIM; `ChatbotController` rejects PSM assistant sessions with
-HTTP 422. Production uses the Arvan OpenAI-compatible endpoint with `DeepSeek-V4-Flash`.
+HTTP 422. Production uses the Arvan OpenAI-compatible endpoint with `Gemma-4-31B-IT`.
 
 ## Runtime path
 
@@ -24,9 +24,10 @@ Users never choose an internal strategy. The LLM returns one allowlisted value f
 `CONCEPTUAL_GENERATION`, `INSPECT_AGENT`, or `ANSWER`; deterministic structural facts restrict the
 legal set. Request keywords, aliases, and regex routing are not used.
 
-Fresh empty-model creation may use conceptual generation. Existing models, selected elements,
-resumed work, and confirmed destructive requests use the inspect/contract path. `ANSWER` maps to a
-read-only workflow that cannot mutate, checkpoint, validate, or repair.
+Fresh model creation and coherent non-destructive evolution may use conceptual generation. The LLM
+may instead choose the inspect/contract path for a non-empty model. Selected-element, resumed, and
+confirmed destructive requests require the inspect/contract path. `ANSWER` maps to a read-only
+workflow that cannot mutate, checkpoint, validate, or repair.
 
 ## Conceptual generation
 
@@ -38,7 +39,7 @@ read-only workflow that cannot mutate, checkpoint, validate, or repair.
 4. A stable-ID blueprint with obligation and source-unit allocations.
 5. Private, durable slice generation; large blueprints begin with two objects per slice and fall
    back to one after provider length truncation.
-6. Independent LLM obligation review with exact object and relationship evidence.
+6. Optional independent LLM obligation review with exact object and relationship evidence.
 7. Deterministic compilation into `ModelCommandBatch`.
 8. Structural-only validation and one atomic checkpoint commit.
 
@@ -49,8 +50,9 @@ capacity; the LLM chooses among exact creatable subtypes supplied by the backend
 The obligation ledger contains stable IDs, natural-language obligations, mandatory/optional
 importance, source-unit IDs, and one to four LLM-selected candidate EClasses. Candidate EClasses
 are alternatives, not a checklist. Deterministic code verifies IDs, types, allocations, cited
-objects, and cited relationship triples. Every mandatory obligation must be `SATISFIED` before a
-checkpoint can be published.
+objects, and cited relationship triples when review is enabled. Every mandatory obligation must be
+allocated in the blueprint; with review enabled, each must also be `SATISFIED` before a checkpoint
+can be published. The validated Gemma deployment currently disables this optional judge call.
 
 There is no business-semantic fallback model. Failure or unresolved coverage produces an honest
 partial/failure state and leaves the persisted model unchanged.
@@ -75,9 +77,11 @@ VARKA_AI_METAMODEL_MODE=normal
 VARKA_AI_OPENAI_PROTOCOL=json_schema
 VARKA_AI_NATIVE_TOOLS_PREFERRED=false
 VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
+VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION=true
+VARKA_AI_LLM_REVIEW_ENABLED=false
 ```
 
-The adapter sends temperature zero and `thinking: {"type":"disabled"}`. Arvan can still return
+The adapter sends temperature zero and a non-thinking request hint when supported. Arvan can still return
 large `reasoning_content` and `finish_reason=length`. Truncated type-selection retries therefore
 use only the LLM obligation candidates, exact closure costs, the request, and the latest diagnostic.
 The selector currently has four bounded attempts so the LLM can act on a final capacity diagnostic.
@@ -113,9 +117,10 @@ Assistant create, repair, apply, review, and commit paths may call only
 semantic-validation endpoints, `validateGeneratedXmi(...)`, EVL validators, CLIs, or profiles.
 EVL remains available only for explicit validation workflows outside the chatbot.
 
-The implementation has strong focused regression coverage and repeatedly fails atomically, but the
-obligation-gated PIM profile does not yet have a clean live acceptance pass or the required repeated
-reliability campaigns. Structural validity alone is not semantic success. See:
+The implementation has strong focused regression coverage and repeatedly fails atomically. Live
+evidence covers explanation, source-to-CIM, fresh CIM/PIM, and existing-PIM evolution with feature
+preservation. The required repeated reliability and visual UX campaigns remain incomplete;
+structural validity alone is not semantic success. See:
 
 - `docs/internal/ai/current-llm-workflow.md`
 - `docs/internal/ai/live-eval-gate-report.md`

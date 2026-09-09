@@ -103,6 +103,45 @@ class AgentTurnLoopTest {
   }
 
   @Test
+  void allowsLlmToChooseConceptualWorkflowForExistingNonDestructiveModel() throws Exception {
+    ModelService models = mock(ModelService.class);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    AdaptiveAnswerProvider provider = new AdaptiveAnswerProvider();
+    AgentTurnLoop loop =
+        new AgentTurnLoop(
+            provider,
+            new AgentModelTools(new TypeContractService(knowledge), models),
+            new MetamodelGuideGenerator(knowledge),
+            null,
+            Duration.ofSeconds(5),
+            Duration.ofSeconds(5),
+            3,
+            3);
+    var root =
+        new ObjectMapper()
+            .readTree(
+                """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","services":[{"id":"service","eClass":"ServerlessService","name":"Orders"}]}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.PIM, "m", 1, root, new AssistantPatchCompiler(), null);
+
+    loop.run(
+        "adaptive-existing-pim",
+        ModelLevel.PIM,
+        "Explain the current model",
+        null,
+        workspace,
+        false,
+        AgentTurnLoop.WorkflowMode.ADAPTIVE);
+
+    assertTrue(provider.firstUserPrompt.contains("modelEmpty=false"));
+    assertTrue(
+        provider.firstUserPrompt.contains(
+            "legalStrategies=CONCEPTUAL_GENERATION,INSPECT_AGENT,ANSWER"));
+  }
+
+  @Test
   void normalizesPaperStyleBatchWrapperWithoutInventingModelContent() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     var arguments =
@@ -125,7 +164,8 @@ class AgentTurnLoopTest {
   @Test
   void sourceAttachmentsPlanAndCheckpointWithoutSeparateAnalysis() throws Exception {
     ModelService models = mock(ModelService.class);
-    when(models.validateStructural(any(), any()))
+    when(models.validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     SourcePlanThenPatchProvider provider = new SourcePlanThenPatchProvider();
@@ -167,7 +207,8 @@ class AgentTurnLoopTest {
   @Test
   void shallowSourceSlicesAreRepairedBeforeWorkspaceMutation() throws Exception {
     ModelService models = mock(ModelService.class);
-    when(models.validateStructural(any(), any()))
+    when(models.validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     MultiSourceShallowThenUsefulProvider provider = new MultiSourceShallowThenUsefulProvider();
@@ -200,13 +241,16 @@ class AgentTurnLoopTest {
     assertEquals(3, provider.calls);
     assertTrue(provider.correctivePromptReceived);
     assertEquals(2, result.commandBatch().evidence().size());
-    verify(models).validateStructural(any(), any());
+    verify(models)
+        .validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class));
   }
 
   @Test
   void nonSourcePimPlansReceiveBackendContractsBeforeTheFirstCommit() throws Exception {
     ModelService models = mock(ModelService.class);
-    when(models.validateStructural(any(), any()))
+    when(models.validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     PimPlanThenPatchProvider provider = new PimPlanThenPatchProvider();
@@ -248,7 +292,8 @@ class AgentTurnLoopTest {
   @Test
   void resumeRepairReusesPersistedModelingPlanInsteadOfReplanning() throws Exception {
     ModelService models = mock(ModelService.class);
-    when(models.validateStructural(any(), any()))
+    when(models.validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     ResumePlanThenPatchProvider provider = new ResumePlanThenPatchProvider();
@@ -299,7 +344,8 @@ Work items:
   @Test
   void invalidSourceEvidenceIsRepairedBeforeCommit() throws Exception {
     ModelService models = mock(ModelService.class);
-    when(models.validateStructural(any(), any()))
+    when(models.validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     BlankHyphenatedEvidenceProvider provider = new BlankHyphenatedEvidenceProvider();
@@ -343,13 +389,16 @@ Work items:
     assertTrue(provider.correctivePromptReceived);
     assertEquals("SOURCE_GROUNDED", result.commandBatch().evidence().get(0).kind());
     assertEquals("src-1", result.commandBatch().evidence().get(0).sourceUnitId());
-    verify(models).validateStructural(any(), any());
+    verify(models)
+        .validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class));
   }
 
   @Test
   void sourceBackedDeletionAttemptRepairsToAdditiveCheckpoint() throws Exception {
     ModelService models = mock(ModelService.class);
-    when(models.validateStructural(any(), any()))
+    when(models.validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     DeleteThenAdditiveSourceProvider provider = new DeleteThenAdditiveSourceProvider();
@@ -401,7 +450,8 @@ Work items:
   @Test
   void executesTerminalStructuredActionWithinBudget() throws Exception {
     ModelService models = mock(ModelService.class);
-    when(models.validateStructural(any(), any()))
+    when(models.validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     var tools = new AgentModelTools(new TypeContractService(knowledge), models);
@@ -434,7 +484,8 @@ Work items:
   @Test
   void honorsTheModelsAnswerForAnExplanationThatMentionsUpdating() throws Exception {
     ModelService models = mock(ModelService.class);
-    when(models.validateStructural(any(), any()))
+    when(models.validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     FakeProvider provider = new FakeProvider();
@@ -502,14 +553,17 @@ Work items:
 
     assertEquals("Done", result.message());
     assertTrue(result.patch().isEmpty());
-    verify(models, never()).validateStructural(any(), any());
+    verify(models, never())
+        .validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class));
     verify(models, never()).validate(any(ModelLevel.class), any());
   }
 
   @Test
   void fallsBackToFullInspectionWhenNarrowInspectMissesExistingElements() throws Exception {
     ModelService models = mock(ModelService.class);
-    when(models.validateStructural(any(), any()))
+    when(models.validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     InspectMissThenAnswerProvider provider = new InspectMissThenAnswerProvider();
@@ -615,7 +669,8 @@ Work items:
   @Test
   void repairsInvalidToolPayloadWithinBudget() throws Exception {
     ModelService models = mock(ModelService.class);
-    when(models.validateStructural(any(), any()))
+    when(models.validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     RepairingProvider provider = new RepairingProvider();
@@ -648,7 +703,8 @@ Work items:
   @Test
   void acceptsStringEncodedCommandItemsFromStructuredProviders() throws Exception {
     ModelService models = mock(ModelService.class);
-    when(models.validateStructural(any(), any()))
+    when(models.validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     AgentTurnLoop loop =
@@ -673,14 +729,17 @@ Work items:
     assertTrue(result.message().startsWith("Model checkpoint saved"));
     assertEquals(3, result.providerCalls());
     assertTrue(!result.patch().isEmpty());
-    verify(models).validateStructural(any(), any());
+    verify(models)
+        .validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class));
     verify(models, never()).validate(any(ModelLevel.class), any());
   }
 
   @Test
   void repairsNullTurnCompleteToAnExplicitCheckpointDecision() throws Exception {
     ModelService models = mock(ModelService.class);
-    when(models.validateStructural(any(), any()))
+    when(models.validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     AgentTurnLoop loop =
@@ -721,7 +780,9 @@ Work items:
     assertTrue(result.message().startsWith("Model checkpoint saved"));
     assertEquals(false, result.commandBatch().turnComplete());
     assertEquals(2, result.providerCalls());
-    verify(models).validateStructural(any(), any());
+    verify(models)
+        .validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class));
   }
 
   @Test
@@ -790,7 +851,9 @@ Work items:
 
     assertEquals("Recovered", result.message());
     assertEquals(2, result.providerCalls());
-    verify(models, never()).validateStructural(any(), any());
+    verify(models, never())
+        .validateStructural(
+            any(), org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class));
   }
 
   @Test

@@ -122,7 +122,7 @@ Required production changes:
 - Set `VARKA_ALLOWED_ORIGINS` to only the real HTTPS origins.
 - Set all public URLs to `https://...`.
 - Configure the Arvan base URL/key only through environment variables or a secret manager. Set
-  `VARKA_AI_PROVIDER=openai`, `VARKA_AI_MODEL=DeepSeek-V4-Flash`, `VARKA_AI_MODE=unified`,
+  `VARKA_AI_PROVIDER=openai`, `VARKA_AI_MODEL=Gemma-4-31B-IT`, `VARKA_AI_MODE=unified`,
   `VARKA_AI_OPENAI_PROTOCOL=json_schema`, and keep native/forced tool flags false.
 - Disable or remove LocalStack unless it is explicitly needed.
 - Set upload and data paths to durable volumes.

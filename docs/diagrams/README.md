@@ -12,7 +12,7 @@ The diagrams were derived from:
 - Maven module POMs, `deploy/compose.yaml`, and backend configuration.
 - `PlatformStore`, `PostgresPlatformStore`, and Flyway migrations under
   `platform-storage-postgres` (including V32 model synchronization records) and `platform-assistant`
-  (V14 durable-turn baseline and later assistant migrations through V29).
+  (V14 durable-turn baseline and later assistant migrations through V31).
 - Emfatic/Ecore metamodels, EVL entry modules, ETL entry modules, and EGX/EGL generation assets.
 
 ## Diagram Index

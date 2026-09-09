@@ -1,6 +1,6 @@
 # Current LLM modeling workflow
 
-Updated: 2026-08-15
+Updated: 2026-09-09
 
 This document describes the implementation currently in the repository. It distinguishes shipped
 behavior from proposed production hardening.
@@ -50,13 +50,13 @@ The backend supplies only structural facts such as model level, model emptiness,
 count, destructive-confirmation state, and the legal strategies. It does not inspect request
 keywords. Safety restrictions are deterministic:
 
-| Structural situation                | Legal semantic choices              | Effective mutation path                            |
-| ----------------------------------- | ----------------------------------- | -------------------------------------------------- |
-| Empty, fresh, non-destructive model | conceptual or `ANSWER` intention    | conceptual mutation or read-only explanation       |
-| Non-empty, fresh model              | inspect agent or `ANSWER` intention | inspect/contract mutation or read-only explanation |
-| Selected elements                   | agent action loop                   | inspect/contract agent                             |
-| Resumed durable work                | persisted workflow                  | inspect/contract plan/repair                       |
-| Confirmed destructive request       | agent action loop                   | inspect/contract agent with preconditions          |
+| Structural situation                | Legal semantic choices           | Effective mutation path                           |
+| ----------------------------------- | -------------------------------- | ------------------------------------------------- |
+| Empty, fresh, non-destructive model | conceptual or `ANSWER` intention | conceptual mutation or read-only explanation      |
+| Non-empty, non-destructive model    | conceptual, inspect, or `ANSWER` | coherent evolution, surgical edit, or explanation |
+| Selected elements                   | agent action loop                | inspect/contract agent                            |
+| Resumed durable work                | persisted workflow               | inspect/contract plan/repair                      |
+| Confirmed destructive request       | agent action loop                | inspect/contract agent with preconditions         |
 
 If the strategy response is malformed, one bounded correction requests only the tiny schema.
 Strategy calls and their tokens are included in the durable provider-call audit.
@@ -64,7 +64,7 @@ Strategy calls and their tokens are included in the durable provider-call audit.
 `ANSWER` maps to the enforced read-only explanation workflow. Mutation actions are unavailable on
 that route.
 
-## Conceptual generation
+## Conceptual generation and additive evolution
 
 The conceptual strategy is implemented by `ConceptualInstanceModelWorkflow`.
 
@@ -101,8 +101,7 @@ rejected before slice generation.
 Every mandatory obligation must be allocated to at least one planned object whose exact EClass is
 one of the ledger mappings or an assignable concrete subtype. Each focused slice also rejects any
 emitted association that is not an exact writable Ecore reference, is placed under the wrong
-containment/reference collection, names an unknown or incompatible target, declares a target
-EClass different from the actual planned or persisted target, duplicates a single-valued feature,
+containment/reference collection, names an unknown or incompatible target, duplicates a single-valued feature,
 or contradicts blueprint containment ownership. This keeps structural correction local instead of
 spending the remaining generation budget before the complete compiler reports the defect. After
 all private slices are staged, an independent bounded LLM verdict can report `SATISFIED`, `PARTIAL`,
@@ -112,9 +111,9 @@ source-feature-target relationship evidence. This verdict runs only when
 review is disabled, no verdict or judge call occurs and structural Ecore conformance alone gates
 the candidate. There is no semantic fallback, and neither mode invokes EVL validation.
 
-Small Arvan/DeepSeek blueprints normally use one rich object per slice. Blueprints larger than eight
-objects begin with two related objects per slice to preserve call budget and durably split to one if
-Arvan length-limits a response. Other providers may pack at most two. Every slice receives:
+The Gemma profile normally uses two related objects per slice and durably falls back to one if
+Arvan length-limits a response. DeepSeek-compatible profiles use one rich object per slice. Every
+slice receives:
 
 - the selected authoritative Ecore contracts;
 - a compact persisted-model inventory with exact IDs, ownership, attributes, and references;
@@ -188,7 +187,8 @@ point for a new source turn; new source work begins with `plan_model_edit`.
 Plans, exact contracts, inspection results, and compiler errors are fed back to the same LLM. The
 backend resolves batch `clientRef` values to UUIDs, checks containment/references/evidence and
 destructive preconditions, applies the batch to a private workspace, and validates it before
-persistence. Existing-model evolution and all destructive work currently use this path.
+persistence. This path is mandatory for selected-element, resumed, and destructive work and remains
+available to the LLM for surgical non-destructive edits.
 
 Packaged skills are loaded from formal workflow state, level, source presence, and model
 emptiness. They guide the LLM but cannot mutate or validate a model.
@@ -227,17 +227,18 @@ VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
 
 `json_schema` selects structured JSON content in the provider adapter. For the Arvan endpoint this
 is transported using JSON-object response format, schema-specific prompting, temperature zero, and
-DeepSeek's `thinking: {"type":"disabled"}` request field. Native OpenAI tool calls are not used in
+a non-thinking request hint when the endpoint accepts it. Native OpenAI tool calls are not used in
 the deployed configuration.
 
 The same `OpenAiCompatibleAssistantModelProvider` handles strategy selection, conceptual type
 selection, conceptual generation, and agent actions. Provider-call latency, prompt/completion token
 usage, prompts, model, and failures are persisted, including failed turns.
 
-The deployed 20-call ceiling reserves up to two calls for adaptive routing and 18 for conceptual
-work. The conceptual budget accommodates obligation interpretation, semantic type selection, a
-blueprint, private slices, independent obligation review, and bounded selection, slice, review, and
-compiler corrections. Effective object capacity is derived from the remaining call budget and
+The deployed profile uses a 24-call ceiling for normal turns and 20 for source-backed turns. Up to
+two calls are reserved for adaptive routing. The conceptual budget accommodates obligation
+interpretation, semantic type selection, a blueprint, private slices, optional independent
+obligation review, and bounded selection, slice, review, and compiler corrections. Effective
+object capacity is derived from the remaining call budget and
 slice size and is capped by the 18-object schema. Stage-specific completion limits keep every
 response bounded below the provider's broad global maximum.
 
@@ -266,28 +267,29 @@ EVL is available only when a user explicitly initiates model validation outside 
 
 ## Current live evidence
 
-| Fixture                     | Agent acceptance | Conceptual acceptance                       | Unified acceptance                                                                  |
-| --------------------------- | ---------------- | ------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `create-cim-library`        | Passed           | Passed in an optimized run                  | Earlier bounded profiles passed; repeated final-profile campaign remains incomplete |
-| `cim-feature-evolution`     | Passed           | Failed the second persisted-model update    | Passed through the agent path                                                       |
-| `source-to-cim-pantry`      | Passed           | Passed with complete coverage               | Passed with complete coverage                                                       |
-| `create-pim-serverless`     | Passed           | Passed structurally with Gemma              | 2026-08-14: automatic compiler recovery, 33 nodes, 20 real calls                    |
-| `create-pim-doctor-booking` | Not applicable   | Two of three exact-prompt Gemma runs passed | 27/28-node structural checkpoints; one safe malformed-JSON failure                  |
+| User journey                       | Latest evidence                                                                                   |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Active model/metamodel explanation | Succeeded without mutation using the read-only explanation path.                                  |
+| Source attachment to CIM           | Succeeded with complete source-unit coverage and stored provenance.                               |
+| Fresh CIM                          | Succeeded through obligation-gated conceptual generation.                                         |
+| Fresh PIM                          | Succeeded through obligation-gated conceptual generation.                                         |
+| Existing CIM evolution             | Earlier unified agent-path scenario succeeded; post-routing repeated evidence remains incomplete. |
+| Existing PIM conceptual evolution  | 2026-09-09: preserved 13 nodes, added 11, revision 3, 10 calls, 268 seconds, structurally valid.  |
 
-The evidence supports conceptual generation for bounded empty models and the agent for persisted
-updates. It does not support a claim of perfect reliability. Detailed call, latency, token, repair,
-structure, preservation, and failure evidence is in
-[assistant-approach-comparison.md](assistant-approach-comparison.md) and the reports under `target/`.
+The evidence supports all four required journeys at least once, including additive evolution of a
+persisted PIM. It does not support a claim of perfect reliability. Detailed call, latency, token,
+structure, and preservation evidence is in
+[assistant-approach-comparison.md](assistant-approach-comparison.md) and
+[live-eval-gate-report.md](live-eval-gate-report.md).
 
 ## Known limitations
 
 - The conceptual blueprint, per-object payloads, reduced slice size, provider-call audit, and token
   totals are durable. Lease recovery resumes missing IDs without exposing a partial model revision.
-- Conceptual updates to non-empty models have not passed the feature-evolution acceptance fixture
-  reliably and are therefore excluded by the production safety rule.
-- The staged library protocol had one successful two-object-slice run, but a later final-profile
-  run truncated two slices and exhausted the review reserve with zero commits. The one-object
-  profile still requires a successful live rerun and the repeated-run release campaign.
+- Non-empty, non-destructive models now permit LLM selection of conceptual evolution. One PIM
+  preservation scenario passed; repeated PIM and post-change CIM evolution campaigns remain open.
+- One successful run is not a reliability distribution. The full fixture matrix, paraphrases, and
+  ten-run campaigns remain incomplete.
 - Structural validity is the chatbot's required validation boundary; human usefulness still needs
   repeated evaluation. EVL is intentionally outside chatbot apply/repair/commit paths.
 - The live paraphrase corpus and repeated-run production SLO gate remain incomplete.
@@ -296,23 +298,15 @@ structure, preservation, and failure evidence is in
   and human usefulness review remain open.
 - With LLM review disabled, structural validity does not guarantee that every generated name or
   design choice is optimal; this is an explicit tradeoff rather than hidden reviewer coverage.
-- The exact doctor-booking prompt now has two successful structurally valid runs out of three after
-  the provider-account HTTP 403 cleared. The remaining run failed safely on malformed provider JSON.
-- Gemma remains the active and currently better-observed model, but its endpoint is intermittent:
-  the latest persisted-evolution rerun failed on two transport attempts with zero generated tokens.
-- Required writable Ecore references are now validated within each conceptual slice so a focused
-  correction happens before later slices consume the budget. All emitted association features,
-  kinds, targets, types, multiplicities, and ownership are now checked there as well. This is
-  focused-test green but still needs a post-fix persisted-evolution live run.
-- The 2026-08-15 bounded evolution run timed out during initial creation after 20 calls. It exposed
-  the late association checks and stale cancellation aggregates fixed above, but did not reach the
-  persisted edit and therefore is not acceptance evidence.
-- Its one post-fix rerun proved that association and required-reference defects are now rejected in
-  focused slices, but still timed out after 17 calls with 8 of 14 private objects staged. A provider
-  HTTP 403 raced with cancellation; cancellation now takes precedence and V31 repaired historical
-  raced terminal rows. Persisted evolution remains unproven and no further replay was launched.
-- The 2026-08-15 backend JAR was deployed in a new local image derived from the prior runtime image
-  because Docker Hub again returned HTTP 403 for Maven base-image metadata. The service is healthy;
-  a conventional clean Docker rebuild remains externally blocked until registry access recovers.
+- The exact doctor-booking prompt has two successful structurally valid runs out of three; the
+  remaining historical run failed safely on malformed provider JSON.
+- Gemma remains the only validated active model. Historical provider transport, truncation, and
+  malformed-JSON failures were fail-closed, but transport/restart campaigns remain incomplete.
+- Required writable Ecore references are validated within each conceptual slice. Association
+  buckets, features, targets, types, multiplicities, ownership, and read-only inverse references
+  are normalized or rejected against exact contracts before commit.
+- The latest backend JAR is deployed and healthy locally. Docker Hub returned HTTP 403 for base-image
+  metadata during the conventional image rebuild, so clean container recreation remains to be
+  verified when registry access recovers.
 - Expired `RUNNING` turns whose worker leases have ended are now finalized as `TIMED_OUT` during
   polling, preventing a restart from leaving a permanent working indicator.

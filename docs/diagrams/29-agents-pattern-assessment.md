@@ -3,10 +3,11 @@
 ```mermaid
 flowchart TB
     Worker["Durable worker"] --> Router{"LLM closed strategy"}
-    Router -->|fresh empty model| Chain["Prompt chain<br/>obligations -> types -> blueprint -> slices"]
-    Chain --> Reviewer["Independent obligation evaluator"]
+    Router -->|fresh or additive evolution| Chain["Prompt chain<br/>obligations -> types -> blueprint -> slices"]
+    Chain --> Reviewer["Optional obligation evaluator"]
     Reviewer --> Compiler["Deterministic Ecore compiler"]
-    Router -->|existing/resumed/destructive| Agent["Inspect/contract action loop"]
+    Chain -->|review disabled| Compiler
+    Router -->|surgical/selected/resumed/destructive| Agent["Inspect/contract action loop"]
     Router -->|answer| ReadOnly["Read-only explanation"]
     Compiler --> Workspace["Private workspace"]
     Agent --> Workspace

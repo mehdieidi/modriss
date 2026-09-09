@@ -20,32 +20,36 @@ clarification can produce `PARTIAL`, `FAILED`, `CONFLICTED`, `NEEDS_INPUT`, or
 The UI exposes one chatbot. Internally, an LLM chooses one closed strategy allowed by structural
 state:
 
-- `CONCEPTUAL_GENERATION` for fresh empty CIM/PIM creation.
-- `INSPECT_AGENT` for existing models, selected elements, resumed work, and destructive edits.
+- `CONCEPTUAL_GENERATION` for fresh CIM/PIM creation and coherent additive evolution of an
+  existing model.
+- `INSPECT_AGENT` for surgical edits and for selected-element, resumed, or destructive work.
 - `ANSWER` for read-only model explanation.
 
 The backend does not route business meaning with prompt keywords or canned templates.
 
-## Fresh-model generation
+## Conceptual generation and evolution
 
 The conceptual workflow creates a durable requirement-obligation ledger, selects exact EClasses,
-plans a stable-ID blueprint, generates private slices, independently reviews mandatory obligation
-coverage, compiles the result, validates structural Ecore/EMF conformance, and then commits one
-atomic checkpoint.
+plans a stable-ID blueprint, generates private slices, optionally performs an independent LLM
+obligation review, compiles the result, validates structural Ecore/EMF conformance, and then
+commits one atomic checkpoint. The currently validated Gemma profile disables the optional LLM
+review; structural conformance and deterministic obligation/evidence checks remain mandatory.
 
 No generated object is visible before the final checkpoint. If any mandatory obligation cannot be
 proven with real staged object/reference evidence, the checkpoint is not published.
 
-The private blueprint schema allows at most 16 objects/types, further constrained by required
+The private blueprint schema allows at most 18 objects/types, further constrained by required
 Ecore closure and the provider-call budget. Larger models need a future coherent multi-increment
 design; the assistant must not silently omit requested concepts to fit the ceiling.
 
 ## Existing-model edits
 
-Existing-model turns inspect the saved model, request exact contracts, and submit checked command
-batches. Revision checks, containment/reference enforcement, destructive confirmation, private
-staging, structural validation, and inverse patches protect existing content. Existing-model
-preservation still needs broader repeated live evidence.
+For a non-empty model and a non-destructive request, the LLM may choose either coherent conceptual
+evolution or the inspect/contract action loop. Selected-element, resumed, and destructive turns use
+the inspect/contract path. Revision checks, containment/reference enforcement, destructive
+confirmation, private staging, structural validation, and inverse patches protect existing
+content. A live PIM evolution preserved 13 existing nodes and committed 11 new nodes in revision 3;
+repeated CIM/PIM preservation campaigns are still required.
 
 ## Source-backed modeling
 

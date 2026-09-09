@@ -36,7 +36,7 @@ generator issue.
 ## Assistant Is Unavailable
 
 - Confirm `VARKA_AI_ENABLED=true`.
-- Confirm the Arvan base URL/key, `DeepSeek-V4-Flash`, `VARKA_AI_MODE=unified`, JSON schema
+- Confirm the Arvan base URL/key, `Gemma-4-31B-IT`, `VARKA_AI_MODE=unified`, JSON schema
   protocol, native tools disabled, and request timeout.
 - Check dedicated AI proxy configuration.
 - Set `VARKA_AI_ENABLED=false` while diagnosing provider or durable turn issues.

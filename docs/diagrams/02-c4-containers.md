@@ -21,7 +21,7 @@ flowchart TB
         cli["Container: MDE CLI Tools<br/>Picocli shaded JARs<br/>Metamodel compile, validate, transform, generate"]
     end
 
-    provider["Arvan OpenAI-compatible AI<br/>DeepSeek-V4-Flash"]
+    provider["Arvan OpenAI-compatible AI<br/>Gemma-4-31B-IT"]
     proxy["Optional HTTP/SOCKS Proxy"]
 
     user -->|"HTTP/HTTPS entrypoints"| caddy

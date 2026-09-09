@@ -39,6 +39,7 @@ flowchart LR
 
     subgraph mde["Formal MDE Runtime"]
         xmi["XmiModelImportService + MetamodelResolver"]
+        structural["EMF structural conformance<br/>assistant apply gate"]
         evl["EpsilonEvlValidator"]
         etl["EpsilonEtlExecutor"]
         egx["EpsilonEgxGenerator"]
@@ -47,7 +48,7 @@ flowchart LR
     store["Port: PlatformStore"]
     postgres["Adapter: PostgresPlatformStore"]
     db[("PostgreSQL")]
-    ai["Arvan OpenAI-compatible endpoint<br/>DeepSeek-V4-Flash"]
+    ai["Arvan OpenAI-compatible endpoint<br/>Gemma-4-31B-IT"]
 
     client --> controllers
     client <--> realtime
@@ -86,6 +87,9 @@ flowchart LR
     conceptual --> tools
     tools --> schema
     tools --> models
+    conceptual --> structural
+    tools --> structural
+    structural --> models
     facade --> memory
     facade --> models
     facade --> projects
@@ -101,3 +105,7 @@ flowchart LR
     turnStore --> db
     memory --> db
 ```
+
+The assistant's generation, repair, apply, and commit paths use the structural conformance gate
+only. The `models --> evl` relationship represents explicit user/model validation elsewhere in the
+platform; it is not an assistant mutation gate.

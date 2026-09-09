@@ -75,7 +75,8 @@ class ConceptualInstanceModelWorkflowTest {
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -191,7 +192,8 @@ class ConceptualInstanceModelWorkflowTest {
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -321,7 +323,8 @@ class ConceptualInstanceModelWorkflowTest {
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -337,8 +340,9 @@ class ConceptualInstanceModelWorkflowTest {
             false);
 
     String correctionPrompt = provider.prompts().get(4).user();
-    assertTrue(correctionPrompt.contains("has an invalid references entry"));
-    assertTrue(correctionPrompt.contains("missing required Ecore attributes [consistencyNeed]"));
+    assertTrue(
+        correctionPrompt.contains(
+            "requires non-empty associationName, associatedClassName, and instanceID"));
     assertEquals(6, result.providerCalls());
     assertEquals(2, result.commandBatch().creates().size());
     assertEquals(0, provider.remainingSteps());
@@ -383,7 +387,8 @@ class ConceptualInstanceModelWorkflowTest {
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -456,7 +461,8 @@ class ConceptualInstanceModelWorkflowTest {
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -506,7 +512,8 @@ class ConceptualInstanceModelWorkflowTest {
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -555,7 +562,8 @@ class ConceptualInstanceModelWorkflowTest {
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -604,7 +612,8 @@ class ConceptualInstanceModelWorkflowTest {
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -653,7 +662,8 @@ class ConceptualInstanceModelWorkflowTest {
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -733,7 +743,8 @@ class ConceptualInstanceModelWorkflowTest {
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -770,7 +781,7 @@ class ConceptualInstanceModelWorkflowTest {
   }
 
   @Test
-  void rejectsInvalidAssociationTypeInsideTheFocusedSlice() throws Exception {
+  void rejectsAnAssociationWhoseLiveTargetViolatesTheEcoreType() throws Exception {
     String blueprint =
         """
 {"types":["Actor","BusinessGoal"],"objects":[
@@ -809,7 +820,8 @@ class ConceptualInstanceModelWorkflowTest {
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -829,7 +841,7 @@ class ConceptualInstanceModelWorkflowTest {
             .prompts()
             .get(3)
             .user()
-            .contains("declares associatedClassName Stakeholder but instance 'customer' is Actor"));
+            .contains("requires Stakeholder but instance 'customer' is Actor"));
     assertEquals(2, result.commandBatch().creates().size());
     assertEquals(0, result.commandBatch().connections().size());
     assertEquals(0, provider.remainingSteps());
@@ -873,7 +885,8 @@ class ConceptualInstanceModelWorkflowTest {
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -893,7 +906,7 @@ class ConceptualInstanceModelWorkflowTest {
     assertTrue(provider.prompts().get(2).user().contains("The prior selection was rejected"));
     assertTrue(
         provider.prompts().get(2).user().contains("prior type-selection response was truncated"));
-    assertTrue(provider.prompts().get(3).user().contains("strict maximum is 12"));
+    assertTrue(provider.prompts().get(3).user().contains("capacity"));
     assertEquals(0, provider.remainingSteps());
   }
 
@@ -958,7 +971,8 @@ class ConceptualInstanceModelWorkflowTest {
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     try {
       var firstWorkspace =
@@ -1081,7 +1095,8 @@ class ConceptualInstanceModelWorkflowTest {
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
-            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
@@ -1344,7 +1359,12 @@ class ConceptualInstanceModelWorkflowTest {
       {"dataType": "", "attributeName": "name", "value": "Orders"},
       {"dataType": "", "attributeName": "boundaryType", "value": "CAPABILITY_BASED"}
     ],
-    "associations": {"compositions": [], "references": []}
+    "associations": {
+      "compositions": [
+        {"associationName": "functions", "associatedClassName": "Function", "instanceID": "function"}
+      ],
+      "references": []
+    }
   },
   "function": {
     "type": "Function",
@@ -1384,7 +1404,12 @@ class ConceptualInstanceModelWorkflowTest {
       {"dataType": "", "attributeName": "name", "value": "Orders"},
       {"dataType": "", "attributeName": "boundaryType", "value": "CAPABILITY_BASED"}
     ],
-    "associations": {"compositions": [], "references": []}
+    "associations": {
+      "compositions": [
+        {"associationName": "functions", "associatedClassName": "Function", "instanceID": "function"}
+      ],
+      "references": []
+    }
   },
   "function": {
     "type": "Function",

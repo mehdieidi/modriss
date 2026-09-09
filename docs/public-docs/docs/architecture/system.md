@@ -13,7 +13,7 @@ flowchart TB
     MDE["MDE assets<br/>Emfatic, Ecore, EVL, ETL, EGX/EGL"]
     Observability["Prometheus, Grafana, Loki, Promtail<br/>metrics, dashboards, logs"]
     LocalStack["LocalStack<br/>AWS emulator for generated projects"]
-    AI["Arvan OpenAI-compatible AI<br/>DeepSeek-V4-Flash"]
+    AI["Arvan OpenAI-compatible AI<br/>Gemma-4-31B-IT"]
     CLIs["MDE CLI tools"]
 
     User --> Caddy

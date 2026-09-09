@@ -10,7 +10,7 @@ flowchart LR
         system["AI-assisted model-driven low-code platform<br/>Models, validates, transforms, and generates AWS serverless systems"]
     end
 
-    llm["External System: Arvan AI<br/>OpenAI-compatible DeepSeek-V4-Flash endpoint"]
+    llm["External System: Arvan AI<br/>OpenAI-compatible Gemma-4-31B-IT endpoint"]
     proxy["External System: AI Network Proxy<br/>Optional HTTP or SOCKS proxy"]
     aws["External System: AWS Toolchain / Cloud<br/>Target of generated SAM, Lambda, API, workflow, and deployment artifacts"]
 
@@ -31,7 +31,7 @@ flowchart TB
     pim["Platform-independent serverless model"]
     psm["AWS platform-specific model"]
     artifacts["Deployable source, contracts, IaC, tests, docs, scripts"]
-    assistant["Unified bounded CIM/PIM AI assistant<br/>Obligation-gated generation, inspected edits, answers"]
+    assistant["Unified bounded CIM/PIM AI assistant<br/>Generation/evolution, inspected edits, answers"]
     formal["Formal MDE engine<br/>Ecore + EVL + ETL + EGX/EGL"]
 
     intent --> cim --> pim --> psm --> artifacts

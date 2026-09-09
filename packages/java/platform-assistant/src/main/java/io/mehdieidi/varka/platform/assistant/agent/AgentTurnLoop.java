@@ -1207,8 +1207,13 @@ public final class AgentTurnLoop {
             + "questions/explanations that require no model mutation. Return only the schema.";
     boolean modelEmpty = hasNoModelElements(workspace);
     int sourceChars = sourceDocument == null ? 0 : sourceDocument.length();
-    boolean conceptualSafe = !destructiveConfirmed && modelEmpty;
-    String legal = conceptualSafe ? "CONCEPTUAL_GENERATION,ANSWER" : "INSPECT_AGENT,ANSWER";
+    boolean conceptualAllowed = !destructiveConfirmed;
+    String legal =
+        modelEmpty
+            ? "CONCEPTUAL_GENERATION,ANSWER"
+            : conceptualAllowed
+                ? "CONCEPTUAL_GENERATION,INSPECT_AGENT,ANSWER"
+                : "INSPECT_AGENT,ANSWER";
     String user =
         "Authoritative structural facts: level="
             + level
@@ -1296,8 +1301,8 @@ public final class AgentTurnLoop {
       throw new TurnExecutionException(
           cause, calls, strategyPromptTokens, strategyCompletionTokens, strategyCalls);
     }
-    if (!conceptualSafe && "CONCEPTUAL_GENERATION".equals(strategy)) strategy = "INSPECT_AGENT";
-    if (conceptualSafe && "INSPECT_AGENT".equals(strategy)) strategy = "CONCEPTUAL_GENERATION";
+    if (!conceptualAllowed && "CONCEPTUAL_GENERATION".equals(strategy)) strategy = "INSPECT_AGENT";
+    if (modelEmpty && "INSPECT_AGENT".equals(strategy)) strategy = "CONCEPTUAL_GENERATION";
     WorkflowMode selected =
         switch (strategy) {
           case "CONCEPTUAL_GENERATION" -> WorkflowMode.CONCEPTUAL_INSTANCE_GENERATION;
