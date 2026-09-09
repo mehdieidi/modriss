@@ -79,5 +79,5 @@ Migrates legacy `*-ui-metadata.json` files to Concrete Visual Syntax (CVS) v2 JS
 npm run migrate:all -w @varka/notation-migrate
 ```
 
-See [concrete-visual-syntax-v2.md](../../../internal/mde/concrete-visual-syntax-v2.md) for the CVS
-formalism and migration workflow.
+The CVS formalism and migration workflow are maintained in the repository's internal document
+`docs/internal/mde/concrete-visual-syntax-v2.md`, outside the published MkDocs tree.

@@ -1,7 +1,7 @@
 # Deployment
 
-This page is the public production checklist. The deeper operator runbook lives at
-[DevOps/SRE production server runbook](../../../devops-sre/production-server-runbook.md).
+This page is the public production checklist. Use the published
+[DevOps/SRE overview](devops-sre.md) for the broader operational handbook and ownership context.
 
 ## Local Compose Deployment
 

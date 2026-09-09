@@ -27,6 +27,15 @@ EVL `constraint` results are treated as mandatory violations. EVL `critique` res
 improvements. Reports contain phases, diagnostics, source locations, element references, messages,
 and fix suggestions where available.
 
+See the [complete EVL semantic validation reference](../evl/index.md) for the rule-by-rule rationale,
+applicability guard, source check, diagnostic, and repair guidance.
+
+See the [model-to-model transformation reference](../transformations/index.md) for the rule-by-rule
+source/target mapping, guards, traceability, manual decisions, and post-phase resolution behavior.
+
+See the [model-to-text and code-generation reference](../generation/index.md) for the EGX/EGL
+generation rules, artifact paths, merge/protected-region behavior, and output-specific resources.
+
 ## CIM to PIM
 
 The CIM-to-PIM ETL profile creates PIM scaffolding, boundaries, security concepts, data structures,

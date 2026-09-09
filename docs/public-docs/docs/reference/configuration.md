@@ -4,8 +4,8 @@ Varka reads configuration from Spring Boot, Docker Compose, the frontend runtime
 the PostgreSQL/LocalStack helper scripts. The root `.env` and `.env.example` files contain the same
 active keys. `.env.example` is safe to copy; keep real credentials only in the untracked `.env`.
 
-For the complete field-by-field reference, including accepted values and behavior, see the
-[internal environment-variable reference](../../../internal/environment-variables.md).
+This page contains the public field-by-field environment-variable reference, including accepted
+values and behavior, in the sections below.
 
 ## How configuration is applied
 
