@@ -833,8 +833,8 @@ function RelationshipsEditor({ doc, selected, setSelected, mutate }: any) {
                 <div className="relationship-facts">
                   <div><span>Source</span><strong>{relation.sourceType}</strong></div>
                   <div><span>Target</span><strong>{relation.targetType}</strong></div>
-                  <div><span>Feature</span><strong>{relation.feature || "—"}</strong></div>
-                  <div><span>Legal kinds</span><strong>{relation.kinds.join(", ") || "—"}</strong></div>
+                  <div><span>Feature</span><strong>{relation.feature || "Not set"}</strong></div>
+                  <div><span>Legal kinds</span><strong>{relation.kinds.join(", ") || "Not set"}</strong></div>
                 </div>
                 <p className="editor-note">These endpoints and legal kinds come from the Ecore references and edge EClasses. Edit their CVS presentation or configured edge mapping; do not create synthetic relationship types.</p>
                 {configuredRuleIndex >= 0 ? (

@@ -166,7 +166,7 @@ function buildProcessView(process, progress) {
     });
   }
 
-  layout.title = `${process.displayName || process.level?.toUpperCase()} — Phases`;
+  layout.title = `${process.displayName || process.level?.toUpperCase()}: Phases`;
   return layout;
 }
 
@@ -187,9 +187,9 @@ function buildPhaseView(process, progress, phaseId) {
       id: stage.id,
       label: stage.name,
       sublabel: hasSub
-        ? `${stage.subStages.length} sub-stage(s) — click to open`
+        ? `${stage.subStages.length} sub-stage(s). Click to open`
         : hasTasks
-          ? `${stage.tasks.length} task(s) — click to open`
+          ? `${stage.tasks.length} task(s). Click to open`
           : stage.objective?.slice(0, 40),
       icon: iconForName(stage.name, stage.id),
       kind: "stage",
@@ -230,7 +230,7 @@ function buildStageView(process, progress, phaseId, stageId) {
       stage: sub,
     }));
     const layout = layoutHorizontalRow(items, { rowY: 130 });
-    layout.title = `${stage.name} — Sub-stages`;
+    layout.title = `${stage.name}: Sub-stages`;
     layout.subtitle = stage.objective;
     return layout;
   }
@@ -257,7 +257,7 @@ function buildStageView(process, progress, phaseId, stageId) {
     nodeH: TASK_NODE_H,
     gap: 28,
   });
-  layout.title = `${stage.name} — Tasks`;
+  layout.title = `${stage.name}: Tasks`;
   layout.subtitle = stage.objective;
   return layout;
 }
@@ -673,14 +673,14 @@ function renderRole(role) {
   const responsibilities = (role.responsibilities || []).join("; ");
   return `<div class="map-detail-section">
     ${renderSectionTitle("Role")}
-    <p><strong>${escapeHtml(role.name)}</strong>${responsibilities ? ` — ${escapeHtml(responsibilities)}` : ""}</p>
+    <p><strong>${escapeHtml(role.name)}</strong>${responsibilities ? `: ${escapeHtml(responsibilities)}` : ""}</p>
   </div>`;
 }
 
 function renderArtifacts(artifacts) {
   const items = artifacts
     .map((artifact) => {
-      const desc = artifact.description ? ` — ${artifact.description}` : "";
+      const desc = artifact.description ? `: ${artifact.description}` : "";
       return `<li><strong>${escapeHtml(artifact.name)}</strong>${escapeHtml(desc)}</li>`;
     })
     .join("");
@@ -689,7 +689,7 @@ function renderArtifacts(artifacts) {
 
 function renderGuidelines(guidelines) {
   const items = guidelines
-    .map((g) => `<li><strong>${escapeHtml(g.name)}</strong> — ${escapeHtml(g.text)}</li>`)
+    .map((g) => `<li><strong>${escapeHtml(g.name)}</strong>: ${escapeHtml(g.text)}</li>`)
     .join("");
   return `${renderSectionTitle("Guidelines")}<ul>${items}</ul>`;
 }

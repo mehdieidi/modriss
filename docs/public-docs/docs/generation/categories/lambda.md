@@ -1,4 +1,4 @@
-# Code generation — Lambda runtime
+# Code generation: Lambda runtime
 
 Lambda templates create the Go handler and shared runtime packages used by generated functions. They provide a usable scaffold and common cross-cutting behavior, but protected regions deliberately reserve business logic, custom types, imports, assertions, and other decisions that generation cannot safely own forever.
 
@@ -23,7 +23,7 @@ The category contains 10 EGX generation rules and 10 EGL templates.
 
 ## `LambdaToHandler`
 
-**Source context:** `awsFn` — `AWSPSMCOMPUTE!AwsLambdaFunction`  
+**Source context:** `awsFn`, `AWSPSMCOMPUTE!AwsLambdaFunction`  
 **Template:** `lambda/go-handler.egl`  
 **Target path expression:** `awsFn.handlerPath(emitCtx())`  
 **EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:261`
@@ -62,7 +62,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeLogger`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`lambda/shared-logger.egl` 
 **Target path expression:**`"src/shared/logger." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:486`
@@ -95,7 +95,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeTracer`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`lambda/shared-tracer.egl` 
 **Target path expression:**`"src/shared/tracer." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:497`
@@ -128,7 +128,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeMetrics`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`lambda/shared-metrics.egl` 
 **Target path expression:**`"src/shared/metrics." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:508`
@@ -161,7 +161,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeErrors`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`lambda/shared-errors.egl` 
 **Target path expression:**`"src/shared/errors." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:519`
@@ -194,7 +194,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeValidation`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`lambda/shared-validation.egl` 
 **Target path expression:**`"src/shared/validation." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:530`
@@ -227,7 +227,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeConfig`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`lambda/shared-config.egl` 
 **Target path expression:**`"src/shared/config." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:541`
@@ -260,7 +260,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeIdempotency`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`lambda/shared-idempotency.egl` 
 **Target path expression:**`"src/shared/idempotency." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:552`
@@ -295,7 +295,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeEventPublisher`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`lambda/shared-event-publisher.egl` 
 **Target path expression:**`"src/shared/event-publisher." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:563`
@@ -328,7 +328,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeDataAccess`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`lambda/shared-data-access.egl` 
 **Target path expression:**`"src/shared/data-access." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:574`

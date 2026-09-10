@@ -115,7 +115,7 @@
       "id": "psm.guid.integration-views",
       "name": "Integration views for traceability",
       "appliesTo": "psm.ph6",
-      "text": "Relationship views denormalize cross-resource wiring for M2T and human review — create them before M2T generation."
+      "text": "Relationship views denormalize cross-resource wiring for M2T and human review, create them before M2T generation."
     },
     {
       "id": "psm.guid.deployable-slice",

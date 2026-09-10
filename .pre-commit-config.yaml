@@ -1,7 +1,7 @@
 # Install: pip install pre-commit && pre-commit install
 # Run manually: pre-commit run --all-files
 #
-# Local hooks only — no download from GitHub on first commit (avoids hangs on slow networks).
+# Local hooks only: no download from GitHub on first commit (avoids hangs on slow networks).
 
 default_install_hook_types:
   - pre-commit

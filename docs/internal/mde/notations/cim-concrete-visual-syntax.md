@@ -277,9 +277,9 @@ Complexity is managed through:
 5. inspector editing for high-cardinality and technical references;
 6. search, relationship exploration, and trace/readiness overlays.
 
-The result is a syntax that supports natural modeling gestures—create a
+The result is a syntax that supports natural modeling gestures, create a
 concept from the relevant palette, open true local detail, and draw a
-meaningful relationship—without turning every reference into a connector or
+meaningful relationship, without turning every reference into a connector or
 every nested support object into a first-class node.
 
 ## 7. Verification and scope boundary

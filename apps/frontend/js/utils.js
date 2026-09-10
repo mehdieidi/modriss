@@ -99,7 +99,7 @@ export function autoLayout(nodes, connections = []) {
   const maxDepth = Math.max(...depth.values());
 
   if (maxDepth === 0) {
-    // No edges or all nodes at same level — use a square grid
+    // No edges or all nodes at same level. Use a square grid
     const cols = Math.max(1, Math.ceil(Math.sqrt(nodes.length)));
     nodes.forEach((node, i) => {
       node.x = MARGIN + (i % cols) * COL_SPACING;

@@ -1,4 +1,4 @@
-# PIM validation — Workflow
+# PIM validation: Workflow
 
 Workflow rules protect the PIM execution graph: it must have entry and termination, reachable steps, valid transitions, unambiguous task actions, recoverable errors, and explicit compensation where the business needs it.
 

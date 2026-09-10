@@ -1,4 +1,4 @@
-# PIM validation — Policies
+# PIM validation: Policies
 
 Policy rules turn resilience, timeout, idempotency, rate, batching, ordering, caching, backup, retention, cost, observability, CORS, and data-protection intent into bounded architecture decisions rather than provider defaults.
 

@@ -1,4 +1,4 @@
-# CIM → PIM — Boundaries Security
+# CIM → PIM: Boundaries Security
 
 Boundary and security refinement decides where provider-independent services begin and who may act within them. Bounded contexts and capabilities become service ownership, actors and roles become principals, and external systems become adapters. The important design choice is that this page preserves business ownership and trust boundaries instead of producing anonymous functions first.
 
@@ -24,8 +24,8 @@ These operations are not independent source-to-target rules, but they materially
 
 ## `BoundedContext2Service`
 
-**Source:** `bc` — `CIMORG!BoundedContextCandidate`  
-**Target:** `s` — `DEPLOY!ServerlessService`  
+**Source:** `bc` to `CIMORG!BoundedContextCandidate`  
+**Target:** `s` to `DEPLOY!ServerlessService`  
 **Source location:** `mde/transformations/cim-to-pim/boundaries-security.etl:52`
 
 ### Why this rule exists
@@ -59,8 +59,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-securit
 
 ## `Capability2Service`
 
-**Source:** `cap` — `CIMORG!BusinessCapability`  
-**Target:** `s` — `DEPLOY!ServerlessService`  
+**Source:** `cap` to `CIMORG!BusinessCapability`  
+**Target:** `s` to `DEPLOY!ServerlessService`  
 **Source location:** `mde/transformations/cim-to-pim/boundaries-security.etl:69`
 
 ### Why this rule exists
@@ -98,8 +98,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-securit
 
 ## `Actor2Principal`
 
-**Source:** `a` — `CIMORG!Actor`  
-**Target:** `p` — `SECURITY!Principal`  
+**Source:** `a` to `CIMORG!Actor`  
+**Target:** `p` to `SECURITY!Principal`  
 **Source location:** `mde/transformations/cim-to-pim/boundaries-security.etl:89`
 
 ### Why this rule exists
@@ -135,8 +135,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-securit
 
 ## `Role2Principal`
 
-**Source:** `r` — `CIMORG!Role`  
-**Target:** `p` — `SECURITY!Principal`  
+**Source:** `r` to `CIMORG!Role`  
+**Target:** `p` to `SECURITY!Principal`  
 **Source location:** `mde/transformations/cim-to-pim/boundaries-security.etl:130`
 
 ### Why this rule exists
@@ -172,8 +172,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-securit
 
 ## `ExternalSystem2Adapter`
 
-**Source:** `es` — `CIMORG!ExternalSystem`  
-**Target:** `a` — `EXTERNAL!ExternalAdapter`  
+**Source:** `es` to `CIMORG!ExternalSystem`  
+**Target:** `a` to `EXTERNAL!ExternalAdapter`  
 **Source location:** `mde/transformations/cim-to-pim/boundaries-security.etl:162`
 
 ### Why this rule exists

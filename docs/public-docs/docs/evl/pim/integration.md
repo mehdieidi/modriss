@@ -1,4 +1,4 @@
-# PIM validation — Integration
+# PIM validation: Integration
 
 Integration rules ensure channels, queues, topics, schedules, subscriptions, buses, and flows say enough about delivery, routing, ordering, replay, dead letters, and ownership to be mapped safely to AWS messaging and event services.
 

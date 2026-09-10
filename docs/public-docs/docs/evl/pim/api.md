@@ -1,4 +1,4 @@
-# PIM validation — API
+# PIM validation: API
 
 API rules make a provider-independent interface internally coherent: routes are unique and well formed, each has one backend, protected operations have authorization, and validation settings are backed by schemas. Critiques add the consumer-facing documentation and error behavior that makes an API usable rather than merely callable.
 

@@ -1,8 +1,8 @@
 # End-to-End Modeling Methodology
 
 This guide describes the full **incremental-evolutionary** Varka modeling lifecycle from business
-intent through deployable AWS artifacts. It connects three level-specific methodologies—[CIM](cim-modeling-methodology.md),
-[PIM](pim-modeling-methodology.md), and [PSM](psm-modeling-methodology.md)—with transformation
+intent through deployable AWS artifacts. It connects three level-specific methodologies, [CIM](cim-modeling-methodology.md),
+[PIM](pim-modeling-methodology.md), and [PSM](psm-modeling-methodology.md), with transformation
 milestones, EVL gates, iteration loops, and human-in-the-loop refinement.
 
 The machine-readable process definition lives at
@@ -14,12 +14,12 @@ backlog remains.
 
 The end-to-end engine delivers in **capability slices**:
 
-1. **Increment Planning** (`e2e.p0`) — engine cycle entry
+1. **Increment Planning** (`e2e.p0`), engine cycle entry
 2. **CIM engine** → **CIM→PIM** → **PIM engine** → **PIM→PSM** → **PSM engine** → **M2T** →
    **Artifact closure**
-3. **Engine loop** — review/adapt inside the active phase, then back to step 1 if more slices remain
+3. **Engine loop**, review/adapt inside the active phase, then back to step 1 if more slices remain
 
-Cross-level **rework loops** inside the engine (PIM feedback to CIM, etc.) are not failures — they
+Cross-level **rework loops** inside the engine (PIM feedback to CIM, etc.) are not failures, they
 are how the engine corrects course within a revolution.
 
 ## Roles Across the Pipeline
@@ -81,17 +81,17 @@ flowchart LR
 
 | Phase | Name                         | Primary role            | Transform             | Validation gate           | Outputs                                      |
 | ----- | ---------------------------- | ----------------------- | --------------------- | ------------------------- | -------------------------------------------- |
-| 1     | CIM Modeling (5 phases)      | Business Modeler        | —                     | `cim-semantic-validation` | Complete CIM with traceability and readiness |
-| 2     | CIM → PIM Transformation     | Solution Architect      | `cim-to-pim`          | —                         | Draft PIM scaffolding from CIM               |
-| 3     | PIM Refinement (6 phases)    | Solution Architect      | —                     | `pim-semantic-validation` | Production-ready PIM                         |
-| 4     | PIM → AWS PSM Transformation | Cloud Platform Engineer | `pim-to-awspsm`       | —                         | Draft AWS PSM from PIM                       |
-| 5     | PSM Refinement (6 phases)    | Cloud Platform Engineer | —                     | `psm-semantic-validation` | Production-ready AWS PSM                     |
-| 6     | M2T Artifact Generation      | Cloud Platform Engineer | `awspsm-to-artifacts` | —                         | SAM/CloudFormation, handlers, tests, docs    |
-| 7     | Artifact Review & Completion | Process Reviewer        | —                     | —                         | Reviewed, deployable AWS project             |
+| 1     | CIM Modeling (5 phases)      | Business Modeler        | :                     | `cim-semantic-validation` | Complete CIM with traceability and readiness |
+| 2     | CIM → PIM Transformation     | Solution Architect      | `cim-to-pim`          | :                         | Draft PIM scaffolding from CIM               |
+| 3     | PIM Refinement (6 phases)    | Solution Architect      | :                     | `pim-semantic-validation` | Production-ready PIM                         |
+| 4     | PIM → AWS PSM Transformation | Cloud Platform Engineer | `pim-to-awspsm`       | :                         | Draft AWS PSM from PIM                       |
+| 5     | PSM Refinement (6 phases)    | Cloud Platform Engineer | :                     | `psm-semantic-validation` | Production-ready AWS PSM                     |
+| 6     | M2T Artifact Generation      | Cloud Platform Engineer | `awspsm-to-artifacts` | :                         | SAM/CloudFormation, handlers, tests, docs    |
+| 7     | Artifact Review & Completion | Process Reviewer        | :                     | :                         | Reviewed, deployable AWS project             |
 
 ---
 
-## Stage 1 — CIM Modeling (5 phases)
+## Stage 1: CIM Modeling (5 phases)
 
 **Child process:** `varka.cim.modeling` · **Guide:** [CIM Modeling Methodology](cim-modeling-methodology.md)
 
@@ -123,13 +123,13 @@ detail. Follow all five CIM phases (`cim.ph1`–`cim.ph5`) in SPEM order: phases
 
 ---
 
-## Stage 2 — CIM → PIM Transformation
+## Stage 2: CIM → PIM Transformation
 
 **Transform:** `cim-to-pim` · **Primary role:** Solution Architect
 
-Run the semi-automated CIM-to-PIM ETL profile. The transformation creates PIM scaffolding—service
+Run the semi-automated CIM-to-PIM ETL profile. The transformation creates PIM scaffolding, service
 boundaries, security concepts, data structures, behaviors, contracts, integrations, deployment
-concepts, traces, and readiness information—split across concern-specific ETL modules.
+concepts, traces, and readiness information, split across concern-specific ETL modules.
 
 ### Tasks
 
@@ -155,7 +155,7 @@ concepts, traces, and readiness information—split across concern-specific ETL 
 
 ---
 
-## Stage 3 — PIM Refinement (6 phases)
+## Stage 3: PIM Refinement (6 phases)
 
 **Child process:** `varka.pim.modeling` · **Guide:** [PIM Modeling Methodology](pim-modeling-methodology.md)
 
@@ -187,7 +187,7 @@ Refine generated PIM through six SPEM phases (`pim.ph1`–`pim.ph6`): phases →
 
 ---
 
-## Stage 4 — PIM → AWS PSM Transformation
+## Stage 4: PIM → AWS PSM Transformation
 
 **Transform:** `pim-to-awspsm` · **Primary role:** Cloud Platform Engineer
 
@@ -219,7 +219,7 @@ resolves relationships and validates placement.
 
 ---
 
-## Stage 5 — PSM Refinement (6 phases)
+## Stage 5: PSM Refinement (6 phases)
 
 **Child process:** `varka.psm.modeling` · **Guide:** [PSM Modeling Methodology](psm-modeling-methodology.md)
 
@@ -251,7 +251,7 @@ Refine generated AWS resources through six SPEM phases (`psm.ph1`–`psm.ph6`).
 
 ---
 
-## Stage 6 — M2T Artifact Generation
+## Stage 6: M2T Artifact Generation
 
 **Transform:** `awspsm-to-artifacts` · **Primary role:** Cloud Platform Engineer
 
@@ -285,11 +285,11 @@ See [Generated AWS Projects](generated-artifacts.md) for review expectations.
 
 ---
 
-## Stage 7 — Artifact Review & Completion
+## Stage 7: Artifact Review & Completion
 
 **Primary role:** Process Reviewer
 
-Human final gate before deployment. Generation is deliberately not the last decision—reviewers
+Human final gate before deployment. Generation is deliberately not the last decision, reviewers
 validate infrastructure, security, operations, and traceability documentation.
 
 ### Tasks
@@ -341,8 +341,8 @@ flowchart TD
 
 ## Related Documentation
 
-- [Validation, Transformation, and Generation](../concepts/pipeline.md) — pipeline mechanics
-- [Modeling Workflow](modeling-workflow.md) — editor, validation, and export
+- [Validation, Transformation, and Generation](../concepts/pipeline.md): pipeline mechanics
+- [Modeling Workflow](modeling-workflow.md): editor, validation, and export
 - [CIM Modeling Methodology](cim-modeling-methodology.md)
 - [PIM Modeling Methodology](pim-modeling-methodology.md)
 - [PSM Modeling Methodology](psm-modeling-methodology.md)

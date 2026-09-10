@@ -140,7 +140,7 @@
       "id": "cim.guid.ddd-language",
       "name": "Ubiquitous language first (Evans)",
       "appliesTo": "cim.ph2",
-      "text": "Agree domain vocabulary before modeling entities. Renaming later is expensive — use glossary tasks early."
+      "text": "Agree domain vocabulary before modeling entities. Renaming later is expensive. Use glossary tasks early."
     },
     {
       "id": "cim.guid.information-before-entity",
@@ -857,7 +857,7 @@
       "id": "cim.ph3",
       "name": "Domain Exploration",
       "order": 3,
-      "objective": "Explore information, structure, and behavior using Twin Peaks — iterate until CQRS surface is coherent.",
+      "objective": "Explore information, structure, and behavior using Twin Peaks, iterate until CQRS surface is coherent.",
       "primaryRole": "business-modeler",
       "entryCriteria": ["Context Discovery complete for slice"],
       "exitCriteria": ["Commands, queries, and events cover primary use cases"],
@@ -1130,7 +1130,7 @@
         {
           "id": "cim.ph3.st3",
           "name": "Behavior Surface",
-          "objective": "CQRS and event storming — commands, queries, events linked to actors and capabilities.",
+          "objective": "CQRS and event storming, commands, queries, events linked to actors and capabilities.",
           "primaryRole": "business-modeler",
           "viewpoint": "eventstorming",
           "iterative": false,
@@ -1681,7 +1681,7 @@
         {
           "id": "cim.ph5.st1",
           "name": "Requirements Engineering",
-          "objective": "Twin Peaks backfill — formalize requirements traced to modeled elements.",
+          "objective": "Twin Peaks backfill, formalize requirements traced to modeled elements.",
           "primaryRole": "requirements-engineer",
           "viewpoint": "governance",
           "iterative": false,

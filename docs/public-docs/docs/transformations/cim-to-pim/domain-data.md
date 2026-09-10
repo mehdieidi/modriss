@@ -1,4 +1,4 @@
-# CIM → PIM — Domain Data
+# CIM → PIM: Domain Data
 
 Domain-data refinement turns concepts into the schemas and stores that PIM behavior can actually use. Entities become object-shaped schemas, value objects become reusable nested structures, aggregates become stores, and classification/privacy/compliance decisions become data-protection policies. Relationship fields and access consequences are completed after the initial objects exist.
 
@@ -25,8 +25,8 @@ These operations are not independent source-to-target rules, but they materially
 
 ## `Entity2Schema`
 
-**Source:** `e` — `CIMDOMAIN!DomainEntity`  
-**Target:** `s` — `CONTRACTS!Schema`  
+**Source:** `e` to `CIMDOMAIN!DomainEntity`  
+**Target:** `s` to `CONTRACTS!Schema`  
 **Source location:** `mde/transformations/cim-to-pim/domain-data.etl:40`
 
 ### Why this rule exists
@@ -61,8 +61,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:40
 
 ## `ValueObject2Schema`
 
-**Source:** `v` — `CIMDOMAIN!ValueObject`  
-**Target:** `s` — `CONTRACTS!Schema`  
+**Source:** `v` to `CIMDOMAIN!ValueObject`  
+**Target:** `s` to `CONTRACTS!Schema`  
 **Source location:** `mde/transformations/cim-to-pim/domain-data.etl:75`
 
 ### Why this rule exists
@@ -96,8 +96,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:75
 
 ## `DomainRelationship2SchemaReference`
 
-**Source:** `rel` — `CIMDOMAIN!DomainRelationship`  
-**Target:** `field` — `CONTRACTS!SchemaField`, `constraint` — `CONTRACTS!SchemaConstraint`  
+**Source:** `rel` to `CIMDOMAIN!DomainRelationship`  
+**Target:** `field` to `CONTRACTS!SchemaField`, `constraint` to `CONTRACTS!SchemaConstraint`  
 **Source location:** `mde/transformations/cim-to-pim/domain-data.etl:95`
 
 ### Why this rule exists
@@ -133,8 +133,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:95
 
 ## `Aggregate2DataStore`
 
-**Source:** `ag` — `CIMDOMAIN!AggregateCandidate`  
-**Target:** `store` — `DATA!DataStore`, `dataModel` — `DATA!DataModel`  
+**Source:** `ag` to `CIMDOMAIN!AggregateCandidate`  
+**Target:** `store` to `DATA!DataStore`, `dataModel` to `DATA!DataModel`  
 **Source location:** `mde/transformations/cim-to-pim/domain-data.etl:175`
 
 ### Why this rule exists
@@ -171,8 +171,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:17
 
 ## `DataClassification2DataProtectionPolicy`
 
-**Source:** `dc` — `CIMDOMAIN!DataClassification`  
-**Target:** `pol` — `POLICY!DataProtectionPolicy`  
+**Source:** `dc` to `CIMDOMAIN!DataClassification`  
+**Target:** `pol` to `POLICY!DataProtectionPolicy`  
 **Source location:** `mde/transformations/cim-to-pim/domain-data.etl:262`
 
 ### Why this rule exists
@@ -207,8 +207,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:26
 
 ## `PrivacyConstraint2Policies`
 
-**Source:** `pc` — `CIMGOV!PrivacyConstraint`  
-**Target:** `dp` — `POLICY!DataProtectionPolicy`, `rp` — `POLICY!RetentionPolicy`  
+**Source:** `pc` to `CIMGOV!PrivacyConstraint`  
+**Target:** `dp` to `POLICY!DataProtectionPolicy`, `rp` to `POLICY!RetentionPolicy`  
 **Source location:** `mde/transformations/cim-to-pim/domain-data.etl:288`
 
 ### Why this rule exists
@@ -244,8 +244,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:28
 
 ## `ComplianceConstraint2CompliancePolicy`
 
-**Source:** `cc` — `CIMGOV!ComplianceConstraint`  
-**Target:** `pol` — `POLICY!CompliancePolicy`  
+**Source:** `cc` to `CIMGOV!ComplianceConstraint`  
+**Target:** `pol` to `POLICY!CompliancePolicy`  
 **Source location:** `mde/transformations/cim-to-pim/domain-data.etl:328`
 
 ### Why this rule exists

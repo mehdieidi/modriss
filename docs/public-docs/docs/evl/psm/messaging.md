@@ -1,4 +1,4 @@
-# AWS PSM validation — Messaging
+# AWS PSM validation: Messaging
 
 SQS and SNS rules enforce AWS naming, FIFO semantics, timing ranges, redrive behavior, encryption expectations, subscription targets, and filter completeness. They protect the operational contract that sits below the provider-independent channel model.
 

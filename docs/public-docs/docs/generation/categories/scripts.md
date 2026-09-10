@@ -1,4 +1,4 @@
-# Code generation — Scripts
+# Code generation: Scripts
 
 Script templates assemble the repeatable local and CI workflow around the generated project. They validate models and templates, build, test, package, deploy, and invoke locally; merge mode allows teams to add repository-specific switches without losing the generated baseline.
 
@@ -23,7 +23,7 @@ The category contains 10 EGX generation rules and 10 EGL templates.
 
 ## `Makefile`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`scripts/makefile.egl` 
 **Target path expression:**`"Makefile"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:87`
@@ -62,7 +62,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ValidateModelsScript`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`scripts/validate-models.egl` 
 **Target path expression:**`"scripts/validate-models.sh"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:633`
@@ -101,7 +101,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ValidateTemplateScript`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`scripts/validate-template.egl` 
 **Target path expression:**`"scripts/validate-template.sh"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:644`
@@ -140,7 +140,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ValidateContractsScript`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`scripts/validate-contracts.egl` 
 **Target path expression:**`"scripts/validate-contracts.sh"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:655`
@@ -179,7 +179,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `BuildScript`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`scripts/build.egl` 
 **Target path expression:**`"scripts/build.sh"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:666`
@@ -218,7 +218,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `TestScript`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`scripts/test.egl` 
 **Target path expression:**`"scripts/test.sh"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:677`
@@ -257,7 +257,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `DeployScript`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`scripts/deploy.egl` 
 **Target path expression:**`"scripts/deploy.sh"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:688`
@@ -296,7 +296,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `LocalInvokeScript`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`scripts/local-invoke.egl` 
 **Target path expression:**`"scripts/local-invoke.sh"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:699`
@@ -335,7 +335,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `LocalStartApiScript`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`scripts/local-start-api.egl` 
 **Target path expression:**`"scripts/local-start-api.sh"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:710`
@@ -374,7 +374,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `PackageScript`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`scripts/package.egl` 
 **Target path expression:**`"scripts/package.sh"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:721`

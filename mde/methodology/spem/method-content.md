@@ -1,4 +1,4 @@
-# SPEM 2.0 Method Content — Varka Agile MDE Methodologies
+# SPEM 2.0 Method Content: Varka Agile MDE Methodologies
 
 Formal method content for CIM, PIM, AWS PSM, and end-to-end modeling aligned with
 [SPEM 2.0](https://www.omg.org/spec/SPEM/2.0) and executable via
@@ -6,7 +6,7 @@ Formal method content for CIM, PIM, AWS PSM, and end-to-end modeling aligned wit
 
 ## Process Engine (Agile Kernel)
 
-The **process engine** is the iterative part of each methodology — the repeating cycle that runs
+The **process engine** is the iterative part of each methodology, the repeating cycle that runs
 through phases/stages/tasks and produces accepted model evidence per revolution. It is not separate
 metadata; it _is_ the iteration.
 
@@ -34,11 +34,11 @@ Each level-specific process embeds `processEngine`:
 }
 ```
 
-- **`cycle`** — phase steps executed each revolution; framing/setup phases are part of the cycle and
+- **`cycle`**, phase steps executed each revolution; framing/setup phases are part of the cycle and
   contain first-cycle bootstrap tasks where needed.
-- **`loop`** — engine revolution: after the phase-embedded review/adapt stage, return to framing when
+- **`loop`**, engine revolution: after the phase-embedded review/adapt stage, return to framing when
   backlog remains.
-- **`reworkLoops`** — internal phase-level rework paths _inside_ a cycle step (Twin Peaks, contract gaps, etc.).
+- **`reworkLoops`**, internal phase-level rework paths _inside_ a cycle step (Twin Peaks, contract gaps, etc.).
 
 Static method content (roles, stages, phases, tasks) is the executable body of the engine; the engine
 repeats by revisiting the phase hierarchy for the next slice.
@@ -68,7 +68,7 @@ Process
 - **Roles** are assigned at phase, stage, and task level via `primaryRole`.
 - **Guidelines** cite established practice (GQM, DDD, Twin Peaks, etc.) and apply to the whole process or a phase id.
 
-The **process engine** is not a separate methodology — it is the repeating cycle that revolves
+The **process engine** is not a separate methodology, it is the repeating cycle that revolves
 through `inEngine` phases until a slice is reviewed and accepted.
 
 ## CIM Process (5 phases)
@@ -156,10 +156,10 @@ add/modify/remove, and post-transform propagation.
 
 ## Task Catalog
 
-- `process-definitions/cim.json` — 5 phases, 25 tasks, 122 concepts
-- `process-definitions/pim.json` — 6 phases, 31 tasks, 179 concepts
-- `process-definitions/psm.json` — 6 phases, 27 tasks, 297 concepts
-- `process-definitions/end-to-end.json` — 1 phase, 8 stages, top-level engine
+- `process-definitions/cim.json`, 5 phases, 25 tasks, 122 concepts
+- `process-definitions/pim.json`, 6 phases, 31 tasks, 179 concepts
+- `process-definitions/psm.json`, 6 phases, 27 tasks, 297 concepts
+- `process-definitions/end-to-end.json`, 1 phase, 8 stages, top-level engine
 
 Regenerate public guide task catalogs and phase narratives:
 

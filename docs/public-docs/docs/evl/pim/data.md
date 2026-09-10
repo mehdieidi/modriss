@@ -1,4 +1,4 @@
-# PIM validation — Data
+# PIM validation: Data
 
 Data rules connect stores to schemas and access patterns, then connect those choices back to functions and policies. They make transactionality, consistency, indexes, retention, backup, streams, and privacy explicit before a DynamoDB or S3 design is generated.
 

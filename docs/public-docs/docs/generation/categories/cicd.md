@@ -1,4 +1,4 @@
-# Code generation — CI/CD
+# Code generation: CI/CD
 
 CI/CD templates make the model's validation and deployment gates reproducible in GitHub Actions. The production workflow is intentionally separate from development deployment so approvals, environments, and credentials are not accidentally treated as interchangeable.
 
@@ -16,7 +16,7 @@ The category contains 3 EGX generation rules and 3 EGL templates.
 
 ## `CiValidate`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`cicd/github-actions-validate.egl` 
 **Target path expression:**`".github/workflows/validate.yml"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:732`
@@ -59,7 +59,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `CiDeployDev`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`cicd/github-actions-deploy-dev.egl` 
 **Target path expression:**`".github/workflows/deploy-dev.yml"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:744`
@@ -102,7 +102,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `CiDeployProd`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`cicd/github-actions-deploy-prod.egl` 
 **Target path expression:**`".github/workflows/deploy-prod.yml"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:756`

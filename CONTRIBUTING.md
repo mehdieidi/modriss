@@ -5,7 +5,7 @@ live in the public documentation site.
 
 ## Before You Start
 
-1. Read the [change guide](docs/public-docs/docs/contributing/change-guide.md) — language and
+1. Read the [change guide](docs/public-docs/docs/contributing/change-guide.md), language and
    persistence changes must stay synchronized across metamodels, validation, UI, API, and tests.
 2. Copy [`.env.example`](.env.example) to `.env` for local overrides (never commit `.env`).
 3. Install tooling hooks:
@@ -60,7 +60,7 @@ layering, or security posture.
 
 ## Security
 
-Report vulnerabilities privately — see [SECURITY.md](SECURITY.md).
+Report vulnerabilities privately. See [SECURITY.md](SECURITY.md).
 
 ## License
 

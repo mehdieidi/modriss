@@ -379,7 +379,7 @@ public final class ConceptualInstanceModelWorkflow {
             + " as distinct semantic evidence (for example, a channel and an event type for"
             + " explicit publication/consumption). Do not list containment owners, contracts,"
             + " workflow steps, schemas, principals, policies, routes, or other structural support"
-            + " unless the request explicitly requires that concept—the Ecore closure and"
+            + " unless the request explicitly requires that concept. The Ecore closure and"
             + " blueprint phases add necessary support. expectedEClasses is a required set, not a"
             + " list of alternatives. Reuse the same"
             + " EClass across obligations when appropriate. Do not match words mechanically and"

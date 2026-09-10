@@ -170,7 +170,7 @@ function replaceChildren(element, children) {
 }
 
 function formatValue(value) {
-  if (value === null || value === undefined) return "Absent — this version deletes the value.";
+  if (value === null || value === undefined) return "Absent, this version deletes the value.";
   if (typeof value === "string") return value || "(empty string)";
   return JSON.stringify(value, null, 2);
 }

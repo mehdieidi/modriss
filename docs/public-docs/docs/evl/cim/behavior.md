@@ -1,4 +1,4 @@
-# CIM validation — Behavior
+# CIM validation: Behavior
 
 Behavior rules distinguish commands, queries, events, errors, and conditions. Their purpose is to preserve business meaning at the point where it is easiest to lose: before functions, routes, event channels, retries, and authorization policies are generated.
 

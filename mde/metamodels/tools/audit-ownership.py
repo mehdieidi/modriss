@@ -159,7 +159,7 @@ def build_rows(classes: list[ClassInfo]) -> list[dict[str, str]]:
                 rationale = "back-pointer"
             elif feat.kind == "ref" and feat.name.startswith("owns"):
                 flags.append("owns-ref")
-                rationale = "duplicate ownership — remove"
+                rationale = "duplicate ownership: remove"
             elif feat.kind == "ref":
                 rationale = "cross-link"
             rows.append(

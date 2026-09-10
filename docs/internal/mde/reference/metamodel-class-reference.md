@@ -1216,7 +1216,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Incoming `val`:** `ParallelBranch.transitions`, `Workflow.transitions`
 - **Inherits:** `kernel.TraceableElement`
 
-## PSM (Platform-Specific Model — AWS)
+## PSM (Platform-Specific Model: AWS)
 
 **Modules:** `awspsm-api.emf`, `awspsm-compute.emf`, `awspsm-core.emf`, `awspsm-events.emf`, `awspsm-identity.emf`, `awspsm-integrations.emf`, `awspsm-messaging.emf`, `awspsm-networking.emf`, `awspsm-observability.emf`, `awspsm-root.emf`, `awspsm-security.emf`, `awspsm-storage.emf`, `awspsm-workflow.emf`  
 **Classes:** 214

@@ -1,4 +1,4 @@
-# PIM → AWS PSM — Contracts External Policy
+# PIM → AWS PSM: Contracts External Policy
 
 Contract and external-policy binding creates AWS-side structured documents and monitoring resources from PIM schemas, event types, business rules, decision models, external adapters, and alert policies. These documents are the bridge between provider-independent meaning and generated OpenAPI/JSON/ASL/IAM-facing artifacts.
 
@@ -45,8 +45,8 @@ These operations are not independent source-to-target rules, but they materially
 
 ## `Schema2StructuredDocument`
 
-**Source:** `s` — `CONTRACTS!Schema`  
-**Target:** `d` — `KERNEL!StructuredDocument`  
+**Source:** `s` to `CONTRACTS!Schema`  
+**Target:** `d` to `KERNEL!StructuredDocument`  
 **Source location:** `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:2`
 
 ### Why this rule exists
@@ -77,8 +77,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-exter
 
 ## `EventType2StructuredDocument`
 
-**Source:** `e` — `CONTRACTS!EventType`  
-**Target:** `d` — `KERNEL!StructuredDocument`  
+**Source:** `e` to `CONTRACTS!EventType`  
+**Target:** `d` to `KERNEL!StructuredDocument`  
 **Source location:** `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:16`
 
 ### Why this rule exists
@@ -109,8 +109,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-exter
 
 ## `BusinessRule2StructuredDocument`
 
-**Source:** `b` — `POLICY!BusinessRule`  
-**Target:** `d` — `KERNEL!StructuredDocument`  
+**Source:** `b` to `POLICY!BusinessRule`  
+**Target:** `d` to `KERNEL!StructuredDocument`  
 **Source location:** `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:29`
 
 ### Why this rule exists
@@ -141,8 +141,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-exter
 
 ## `DecisionModel2PsmMetadata`
 
-**Source:** `dm` — `POLICY!DecisionModel`  
-**Target:** `n` — `AWSPSMCORE!AwsNativeResource`  
+**Source:** `dm` to `POLICY!DecisionModel`  
+**Target:** `n` to `AWSPSMCORE!AwsNativeResource`  
 **Source location:** `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:42`
 
 ### Why this rule exists
@@ -174,8 +174,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-exter
 
 ## `ExternalAdapter2PsmMetadata`
 
-**Source:** `a` — `EXTERNAL!ExternalAdapter`  
-**Target:** `n` — `AWSPSMCORE!AwsNativeResource`  
+**Source:** `a` to `EXTERNAL!ExternalAdapter`  
+**Target:** `n` to `AWSPSMCORE!AwsNativeResource`  
 **Source location:** `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:60`
 
 ### Why this rule exists
@@ -207,8 +207,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-exter
 
 ## `AlertPolicy2CloudWatchAlarm`
 
-**Source:** `a` — `POLICY!AlertPolicy`  
-**Target:** `alarm` — `AWSPSMOBSERVABILITY!CloudWatchAlarm`  
+**Source:** `a` to `POLICY!AlertPolicy`  
+**Target:** `alarm` to `AWSPSMOBSERVABILITY!CloudWatchAlarm`  
 **Source location:** `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:99`
 
 ### Why this rule exists

@@ -1,4 +1,4 @@
-# CIM validation — Core Kernel Trace
+# CIM validation: Core Kernel Trace
 
 These rules make a CIM model a coherent starting point for refinement. They require a semantic core, protect model identity and origin, and stop provider vocabulary from leaking into the computation-independent language.
 

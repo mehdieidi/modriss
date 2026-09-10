@@ -1,4 +1,4 @@
-# CIM validation — Organization Intent
+# CIM validation: Organization Intent
 
 Organization and intent rules ask whether the business problem is specific enough to guide architecture. Requirements need observable fit, goals need measurable success, actors and systems need explicit trust expectations, and capabilities need ownership and behavior.
 

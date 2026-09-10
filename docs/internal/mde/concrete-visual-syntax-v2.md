@@ -23,14 +23,14 @@ Legacy `*-ui-metadata.json` files remain on the classpath as fallback when a CVS
 
 Each CVS document declares:
 
-- `metamodelRef` — level key, Ecore path, namespace URI
-- `primitives` — reusable visual primitives with geometry
-- `elementVisualRules` / `elementOverrides` — type and package visual rules
-- `referenceMappings` — EReference to semantic edge kind
-- `relationshipMappings` — relationship-object EClasses
-- `viewpoints` — workbench views (palette, visible element filters, layout hints, legal edge kinds)
-- `canvasPolicy` — palette roles, container focus, semantic zoom thresholds
-- `semanticDashboardColumns` — optional viewpoint-owned dashboard layout columns
+- `metamodelRef`: level key, Ecore path, namespace URI
+- `primitives`, reusable visual primitives with geometry
+- `elementVisualRules` / `elementOverrides`, type and package visual rules
+- `referenceMappings`, EReference to semantic edge kind
+- `relationshipMappings`, relationship-object EClasses
+- `viewpoints`, workbench views (palette, visible element filters, layout hints, legal edge kinds)
+- `canvasPolicy`, palette roles, container focus, semantic zoom thresholds
+- `semanticDashboardColumns`, optional viewpoint-owned dashboard layout columns
 
 At runtime `CvsV2Loader` converts CVS into the UI metadata shape consumed by
 `ModelingConfigService`, then derives per-type `elementMappings` after Ecore merge.
@@ -39,17 +39,17 @@ At runtime `CvsV2Loader` converts CVS into the UI metadata shape consumed by
 
 Completeness is enforced in two places:
 
-1. **Load time** — CVS must declare `cvsVersion: 2`, viewpoints, and canvas policy.
-2. **Merge time** — every concrete EClass receives `visualRole`, notation geometry, and card
+1. **Load time**, CVS must declare `cvsVersion: 2`, viewpoints, and canvas policy.
+2. **Merge time**, every concrete EClass receives `visualRole`, notation geometry, and card
    fields; `syntaxCoverage` reports uncovered view types and reference fields.
 
 ## Phased delivery
 
-| Phase   | Scope                                                                                   | Status   |
-| ------- | --------------------------------------------------------------------------------------- | -------- |
-| 1 — CIM | `cim.cvs.json`, bounded-context overlays, validation decoration, full canvas operations | Complete |
-| 2 — PIM | `pim.cvs.json`, service containers, workflow notation, ELK auto-layout                  | Complete |
-| 3 — PSM | `psm.cvs.json`, AWS resource cards, shortcut integration edges, impact overlay          | Complete |
+| Phase  | Scope                                                                                   | Status   |
+| ------ | --------------------------------------------------------------------------------------- | -------- |
+| 1: CIM | `cim.cvs.json`, bounded-context overlays, validation decoration, full canvas operations | Complete |
+| 2: PIM | `pim.cvs.json`, service containers, workflow notation, ELK auto-layout                  | Complete |
+| 3: PSM | `psm.cvs.json`, AWS resource cards, shortcut integration edges, impact overlay          | Complete |
 
 Generate or refresh level CVS files:
 

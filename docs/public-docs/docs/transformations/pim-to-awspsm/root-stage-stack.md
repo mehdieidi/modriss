@@ -1,4 +1,4 @@
-# PIM → AWS PSM — Root Stage Stack
+# PIM → AWS PSM: Root Stage Stack
 
 The PSM root rules establish AWS deployment scope: one PIM root becomes one AWS PSM model, environments become stages, deployment units become SAM stacks, and service ownership becomes structured metadata. They give provider-specific rules a stage and stack context in which names, resources, policies, and readiness can be placed.
 
@@ -12,8 +12,8 @@ A transformation rule is not a validation constraint: it decides whether and how
 
 ## `PIMModel2AwsPsmModel`
 
-**Source:** `p` — `PIM!PIMModel`  
-**Target:** `a` — `AWSPSM!AwsPsmModel`  
+**Source:** `p` to `PIM!PIMModel`  
+**Target:** `a` to `AWSPSM!AwsPsmModel`  
 **Source location:** `mde/transformations/pim-to-awspsm/root-stage-stack.etl:2`
 
 ### Why this rule exists
@@ -45,8 +45,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stac
 
 ## `Environment2AwsStage`
 
-**Source:** `e` — `DEPLOYMENT!Environment`  
-**Target:** `s` — `AWSPSMCORE!AwsStage`  
+**Source:** `e` to `DEPLOYMENT!Environment`  
+**Target:** `s` to `AWSPSMCORE!AwsStage`  
 **Source location:** `mde/transformations/pim-to-awspsm/root-stage-stack.etl:50`
 
 ### Why this rule exists
@@ -77,8 +77,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stac
 
 ## `DeploymentUnit2SamStack`
 
-**Source:** `d` — `DEPLOYMENT!DeploymentUnit`  
-**Target:** `s` — `AWSPSMCORE!SamStack`  
+**Source:** `d` to `DEPLOYMENT!DeploymentUnit`  
+**Target:** `s` to `AWSPSMCORE!SamStack`  
 **Source location:** `mde/transformations/pim-to-awspsm/root-stage-stack.etl:77`
 
 ### Why this rule exists
@@ -109,8 +109,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stac
 
 ## `ServerlessService2StructuredMetadata`
 
-**Source:** `svc` — `DEPLOYMENT!ServerlessService`  
-**Target:** `doc` — `KERNEL!StructuredDocument`  
+**Source:** `svc` to `DEPLOYMENT!ServerlessService`  
+**Target:** `doc` to `KERNEL!StructuredDocument`  
 **Source location:** `mde/transformations/pim-to-awspsm/root-stage-stack.etl:96`
 
 ### Why this rule exists

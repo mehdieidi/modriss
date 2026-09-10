@@ -1,4 +1,4 @@
-# Code generation — Contracts
+# Code generation: Contracts
 
 Contract templates publish the executable boundaries of the generated system: OpenAPI, ASL, JSON Schema, event fixtures, and schema catalogs. They are generated from the already-bound PSM, so their purpose is to keep clients, workflows, tests, and deployment artifacts looking at the same modeled contract.
 
@@ -18,7 +18,7 @@ The category contains 11 EGX generation rules and 5 EGL templates.
 
 ## `ApiToOpenApi`
 
-**Source context:** `apiObj` — `AWSPSMAPI!ApiGatewayApi`  
+**Source context:** `apiObj`, `AWSPSMAPI!ApiGatewayApi`  
 **Template:** `contracts/openapi.egl`  
 **Target path expression:** `apiObj.openApiPath()`  
 **EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:225`
@@ -57,7 +57,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `WorkflowToAsl`
 
-**Source context:** `stateMachineObj` — `AWSPSMWORKFLOW!StepFunctionStateMachine`  
+**Source context:** `stateMachineObj`, `AWSPSMWORKFLOW!StepFunctionStateMachine`  
 **Template:** `contracts/asl.egl`  
 **Target path expression:** `stateMachineObj.aslPath()`  
 **EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:243`
@@ -94,7 +94,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `LambdaToLocalSchema`
 
-**Source context:** `awsFn` — `AWSPSMCOMPUTE!AwsLambdaFunction`  
+**Source context:** `awsFn`, `AWSPSMCOMPUTE!AwsLambdaFunction`  
 **Template:** `contracts/json-schema.egl`  
 **Target path expression:** `awsFn.localSchemaPath(emitCtx())`  
 **EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:285`
@@ -127,7 +127,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `EventBridgeRuleToFixture`
 
-**Source context:** `bridgeRuleObj` — `AWSPSMEVENTS!EventBridgeRule`  
+**Source context:** `bridgeRuleObj`, `AWSPSMEVENTS!EventBridgeRule`  
 **Template:** `contracts/sample-event.egl`  
 **Target path expression:** `bridgeRuleObj.eventFixturePath()`  
 **EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:353`
@@ -164,7 +164,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SqsQueueToFixture`
 
-**Source context:** `queueObj` — `AWSPSMMESSAGING!SqsQueue`  
+**Source context:** `queueObj`, `AWSPSMMESSAGING!SqsQueue`  
 **Template:** `contracts/sample-event.egl`  
 **Target path expression:** `queueObj.queueFixturePath()`  
 **EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:371`
@@ -197,7 +197,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SnsTopicToFixture`
 
-**Source context:** `topicObj` — `AWSPSMMESSAGING!SnsTopic`  
+**Source context:** `topicObj`, `AWSPSMMESSAGING!SnsTopic`  
 **Template:** `contracts/sample-event.egl`  
 **Target path expression:** `topicObj.topicFixturePath()`  
 **EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:388`
@@ -230,7 +230,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ApiSchemaCatalog`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`contracts/catalog-schema.egl` 
 **Target path expression:**`"schemas/api/generated-api.schema.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:405`
@@ -267,7 +267,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `EventSchemaCatalog`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`contracts/catalog-schema.egl` 
 **Target path expression:**`"schemas/events/generated-event.schema.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:416`
@@ -304,7 +304,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `MessageSchemaCatalog`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`contracts/catalog-schema.egl` 
 **Target path expression:**`"schemas/messages/generated-message.schema.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:427`
@@ -341,7 +341,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ErrorSchemaCatalog`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`contracts/catalog-schema.egl` 
 **Target path expression:**`"schemas/errors/generated-error.schema.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:438`
@@ -378,7 +378,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `DataSchemaCatalog`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`contracts/catalog-schema.egl` 
 **Target path expression:**`"schemas/data/generated-data.schema.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:449`

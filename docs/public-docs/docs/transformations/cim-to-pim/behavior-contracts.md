@@ -1,4 +1,4 @@
-# CIM → PIM — Behavior Contracts
+# CIM → PIM: Behavior Contracts
 
 Behavior refinement is where a command, query, event, or error acquires an executable PIM boundary. Commands and queries become functions and, when appropriate, API routes; events acquire versioned event types and schemas; business errors become reusable error schemas. The rules also carry authorization, idempotency, correlation, error, and access-pattern intent rather than reducing business behavior to names.
 
@@ -24,8 +24,8 @@ These operations are not independent source-to-target rules, but they materially
 
 ## `BusinessError2ErrorSchema`
 
-**Source:** `e` — `CIMBEHAVIOR!BusinessError`  
-**Target:** `s` — `CONTRACTS!Schema`  
+**Source:** `e` to `CIMBEHAVIOR!BusinessError`  
+**Target:** `s` to `CONTRACTS!Schema`  
 **Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:57`
 
 ### Why this rule exists
@@ -59,8 +59,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts
 
 ## `BusinessEvent2EventType`
 
-**Source:** `e` — `CIMBEHAVIOR!BusinessEvent`  
-**Target:** `et` — `CONTRACTS!EventType`, `schema` — `CONTRACTS!Schema`  
+**Source:** `e` to `CIMBEHAVIOR!BusinessEvent`  
+**Target:** `et` to `CONTRACTS!EventType`, `schema` to `CONTRACTS!Schema`  
 **Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:76`
 
 ### Why this rule exists
@@ -95,8 +95,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts
 
 ## `Command2Function`
 
-**Source:** `cmd` — `CIMBEHAVIOR!Command`  
-**Target:** `fn` — `COMPUTE!Function`  
+**Source:** `cmd` to `CIMBEHAVIOR!Command`  
+**Target:** `fn` to `COMPUTE!Function`  
 **Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:114`
 
 ### Why this rule exists
@@ -131,8 +131,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts
 
 ## `UserInitiatedCommand2ApiRoute`
 
-**Source:** `cmd` — `CIMBEHAVIOR!Command`  
-**Target:** `route` — `API!ApiRoute`  
+**Source:** `cmd` to `CIMBEHAVIOR!Command`  
+**Target:** `route` to `API!ApiRoute`  
 **Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:178`
 
 ### Why this rule exists
@@ -172,8 +172,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts
 
 ## `Query2Function`
 
-**Source:** `q` — `CIMBEHAVIOR!Query`  
-**Target:** `fn` — `COMPUTE!Function`  
+**Source:** `q` to `CIMBEHAVIOR!Query`  
+**Target:** `fn` to `COMPUTE!Function`  
 **Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:270`
 
 ### Why this rule exists
@@ -208,8 +208,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts
 
 ## `Query2ApiRoute`
 
-**Source:** `q` — `CIMBEHAVIOR!Query`  
-**Target:** `route` — `API!ApiRoute`  
+**Source:** `q` to `CIMBEHAVIOR!Query`  
+**Target:** `route` to `API!ApiRoute`  
 **Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:312`
 
 ### Why this rule exists
@@ -245,13 +245,13 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts
 
 ## `Query2AccessPattern`
 
-**Source:** `q` — `CIMBEHAVIOR!Query`  
-**Target:** `ap` — `DATA!AccessPattern`  
+**Source:** `q` to `CIMBEHAVIOR!Query`  
+**Target:** `ap` to `DATA!AccessPattern`  
 **Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:381`
 
 ### Why this rule exists
 
-A query that reads domain data becomes a named PIM access pattern. It records keys, filters, projection, cardinality, frequency, and consistency needs—the information a store design needs but a query name alone cannot provide. High-cardinality or read-model cases can also seed a dedicated read store.
+A query that reads domain data becomes a named PIM access pattern. It records keys, filters, projection, cardinality, frequency, and consistency needs. The information a store design needs but a query name alone cannot provide. High-cardinality or read-model cases can also seed a dedicated read store.
 
 ### When the rule runs
 

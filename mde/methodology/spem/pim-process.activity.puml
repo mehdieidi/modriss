@@ -1,37 +1,37 @@
 @startuml pim-process
-title PIM Modeling Process — SPEM Engine (6 Phases per Service Slice)
+title PIM Modeling Process, SPEM Engine (6 Phases per Service Slice)
 start
-partition "Phase 1 — Architecture & Slice Framing (engine)" {
-  :Stage — Service Slice Planning;
-  :Stage — Architecture Posture;
-  :Stage — Service Boundaries;
+partition "Phase 1, Architecture & Slice Framing (engine)" {
+  :Stage, Service Slice Planning;
+  :Stage, Architecture Posture;
+  :Stage, Service Boundaries;
 }
-partition "Phase 2 — Contracts & Data (engine)" {
-  :Stage — Contracts & Schemas;
-  :Stage — Data Architecture;
+partition "Phase 2, Contracts & Data (engine)" {
+  :Stage, Contracts & Schemas;
+  :Stage, Data Architecture;
 }
-partition "Phase 3 — Compute & Exposure (engine)" {
-  :Stage — Compute Units;
-  :Stage — API Surface;
+partition "Phase 3, Compute & Exposure (engine)" {
+  :Stage, Compute Units;
+  :Stage, API Surface;
 }
-partition "Phase 4 — Integration & Orchestration (engine)" {
-  :Stage — Integration Topology;
-  :Stage — Workflow Orchestration;
+partition "Phase 4, Integration & Orchestration (engine)" {
+  :Stage, Integration Topology;
+  :Stage: Workflow Orchestration;
 }
-partition "Phase 5 — Assurance & Configuration (engine)" {
-  :Stage — Security & Identity;
-  :Stage — Architecture Policies;
-  :Stage — External & Config;
+partition "Phase 5, Assurance & Configuration (engine)" {
+  :Stage, Security & Identity;
+  :Stage, Architecture Policies;
+  :Stage, External & Config;
 }
-partition "Phase 6 — Platform Readiness (engine)" {
-  :Stage — Platform Mapping Assessment;
-  :Stage — Trace & Readiness Gate;
-  :Stage — Increment Review & Adapt;
+partition "Phase 6, Platform Readiness (engine)" {
+  :Stage, Platform Mapping Assessment;
+  :Stage, Trace & Readiness Gate;
+  :Stage, Increment Review & Adapt;
 }
 if (PIM EVL pass?) then (yes)
   :PIM→PSM ETL gate;
   if (More service slices?) then (yes)
-    backward :Stage — Service Slice Planning;
+    backward :Stage, Service Slice Planning;
   else (no)
     stop
   endif

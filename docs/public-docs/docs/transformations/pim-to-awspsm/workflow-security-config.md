@@ -1,4 +1,4 @@
-# PIM → AWS PSM — Workflow Security Config
+# PIM → AWS PSM: Workflow Security Config
 
 Workflow, identity, security, and configuration binding turns PIM control flow and access intent into Step Functions, Cognito, IAM, Secrets Manager, CloudFormation parameters, and SSM parameters. The module builds an ASL graph in phases, resolves task targets after Lambda resources exist, separates secret from non-secret configuration, and keeps trust/permission decisions traceable.
 
@@ -52,8 +52,8 @@ These operations are not independent source-to-target rules, but they materially
 
 ## `Workflow2StepFunctionStateMachine`
 
-**Source:** `w` — `WORKFLOW!Workflow`  
-**Target:** `sm` — `AWSPSMWORKFLOW!StepFunctionStateMachine`  
+**Source:** `w` to `WORKFLOW!Workflow`  
+**Target:** `sm` to `AWSPSMWORKFLOW!StepFunctionStateMachine`  
 **Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:2`
 
 ### Why this rule exists
@@ -89,8 +89,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-securi
 
 ## `IdentityProvider2CognitoUserPool`
 
-**Source:** `idp` — `SECURITY!IdentityProvider`  
-**Target:** `pool` — `AWSPSMIDENTITY!CognitoUserPool`  
+**Source:** `idp` to `SECURITY!IdentityProvider`  
+**Target:** `pool` to `AWSPSMIDENTITY!CognitoUserPool`  
 **Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:95`
 
 ### Why this rule exists
@@ -122,8 +122,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-securi
 
 ## `Principal2IamRole`
 
-**Source:** `p` — `SECURITY!Principal`  
-**Target:** `role` — `AWSPSMSECURITY!IamRole`  
+**Source:** `p` to `SECURITY!Principal`  
+**Target:** `role` to `AWSPSMSECURITY!IamRole`  
 **Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:125`
 
 ### Why this rule exists
@@ -159,8 +159,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-securi
 
 ## `Secret2SecretsManagerSecret`
 
-**Source:** `s` — `CONFIG!Secret`  
-**Target:** `sec` — `AWSPSMSECURITY!SecretsManagerSecret`  
+**Source:** `s` to `CONFIG!Secret`  
+**Target:** `sec` to `AWSPSMSECURITY!SecretsManagerSecret`  
 **Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:161`
 
 ### Why this rule exists
@@ -193,8 +193,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-securi
 
 ## `ConfigurationSet2CfnParameterCarrier`
 
-**Source:** `c` — `CONFIG!ConfigurationSet`  
-**Target:** `doc` — `KERNEL!StructuredDocument`  
+**Source:** `c` to `CONFIG!ConfigurationSet`  
+**Target:** `doc` to `KERNEL!StructuredDocument`  
 **Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:196`
 
 ### Why this rule exists
@@ -225,8 +225,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-securi
 
 ## `ConfigParameter2CfnParameter`
 
-**Source:** `p` — `CONFIG!ConfigParameter`  
-**Target:** `c` — `AWSPSMCORE!CfnParameter`  
+**Source:** `p` to `CONFIG!ConfigParameter`  
+**Target:** `c` to `AWSPSMCORE!CfnParameter`  
 **Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:209`
 
 ### Why this rule exists
@@ -261,8 +261,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-securi
 
 ## `SecretConfigParameter2SsmParameter`
 
-**Source:** `p` — `CONFIG!ConfigParameter`  
-**Target:** `s` — `AWSPSMSECURITY!SsmParameter`  
+**Source:** `p` to `CONFIG!ConfigParameter`  
+**Target:** `s` to `AWSPSMSECURITY!SsmParameter`  
 **Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:230`
 
 ### Why this rule exists

@@ -1,4 +1,4 @@
-# PIM validation — Core
+# PIM validation: Core
 
 PIM core rules protect the provider-independent architecture's identity, portability, naming, traceability, and explanation. They are the guard against a PIM that is structurally valid but already assumes an AWS resource or has lost its business origin.
 

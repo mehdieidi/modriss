@@ -66,14 +66,14 @@ Use `VARKA_AI_TEST_MODEL` only for an intentional evaluation override.
 ## PostgreSQL integration tests
 
 Storage and backend integration tests use **Testcontainers** with the `pgvector/pgvector:pg16`
-image. Docker must be running locally and in CI — no manual PostgreSQL setup is required.
+image. Docker must be running locally and in CI, no manual PostgreSQL setup is required.
 
 Additional coverage:
 
-- `PostgresPlatformStoreIntegrationTest` — storage CRUD and blob operations
-- `FlywayMigrationVerificationTest` — migrations from empty schema
-- `OpenApiContractTest` — Spring MVC handlers vs `docs/api/openapi/openapi.yaml`
-- `ApiSmokeContractTest` — auth, project, and model lifecycle smoke tests
+- `PostgresPlatformStoreIntegrationTest`, storage CRUD and blob operations
+- `FlywayMigrationVerificationTest`, migrations from empty schema
+- `OpenApiContractTest`, Spring MVC handlers vs `docs/api/openapi/openapi.yaml`
+- `ApiSmokeContractTest`, auth, project, and model lifecycle smoke tests
 
 ## Formatting Verification
 

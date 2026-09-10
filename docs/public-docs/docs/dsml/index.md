@@ -21,15 +21,15 @@ flowchart LR
 
 ## Start here
 
-- [CIM reference](cim/index.md) — begin with business and domain vocabulary.
-- [PIM reference](pim/index.md) — refine behavior into generic serverless architecture.
-- [AWS PSM reference](psm/index.md) — bind the architecture to AWS resources and deployment details.
-- [Shared kernel reference](shared-kernel.md) — find inherited identity, lifecycle, traceability, expression, and readiness attributes.
-- [End-to-end modeling methodology](../guides/end-to-end-modeling-methodology.md) — follow the workflow across all three levels.
-- [Validation, transformation, and generation](../concepts/pipeline.md) — understand where EVL, ETL, EGX, and EGL act on the models.
-- [EVL semantic validation reference](../evl/index.md) — understand every semantic constraint and critique, its applicability, its diagnostic, and the repair path.
-- [Model-to-model transformation reference](../transformations/index.md) — follow every CIM→PIM and PIM→AWS PSM rule, guard, target, trace, and deferred-resolution phase.
-- [Model-to-text and code-generation reference](../generation/index.md) — understand how the AWS PSM becomes infrastructure, contracts, runtime code, tests, scripts, CI/CD, and review artifacts.
+- [CIM reference](cim/index.md): begin with business and domain vocabulary.
+- [PIM reference](pim/index.md): refine behavior into generic serverless architecture.
+- [AWS PSM reference](psm/index.md): bind the architecture to AWS resources and deployment details.
+- [Shared kernel reference](shared-kernel.md): find inherited identity, lifecycle, traceability, expression, and readiness attributes.
+- [End-to-end modeling methodology](../guides/end-to-end-modeling-methodology.md): follow the workflow across all three levels.
+- [Validation, transformation, and generation](../concepts/pipeline.md): understand where EVL, ETL, EGX, and EGL act on the models.
+- [EVL semantic validation reference](../evl/index.md): understand every semantic constraint and critique, its applicability, its diagnostic, and the repair path.
+- [Model-to-model transformation reference](../transformations/index.md): follow every CIM→PIM and PIM→AWS PSM rule, guard, target, trace, and deferred-resolution phase.
+- [Model-to-text and code-generation reference](../generation/index.md): understand how the AWS PSM becomes infrastructure, contracts, runtime code, tests, scripts, CI/CD, and review artifacts.
 
 ## How to read an element page
 
@@ -49,9 +49,9 @@ The reference covers the current repository definitions: 56 CIM classes, 110 PIM
 
 ## Additional resources
 
-- [Eclipse Modeling Framework](https://eclipse.dev/modeling/emf/) — Ecore's metamodeling foundation.
-- [Emfatic language](https://eclipse.dev/emfatic/) — textual notation used by the source metamodels.
-- [Eclipse Epsilon EVL](https://eclipse.dev/epsilon/doc/evl/) — validation language used for semantic constraints.
-- [Eclipse Epsilon ETL](https://eclipse.dev/epsilon/doc/etl/) — model-to-model transformation language used between levels.
-- [Eclipse Epsilon EGL and EGX](https://eclipse.dev/epsilon/doc/egl/) — model-to-text generation and generation orchestration.
-- [AWS Well-Architected Serverless Applications Lens](https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/welcome.html) — operational context for AWS PSM.
+- [Eclipse Modeling Framework](https://eclipse.dev/modeling/emf/): Ecore's metamodeling foundation.
+- [Emfatic language](https://eclipse.dev/emfatic/): textual notation used by the source metamodels.
+- [Eclipse Epsilon EVL](https://eclipse.dev/epsilon/doc/evl/): validation language used for semantic constraints.
+- [Eclipse Epsilon ETL](https://eclipse.dev/epsilon/doc/etl/): model-to-model transformation language used between levels.
+- [Eclipse Epsilon EGL and EGX](https://eclipse.dev/epsilon/doc/egl/): model-to-text generation and generation orchestration.
+- [AWS Well-Architected Serverless Applications Lens](https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/welcome.html): operational context for AWS PSM.

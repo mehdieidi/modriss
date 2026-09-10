@@ -6,12 +6,12 @@ Platform-independent modeling follows `varka.pim.modeling` (`mde/methodology/pro
 
 ```mermaid
 flowchart TB
-    ph1["pim.ph1 — Architecture Establishment<br/>once"]
-    ph2["pim.ph2 — Contracts & Data<br/>engine"]
-    ph3["pim.ph3 — Compute & Exposure<br/>engine"]
-    ph4["pim.ph4 — Integration & Orchestration<br/>engine"]
-    ph5["pim.ph5 — Assurance & Configuration<br/>engine"]
-    ph6["pim.ph6 — Platform Readiness<br/>EVL gate"]
+    ph1["pim.ph1, Architecture Establishment<br/>once"]
+    ph2["pim.ph2, Contracts & Data<br/>engine"]
+    ph3["pim.ph3, Compute & Exposure<br/>engine"]
+    ph4["pim.ph4, Integration & Orchestration<br/>engine"]
+    ph5["pim.ph5, Assurance & Configuration<br/>engine"]
+    ph6["pim.ph6, Platform Readiness<br/>EVL gate"]
     gate["pim-semantic-validation"]
 
     ph1 --> ph2 --> ph3 --> ph4 --> ph5 --> ph6 --> gate
@@ -35,12 +35,12 @@ flowchart TB
     end
 
     subgraph phases["PIM engine phases"]
-        p1["pim.ph1 — Architecture Establishment"]
-        p2["pim.ph2 — Contracts & Data"]
-        p3["pim.ph3 — Compute & Exposure"]
-        p4["pim.ph4 — Integration & Orchestration"]
-        p5["pim.ph5 — Assurance & Configuration"]
-        p6["pim.ph6 — Platform Readiness"]
+        p1["pim.ph1, Architecture Establishment"]
+        p2["pim.ph2, Contracts & Data"]
+        p3["pim.ph3, Compute & Exposure"]
+        p4["pim.ph4, Integration & Orchestration"]
+        p5["pim.ph5, Assurance & Configuration"]
+        p6["pim.ph6, Platform Readiness"]
     end
 
     root -.-> p1

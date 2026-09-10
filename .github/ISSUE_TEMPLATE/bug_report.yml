@@ -66,4 +66,4 @@ body:
     id: possible-fix
     attributes:
       label: Possible fix
-      description: Optional — if you already have an idea.
+      description: "Optional: if you already have an idea."

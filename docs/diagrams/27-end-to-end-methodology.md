@@ -53,7 +53,7 @@ flowchart TB
         PSM["AWS PSM model"]
         EVL_PSM["psm-semantic-validation<br/>@ psm.ph6"]
         M2T["EGX: awspsm-to-artifacts<br/>e2e.p6"]
-        ART["e2e.p7 — artifact review"]
+        ART["e2e.p7, artifact review"]
     end
 
     CIM --> EVL_CIM --> ETL_CP --> PIM
@@ -66,9 +66,9 @@ flowchart TB
 | Milestone          | Stage / phase           | Gate / action             | On failure                    |
 | ------------------ | ----------------------- | ------------------------- | ----------------------------- |
 | `e2e.m1.cim-ready` | `e2e.p1.cim-modeling`   | `cim-semantic-validation` | Rework in CIM (`cim.ph5`)     |
-| —                  | `e2e.p2.cim-to-pim`     | ETL (no EVL)              | Fix CIM or profile; re-run    |
+| :                  | `e2e.p2.cim-to-pim`     | ETL (no EVL)              | Fix CIM or profile; re-run    |
 | `e2e.m2.pim-ready` | `e2e.p3.pim-refinement` | `pim-semantic-validation` | Rework in PIM (`pim.ph6`)     |
-| —                  | `e2e.p4.pim-to-psm`     | ETL (no EVL)              | Fix PIM; re-run               |
+| :                  | `e2e.p4.pim-to-psm`     | ETL (no EVL)              | Fix PIM; re-run               |
 | `e2e.m3.psm-ready` | `e2e.p5.psm-refinement` | `psm-semantic-validation` | Rework in PSM (`psm.ph6`)     |
 | `e2e.m4.artifacts` | `e2e.p7`                | Manual review             | Fix PSM; regenerate artifacts |
 
@@ -84,24 +84,24 @@ sequenceDiagram
     participant EVL as EVL runner
     participant ETL as ETL / EGX runner
 
-    BM->>BM: e2e.p1 — cim.ph1..ph5
+    BM->>BM: e2e.p1, cim.ph1..ph5
     PR->>EVL: cim-semantic-validation @ cim.ph5
     EVL-->>PR: e2e.m1.cim-ready
 
-    SA->>ETL: e2e.p2 — cim-to-pim
+    SA->>ETL: e2e.p2, cim-to-pim
     ETL-->>SA: PIM draft
-    SA->>SA: e2e.p3 — pim.ph1..ph6
+    SA->>SA: e2e.p3, pim.ph1..ph6
     PR->>EVL: pim-semantic-validation
     EVL-->>PR: e2e.m2.pim-ready
 
-    CPE->>ETL: e2e.p4 — pim-to-awspsm
+    CPE->>ETL: e2e.p4, pim-to-awspsm
     ETL-->>CPE: AWS PSM draft
-    CPE->>CPE: e2e.p5 — psm.ph1..ph6
+    CPE->>CPE: e2e.p5, psm.ph1..ph6
     PR->>EVL: psm-semantic-validation
     EVL-->>PR: e2e.m3.psm-ready
 
-    CPE->>ETL: e2e.p6 — awspsm-to-artifacts
-    PR->>PR: e2e.p7 — artifact review
+    CPE->>ETL: e2e.p6, awspsm-to-artifacts
+    PR->>PR: e2e.p7, artifact review
 ```
 
 ## Child Process Reference
@@ -109,11 +109,11 @@ sequenceDiagram
 | E2E stage ID                 | Child / transform     | SPEM phases             |
 | ---------------------------- | --------------------- | ----------------------- |
 | `e2e.p1.cim-modeling`        | `varka.cim.modeling`  | 5 (`cim.ph1`–`cim.ph5`) |
-| `e2e.p2.cim-to-pim`          | `cim-to-pim` ETL      | —                       |
+| `e2e.p2.cim-to-pim`          | `cim-to-pim` ETL      | :                       |
 | `e2e.p3.pim-refinement`      | `varka.pim.modeling`  | 6 (`pim.ph1`–`pim.ph6`) |
-| `e2e.p4.pim-to-psm`          | `pim-to-awspsm` ETL   | —                       |
+| `e2e.p4.pim-to-psm`          | `pim-to-awspsm` ETL   | :                       |
 | `e2e.p5.psm-refinement`      | `varka.psm.modeling`  | 6 (`psm.ph1`–`psm.ph6`) |
-| `e2e.p6.m2t-generation`      | `awspsm-to-artifacts` | —                       |
-| `e2e.p7.artifact-completion` | Manual review         | —                       |
+| `e2e.p6.m2t-generation`      | `awspsm-to-artifacts` | :                       |
+| `e2e.p7.artifact-completion` | Manual review         | :                       |
 
 See [24-cim-methodology.md](24-cim-methodology.md), [25-pim-methodology.md](25-pim-methodology.md), and [26-psm-methodology.md](26-psm-methodology.md).

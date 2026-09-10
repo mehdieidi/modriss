@@ -1,5 +1,5 @@
 /**
- * SPEM guidance elements — method principles and phase-level guidelines.
+ * SPEM guidance elements, method principles and phase-level guidelines.
  */
 
 /** @type {Record<string, import('./process-types.mjs').Guideline[]>} */
@@ -27,7 +27,7 @@ export const PROCESS_GUIDELINES = {
       id: "cim.guid.ddd-language",
       name: "Ubiquitous language first (Evans)",
       appliesTo: "cim.ph2",
-      text: "Agree domain vocabulary before modeling entities. Renaming later is expensive — use glossary tasks early.",
+      text: "Agree domain vocabulary before modeling entities. Renaming later is expensive. Use glossary tasks early.",
     },
     {
       id: "cim.guid.information-before-entity",
@@ -77,7 +77,7 @@ export const PROCESS_GUIDELINES = {
       id: "pim.guid.policy-as-code",
       name: "Policy attachment discipline",
       appliesTo: "pim.ph5",
-      text: "Attach resilience, observability, and compliance policies to concrete PolicyTarget elements — not free-floating rules.",
+      text: "Attach resilience, observability, and compliance policies to concrete PolicyTarget elements, not free-floating rules.",
     },
     {
       id: "pim.guid.readiness-in-cycle",
@@ -109,7 +109,7 @@ export const PROCESS_GUIDELINES = {
       id: "psm.guid.integration-views",
       name: "Integration views for traceability",
       appliesTo: "psm.ph6",
-      text: "Relationship views denormalize cross-resource wiring for M2T and human review — create them before M2T generation.",
+      text: "Relationship views denormalize cross-resource wiring for M2T and human review, create them before M2T generation.",
     },
     {
       id: "psm.guid.deployable-slice",

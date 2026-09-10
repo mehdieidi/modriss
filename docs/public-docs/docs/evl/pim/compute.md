@@ -1,4 +1,4 @@
-# PIM validation — Compute
+# PIM validation: Compute
 
 Compute rules ensure that every function has a responsibility, contract, reachability path, and compatible state behavior. They also surface the operational consequences of external calls, public exposure, duration, idempotency, and event publication.
 

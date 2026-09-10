@@ -1,4 +1,4 @@
-# PIM validation — Security Config External
+# PIM validation: Security Config External
 
 Security, configuration, and external-system rules stop credentials, identity assumptions, authorization logic, and provider endpoints from remaining implicit. The rules are especially concerned with secret references, least privilege, federation, and environment-specific ownership.
 

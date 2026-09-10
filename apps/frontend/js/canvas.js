@@ -2803,7 +2803,7 @@ function activateNode(nodeId) {
     if (state.connectMode && drawKind) {
       state.connectSourceId = drawSourceId;
       const kindLabel = modelingRelationshipKindLabel(state.activeType, drawKind);
-      setStatus(`Drawing ${kindLabel} — select another highlighted target or cancel`);
+      setStatus(`Drawing ${kindLabel}, select another highlighted target or cancel`);
     } else {
       state.connectSourceId = null;
     }
@@ -3769,7 +3769,7 @@ export function syncConnectionDrawChrome() {
   label.className = "canvas-connection-draw-hint-label";
   label.innerHTML = `Drawing <strong>${escapeHtml(kindLabel)}</strong> from <strong>${escapeHtml(
     sourceLabel,
-  )}</strong> — click a highlighted target`;
+  )}</strong>. Click a highlighted target`;
 
   const cancel = document.createElement("button");
   cancel.type = "button";
@@ -3835,7 +3835,7 @@ export function startConnectionFromNode(nodeId, preferredKind = null) {
     : null;
   setStatus(
     kindLabel
-      ? `Drawing ${kindLabel} — click a highlighted target on the canvas`
+      ? `Drawing ${kindLabel}. Click a highlighted target on the canvas`
       : "Select a highlighted legal target on the canvas",
   );
   return true;

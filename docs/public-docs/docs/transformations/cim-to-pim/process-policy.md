@@ -1,4 +1,4 @@
-# CIM → PIM — Process Policy
+# CIM → PIM: Process Policy
 
 Process and policy refinement preserves the difference between business intent and execution structure. Policies become handler functions or architecture policies, decision tables become choice logic, processes become workflows, and process steps/transitions become a typed PIM graph. Non-functional requirements are routed into the PIM policy that can enforce them, while unsupported ambiguity becomes a visible readiness or manual decision.
 
@@ -31,8 +31,8 @@ These operations are not independent source-to-target rules, but they materially
 
 ## `Policy2PolicyHandlerFunction`
 
-**Source:** `pol` — `CIMPROCESS!Policy`  
-**Target:** `fn` — `COMPUTE!Function`  
+**Source:** `pol` to `CIMPROCESS!Policy`  
+**Target:** `fn` to `COMPUTE!Function`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:152`
 
 ### Why this rule exists
@@ -71,8 +71,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `Policy2ArchitecturePolicy`
 
-**Source:** `pol` — `CIMPROCESS!Policy`  
-**Target:** `p` — `POLICY!CompliancePolicy`  
+**Source:** `pol` to `CIMPROCESS!Policy`  
+**Target:** `p` to `POLICY!CompliancePolicy`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:226`
 
 ### Why this rule exists
@@ -110,8 +110,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `DecisionTable2ChoiceLogic`
 
-**Source:** `dt` — `CIMPROCESS!DecisionTable`  
-**Target:** `fn` — `COMPUTE!Function`  
+**Source:** `dt` to `CIMPROCESS!DecisionTable`  
+**Target:** `fn` to `COMPUTE!Function`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:242`
 
 ### Why this rule exists
@@ -147,8 +147,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `DecisionTable2DecisionModel`
 
-**Source:** `dt` — `CIMPROCESS!DecisionTable`  
-**Target:** `dm` — `POLICY!DecisionModel`  
+**Source:** `dt` to `CIMPROCESS!DecisionTable`  
+**Target:** `dm` to `POLICY!DecisionModel`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:314`
 
 ### Why this rule exists
@@ -184,8 +184,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `BusinessProcess2Workflow`
 
-**Source:** `bp` — `CIMPROCESS!BusinessProcess`  
-**Target:** `wf` — `WORKFLOW!Workflow`  
+**Source:** `bp` to `CIMPROCESS!BusinessProcess`  
+**Target:** `wf` to `WORKFLOW!Workflow`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:373`
 
 ### Why this rule exists
@@ -223,8 +223,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `StartStep2WorkflowStartStep`
 
-**Source:** `s` — `CIMPROCESS!StartStep`  
-**Target:** `ws` — `WORKFLOW!StartStep`  
+**Source:** `s` to `CIMPROCESS!StartStep`  
+**Target:** `ws` to `WORKFLOW!StartStep`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:400`
 
 ### Why this rule exists
@@ -259,8 +259,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `EndStep2WorkflowSuccessEndStep`
 
-**Source:** `s` — `CIMPROCESS!EndStep`  
-**Target:** `ws` — `WORKFLOW!SuccessEndStep`  
+**Source:** `s` to `CIMPROCESS!EndStep`  
+**Target:** `ws` to `WORKFLOW!SuccessEndStep`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:415`
 
 ### Why this rule exists
@@ -295,8 +295,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `DecisionStep2WorkflowChoiceStep`
 
-**Source:** `s` — `CIMPROCESS!DecisionStep`  
-**Target:** `ws` — `WORKFLOW!ChoiceStep`  
+**Source:** `s` to `CIMPROCESS!DecisionStep`  
+**Target:** `ws` to `WORKFLOW!ChoiceStep`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:430`
 
 ### Why this rule exists
@@ -331,8 +331,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `WaitLikeStep2WorkflowWaitStep`
 
-**Source:** `s` — `CIMPROCESS!ProcessStep`  
-**Target:** `ws` — `WORKFLOW!WaitStep`  
+**Source:** `s` to `CIMPROCESS!ProcessStep`  
+**Target:** `ws` to `WORKFLOW!WaitStep`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:456`
 
 ### Why this rule exists
@@ -371,8 +371,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `ProcessStep2WorkflowTaskStep`
 
-**Source:** `s` — `CIMPROCESS!ProcessStep`  
-**Target:** `ws` — `WORKFLOW!TaskStep`  
+**Source:** `s` to `CIMPROCESS!ProcessStep`  
+**Target:** `ws` to `WORKFLOW!TaskStep`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:480`
 
 ### Why this rule exists
@@ -413,8 +413,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `ProcessTransition2WorkflowTransition`
 
-**Source:** `t` — `CIMPROCESS!ProcessTransition`  
-**Target:** `wt` — `WORKFLOW!WorkflowTransition`  
+**Source:** `t` to `CIMPROCESS!ProcessTransition`  
+**Target:** `wt` to `WORKFLOW!WorkflowTransition`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:546`
 
 ### Why this rule exists
@@ -448,8 +448,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `ExceptionScenario2ErrorHandler`
 
-**Source:** `ex` — `CIMPROCESS!ExceptionScenario`  
-**Target:** `eh` — `WORKFLOW!ErrorHandler`  
+**Source:** `ex` to `CIMPROCESS!ExceptionScenario`  
+**Target:** `eh` to `WORKFLOW!ErrorHandler`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:658`
 
 ### Why this rule exists
@@ -484,8 +484,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `SecurityConstraint2SecurityPolicies`
 
-**Source:** `sc` — `CIMGOV!SecurityConstraint`  
-**Target:** `sec` — `SECURITY!SecurityPolicy`, `auth` — `SECURITY!AuthPolicy`, `authz` — `SECURITY!AuthorizationPolicy`  
+**Source:** `sc` to `CIMGOV!SecurityConstraint`  
+**Target:** `sec` to `SECURITY!SecurityPolicy`, `auth` to `SECURITY!AuthPolicy`, `authz` to `SECURITY!AuthorizationPolicy`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:675`
 
 ### Why this rule exists
@@ -522,8 +522,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `TemporalConstraint2TimeoutPolicy`
 
-**Source:** `tc` — `CIMPROCESS!TemporalConstraint`  
-**Target:** `timeout` — `POLICY!TimeoutPolicy`, `ordering` — `POLICY!OrderingPolicy`  
+**Source:** `tc` to `CIMPROCESS!TemporalConstraint`  
+**Target:** `timeout` to `POLICY!TimeoutPolicy`, `ordering` to `POLICY!OrderingPolicy`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:754`
 
 ### Why this rule exists
@@ -560,8 +560,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `AvailabilityReliabilityNfr2ResiliencePolicy`
 
-**Source:** `nfr` — `CIMGOV!NonFunctionalRequirement`  
-**Target:** `pol` — `POLICY!ResiliencePolicy`, `backup` — `POLICY!BackupPolicy`  
+**Source:** `nfr` to `CIMGOV!NonFunctionalRequirement`  
+**Target:** `pol` to `POLICY!ResiliencePolicy`, `backup` to `POLICY!BackupPolicy`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:855`
 
 ### Why this rule exists
@@ -601,8 +601,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `PerformanceNfr2TimeoutPolicy`
 
-**Source:** `nfr` — `CIMGOV!NonFunctionalRequirement`  
-**Target:** `pol` — `POLICY!TimeoutPolicy`, `concurrency` — `POLICY!ConcurrencyPolicy`, `cache` — `POLICY!CachePolicy`, `rateLimit` — `POLICY!RateLimitPolicy`  
+**Source:** `nfr` to `CIMGOV!NonFunctionalRequirement`  
+**Target:** `pol` to `POLICY!TimeoutPolicy`, `concurrency` to `POLICY!ConcurrencyPolicy`, `cache` to `POLICY!CachePolicy`, `rateLimit` to `POLICY!RateLimitPolicy`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:897`
 
 ### Why this rule exists
@@ -644,8 +644,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `AuditOperabilityNfr2Observability`
 
-**Source:** `nfr` — `CIMGOV!NonFunctionalRequirement`  
-**Target:** `pol` — `POLICY!ObservabilityConfig`  
+**Source:** `nfr` to `CIMGOV!NonFunctionalRequirement`  
+**Target:** `pol` to `POLICY!ObservabilityConfig`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:957`
 
 ### Why this rule exists
@@ -684,8 +684,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `CostNfr2CostPolicy`
 
-**Source:** `nfr` — `CIMGOV!NonFunctionalRequirement`  
-**Target:** `pol` — `POLICY!CostPolicy`  
+**Source:** `nfr` to `CIMGOV!NonFunctionalRequirement`  
+**Target:** `pol` to `POLICY!CostPolicy`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:1022`
 
 ### Why this rule exists
@@ -723,8 +723,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `DataQualityNfr2SchemaConstraintAndReadiness`
 
-**Source:** `nfr` — `CIMGOV!NonFunctionalRequirement`  
-**Target:** `pol` — `POLICY!DataQualityPolicy`  
+**Source:** `nfr` to `CIMGOV!NonFunctionalRequirement`  
+**Target:** `pol` to `POLICY!DataQualityPolicy`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:1042`
 
 ### Why this rule exists
@@ -762,8 +762,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl
 
 ## `GenericComplianceNfr2CompliancePolicy`
 
-**Source:** `nfr` — `CIMGOV!NonFunctionalRequirement`  
-**Target:** `pol` — `POLICY!CompliancePolicy`  
+**Source:** `nfr` to `CIMGOV!NonFunctionalRequirement`  
+**Target:** `pol` to `POLICY!CompliancePolicy`  
 **Source location:** `mde/transformations/cim-to-pim/process-policy.etl:1066`
 
 ### Why this rule exists

@@ -1,4 +1,4 @@
-# CIM → PIM — Integration Deployment
+# CIM → PIM: Integration Deployment
 
 This module performs the connective work that individual source-to-target rules cannot complete alone. It builds request/response and event flows, connects topics and external systems, derives access and protection policies, creates operational defaults, attaches service membership, and closes readiness evidence. It is the place where the PIM model becomes an architecture rather than a set of isolated generated objects.
 
@@ -58,8 +58,8 @@ These operations are not independent source-to-target rules, but they materially
 
 ## `Risk2ReadinessFinding`
 
-**Source:** `r` — `CIMTRANSFORM!Risk`  
-**Target:** `f` — `KERNEL!ReadinessFinding`  
+**Source:** `r` to `CIMTRANSFORM!Risk`  
+**Target:** `f` to `KERNEL!ReadinessFinding`  
 **Source location:** `mde/transformations/cim-to-pim/integration-deployment.etl:1091`
 
 ### Why this rule exists
@@ -93,8 +93,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/integration-deploy
 
 ## `Assumption2ReadinessFinding`
 
-**Source:** `a` — `CIMTRANSFORM!Assumption`  
-**Target:** `f` — `KERNEL!ReadinessFinding`  
+**Source:** `a` to `CIMTRANSFORM!Assumption`  
+**Target:** `f` to `KERNEL!ReadinessFinding`  
 **Source location:** `mde/transformations/cim-to-pim/integration-deployment.etl:1116`
 
 ### Why this rule exists

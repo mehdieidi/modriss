@@ -6,7 +6,7 @@ artifacts, layout, and the AI assistant (REST + authenticated SSE).
 ## Run
 
 ```bash
-# from repository root — PostgreSQL on localhost:5432
+# from repository root: PostgreSQL on localhost:5432
 mvn -pl apps/backend -am spring-boot:run
 ```
 
@@ -19,10 +19,10 @@ mvn -pl apps/backend -am spring-boot:run
 Defaults in `src/main/resources/application.yml`; overrides via environment or `.env`.
 Copy [`.env.example`](../../.env.example) at the repo root.
 
-| Concern      | Variables                                                                                                           |
-| ------------ | ------------------------------------------------------------------------------------------------------------------- |
-| Database     | `VARKA_DB_URL`, `VARKA_DB_USER`, `VARKA_DB_PASSWORD`                                                                |
-| AI assistant | `VARKA_AI_ENABLED`, `VARKA_AI_PROVIDER`, provider keys — see [assistant setup](../../docs/internal/ai/assistant.md) |
+| Concern      | Variables                                                                                                          |
+| ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Database     | `VARKA_DB_URL`, `VARKA_DB_USER`, `VARKA_DB_PASSWORD`                                                               |
+| AI assistant | `VARKA_AI_ENABLED`, `VARKA_AI_PROVIDER`, provider keys: see [assistant setup](../../docs/internal/ai/assistant.md) |
 
 Start only Postgres: `docker compose up -d postgres`
 

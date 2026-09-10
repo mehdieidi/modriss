@@ -1,4 +1,4 @@
-# AWS PSM validation — Workflow
+# AWS PSM validation: Workflow
 
 Step Functions and ASL rules protect the executable state graph. They verify definition sources, entry and terminal states, state naming, task targets, JSONPath/JSONata boundaries, waits, choices, retries, and catches so a generated state machine is not merely syntactically shaped but operationally startable.
 
@@ -56,7 +56,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-A Step Functions resource without a definition has no executable workflow. The rule permits the supported definition sources, but insists that one—and only one—owns the state machine body.
+A Step Functions resource without a definition has no executable workflow. The rule permits the supported definition sources, but insists that one, and only one, owns the state machine body.
 
 ### When it applies
 

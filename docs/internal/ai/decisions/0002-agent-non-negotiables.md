@@ -29,7 +29,7 @@ The assistant must obey these rules:
 5. **Idempotency and cancellation.** Duplicate `idempotencyKey` requests return the stored terminal
    outcome; canceled or timed-out turns cannot apply later.
 6. **User-visible trace, not chain-of-thought.** Realtime events stream planning summaries, tool
-   use, evidence coverage, validation summaries, and operation previews — never private raw
+   use, evidence coverage, validation summaries, and operation previews. Never private raw
    reasoning.
 7. **Source documents are untrusted data.** Prompt blocks label context roles; instruction-like
    source text is classified as evidence, not executable commands.

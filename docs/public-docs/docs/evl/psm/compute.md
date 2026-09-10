@@ -1,4 +1,4 @@
-# AWS PSM validation — Compute
+# AWS PSM validation: Compute
 
 Lambda rules check the parts of a function that AWS cannot safely infer: execution role, code location, runtime/handler pairing, package form, resource limits, environment-secret handling, event-source bounds, destinations, logging, and production safeguards.
 

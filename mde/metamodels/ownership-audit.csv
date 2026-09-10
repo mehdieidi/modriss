@@ -24,7 +24,7 @@ cim,cim-organization.emf,BusinessCapability,False,CIMModel.capabilities,CIMModel
 cim,cim-organization.emf,BusinessCapability,False,CIMModel.capabilities,CIMModel.capabilities,containsQueries,ref,Query,targetCapability,ref,cross-link,
 cim,cim-organization.emf,BusinessCapability,False,CIMModel.capabilities,CIMModel.capabilities,containsEvents,ref,BusinessEvent,,ref,cross-link,
 cim,cim-organization.emf,BusinessCapability,False,CIMModel.capabilities,CIMModel.capabilities,managesEntities,ref,DomainEntity,owningCapability,ref,cross-link,
-cim,cim-organization.emf,BusinessCapability,False,CIMModel.capabilities,CIMModel.capabilities,ownsProcesses,ref,BusinessProcess,owningCapability,ref,duplicate ownership — remove,owns-ref
+cim,cim-organization.emf,BusinessCapability,False,CIMModel.capabilities,CIMModel.capabilities,ownsProcesses,ref,BusinessProcess,owningCapability,ref,duplicate ownership: remove,owns-ref
 cim,cim-organization.emf,BusinessCapability,False,CIMModel.capabilities,CIMModel.capabilities,constrainedBy,ref,NonFunctionalRequirement,,ref,cross-link,owns-ref
 cim,cim-behavior.emf,BusinessError,False,CIMModel.businessErrors,CIMModel.businessErrors,emittedEvents,ref,BusinessEvent,,ref,cross-link,
 cim,cim-behavior.emf,BusinessEvent,False,CIMModel.events,CIMModel.events,expectedByCommands,ref,Command,expectedEvents,ref,cross-link,
@@ -170,7 +170,7 @@ cim,cim-governance.emf,SecurityConstraint,False,(none),(none),constrainedActors,
 cim,cim-governance.emf,SecurityConstraint,False,(none),(none),constrainedCommands,ref,Command,,ref,cross-link,unreachable
 cim,cim-governance.emf,SecurityConstraint,False,(none),(none),constrainedQueries,ref,Query,,ref,cross-link,unreachable
 cim,cim-governance.emf,SecurityConstraint,False,(none),(none),constrainedInformation,ref,InformationItem,,ref,cross-link,unreachable
-cim,cim-organization.emf,Stakeholder,False,CIMModel.stakeholders,CIMModel.stakeholders,ownsGoals,ref,BusinessGoal,owners,flag: owns-ref,duplicate ownership — remove,owns-ref
+cim,cim-organization.emf,Stakeholder,False,CIMModel.stakeholders,CIMModel.stakeholders,ownsGoals,ref,BusinessGoal,owners,flag: owns-ref,duplicate ownership: remove,owns-ref
 cim,cim-organization.emf,Stakeholder,False,CIMModel.stakeholders,CIMModel.stakeholders,providesRequirements,ref,Requirement,,ref,cross-link,owns-ref
 cim,cim-process-policy.emf,StartStep,False,(none),(none),,,,,flag: unreachable,leaf classifier,unreachable
 cim,cim-process-policy.emf,TemporalConstraint,False,BusinessProcess.temporalConstraints,BusinessProcess.temporalConstraints,deadline,val,Expression,,val,containment owner,

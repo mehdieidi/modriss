@@ -1,7 +1,7 @@
 # Varka Frontend
 
 Static browser modeling application: CIM/PIM/PSM workbenches, artifact explorer, impact analysis,
-and assistant UI. No bundler — ES modules with vendored browser libraries.
+and assistant UI. No bundler, ES modules with vendored browser libraries.
 
 ## Run locally
 

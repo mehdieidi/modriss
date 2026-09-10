@@ -1,4 +1,4 @@
-# PIM validation — Readiness
+# PIM validation: Readiness
 
 PIM readiness rules separate a model that can be transformed from one that is ready to be deployed or called production-ready. They reconcile checks, findings, manual decisions, blockers, and remediation rather than treating a single status flag as evidence.
 

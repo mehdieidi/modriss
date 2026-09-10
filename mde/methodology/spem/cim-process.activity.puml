@@ -1,51 +1,51 @@
 @startuml cim-process
-title CIM Modeling Process — SPEM Engine (5 Phases per Capability Slice)
+title CIM Modeling Process, SPEM Engine (5 Phases per Capability Slice)
 start
-partition "Phase 1 — Increment Framing (engine)" {
-  :Stage — Program Charter;
-  :Stage — Capability Slice Planning;
-  :Stage — Strategic Framing;
+partition "Phase 1, Increment Framing (engine)" {
+  :Stage, Program Charter;
+  :Stage, Capability Slice Planning;
+  :Stage, Strategic Framing;
 }
-partition "Phase 2 — Context Discovery (engine)" {
-  :Stage — Participation Model;
-  :Stage — Capability Landscape;
-  :Stage — Ubiquitous Language;
+partition "Phase 2, Context Discovery (engine)" {
+  :Stage, Participation Model;
+  :Stage, Capability Landscape;
+  :Stage, Ubiquitous Language;
 }
-partition "Phase 3 — Domain Exploration (engine, iterative)" {
+partition "Phase 3, Domain Exploration (engine, iterative)" {
   repeat
-    :Stage — Information Architecture;
-    :Stage — Structural Model;
+    :Stage, Information Architecture;
+    :Stage, Structural Model;
     if (Naming conflicts?) then (yes)
       backward :Ubiquitous Language;
     endif
-    :Stage — Behavior Surface;
+    :Stage, Behavior Surface;
     if (Missing taxonomy/structure?) then (yes)
       backward :Information Architecture;
     else (no)
     endif
   repeat while (CQRS surface coherent?) is (no)
 }
-partition "Phase 4 — Domain Synthesis (engine)" {
-  :Stage — Aggregate Boundaries;
+partition "Phase 4, Domain Synthesis (engine)" {
+  :Stage, Aggregate Boundaries;
   if (Ownership conflicts?) then (yes)
     backward :Behavior Surface;
   endif
-  :Stage — Process & Decisions;
-  :Stage — Bounded Contexts;
+  :Stage, Process & Decisions;
+  :Stage, Bounded Contexts;
 }
-partition "Phase 5 — Convergence & Readiness (engine)" {
-  :Stage — Requirements (Twin Peaks);
+partition "Phase 5, Convergence & Readiness (engine)" {
+  :Stage, Requirements (Twin Peaks);
   if (Untraceable requirements?) then (yes)
     backward :Structural Model;
   endif
-  :Stage — Governance;
-  :Stage — EVL Readiness Gate;
-  :Stage — Increment Review & Adapt;
+  :Stage, Governance;
+  :Stage, EVL Readiness Gate;
+  :Stage, Increment Review & Adapt;
 }
 if (CIM EVL pass?) then (yes)
   :CIM→PIM ETL gate;
   if (More capability slices?) then (yes)
-    backward :Stage — Capability Slice Planning;
+    backward :Stage, Capability Slice Planning;
   else (no)
     stop
   endif

@@ -1,4 +1,4 @@
-# AWS PSM validation — Identity
+# AWS PSM validation: Identity
 
 Cognito rules protect production authentication posture and OAuth completeness. They make MFA, deletion protection, callback URLs, user-existence behavior, and unauthenticated identity review explicit rather than silently accepting an insecure default.
 

@@ -1,4 +1,4 @@
-# PIM validation — Contracts
+# PIM validation: Contracts
 
 Contract rules protect the boundaries through which functions, APIs, events, and messages communicate. They require meaningful input/output shape, typed fields, compatible versions, and explicit handling for sensitive or externally sourced schemas.
 

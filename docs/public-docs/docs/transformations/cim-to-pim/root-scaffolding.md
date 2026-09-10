@@ -1,4 +1,4 @@
-# CIM → PIM — Root Scaffolding
+# CIM → PIM: Root Scaffolding
 
 Root scaffolding establishes the PIM document that every later rule writes into. It carries the domain identity forward, creates traceability and readiness containers, seeds environments and implementation settings, and turns high-level organizational intent into reviewable PIM policy or readiness evidence. These rules deliberately leave some decisions as review-required rather than pretending that CIM can know a runtime, package manager, or deployment command.
 
@@ -25,8 +25,8 @@ These operations are not independent source-to-target rules, but they materially
 
 ## `CIMModel2PIMModel`
 
-**Source:** `c` — `CIM!CIMModel`  
-**Target:** `p` — `PIM!PIMModel`  
+**Source:** `c` to `CIM!CIMModel`  
+**Target:** `p` to `PIM!PIMModel`  
 **Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:51`
 
 ### Why this rule exists
@@ -61,8 +61,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.e
 
 ## `DefaultEnvironmentsAndImplementationProfile`
 
-**Source:** `c` — `CIM!CIMModel`  
-**Target:** `dev` — `DEPLOY!Environment`, `test` — `DEPLOY!Environment`, `prod` — `DEPLOY!Environment`, `profile` — `DEPLOY!ImplementationProfile`  
+**Source:** `c` to `CIM!CIMModel`  
+**Target:** `dev` to `DEPLOY!Environment`, `test` to `DEPLOY!Environment`, `prod` to `DEPLOY!Environment`, `profile` to `DEPLOY!ImplementationProfile`  
 **Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:85`
 
 ### Why this rule exists
@@ -100,8 +100,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.e
 
 ## `Requirement2BusinessRule`
 
-**Source:** `r` — `CIMORG!Requirement`  
-**Target:** `b` — `POLICY!BusinessRule`  
+**Source:** `r` to `CIMORG!Requirement`  
+**Target:** `b` to `POLICY!BusinessRule`  
 **Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:140`
 
 ### Why this rule exists
@@ -136,8 +136,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.e
 
 ## `BusinessGoal2BusinessRule`
 
-**Source:** `g` — `CIMORG!BusinessGoal`  
-**Target:** `b` — `POLICY!BusinessRule`  
+**Source:** `g` to `CIMORG!BusinessGoal`  
+**Target:** `b` to `POLICY!BusinessRule`  
 **Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:159`
 
 ### Why this rule exists
@@ -171,8 +171,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.e
 
 ## `UbiquitousLanguageTerm2BusinessRule`
 
-**Source:** `t` — `CIMORG!UbiquitousLanguageTerm`  
-**Target:** `b` — `POLICY!BusinessRule`  
+**Source:** `t` to `CIMORG!UbiquitousLanguageTerm`  
+**Target:** `b` to `POLICY!BusinessRule`  
 **Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:172`
 
 ### Why this rule exists
@@ -206,8 +206,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.e
 
 ## `KPI2ReadinessCheck`
 
-**Source:** `k` — `CIMORG!KPI`  
-**Target:** `c` — `KERNEL!ReadinessCheck`  
+**Source:** `k` to `CIMORG!KPI`  
+**Target:** `c` to `KERNEL!ReadinessCheck`  
 **Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:185`
 
 ### Why this rule exists
@@ -241,8 +241,8 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.e
 
 ## `Stakeholder2ManualDecision`
 
-**Source:** `s` — `CIMORG!Stakeholder`  
-**Target:** `d` — `KERNEL!ManualDecision`  
+**Source:** `s` to `CIMORG!Stakeholder`  
+**Target:** `d` to `KERNEL!ManualDecision`  
 **Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:203`
 
 ### Why this rule exists

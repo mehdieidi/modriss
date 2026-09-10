@@ -15,4 +15,4 @@ Start from the saved model as authoritative state.
 6. Avoid deletion unless explicitly requested. If deletion is required, let the backend confirmation workflow control it.
 7. Report which existing elements were reused, which were changed, and whether later checkpoints remain.
 
-Use conversation history only to understand intent. Use the current model inventory and inspection results—not prior assistant claims—to decide what actually exists.
+Use conversation history only to understand intent. Use the current model inventory and inspection results, not prior assistant claims, to decide what actually exists.

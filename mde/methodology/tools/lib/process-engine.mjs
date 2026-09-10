@@ -1,5 +1,5 @@
 /**
- * Process engine — iterative kernel that revolves through phases/stages and delivers increments.
+ * Process engine, iterative kernel that revolves through phases/stages and delivers increments.
  */
 
 /** @type {Record<string, import('./process-types.mjs').ProcessEngineSpec>} */

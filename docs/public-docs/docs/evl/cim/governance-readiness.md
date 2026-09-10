@@ -1,4 +1,4 @@
-# CIM validation — Governance Readiness
+# CIM validation: Governance Readiness
 
 Governance rules turn non-functional, security, privacy, compliance, risk, and readiness concerns into reviewable model facts. They keep a model from being declared ready while a known blocker has no owner, recommendation, evidence, or decision.
 

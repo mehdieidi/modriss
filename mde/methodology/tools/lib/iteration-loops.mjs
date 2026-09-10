@@ -1,5 +1,5 @@
 /**
- * Engine rework loops — between stages within phases (inside engine cycles).
+ * Engine rework loops, between stages within phases (inside engine cycles).
  */
 
 /** @type {Record<string, import('./process-types.mjs').IterationLoop[]>} */

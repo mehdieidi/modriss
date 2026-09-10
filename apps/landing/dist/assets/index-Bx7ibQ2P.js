@@ -11653,7 +11653,7 @@ function C() {
               }),
               (0, m.jsx)(`p`, {
                 className: `hero-lede`,
-                children: `Varka connects business intent, software architecture, and AWS deployment design in one traceable modeling pipeline—then generates a project your team can inspect, test, and own.`,
+                children: `Varka connects business intent, software architecture, and AWS deployment design in one traceable modeling pipeline, then generates a project your team can inspect, test, and own.`,
               }),
               (0, m.jsxs)(`div`, {
                 className: `hero-actions`,
@@ -11875,7 +11875,7 @@ function C() {
                     ],
                   }),
                   (0, m.jsx)(`p`, {
-                    children: `Varka’s editors implement domain-specific modeling languages (DSMLs) defined by Ecore metamodels. Structural conformance and domain-specific EVL constraints are evaluated before transformation—so diagramming is connected to a machine-checkable model.`,
+                    children: `Varka’s editors implement domain-specific modeling languages (DSMLs) defined by Ecore metamodels. Structural conformance and domain-specific EVL constraints are evaluated before transformation, so diagramming is connected to a machine-checkable model.`,
                   }),
                   (0, m.jsxs)(`a`, {
                     className: `inline-link`,

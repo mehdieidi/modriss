@@ -1,4 +1,4 @@
-# AWS PSM validation — Networking
+# AWS PSM validation: Networking
 
 Networking rules verify that VPC attachments have subnets and security groups, modeled IDs do not contradict typed references, private connectivity assumptions are supported, DNS is enabled, and public administrative ingress is reviewed.
 

@@ -152,7 +152,7 @@ def build_markdown(classes: list[ClassInfo]) -> str:
     level_titles = {
         "cim": "CIM (Computation-Independent Model)",
         "pim": "PIM (Platform-Independent Model)",
-        "psm": "PSM (Platform-Specific Model — AWS)",
+        "psm": "PSM (Platform-Specific Model, AWS)",
     }
 
     lines: list[str] = [
@@ -220,7 +220,7 @@ def main() -> int:
     }
     print(f"Wrote {OUTPUT}")
     print(
-        "Class counts — "
+        "Class counts, "
         + ", ".join(f"{level}: {count}" for level, count in level_counts.items())
     )
     return 0

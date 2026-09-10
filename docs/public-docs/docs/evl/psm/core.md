@@ -1,4 +1,4 @@
-# AWS PSM validation — Core
+# AWS PSM validation: Core
 
 AWS PSM core rules protect the deployment graph and CloudFormation/SAM safety model: stages and stacks must exist, logical IDs must be valid and unique, imports must be explicit, expressions must have compatible shapes, and production resources must carry the required governance metadata.
 

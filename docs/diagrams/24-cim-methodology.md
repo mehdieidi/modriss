@@ -6,11 +6,11 @@ Guided CIM modeling follows process `varka.cim.modeling` (`mde/methodology/proce
 
 ```mermaid
 flowchart TB
-    ph1["cim.ph1 — Establishment<br/>once"]
-    ph2["cim.ph2 — Context Discovery<br/>engine"]
-    ph3["cim.ph3 — Domain Exploration<br/>engine · Twin Peaks"]
-    ph4["cim.ph4 — Domain Synthesis<br/>engine"]
-    ph5["cim.ph5 — Convergence & Readiness<br/>engine · EVL gate"]
+    ph1["cim.ph1, Establishment<br/>once"]
+    ph2["cim.ph2, Context Discovery<br/>engine"]
+    ph3["cim.ph3, Domain Exploration<br/>engine · Twin Peaks"]
+    ph4["cim.ph4, Domain Synthesis<br/>engine"]
+    ph5["cim.ph5, Convergence & Readiness<br/>engine · EVL gate"]
     gate["cim-semantic-validation"]
 
     ph1 --> ph2 --> ph3 --> ph4 --> ph5 --> gate
@@ -57,11 +57,11 @@ All **122** CIM concepts are covered (`orphanedConcepts: []`). Assignments come 
 
 ## Dependency Rationale
 
-- **Goals before actors** — strategic intent anchors participation boundaries.
-- **Capabilities before glossary** — ownership before ubiquitous language (DDD).
-- **InformationItem before DomainEntity** — `CIM-ENTITY-001`.
-- **Structure before CQRS** — entities exist before commands/events.
-- **Behavior before aggregates** — command/event ownership drives boundaries.
-- **Twin Peaks in convergence** — requirements backfill after domain structure (`cim.ph5`).
+- **Goals before actors**, strategic intent anchors participation boundaries.
+- **Capabilities before glossary**, ownership before ubiquitous language (DDD).
+- **InformationItem before DomainEntity**, `CIM-ENTITY-001`.
+- **Structure before CQRS**, entities exist before commands/events.
+- **Behavior before aggregates**, command/event ownership drives boundaries.
+- **Twin Peaks in convergence**, requirements backfill after domain structure (`cim.ph5`).
 
 Exit from `cim.ph5` with `cim-semantic-validation` passes is the handoff to `e2e.p2.cim-to-pim`.

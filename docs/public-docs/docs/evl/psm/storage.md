@@ -1,4 +1,4 @@
-# AWS PSM validation — Storage
+# AWS PSM validation: Storage
 
 DynamoDB and S3 rules validate key coverage, capacity-mode consistency, index definitions, TTL/encryption/backup choices, public-access blocking, notifications, and replication. These checks are aimed at preventing deployable templates that still lose or expose data.
 

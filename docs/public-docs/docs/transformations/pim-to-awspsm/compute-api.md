@@ -1,4 +1,4 @@
-# PIM → AWS PSM — Compute API
+# PIM → AWS PSM: Compute API
 
 Compute and API binding converts provider-independent execution into Lambda and API Gateway resources. The rules choose HTTP API versus REST API, materialize routes after their parent API exists, infer conservative operational settings, carry contracts into OpenAPI models, and emit explicit manual decisions where PIM intent cannot safely determine AWS implementation.
 
@@ -61,8 +61,8 @@ These operations are not independent source-to-target rules, but they materially
 
 ## `Function2AwsLambdaFunction`
 
-**Source:** `f` — `COMPUTE!Function`  
-**Target:** `l` — `AWSPSMCOMPUTE!AwsLambdaFunction`  
+**Source:** `f` to `COMPUTE!Function`  
+**Target:** `l` to `AWSPSMCOMPUTE!AwsLambdaFunction`  
 **Source location:** `mde/transformations/pim-to-awspsm/compute-api.etl:2`
 
 ### Why this rule exists
@@ -94,8 +94,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl
 
 ## `Api2HttpApi`
 
-**Source:** `api` — `API!Api`  
-**Target:** `g` — `AWSPSMAPI!HttpApi`  
+**Source:** `api` to `API!Api`  
+**Target:** `g` to `AWSPSMAPI!HttpApi`  
 **Source location:** `mde/transformations/pim-to-awspsm/compute-api.etl:69`
 
 ### Why this rule exists
@@ -130,8 +130,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl
 
 ## `Api2RestApi`
 
-**Source:** `api` — `API!Api`  
-**Target:** `g` — `AWSPSMAPI!RestApi`  
+**Source:** `api` to `API!Api`  
+**Target:** `g` to `AWSPSMAPI!RestApi`  
 **Source location:** `mde/transformations/pim-to-awspsm/compute-api.etl:101`
 
 ### Why this rule exists
@@ -166,8 +166,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl
 
 ## `Api2NativeUnsupportedApi`
 
-**Source:** `api` — `API!Api`  
-**Target:** `n` — `AWSPSMCORE!AwsNativeResource`  
+**Source:** `api` to `API!Api`  
+**Target:** `n` to `AWSPSMCORE!AwsNativeResource`  
 **Source location:** `mde/transformations/pim-to-awspsm/compute-api.etl:132`
 
 ### Why this rule exists
@@ -203,8 +203,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl
 
 ## `ApiRoute2HttpApiRoute`
 
-**Source:** `r` — `API!ApiRoute`  
-**Target:** `gr` — `AWSPSMAPI!HttpApiRoute`  
+**Source:** `r` to `API!ApiRoute`  
+**Target:** `gr` to `AWSPSMAPI!HttpApiRoute`  
 **Source location:** `mde/transformations/pim-to-awspsm/compute-api.etl:163`
 
 ### Why this rule exists
@@ -239,8 +239,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl
 
 ## `ApiRoute2RestApiRoute`
 
-**Source:** `r` — `API!ApiRoute`  
-**Target:** `gr` — `AWSPSMAPI!RestApiRoute`  
+**Source:** `r` to `API!ApiRoute`  
+**Target:** `gr` to `AWSPSMAPI!RestApiRoute`  
 **Source location:** `mde/transformations/pim-to-awspsm/compute-api.etl:173`
 
 ### Why this rule exists

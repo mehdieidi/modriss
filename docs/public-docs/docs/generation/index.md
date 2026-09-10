@@ -43,11 +43,11 @@ Generated infrastructure and code are not proof that the deployment is secure or
 
 ## Useful resources
 
-- [Eclipse Epsilon EGL](https://eclipse.dev/epsilon/doc/egl/) — template syntax and model access.
-- [Eclipse Epsilon EGX](https://eclipse.dev/epsilon/doc/egx/) — generation-rule orchestration.
-- [AWS SAM documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html) — generated serverless infrastructure context.
-- [OpenAPI Specification](https://spec.openapis.org/oas/latest.html) — generated HTTP contract context.
-- [JSON Schema specification](https://json-schema.org/specification) — generated data and validation contract context.
-- [Amazon States Language](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html) — generated workflow JSON context.
-- [AWS Lambda Go handler model](https://docs.aws.amazon.com/lambda/latest/dg/golang-handler.html) — generated handler context.
-- [GitHub Actions documentation](https://docs.github.com/en/actions) — generated CI/CD workflow context.
+- [Eclipse Epsilon EGL](https://eclipse.dev/epsilon/doc/egl/): template syntax and model access.
+- [Eclipse Epsilon EGX](https://eclipse.dev/epsilon/doc/egx/): generation-rule orchestration.
+- [AWS SAM documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html): generated serverless infrastructure context.
+- [OpenAPI Specification](https://spec.openapis.org/oas/latest.html): generated HTTP contract context.
+- [JSON Schema specification](https://json-schema.org/specification): generated data and validation contract context.
+- [Amazon States Language](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html): generated workflow JSON context.
+- [AWS Lambda Go handler model](https://docs.aws.amazon.com/lambda/latest/dg/golang-handler.html): generated handler context.
+- [GitHub Actions documentation](https://docs.github.com/en/actions): generated CI/CD workflow context.

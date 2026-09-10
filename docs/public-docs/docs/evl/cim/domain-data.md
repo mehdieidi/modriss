@@ -1,4 +1,4 @@
-# CIM validation — Domain Data
+# CIM validation: Domain Data
 
 Domain-data rules prevent business concepts from becoming attractive but unusable nouns. They protect identity and lifecycle meaning, aggregate boundaries, equality of value objects, information typing, privacy classification, and the evidence needed to turn domain data into PIM schemas and stores.
 

@@ -596,7 +596,7 @@ function _renderPhaseDetail(host, process, progress) {
   if (role) {
     appendSection(detail, "Performing role", (sec) => {
       const p = document.createElement("p");
-      p.innerHTML = `<strong>${escapeHtml(role.name)}</strong> — ${escapeHtml((role.responsibilities || []).join("; "))}`;
+      p.innerHTML = `<strong>${escapeHtml(role.name)}</strong>, ${escapeHtml((role.responsibilities || []).join("; "))}`;
       sec.appendChild(p);
     });
   }

@@ -1,4 +1,4 @@
-# PIM validation — Deployment
+# PIM validation: Deployment
 
 Deployment rules check that services, deployment units, environments, and implementation profiles form a realizable architecture. They connect ownership to membership, production intent to approval, and code-generation settings to a coherent language/runtime toolchain.
 

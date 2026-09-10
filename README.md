@@ -98,4 +98,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.
 
 ## License
 
-[MIT](LICENSE) — Copyright (c) 2026 Mehdi Eidi
+[MIT](LICENSE), Copyright (c) 2026 Mehdi Eidi

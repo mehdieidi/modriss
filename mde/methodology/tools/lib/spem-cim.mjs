@@ -1,5 +1,5 @@
 /**
- * CIM modeling process — SPEM hierarchy: Phase → Stage → (subStage) → atomic Task.
+ * CIM modeling process, SPEM hierarchy: Phase → Stage → (subStage) → atomic Task.
  * Concept types on tasks map to CIM metamodel EClasses/enums (cim-combined.ecore).
  */
 
@@ -235,7 +235,7 @@ export const CIM_PROCESS_PHASES = [
     name: "Domain Exploration",
     order: 3,
     objective:
-      "Explore information, structure, and behavior using Twin Peaks — iterate until CQRS surface is coherent.",
+      "Explore information, structure, and behavior using Twin Peaks, iterate until CQRS surface is coherent.",
     primaryRole: "business-modeler",
     entryCriteria: ["Context Discovery complete for slice"],
     exitCriteria: ["Commands, queries, and events cover primary use cases"],
@@ -370,7 +370,7 @@ export const CIM_PROCESS_PHASES = [
         id: "cim.ph3.st3",
         name: "Behavior Surface",
         objective:
-          "CQRS and event storming — commands, queries, events linked to actors and capabilities.",
+          "CQRS and event storming, commands, queries, events linked to actors and capabilities.",
         primaryRole: "business-modeler",
         viewpoint: "eventstorming",
         subStages: [
@@ -611,7 +611,7 @@ export const CIM_PROCESS_PHASES = [
       {
         id: "cim.ph5.st1",
         name: "Requirements Engineering",
-        objective: "Twin Peaks backfill — formalize requirements traced to modeled elements.",
+        objective: "Twin Peaks backfill, formalize requirements traced to modeled elements.",
         primaryRole: "requirements-engineer",
         viewpoint: "governance",
         tasks: [

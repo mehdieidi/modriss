@@ -427,7 +427,7 @@ Regardless of the scenario, all correct implementations must preserve these inva
 
 1. Transformation always generates into a fresh empty target model.
 2. Base, Working, and NewGenerated are distinct model states and independent EMF graphs.
-3. Stable immutable IDs—not names—are the primary matching mechanism.
+3. Stable immutable IDs, not names, are the primary matching mechanism.
 4. User-created elements remain unless explicitly deleted or involved in a resolved conflict.
 5. Real conflicts never silently destroy either side.
 6. Safe changes may be prepared in a candidate, but canonical Working is not partially committed

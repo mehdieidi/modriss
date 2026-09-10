@@ -1,5 +1,5 @@
 /**
- * PIM modeling process — SPEM hierarchy: Phase → Stage → (subStage) → atomic Task.
+ * PIM modeling process, SPEM hierarchy: Phase → Stage → (subStage) → atomic Task.
  * Concept types on tasks map to PIM metamodel EClasses/enums (pim-combined.ecore).
  */
 

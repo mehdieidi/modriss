@@ -1,5 +1,5 @@
 /**
- * PSM modeling process — SPEM hierarchy: Phase → Stage → (subStage) → atomic Task.
+ * PSM modeling process, SPEM hierarchy: Phase → Stage → (subStage) → atomic Task.
  * Concept types on tasks map to AWS PSM metamodel EClasses/enums (psm-aws-combined.ecore).
  */
 

@@ -1,4 +1,4 @@
-# CIM validation — Process Policy
+# CIM validation: Process Policy
 
 Process and policy rules check that a business journey has a real beginning, completion, responsibility, branching logic, timing, and recovery story. They are deliberately stricter about meaning than about implementation: a process can be technology-neutral, but it cannot be ownerless or impossible to complete.
 

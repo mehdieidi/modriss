@@ -1,4 +1,4 @@
-# AWS PSM validation — Events
+# AWS PSM validation: Events
 
 EventBridge rules validate the provider-specific event graph: patterns and schedules are not mixed accidentally, targets are complete and unique, roles and connections match their integration type, and retry/dead-letter behavior is not omitted from critical delivery paths.
 

@@ -1,4 +1,4 @@
-# AWS PSM validation — Security
+# AWS PSM validation: Security
 
 IAM, KMS, Secrets Manager, and SSM rules enforce the security properties that are too important to leave to template conventions: trust and permission statements, least privilege evidence, key rotation, secret sources, secure parameter types, and safe production defaults.
 

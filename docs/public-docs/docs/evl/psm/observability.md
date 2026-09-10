@@ -1,4 +1,4 @@
-# AWS PSM validation — Observability
+# AWS PSM validation: Observability
 
 CloudWatch rules require alarms and metrics to have the information needed to act on them. Production observability is treated as an operational control: a metric without a threshold or an alarm without an action is not meaningful protection.
 

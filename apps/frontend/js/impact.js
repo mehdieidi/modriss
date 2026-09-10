@@ -38,7 +38,7 @@ function setImpactButtonState(active) {
 export function toggleImpactMode() {
   state.impactMode = !state.impactMode;
   setImpactButtonState(state.impactMode); /*
-      ? 'Impact mode ON — click any element to analyse its impact'
+      ? 'Impact mode ON. Click any element to analyse its impact'
       : 'Toggle Change Impact Analysis mode'; */
 
   if (!state.impactMode) {
@@ -46,7 +46,7 @@ export function toggleImpactMode() {
   } else {
     closeAttributePanel();
     openImpactPanel();
-    setStatus("Impact mode ON — click any element to see its change impact");
+    setStatus("Impact mode ON. Click any element to see its change impact");
   }
 }
 

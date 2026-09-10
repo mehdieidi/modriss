@@ -1,4 +1,4 @@
-# Code generation — Documentation and reports
+# Code generation: Documentation and reports
 
 Documentation templates expose the generated system's architecture, deployment, security, operations, traceability, manual actions, and generation evidence. These files are not ornamental: they are the human-readable record of what the model generated and what still requires a decision.
 
@@ -30,7 +30,7 @@ The category contains 17 EGX generation rules and 17 EGL templates.
 
 ## `ProjectScaffold`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/project-scaffold.egl` 
 **Target path expression:**`"generated/reports/project-scaffold.txt"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:42`
@@ -67,7 +67,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `StructuredDocumentArtifact`
 
-**Source context:** `documentObj` — `KERNEL!StructuredDocument`  
+**Source context:** `documentObj`, `KERNEL!StructuredDocument`  
 **Template:** `docs/structured-document.egl`  
 **Target path expression:** `documentObj.documentPath()`  
 **EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:460`
@@ -104,7 +104,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `Readme`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/readme.egl` 
 **Target path expression:**`"README.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:768`
@@ -147,7 +147,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ArchitectureDoc`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/architecture.egl` 
 **Target path expression:**`"docs/architecture.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:780`
@@ -190,7 +190,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ModelSummaryDoc`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/model-summary.egl` 
 **Target path expression:**`"docs/model-summary.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:792`
@@ -231,7 +231,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SecurityDoc`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/security.egl` 
 **Target path expression:**`"docs/security.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:804`
@@ -274,7 +274,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `OperationsDoc`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/operations.egl` 
 **Target path expression:**`"docs/operations.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:816`
@@ -317,7 +317,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `DeploymentDoc`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/deployment.egl` 
 **Target path expression:**`"docs/deployment.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:828`
@@ -360,7 +360,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `IncidentRunbook`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/runbook-incident-response.egl` 
 **Target path expression:**`"docs/runbooks/incident-response.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:840`
@@ -403,7 +403,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `RollbackRunbook`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/runbook-rollback.egl` 
 **Target path expression:**`"docs/runbooks/rollback.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:852`
@@ -446,7 +446,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `TraceabilityDoc`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/traceability.egl` 
 **Target path expression:**`"docs/traceability.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:864`
@@ -487,7 +487,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ProtectedRegionsJson`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/protected-regions-json.egl` 
 **Target path expression:**`"generated/trace/protected-regions.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:876`
@@ -524,7 +524,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ModelTraceJson`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/model-trace-json.egl` 
 **Target path expression:**`"generated/trace/model-trace.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:889`
@@ -561,7 +561,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SecurityReviewReport`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/security-review.egl` 
 **Target path expression:**`"generated/reports/security-review.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:915`
@@ -598,7 +598,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ManualActionsReport`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/manual-actions.egl` 
 **Target path expression:**`"generated/reports/manual-actions.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:928`
@@ -635,7 +635,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `GenerationReport`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/generation-report.egl` 
 **Target path expression:**`"generated/reports/generation-report.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:941`
@@ -672,7 +672,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ArtifactTraceJson`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`docs/artifact-trace-json.egl` 
 **Target path expression:**`"generated/trace/artifact-trace.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:954`

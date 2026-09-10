@@ -1862,7 +1862,7 @@ function _appendProposalCard(typeKey, sessionId, proposal) {
   validation.className = `chat-proposal-validation ${validationPassed ? "is-pass" : "is-fail"}`;
   validation.textContent = validationPassed
     ? "Validation passed and applied"
-    : "Validation failed — changes were not applied";
+    : "Validation failed, changes were not applied";
   bubble.appendChild(validation);
 
   if (issues.length) {

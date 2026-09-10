@@ -1,4 +1,4 @@
-# PIM → AWS PSM — Data Messaging Events
+# PIM → AWS PSM: Data Messaging Events
 
 This module binds PIM data and integration abstractions to DynamoDB, S3, SQS, SNS, EventBridge, and Scheduler. It does more than rename classes: it encodes AWS key/index rules, encryption, recovery, FIFO and redrive behavior, targets, subscriptions, event patterns, and secure transport policies, with unresolved provider choices represented explicitly.
 
@@ -51,8 +51,8 @@ These operations are not independent source-to-target rules, but they materially
 
 ## `DataStore2DynamoDbTable`
 
-**Source:** `ds` — `DATA!DataStore`  
-**Target:** `t` — `AWSPSMSTORAGE!DynamoDbTable`  
+**Source:** `ds` to `DATA!DataStore`  
+**Target:** `t` to `AWSPSMSTORAGE!DynamoDbTable`  
 **Source location:** `mde/transformations/pim-to-awspsm/data-messaging-events.etl:2`
 
 ### Why this rule exists
@@ -88,13 +88,13 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-
 
 ## `DataStore2NativeUnsupportedStore`
 
-**Source:** `ds` — `DATA!DataStore`  
-**Target:** `n` — `AWSPSMCORE!AwsNativeResource`  
+**Source:** `ds` to `DATA!DataStore`  
+**Target:** `n` to `AWSPSMCORE!AwsNativeResource`  
 **Source location:** `mde/transformations/pim-to-awspsm/data-messaging-events.etl:50`
 
 ### Why this rule exists
 
-Unsupported PIM store kinds are represented by a CloudFormation custom-resource placeholder and a blocking service-selection decision. This is safer than guessing a database because storage semantics—transactions, indexes, retention, and cost—cannot be recovered from a generic kind alone.
+Unsupported PIM store kinds are represented by a CloudFormation custom-resource placeholder and a blocking service-selection decision. This is safer than guessing a database because storage semantics such as transactions, indexes, retention, and cost cannot be recovered from a generic kind alone.
 
 ### When the rule runs
 
@@ -125,8 +125,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-
 
 ## `ObjectStore2S3Bucket`
 
-**Source:** `os` — `DATA!ObjectStore`  
-**Target:** `b` — `AWSPSMSTORAGE!S3Bucket`  
+**Source:** `os` to `DATA!ObjectStore`  
+**Target:** `b` to `AWSPSMSTORAGE!S3Bucket`  
 **Source location:** `mde/transformations/pim-to-awspsm/data-messaging-events.etl:69`
 
 ### Why this rule exists
@@ -158,8 +158,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-
 
 ## `Queue2SqsQueue`
 
-**Source:** `q` — `INTEGRATION!Queue`  
-**Target:** `sqs` — `AWSPSMMESSAGING!SqsQueue`  
+**Source:** `q` to `INTEGRATION!Queue`  
+**Target:** `sqs` to `AWSPSMMESSAGING!SqsQueue`  
 **Source location:** `mde/transformations/pim-to-awspsm/data-messaging-events.etl:110`
 
 ### Why this rule exists
@@ -192,8 +192,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-
 
 ## `Topic2SnsTopic`
 
-**Source:** `t` — `INTEGRATION!Topic`  
-**Target:** `sns` — `AWSPSMMESSAGING!SnsTopic`  
+**Source:** `t` to `INTEGRATION!Topic`  
+**Target:** `sns` to `AWSPSMMESSAGING!SnsTopic`  
 **Source location:** `mde/transformations/pim-to-awspsm/data-messaging-events.etl:186`
 
 ### Why this rule exists
@@ -225,8 +225,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-
 
 ## `Subscription2SnsSubscription`
 
-**Source:** `s` — `INTEGRATION!Subscription`  
-**Target:** `sub` — `AWSPSMMESSAGING!SnsSubscription`  
+**Source:** `s` to `INTEGRATION!Subscription`  
+**Target:** `sub` to `AWSPSMMESSAGING!SnsSubscription`  
 **Source location:** `mde/transformations/pim-to-awspsm/data-messaging-events.etl:212`
 
 ### Why this rule exists
@@ -258,8 +258,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-
 
 ## `EventBus2EventBridgeBus`
 
-**Source:** `b` — `INTEGRATION!EventBus`  
-**Target:** `eb` — `AWSPSMEVENTS!EventBridgeBus`  
+**Source:** `b` to `INTEGRATION!EventBus`  
+**Target:** `eb` to `AWSPSMEVENTS!EventBridgeBus`  
 **Source location:** `mde/transformations/pim-to-awspsm/data-messaging-events.etl:270`
 
 ### Why this rule exists
@@ -290,8 +290,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-
 
 ## `EventRoutingRule2EventBridgeRule`
 
-**Source:** `rr` — `INTEGRATION!EventRoutingRule`  
-**Target:** `er` — `AWSPSMEVENTS!EventBridgeRule`  
+**Source:** `rr` to `INTEGRATION!EventRoutingRule`  
+**Target:** `er` to `AWSPSMEVENTS!EventBridgeRule`  
 **Source location:** `mde/transformations/pim-to-awspsm/data-messaging-events.etl:282`
 
 ### Why this rule exists
@@ -323,8 +323,8 @@ Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-
 
 ## `Schedule2EventBridgeSchedule`
 
-**Source:** `s` — `INTEGRATION!Schedule`  
-**Target:** `es` — `AWSPSMEVENTS!EventBridgeSchedule`  
+**Source:** `s` to `INTEGRATION!Schedule`  
+**Target:** `es` to `AWSPSMEVENTS!EventBridgeSchedule`  
 **Source location:** `mde/transformations/pim-to-awspsm/data-messaging-events.etl:312`
 
 ### Why this rule exists

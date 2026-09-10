@@ -1,8 +1,8 @@
 # Varka Modeling Methodologies
 
-The complete Persian software-project lifecycle process—including initiation, iterative MDE
+The complete Persian software-project lifecycle process, including initiation, iterative MDE
 construction, transition, release, operations, maintenance, roles, artifacts, gates, umbrella
-activities, tailoring rules, and Mermaid diagrams—is defined in
+activities, tailoring rules, and Mermaid diagrams. It is defined in
 [`software-development-process-fa.md`](software-development-process-fa.md). The machine-readable
 definitions below are the technical modeling and artifact-readiness subprocesses enacted inside
 that lifecycle.
@@ -41,5 +41,5 @@ When metamodels change:
 
 ## API
 
-- `GET /api/modeling/process/{cim|pim|psm|artifact|end-to-end}` — process definition
-- `GET /api/modeling/process/{cim|pim|psm}/coverage` — coverage matrix
+- `GET /api/modeling/process/{cim|pim|psm|artifact|end-to-end}`: process definition
+- `GET /api/modeling/process/{cim|pim|psm}/coverage`: coverage matrix

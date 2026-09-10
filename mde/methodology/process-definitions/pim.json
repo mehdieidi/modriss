@@ -121,7 +121,7 @@
       "id": "pim.guid.policy-as-code",
       "name": "Policy attachment discipline",
       "appliesTo": "pim.ph5",
-      "text": "Attach resilience, observability, and compliance policies to concrete PolicyTarget elements — not free-floating rules."
+      "text": "Attach resilience, observability, and compliance policies to concrete PolicyTarget elements, not free-floating rules."
     },
     {
       "id": "pim.guid.readiness-in-cycle",

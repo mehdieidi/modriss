@@ -1,4 +1,4 @@
-# Code generation — Tests and fixtures
+# Code generation: Tests and fixtures
 
 Test templates turn model contracts and AWS resources into executable test scaffolding. They cover unit, integration, workflow, event, contract, security, and end-to-end concerns; protected assertion and fixture regions are the point where the model stops being able to invent application-specific expectations.
 
@@ -21,7 +21,7 @@ The category contains 8 EGX generation rules and 8 EGL templates.
 
 ## `LambdaToUnitTest`
 
-**Source context:** `awsFn` — `AWSPSMCOMPUTE!AwsLambdaFunction`  
+**Source context:** `awsFn`, `AWSPSMCOMPUTE!AwsLambdaFunction`  
 **Template:** `tests/unit-test-go.egl`  
 **Target path expression:** `awsFn.unitTestPath(emitCtx())`  
 **EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:302`
@@ -60,7 +60,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `LambdaToIntegrationTest`
 
-**Source context:** `awsFn` — `AWSPSMCOMPUTE!AwsLambdaFunction`  
+**Source context:** `awsFn`, `AWSPSMCOMPUTE!AwsLambdaFunction`  
 **Template:** `tests/integration-test.egl`  
 **Target path expression:** `awsFn.integrationTestPath(emitCtx())`  
 **EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:319`
@@ -99,7 +99,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `WorkflowToTest`
 
-**Source context:** `stateMachineObj` — `AWSPSMWORKFLOW!StepFunctionStateMachine`  
+**Source context:** `stateMachineObj`, `AWSPSMWORKFLOW!StepFunctionStateMachine`  
 **Template:** `tests/workflow-test.egl`  
 **Target path expression:** `stateMachineObj.workflowTestPath(emitCtx())`  
 **EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:336`
@@ -138,7 +138,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `TestFixturesReadme`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`tests/fixtures-readme.egl` 
 **Target path expression:**`"tests/fixtures/README.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:474`
@@ -179,7 +179,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ContractTests`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`tests/contract-test.egl` 
 **Target path expression:**`"tests/contract/generated_contracts_test." + emitCtx().testExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:585`
@@ -218,7 +218,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `EventTests`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`tests/event-test.egl` 
 **Target path expression:**`"tests/events/generated_events_test." + emitCtx().testExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:597`
@@ -257,7 +257,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SecurityTests`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`tests/security-test.egl` 
 **Target path expression:**`"tests/e2e/security_generated_test." + emitCtx().testExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:609`
@@ -296,7 +296,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `E2eTests`
 
-**Source context:** ``—`shared AWS PSM generation context` 
+**Source context:** ``, `shared AWS PSM generation context` 
 **Template:**`tests/e2e-test.egl` 
 **Target path expression:**`"tests/e2e/generated_flows_test." + emitCtx().testExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:621`

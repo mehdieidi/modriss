@@ -1,4 +1,4 @@
-# AWS PSM validation — API
+# AWS PSM validation: API
 
 API Gateway rules verify that the concrete API graph has routes, integrations, authorizers, certificates, stages, logs, metrics, throttles, and credentials that agree with one another. They catch provider-level omissions that a PIM API contract cannot see.
 

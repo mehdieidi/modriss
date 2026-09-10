@@ -1,4 +1,4 @@
-# AWS PSM validation — Relationships
+# AWS PSM validation: Relationships
 
 Relationship-view rules check that the generated integration picture agrees with the deployable resources and permissions it claims to summarize. They are consistency checks across resources, not substitutes for the resource-specific rules.
 
