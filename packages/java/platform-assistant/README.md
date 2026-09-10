@@ -37,13 +37,19 @@ workflow that cannot mutate, checkpoint, validate, or repair.
 2. LLM exact-EClass selection from the live metamodel index.
 3. Deterministic combined containment/reference closure and capacity checks.
 4. A stable-ID blueprint with obligation and source-unit allocations.
-5. Private, durable slice generation; large blueprints begin with two objects per slice and fall
+5. Bounded LLM-authored remove/upsert patches repair rejected blueprints without regenerating the
+   entire plan.
+6. For source-backed work, one optional independent LLM completeness critique of the blueprint.
+   The critic reports all material findings in one bounded response so one coherent patch can
+   address them together; the corrected plan is structurally rechecked before generation.
+7. Private, durable slice generation; large blueprints begin with two objects per slice and fall
    back to one after provider length truncation.
-6. Optional independent LLM obligation review with exact object and relationship evidence.
-7. Deterministic compilation into `ModelCommandBatch`.
-8. Structural-only validation and one atomic checkpoint commit.
+8. Optional independent LLM obligation review with exact object and relationship evidence.
+9. Deterministic compilation into `ModelCommandBatch`.
+10. Structural-only validation and one atomic checkpoint commit.
 
-The blueprint schema admits at most 18 objects/types. Effective capacity is also constrained by
+The blueprint schema admits at most 96 objects/types and the obligation ledger at most 64 entries.
+Effective capacity is also constrained by
 the provider-call budget and required Ecore closure. Abstract required targets count toward
 capacity; the LLM chooses among exact creatable subtypes supplied by the backend.
 
@@ -52,7 +58,8 @@ importance, source-unit IDs, and one to four LLM-selected candidate EClasses. Ca
 are alternatives, not a checklist. Deterministic code verifies IDs, types, allocations, cited
 objects, and cited relationship triples when review is enabled. Every mandatory obligation must be
 allocated in the blueprint; with review enabled, each must also be `SATISFIED` before a checkpoint
-can be published. The validated Gemma deployment currently disables this optional judge call.
+can be published. For source-backed work, review also rejects blueprints that compress distinct
+named source concepts into one generic evidence object.
 
 There is no business-semantic fallback model. Failure or unresolved coverage produces an honest
 partial/failure state and leaves the persisted model unchanged.

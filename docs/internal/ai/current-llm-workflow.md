@@ -77,9 +77,18 @@ EClasses expected to provide model evidence. Deterministic code does not infer t
 prompt words. It checks that type selection retains a compatible mapping for every mandatory
 obligation and persists the ledger before blueprinting so restart/resume cannot reinterpret it.
 
-The blueprint pass assigns at most eighteen stable temporary IDs, exact EClasses, containment ownership, major
-reference targets, obligation allocation, source-unit allocation, and coherent slice numbers without generating full
-attribute payloads. It is capped at 18 objects and 18 focused EClasses. Blueprint acceptance checks
+The blueprint pass assigns at most 96 stable temporary IDs, exact EClasses, containment ownership,
+major reference targets, obligation allocation, source-unit allocation, and coherent slice numbers
+without generating full attribute payloads. It is capped at 96 objects and 96 focused EClasses.
+Source-backed blueprints receive one exhaustive LLM completeness critique before slice generation.
+Rejected parseable blueprints are repaired through bounded LLM-authored remove/upsert patches, so
+a local structural defect does not require another full blueprint response. The critic reports all
+material omissions it can identify in one pass rather than revealing a small fixed batch across
+successive repairs. Its CIM rubric distinguishes independently modelable actors, states, risks,
+domain terms, and behaviors from scalar fields or cohesive sub-actions that can be represented by
+the purpose and attributes of one owning conceptual object. The corrected plan is structurally
+rechecked; the generated objects later receive a separate LLM obligation-evidence verdict instead
+of repeatedly invoking a non-monotonic open-ended critic. Blueprint acceptance checks
 both legal containment placement and closure of every required writable Ecore reference, so a rich
 object cannot be generated before its required stable-ID dependencies are planned.
 
@@ -205,6 +214,11 @@ Every source-backed created or inferred element must carry evidence:
 - `SOURCE_GROUNDED` with an exact source-unit ID; or
 - `INFERRED` with an explicit assumption and no source-unit ID.
 
+Source-unit allocations in a structurally accepted LLM blueprint are authoritative provenance.
+Slice compilation carries those allocations onto generated objects when Gemma omits the redundant
+evidence fields. This prevents false partial coverage and duplicate continuation without creating
+business-model content outside the LLM workflow.
+
 Coverage is accounting, not semantic validation. A source-backed turn cannot claim success while
 relevant source units remain unaccounted. Large-source progressive checkpointing currently belongs
 primarily to the inspect/contract workflow. The conceptual path durably persists its obligation
@@ -234,12 +248,12 @@ The same `OpenAiCompatibleAssistantModelProvider` handles strategy selection, co
 selection, conceptual generation, and agent actions. Provider-call latency, prompt/completion token
 usage, prompts, model, and failures are persisted, including failed turns.
 
-The deployed profile uses a 24-call ceiling for normal turns and 20 for source-backed turns. Up to
+The full-source profile uses a 40-call ceiling for normal turns and 64 for source-backed turns. Up to
 two calls are reserved for adaptive routing. The conceptual budget accommodates obligation
 interpretation, semantic type selection, a blueprint, private slices, optional independent
 obligation review, and bounded selection, slice, review, and compiler corrections. Effective
 object capacity is derived from the remaining call budget and
-slice size and is capped by the 18-object schema. Stage-specific completion limits keep every
+slice size and is capped by the 64-object schema. Stage-specific completion limits keep every
 response bounded below the provider's broad global maximum.
 
 LLM review is configurable with `VARKA_AI_LLM_REVIEW_ENABLED`. When disabled, no reviewer or judge

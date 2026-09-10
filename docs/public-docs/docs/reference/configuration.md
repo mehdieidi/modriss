@@ -76,8 +76,8 @@ Timeouts, token budgets, context limits, agent steps, provider-call limits, repa
 passes, rate limits, retries, and recent-message windows all trade completeness and resilience
 against latency, memory use, and provider cost. `VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN` and
 `VARKA_AI_SOURCE_TURN_TIMEOUT` are the separately configurable budgets used for source-backed
-attachment turns. The tested Gemma profile uses 24 calls for normal turns and 20 calls for source turns, with
-12- and 15-minute timeouts respectively. Increasing them allows more complex documents; lowering
+attachment turns. The tested Gemma profile uses 40 calls for normal turns and 64 calls for source turns, with
+12- and 25-minute timeouts respectively. Increasing them allows more complex documents; lowering
 them makes failures faster and cheaper but can starve review or correction.
 `VARKA_AI_FALLBACK_PROVIDER` is used only after an HTTP 429 from the primary provider. The current
 single-provider Arvan deployment must leave it empty; configuring another adapter does not make that
@@ -93,15 +93,15 @@ adapter default.
 For Arvan, use `VARKA_AI_OPENAI_PROTOCOL=json_schema`,
 `VARKA_AI_NATIVE_TOOLS_PREFERRED=false`, and
 `VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false`. Structured requests use temperature zero and the
-model-family-specific generation controls. The validated profile uses
-`VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION=true` and `VARKA_AI_LLM_REVIEW_ENABLED=false`: source
-interpretation remains LLM-based, while the optional second LLM judge is omitted to preserve the
-Gemma call and latency budget. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION` and
+model-family-specific generation controls. The full-source profile uses
+`VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION=true` and `VARKA_AI_LLM_REVIEW_ENABLED=true`: source
+interpretation, pre-generation blueprint critique, and the final obligation verdict remain
+LLM-based. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION` and
 `VARKA_AI_LLM_CONTRACT_RERANK_ENABLED` can improve source/retrieval quality at the cost of extra
 provider calls. The proxy variables accept `DIRECT`, `HTTP`, or `SOCKS`; proxy settings affect AI
 provider traffic only.
 
-The conceptual blueprint maximum (18 objects/types), obligation-ledger maximum (12 obligations),
+The conceptual blueprint maximum (96 objects/types), obligation-ledger maximum (64 obligations),
 type-selection attempts (4), and compact truncation-retry protocol are implementation invariants,
 not environment variables. Effective conceptual capacity is lower when required Ecore closure or
 the provider-call reserve consumes budget.

@@ -257,6 +257,8 @@ class OpenAiCompatibleAssistantModelProviderTest {
     for (String document :
         List.of(
             "conceptual_blueprint",
+            "conceptual_blueprint_patch",
+            "conceptual_blueprint_review",
             "conceptual_instance_slice",
             "conceptual_obligation_ledger",
             "conceptual_obligation_review",
@@ -279,6 +281,10 @@ class OpenAiCompatibleAssistantModelProviderTest {
     assertTrue(
         OpenAiCompatibleAssistantModelProvider.isStructuredDocument(
             "conceptual_obligation_review"));
+    assertTrue(
+        OpenAiCompatibleAssistantModelProvider.isStructuredDocument("conceptual_blueprint_patch"));
+    assertTrue(
+        OpenAiCompatibleAssistantModelProvider.isStructuredDocument("conceptual_blueprint_review"));
   }
 
   @Test

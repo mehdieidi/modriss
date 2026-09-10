@@ -58,14 +58,14 @@ VARKA_AI_NATIVE_TOOLS_PREFERRED=false
 VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
 VARKA_AI_REQUEST_TIMEOUT=180s
 VARKA_AI_TURN_TIMEOUT=12m
-VARKA_AI_SOURCE_TURN_TIMEOUT=15m
+VARKA_AI_SOURCE_TURN_TIMEOUT=25m
 VARKA_AI_MAX_SYSTEM_CHARS=32000
 VARKA_AI_MAX_COMPLETION_TOKENS=16000
-VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=24
-VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=20
+VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=40
+VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=64
 VARKA_AI_PROVIDER_RETRY_ATTEMPTS=0
 VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION=true
-VARKA_AI_LLM_REVIEW_ENABLED=false
+VARKA_AI_LLM_REVIEW_ENABLED=true
 docker compose up --build
 ```
 
@@ -73,8 +73,8 @@ The validated deployment uses Arvan and `Gemma-4-31B-IT`. `unified` automaticall
 internal modeling workflow; users and API clients do not select it. These limits are the tested
 Gemma profile: a standard turn reserves up to two calls for adaptive routing and exposes the
 remaining bounded budget to obligation planning, type selection, blueprinting, private slices,
-and corrections. Optional independent LLM review is disabled in this validated profile. The
-conceptual schema caps blueprints at 18 objects/types;
+corrections and independent review. The conceptual schema caps blueprints at 96 objects/types and
+requirement ledgers at 64 obligations;
 required Ecore closure and call reserves can lower the effective capacity.
 
 ## Stop or Reset

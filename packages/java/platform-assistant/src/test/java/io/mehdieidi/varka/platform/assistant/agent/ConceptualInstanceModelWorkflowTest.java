@@ -34,6 +34,74 @@ class ConceptualInstanceModelWorkflowTest {
       new TypeContractService(new MetamodelKnowledgeService(new AssistantMetamodelSchemaService()));
 
   @Test
+  void admitsNonCompressedSourceLedgersAndBlueprints() throws Exception {
+    var obligationSchema =
+        mapper.readTree(ConceptualInstanceModelWorkflow.obligationLedgerSchema());
+    var blueprintSchema = mapper.readTree(ConceptualInstanceModelWorkflow.blueprintSchema());
+    var blueprintPatchSchema =
+        mapper.readTree(ConceptualInstanceModelWorkflow.blueprintPatchSchema());
+    var reviewSchema = mapper.readTree(ConceptualInstanceModelWorkflow.obligationReviewSchema());
+    var blueprintReviewSchema =
+        mapper.readTree(ConceptualInstanceModelWorkflow.blueprintCompletenessSchema());
+
+    assertEquals(64, obligationSchema.at("/properties/obligations/maxItems").asInt());
+    assertEquals(96, blueprintSchema.at("/properties/objects/maxItems").asInt());
+    assertEquals(96, blueprintSchema.at("/properties/types/maxItems").asInt());
+    assertEquals(24, blueprintPatchSchema.at("/properties/upsertObjects/maxItems").asInt());
+    assertEquals(64, reviewSchema.at("/properties/coverage/maxItems").asInt());
+    assertTrue(blueprintReviewSchema.at("/properties/acceptable").isObject());
+    assertEquals(12, blueprintReviewSchema.at("/properties/findings/maxItems").asInt());
+  }
+
+  @Test
+  void preservesEveryLlmBlueprintSourceAllocationWhenASliceOmitsEvidence() throws Exception {
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\"]}"),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"types":["Actor"],"objects":[
+  {"instanceId":"patient","type":"Actor","purpose":"Patient","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"obligationIds":[],"sourceUnitIds":["src-1"],"slice":1}
+]}
+"""),
+                ScriptedAssistantModelProvider.reply(actor("patient", "Patient"))));
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(10);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
+    when(properties.maxRepairAttempts()).thenReturn(2);
+    when(properties.model()).thenReturn("Gemma-4-31B-IT");
+    when(properties.llmReviewEnabled()).thenReturn(false);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
+
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.CIM,
+            "SOURCE SPECIFICATION (authoritative input)\n"
+                + "<source-unit id=\"src-1\">Patient</source-unit>",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+            false);
+
+    assertEquals(1, result.commandBatch().evidence().size());
+    assertEquals("src-1", result.commandBatch().evidence().get(0).sourceUnitId());
+    assertEquals("SOURCE_GROUNDED", result.commandBatch().evidence().get(0).kind());
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
   void repairsInventedSourceEvidenceAcrossMultipleSliceCorrections() throws Exception {
     String blueprint =
         """
@@ -157,9 +225,7 @@ class ConceptualInstanceModelWorkflowTest {
 """),
                 ScriptedAssistantModelProvider.reply(
                     """
-{"types":["ServerlessService","Workflow","TaskStep"],"objects":[
-  {"instanceId":"service-1","type":"ServerlessService","purpose":"Order service","ownerInstanceId":"rootId","containment":"services","referenceTargets":[],"sourceUnitIds":[],"slice":1},
-  {"instanceId":"workflow-1","type":"Workflow","purpose":"Order workflow","ownerInstanceId":"service-1","containment":"workflows","referenceTargets":[],"sourceUnitIds":[],"slice":2},
+{"removeObjectIds":[],"upsertObjects":[
   {"instanceId":"step-1","type":"TaskStep","purpose":"Handle order command","ownerInstanceId":"workflow-1","containment":"steps","referenceTargets":[],"sourceUnitIds":[],"slice":3}
 ]}
 """),
@@ -219,6 +285,7 @@ class ConceptualInstanceModelWorkflowTest {
             .get(2)
             .user()
             .contains("uses abstract or non-creatable EClass 'WorkflowStep'"));
+    assertEquals("conceptual_blueprint_patch", provider.prompts().get(2).requiredTool());
     assertEquals(
         List.of("ServerlessService", "Workflow", "TaskStep"),
         result.commandBatch().creates().stream().map(create -> create.eClass()).toList());
@@ -352,8 +419,7 @@ class ConceptualInstanceModelWorkflowTest {
   void rejectsABlueprintThatSilentlyDropsASelectedSemanticType() throws Exception {
     String correctedBlueprint =
         """
-{"types":["Actor","BusinessGoal"],"objects":[
-  {"instanceId":"actor-1","type":"Actor","purpose":"Borrower","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"sourceUnitIds":[],"slice":1},
+{"removeObjectIds":[],"upsertObjects":[
   {"instanceId":"goal-1","type":"BusinessGoal","purpose":"Borrow books","ownerInstanceId":"rootId","containment":"goals","referenceTargets":[],"sourceUnitIds":[],"slice":2}
 ]}
 """;
@@ -409,13 +475,15 @@ class ConceptualInstanceModelWorkflowTest {
             .get(2)
             .user()
             .contains("omitted selected semantic EClasses [BusinessGoal]"));
+    assertTrue(provider.prompts().get(2).user().contains("REJECTED BLUEPRINT TO EDIT"));
+    assertTrue(provider.prompts().get(2).user().contains("\"purpose\":\"Borrower\""));
     assertTrue(
         provider
             .prompts()
             .get(3)
             .user()
             .contains("omitted selected semantic EClasses [BusinessGoal]"));
-    assertTrue(provider.prompts().get(3).user().contains("prior blueprint response was truncated"));
+    assertTrue(provider.prompts().get(3).user().contains("Prior blueprint repair attempt failed"));
     assertEquals("TRUNCATED", result.providerCallDetails().get(2).finishReason());
     assertEquals(2, result.commandBatch().creates().size());
     assertEquals(0, provider.remainingSteps());
@@ -532,6 +600,57 @@ class ConceptualInstanceModelWorkflowTest {
     assertEquals(6, result.providerCallDetails().size());
     assertEquals("TRUNCATED", result.providerCallDetails().get(2).finishReason());
     assertEquals(2, result.commandBatch().creates().size());
+  }
+
+  @Test
+  void malformedMultiObjectSliceIsRetriedAsSingleObjectSlices() throws Exception {
+    String blueprint =
+        """
+{"types":["Actor"],"objects":[
+  {"instanceId":"actor-1","type":"Actor","purpose":"Borrower","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"actor-2","type":"Actor","purpose":"Librarian","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"sourceUnitIds":[],"slice":1}
+]}
+""";
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\"]}"),
+                ScriptedAssistantModelProvider.reply(blueprint),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"actor-1\":[],\"actor-2\":{\"type\":\"Actor\",\"attributes\":[],\"associations\":{}}}"),
+                ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
+                ScriptedAssistantModelProvider.reply(actor("actor-2", "Librarian"))));
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(8);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(8);
+    when(properties.maxRepairAttempts()).thenReturn(2);
+    when(properties.model()).thenReturn("Gemma-4-31B-IT");
+    when(properties.llmReviewEnabled()).thenReturn(false);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
+
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.CIM,
+            "Create a library",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+            false);
+
+    assertEquals(5, result.providerCalls());
+    assertEquals(2, result.commandBatch().creates().size());
+    assertEquals(0, provider.remainingSteps());
   }
 
   @Test
@@ -684,7 +803,7 @@ class ConceptualInstanceModelWorkflowTest {
   }
 
   @Test
-  void rejectsBlueprintMissingRequiredReferenceClosureBeforeGeneratingSlices() throws Exception {
+  void completesRequiredReferencesFromAnUnambiguousLlmBlueprintTarget() throws Exception {
     String invalidBlueprint =
         """
 {"types":["DomainEntity"],"objects":[
@@ -693,7 +812,7 @@ class ConceptualInstanceModelWorkflowTest {
 """;
     String correctedBlueprint =
         """
-{"types":["DomainEntity","InformationItem"],"objects":[
+{"removeObjectIds":[],"upsertObjects":[
   {"instanceId":"book","type":"DomainEntity","purpose":"Book","ownerInstanceId":"rootId","containment":"entities","referenceTargets":["book-id"],"sourceUnitIds":[],"slice":1},
   {"instanceId":"book-id","type":"InformationItem","purpose":"Book identifier","ownerInstanceId":"rootId","containment":"informationItems","referenceTargets":[],"sourceUnitIds":[],"slice":2}
 ]}
@@ -712,16 +831,6 @@ class ConceptualInstanceModelWorkflowTest {
   {"attributeName":"identityStrategy","value":"NATURAL_KEY"}
 ],"associations":{"compositions":[],"references":[
   {"associationName":"identityAttributes","associatedClassName":"InformationItem","instanceID":"book-id"}
-]}}}
-"""),
-                ScriptedAssistantModelProvider.reply(
-                    """
-{"book":{"type":"DomainEntity","attributes":[
-  {"attributeName":"name","value":"Book"},
-  {"attributeName":"identityStrategy","value":"NATURAL_KEY"}
-],"associations":{"compositions":[],"references":[
-  {"associationName":"identityAttributes","associatedClassName":"InformationItem","instanceID":"book-id"},
-  {"associationName":"primaryIdentityAttribute","associatedClassName":"InformationItem","instanceID":"book-id"}
 ]}}}
 """),
                 ScriptedAssistantModelProvider.reply(
@@ -759,7 +868,7 @@ class ConceptualInstanceModelWorkflowTest {
             new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
             false);
 
-    assertEquals(7, result.providerCalls());
+    assertEquals(6, result.providerCalls());
     assertEquals(2, result.commandBatch().creates().size());
     assertEquals("DomainEntity", result.commandBatch().creates().get(0).eClass());
     String slicePrompt =
@@ -771,12 +880,8 @@ class ConceptualInstanceModelWorkflowTest {
     assertTrue(slicePrompt.contains("DomainEntity"));
     assertTrue(slicePrompt.contains("InformationItem"));
     assertTrue(
-        provider.prompts().stream()
-            .filter(prompt -> "conceptual_instance_slice".equals(prompt.requiredTool()))
-            .anyMatch(
-                prompt ->
-                    prompt.user().contains("missing required Ecore references")
-                        && prompt.user().contains("primaryIdentityAttribute->InformationItem")));
+        result.commandBatch().connections().stream()
+            .anyMatch(connection -> "primaryIdentityAttribute".equals(connection.reference())));
     assertEquals(0, provider.remainingSteps());
   }
 

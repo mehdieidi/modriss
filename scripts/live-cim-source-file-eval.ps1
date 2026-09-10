@@ -2,7 +2,7 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$StoryPath,
   [string]$BaseUrl = "http://127.0.0.1:8080/api",
-  [int]$TimeoutSeconds = 600,
+  [int]$TimeoutSeconds = 1500,
   [int]$MaxContinues = 2
 )
 

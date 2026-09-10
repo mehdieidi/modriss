@@ -143,17 +143,25 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                       ? ConceptualInstanceModelWorkflow.blueprintSchema()
                       : "conceptual_obligation_ledger".equals(prompt.requiredTool())
                           ? ConceptualInstanceModelWorkflow.obligationLedgerSchema()
-                          : "conceptual_obligation_review".equals(prompt.requiredTool())
-                              ? ConceptualInstanceModelWorkflow.obligationReviewSchema()
-                              : "conceptual_review".equals(prompt.requiredTool())
-                                  ? ConceptualInstanceModelWorkflow.reviewSchema()
-                                  : "conceptual_correction".equals(prompt.requiredTool())
-                                      ? ConceptualInstanceModelWorkflow.correctionSchema()
-                                      : "conceptual_type_selection".equals(prompt.requiredTool())
-                                          ? ConceptualInstanceModelWorkflow.typeSelectionSchema()
-                                          : "assistant_strategy".equals(prompt.requiredTool())
-                                              ? AgentTurnLoop.strategySchema()
-                                              : AgentActionSchema.json(prompt.patchContracts()));
+                          : "conceptual_blueprint_patch".equals(prompt.requiredTool())
+                              ? ConceptualInstanceModelWorkflow.blueprintPatchSchema()
+                              : "conceptual_blueprint_review".equals(prompt.requiredTool())
+                                  ? ConceptualInstanceModelWorkflow.blueprintCompletenessSchema()
+                                  : "conceptual_obligation_review".equals(prompt.requiredTool())
+                                      ? ConceptualInstanceModelWorkflow.obligationReviewSchema()
+                                      : "conceptual_review".equals(prompt.requiredTool())
+                                          ? ConceptualInstanceModelWorkflow.reviewSchema()
+                                          : "conceptual_correction".equals(prompt.requiredTool())
+                                              ? ConceptualInstanceModelWorkflow.correctionSchema()
+                                              : "conceptual_type_selection"
+                                                      .equals(prompt.requiredTool())
+                                                  ? ConceptualInstanceModelWorkflow
+                                                      .typeSelectionSchema()
+                                                  : "assistant_strategy"
+                                                          .equals(prompt.requiredTool())
+                                                      ? AgentTurnLoop.strategySchema()
+                                                      : AgentActionSchema.json(
+                                                          prompt.patchContracts()));
     }
     return builder;
   }
@@ -339,6 +347,8 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       // configured ceiling to leave room for provider-side reasoning before its tiny JSON result.
       case "conceptual_type_selection",
           "conceptual_blueprint",
+          "conceptual_blueprint_patch",
+          "conceptual_blueprint_review",
           "conceptual_obligation_ledger",
           "conceptual_obligation_review" ->
           fallback;
@@ -473,6 +483,8 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     return "conceptual_instance_model".equals(requiredAction)
         || "conceptual_instance_slice".equals(requiredAction)
         || "conceptual_blueprint".equals(requiredAction)
+        || "conceptual_blueprint_patch".equals(requiredAction)
+        || "conceptual_blueprint_review".equals(requiredAction)
         || "conceptual_obligation_ledger".equals(requiredAction)
         || "conceptual_obligation_review".equals(requiredAction)
         || "conceptual_review".equals(requiredAction)

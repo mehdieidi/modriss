@@ -30,17 +30,19 @@ The backend does not route business meaning with prompt keywords or canned templ
 ## Conceptual generation and evolution
 
 The conceptual workflow creates a durable requirement-obligation ledger, selects exact EClasses,
-plans a stable-ID blueprint, generates private slices, optionally performs an independent LLM
-obligation review, compiles the result, validates structural Ecore/EMF conformance, and then
-commits one atomic checkpoint. The currently validated Gemma profile disables the optional LLM
-review; structural conformance and deterministic obligation/evidence checks remain mandatory.
+plans a stable-ID blueprint, performs an independent source-blueprint completeness review,
+repairs rejected plans with bounded LLM-authored remove/upsert patches, generates private slices,
+performs an independent LLM obligation review, compiles the result,
+validates structural Ecore/EMF conformance, and then commits one atomic checkpoint.
 
 No generated object is visible before the final checkpoint. If any mandatory obligation cannot be
 proven with real staged object/reference evidence, the checkpoint is not published.
 
-The private blueprint schema allows at most 18 objects/types, further constrained by required
-Ecore closure and the provider-call budget. Larger models need a future coherent multi-increment
-design; the assistant must not silently omit requested concepts to fit the ceiling.
+The private blueprint schema allows at most 96 objects/types and 64 requirement obligations,
+further constrained by required Ecore closure and the provider-call budget. The reviewer rejects
+source plans that cite a source span without separately representing its distinct named concepts.
+Larger models still need a coherent multi-increment design; the assistant must not silently omit
+requested concepts to fit the ceiling.
 
 ## Existing-model edits
 
