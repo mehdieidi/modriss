@@ -33,6 +33,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Component
 public final class DurableAssistantTurnWorker {
   private static final Logger log = LoggerFactory.getLogger(DurableAssistantTurnWorker.class);
+  private static final int MAX_AUTOMATIC_RECOVERIES_PER_WORK_ITEM = 3;
 
   /** Server-written marker used only by the confirmation endpoint, never shown to providers. */
   public static final String CONFIRMED_DESTRUCTION_PREFIX = "[durable-confirmed-destruction] ";
@@ -598,16 +599,28 @@ public final class DurableAssistantTurnWorker {
                     .isPresent()
                 && turns.workItems(turn.id()).stream()
                     .anyMatch(item -> item.payload().path("generated").isObject());
+        boolean hasDurableConceptualPlan =
+            progressiveWorkflow
+                .filter(item -> "CONCEPTUAL_GENERATION".equals(item.workflowKind()))
+                .map(AssistantTurnStore.Workflow::plan)
+                .filter(DurableAssistantTurnWorker::isDurablePlan)
+                .isPresent();
         if (automaticContinuationEnabled
-            && (turnFailure.progressiveRecovery() || hasDurableConceptualProgress)
+            && shouldAutomaticallyRecover(
+                turnFailure.progressiveRecovery(),
+                hasDurableConceptualProgress,
+                hasDurableConceptualPlan,
+                ex.status())
             && !turns.cancellationRequested(turn.id())
             && Instant.now().isBefore(turn.deadlineAt())
             && providerCallsAvailable(turn, turnFailure.providerCalls())) {
+          String recoveryWorkItemId =
+              progressiveWorkflow.map(AssistantTurnStore.Workflow::currentWorkItemId).orElse(null);
           int recoveryCount =
               progressiveWorkflow
-                  .map(item -> item.plan().path("automaticRecoveryCount").asInt(0))
+                  .map(item -> automaticRecoveryCount(item.plan(), recoveryWorkItemId))
                   .orElse(0);
-          if (recoveryCount < 1) {
+          if (recoveryCount < MAX_AUTOMATIC_RECOVERIES_PER_WORK_ITEM) {
             progressiveWorkflow.ifPresent(
                 item -> {
                   tools.jackson.databind.node.ObjectNode plan =
@@ -615,6 +628,11 @@ public final class DurableAssistantTurnWorker {
                           ? (tools.jackson.databind.node.ObjectNode) item.plan().deepCopy()
                           : tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
                   plan.put("automaticRecoveryCount", recoveryCount + 1);
+                  if (recoveryWorkItemId == null || recoveryWorkItemId.isBlank()) {
+                    plan.remove("automaticRecoveryWorkItemId");
+                  } else {
+                    plan.put("automaticRecoveryWorkItemId", recoveryWorkItemId);
+                  }
                   turns.saveWorkflow(
                       new AssistantTurnStore.Workflow(
                           item.turnId(),
@@ -629,6 +647,8 @@ public final class DurableAssistantTurnWorker {
                 java.util.Map.of(
                     "stage",
                     "COMPILATION",
+                    "attempt",
+                    recoveryCount + 1,
                     "reason",
                     ex.getMessage() == null ? "repair incomplete" : ex.getMessage()));
             turns.continueProgressively(turn.id(), turn.revision(), ex.getMessage());
@@ -962,6 +982,33 @@ public final class DurableAssistantTurnWorker {
     return plan.path("obligationLedger").isObject()
         || (plan.path("selectedTypes").isArray() && !plan.path("selectedTypes").isEmpty())
         || plan.path("blueprint").isObject();
+  }
+
+  static boolean shouldAutomaticallyRecover(
+      boolean progressiveRecovery,
+      boolean hasDurableConceptualProgress,
+      boolean hasDurableConceptualPlan,
+      int failureStatus) {
+    // A provider/protocol failure can happen on the first conceptual slice, before any generated
+    // payload exists. The obligation ledger, selected types, and blueprint are already durable at
+    // that point, so a bounded resume is safe and avoids discarding minutes of valid LLM work.
+    boolean resumableFirstSliceFailure =
+        hasDurableConceptualPlan
+            && (failureStatus == 422
+                || failureStatus == 500
+                || failureStatus == 502
+                || failureStatus == 503
+                || failureStatus == 504);
+    return progressiveRecovery || hasDurableConceptualProgress || resumableFirstSliceFailure;
+  }
+
+  static int automaticRecoveryCount(
+      tools.jackson.databind.JsonNode plan, String currentWorkItemId) {
+    if (plan == null || !plan.isObject()) return 0;
+    String recordedWorkItemId = plan.path("automaticRecoveryWorkItemId").asText("");
+    String current = currentWorkItemId == null ? "" : currentWorkItemId.trim();
+    if (!recordedWorkItemId.equals(current)) return 0;
+    return Math.max(0, plan.path("automaticRecoveryCount").asInt(0));
   }
 
   static AssistantTurn.State failureState(

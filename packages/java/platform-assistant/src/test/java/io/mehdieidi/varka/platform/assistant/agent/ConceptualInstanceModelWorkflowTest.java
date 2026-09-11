@@ -947,6 +947,9 @@ class ConceptualInstanceModelWorkflowTest {
             .get(3)
             .user()
             .contains("requires Stakeholder but instance 'customer' is Actor"));
+    assertTrue(provider.prompts().get(3).user().contains("REJECTED SLICE JSON"));
+    assertTrue(provider.prompts().get(3).user().contains("\"customer\":\"Actor\""));
+    assertTrue(!provider.prompts().get(3).user().contains("REQUEST AND SOURCE SPECIFICATION"));
     assertEquals(2, result.commandBatch().creates().size());
     assertEquals(0, result.commandBatch().connections().size());
     assertEquals(0, provider.remainingSteps());
@@ -1067,7 +1070,7 @@ class ConceptualInstanceModelWorkflowTest {
             List.of(
                 ScriptedAssistantModelProvider.reply(
                     "{\"obligations\":[{\"id\":\"OBL-1\",\"obligation\":\"Represent library"
-                        + " participants\",\"importance\":\"MANDATORY\",\"sourceUnitIds\":[],\"expectedEClasses\":[\"Actor\"]}]}"),
+                        + " participants\",\"importance\":\"MANDATORY\",\"minimumEvidenceObjects\":2,\"sourceUnitIds\":[],\"expectedEClasses\":[\"Actor\"]}]}"),
                 ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\"]}"),
                 ScriptedAssistantModelProvider.reply(blueprint),
                 ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
@@ -1114,6 +1117,16 @@ class ConceptualInstanceModelWorkflowTest {
               .get(0)
               .path("id")
               .asText());
+      assertEquals(
+          2,
+          savedWorkflow
+              .get()
+              .plan()
+              .path("obligationLedger")
+              .path("obligations")
+              .get(0)
+              .path("minimumEvidenceObjects")
+              .asInt());
       assertEquals(
           "actors",
           savedWorkflow
@@ -1237,11 +1250,13 @@ class ConceptualInstanceModelWorkflowTest {
   }
 
   @Test
-  void preventsCheckpointWhenIndependentReviewCannotProveAMandatoryObligation() throws Exception {
+  void preventsCheckpointWhenReviewClaimsCompressedEvidenceSatisfiesRequiredCardinality()
+      throws Exception {
     String blueprint =
         """
 {"types":["Actor"],"objects":[
   {"instanceId":"actor-1","type":"Actor","purpose":"Borrower","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"obligationIds":["OBL-1"],"sourceUnitIds":[],"slice":1}
+  ,{"instanceId":"actor-2","type":"Actor","purpose":"Librarian","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"obligationIds":["OBL-1"],"sourceUnitIds":[],"slice":1}
 ]}
 """;
     var provider =
@@ -1249,14 +1264,14 @@ class ConceptualInstanceModelWorkflowTest {
             List.of(
                 ScriptedAssistantModelProvider.reply(
                     "{\"obligations\":[{\"id\":\"OBL-1\",\"obligation\":\"Represent borrowing"
-                        + " behavior\",\"importance\":\"MANDATORY\",\"sourceUnitIds\":[],\"expectedEClasses\":[\"Actor\"]}]}"),
+                        + " participants\",\"importance\":\"MANDATORY\",\"minimumEvidenceObjects\":2,\"sourceUnitIds\":[],\"expectedEClasses\":[\"Actor\"]}]}"),
                 ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\"]}"),
                 ScriptedAssistantModelProvider.reply(blueprint),
                 ScriptedAssistantModelProvider.reply(actor("actor-1", "Borrower")),
+                ScriptedAssistantModelProvider.reply(actor("actor-2", "Librarian")),
                 ScriptedAssistantModelProvider.reply(
-                    "{\"acceptable\":false,\"coverage\":[{\"obligationId\":\"OBL-1\",\"state\":\"PARTIAL\",\"evidenceObjectIds\":[\"actor-1\"],\"evidenceRelationships\":[],\"explanation\":\"Actor"
-                        + " alone does not prove behavior\"}],\"findings\":[\"Missing behavioral"
-                        + " relationship\"]}")));
+                    "{\"acceptable\":true,\"coverage\":[{\"obligationId\":\"OBL-1\",\"state\":\"SATISFIED\",\"evidenceObjectIds\":[\"actor-1\"],\"evidenceRelationships\":[],\"explanation\":\"Participants"
+                        + " modeled\"}],\"findings\":[]}")));
     AssistantTurnStore store = mock(AssistantTurnStore.class);
     AtomicReference<AssistantTurnStore.Workflow> savedWorkflow = new AtomicReference<>();
     when(store.workflow("turn-obligation-failure"))
@@ -1300,6 +1315,10 @@ class ConceptualInstanceModelWorkflowTest {
 
     assertTrue(
         failure.getMessage().contains("Mandatory requirement obligations were not satisfied"));
+    String reviewPrompt = provider.prompts().get(5).user();
+    assertTrue(reviewPrompt.contains("OBLIGATION LEDGER (authoritative requirements"));
+    assertTrue(!reviewPrompt.contains("REQUEST AND SOURCE SPECIFICATION"));
+    assertTrue(!reviewPrompt.contains("\"purpose\":\"Borrower\""));
     assertTrue(!workspace.snapshot().toString().contains("Borrower"));
     assertEquals(0, provider.remainingSteps());
   }

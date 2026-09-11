@@ -19,6 +19,31 @@ class DurableAssistantModeTest {
   }
 
   @Test
+  void automaticallyRecoversProviderFailureOnFirstPersistedConceptualSlice() {
+    assertTrue(DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, true, 502));
+    assertTrue(DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, true, 422));
+  }
+
+  @Test
+  void doesNotReplayNonRecoverableFailureWithoutConceptualProgress() {
+    assertEquals(
+        false, DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, true, 400));
+    assertEquals(
+        false, DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, false, 502));
+  }
+
+  @Test
+  void recoveryBudgetResetsWhenConceptualWorkAdvances() {
+    var plan = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+    plan.put("automaticRecoveryWorkItemId", "turn:conceptual:9");
+    plan.put("automaticRecoveryCount", 2);
+
+    assertEquals(2, DurableAssistantTurnWorker.automaticRecoveryCount(plan, "turn:conceptual:9"));
+    assertEquals(0, DurableAssistantTurnWorker.automaticRecoveryCount(plan, "turn:conceptual:10"));
+    assertEquals(0, DurableAssistantTurnWorker.automaticRecoveryCount(plan, null));
+  }
+
+  @Test
   void acceptsOnlyUnifiedAndExplicitTestOverrides() {
     assertEquals(
         DurableAssistantTurnWorker.AssistantMode.UNIFIED,
