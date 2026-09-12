@@ -40,6 +40,7 @@ public final class ConceptualInstanceModelWorkflow {
   private static final int MAX_BLUEPRINT_OBJECTS = 96;
   private static final int MAX_OBLIGATIONS = 64;
   private static final int MAX_BLUEPRINT_ATTEMPTS = 10;
+  private static final int MAX_BLUEPRINT_CRITIQUES = 3;
   private final AssistantModelProvider provider;
   private final MetamodelGuideGenerator guides;
   private final TypeContractService contracts;
@@ -247,7 +248,7 @@ public final class ConceptualInstanceModelWorkflow {
           persistObligations(durableTurnId, obligations);
         }
         if (obligations == null) obligations = ObligationLedger.empty();
-        Blueprint blueprint = restoredBlueprint(durableTurnId, level);
+        Blueprint blueprint = restoredBlueprint(durableTurnId, level, current);
         if (blueprint == null) {
           Set<String> selectedTypes = restoredSelectedTypes(durableTurnId, level);
           if (selectedTypes.isEmpty()) {
@@ -277,7 +278,8 @@ public final class ConceptualInstanceModelWorkflow {
         if (properties.llmReviewEnabled()) {
           last =
               obligations.obligations().isEmpty()
-                  ? review(level, request, metamodel, blueprint, generated, audit, maxCalls)
+                  ? review(
+                      level, request, current, metamodel, blueprint, generated, audit, maxCalls)
                   : reviewObligations(
                       level, request, current, obligations, blueprint, generated, audit, maxCalls);
         } else {
@@ -307,6 +309,7 @@ public final class ConceptualInstanceModelWorkflow {
                 correctCompilerFailure(
                     level,
                     request,
+                    current,
                     metamodel,
                     blueprint,
                     generated,
@@ -378,9 +381,14 @@ public final class ConceptualInstanceModelWorkflow {
             + " and workflow requirement as a separate MANDATORY obligation; use OPTIONAL only"
             + " for genuinely nonessential enrichment. Map each obligation to the smallest jointly"
             + " sufficient set of exact creatable EClasses from the authoritative live index."
-            + " Normally use exactly one EClass per obligation; use two only when both are needed"
-            + " as distinct semantic evidence (for example, a channel and an event type for"
-            + " explicit publication/consumption). Do not list containment owners, contracts,"
+            + " Normally use exactly one EClass per obligation; use multiple only when each is"
+            + " indispensable distinct semantic evidence. In particular, a requested behavior"
+            + " with an explicit consequence, resulting state, invariant, preservation effect,"
+            + " or pre/postcondition needs both a legal behavioral carrier and the metamodel type"
+            + " that represents that condition or state (for example, a process plus Condition),"
+            + " when the authoritative index supports that representation. Likewise explicit"
+            + " publication/consumption can need both a channel and event type. Do not list"
+            + " containment owners, contracts,"
             + " workflow steps, schemas, principals, policies, routes, or other structural support"
             + " unless the request explicitly requires that concept. The Ecore closure and"
             + " blueprint phases add necessary support. expectedEClasses is a required set, not a"
@@ -395,6 +403,7 @@ public final class ConceptualInstanceModelWorkflow {
             + " transition in the same obligation or in a separate mandatory obligation. Set"
             + " minimumEvidenceObjects to the number of distinct model"
             + " instances required as evidence for the obligation: normally 1, but count every"
+            + " jointly necessary carrier, explicit outcome/condition/state, and"
             + " explicitly named member of a finite source list when the metamodel represents"
             + " those members as individual instances (for example, six named lifecycle states"
             + " require 6). Never treat a comma-separated scalar value as multiple instances."
@@ -438,6 +447,7 @@ public final class ConceptualInstanceModelWorkflow {
         return ledger;
       } catch (RuntimeException failure) {
         if (ProviderCallBudget.isExceeded(failure)) throw failure;
+        if (failure instanceof ProviderInvocationFailure) throw failure;
         lastFailure = failure;
         if (attempt == 4) throw failure;
         correction =
@@ -558,7 +568,7 @@ public final class ConceptualInstanceModelWorkflow {
     String correction = "";
     String rejectionDiagnostic = "";
     JsonNode candidateJson = null;
-    boolean blueprintCritiqueCompleted = false;
+    int blueprintCritiques = 0;
     RuntimeException lastFailure = null;
     for (int attempt = 0; attempt < MAX_BLUEPRINT_ATTEMPTS; attempt++) {
       try {
@@ -570,6 +580,7 @@ public final class ConceptualInstanceModelWorkflow {
               repairBlueprint(
                   level,
                   request,
+                  current,
                   obligations,
                   focusedContracts,
                   focusedTypes,
@@ -581,6 +592,7 @@ public final class ConceptualInstanceModelWorkflow {
         }
       } catch (RuntimeException failure) {
         if (ProviderCallBudget.isExceeded(failure)) throw failure;
+        if (failure instanceof ProviderInvocationFailure) throw failure;
         lastFailure = failure;
         if (attempt < MAX_BLUEPRINT_ATTEMPTS - 1 && (candidateJson != null || truncated(failure))) {
           rejectionDiagnostic =
@@ -600,8 +612,11 @@ public final class ConceptualInstanceModelWorkflow {
         throw failure;
       }
       try {
-        blueprint = Blueprint.parse(mapper, candidateJson.toString(), contracts, level);
-        blueprint = normalizeBlueprintPlacements(level, blueprint);
+        Map<String, String> persistedTypes = currentElementTypes(current);
+        blueprint =
+            Blueprint.parse(
+                mapper, candidateJson.toString(), contracts, level, persistedTypes.keySet());
+        blueprint = normalizeBlueprintPlacements(level, blueprint, persistedTypes);
         Set<String> outsideFocus = new LinkedHashSet<>(blueprint.types());
         outsideFocus.removeAll(focusedTypes);
         outsideFocus.removeAll(concreteRequiredOptions);
@@ -616,11 +631,20 @@ public final class ConceptualInstanceModelWorkflow {
                 .map(BlueprintObject::type)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
         Set<String> omittedSelectedTypes = new LinkedHashSet<>(selectedTypes);
+        // The persisted model root is structural context, not a creatable semantic object. Type
+        // selection may include it because the focused Ecore closure starts there, but requiring
+        // the blueprint to instantiate it contradicts Blueprint.parse(), which correctly rejects
+        // a second CIMModel/PIMModel root.
+        omittedSelectedTypes.remove(contracts.rootType(level));
         omittedSelectedTypes.removeIf(
             selectedType ->
                 plannedTypes.stream()
-                    .anyMatch(
-                        plannedType -> contracts.assignable(level, plannedType, selectedType)));
+                        .anyMatch(
+                            plannedType -> contracts.assignable(level, plannedType, selectedType))
+                    || persistedTypes.values().stream()
+                        .anyMatch(
+                            persistedType ->
+                                contracts.assignable(level, persistedType, selectedType)));
         if (!omittedSelectedTypes.isEmpty()) {
           throw new PlatformException(
               422,
@@ -633,7 +657,8 @@ public final class ConceptualInstanceModelWorkflow {
         for (BlueprintObject object : blueprint.objects()) {
           allocated.addAll(object.sourceUnitIds());
         }
-        List<String> diagnostics = blueprintDiagnostics(level, blueprint, obligations);
+        List<String> diagnostics =
+            blueprintDiagnostics(level, blueprint, obligations, persistedTypes);
         if (!suppliedSourceUnits.containsAll(allocated)) {
           Set<String> unknown = new LinkedHashSet<>(allocated);
           unknown.removeAll(suppliedSourceUnits);
@@ -658,26 +683,28 @@ public final class ConceptualInstanceModelWorkflow {
                   + capacity
                   + ". Keep the most important coherent objects and relationships.");
         }
+        boolean sourceBacked =
+            request != null && request.contains("SOURCE SPECIFICATION (authoritative input)");
         if (properties.llmReviewEnabled()
-            && request != null
-            && request.contains("SOURCE SPECIFICATION (authoritative input)")
-            && !blueprintCritiqueCompleted) {
+            && (sourceBacked || hasPersistedElements(current))
+            && blueprintCritiques < MAX_BLUEPRINT_CRITIQUES) {
+          blueprintCritiques++;
           requireBlueprintCompletenessReview(
-              level, request, obligations, blueprint, audit, maxCalls);
-          blueprintCritiqueCompleted = true;
+              level, request, current, obligations, blueprint, audit, maxCalls);
         }
         break;
       } catch (RuntimeException failure) {
+        if (failure instanceof ProviderInvocationFailure) throw failure;
         lastFailure = failure;
         blueprint = null;
         if (attempt == MAX_BLUEPRINT_ATTEMPTS - 1) throw failure;
         if (safe(failure.getMessage())
             .contains("Independent blueprint completeness review rejected the plan:")) {
-          // The critic was instructed to report all material findings in one pass. Its LLM-authored
-          // patch is structurally rechecked here; requirement evidence receives a second,
-          // independent LLM review after full object generation. Repeating the same open-ended
-          // critique is non-monotonic and can reveal an endless new tail of scalar details.
-          blueprintCritiqueCompleted = true;
+          // A critic-produced patch is only a proposal. Re-review it independently so an
+          // incomplete or regressive repair cannot pass directly into generation. Keep the loop
+          // bounded because open-ended semantic critique can otherwise reveal an endless tail of
+          // optional refinements.
+          if (blueprintCritiques >= MAX_BLUEPRINT_CRITIQUES) throw failure;
         }
         rejectionDiagnostic = safe(failure.getMessage());
       }
@@ -699,6 +726,7 @@ public final class ConceptualInstanceModelWorkflow {
   private JsonNode repairBlueprint(
       ModelLevel level,
       String request,
+      JsonNode current,
       ObligationLedger obligations,
       List<TypeContract> focusedContracts,
       Set<String> focusedTypes,
@@ -714,6 +742,10 @@ public final class ConceptualInstanceModelWorkflow {
             + " blueprint record for that object, including its stable ID, exact EClass, purpose,"
             + " owner/containment, declared reference target IDs, obligation/source allocations,"
             + " and slice. Every referenced or owning non-root ID must exist after the patch."
+            + " When a persisted element supplies obligation evidence, upsert a blueprint record"
+            + " using its exact persisted ID and EClass and allocate the obligation to that record;"
+            + " merely referencing its ID from another object does not allocate evidence. This"
+            + " plans an update/reuse and does not create a duplicate persisted element."
             + " The persisted model root is not a blueprint object: represent it only with the"
             + " exact ownerInstanceId literal rootId and a bare containment feature name. Never"
             + " use CIMModel, root, cim-root, or the persisted UUID as ownerInstanceId."
@@ -737,6 +769,8 @@ public final class ConceptualInstanceModelWorkflow {
             + containmentIndex(level, focusedTypes)
             + "\n\nREQUEST AND SOURCE SPECIFICATION:\n"
             + (request == null ? "" : request)
+            + "\n\nCURRENT PERSISTED ELEMENT INDEX (reuse exact IDs; do not duplicate):\n"
+            + currentElementIndex(current)
             + "\n\nOBLIGATION LEDGER:\n"
             + obligations.json()
             + "\n\nAVAILABLE SOURCE UNIT IDS: "
@@ -782,6 +816,7 @@ public final class ConceptualInstanceModelWorkflow {
   private void requireBlueprintCompletenessReview(
       ModelLevel level,
       String request,
+      JsonNode current,
       ObligationLedger obligations,
       Blueprint blueprint,
       UsageAudit audit,
@@ -794,12 +829,21 @@ public final class ConceptualInstanceModelWorkflow {
             + " or acceptance outcomes normally requires separately identifiable planned evidence;"
             + " attaching a source unit to one generic object is not coverage. Also require useful"
             + " relationships for interactions stated by the source. Apply a sound CIM abstraction"
-            + " boundary: scalar input, filter, result, or captured-data fields may be stated"
-            + " explicitly in the purpose of their owning query, command, entity, or information"
-            + " object; cohesive sub-actions such as managing working hours, breaks, blocked times,"
+            + " boundary: when a requirement enumerates command/query inputs, event payload, or"
+            + " captured data, plan compatible InformationItem evidence and a relationship target;"
+            + " merely mentioning those fields in an object's purpose is not final model evidence."
+            + " When an obligation states that an action causes an outcome, changes or preserves"
+            + " state, releases or retains something, or is governed by a pre/postcondition,"
+            + " require planned evidence for every distinct outcome and a legal relationship from"
+            + " its behavioral carrier. A purpose sentence alone is insufficient. Use the"
+            + " obligation's expected EClasses and authoritative metamodel vocabulary; recommend"
+            + " explicit Condition/state objects when that is the legal representation."
+            + " Cohesive sub-actions such as managing working hours, breaks, blocked times,"
             + " and visit-type limits may remain one clearly described command. Do not demand"
             + " separate objects merely to atomize those fields or duplicate an actor as a domain"
-            + " entity. Do not invent requirements and"
+            + " entity. For an evolution, compare against the persisted-element index and reject"
+            + " any planned semantic duplicate; require reuse of the exact persisted ID. Do not"
+            + " invent requirements and"
             + " do not judge EVL semantics. Report every material omission you can identify in this"
             + " single pass, up to the schema limit; never defer known findings to a later review."
             + " Return only the strict review schema.";
@@ -810,6 +854,8 @@ public final class ConceptualInstanceModelWorkflow {
             + (request == null ? "" : request)
             + "\n\nOBLIGATION LEDGER:\n"
             + obligations.json()
+            + "\n\nCURRENT PERSISTED ELEMENT INDEX (reuse exact IDs; do not duplicate):\n"
+            + currentElementIndex(current)
             + "\n\nCANDIDATE BLUEPRINT:\n"
             + blueprint.json()
             + "\n\nReturn {acceptable,findings:[{missingConcept,reason,recommendedCorrection}]}."
@@ -976,7 +1022,8 @@ public final class ConceptualInstanceModelWorkflow {
         .toList();
   }
 
-  private Blueprint normalizeBlueprintPlacements(ModelLevel level, Blueprint blueprint) {
+  private Blueprint normalizeBlueprintPlacements(
+      ModelLevel level, Blueprint blueprint, Map<String, String> persistedTypes) {
     Map<String, BlueprintObject> byId = new LinkedHashMap<>();
     blueprint.objects().forEach(object -> byId.put(object.instanceId(), object));
     List<BlueprintObject> normalized = new ArrayList<>();
@@ -988,7 +1035,7 @@ public final class ConceptualInstanceModelWorkflow {
               ? contracts.rootType(level)
               : byId.containsKey(object.ownerInstanceId())
                   ? byId.get(object.ownerInstanceId()).type()
-                  : "";
+                  : persistedTypes.getOrDefault(object.ownerInstanceId(), "");
       String containment = object.containment();
       String prefix = ownerType + ".";
       if (!ownerType.isBlank() && containment.startsWith(prefix)) {
@@ -1012,7 +1059,10 @@ public final class ConceptualInstanceModelWorkflow {
   }
 
   private List<String> blueprintDiagnostics(
-      ModelLevel level, Blueprint blueprint, ObligationLedger obligations) {
+      ModelLevel level,
+      Blueprint blueprint,
+      ObligationLedger obligations,
+      Map<String, String> persistedTypes) {
     List<String> diagnostics = new ArrayList<>();
     Map<String, BlueprintObject> objects = new LinkedHashMap<>();
     blueprint.objects().forEach(object -> objects.put(object.instanceId(), object));
@@ -1033,7 +1083,10 @@ public final class ConceptualInstanceModelWorkflow {
         ownerType = contracts.rootType(level);
       } else {
         BlueprintObject owner = objects.get(object.ownerInstanceId());
-        ownerType = owner == null ? "" : owner.type();
+        ownerType =
+            owner == null
+                ? persistedTypes.getOrDefault(object.ownerInstanceId(), "")
+                : owner.type();
       }
       boolean legal =
           !ownerType.isBlank()
@@ -1073,11 +1126,15 @@ public final class ConceptualInstanceModelWorkflow {
         } else {
           planned =
               object.referenceTargets().stream()
-                  .map(objects::get)
+                  .map(
+                      id -> {
+                        BlueprintObject target = objects.get(id);
+                        return target == null ? persistedTypes.get(id) : target.type();
+                      })
                   .filter(java.util.Objects::nonNull)
                   .anyMatch(
-                      candidate ->
-                          contracts.assignable(level, candidate.type(), required.targetType()));
+                      candidateType ->
+                          contracts.assignable(level, candidateType, required.targetType()));
         }
         if (!planned) {
           diagnostics.add(
@@ -1129,13 +1186,28 @@ public final class ConceptualInstanceModelWorkflow {
                               object -> contracts.assignable(level, object.type(), expected)))
               .toList();
       if (!missingExpectedTypes.isEmpty()) {
+        Map<String, List<String>> compatiblePersistedIds = new LinkedHashMap<>();
+        for (String expected : missingExpectedTypes) {
+          List<String> ids =
+              persistedTypes.entrySet().stream()
+                  .filter(entry -> contracts.assignable(level, entry.getValue(), expected))
+                  .map(Map.Entry::getKey)
+                  .toList();
+          if (!ids.isEmpty()) compatiblePersistedIds.put(expected, ids);
+        }
         diagnostics.add(
             "mandatory obligation "
                 + obligation.id()
                 + " is allocated to object types "
                 + evidence.stream().map(BlueprintObject::type).toList()
                 + " but lacks jointly required types "
-                + missingExpectedTypes);
+                + missingExpectedTypes
+                + (compatiblePersistedIds.isEmpty()
+                    ? ""
+                    : "; compatible persisted IDs are "
+                        + compatiblePersistedIds
+                        + ". Add an exact-ID blueprint record with the obligation allocation; a"
+                        + " reference target alone is not allocated evidence"));
       }
     }
     return diagnostics;
@@ -1235,6 +1307,7 @@ public final class ConceptualInstanceModelWorkflow {
         reply = audit.call(system, user, "conceptual_instance_slice");
       } catch (RuntimeException failure) {
         if (ProviderCallBudget.isExceeded(failure)) throw failure;
+        if (failure instanceof ProviderInvocationFailure) throw failure;
         if (truncated(failure) && slice.size() > 1) {
           int middle = slice.size() / 2;
           persistSliceSize(durableTurnId, Math.max(1, middle), failure.getMessage());
@@ -1970,31 +2043,173 @@ public final class ConceptualInstanceModelWorkflow {
             + "evidenceRelationships:[{sourceId,feature,targetId}],explanation}],findings}.";
     AssistantModelProvider.AssistantReply reply = null;
     RuntimeException lastFailure = null;
-    for (int attempt = 0; attempt < 2; attempt++) {
+    int invalidReplies = 0;
+    int semanticCorrections = 0;
+    while (audit.totalCalls() < maxCalls && invalidReplies < 2) {
       if (audit.totalCalls() >= maxCalls) break;
       try {
         reply =
             audit.call(
                 system,
                 baseUser
-                    + (attempt == 0
+                    + (invalidReplies == 0
                         ? ""
-                        : "\n\nThe prior response was truncated or invalid. Return only the tiny"
-                            + " terminal verdict; keep each explanation under 12 words."),
+                        : "\n\nThe prior response was rejected: "
+                            + safe(
+                                lastFailure == null ? "invalid response" : lastFailure.getMessage())
+                            + " Return only the tiny terminal verdict, cite only relationships"
+                            + " literally present in ACTUAL STAGED MODEL EVIDENCE, and keep each"
+                            + " explanation under 12 words."),
                 "conceptual_obligation_review");
         requireObligationReview(reply.content(), obligations, generated);
         persistObligationReview(DurableTurnExecutionContext.turnId(), reply.content());
         return reply;
       } catch (RuntimeException failure) {
         if (ProviderCallBudget.isExceeded(failure)) throw failure;
+        if (failure instanceof ProviderInvocationFailure) throw failure;
         if (safe(failure.getMessage())
-            .startsWith("Mandatory requirement obligations were not satisfied:")) throw failure;
+            .startsWith("Mandatory requirement obligations were not satisfied:")) {
+          if (semanticCorrections >= Math.max(1, properties.maxRepairAttempts())
+              || audit.totalCalls() >= maxCalls) throw failure;
+          reply =
+              correctObligationFailure(
+                  level,
+                  request,
+                  current,
+                  obligations,
+                  blueprint,
+                  generated,
+                  reply.content(),
+                  audit,
+                  maxCalls);
+          persistObjects(DurableTurnExecutionContext.turnId(), blueprint, generated);
+          semanticCorrections++;
+          invalidReplies = 0;
+          continue;
+        }
         lastFailure = failure;
+        invalidReplies++;
       }
     }
     throw lastFailure == null
         ? new PlatformException(429, "No provider-call budget remains for obligation review.")
         : lastFailure;
+  }
+
+  private AssistantModelProvider.AssistantReply correctObligationFailure(
+      ModelLevel level,
+      String request,
+      JsonNode current,
+      ObligationLedger obligations,
+      Blueprint blueprint,
+      LinkedHashMap<String, JsonNode> generated,
+      String rejectedReview,
+      UsageAudit audit,
+      int maxCalls) {
+    JsonNode verdict = strictObject(rejectedReview, "rejected conceptual obligation review");
+    LinkedHashSet<String> failedObligationIds = new LinkedHashSet<>();
+    LinkedHashSet<String> affectedIds = new LinkedHashSet<>();
+    for (JsonNode coverage : verdict.path("coverage")) {
+      String obligationId = coverage.path("obligationId").asText();
+      Obligation obligation = obligations.byId().get(obligationId);
+      int evidenceCount =
+          new LinkedHashSet<>(Blueprint.strings(coverage.path("evidenceObjectIds"))).size();
+      if (!"SATISFIED".equals(coverage.path("state").asText())
+          || obligation == null
+          || evidenceCount < obligation.minimumEvidenceObjects()) {
+        failedObligationIds.add(obligationId);
+        affectedIds.addAll(Blueprint.strings(coverage.path("evidenceObjectIds")));
+      }
+    }
+    String verdictText = verdict.toString();
+    blueprint.objects().stream()
+        .filter(
+            object ->
+                object.obligationIds().stream().anyMatch(failedObligationIds::contains)
+                    || verdictText.contains(object.instanceId()))
+        .map(BlueprintObject::instanceId)
+        .forEach(affectedIds::add);
+    List<String> direct = List.copyOf(affectedIds);
+    for (String id : direct) {
+      blueprint.objects().stream()
+          .filter(object -> object.instanceId().equals(id))
+          .findFirst()
+          .ifPresent(
+              object -> {
+                if (!"rootId".equals(object.ownerInstanceId())) {
+                  affectedIds.add(object.ownerInstanceId());
+                }
+                affectedIds.addAll(object.referenceTargets());
+              });
+      blueprint.objects().stream()
+          .filter(object -> object.referenceTargets().contains(id))
+          .map(BlueprintObject::instanceId)
+          .forEach(affectedIds::add);
+    }
+    List<String> correctionIds =
+        affectedIds.stream().filter(generated::containsKey).limit(6).toList();
+    if (correctionIds.isEmpty()) {
+      throw new PlatformException(
+          422, "Obligation review rejected the model without repairable staged evidence IDs.");
+    }
+    var rejected = JsonNodeFactory.instance.objectNode();
+    correctionIds.forEach(id -> rejected.set(id, generated.get(id).deepCopy()));
+    List<BlueprintObject> affectedObjects =
+        blueprint.objects().stream()
+            .filter(object -> correctionIds.contains(object.instanceId()))
+            .toList();
+    String system =
+        "Repair staged conceptual objects rejected by an independent requirement-obligation"
+            + " review. Return {acceptable:false,findings:[...],corrections:{...}} with complete"
+            + " replacement objects for ONLY these existing IDs: "
+            + correctionIds
+            + ". Make every failed clause explicit in legal attributes and relationships, while"
+            + " preserving valid semantics and exact EClasses. Do not add, delete, rename, or echo"
+            + " any other object. Every relationship target must be an exact ID from the allowed"
+            + " target index. Do not return prose.";
+    String user =
+        "REQUEST:\n"
+            + request
+            + "\n\nFAILED OBLIGATIONS:\n"
+            + obligations.json()
+            + "\n\nREJECTED REVIEW VERDICT:\n"
+            + verdict
+            + "\n\nCURRENT PERSISTED ELEMENT INDEX:\n"
+            + currentElementIndex(current)
+            + "\n\nFOCUSED METAMODEL:\n"
+            + sliceMetamodel(level, affectedObjects, blueprint)
+            + "\n\nALLOWED TARGET IDS AND TYPES:\n"
+            + blueprintTargetIndex(blueprint, current, level)
+            + "\n\nONLY REPAIRABLE STAGED OBJECTS:\n"
+            + rejected;
+    AssistantModelProvider.AssistantReply reply = audit.call(system, user, "conceptual_correction");
+    applyReview(reply.content(), blueprint, generated, correctionIds.size());
+    int structuralCorrections = 0;
+    while (true) {
+      try {
+        new ConceptualModel(generated).commands(current, contracts, level);
+        break;
+      } catch (RuntimeException structuralFailure) {
+        if (ProviderCallBudget.isExceeded(structuralFailure)
+            || audit.totalCalls() >= maxCalls
+            || structuralCorrections >= Math.max(1, properties.maxRepairAttempts())) {
+          throw structuralFailure;
+        }
+        reply =
+            correctCompilerFailure(
+                level,
+                request,
+                current,
+                sliceMetamodel(level, affectedObjects, blueprint),
+                blueprint,
+                generated,
+                structuralFailure.getMessage(),
+                audit,
+                maxCalls);
+        structuralCorrections++;
+      }
+    }
+    return reply;
   }
 
   private void requireObligationReview(
@@ -2071,6 +2286,7 @@ public final class ConceptualInstanceModelWorkflow {
   private AssistantModelProvider.AssistantReply review(
       ModelLevel level,
       String request,
+      JsonNode current,
       String metamodel,
       Blueprint blueprint,
       LinkedHashMap<String, JsonNode> generated,
@@ -2105,9 +2321,10 @@ public final class ConceptualInstanceModelWorkflow {
     try {
       reply = audit.call(system, user, "conceptual_review");
       return finishQualityReview(
-          reply, level, request, metamodel, blueprint, generated, audit, maxCalls);
+          reply, level, request, current, metamodel, blueprint, generated, audit, maxCalls);
     } catch (RuntimeException failure) {
       if (ProviderCallBudget.isExceeded(failure)) throw failure;
+      if (failure instanceof ProviderInvocationFailure) throw failure;
       if (audit.totalCalls() >= maxCalls) throw failure;
       String reducedUser =
           "REQUEST AND SOURCE:\n"
@@ -2123,13 +2340,14 @@ public final class ConceptualInstanceModelWorkflow {
               + " from PLANNED OBJECT PURPOSES, problem, and recommendedCorrection.";
       reply = audit.call(system, reducedUser, "conceptual_review");
       return finishQualityReview(
-          reply, level, request, metamodel, blueprint, generated, audit, maxCalls);
+          reply, level, request, current, metamodel, blueprint, generated, audit, maxCalls);
     }
   }
 
   private AssistantModelProvider.AssistantReply correctCompilerFailure(
       ModelLevel level,
       String request,
+      JsonNode current,
       String metamodel,
       Blueprint blueprint,
       LinkedHashMap<String, JsonNode> generated,
@@ -2189,6 +2407,8 @@ public final class ConceptualInstanceModelWorkflow {
             + focusedMetamodel
             + "\n\nBLUEPRINT:\n"
             + compactBlueprint(blueprint)
+            + "\n\nALLOWED TARGET IDS AND TYPES:\n"
+            + blueprintTargetIndex(blueprint, current, level)
             + "\n\nONLY AFFECTED REJECTED OBJECTS:\n"
             + rejected
             + "\n\nCOMPILER DIAGNOSTIC:\n"
@@ -2359,6 +2579,7 @@ public final class ConceptualInstanceModelWorkflow {
       AssistantModelProvider.AssistantReply reply,
       ModelLevel level,
       String request,
+      JsonNode current,
       String metamodel,
       Blueprint blueprint,
       LinkedHashMap<String, JsonNode> generated,
@@ -2373,6 +2594,7 @@ public final class ConceptualInstanceModelWorkflow {
     return correctCompilerFailure(
         level,
         request,
+        current,
         metamodel,
         blueprint,
         generated,
@@ -2449,14 +2671,21 @@ public final class ConceptualInstanceModelWorkflow {
     turns.setSourceCoverage(turnId, 100, "");
   }
 
-  private Blueprint restoredBlueprint(String turnId, ModelLevel level) {
+  private Blueprint restoredBlueprint(String turnId, ModelLevel level, JsonNode current) {
     if (turns == null || turnId == null || turnId.isBlank()) return null;
     return turns
         .workflow(turnId)
         .filter(workflow -> "CONCEPTUAL_GENERATION".equals(workflow.workflowKind()))
         .map(AssistantTurnStore.Workflow::plan)
         .filter(plan -> plan != null && plan.path("blueprint").isObject())
-        .map(plan -> Blueprint.parse(mapper, plan.path("blueprint").toString(), contracts, level))
+        .map(
+            plan ->
+                Blueprint.parse(
+                    mapper,
+                    plan.path("blueprint").toString(),
+                    contracts,
+                    level,
+                    currentElementTypes(current).keySet()))
         .orElse(null);
   }
 
@@ -2933,6 +3162,24 @@ public final class ConceptualInstanceModelWorkflow {
     return result;
   }
 
+  private boolean hasPersistedElements(JsonNode current) {
+    return !currentElementIndex(current).isEmpty();
+  }
+
+  private Map<String, String> currentElementTypes(JsonNode current) {
+    LinkedHashMap<String, String> result = new LinkedHashMap<>();
+    if (current == null || !current.isContainer()) return result;
+    List<SnapshotElement> elements = new ArrayList<>();
+    collectElements(current, null, null, elements);
+    for (SnapshotElement element : elements) {
+      if (element.ownerId() == null) continue;
+      String id = element.node().path("id").asText("").trim();
+      String type = element.node().path("eClass").asText("").trim();
+      if (!id.isBlank() && !type.isBlank()) result.putIfAbsent(id, type);
+    }
+    return java.util.Collections.unmodifiableMap(result);
+  }
+
   private void collectTypeNames(JsonNode node, Set<String> result) {
     if (node == null) return;
     if (node.isObject() && node.hasNonNull("eClass")) result.add(node.path("eClass").asText());
@@ -2992,7 +3239,11 @@ public final class ConceptualInstanceModelWorkflow {
                 safe(failure.getMessage()),
                 callKey);
         record(failed);
-        throw failure;
+        if (failure instanceof PlatformException platform && platform.status() == 422
+            || truncated(failure)) {
+          throw failure;
+        }
+        throw new ProviderInvocationFailure(failure);
       }
       long latency = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
       if (reply.usage().reported()) {
@@ -3051,6 +3302,18 @@ public final class ConceptualInstanceModelWorkflow {
         return "EMPTY_RESPONSE";
       if (message.contains("json")) return "MALFORMED_JSON";
       return "PROVIDER_FAILURE";
+    }
+  }
+
+  /**
+   * Marks a failure of the provider invocation itself so semantic repair loops do not consume it.
+   */
+  private static final class ProviderInvocationFailure extends PlatformException {
+    private ProviderInvocationFailure(RuntimeException cause) {
+      super(
+          cause instanceof PlatformException platform ? platform.status() : 503,
+          cause.getMessage() == null ? "AI provider request failed." : cause.getMessage(),
+          cause);
     }
   }
 
@@ -3850,7 +4113,11 @@ public final class ConceptualInstanceModelWorkflow {
 
   private record Blueprint(Set<String> types, List<BlueprintObject> objects, JsonNode json) {
     private static Blueprint parse(
-        ObjectMapper mapper, String content, TypeContractService contracts, ModelLevel level) {
+        ObjectMapper mapper,
+        String content,
+        TypeContractService contracts,
+        ModelLevel level,
+        Set<String> persistedIds) {
       String jsonText = content == null ? "" : content.trim();
       if (jsonText.startsWith("```")) {
         jsonText =
@@ -3931,7 +4198,8 @@ public final class ConceptualInstanceModelWorkflow {
       for (BlueprintObject object : objects) {
         if (!object.ownerInstanceId().isBlank()
             && !"rootId".equals(object.ownerInstanceId())
-            && !ids.contains(object.ownerInstanceId())) {
+            && !ids.contains(object.ownerInstanceId())
+            && !persistedIds.contains(object.ownerInstanceId())) {
           throw new PlatformException(
               422,
               "Blueprint object '"
@@ -3941,7 +4209,7 @@ public final class ConceptualInstanceModelWorkflow {
                   + "'.");
         }
         for (String target : object.referenceTargets()) {
-          if (!ids.contains(target)) {
+          if (!ids.contains(target) && !persistedIds.contains(target)) {
             throw new PlatformException(
                 422,
                 "Blueprint object '"

@@ -1,5 +1,6 @@
 package io.mehdieidi.varka.platform.assistant.agent;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -206,6 +207,132 @@ class ConceptualInstanceModelWorkflowTest {
 
     assertTrue(provider.prompts().get(2).user().contains("OBL-1=[EventType]"));
     assertEquals("conceptual_blueprint", provider.prompts().get(3).requiredTool());
+    assertTrue(
+        provider
+            .prompts()
+            .get(0)
+            .system()
+            .contains("both a legal behavioral carrier and the metamodel type"));
+  }
+
+  @Test
+  void independentlyRechecksARepairedEvolutionBlueprintBeforeGeneration() throws Exception {
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply(
+                    "{\"obligations\":[{\"id\":\"OBL-1\",\"obligation\":\"Authorize the"
+                        + " existing customer\",\"importance\":\"MANDATORY\","
+                        + "\"minimumEvidenceObjects\":1,\"sourceUnitIds\":[],"
+                        + "\"expectedEClasses\":[\"Actor\"]}]}"),
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\"]}"),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"types\":[\"Actor\"],\"objects\":[{\"instanceId\":\"actor-new\","
+                        + "\"type\":\"Actor\",\"purpose\":\"Customer\","
+                        + "\"ownerInstanceId\":\"rootId\",\"containment\":\"actors\","
+                        + "\"referenceTargets\":[],\"obligationIds\":[\"OBL-1\"],"
+                        + "\"sourceUnitIds\":[],\"slice\":1}]}"),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"acceptable\":false,\"findings\":[{\"missingConcept\":\"Persisted"
+                        + " customer reuse\",\"reason\":\"The plan duplicates actor-existing\","
+                        + "\"recommendedCorrection\":\"Reuse actor-existing\"}]}"),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"removeObjectIds\":[\"actor-new\"],\"upsertObjects\":[{"
+                        + "\"instanceId\":\"actor-existing\",\"type\":\"Actor\","
+                        + "\"purpose\":\"Authorize existing customer\","
+                        + "\"ownerInstanceId\":\"rootId\",\"containment\":\"actors\","
+                        + "\"referenceTargets\":[],\"obligationIds\":[\"OBL-1\"],"
+                        + "\"sourceUnitIds\":[],\"slice\":1}]}"),
+                ScriptedAssistantModelProvider.reply("{\"acceptable\":true,\"findings\":[]}"),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"actor-existing\":{\"type\":\"Actor\",\"attributes\":[{"
+                        + "\"attributeName\":\"authenticationExpectation\",\"value\":\"MFA\"}],"
+                        + "\"associations\":{\"compositions\":[],\"references\":[]}}}"),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"acceptable\":true,\"coverage\":[{\"obligationId\":\"OBL-1\","
+                        + "\"state\":\"SATISFIED\",\"evidenceObjectIds\":[\"actor-existing\"],"
+                        + "\"evidenceRelationships\":[],\"explanation\":\"Existing customer is"
+                        + " updated\"}],\"findings\":[]}")));
+    AssistantTurnStore store = mock(AssistantTurnStore.class);
+    when(store.workflow("turn-recheck")).thenReturn(Optional.empty());
+    when(store.workItems("turn-recheck")).thenReturn(List.of());
+    AiProperties properties = properties();
+    when(properties.llmReviewEnabled()).thenReturn(true);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.CIM, "model", 1, existingCim(), new AssistantPatchCompiler(), null);
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties, store);
+
+    var result =
+        DurableTurnExecutionContext.with(
+            "turn-recheck",
+            () ->
+                workflow.run(
+                    "session",
+                    ModelLevel.CIM,
+                    "Authorize the existing customer",
+                    workspace,
+                    new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+                    false));
+
+    assertEquals("conceptual_blueprint_review", provider.prompts().get(3).requiredTool());
+    assertEquals("conceptual_blueprint_patch", provider.prompts().get(4).requiredTool());
+    assertEquals("conceptual_blueprint_review", provider.prompts().get(5).requiredTool());
+    assertEquals(1, result.commandBatch().updates().size());
+    assertEquals("actor-existing", result.commandBatch().updates().get(0).elementId());
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
+  void doesNotMisclassifyProviderAccountFailureAsBlueprintRepairFeedback() throws Exception {
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply(
+                    "{\"types\":[\"CIMModel\",\"Actor\",\"BusinessGoal\"]}"),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"types\":[\"Actor\"],\"objects\":[{\"instanceId\":\"actor-1\","
+                        + "\"type\":\"Actor\",\"purpose\":\"Borrower\","
+                        + "\"ownerInstanceId\":\"rootId\",\"containment\":\"actors\","
+                        + "\"referenceTargets\":[],\"sourceUnitIds\":[],\"slice\":1}]}"),
+                ScriptedAssistantModelProvider.failure(
+                    new PlatformException(400, "AI provider account has no remaining credit.")),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"removeObjectIds\":[],\"upsertObjects\":[]}")));
+    AiProperties properties = properties();
+    when(properties.llmReviewEnabled()).thenReturn(false);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
+
+    AgentTurnLoop.TurnExecutionException failure =
+        assertThrows(
+            AgentTurnLoop.TurnExecutionException.class,
+            () ->
+                workflow.run(
+                    "session",
+                    ModelLevel.CIM,
+                    "Create a borrower and borrowing goal",
+                    workspace,
+                    new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+                    false));
+
+    assertTrue(failure.getMessage().contains("no remaining credit"));
+    assertEquals(3, provider.prompts().size());
+    assertEquals(1, provider.remainingSteps());
   }
 
   @Test
@@ -426,7 +553,8 @@ class ConceptualInstanceModelWorkflowTest {
     var provider =
         new ScriptedAssistantModelProvider(
             List.of(
-                ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\",\"BusinessGoal\"]}"),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"types\":[\"CIMModel\",\"Actor\",\"BusinessGoal\"]}"),
                 ScriptedAssistantModelProvider.reply(
                     """
 {"types":["Actor"],"objects":[
@@ -1250,8 +1378,7 @@ class ConceptualInstanceModelWorkflowTest {
   }
 
   @Test
-  void preventsCheckpointWhenReviewClaimsCompressedEvidenceSatisfiesRequiredCardinality()
-      throws Exception {
+  void repairsCompressedEvidenceBeforeCheckpointingRequiredCardinality() throws Exception {
     String blueprint =
         """
 {"types":["Actor"],"objects":[
@@ -1271,7 +1398,15 @@ class ConceptualInstanceModelWorkflowTest {
                 ScriptedAssistantModelProvider.reply(actor("actor-2", "Librarian")),
                 ScriptedAssistantModelProvider.reply(
                     "{\"acceptable\":true,\"coverage\":[{\"obligationId\":\"OBL-1\",\"state\":\"SATISFIED\",\"evidenceObjectIds\":[\"actor-1\"],\"evidenceRelationships\":[],\"explanation\":\"Participants"
-                        + " modeled\"}],\"findings\":[]}")));
+                        + " modeled\"}],\"findings\":[]}"),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"acceptable\":false,\"findings\":[{\"problem\":\"Cardinality evidence was"
+                        + " compressed\"}],\"corrections\":{\"actor-1\":{\"type\":\"Actor\",\"attributes\":[{\"attributeName\":\"name\",\"value\":\"Borrower"
+                        + " participant\"}],\"associations\":{\"compositions\":[],\"references\":[]}},\"actor-2\":{\"type\":\"Actor\",\"attributes\":[{\"attributeName\":\"name\",\"value\":\"Librarian"
+                        + " participant\"}],\"associations\":{\"compositions\":[],\"references\":[]}}}}"),
+                ScriptedAssistantModelProvider.reply(
+                    "{\"acceptable\":true,\"coverage\":[{\"obligationId\":\"OBL-1\",\"state\":\"SATISFIED\",\"evidenceObjectIds\":[\"actor-1\",\"actor-2\"],\"evidenceRelationships\":[],\"explanation\":\"Both"
+                        + " participants modeled\"}],\"findings\":[]}")));
     AssistantTurnStore store = mock(AssistantTurnStore.class);
     AtomicReference<AssistantTurnStore.Workflow> savedWorkflow = new AtomicReference<>();
     when(store.workflow("turn-obligation-failure"))
@@ -1290,6 +1425,10 @@ class ConceptualInstanceModelWorkflowTest {
     when(properties.model()).thenReturn("DeepSeek-V4-Flash");
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
     var workspace =
         new ModelWorkspace(
             ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
@@ -1297,29 +1436,26 @@ class ConceptualInstanceModelWorkflowTest {
         new ConceptualInstanceModelWorkflow(
             provider, new MetamodelGuideGenerator(knowledge), contracts, properties, store);
 
-    AgentTurnLoop.TurnExecutionException failure =
-        assertThrows(
-            AgentTurnLoop.TurnExecutionException.class,
-            () ->
-                DurableTurnExecutionContext.with(
-                    "turn-obligation-failure",
-                    () ->
-                        workflow.run(
-                            "session",
-                            ModelLevel.CIM,
-                            "Create borrowing behavior",
-                            workspace,
-                            new AgentModelTools(contracts, models)
-                                .scoped(ModelLevel.CIM, workspace),
-                            false)));
+    assertDoesNotThrow(
+        () ->
+            DurableTurnExecutionContext.with(
+                "turn-obligation-failure",
+                () ->
+                    workflow.run(
+                        "session",
+                        ModelLevel.CIM,
+                        "Create borrowing behavior",
+                        workspace,
+                        new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+                        false)));
 
-    assertTrue(
-        failure.getMessage().contains("Mandatory requirement obligations were not satisfied"));
     String reviewPrompt = provider.prompts().get(5).user();
     assertTrue(reviewPrompt.contains("OBLIGATION LEDGER (authoritative requirements"));
     assertTrue(!reviewPrompt.contains("REQUEST AND SOURCE SPECIFICATION"));
     assertTrue(!reviewPrompt.contains("\"purpose\":\"Borrower\""));
-    assertTrue(!workspace.snapshot().toString().contains("Borrower"));
+    assertTrue(provider.prompts().get(6).user().contains("REJECTED REVIEW VERDICT"));
+    assertTrue(provider.prompts().get(7).user().contains("OBLIGATION LEDGER"));
+    assertTrue(workspace.snapshot().toString().contains("Borrower participant"));
     assertEquals(0, provider.remainingSteps());
   }
 

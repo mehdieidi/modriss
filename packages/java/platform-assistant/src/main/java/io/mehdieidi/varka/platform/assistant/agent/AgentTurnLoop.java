@@ -293,9 +293,19 @@ public final class AgentTurnLoop {
       if (sourceDocument != null && !sourceDocument.isBlank()) {
         conceptualRequest += "\n\nSOURCE SPECIFICATION (authoritative input):\n" + sourceDocument;
       }
+      String finalConceptualRequest = conceptualRequest;
       try {
-        return workflow.run(
-            sessionId, level, conceptualRequest, workspace, turnTools, destructiveConfirmed);
+        return ProviderRequestContext.with(
+            () -> canceled.get() || cancellationRequested.getAsBoolean(),
+            stopReason,
+            () ->
+                workflow.run(
+                    sessionId,
+                    level,
+                    finalConceptualRequest,
+                    workspace,
+                    turnTools,
+                    destructiveConfirmed));
       } finally {
         // The conceptual route returns before the general loop's finally block. Always release
         // the per-session cancellation slot, including provider timeouts and repair failures.
