@@ -6,7 +6,7 @@ Source profile: `mde/validation/pim/rules/security-config-external.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that adapter has endpoint. The external adapter element owns the evidence for this decision, including endpoint, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-EXT-000] ExternalAdapter ' ' has no endpoint.
+The rule checks whether adapter has endpoint. The external adapter element provides the relevant evidence through endpoint, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-EXT-000] ExternalAdapter ' ' has no endpoint.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,7 +56,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that credential requirement for credentialed adapter. The external adapter element owns the evidence for this decision, including endpoint, credentials, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-EXT-001] ExternalAdapter ' ' requires credentials but has none.
+The rule checks whether credential requirement for credentialed adapter. The external adapter element provides the relevant evidence through endpoint, credentials, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-EXT-001] ExternalAdapter ' ' requires credentials but has none.
 
 ### When it applies
 
@@ -96,7 +96,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that external adapter should describe endpoint and protocol. This is a review signal about endpoint, display name, not a cosmetic naming preference. In this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-EXT-002] ExternalAdapter ' ' lacks externalSystemName, protocolFamily or endpointDescription. Suggested fix: describe the external system boundary without embedding provider-specific deployment details. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether external adapter should describe endpoint and protocol. It examines endpoint, display name. Within this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. The gap is [PIM-EXT-002] ExternalAdapter ' ' lacks externalSystemName, protocolFamily or endpointDescription. Suggested fix: describe the external system boundary without embedding provider-specific deployment details. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -136,7 +136,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that rate limited adapter should have resilience. This is a review signal about endpoint, resilience, display name, not a cosmetic naming preference. In this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-EXT-003] ExternalAdapter ' ' is rate-limited or private-network dependent but lacks resilience policy. Suggested fix: attach ResiliencePolicy with retry, timeout, fallback and circuit-breaker decisions. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether rate limited adapter should have resilience. It examines endpoint, resilience, display name. Within this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. The gap is [PIM-EXT-003] ExternalAdapter ' ' is rate-limited or private-network dependent but lacks resilience policy. Suggested fix: attach ResiliencePolicy with retry, timeout, fallback and circuit-breaker decisions. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -176,13 +176,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that configuration set should apply somewhere. This is a review signal about environments, applies to, display name, not a cosmetic naming preference. In this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-CONFIG-001] ConfigurationSet ' ' is not attached to environments or targets. Suggested fix: link environments/appliesTo so generated configuration is scoped correctly. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether configuration set should apply somewhere. It examines environments, applies to, display name. Within this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. The gap is [PIM-CONFIG-001] ConfigurationSet ' ' is not attached to environments or targets. Suggested fix: link environments/appliesTo so generated configuration is scoped correctly. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -214,7 +214,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that required parameter should have default or stage specific decision. This is a review signal about required, default value, stage specific, secret, display name, not a cosmetic naming preference. In this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-CONFIG-002] Required ConfigParameter ' ' has no default, stage-specific decision or secret flag. Suggested fix: provide a safe default, mark stageSpecific, or model it as a secret. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether required parameter should have default or stage specific decision. It examines required, default value, stage specific, secret, display name. Within this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. The gap is [PIM-CONFIG-002] Required ConfigParameter ' ' has no default, stage-specific decision or secret flag. Suggested fix: provide a safe default, mark stageSpecific, or model it as a secret. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -254,7 +254,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that secret environment variable references secret. The environment variable element owns the evidence for this decision, including secret reference, secret, variable name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-CONFIG-003] EnvironmentVariable ' ' is a secret reference but has no secret.
+The rule checks whether secret environment variable references secret. The environment variable element provides the relevant evidence through secret reference, secret, variable name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-CONFIG-003] EnvironmentVariable ' ' is a secret reference but has no secret.
 
 ### When it applies
 
@@ -294,13 +294,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that environment variable name is portable. The environment variable element owns the evidence for this decision, including variable name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-CONFIG-004] EnvironmentVariable name ' <missing> ' is not portable.
+The rule checks whether environment variable name is portable. The environment variable element provides the relevant evidence through variable name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-CONFIG-004] EnvironmentVariable name ' <missing> ' is not portable.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -332,7 +332,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that secret not plain environment value. The environment variable element owns the evidence for this decision, including secret reference, value source, variable name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-CONFIG-005] Secret EnvironmentVariable ' ' appears to define a plain value source.
+The rule checks whether secret not plain environment value. The environment variable element provides the relevant evidence through secret reference, value source, variable name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-CONFIG-005] Secret EnvironmentVariable ' ' appears to define a plain value source.
 
 ### When it applies
 
@@ -372,13 +372,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that secret reference only. The secret element owns the evidence for this decision, including generated reference only, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SECRET-001] Secret ' ' is not marked generatedReferenceOnly.
+The rule checks whether secret reference only. The secret element provides the relevant evidence through generated reference only, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SECRET-001] Secret ' ' is not marked generatedReferenceOnly.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -410,7 +410,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that rotation required needs frequency. The secret element owns the evidence for this decision, including rotation required, rotation frequency, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SECRET-002] Secret ' ' requires rotation but has no rotationFrequency.
+The rule checks whether rotation required needs frequency. The secret element provides the relevant evidence through rotation required, rotation frequency, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SECRET-002] Secret ' ' requires rotation but has no rotationFrequency.
 
 ### When it applies
 
@@ -450,7 +450,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that environment specific secret should have owner. This is a review signal about environment specific, owner team, display name, not a cosmetic naming preference. In this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-SECRET-003] Environment-specific secret ' ' has no ownerTeam. Suggested fix: set the team responsible for rotation, provisioning and incident response. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether environment specific secret should have owner. It examines environment specific, owner team, display name. Within this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. The gap is [PIM-SECRET-003] Environment-specific secret ' ' has no ownerTeam. Suggested fix: set the team responsible for rotation, provisioning and incident response. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -490,13 +490,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that credential requirement has secret. The credential requirement element owns the evidence for this decision, including secret, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-CRED-001] CredentialRequirement ' ' is not linked to a Secret.
+The rule checks whether credential requirement has secret. The credential requirement element provides the relevant evidence through secret, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-CRED-001] CredentialRequirement ' ' is not linked to a Secret.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -528,13 +528,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that credential requirement should explain purpose. This is a review signal about purpose, display name, not a cosmetic naming preference. In this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-CRED-002] CredentialRequirement ' ' has no purpose. Suggested fix: describe why this credential is needed and which external call or adapter uses it. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether credential requirement should explain purpose. It examines purpose, display name. Within this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. The gap is [PIM-CRED-002] CredentialRequirement ' ' has no purpose. Suggested fix: describe why this credential is needed and which external call or adapter uses it. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -566,7 +566,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that federated identity should describe token and attributes. This is a review signal about federation required, token type, user attribute requirements, display name, not a cosmetic naming preference. In this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-SEC-001] Federated IdentityProvider ' ' lacks tokenType or userAttributeRequirements. Suggested fix: describe token and required claims/attributes. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether federated identity should describe token and attributes. It examines federation required, token type, user attribute requirements, display name. Within this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. The gap is [PIM-SEC-001] Federated IdentityProvider ' ' lacks tokenType or userAttributeRequirements. Suggested fix: describe token and required claims/attributes. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -606,7 +606,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that privileged principal needs permissions. This is a review signal about privileged, permissions, display name, not a cosmetic naming preference. In this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-SEC-002] Privileged Principal ' ' has no permissions. Suggested fix: either remove privileged=true or model the exact permissions and least-privilege decision. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether privileged principal needs permissions. It examines privileged, permissions, display name. Within this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. The gap is [PIM-SEC-002] Privileged Principal ' ' has no permissions. Suggested fix: either remove privileged=true or model the exact permissions and least-privilege decision. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -646,13 +646,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that permission is scoped. The permission element owns the evidence for this decision, including action, resource, target resource, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SEC-003] Permission ' ' is not scoped.
+The rule checks whether permission is scoped. The permission element provides the relevant evidence through action, resource, target resource, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SEC-003] Permission ' ' is not scoped.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -684,13 +684,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that least privilege should be confirmed. This is a review signal about least privilege confirmed, action, resource, display name, not a cosmetic naming preference. In this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-SEC-004] Permission ' ' has not been confirmed as least-privilege or uses wildcards. Suggested fix: narrow action/resource and set leastPrivilegeConfirmed to true after review. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether least privilege should be confirmed. It examines least privilege confirmed, action, resource, display name. Within this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. The gap is [PIM-SEC-004] Permission ' ' has not been confirmed as least-privilege or uses wildcards. Suggested fix: narrow action/resource and set leastPrivilegeConfirmed to true after review. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -722,13 +722,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that auth policy has scheme. The auth policy element owns the evidence for this decision, including auth scheme, identity provider, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SEC-005] AuthPolicy ' ' lacks authScheme or identityProvider.
+The rule checks whether auth policy has scheme. The auth policy element provides the relevant evidence through auth scheme, identity provider, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SEC-005] AuthPolicy ' ' lacks authScheme or identityProvider.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -760,13 +760,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that authorization policy has decision logic. The authorization policy element owns the evidence for this decision, including rule expression, role or scope required, allowed principals, permissions, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SEC-006] AuthorizationPolicy ' ' has no decision logic.
+The rule checks whether authorization policy has decision logic. The authorization policy element provides the relevant evidence through rule expression, role or scope required, allowed principals, permissions, display name. At this level, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SEC-006] AuthorizationPolicy ' ' has no decision logic.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -798,7 +798,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that resource level authorization should have expression. This is a review signal about resource level authorization, rule expression, display name, not a cosmetic naming preference. In this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-SEC-007] Resource-level AuthorizationPolicy ' ' has no ruleExpression. Suggested fix: define the rule that binds principal, resource identity and permitted operation. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether resource level authorization should have expression. It examines resource level authorization, rule expression, display name. Within this part of the model, credentials, identity, secrets, authorization, configuration, and external endpoints have explicit owners and safeguards. The gap is [PIM-SEC-007] Resource-level AuthorizationPolicy ' ' has no ruleExpression. Suggested fix: define the rule that binds principal, resource identity and permitted operation. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 

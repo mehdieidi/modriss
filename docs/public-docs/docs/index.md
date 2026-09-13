@@ -49,6 +49,5 @@ inspect/contract editing, or a non-mutating answer. Source-backed coverage and p
 implemented. Current live acceptance passes three of four unified scenarios; large library
 generation remains sensitive to provider output truncation and is under active hardening.
 
-The project is both a research platform and an engineering system. Its documentation therefore
-describes not only how to use it, but also the formal sources of truth, traceability boundaries,
-runtime architecture, and extension rules.
+The project serves as both a research platform and an engineering system. The documentation covers
+its use, formal sources of truth, traceability boundaries, runtime architecture, and extension rules.

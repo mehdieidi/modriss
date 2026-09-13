@@ -6,7 +6,7 @@ Source profile: `mde/validation/pim/rules/contracts.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that contract has at least input or output. The function contract element owns the evidence for this decision, including input schema, output schema, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-CONTRACT-001] Function contract ' ' has neither inputSchema nor outputSchema.
+The rule checks whether contract has at least input or output. The function contract element provides the relevant evidence through input schema, output schema, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-CONTRACT-001] Function contract ' ' has neither inputSchema nor outputSchema.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,7 +56,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that input validation requires input schema. The function contract element owns the evidence for this decision, including validates input, input schema, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-CONTRACT-002] Contract ' ' validates input but has no inputSchema.
+The rule checks whether input validation requires input schema. The function contract element provides the relevant evidence through validates input, input schema, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-CONTRACT-002] Contract ' ' validates input but has no inputSchema.
 
 ### When it applies
 
@@ -96,7 +96,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that output validation requires output schema. The function contract element owns the evidence for this decision, including validates output, output schema, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-CONTRACT-003] Contract ' ' validates output but has no outputSchema.
+The rule checks whether output validation requires output schema. The function contract element provides the relevant evidence through validates output, output schema, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-CONTRACT-003] Contract ' ' validates output but has no outputSchema.
 
 ### When it applies
 
@@ -136,7 +136,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that correlation id field should exist in schema. This is a review signal about correlation id field, input schema, display name, not a cosmetic naming preference. In this part of the model, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-CONTRACT-004] Contract ' ' declares correlationIdField ' ' but the input schema does not contain such a field. Suggested fix: add the field to the schema or correct the field name. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether correlation id field should exist in schema. It examines correlation id field, input schema, display name. Within this part of the model, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. The gap is [PIM-CONTRACT-004] Contract ' ' declares correlationIdField ' ' but the input schema does not contain such a field. Suggested fix: add the field to the schema or correct the field name. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -176,7 +176,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that idempotency key field should exist in schema. This is a review signal about idempotency key field, input schema, display name, not a cosmetic naming preference. In this part of the model, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-CONTRACT-005] Contract ' ' declares idempotencyKeyField ' ' but the input schema does not contain such a field. Suggested fix: add the field or update idempotencyKeyField. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether idempotency key field should exist in schema. It examines idempotency key field, input schema, display name. Within this part of the model, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. The gap is [PIM-CONTRACT-005] Contract ' ' declares idempotencyKeyField ' ' but the input schema does not contain such a field. Suggested fix: add the field or update idempotencyKeyField. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -216,13 +216,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that schema has fields unless external. The schema element owns the evidence for this decision, including external schema uri, fields, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SCHEMA-001] Schema ' ' has no fields and no externalSchemaUri.
+The rule checks whether schema has fields unless external. The schema element provides the relevant evidence through external schema uri, fields, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SCHEMA-001] Schema ' ' has no fields and no externalSchemaUri.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -254,13 +254,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that schema version should be semver. This is a review signal about semantic version, display name, not a cosmetic naming preference. In this part of the model, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-SCHEMA-002] Schema ' ' has no SemVer-like semanticVersion. Suggested fix: use a version such as 1.0.0 so compatibility and contract evolution can be validated. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether schema version should be semver. It examines semantic version, display name. Within this part of the model, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. The gap is [PIM-SCHEMA-002] Schema ' ' has no SemVer-like semanticVersion. Suggested fix: use a version such as 1.0.0 so compatibility and contract evolution can be validated. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -292,7 +292,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that external schema should state compatibility. This is a review signal about external schema uri, e is set, e class, display name, not a cosmetic naming preference. In this part of the model, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-SCHEMA-003] External schema ' ' does not state compatibility. Suggested fix: set compatibility to BACKWARD, FORWARD, FULL or NONE based on the evolution contract. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether external schema should state compatibility. It examines external schema uri, e is set, e class, display name. Within this part of the model, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. The gap is [PIM-SCHEMA-003] External schema ' ' does not state compatibility. Suggested fix: set compatibility to BACKWARD, FORWARD, FULL or NONE based on the evolution contract. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -332,7 +332,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that sensitive field is classified. The schema field element owns the evidence for this decision, including personal data, sensitive data, secret value, classification, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SCHEMA-004] Field ' ' is personal, sensitive or secret but has no classification.
+The rule checks whether sensitive field is classified. The schema field element provides the relevant evidence through personal data, sensitive data, secret value, classification, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SCHEMA-004] Field ' ' is personal, sensitive or secret but has no classification.
 
 ### When it applies
 
@@ -372,7 +372,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that enum field has literals. The schema field element owns the evidence for this decision, including field type, enum values, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SCHEMA-005] Enum field ' ' has no enumValues.
+The rule checks whether enum field has literals. The schema field element provides the relevant evidence through field type, enum values, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SCHEMA-005] Enum field ' ' has no enumValues.
 
 ### When it applies
 
@@ -412,7 +412,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that object field has object schema. The schema field element owns the evidence for this decision, including field type, object schema, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SCHEMA-006] Object field ' ' has no objectSchema.
+The rule checks whether object field has object schema. The schema field element provides the relevant evidence through field type, object schema, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SCHEMA-006] Object field ' ' has no objectSchema.
 
 ### When it applies
 
@@ -452,7 +452,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that field length bounds are valid. The schema field element owns the evidence for this decision, including min length, max length, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SCHEMA-007] Field ' ' has invalid minLength/maxLength.
+The rule checks whether field length bounds are valid. The schema field element provides the relevant evidence through min length, max length, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SCHEMA-007] Field ' ' has invalid minLength/maxLength.
 
 ### When it applies
 
@@ -492,7 +492,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that required nullable field needs rationale. This is a review signal about required, nullable, rationale, description for consumers, display name, not a cosmetic naming preference. In this part of the model, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-SCHEMA-008] Field ' ' is both required and nullable. Suggested fix: either make it non-nullable or explain the intended null semantics in descriptionForConsumers/rationale. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether required nullable field needs rationale. It examines required, nullable, rationale, description for consumers, display name. Within this part of the model, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. The gap is [PIM-SCHEMA-008] Field ' ' is both required and nullable. Suggested fix: either make it non-nullable or explain the intended null semantics in descriptionForConsumers/rationale. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -532,7 +532,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that sensitive field should not expose examples or defaults. This is a review signal about personal data, sensitive data, secret value, default value, example, not a cosmetic naming preference. In this part of the model, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-SCHEMA-009] Sensitive field ' ' has example/default data. Suggested fix: remove real-looking examples/defaults or replace them with clearly synthetic, non-sensitive placeholders. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether sensitive field should not expose examples or defaults. It examines personal data, sensitive data, secret value, default value, example. Within this part of the model, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. The gap is [PIM-SCHEMA-009] Sensitive field ' ' has example/default data. Suggested fix: remove real-looking examples/defaults or replace them with clearly synthetic, non-sensitive placeholders. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -572,13 +572,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that schema constraint has expression and message. The schema constraint element owns the evidence for this decision, including expression language, expression, message, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SCHEMA-010] SchemaConstraint ' ' is incomplete.
+The rule checks whether schema constraint has expression and message. The schema constraint element provides the relevant evidence through expression language, expression, message, display name. At this level, the boundaries between functions, APIs, events, and messages remain typed and compatible during transformation. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SCHEMA-010] SchemaConstraint ' ' is incomplete.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

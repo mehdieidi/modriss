@@ -6,7 +6,7 @@ Source profile: `mde/validation/psm/rules/networking.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that vpc attachment has subnets and security groups. The vpc attachment config element owns the evidence for this decision, including subnet ids, subnets, security group ids, security groups. At this level, VPC, subnet, security-group, DNS, endpoint, and ingress assumptions agree with the resources that will actually be deployed; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: VPC attachment is missing subnet IDs/references or security groups.
+The rule checks whether vpc attachment has subnets and security groups. The vpc attachment config element provides the relevant evidence through subnet ids, subnets, security group ids, security groups. At this level, VPC, subnet, security-group, DNS, endpoint, and ingress assumptions agree with the resources that will actually be deployed. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: VPC attachment is missing subnet IDs/references or security groups.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,7 +56,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that modeled vpc attachment should not contradict raw ids. This is a review signal about vpc, subnets, security groups, vpc id, subnet ids, not a cosmetic naming preference. In this part of the model, VPC, subnet, security-group, DNS, endpoint, and ingress assumptions agree with the resources that will actually be deployed; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: VPC attachment mixes modeled VPC/subnet/security-group references with raw IDs. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether modeled vpc attachment should not contradict raw ids. It examines vpc, subnets, security groups, vpc id, subnet ids. Within this part of the model, VPC, subnet, security-group, DNS, endpoint, and ingress assumptions agree with the resources that will actually be deployed. The gap is VPC attachment mixes modeled VPC/subnet/security-group references with raw IDs. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -96,7 +96,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that private subnets require endpoints when flagged. This is a review signal about private subnets require nat or endpoints, required endpoints, required for private access, service name, not a cosmetic naming preference. In this part of the model, VPC, subnet, security-group, DNS, endpoint, and ingress assumptions agree with the resources that will actually be deployed; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: VPC attachment requires NAT/endpoints but has incomplete endpoint references. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether private subnets require endpoints when flagged. It examines private subnets require nat or endpoints, required endpoints, required for private access, service name. Within this part of the model, VPC, subnet, security-group, DNS, endpoint, and ingress assumptions agree with the resources that will actually be deployed. The gap is VPC attachment requires NAT/endpoints but has incomplete endpoint references. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -136,13 +136,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that vpc should enable dns. This is a review signal about enable dns hostnames, enable dns support, resource label, not a cosmetic naming preference. In this part of the model, VPC, subnet, security-group, DNS, endpoint, and ingress assumptions agree with the resources that will actually be deployed; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: VPC does not enable both DNS hostnames and DNS support. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether vpc should enable dns. It examines enable dns hostnames, enable dns support, resource label. Within this part of the model, VPC, subnet, security-group, DNS, endpoint, and ingress assumptions agree with the resources that will actually be deployed. The gap is VPC does not enable both DNS hostnames and DNS support. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -174,13 +174,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that port range valid. The security group rule element owns the evidence for this decision, including from port, to port. At this level, VPC, subnet, security-group, DNS, endpoint, and ingress assumptions agree with the resources that will actually be deployed; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Security group rule has invalid port range.
+The rule checks whether port range valid. The security group rule element provides the relevant evidence through from port, to port. At this level, VPC, subnet, security-group, DNS, endpoint, and ingress assumptions agree with the resources that will actually be deployed. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Security group rule has invalid port range.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -212,7 +212,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that public admin ingress requires review. This is a review signal about cidr ip, from port, to port, rule description, not a cosmetic naming preference. In this part of the model, VPC, subnet, security-group, DNS, endpoint, and ingress assumptions agree with the resources that will actually be deployed; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Security group rule exposes SSH/RDP to the public internet. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether public admin ingress requires review. It examines cidr ip, from port, to port, rule description. Within this part of the model, VPC, subnet, security-group, DNS, endpoint, and ingress assumptions agree with the resources that will actually be deployed. The gap is Security group rule exposes SSH/RDP to the public internet. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 

@@ -6,7 +6,7 @@ Source profile: `mde/validation/pim/rules/integration.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that event type has schema. The event type element owns the evidence for this decision, including schema, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-EVENT-001] EventType ' ' has no schema.
+The rule checks whether event type has schema. The event type element provides the relevant evidence through schema, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-EVENT-001] EventType ' ' has no schema.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,7 +56,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that personal data event schema is classified. The event type element owns the evidence for this decision, including carries personal data, schema, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-EVENT-002] EventType ' ' carries personal/sensitive data but its schema fields are not fully classified.
+The rule checks whether personal data event schema is classified. The event type element provides the relevant evidence through carries personal data, schema, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-EVENT-002] EventType ' ' carries personal/sensitive data but its schema fields are not fully classified.
 
 ### When it applies
 
@@ -96,13 +96,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that event type should have version and source. This is a review signal about version, source domain, display name, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-EVENT-003] EventType ' ' should have version and sourceDomain. Suggested fix: set a semantic event version and the domain/service that owns the event. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether event type should have version and source. It examines version, source domain, display name. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-EVENT-003] EventType ' ' should have version and sourceDomain. Suggested fix: set a semantic event version and the domain/service that owns the event. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -134,7 +134,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that external or replayable event should have envelope. This is a review signal about external event, replayable, audit event, envelope, display name, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-EVENT-004] EventType ' ' is external, replayable or audit-related but has no EventEnvelope. Suggested fix: define envelope fields for eventId, eventType, source, time, version and correlation/causation IDs. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether external or replayable event should have envelope. It examines external event, replayable, audit event, envelope, display name. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-EVENT-004] EventType ' ' is external, replayable or audit-related but has no EventEnvelope. Suggested fix: define envelope fields for eventId, eventType, source, time, version and correlation/causation IDs. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -174,13 +174,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that event type producer consumer links consistent. This is a review signal about produced by, participant key, consumed by, display name, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-EVENT-006] EventType ' ' has producedBy/consumedBy links that are not reflected by event-channel producer/consumer links. Suggested fix: synchronize EventType and EventChannel relationship references. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether event type producer consumer links consistent. It examines produced by, participant key, consumed by, display name. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-EVENT-006] EventType ' ' has producedBy/consumedBy links that are not reflected by event-channel producer/consumer links. Suggested fix: synchronize EventType and EventChannel relationship references. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -212,13 +212,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that envelope should carry correlation fields. This is a review signal about event id field, event type field, source field, time field, version field, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-EVENT-005] EventEnvelope ' ' lacks one or more standard envelope fields. Suggested fix: define eventIdField, eventTypeField, sourceField, timeField, versionField and correlationIdField. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether envelope should carry correlation fields. It examines event id field, event type field, source field, time field, version field. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-EVENT-005] EventEnvelope ' ' lacks one or more standard envelope fields. Suggested fix: define eventIdField, eventTypeField, sourceField, timeField, versionField and correlationIdField. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -250,13 +250,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that channel has event types. The event channel element owns the evidence for this decision, including event types, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-CHAN-001] Event channel ' ' has no eventTypes.
+The rule checks whether channel has event types. The event channel element provides the relevant evidence through event types, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-CHAN-001] Event channel ' ' has no eventTypes.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -288,7 +288,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that personal data channel must be encrypted. The event channel element owns the evidence for this decision, including carries personal data, encrypted, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-CHAN-002] Event channel ' ' carries personal/sensitive events but is not encrypted.
+The rule checks whether personal data channel must be encrypted. The event channel element provides the relevant evidence through carries personal data, encrypted, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-CHAN-002] Event channel ' ' carries personal/sensitive events but is not encrypted.
 
 ### When it applies
 
@@ -328,7 +328,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that exactly once requires idempotent consumers. The event channel element owns the evidence for this decision, including delivery semantics, consumers, idempotency, workflow consumers, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-CHAN-003] Channel ' ' requires exactly/effectively-once delivery but not all consumers have idempotency policies.
+The rule checks whether exactly once requires idempotent consumers. The event channel element provides the relevant evidence through delivery semantics, consumers, idempotency, workflow consumers, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-CHAN-003] Channel ' ' requires exactly/effectively-once delivery but not all consumers have idempotency policies.
 
 ### When it applies
 
@@ -368,7 +368,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that ordered channel has ordering key. The event channel element owns the evidence for this decision, including ordering requirement, partition key expression, event types, ordering key, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-CHAN-004] Ordered channel ' ' has no partitionKeyExpression or event orderingKey.
+The rule checks whether ordered channel has ordering key. The event channel element provides the relevant evidence through ordering requirement, partition key expression, event types, ordering key, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-CHAN-004] Ordered channel ' ' has no partitionKeyExpression or event orderingKey.
 
 ### When it applies
 
@@ -408,13 +408,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that channel should have producer and consumer intent. This is a review signal about producers, external producers, consumers, workflow consumers, external consumers, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-CHAN-005] Channel ' ' has no producer/consumer intent. Suggested fix: connect producers and consumers or mark it as intentionally reserved in rationale. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether channel should have producer and consumer intent. It examines producers, external producers, consumers, workflow consumers, external consumers. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-CHAN-005] Channel ' ' has no producer/consumer intent. Suggested fix: connect producers and consumers or mark it as intentionally reserved in rationale. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -446,13 +446,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that channel producer consumer links consistent. This is a review signal about producers, event types, produced by, consumers, consumed by, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-CHAN-006] Channel ' ' has producer/consumer links that are not reflected by event types, functions, external adapters, workflows, or event flows. Suggested fix: keep EventChannel, EventType, Function and EventFlow references synchronized. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether channel producer consumer links consistent. It examines producers, event types, produced by, consumers, consumed by. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-CHAN-006] Channel ' ' has producer/consumer links that are not reflected by event types, functions, external adapters, workflows, or event flows. Suggested fix: keep EventChannel, EventType, Function and EventFlow references synchronized. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -484,7 +484,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that retry queue needs dead letter channel. The queue element owns the evidence for this decision, including max receive attempts, dead letter channel, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-QUEUE-001] Queue ' ' retries messages but has no deadLetterChannel.
+The rule checks whether retry queue needs dead letter channel. The queue element provides the relevant evidence through max receive attempts, dead letter channel, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-QUEUE-001] Queue ' ' retries messages but has no deadLetterChannel.
 
 ### When it applies
 
@@ -524,7 +524,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that batch queue needs partial failure decision. The queue element owns the evidence for this decision, including batch policy, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-QUEUE-002] Queue ' ' has a BatchPolicy but partialFailureHandling is UNDECIDED.
+The rule checks whether batch queue needs partial failure decision. The queue element provides the relevant evidence through batch policy, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-QUEUE-002] Queue ' ' has a BatchPolicy but partialFailureHandling is UNDECIDED.
 
 ### When it applies
 
@@ -564,7 +564,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that fifo queue needs deduplication or idempotency. The queue element owns the evidence for this decision, including fifo required, deduplication required, consumers, idempotency, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-QUEUE-003] FIFO queue ' ' needs deduplication or idempotent consumers.
+The rule checks whether fifo queue needs deduplication or idempotency. The queue element provides the relevant evidence through fifo required, deduplication required, consumers, idempotency, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-QUEUE-003] FIFO queue ' ' needs deduplication or idempotent consumers.
 
 ### When it applies
 
@@ -604,13 +604,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that queue should have visibility timeout. This is a review signal about visibility timeout seconds, display name, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-QUEUE-004] Queue ' ' has no positive visibilityTimeoutSeconds. Suggested fix: set a timeout that exceeds normal consumer processing time and retry behavior. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether queue should have visibility timeout. It examines visibility timeout seconds, display name. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-QUEUE-004] Queue ' ' has no positive visibilityTimeoutSeconds. Suggested fix: set a timeout that exceeds normal consumer processing time and retry behavior. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -642,7 +642,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that filtering topic should use subscription filters. This is a review signal about filtering required, subscriptions, filter expression, display name, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-TOPIC-001] Topic ' ' requires filtering but none of its subscriptions define filterExpression. Suggested fix: add subscription filters or mark filteringRequired false. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether filtering topic should use subscription filters. It examines filtering required, subscriptions, filter expression, display name. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-TOPIC-001] Topic ' ' requires filtering but none of its subscriptions define filterExpression. Suggested fix: add subscription filters or mark filteringRequired false. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -682,13 +682,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that event bus should have routing rules. This is a review signal about routing rules, display name, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-BUS-001] EventBus ' ' has no routingRules. Suggested fix: add EventRoutingRule entries or use a simpler channel type if no routing is needed. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether event bus should have routing rules. It examines routing rules, display name. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-BUS-001] EventBus ' ' has no routingRules. Suggested fix: add EventRoutingRule entries or use a simpler channel type if no routing is needed. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -720,13 +720,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that routing rule has pattern or schedule. The event routing rule element owns the evidence for this decision, including event pattern, schedule expression, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-BUS-002] EventRoutingRule ' ' has neither eventPattern nor scheduleExpression.
+The rule checks whether routing rule has pattern or schedule. The event routing rule element provides the relevant evidence through event pattern, schedule expression, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-BUS-002] EventRoutingRule ' ' has neither eventPattern nor scheduleExpression.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -758,7 +758,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that enabled routing rule has targets. The event routing rule element owns the evidence for this decision, including enabled, targets, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-BUS-003] Enabled EventRoutingRule ' ' has no targets.
+The rule checks whether enabled routing rule has targets. The event routing rule element provides the relevant evidence through enabled, targets, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-BUS-003] Enabled EventRoutingRule ' ' has no targets.
 
 ### When it applies
 
@@ -798,7 +798,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that dead letter subscription should explain handling. This is a review signal about dead letter required, filter expression, rationale, review notes, display name, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-SUB-001] Subscription ' ' requires dead-letter behavior but does not document filtering/error-handling intent. Suggested fix: add filterExpression, rationale or reviewNotes explaining poison message handling. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether dead letter subscription should explain handling. It examines dead letter required, filter expression, rationale, review notes, display name. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-SUB-001] Subscription ' ' requires dead-letter behavior but does not document filtering/error-handling intent. Suggested fix: add filterExpression, rationale or reviewNotes explaining poison message handling. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -838,13 +838,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that schedule expression required. The schedule element owns the evidence for this decision, including schedule expression, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SCHED-001] Schedule ' ' has no scheduleExpression.
+The rule checks whether schedule expression required. The schedule element provides the relevant evidence through schedule expression, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SCHED-001] Schedule ' ' has no scheduleExpression.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -876,13 +876,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that schedule should declare timezone. This is a review signal about time zone, display name, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-SCHED-002] Schedule ' ' has no timeZone. Suggested fix: set an IANA timezone or document why UTC/default timezone is intended. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether schedule should declare timezone. It examines time zone, display name. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-SCHED-002] Schedule ' ' has no timeZone. Suggested fix: set an IANA timezone or document why UTC/default timezone is intended. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -914,7 +914,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that enabled schedule has single target. The schedule element owns the evidence for this decision, including enabled, targets, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SCHED-003] Enabled Schedule ' ' must have exactly one target.
+The rule checks whether enabled schedule has single target. The schedule element provides the relevant evidence through enabled, targets, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SCHED-003] Enabled Schedule ' ' must have exactly one target.
 
 ### When it applies
 
@@ -954,13 +954,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that flow purpose required. The flow element owns the evidence for this decision, including flow purpose, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-FLOW-001] Flow ' ' has no flowPurpose.
+The rule checks whether flow purpose required. The flow element provides the relevant evidence through flow purpose, display name. At this level, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-FLOW-001] Flow ' ' has no flowPurpose.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -992,7 +992,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that critical flow needs resilience and observability. This is a review signal about critical path, resilience, observability, display name, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-FLOW-002] Critical flow ' ' lacks resilience or observability. Suggested fix: attach retry/timeout/dead-letter decisions and observability configuration. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether critical flow needs resilience and observability. It examines critical path, resilience, observability, display name. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-FLOW-002] Critical flow ' ' lacks resilience or observability. Suggested fix: attach retry/timeout/dead-letter decisions and observability configuration. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -1032,7 +1032,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that personal data flow needs policy. This is a review signal about contains personal data, policies, is kind of, display name, not a cosmetic naming preference. In this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-FLOW-003] Flow ' ' contains personal data but has no DataProtectionPolicy. Suggested fix: attach data protection policy covering encryption, masking, auditing, retention and residency. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether personal data flow needs policy. It examines contains personal data, policies, is kind of, display name. Within this part of the model, delivery, routing, ordering, replay, dead-letter, and ownership choices can be mapped to concrete channels safely. The gap is [PIM-FLOW-003] Flow ' ' contains personal data but has no DataProtectionPolicy. Suggested fix: attach data protection policy covering encryption, masking, auditing, retention and residency. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 

@@ -6,7 +6,7 @@ Source profile: `mde/validation/pim/rules/readiness.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that trace link has reference or external id. The trace link element owns the evidence for this decision, including source, target, source element id, target element id, display name. At this level, transformation readiness and production readiness remain evidence-based decisions rather than optimistic status flags; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-READY-001] TraceLink ' ' has no complete source/target reference.
+The rule checks whether trace link has reference or external id. The trace link element provides the relevant evidence through source, target, source element id, target element id, display name. At this level, transformation readiness and production readiness remain evidence-based decisions rather than optimistic status flags. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-READY-001] TraceLink ' ' has no complete source/target reference.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,7 +56,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that production ready requires passed checks and no blocking findings. The production readiness assessment element owns the evidence for this decision, including production ready, transformation ready, deployment ready, findings, blocking. At this level, transformation readiness and production readiness remain evidence-based decisions rather than optimistic status flags; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-READY-002] ProductionReadinessAssessment ' ' is marked productionReady while checks/findings/manual decisions are unresolved.
+The rule checks whether production ready requires passed checks and no blocking findings. The production readiness assessment element provides the relevant evidence through production ready, transformation ready, deployment ready, findings, blocking. At this level, transformation readiness and production readiness remain evidence-based decisions rather than optimistic status flags. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-READY-002] ProductionReadinessAssessment ' ' is marked productionReady while checks/findings/manual decisions are unresolved.
 
 ### When it applies
 
@@ -96,13 +96,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that finding should recommend remediation. This is a review signal about message, recommendation, affected elements, display name, not a cosmetic naming preference. In this part of the model, transformation readiness and production readiness remain evidence-based decisions rather than optimistic status flags; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-READY-003] ReadinessFinding ' ' lacks message, recommendation or affectedElements. Suggested fix: explain the issue, attach affected elements and provide remediation. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether finding should recommend remediation. It examines message, recommendation, affected elements, display name. Within this part of the model, transformation readiness and production readiness remain evidence-based decisions rather than optimistic status flags. The gap is [PIM-READY-003] ReadinessFinding ' ' lacks message, recommendation or affectedElements. Suggested fix: explain the issue, attach affected elements and provide remediation. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -134,7 +134,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that failed check should have remediation. This is a review signal about passed, message, remediation, display name, not a cosmetic naming preference. In this part of the model, transformation readiness and production readiness remain evidence-based decisions rather than optimistic status flags; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-READY-004] Failed ReadinessCheck ' ' has no message/remediation. Suggested fix: explain what failed and how the user can fix it. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether failed check should have remediation. It examines passed, message, remediation, display name. Within this part of the model, transformation readiness and production readiness remain evidence-based decisions rather than optimistic status flags. The gap is [PIM-READY-004] Failed ReadinessCheck ' ' has no message/remediation. Suggested fix: explain what failed and how the user can fix it. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -174,7 +174,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that blocking manual decision must be answered. The manual decision element owns the evidence for this decision, including blocking, generated by transformation, decision, decision owner, display name. At this level, transformation readiness and production readiness remain evidence-based decisions rather than optimistic status flags; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-READY-005] Blocking ManualDecision ' ' is unanswered or has no owner.
+The rule checks whether blocking manual decision must be answered. The manual decision element provides the relevant evidence through blocking, generated by transformation, decision, decision owner, display name. At this level, transformation readiness and production readiness remain evidence-based decisions rather than optimistic status flags. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-READY-005] Blocking ManualDecision ' ' is unanswered or has no owner.
 
 ### When it applies
 
@@ -214,7 +214,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that generated blocking manual decision should have owner. This is a review signal about blocking, generated by transformation, decision owner, affected elements, display name, not a cosmetic naming preference. In this part of the model, transformation readiness and production readiness remain evidence-based decisions rather than optimistic status flags; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-READY-006] Generated blocking ManualDecision ' ' should identify an owner or affected PIM elements so it can be triaged. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether generated blocking manual decision should have owner. It examines blocking, generated by transformation, decision owner, affected elements, display name. Within this part of the model, transformation readiness and production readiness remain evidence-based decisions rather than optimistic status flags. The gap is [PIM-READY-006] Generated blocking ManualDecision ' ' should identify an owner or affected PIM elements so it can be triaged. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 

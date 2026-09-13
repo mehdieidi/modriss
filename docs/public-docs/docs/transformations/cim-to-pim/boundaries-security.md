@@ -6,19 +6,19 @@ Source module: `mde/transformations/cim-to-pim/boundaries-security.etl`.
 
 ## Reading this page
 
-A transformation rule is not a validation constraint: it decides whether and how a source element contributes to the target model. Read the guard as a routing decision, the target table as the model-level result, the behavior section as the important semantic side effects, and the trace/manual-decision information as the hand-off to review and later phases.
+A transformation rule determines whether a source element contributes to the target model and how it is mapped. Use the guard to understand routing and the target table to see the model-level result. The behavior section records important semantic side effects. Trace and manual-decision information identifies work for review and later phases.
 
 ---
 
 ## Supporting ETL operations
 
-These operations are not independent source-to-target rules, but they materially shape the result. They derive defaults, create secondary resources, cache correspondences, or resolve relationships after the main rule has run.
+Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
-| Operation                             | Role                                            | Source                                                      |
-| ------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------- |
-| `capabilityInBoundedContext`          | Computes capability in bounded context.         | `mde/transformations/cim-to-pim/boundaries-security.etl:8`  |
-| `inferExternalProtocolFamily`         | Derives infer external protocol family.         | `mde/transformations/cim-to-pim/boundaries-security.etl:16` |
-| `ensurePrivilegedPrincipalPermission` | Creates ensure privileged principal permission. | `mde/transformations/cim-to-pim/boundaries-security.etl:31` |
+| Operation                             | Role                                     | Source                                                      |
+| ------------------------------------- | ---------------------------------------- | ----------------------------------------------------------- |
+| `capabilityInBoundedContext`          | Computes capability in bounded context.  | `mde/transformations/cim-to-pim/boundaries-security.etl:8`  |
+| `inferExternalProtocolFamily`         | Derives infer external protocol family.  | `mde/transformations/cim-to-pim/boundaries-security.etl:16` |
+| `ensurePrivilegedPrincipalPermission` | Ensures privileged principal permission. | `mde/transformations/cim-to-pim/boundaries-security.etl:31` |
 
 ---
 
@@ -53,7 +53,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:52`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:52`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -69,7 +69,7 @@ Capabilities are alternate service-boundary seeds. This rule creates a service o
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : not capabilityInBoundedContext(cap)
@@ -86,13 +86,13 @@ Trace identifiers emitted here: `TR-010`. These identifiers are useful when foll
 
 ### How to troubleshoot or repair it
 
-Verify the business capability instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the business capability instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 The trace record is the best first diagnostic: it tells you whether the target was created, which transformation rule claimed it, and what source element it came from.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:69`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:69`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -119,7 +119,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `p.id`, `p.name`, `p.principalKind`, `p.externalRef`, `p.privileged`, `idp.id`, `idp.name`, `idp.identityKind`, `idp.federationRequired`, `idp.mfaRequired`, `idp.tokenType`, `idp.userAttributeRequirements`.
 Trace identifiers emitted here: `TR-020`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-020`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-020`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -129,7 +129,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:89`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:89`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -156,7 +156,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `p.id`, `p.name`, `p.principalKind`, `p.privileged`, `p.externalRef`, `authz.id`, `authz.name`, `authz.policyScope`, `authz.productionRequired`, `authz.authorizationRequired`, `authz.ruleExpression`, `authz.roleOrScopeRequired`, `authz.resourceLevelAuthorization`.
 Trace identifiers emitted here: `TR-020`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-020`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-020`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -166,7 +166,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:130`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:130`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -193,7 +193,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `a.id`, `a.name`, `a.responsibility`, `ep.id`, `ep.name`, `ep.externalSystemName`, `ep.protocolFamily`, `ep.endpointDescription`, `ep.expectedSla`, `ep.credentialsRequired`, `ep.rateLimitedByProvider`, `ep.privateNetworkRequired`, `a.endpoint`, `a.resilience`, `a.observability`, `cred.id` ….
 Trace identifiers emitted here: `TR-030`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-030`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-030`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -203,6 +203,6 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:162`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:162`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

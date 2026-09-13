@@ -6,45 +6,45 @@ Source module: `mde/transformations/pim-to-awspsm/data-messaging-events.etl`.
 
 ## Reading this page
 
-A transformation rule is not a validation constraint: it decides whether and how a source element contributes to the target model. Read the guard as a routing decision, the target table as the model-level result, the behavior section as the important semantic side effects, and the trace/manual-decision information as the hand-off to review and later phases.
+A transformation rule determines whether a source element contributes to the target model and how it is mapped. Use the guard to understand routing and the target table to see the model-level result. The behavior section records important semantic side effects. Trace and manual-decision information identifies work for review and later phases.
 
 ---
 
 ## Supporting ETL operations
 
-These operations are not independent source-to-target rules, but they materially shape the result. They derive defaults, create secondary resources, cache correspondences, or resolve relationships after the main rule has run.
+Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
 | Operation                           | Role                                                                           | Source                                                            |
 | ----------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
 | `resolveSqsRedrivePolicies`         | Resolves resolve sqs redrive policies.                                         | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:164` |
-| `createSnsSubscriptionDlq`          | Creates create sns subscription dlq.                                           | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:253` |
-| `addDynamoKeys`                     | Adds or records add dynamo keys.                                               | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:344` |
-| `addDynamoAttribute`                | Adds or records add dynamo attribute.                                          | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:382` |
+| `createSnsSubscriptionDlq`          | Creates sns subscription dlq.                                                  | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:253` |
+| `addDynamoKeys`                     | Adds or records dynamo keys.                                                   | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:344` |
+| `addDynamoAttribute`                | Adds or records dynamo attribute.                                              | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:382` |
 | `dynamoKey`                         | Computes dynamo key.                                                           | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:395` |
 | `dynamoType`                        | Computes dynamo type.                                                          | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:405` |
-| `addDynamoIndexes`                  | Adds or records add dynamo indexes.                                            | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:416` |
+| `addDynamoIndexes`                  | Adds or records dynamo indexes.                                                | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:416` |
 | `fieldByStorageOrName`              | Computes field by storage or name.                                             | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:468` |
 | `indexKeyFields`                    | Computes index key fields.                                                     | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:487` |
-| `normalizedLookupKey`               | Converts the receiver to normalized lookup key.                                | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:502` |
-| `createS3Encryption`                | Creates create s3 encryption.                                                  | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:507` |
-| `createStrictPublicAccessBlock`     | Creates create strict public access block.                                     | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:517` |
-| `createS3Ownership`                 | Creates create s3 ownership.                                                   | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:529` |
-| `createS3Lifecycle`                 | Creates create s3 lifecycle.                                                   | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:542` |
+| `normalizedLookupKey`               | Normalizes the receiver for lookup.                                            | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:502` |
+| `createS3Encryption`                | Creates s3 encryption.                                                         | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:507` |
+| `createStrictPublicAccessBlock`     | Creates strict public access block.                                            | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:517` |
+| `createS3Ownership`                 | Creates s3 ownership.                                                          | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:529` |
+| `createS3Lifecycle`                 | Creates s3 lifecycle.                                                          | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:542` |
 | `retentionDays`                     | Computes retention days.                                                       | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:563` |
 | `extractLeadingInteger`             | Computes extract leading integer.                                              | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:588` |
-| `createS3Notification`              | Creates create s3 notification.                                                | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:608` |
+| `createS3Notification`              | Creates s3 notification.                                                       | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:608` |
 | `eventTypesPatternJson`             | Computes event types pattern json.                                             | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:623` |
-| `createEventBridgeTarget`           | Creates create event bridge target.                                            | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:638` |
-| `defaultEventBridgeRetryPolicy`     | Creates default event bridge retry policy.                                     | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:675` |
+| `createEventBridgeTarget`           | Creates event bridge target.                                                   | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:638` |
+| `defaultEventBridgeRetryPolicy`     | Creates a default event bridge retry policy.                                   | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:675` |
 | `endpointResource`                  | Computes endpoint resource.                                                    | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:685` |
 | `externalEndpointForSubscription`   | Computes external endpoint for subscription.                                   | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:697` |
 | `unresolvedTargetArn`               | Computes unresolved target arn.                                                | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:705` |
 | `subscriptionProtocol`              | Computes subscription protocol.                                                | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:710` |
 | `eventBridgeTargetKind`             | Computes event bridge target kind.                                             | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:725` |
-| `createSchedulerRole`               | Creates create scheduler role.                                                 | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:755` |
-| `createUnresolvedScheduleTarget`    | Creates create unresolved schedule target.                                     | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:766` |
-| `createStorageResourcePolicy`       | Creates create storage resource policy.                                        | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:779` |
-| `createDenyInsecureTransportPolicy` | Creates create deny insecure transport policy.                                 | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:800` |
+| `createSchedulerRole`               | Creates scheduler role.                                                        | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:755` |
+| `createUnresolvedScheduleTarget`    | Creates unresolved schedule target.                                            | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:766` |
+| `createStorageResourcePolicy`       | Creates storage resource policy.                                               | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:779` |
+| `createDenyInsecureTransportPolicy` | Creates deny insecure transport policy.                                        | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:800` |
 | `addWildcardPrincipal`              | Adds the wildcard principal required by a deny-only resource policy statement. | `mde/transformations/pim-to-awspsm/data-messaging-events.etl:822` |
 
 ---
@@ -61,7 +61,7 @@ Key-value, document, and cache-shaped PIM stores are bound to DynamoDB with keys
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : ds.storeKind = PIMTYPES!StoreKind#KEY_VALUE or ds.storeKind = PIMTYPES!StoreKind#DOCUMENT or ds.storeKind = PIMTYPES!StoreKind#CACHE
@@ -78,11 +78,11 @@ The rule directly assigns: `t.id`, `t.tableName`, `t.billingMode`, `t.tableClass
 
 ### How to troubleshoot or repair it
 
-Verify the data store instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the data store instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:2`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:2`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -98,7 +98,7 @@ Unsupported PIM store kinds are represented by a CloudFormation custom-resource 
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : not (ds.storeKind = PIMTYPES!StoreKind#KEY_VALUE or ds.storeKind = PIMTYPES!StoreKind#DOCUMENT or ds.storeKind = PIMTYPES!StoreKind#CACHE)
@@ -111,7 +111,7 @@ guard : not (ds.storeKind = PIMTYPES!StoreKind#KEY_VALUE or ds.storeKind = PIMTY
 ### Important behavior encoded in the rule
 
 The rule directly assigns: `n.id`, `n.cloudFormationType`.
-Manual decisions raised by this rule: `DATASTORE_SERVICE_SELECTION_REQUIRED`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `DATASTORE_SERVICE_SELECTION_REQUIRED`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -119,7 +119,7 @@ Start with the manual decision(s) `DATASTORE_SERVICE_SELECTION_REQUIRED` and com
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:50`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:50`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -152,7 +152,7 @@ Verify that the object store is present and semantically complete, then rerun th
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:69`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:69`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -178,7 +178,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 ### Important behavior encoded in the rule
 
 The rule directly assigns: `sqs.id`, `sqs.queueName`, `sqs.queueType`, `sqs.contentBasedDeduplication`, `sqs.delaySeconds`, `sqs.maximumMessageSize`, `sqs.messageRetentionPeriodSeconds`, `sqs.receiveMessageWaitTimeSeconds`, `sqs.visibilityTimeoutSeconds`, `sqs.kmsDataKeyReusePeriodSeconds`, `sqs.sqsManagedSseEnabled`, `qp.id`, `qp.policyDocument`.
-Manual decisions raised by this rule: `SQS_DLQ_REQUIRED`, `FIFO_ORDERING_KEY_REQUIRED`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `SQS_DLQ_REQUIRED`, `FIFO_ORDERING_KEY_REQUIRED`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -186,7 +186,7 @@ Start with the manual decision(s) `SQS_DLQ_REQUIRED, FIFO_ORDERING_KEY_REQUIRED`
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:110`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:110`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -219,7 +219,7 @@ Verify that the topic is present and semantically complete, then rerun the trans
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:186`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:186`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -244,7 +244,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 ### Important behavior encoded in the rule
 
 The rule directly assigns: `sub.id`, `sub.topic`, `sub.protocol`, `sub.endpointResource`, `sub.endpoint`, `sub.filterPolicyScope`, `sub.rawMessageDelivery`, `sub.deliveryPolicyJson`, `sub.deadLetterQueue`.
-Manual decisions raised by this rule: `SNS_SUBSCRIPTION_DLQ_REQUIRED`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `SNS_SUBSCRIPTION_DLQ_REQUIRED`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -252,7 +252,7 @@ Start with the manual decision(s) `SNS_SUBSCRIPTION_DLQ_REQUIRED` and complete t
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:212`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:212`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -284,7 +284,7 @@ Verify that the event bus is present and semantically complete, then rerun the t
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:270`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:270`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -309,7 +309,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 ### Important behavior encoded in the rule
 
 The rule directly assigns: `er.id`, `er.ruleName`, `er.descriptionText`, `er.eventPatternJson`, `er.scheduleExpression`, `er.state`, `er.bus`.
-Manual decisions raised by this rule: `EVENT_PATTERN_REQUIRED`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `EVENT_PATTERN_REQUIRED`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -317,7 +317,7 @@ Start with the manual decision(s) `EVENT_PATTERN_REQUIRED` and complete the requ
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:282`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:282`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -342,7 +342,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 ### Important behavior encoded in the rule
 
 The rule directly assigns: `es.id`, `es.scheduleName`, `es.scheduleExpression`, `es.scheduleExpressionTimezone`, `es.flexibleTimeWindowJson`, `es.state`, `es.descriptionText`, `es.role`, `es.target`.
-Manual decisions raised by this rule: `SCHEDULE_TARGET_REQUIRED`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `SCHEDULE_TARGET_REQUIRED`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -350,6 +350,6 @@ Start with the manual decision(s) `SCHEDULE_TARGET_REQUIRED` and complete the re
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:312`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/data-messaging-events.etl:312`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

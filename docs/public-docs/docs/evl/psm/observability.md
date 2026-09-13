@@ -6,7 +6,7 @@ Source profile: `mde/validation/psm/rules/observability.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,7 +18,7 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that production log retention explicit. The cloud watch log group element owns the evidence for this decision, including is production scoped, retention days, resource label. At this level, metrics and alarms can support an operator's response instead of merely existing as decorative monitoring objects; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Production-scoped log group has no explicit retentionDays.
+The rule checks whether production log retention explicit. The cloud watch log group element provides the relevant evidence through is production scoped, retention days, resource label. At this level, metrics and alarms can support an operator's response instead of merely existing as decorative monitoring objects. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Production-scoped log group has no explicit retentionDays.
 
 ### When it applies
 
@@ -58,7 +58,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production log group should use kms. This is a review signal about is production scoped, kms key, resource label, not a cosmetic naming preference. In this part of the model, metrics and alarms can support an operator's response instead of merely existing as decorative monitoring objects; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped log group has no KMS key. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production log group should use kms. It examines is production scoped, kms key, resource label. Within this part of the model, metrics and alarms can support an operator's response instead of merely existing as decorative monitoring objects. The gap is Production-scoped log group has no KMS key. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -98,13 +98,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that alarm has metric and threshold. The cloud watch alarm element owns the evidence for this decision, including namespace, metric name, threshold, comparison operator, resource label. At this level, metrics and alarms can support an operator's response instead of merely existing as decorative monitoring objects; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: CloudWatch alarm is missing namespace, metricName, threshold, or comparisonOperator.
+The rule checks whether alarm has metric and threshold. The cloud watch alarm element provides the relevant evidence through namespace, metric name, threshold, comparison operator, resource label. At this level, metrics and alarms can support an operator's response instead of merely existing as decorative monitoring objects. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: CloudWatch alarm is missing namespace, metricName, threshold, or comparisonOperator.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -136,13 +136,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that alarm evaluation settings valid. The cloud watch alarm element owns the evidence for this decision, including period, evaluation periods, datapoints to alarm, resource label. At this level, metrics and alarms can support an operator's response instead of merely existing as decorative monitoring objects; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: CloudWatch alarm has invalid evaluation settings.
+The rule checks whether alarm evaluation settings valid. The cloud watch alarm element provides the relevant evidence through period, evaluation periods, datapoints to alarm, resource label. At this level, metrics and alarms can support an operator's response instead of merely existing as decorative monitoring objects. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: CloudWatch alarm has invalid evaluation settings.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -174,7 +174,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production alarm should have actions. This is a review signal about monitored resource, alarm action arns, alarm action resources, resource label, not a cosmetic naming preference. In this part of the model, metrics and alarms can support an operator's response instead of merely existing as decorative monitoring objects; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Alarm monitors a production-scoped resource but has no alarm actions. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production alarm should have actions. It examines monitored resource, alarm action arns, alarm action resources, resource label. Within this part of the model, metrics and alarms can support an operator's response instead of merely existing as decorative monitoring objects. The gap is Alarm monitors a production-scoped resource but has no alarm actions. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -214,13 +214,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that composite alarm should have actions. This is a review signal about alarm action arns, alarm action resources, resource label, not a cosmetic naming preference. In this part of the model, metrics and alarms can support an operator's response instead of merely existing as decorative monitoring objects; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Composite alarm has no alarm actions. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether composite alarm should have actions. It examines alarm action arns, alarm action resources, resource label. Within this part of the model, metrics and alarms can support an operator's response instead of merely existing as decorative monitoring objects. The gap is Composite alarm has no alarm actions. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

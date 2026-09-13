@@ -6,52 +6,52 @@ Source module: `mde/transformations/cim-to-pim/integration-deployment.etl`.
 
 ## Reading this page
 
-A transformation rule is not a validation constraint: it decides whether and how a source element contributes to the target model. Read the guard as a routing decision, the target table as the model-level result, the behavior section as the important semantic side effects, and the trace/manual-decision information as the hand-off to review and later phases.
+A transformation rule determines whether a source element contributes to the target model and how it is mapped. Use the guard to understand routing and the target table to see the model-level result. The behavior section records important semantic side effects. Trace and manual-decision information identifies work for review and later phases.
 
 ---
 
 ## Supporting ETL operations
 
-These operations are not independent source-to-target rules, but they materially shape the result. They derive defaults, create secondary resources, cache correspondences, or resolve relationships after the main rule has run.
+Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
 | Operation                                | Role                                                                    | Source                                                           |
 | ---------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `attachOwnedElements`                    | Adds or records attach owned elements.                                  | `mde/transformations/cim-to-pim/integration-deployment.etl:9`    |
-| `addOwnedOnce`                           | Adds or records add owned once.                                         | `mde/transformations/cim-to-pim/integration-deployment.etl:52`   |
+| `addOwnedOnce`                           | Adds or records owned once.                                             | `mde/transformations/cim-to-pim/integration-deployment.etl:52`   |
 | `cacheOwnedKey`                          | Computes cache owned key.                                               | `mde/transformations/cim-to-pim/integration-deployment.etl:57`   |
-| `createRequestResponseFlows`             | Creates create request response flows.                                  | `mde/transformations/cim-to-pim/integration-deployment.etl:63`   |
-| `createEventChannelsAndFlows`            | Creates create event channels and flows.                                | `mde/transformations/cim-to-pim/integration-deployment.etl:86`   |
-| `createTopicSubscriptions`               | Creates create topic subscriptions.                                     | `mde/transformations/cim-to-pim/integration-deployment.etl:271`  |
-| `createPolicyRoutingRules`               | Creates create policy routing rules.                                    | `mde/transformations/cim-to-pim/integration-deployment.etl:310`  |
-| `createExternalIntegrationFlows`         | Creates create external integration flows.                              | `mde/transformations/cim-to-pim/integration-deployment.etl:336`  |
-| `createDefaultRetentionPolicy`           | Creates create default retention policy.                                | `mde/transformations/cim-to-pim/integration-deployment.etl:365`  |
-| `createDefaultBackupPolicy`              | Creates create default backup policy.                                   | `mde/transformations/cim-to-pim/integration-deployment.etl:387`  |
-| `ensureStoreOperationalPolicies`         | Creates ensure store operational policies.                              | `mde/transformations/cim-to-pim/integration-deployment.etl:410`  |
-| `ensureIndexCandidatesForAccessPatterns` | Creates ensure index candidates for access patterns.                    | `mde/transformations/cim-to-pim/integration-deployment.etl:428`  |
-| `ensureFunctionContractFields`           | Creates ensure function contract fields.                                | `mde/transformations/cim-to-pim/integration-deployment.etl:456`  |
-| `ensureApiContracts`                     | Creates ensure api contracts.                                           | `mde/transformations/cim-to-pim/integration-deployment.etl:471`  |
-| `ensureChannelConnectivityIntent`        | Creates ensure channel connectivity intent.                             | `mde/transformations/cim-to-pim/integration-deployment.etl:497`  |
-| `ensureFlowOperationalPolicies`          | Creates ensure flow operational policies.                               | `mde/transformations/cim-to-pim/integration-deployment.etl:523`  |
-| `ensureReadinessFindingAffectedElements` | Creates ensure readiness finding affected elements.                     | `mde/transformations/cim-to-pim/integration-deployment.etl:543`  |
+| `createRequestResponseFlows`             | Creates request response flows.                                         | `mde/transformations/cim-to-pim/integration-deployment.etl:63`   |
+| `createEventChannelsAndFlows`            | Creates event channels and flows.                                       | `mde/transformations/cim-to-pim/integration-deployment.etl:86`   |
+| `createTopicSubscriptions`               | Creates topic subscriptions.                                            | `mde/transformations/cim-to-pim/integration-deployment.etl:271`  |
+| `createPolicyRoutingRules`               | Creates policy routing rules.                                           | `mde/transformations/cim-to-pim/integration-deployment.etl:310`  |
+| `createExternalIntegrationFlows`         | Creates external integration flows.                                     | `mde/transformations/cim-to-pim/integration-deployment.etl:336`  |
+| `createDefaultRetentionPolicy`           | Creates a default retention policy.                                     | `mde/transformations/cim-to-pim/integration-deployment.etl:365`  |
+| `createDefaultBackupPolicy`              | Creates a default backup policy.                                        | `mde/transformations/cim-to-pim/integration-deployment.etl:387`  |
+| `ensureStoreOperationalPolicies`         | Ensures store operational policies.                                     | `mde/transformations/cim-to-pim/integration-deployment.etl:410`  |
+| `ensureIndexCandidatesForAccessPatterns` | Ensures index candidates for access patterns.                           | `mde/transformations/cim-to-pim/integration-deployment.etl:428`  |
+| `ensureFunctionContractFields`           | Ensures function contract fields.                                       | `mde/transformations/cim-to-pim/integration-deployment.etl:456`  |
+| `ensureApiContracts`                     | Ensures api contracts.                                                  | `mde/transformations/cim-to-pim/integration-deployment.etl:471`  |
+| `ensureChannelConnectivityIntent`        | Ensures channel connectivity intent.                                    | `mde/transformations/cim-to-pim/integration-deployment.etl:497`  |
+| `ensureFlowOperationalPolicies`          | Ensures flow operational policies.                                      | `mde/transformations/cim-to-pim/integration-deployment.etl:523`  |
+| `ensureReadinessFindingAffectedElements` | Ensures readiness finding affected elements.                            | `mde/transformations/cim-to-pim/integration-deployment.etl:543`  |
 | `firstOwnedFunction`                     | Computes first owned function.                                          | `mde/transformations/cim-to-pim/integration-deployment.etl:550`  |
-| `createCapabilityDependencyArtifacts`    | Creates create capability dependency artifacts.                         | `mde/transformations/cim-to-pim/integration-deployment.etl:558`  |
+| `createCapabilityDependencyArtifacts`    | Creates capability dependency artifacts.                                | `mde/transformations/cim-to-pim/integration-deployment.etl:558`  |
 | `containsProviderSpecificTerm`           | Returns whether the receiver contains provider specific term.           | `mde/transformations/cim-to-pim/integration-deployment.etl:678`  |
 | `containsProviderSpecificTermIn`         | Returns whether the receiver contains provider specific term in.        | `mde/transformations/cim-to-pim/integration-deployment.etl:683`  |
-| `createDataAccesses`                     | Creates create data accesses.                                           | `mde/transformations/cim-to-pim/integration-deployment.etl:688`  |
+| `createDataAccesses`                     | Creates data accesses.                                                  | `mde/transformations/cim-to-pim/integration-deployment.etl:688`  |
 | `schemaContainsItem`                     | Computes schema contains item.                                          | `mde/transformations/cim-to-pim/integration-deployment.etl:801`  |
-| `addIndexed`                             | Adds or records add indexed.                                            | `mde/transformations/cim-to-pim/integration-deployment.etl:806`  |
+| `addIndexed`                             | Adds or records indexed.                                                | `mde/transformations/cim-to-pim/integration-deployment.etl:806`  |
 | `indexedValues`                          | Computes indexed values.                                                | `mde/transformations/cim-to-pim/integration-deployment.etl:821`  |
 | `attachDataProtectionPolicies`           | Adds or records attach data protection policies.                        | `mde/transformations/cim-to-pim/integration-deployment.etl:830`  |
 | `attachDataProtectionPolicyToItem`       | Adds or records attach data protection policy to item.                  | `mde/transformations/cim-to-pim/integration-deployment.etl:883`  |
-| `addEventTypesToChannel`                 | Adds or records add event types to channel.                             | `mde/transformations/cim-to-pim/integration-deployment.etl:902`  |
+| `addEventTypesToChannel`                 | Adds or records event types to channel.                                 | `mde/transformations/cim-to-pim/integration-deployment.etl:902`  |
 | `copySeedEventTypesToChannel`            | Computes copy seed event types to channel.                              | `mde/transformations/cim-to-pim/integration-deployment.etl:911`  |
-| `ensureDeadLetterQueue`                  | Creates ensure dead letter queue.                                       | `mde/transformations/cim-to-pim/integration-deployment.etl:937`  |
-| `ensureEventTypeForChannel`              | Creates ensure event type for channel.                                  | `mde/transformations/cim-to-pim/integration-deployment.etl:974`  |
-| `ensureApiAuthentication`                | Creates ensure api authentication.                                      | `mde/transformations/cim-to-pim/integration-deployment.etl:1010` |
-| `ensureGeneratedOperationalPolicies`     | Creates ensure generated operational policies.                          | `mde/transformations/cim-to-pim/integration-deployment.etl:1034` |
-| `createHotspotManualDecision`            | Creates create hotspot manual decision.                                 | `mde/transformations/cim-to-pim/integration-deployment.etl:1141` |
+| `ensureDeadLetterQueue`                  | Ensures dead letter queue.                                              | `mde/transformations/cim-to-pim/integration-deployment.etl:937`  |
+| `ensureEventTypeForChannel`              | Ensures event type for channel.                                         | `mde/transformations/cim-to-pim/integration-deployment.etl:974`  |
+| `ensureApiAuthentication`                | Ensures api authentication.                                             | `mde/transformations/cim-to-pim/integration-deployment.etl:1010` |
+| `ensureGeneratedOperationalPolicies`     | Ensures generated operational policies.                                 | `mde/transformations/cim-to-pim/integration-deployment.etl:1034` |
+| `createHotspotManualDecision`            | Creates hotspot manual decision.                                        | `mde/transformations/cim-to-pim/integration-deployment.etl:1141` |
 | `resolveGeneratedActionReferences`       | Restores references whose generated target is produced by a later rule. | `mde/transformations/cim-to-pim/integration-deployment.etl:1162` |
-| `addServiceMembership`                   | Adds or records add service membership.                                 | `mde/transformations/cim-to-pim/integration-deployment.etl:1293` |
+| `addServiceMembership`                   | Adds or records service membership.                                     | `mde/transformations/cim-to-pim/integration-deployment.etl:1293` |
 | `generateServiceMemberships`             | Computes generate service memberships.                                  | `mde/transformations/cim-to-pim/integration-deployment.etl:1313` |
 
 ---
@@ -87,7 +87,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/integration-deployment.etl:1091`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/integration-deployment.etl:1091`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -122,6 +122,6 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/integration-deployment.etl:1116`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/integration-deployment.etl:1116`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

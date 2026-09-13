@@ -242,7 +242,7 @@ The case study intentionally contains:
 - a transformation profile expressing serverless-oriented preferences;
 - trace links and readiness findings/checks/manual decisions.
 
-This makes the sample suitable not only for modeling demos, but also for transformation-readiness
+This makes the sample suitable for modeling demonstrations as well as transformation-readiness
 assessment and regression tests.
 
 ## Why Serverless Fits

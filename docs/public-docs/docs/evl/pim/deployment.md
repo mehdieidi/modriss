@@ -6,7 +6,7 @@ Source profile: `mde/validation/pim/rules/deployment.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that service responsibility required. The serverless service element owns the evidence for this decision, including responsibility, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SVC-001] Service ' ' has no responsibility.
+The rule checks whether service responsibility required. The serverless service element provides the relevant evidence through responsibility, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SVC-001] Service ' ' has no responsibility.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,13 +56,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that service owns at least one element. The serverless service element owns the evidence for this decision, including owned elements, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SVC-002] Service ' ' does not own any PIM elements.
+The rule checks whether service owns at least one element. The serverless service element provides the relevant evidence through owned elements, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SVC-002] Service ' ' does not own any PIM elements.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -94,13 +94,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that owned elements have membership records. The serverless service element owns the evidence for this decision, including owned elements, has membership for, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SVC-002A] Service ' ' has owned elements without ServiceElementMembership records.
+The rule checks whether owned elements have membership records. The serverless service element provides the relevant evidence through owned elements, has membership for, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SVC-002A] Service ' ' has owned elements without ServiceElementMembership records.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -132,7 +132,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that externally exposed service needs api. The serverless service element owns the evidence for this decision, including externally exposed, apis, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SVC-003] Externally exposed service ' ' owns no API.
+The rule checks whether externally exposed service needs api. The serverless service element provides the relevant evidence through externally exposed, apis, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SVC-003] Externally exposed service ' ' owns no API.
 
 ### When it applies
 
@@ -172,7 +172,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that data owning service needs store. The serverless service element owns the evidence for this decision, including owns data, stores, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SVC-004] Data-owning service ' ' owns no storage element.
+The rule checks whether data owning service needs store. The serverless service element provides the relevant evidence through owns data, stores, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SVC-004] Data-owning service ' ' owns no storage element.
 
 ### When it applies
 
@@ -212,13 +212,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that service owner team recommended. This is a review signal about owner team, display name, not a cosmetic naming preference. In this part of the model, services and deployment units can be assembled into environments with a coherent implementation toolchain; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-SVC-005] Service ' ' has no ownerTeam. Suggested fix: set the owning team so generated documentation and production readiness reports have an accountable owner. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether service owner team recommended. It examines owner team, display name. Within this part of the model, services and deployment units can be assembled into environments with a coherent implementation toolchain. The gap is [PIM-SVC-005] Service ' ' has no ownerTeam. Suggested fix: set the owning team so generated documentation and production readiness reports have an accountable owner. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -250,13 +250,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that deployment unit contains elements. The deployment unit element owns the evidence for this decision, including contains, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DU-001] Deployment unit ' ' contains no deployable elements.
+The rule checks whether deployment unit contains elements. The deployment unit element provides the relevant evidence through contains, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DU-001] Deployment unit ' ' contains no deployable elements.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -288,13 +288,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that deployment unit targets environment. The deployment unit element owns the evidence for this decision, including target environments, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DU-002] Deployment unit ' ' has no target environments.
+The rule checks whether deployment unit targets environment. The deployment unit element provides the relevant evidence through target environments, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DU-002] Deployment unit ' ' has no target environments.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -326,7 +326,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that independently deployable unit needs release strategy. This is a review signal about independently deployable, release strategy, versioning strategy, display name, not a cosmetic naming preference. In this part of the model, services and deployment units can be assembled into environments with a coherent implementation toolchain; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-DU-003] Independently deployable unit ' ' lacks release or versioning strategy. Suggested fix: define how this unit is versioned, promoted and rolled back independently. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether independently deployable unit needs release strategy. It examines independently deployable, release strategy, versioning strategy, display name. Within this part of the model, services and deployment units can be assembled into environments with a coherent implementation toolchain. The gap is [PIM-DU-003] Independently deployable unit ' ' lacks release or versioning strategy. Suggested fix: define how this unit is versioned, promoted and rolled back independently. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -366,7 +366,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that prod environment is production like. The environment element owns the evidence for this decision, including environment class, production like, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-ENV-001] PROD environment ' ' is not marked productionLike.
+The rule checks whether prod environment is production like. The environment element provides the relevant evidence through environment class, production like, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-ENV-001] PROD environment ' ' is not marked productionLike.
 
 ### When it applies
 
@@ -406,7 +406,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that prod environment should require approval. This is a review signal about environment class, requires approval, display name, not a cosmetic naming preference. In this part of the model, services and deployment units can be assembled into environments with a coherent implementation toolchain; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-ENV-002] PROD environment ' ' does not require approval. Suggested fix: set requiresApproval to true so generated release workflows include a production approval gate. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether prod environment should require approval. It examines environment class, requires approval, display name. Within this part of the model, services and deployment units can be assembled into environments with a coherent implementation toolchain. The gap is [PIM-ENV-002] PROD environment ' ' does not require approval. Suggested fix: set requiresApproval to true so generated release workflows include a production approval gate. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -446,13 +446,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that profile has generation basics. The implementation profile element owns the evidence for this decision, including source layout, build command, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-PROFILE-001] Implementation profile ' ' lacks sourceLayout or buildCommand.
+The rule checks whether profile has generation basics. The implementation profile element provides the relevant evidence through source layout, build command, display name. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-PROFILE-001] Implementation profile ' ' lacks sourceLayout or buildCommand.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -484,13 +484,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that package manager matches runtime language. The implementation profile element owns the evidence for this decision, including package manager fits language, display name, package manager, primary language. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-PROFILE-002] Implementation profile ' ' uses package manager ' ' with runtime language ' '.
+The rule checks whether package manager matches runtime language. The implementation profile element provides the relevant evidence through package manager fits language, display name, package manager, primary language. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-PROFILE-002] Implementation profile ' ' uses package manager ' ' with runtime language ' '.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -522,7 +522,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that runtime validation should generate typed contracts. This is a review signal about generate runtime validation, generate typed contracts, not a cosmetic naming preference. In this part of the model, services and deployment units can be assembled into environments with a coherent implementation toolchain; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-PROFILE-003] Runtime validation is requested without typed contract generation. Suggested fix: enable generateTypedContracts so generated validators and handlers share the same schema-derived types. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether runtime validation should generate typed contracts. It examines generate runtime validation, generate typed contracts. Within this part of the model, services and deployment units can be assembled into environments with a coherent implementation toolchain. The gap is [PIM-PROFILE-003] Runtime validation is requested without typed contract generation. Suggested fix: enable generateTypedContracts so generated validators and handlers share the same schema-derived types. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -562,13 +562,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that membership matches service ownership. The service element membership element owns the evidence for this decision, including service, element. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-SVC-006] ServiceElementMembership does not match the service containment parent.
+The rule checks whether membership matches service ownership. The service element membership element provides the relevant evidence through service, element. At this level, services and deployment units can be assembled into environments with a coherent implementation toolchain. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-SVC-006] ServiceElementMembership does not match the service containment parent.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

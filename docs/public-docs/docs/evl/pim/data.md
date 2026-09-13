@@ -6,7 +6,7 @@ Source profile: `mde/validation/pim/rules/data.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,7 +18,7 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that sensitive storage must be encrypted. The storage element element owns the evidence for this decision, including storage contains sensitive data, encrypted, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DATA-001] Storage element ' ' contains personal/sensitive data but is not encrypted.
+The rule checks whether sensitive storage must be encrypted. The storage element element provides the relevant evidence through storage contains sensitive data, encrypted, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DATA-001] Storage element ' ' contains personal/sensitive data but is not encrypted.
 
 ### When it applies
 
@@ -58,7 +58,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that persistent storage should have retention policy. This is a review signal about persistent, retention policy, display name, not a cosmetic naming preference. In this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-DATA-002] Persistent storage ' ' has no retentionPolicy. Suggested fix: attach RetentionPolicy with retentionPeriod, deletion and legal-hold decisions. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether persistent storage should have retention policy. It examines persistent, retention policy, display name. Within this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. The gap is [PIM-DATA-002] Persistent storage ' ' has no retentionPolicy. Suggested fix: attach RetentionPolicy with retentionPeriod, deletion and legal-hold decisions. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -98,7 +98,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that persistent storage should have backup decision. This is a review signal about persistent, backup policy, display name, not a cosmetic naming preference. In this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-DATA-003] Persistent storage ' ' has no backupPolicy. Suggested fix: attach BackupPolicy or record why backups are intentionally not required. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether persistent storage should have backup decision. It examines persistent, backup policy, display name. Within this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. The gap is [PIM-DATA-003] Persistent storage ' ' has no backupPolicy. Suggested fix: attach BackupPolicy or record why backups are intentionally not required. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -138,13 +138,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that data store has data model. The data store element owns the evidence for this decision, including owned data models, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DATA-004] DataStore ' ' has no ownedDataModels.
+The rule checks whether data store has data model. The data store element provides the relevant evidence through owned data models, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DATA-004] DataStore ' ' has no ownedDataModels.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -176,13 +176,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that data store has access pattern. The data store element owns the evidence for this decision, including access patterns, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DATA-005] DataStore ' ' has no accessPatterns.
+The rule checks whether data store has access pattern. The data store element provides the relevant evidence through access patterns, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DATA-005] DataStore ' ' has no accessPatterns.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -214,7 +214,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that transactional store needs transactional consistency. The data store element owns the evidence for this decision, including transactional, consistency need, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DATA-006] Transactional DataStore ' ' does not declare transactional/strong consistency.
+The rule checks whether transactional store needs transactional consistency. The data store element provides the relevant evidence through transactional, consistency need, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DATA-006] Transactional DataStore ' ' does not declare transactional/strong consistency.
 
 ### When it applies
 
@@ -254,7 +254,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that source of truth should have pitr or backup. This is a review signal about owned data models, source of truth, point in time recovery required, backup policy, display name, not a cosmetic naming preference. In this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-DATA-007] Source-of-truth DataStore ' ' lacks point-in-time recovery or backup decision. Suggested fix: enable pointInTimeRecoveryRequired or attach BackupPolicy. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether source of truth should have pitr or backup. It examines owned data models, source of truth, point in time recovery required, backup policy, display name. Within this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. The gap is [PIM-DATA-007] Source-of-truth DataStore ' ' lacks point-in-time recovery or backup decision. Suggested fix: enable pointInTimeRecoveryRequired or attach BackupPolicy. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -294,7 +294,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that object store with events should declare event types. This is a review signal about event notification required, emitted events, display name, not a cosmetic naming preference. In this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-OBJ-001] ObjectStore ' ' requires event notification but has no emittedEvents. Suggested fix: add EventType entries representing object-created/updated/deleted events. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether object store with events should declare event types. It examines event notification required, emitted events, display name. Within this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. The gap is [PIM-OBJ-001] ObjectStore ' ' requires event notification but has no emittedEvents. Suggested fix: add EventType entries representing object-created/updated/deleted events. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -334,7 +334,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that versioned object store should have lifecycle decision. This is a review signal about versioning required, lifecycle policy required, rationale, display name, not a cosmetic naming preference. In this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-OBJ-002] ObjectStore ' ' requires versioning without lifecycle policy/rationale. Suggested fix: set lifecyclePolicyRequired or explain retention/lifecycle strategy. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether versioned object store should have lifecycle decision. It examines versioning required, lifecycle policy required, rationale, display name. Within this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. The gap is [PIM-OBJ-002] ObjectStore ' ' requires versioning without lifecycle policy/rationale. Suggested fix: set lifecyclePolicyRequired or explain retention/lifecycle strategy. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -374,13 +374,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that data model has schema. The data model element owns the evidence for this decision, including schema, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DATA-008] DataModel ' ' has no schema.
+The rule checks whether data model has schema. The data model element provides the relevant evidence through schema, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DATA-008] DataModel ' ' has no schema.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -412,7 +412,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that source of truth cannot be read model. The data model element owns the evidence for this decision, including source of truth, read model, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DATA-009] DataModel ' ' is both sourceOfTruth and readModel.
+The rule checks whether source of truth cannot be read model. The data model element provides the relevant evidence through source of truth, read model, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DATA-009] DataModel ' ' is both sourceOfTruth and readModel.
 
 ### When it applies
 
@@ -452,13 +452,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that data model should expose storage fields. This is a review signal about storage fields, display name, not a cosmetic naming preference. In this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-DATA-010] DataModel ' ' has no storageFields. Suggested fix: add storage fields for keys, indexes, sensitive data and generated storage mapping. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether data model should expose storage fields. It examines storage fields, display name. Within this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. The gap is [PIM-DATA-010] DataModel ' ' has no storageFields. Suggested fix: add storage fields for keys, indexes, sensitive data and generated storage mapping. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -490,7 +490,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that sensitive data field is classified. The data field element owns the evidence for this decision, including personal data, sensitive data, classification, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DATA-011] DataField ' ' is personal/sensitive but has no classification.
+The rule checks whether sensitive data field is classified. The data field element provides the relevant evidence through personal data, sensitive data, classification, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DATA-011] DataField ' ' is personal/sensitive but has no classification.
 
 ### When it applies
 
@@ -530,7 +530,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that identifier field should be required. This is a review signal about identifier, required, display name, not a cosmetic naming preference. In this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-DATA-012] Identifier field ' ' is not marked required. Suggested fix: set required to true so generated persistence logic treats it as mandatory. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether identifier field should be required. It examines identifier, required, display name. Within this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. The gap is [PIM-DATA-012] Identifier field ' ' is not marked required. Suggested fix: set required to true so generated persistence logic treats it as mandatory. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -570,13 +570,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that access pattern operation defined. The access pattern element owns the evidence for this decision, including operation, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DATA-012A] AccessPattern ' ' has no operation.
+The rule checks whether access pattern operation defined. The access pattern element provides the relevant evidence through operation, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DATA-012A] AccessPattern ' ' has no operation.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -608,13 +608,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that access pattern names query shape. The access pattern element owns the evidence for this decision, including has query shape, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DATA-013] AccessPattern ' ' does not describe operation/query shape.
+The rule checks whether access pattern names query shape. The access pattern element provides the relevant evidence through has query shape, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DATA-013] AccessPattern ' ' does not describe operation/query shape.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -646,7 +646,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that high frequency access pattern should have index. This is a review signal about high frequency, high cardinality, index support key, display name, not a cosmetic naming preference. In this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-DATA-014] High-frequency/high-cardinality AccessPattern ' ' has no supporting IndexCandidate. Suggested fix: add an index candidate and link it to this access pattern. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether high frequency access pattern should have index. It examines high frequency, high cardinality, index support key, display name. Within this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. The gap is [PIM-DATA-014] High-frequency/high-cardinality AccessPattern ' ' has no supporting IndexCandidate. Suggested fix: add an index candidate and link it to this access pattern. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -686,7 +686,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that production index supports access pattern. This is a review signal about required for production, supports access patterns, partition key field, display name, not a cosmetic naming preference. In this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-DATA-015] Production index candidate ' ' has no access pattern or partition key. Suggested fix: link supportsAccessPatterns and define partitionKeyField. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production index supports access pattern. It examines required for production, supports access patterns, partition key field, display name. Within this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. The gap is [PIM-DATA-015] Production index candidate ' ' has no access pattern or partition key. Suggested fix: link supportsAccessPatterns and define partitionKeyField. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -726,13 +726,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that data access consistent with function refs. The data access element owns the evidence for this decision, including mode, function, store, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DATA-015A] DataAccess ' ' is not reflected in Function.reads/writes.
+The rule checks whether data access consistent with function refs. The data access element provides the relevant evidence through mode, function, store, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DATA-015A] DataAccess ' ' is not reflected in Function.reads/writes.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -764,13 +764,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that generates or references permission. This is a review signal about purpose, function, store, display name, not a cosmetic naming preference. In this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-DATA-015B] DataAccess ' ' lacks enough function/store/purpose information to generate or review permissions. Suggested fix: complete the access intent before PSM IAM generation. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether generates or references permission. It examines purpose, function, store, display name. Within this part of the model, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. The gap is [PIM-DATA-015B] DataAccess ' ' lacks enough function/store/purpose information to generate or review permissions. Suggested fix: complete the access intent before PSM IAM generation. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -802,13 +802,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that data access has purpose. The data access element owns the evidence for this decision, including purpose, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-DATA-016] DataAccess ' ' has no purpose.
+The rule checks whether data access has purpose. The data access element provides the relevant evidence through purpose, display name. At this level, stores, schemas, access patterns, and permissions describe one coherent data design before provider binding. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-DATA-016] DataAccess ' ' has no purpose.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

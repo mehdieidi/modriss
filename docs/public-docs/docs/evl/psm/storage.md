@@ -6,7 +6,7 @@ Source profile: `mde/validation/psm/rules/storage.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -22,9 +22,9 @@ DynamoDB's primary key is the lookup and distribution contract of the table. Exa
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -60,9 +60,9 @@ Key schema names and attribute declarations are two halves of one DynamoDB defin
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -98,9 +98,9 @@ An index introduces another access path, so every index key must exist in the ta
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -132,7 +132,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that provisioned mode needs throughput. The dynamo db table element owns the evidence for this decision, including billing mode, provisioned throughput, resource label. At this level, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DynamoDB table uses PROVISIONED billing but has no provisionedThroughput.
+The rule checks whether provisioned mode needs throughput. The dynamo db table element provides the relevant evidence through billing mode, provisioned throughput, resource label. At this level, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DynamoDB table uses PROVISIONED billing but has no provisionedThroughput.
 
 ### When it applies
 
@@ -172,7 +172,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that pay per request does not use provisioned throughput. The dynamo db table element owns the evidence for this decision, including billing mode, provisioned throughput, resource label. At this level, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DynamoDB table uses PAY_PER_REQUEST but also defines provisionedThroughput.
+The rule checks whether pay per request does not use provisioned throughput. The dynamo db table element provides the relevant evidence through billing mode, provisioned throughput, resource label. At this level, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DynamoDB table uses PAY_PER_REQUEST but also defines provisionedThroughput.
 
 ### When it applies
 
@@ -212,7 +212,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that provisioned throughput positive. The dynamo db table element owns the evidence for this decision, including provisioned throughput, resource label. At this level, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DynamoDB table has invalid provisioned throughput.
+The rule checks whether provisioned throughput positive. The dynamo db table element provides the relevant evidence through provisioned throughput, resource label. At this level, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DynamoDB table has invalid provisioned throughput.
 
 ### When it applies
 
@@ -332,7 +332,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that gsi projection include has attributes. The dynamo db global secondary index element owns the evidence for this decision, including projection, index name. At this level, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DynamoDB GSI uses INCLUDE projection but has no nonKeyAttributes.
+The rule checks whether gsi projection include has attributes. The dynamo db global secondary index element provides the relevant evidence through projection, index name. At this level, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DynamoDB GSI uses INCLUDE projection but has no nonKeyAttributes.
 
 ### When it applies
 
@@ -372,7 +372,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that gsi provisioned throughput positive when present. The dynamo db global secondary index element owns the evidence for this decision, including provisioned throughput, index name. At this level, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DynamoDB GSI has invalid provisioned throughput.
+The rule checks whether gsi provisioned throughput positive when present. The dynamo db global secondary index element provides the relevant evidence through provisioned throughput, index name. At this level, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DynamoDB GSI has invalid provisioned throughput.
 
 ### When it applies
 
@@ -572,7 +572,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that website bucket should not be production critical. This is a review signal about website configuration json, is production scoped, resource label, not a cosmetic naming preference. In this part of the model, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: S3 bucket has websiteConfigurationJson and is production-scoped. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether website bucket should not be production critical. It examines website configuration json, is production scoped, resource label. Within this part of the model, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries. The gap is S3 bucket has websiteConfigurationJson and is production-scoped. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -612,7 +612,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that kms algorithm requires kms key. The s3 bucket encryption element owns the evidence for this decision, including sse algorithm, kms key. At this level, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: S3 bucket encryption uses a KMS algorithm but has no kmsKey.
+The rule checks whether kms algorithm requires kms key. The s3 bucket encryption element provides the relevant evidence through sse algorithm, kms key. At this level, DynamoDB and S3 resources protect key correctness, recoverability, encryption, and public-access boundaries. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: S3 bucket encryption uses a KMS algorithm but has no kmsKey.
 
 ### When it applies
 
@@ -656,9 +656,9 @@ A storage notification is a routed event, not a flag. It needs both the object e
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -694,9 +694,9 @@ Replication crosses resource and often account boundaries. The role and replicat
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

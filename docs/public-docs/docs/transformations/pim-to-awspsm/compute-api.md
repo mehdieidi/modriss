@@ -6,55 +6,55 @@ Source module: `mde/transformations/pim-to-awspsm/compute-api.etl`.
 
 ## Reading this page
 
-A transformation rule is not a validation constraint: it decides whether and how a source element contributes to the target model. Read the guard as a routing decision, the target table as the model-level result, the behavior section as the important semantic side effects, and the trace/manual-decision information as the hand-off to review and later phases.
+A transformation rule determines whether a source element contributes to the target model and how it is mapped. Use the guard to understand routing and the target table to see the model-level result. The behavior section records important semantic side effects. Trace and manual-decision information identifies work for review and later phases.
 
 ---
 
 ## Supporting ETL operations
 
-These operations are not independent source-to-target rules, but they materially shape the result. They derive defaults, create secondary resources, cache correspondences, or resolve relationships after the main rule has run.
+Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
 | Operation                     | Role                                                                                   | Source                                                  |
 | ----------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `apiForRoute`                 | Resolves the owning PIM API for a route.                                               | `mde/transformations/pim-to-awspsm/compute-api.etl:151` |
 | `materializeApiRoutes`        | Creates any API routes that were skipped because API resources were not available yet. | `mde/transformations/pim-to-awspsm/compute-api.etl:183` |
-| `createHttpApiRouteFrom`      | Creates create http api route from.                                                    | `mde/transformations/pim-to-awspsm/compute-api.etl:206` |
-| `createRestApiRouteFrom`      | Creates create rest api route from.                                                    | `mde/transformations/pim-to-awspsm/compute-api.etl:239` |
+| `createHttpApiRouteFrom`      | Creates http api route from.                                                           | `mde/transformations/pim-to-awspsm/compute-api.etl:206` |
+| `createRestApiRouteFrom`      | Creates rest api route from.                                                           | `mde/transformations/pim-to-awspsm/compute-api.etl:239` |
 | `inferMemoryMb`               | Derives infer memory mb.                                                               | `mde/transformations/pim-to-awspsm/compute-api.etl:269` |
 | `inferTimeoutSeconds`         | Derives infer timeout seconds.                                                         | `mde/transformations/pim-to-awspsm/compute-api.etl:286` |
 | `inferReservedConcurrency`    | Derives infer reserved concurrency.                                                    | `mde/transformations/pim-to-awspsm/compute-api.etl:307` |
-| `createLambdaTracing`         | Creates create lambda tracing.                                                         | `mde/transformations/pim-to-awspsm/compute-api.etl:315` |
-| `createLambdaLogging`         | Creates create lambda logging.                                                         | `mde/transformations/pim-to-awspsm/compute-api.etl:325` |
-| `createLambdaEnvironment`     | Creates create lambda environment.                                                     | `mde/transformations/pim-to-awspsm/compute-api.etl:337` |
+| `createLambdaTracing`         | Creates lambda tracing.                                                                | `mde/transformations/pim-to-awspsm/compute-api.etl:315` |
+| `createLambdaLogging`         | Creates lambda logging.                                                                | `mde/transformations/pim-to-awspsm/compute-api.etl:325` |
+| `createLambdaEnvironment`     | Creates lambda environment.                                                            | `mde/transformations/pim-to-awspsm/compute-api.etl:337` |
 | `resourceNameEnv`             | Computes resource name env.                                                            | `mde/transformations/pim-to-awspsm/compute-api.etl:379` |
-| `createLambdaRole`            | Creates create lambda role.                                                            | `mde/transformations/pim-to-awspsm/compute-api.etl:390` |
-| `createVpcAttachmentDecision` | Creates create vpc attachment decision.                                                | `mde/transformations/pim-to-awspsm/compute-api.etl:403` |
+| `createLambdaRole`            | Creates lambda role.                                                                   | `mde/transformations/pim-to-awspsm/compute-api.etl:390` |
+| `createVpcAttachmentDecision` | Creates vpc attachment decision.                                                       | `mde/transformations/pim-to-awspsm/compute-api.etl:403` |
 | `routeNeedsAuth`              | Computes route needs auth.                                                             | `mde/transformations/pim-to-awspsm/compute-api.etl:416` |
 | `inferAuthorizationType`      | Derives infer authorization type.                                                      | `mde/transformations/pim-to-awspsm/compute-api.etl:421` |
 | `applyAuthorizerFallback`     | Computes apply authorizer fallback.                                                    | `mde/transformations/pim-to-awspsm/compute-api.etl:464` |
 | `mapHttpMethod`               | Computes map http method.                                                              | `mde/transformations/pim-to-awspsm/compute-api.etl:478` |
 | `inferRouteTimeoutMillis`     | Derives infer route timeout millis.                                                    | `mde/transformations/pim-to-awspsm/compute-api.etl:504` |
-| `createApiIntegration`        | Creates create api integration.                                                        | `mde/transformations/pim-to-awspsm/compute-api.etl:512` |
+| `createApiIntegration`        | Creates api integration.                                                               | `mde/transformations/pim-to-awspsm/compute-api.etl:512` |
 | `requiresRestApi`             | Returns whether the receiver requires rest api.                                        | `mde/transformations/pim-to-awspsm/compute-api.etl:548` |
-| `createApiStages`             | Creates create api stages.                                                             | `mde/transformations/pim-to-awspsm/compute-api.etl:553` |
+| `createApiStages`             | Creates api stages.                                                                    | `mde/transformations/pim-to-awspsm/compute-api.etl:553` |
 | `fillApiStage`                | Computes fill api stage.                                                               | `mde/transformations/pim-to-awspsm/compute-api.etl:577` |
-| `createApiAuthorizer`         | Creates create api authorizer.                                                         | `mde/transformations/pim-to-awspsm/compute-api.etl:605` |
+| `createApiAuthorizer`         | Creates api authorizer.                                                                | `mde/transformations/pim-to-awspsm/compute-api.etl:605` |
 | `findAuthorizerFor`           | Resolves find authorizer for.                                                          | `mde/transformations/pim-to-awspsm/compute-api.etl:656` |
-| `createCors`                  | Creates create cors.                                                                   | `mde/transformations/pim-to-awspsm/compute-api.etl:668` |
+| `createCors`                  | Creates cors.                                                                          | `mde/transformations/pim-to-awspsm/compute-api.etl:668` |
 | `schemaRefJson`               | Computes schema ref json.                                                              | `mde/transformations/pim-to-awspsm/compute-api.etl:703` |
 | `attachOpenApiModels`         | Adds or records attach open api models.                                                | `mde/transformations/pim-to-awspsm/compute-api.etl:711` |
-| `createRequestModel`          | Creates create request model.                                                          | `mde/transformations/pim-to-awspsm/compute-api.etl:724` |
-| `createResponseModel`         | Creates create response model.                                                         | `mde/transformations/pim-to-awspsm/compute-api.etl:736` |
+| `createRequestModel`          | Creates request model.                                                                 | `mde/transformations/pim-to-awspsm/compute-api.etl:724` |
+| `createResponseModel`         | Creates response model.                                                                | `mde/transformations/pim-to-awspsm/compute-api.etl:736` |
 | `generateOpenApi`             | Computes generate open api.                                                            | `mde/transformations/pim-to-awspsm/compute-api.etl:748` |
 | `openApiSchemas`              | Computes open api schemas.                                                             | `mde/transformations/pim-to-awspsm/compute-api.etl:765` |
-| `addSchemaOnce`               | Adds or records add schema once.                                                       | `mde/transformations/pim-to-awspsm/compute-api.etl:785` |
+| `addSchemaOnce`               | Adds or records schema once.                                                           | `mde/transformations/pim-to-awspsm/compute-api.etl:785` |
 | `openApiRequestBody`          | Computes open api request body.                                                        | `mde/transformations/pim-to-awspsm/compute-api.etl:792` |
 | `openApiResponses`            | Computes open api responses.                                                           | `mde/transformations/pim-to-awspsm/compute-api.etl:802` |
 | `statusForError`              | Computes status for error.                                                             | `mde/transformations/pim-to-awspsm/compute-api.etl:821` |
 | `openApiSecurity`             | Computes open api security.                                                            | `mde/transformations/pim-to-awspsm/compute-api.etl:832` |
 | `scopesJson`                  | Computes scopes json.                                                                  | `mde/transformations/pim-to-awspsm/compute-api.etl:846` |
 | `openApiSecuritySchemes`      | Computes open api security schemes.                                                    | `mde/transformations/pim-to-awspsm/compute-api.etl:857` |
-| `createApiKeyAndUsagePlan`    | Creates create api key and usage plan.                                                 | `mde/transformations/pim-to-awspsm/compute-api.etl:865` |
+| `createApiKeyAndUsagePlan`    | Creates api key and usage plan.                                                        | `mde/transformations/pim-to-awspsm/compute-api.etl:865` |
 | `secretValue`                 | Computes secret value.                                                                 | `mde/transformations/pim-to-awspsm/compute-api.etl:905` |
 
 ---
@@ -80,7 +80,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 ### Important behavior encoded in the rule
 
 The rule directly assigns: `l.id`, `l.functionName`, `l.descriptionText`, `l.code`, `l.packageType`, `l.memorySizeMb`, `l.timeoutSeconds`, `l.architecture`, `l.ephemeralStorageMb`, `l.reservedConcurrentExecutions`, `l.recursiveLoopMode`, `l.snapStartApplyOn`, `l.runtimeManagementMode`, `l.publishVersion`, `l.autoPublishAlias`, `l.codeSigningDecision` ….
-Manual decisions raised by this rule: `LAMBDA_BUSINESS_LOGIC_IMPLEMENTATION_REQUIRED`, `LAMBDA_EFS_REQUIRED`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `LAMBDA_BUSINESS_LOGIC_IMPLEMENTATION_REQUIRED`, `LAMBDA_EFS_REQUIRED`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -88,7 +88,7 @@ Start with the manual decision(s) `LAMBDA_BUSINESS_LOGIC_IMPLEMENTATION_REQUIRED
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:2`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:2`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -104,7 +104,7 @@ An HTTP-shaped PIM API becomes an AWS SAM HttpApi when its semantics do not requ
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : (api.apiStyle = PIMTYPES!ApiStyle#RESOURCE_ORIENTED_HTTP or api.apiStyle = PIMTYPES!ApiStyle#RPC_HTTP or api.apiStyle = PIMTYPES!ApiStyle#WEBHOOK) and not requiresRestApi(api)
@@ -120,11 +120,11 @@ The rule directly assigns: `g.id`, `g.apiName`, `g.descriptionText`, `g.accessLo
 
 ### How to troubleshoot or repair it
 
-Verify the api instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the api instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:69`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:69`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -140,7 +140,7 @@ A PIM API that needs API keys, usage plans, or other REST semantics becomes a SA
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : (api.apiStyle = PIMTYPES!ApiStyle#RESOURCE_ORIENTED_HTTP or api.apiStyle = PIMTYPES!ApiStyle#RPC_HTTP or api.apiStyle = PIMTYPES!ApiStyle#WEBHOOK) and requiresRestApi(api)
@@ -156,11 +156,11 @@ The rule directly assigns: `g.id`, `g.apiName`, `g.descriptionText`, `g.accessLo
 
 ### How to troubleshoot or repair it
 
-Verify the api instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the api instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:101`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:101`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -176,7 +176,7 @@ Unsupported API styles are not silently dropped. The rule creates a review-requi
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : not (api.apiStyle = PIMTYPES!ApiStyle#RESOURCE_ORIENTED_HTTP or api.apiStyle = PIMTYPES!ApiStyle#RPC_HTTP)
@@ -189,7 +189,7 @@ guard : not (api.apiStyle = PIMTYPES!ApiStyle#RESOURCE_ORIENTED_HTTP or api.apiS
 ### Important behavior encoded in the rule
 
 The rule directly assigns: `n.id`, `n.cloudFormationType`.
-Manual decisions raised by this rule: `API_STYLE_UNSUPPORTED_DIRECTLY`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `API_STYLE_UNSUPPORTED_DIRECTLY`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -197,7 +197,7 @@ Start with the manual decision(s) `API_STYLE_UNSUPPORTED_DIRECTLY` and complete 
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:132`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:132`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -213,7 +213,7 @@ An API route becomes an HttpApi route only after its parent PIM API has a concre
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : apiForRoute(r).isDefined() and awsEquivalent(apiForRoute(r)).isDefined() and not requiresRestApi(apiForRoute(r))
@@ -229,11 +229,11 @@ The rule delegates most construction to a helper operation; follow the source li
 
 ### How to troubleshoot or repair it
 
-Verify the api route instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the api route instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:163`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:163`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -249,7 +249,7 @@ This is the REST counterpart of route binding. It waits for the concrete RestApi
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : apiForRoute(r).isDefined() and awsEquivalent(apiForRoute(r)).isDefined() and requiresRestApi(apiForRoute(r))
@@ -265,10 +265,10 @@ The rule delegates most construction to a helper operation; follow the source li
 
 ### How to troubleshoot or repair it
 
-Verify the api route instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the api route instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:173`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:173`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

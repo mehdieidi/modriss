@@ -6,7 +6,7 @@ Source profile: `mde/validation/psm/rules/core.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that model has stacks. The aws psm model element owns the evidence for this decision, including stacks. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: AWS PSM model has no SAM stacks.
+The rule checks whether model has stacks. The aws psm model element provides the relevant evidence through stacks. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: AWS PSM model has no SAM stacks.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,13 +56,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that model has stages. The aws psm model element owns the evidence for this decision, including stages. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: AWS PSM model has no deployment stages.
+The rule checks whether model has stages. The aws psm model element provides the relevant evidence through stages. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: AWS PSM model has no deployment stages.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -94,7 +94,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that production mode has prod stage. The aws psm model element owns the evidence for this decision, including production mode, stages, environment class. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: productionMode is true but no PROD stage exists.
+The rule checks whether production mode has prod stage. The aws psm model element provides the relevant evidence through production mode, stages, environment class. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: productionMode is true but no PROD stage exists.
 
 ### When it applies
 
@@ -134,13 +134,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that unique stack names. The aws psm model element owns the evidence for this decision, including stacks, stack name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Two or more SAM stacks have the same stackName.
+The rule checks whether unique stack names. The aws psm model element provides the relevant evidence through stacks, stack name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Two or more SAM stacks have the same stackName.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -172,13 +172,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that unique stage names. The aws psm model element owns the evidence for this decision, including stages, stage name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Two or more deployment stages have the same stageName.
+The rule checks whether unique stage names. The aws psm model element provides the relevant evidence through stages, stage name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Two or more deployment stages have the same stageName.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -210,13 +210,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that default region recommended. This is a review signal about default region, not a cosmetic naming preference. In this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: The model has no defaultRegion. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether default region recommended. It examines default region. Within this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. The gap is The model has no defaultRegion. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -248,13 +248,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that stack resources exist. This is a review signal about stack resource set, stacks, not a cosmetic naming preference. In this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: AWS PSM model has stacks but no stack-contained resources. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether stack resources exist. It examines stack resource set, stacks. Within this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. The gap is AWS PSM model has stacks but no stack-contained resources. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -286,13 +286,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that stage has account and region. The aws stage element owns the evidence for this decision, including account id, region, stage name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Stage is missing accountId or region.
+The rule checks whether stage has account and region. The aws stage element provides the relevant evidence through account id, region, stage name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Stage is missing accountId or region.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -324,7 +324,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that prod requires approval. The aws stage element owns the evidence for this decision, including environment class, requires manual approval, stage name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Production stage does not require manual approval.
+The rule checks whether prod requires approval. The aws stage element provides the relevant evidence through environment class, requires manual approval, stage name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Production stage does not require manual approval.
 
 ### When it applies
 
@@ -364,7 +364,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that prod should confirm changeset. This is a review signal about environment class, confirm changeset, stage name, not a cosmetic naming preference. In this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production stage does not confirm changesets. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether prod should confirm changeset. It examines environment class, confirm changeset, stage name. Within this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. The gap is Production stage does not confirm changesets. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -404,13 +404,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that stage deploys at least one stack. This is a review signal about deploys stacks, stage name, not a cosmetic naming preference. In this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Stage does not deploy any stacks. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether stage deploys at least one stack. It examines deploys stacks, stage name. Within this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. The gap is Stage does not deploy any stacks. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -442,13 +442,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that deployable stack has resources. The sam stack element owns the evidence for this decision, including resources, stack name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SAM stack has no resources.
+The rule checks whether deployable stack has resources. The sam stack element provides the relevant evidence through resources, stack name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SAM stack has no resources.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -480,13 +480,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that stack has resources. The sam stack element owns the evidence for this decision, including resources, stack name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SAM stack has no resources.
+The rule checks whether stack has resources. The sam stack element provides the relevant evidence through resources, stack name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SAM stack has no resources.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -518,13 +518,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that stack logical ids are unique. The sam stack element owns the evidence for this decision, including resources, stack logical id key, stack name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SAM stack contains duplicate resource logical IDs.
+The rule checks whether stack logical ids are unique. The sam stack element provides the relevant evidence through resources, stack logical id key, stack name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SAM stack contains duplicate resource logical IDs.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -556,13 +556,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that sam transform recommended. This is a review signal about use sam transform, stack name, not a cosmetic naming preference. In this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: SAM stack does not enable the SAM transform. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether sam transform recommended. It examines use sam transform, stack name. Within this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. The gap is SAM stack does not enable the SAM transform. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -594,13 +594,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that validation tools recommended. This is a review signal about validate with sam, validate with cfn lint, stack name, not a cosmetic naming preference. In this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: SAM stack is not configured for both SAM and cfn-lint validation. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether validation tools recommended. It examines validate with sam, validate with cfn lint, stack name. Within this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. The gap is SAM stack is not configured for both SAM and cfn-lint validation. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -632,13 +632,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that logical id valid. The aws resource element owns the evidence for this decision, including logical id. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Resource logicalId " " is invalid.
+The rule checks whether logical id valid. The aws resource element provides the relevant evidence through logical id. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Resource logicalId " " is invalid.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -670,13 +670,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that logical id unique in stack. The aws resource element owns the evidence for this decision, including stack logical id key, logical id. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Logical ID is duplicated within its deployment scope.
+The rule checks whether logical id unique in stack. The aws resource element provides the relevant evidence through stack logical id key, logical id. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Logical ID is duplicated within its deployment scope.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -708,13 +708,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that no direct self dependency. The aws resource element owns the evidence for this decision, including depends on, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Resource depends on itself.
+The rule checks whether no direct self dependency. The aws resource element provides the relevant evidence through depends on, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Resource depends on itself.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -746,13 +746,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that no dependency cycles. The aws resource element owns the evidence for this decision, including id, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Resource is part of a circular dependency chain.
+The rule checks whether no dependency cycles. The aws resource element provides the relevant evidence through id, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Resource is part of a circular dependency chain.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -784,7 +784,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that imported resource has import identity. The aws resource element owns the evidence for this decision, including imported resource, imported arn, import details, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Imported resource has no import identity.
+The rule checks whether imported resource has import identity. The aws resource element provides the relevant evidence through imported resource, imported arn, import details, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Imported resource has no import identity.
 
 ### When it applies
 
@@ -824,7 +824,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that non imported resource should not have import metadata. This is a review signal about imported resource, imported arn, import details, resource label, not a cosmetic naming preference. In this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Resource is not marked imported but contains import metadata. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether non imported resource should not have import metadata. It examines imported resource, imported arn, import details, resource label. Within this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. The gap is Resource is not marked imported but contains import metadata. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -864,7 +864,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that deployable resource has aws type. The aws resource element owns the evidence for this decision, including imported resource, stack, aws resource type, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Deployable resource has no awsResourceType.
+The rule checks whether deployable resource has aws type. The aws resource element provides the relevant evidence through imported resource, stack, aws resource type, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Deployable resource has no awsResourceType.
 
 ### When it applies
 
@@ -904,7 +904,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that production resources have required tags. The aws resource element owns the evidence for this decision, including is production scoped, missing required tag keys, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Production-scoped resource is missing required tags: ,.
+The rule checks whether production resources have required tags. The aws resource element provides the relevant evidence through is production scoped, missing required tag keys, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Production-scoped resource is missing required tags: ,.
 
 ### When it applies
 
@@ -944,13 +944,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that tag keys are unique per resource. The aws resource element owns the evidence for this decision, including duplicate tag keys, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Resource has duplicate tag keys: ,.
+The rule checks whether tag keys are unique per resource. The aws resource element provides the relevant evidence through duplicate tag keys, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Resource has duplicate tag keys: ,.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -982,7 +982,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production resources should retain on delete. This is a review signal about is production scoped, retain in production, deletion policy, resource label, not a cosmetic naming preference. In this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped resource has no retain/snapshot deletion safeguard. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production resources should retain on delete. It examines is production scoped, retain in production, deletion policy, resource label. Within this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. The gap is Production-scoped resource has no retain/snapshot deletion safeguard. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -1022,13 +1022,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that native resource type name valid. The aws native resource element owns the evidence for this decision, including cloud formation type, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Native resource has invalid cloudFormationType.
+The rule checks whether native resource type name valid. The aws native resource element provides the relevant evidence through cloud formation type, resource label. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Native resource has invalid cloudFormationType.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1060,13 +1060,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that value expression source shape. The value expression element owns the evidence for this decision, including source kind, literal, resource, parameter, attribute name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ValueExpression has fields that do not match sourceKind. Fix the literal/resource/attribute/reference shape.
+The rule checks whether value expression source shape. The value expression element provides the relevant evidence through source kind, literal, resource, parameter, attribute name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ValueExpression has fields that do not match sourceKind. Fix the literal/resource/attribute/reference shape.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1098,7 +1098,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that secret literal reviewed. This is a review signal about secret, source kind, review status, not a cosmetic naming preference. In this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Secret ValueExpression uses PLAINTEXT without reviewStatus. Suggested fix: use Secrets Manager/SSM secure references or document test-only plaintext use. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether secret literal reviewed. It examines secret, source kind, review status. Within this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. The gap is Secret ValueExpression uses PLAINTEXT without reviewStatus. Suggested fix: use Secrets Manager/SSM secure references or document test-only plaintext use. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -1138,13 +1138,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that tag key has text. The aws tag element owns the evidence for this decision, including key. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: A tag has an empty key.
+The rule checks whether tag key has text. The aws tag element provides the relevant evidence through key. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: A tag has an empty key.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1176,13 +1176,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that avoid aws reserved tag prefix. This is a review signal about key, not a cosmetic naming preference. In this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Tag key uses the AWS-reserved aws: prefix. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether avoid aws reserved tag prefix. It examines key. Within this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. The gap is Tag key uses the AWS-reserved aws: prefix. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1214,7 +1214,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that required native property has value. The native property element owns the evidence for this decision, including required, value, property name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Required native property has no value.
+The rule checks whether required native property has value. The native property element provides the relevant evidence through required, value, property name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Required native property has no value.
 
 ### When it applies
 
@@ -1254,7 +1254,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that secret native property uses secure expression. The native property element owns the evidence for this decision, including secret, value, property name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Secret native property is not backed by a secure value expression.
+The rule checks whether secret native property uses secure expression. The native property element provides the relevant evidence through secret, value, property name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Secret native property is not backed by a secure value expression.
 
 ### When it applies
 
@@ -1294,7 +1294,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that plain text has literal. The value expression element owns the evidence for this decision, including source kind, literal. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: PLAINTEXT value expression has no literal.
+The rule checks whether plain text has literal. The value expression element provides the relevant evidence through source kind, literal. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: PLAINTEXT value expression has no literal.
 
 ### When it applies
 
@@ -1334,7 +1334,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that cloud formation ref has target. The value expression element owns the evidence for this decision, including source kind, resource, parameter, expression. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: CLOUDFORMATION_REF value expression has no target.
+The rule checks whether cloud formation ref has target. The value expression element provides the relevant evidence through source kind, resource, parameter, expression. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: CLOUDFORMATION_REF value expression has no target.
 
 ### When it applies
 
@@ -1374,7 +1374,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that get att has resource and attribute. The value expression element owns the evidence for this decision, including source kind, resource, attribute name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: CLOUDFORMATION_GETATT value expression requires both resource and attributeName.
+The rule checks whether get att has resource and attribute. The value expression element provides the relevant evidence through source kind, resource, attribute name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: CLOUDFORMATION_GETATT value expression requires both resource and attributeName.
 
 ### When it applies
 
@@ -1414,7 +1414,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that list expression has items. The value expression element owns the evidence for this decision, including source kind, items. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: LIST value expression has no items.
+The rule checks whether list expression has items. The value expression element provides the relevant evidence through source kind, items. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: LIST value expression has no items.
 
 ### When it applies
 
@@ -1454,7 +1454,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that map expression has entries. The value expression element owns the evidence for this decision, including source kind, entries. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: MAP value expression has no entries.
+The rule checks whether map expression has entries. The value expression element provides the relevant evidence through source kind, entries. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: MAP value expression has no entries.
 
 ### When it applies
 
@@ -1494,7 +1494,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that secret value must use secure reference. The value expression element owns the evidence for this decision, including secret, uses secure source, source kind. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ValueExpression is marked secret but sourceKind is.
+The rule checks whether secret value must use secure reference. The value expression element provides the relevant evidence through secret, uses secure source, source kind. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ValueExpression is marked secret but sourceKind is.
 
 ### When it applies
 
@@ -1534,13 +1534,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that map entry has key. The named value expression element owns the evidence for this decision, including key. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: A map entry has no key.
+The rule checks whether map entry has key. The named value expression element provides the relevant evidence through key. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: A map entry has no key.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

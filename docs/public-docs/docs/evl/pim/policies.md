@@ -6,7 +6,7 @@ Source profile: `mde/validation/pim/rules/policies.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that retry policy bounded. The retry policy element owns the evidence for this decision, including max attempts, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-001] RetryPolicy ' ' must have maxAttempts between 1 and 10.
+The rule checks whether retry policy bounded. The retry policy element provides the relevant evidence through max attempts, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-001] RetryPolicy ' ' must have maxAttempts between 1 and 10.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,13 +56,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that retry backoff is valid. The retry policy element owns the evidence for this decision, including initial delay seconds, max delay seconds, backoff rate, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-002] RetryPolicy ' ' has invalid delay/backoff values.
+The rule checks whether retry backoff is valid. The retry policy element provides the relevant evidence through initial delay seconds, max delay seconds, backoff rate, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-002] RetryPolicy ' ' has invalid delay/backoff values.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -94,7 +94,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that required dead letter policy has channel. The dead letter policy element owns the evidence for this decision, including required, dead letter channel, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-003] DeadLetterPolicy ' ' is required but has no deadLetterChannel.
+The rule checks whether required dead letter policy has channel. The dead letter policy element provides the relevant evidence through required, dead letter channel, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-003] DeadLetterPolicy ' ' is required but has no deadLetterChannel.
 
 ### When it applies
 
@@ -134,13 +134,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that timeout policy is root owned. The timeout policy element owns the evidence for this decision, including id, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-003A] TimeoutPolicy ' ' must be owned by PIMModel.policies and referenced from functions/routes/resilience policies.
+The rule checks whether timeout policy is root owned. The timeout policy element provides the relevant evidence through id, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-003A] TimeoutPolicy ' ' must be owned by PIMModel.policies and referenced from functions/routes/resilience policies.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -172,13 +172,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that timeout policy is positive. The timeout policy element owns the evidence for this decision, including timeout seconds, client timeout seconds, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-004] TimeoutPolicy ' ' has invalid timeout values.
+The rule checks whether timeout policy is positive. The timeout policy element provides the relevant evidence through timeout seconds, client timeout seconds, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-004] TimeoutPolicy ' ' has invalid timeout values.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -210,13 +210,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that idempotency key required. The idempotency policy element owns the evidence for this decision, including key source, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-005] IdempotencyPolicy ' ' has no keySource.
+The rule checks whether idempotency key required. The idempotency policy element provides the relevant evidence through key source, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-005] IdempotencyPolicy ' ' has no keySource.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -248,13 +248,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that idempotency store decision recommended. This is a review signal about store required, scope, expiration seconds, display name, not a cosmetic naming preference. In this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-POL-006] IdempotencyPolicy ' ' lacks store/scope/expiration decision. Suggested fix: state whether storage is required, define the idempotency scope and set expiration for stored keys. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether idempotency store decision recommended. It examines store required, scope, expiration seconds, display name. Within this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. The gap is [PIM-POL-006] IdempotencyPolicy ' ' lacks store/scope/expiration decision. Suggested fix: state whether storage is required, define the idempotency scope and set expiration for stored keys. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -286,13 +286,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that concurrency policy should explain scaling. This is a review signal about max concurrency, reserved concurrency hint, scaling rationale, display name, not a cosmetic naming preference. In this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-POL-007] ConcurrencyPolicy ' ' lacks concurrency limits or scaling rationale. Suggested fix: set max/reserved concurrency and explain why the limit protects downstream services or cost. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether concurrency policy should explain scaling. It examines max concurrency, reserved concurrency hint, scaling rationale, display name. Within this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. The gap is [PIM-POL-007] ConcurrencyPolicy ' ' lacks concurrency limits or scaling rationale. Suggested fix: set max/reserved concurrency and explain why the limit protects downstream services or cost. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -324,13 +324,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that rate limit policy is positive. The rate limit policy element owns the evidence for this decision, including requests per second, burst limit, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-008] RateLimitPolicy ' ' has invalid limits.
+The rule checks whether rate limit policy is positive. The rate limit policy element provides the relevant evidence through requests per second, burst limit, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-008] RateLimitPolicy ' ' has invalid limits.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -362,13 +362,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that batch policy has size and failure decision. The batch policy element owns the evidence for this decision, including batch size, partial failure handling, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-009] BatchPolicy ' ' needs a positive batchSize and a partialFailureHandling decision.
+The rule checks whether batch policy has size and failure decision. The batch policy element provides the relevant evidence through batch size, partial failure handling, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-009] BatchPolicy ' ' needs a positive batchSize and a partialFailureHandling decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -400,7 +400,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that batch policy needs rationale for no partial failure handling. This is a review signal about partial failure handling, decision rationale, display name, not a cosmetic naming preference. In this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-POL-010] BatchPolicy ' ' says partial failure handling is not required but gives no rationale. Suggested fix: explain why whole-batch retry/failure is acceptable. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether batch policy needs rationale for no partial failure handling. It examines partial failure handling, decision rationale, display name. Within this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. The gap is [PIM-POL-010] BatchPolicy ' ' says partial failure handling is not required but gives no rationale. Suggested fix: explain why whole-batch retry/failure is acceptable. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -440,7 +440,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that production observability needs correlation. The observability config element owns the evidence for this decision, including production required, correlation id required, correlation id field, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-011] Production ObservabilityConfig ' ' must require correlation IDs.
+The rule checks whether production observability needs correlation. The observability config element provides the relevant evidence through production required, correlation id required, correlation id field, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-011] Production ObservabilityConfig ' ' must require correlation IDs.
 
 ### When it applies
 
@@ -480,13 +480,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that observability should enable signals. This is a review signal about logging enabled, metrics enabled, tracing enabled, alarms enabled, display name, not a cosmetic naming preference. In this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-POL-012] ObservabilityConfig ' ' enables no observability signal. Suggested fix: enable logging, metrics, tracing or alarms according to production needs. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether observability should enable signals. It examines logging enabled, metrics enabled, tracing enabled, alarms enabled, display name. Within this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. The gap is [PIM-POL-012] ObservabilityConfig ' ' enables no observability signal. Suggested fix: enable logging, metrics, tracing or alarms according to production needs. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -518,7 +518,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that structured logging needs format. The logging policy element owns the evidence for this decision, including structured logging, log format, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-013] LoggingPolicy ' ' requires structured logging but has no logFormat.
+The rule checks whether structured logging needs format. The logging policy element provides the relevant evidence through structured logging, log format, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-013] LoggingPolicy ' ' requires structured logging but has no logFormat.
 
 ### When it applies
 
@@ -558,13 +558,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that logging should include correlation id. This is a review signal about include correlation id, display name, not a cosmetic naming preference. In this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-POL-014] LoggingPolicy ' ' does not include correlation IDs. Suggested fix: set includeCorrelationId to true so logs can be traced across API, function, event and workflow boundaries. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether logging should include correlation id. It examines include correlation id, display name. Within this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. The gap is [PIM-POL-014] LoggingPolicy ' ' does not include correlation IDs. Suggested fix: set includeCorrelationId to true so logs can be traced across API, function, event and workflow boundaries. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -596,13 +596,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that metric policy should name metric and unit. This is a review signal about metric name, unit, statistic, display name, not a cosmetic naming preference. In this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-POL-015] MetricPolicy ' ' lacks metricName, unit or statistic. Suggested fix: define the metric clearly enough to generate dashboards/alarms. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether metric policy should name metric and unit. It examines metric name, unit, statistic, display name. Within this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. The gap is [PIM-POL-015] MetricPolicy ' ' lacks metricName, unit or statistic. Suggested fix: define the metric clearly enough to generate dashboards/alarms. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -634,13 +634,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that alert policy is actionable. The alert policy element owns the evidence for this decision, including metric name, condition, threshold, notification target, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-016] AlertPolicy ' ' is incomplete.
+The rule checks whether alert policy is actionable. The alert policy element provides the relevant evidence through metric name, condition, threshold, notification target, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-016] AlertPolicy ' ' is incomplete.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -672,13 +672,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that slo should be measurable. This is a review signal about objective name, metric, target, measurement window, display name, not a cosmetic naming preference. In this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-POL-017] SLO ' ' is not measurable. Suggested fix: fill objectiveName, metric, target and measurementWindow. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether slo should be measurable. It examines objective name, metric, target, measurement window, display name. Within this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. The gap is [PIM-POL-017] SLO ' ' is not measurable. Suggested fix: fill objectiveName, metric, target and measurementWindow. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -710,7 +710,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that credentialed cors cannot use wildcard origins. The cors policy element owns the evidence for this decision, including credentials allowed, allowed origins, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-018] CorsPolicy ' ' allows credentials with wildcard origins.
+The rule checks whether credentialed cors cannot use wildcard origins. The cors policy element provides the relevant evidence through credentials allowed, allowed origins, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-018] CorsPolicy ' ' allows credentials with wildcard origins.
 
 ### When it applies
 
@@ -750,13 +750,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that cors policy should declare methods and headers. This is a review signal about allowed origins, allowed methods, allowed headers, display name, not a cosmetic naming preference. In this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-POL-019] CorsPolicy ' ' lacks allowed origins, methods or headers. Suggested fix: list the explicit CORS contract needed by browser clients. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether cors policy should declare methods and headers. It examines allowed origins, allowed methods, allowed headers, display name. Within this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. The gap is [PIM-POL-019] CorsPolicy ' ' lacks allowed origins, methods or headers. Suggested fix: list the explicit CORS contract needed by browser clients. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -788,7 +788,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that protected data has retention decision. The data protection policy element owns the evidence for this decision, including classification, retention period, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-020] DataProtectionPolicy ' ' classifies data but has no retentionPeriod.
+The rule checks whether protected data has retention decision. The data protection policy element provides the relevant evidence through classification, retention period, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-020] DataProtectionPolicy ' ' classifies data but has no retentionPeriod.
 
 ### When it applies
 
@@ -828,7 +828,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that classified data needs protection decision. The data protection policy element owns the evidence for this decision, including classification, encryption required, masking required, tokenization required, access audit required. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-021] DataProtectionPolicy ' ' classifies data but has no protection decision.
+The rule checks whether classified data needs protection decision. The data protection policy element provides the relevant evidence through classification, encryption required, masking required, tokenization required, access audit required. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-021] DataProtectionPolicy ' ' classifies data but has no protection decision.
 
 ### When it applies
 
@@ -868,13 +868,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that retention policy has period. The retention policy element owns the evidence for this decision, including retention period, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-022] RetentionPolicy ' ' has no retentionPeriod.
+The rule checks whether retention policy has period. The retention policy element provides the relevant evidence through retention period, display name. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-022] RetentionPolicy ' ' has no retentionPeriod.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -906,7 +906,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that required backup policy has objectives. This is a review signal about backup required, backup frequency, recovery point objective, recovery time objective, display name, not a cosmetic naming preference. In this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-POL-023] BackupPolicy ' ' requires backup but lacks frequency/RPO/RTO. Suggested fix: define backupFrequency, recoveryPointObjective and recoveryTimeObjective. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether required backup policy has objectives. It examines backup required, backup frequency, recovery point objective, recovery time objective, display name. Within this part of the model, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. The gap is [PIM-POL-023] BackupPolicy ' ' requires backup but lacks frequency/RPO/RTO. Suggested fix: define backupFrequency, recoveryPointObjective and recoveryTimeObjective. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -946,13 +946,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that data quality policy has measurement rule. The data quality policy element owns the evidence for this decision, including validation required, completeness check required, freshness check required, duplicate detection required, quality dimensions. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-POL-021A] DataQualityPolicy ' ' lacks quality checks, dimensions or measurementRule.
+The rule checks whether data quality policy has measurement rule. The data quality policy element provides the relevant evidence through validation required, completeness check required, freshness check required, duplicate detection required, quality dimensions. At this level, resilience, timeout, retention, cost, observability, and data-protection expectations are deliberate rather than provider defaults. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-POL-021A] DataQualityPolicy ' ' lacks quality checks, dimensions or measurementRule.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

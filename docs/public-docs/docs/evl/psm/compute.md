@@ -6,7 +6,7 @@ Source profile: `mde/validation/psm/rules/compute.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -22,9 +22,9 @@ Lambda's execution role is both a deployment requirement and the boundary for wh
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,13 +56,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that lambda has log group. The aws lambda function element owns the evidence for this decision, including log group, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda has no logGroup.
+The rule checks whether lambda has log group. The aws lambda function element provides the relevant evidence through log group, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda has no logGroup.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -98,9 +98,9 @@ A Lambda resource without code configuration has no executable artifact. Requiri
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -136,9 +136,9 @@ The PSM supports specific code-source forms, and each form has different require
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -174,9 +174,9 @@ Zip and container-image Lambdas are packaged and deployed differently. The packa
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -208,13 +208,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that lambda memory range. The aws lambda function element owns the evidence for this decision, including memory size mb, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda memorySizeMb is outside the valid range 128..10240.
+The rule checks whether lambda memory range. The aws lambda function element provides the relevant evidence through memory size mb, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda memorySizeMb is outside the valid range 128..10240.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -246,13 +246,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that lambda timeout range. The aws lambda function element owns the evidence for this decision, including timeout seconds, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda timeoutSeconds is outside the valid range 1..900.
+The rule checks whether lambda timeout range. The aws lambda function element provides the relevant evidence through timeout seconds, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda timeoutSeconds is outside the valid range 1..900.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -284,13 +284,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that lambda ephemeral storage range. The aws lambda function element owns the evidence for this decision, including ephemeral storage mb, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda ephemeralStorageMb is outside the valid range 512..10240.
+The rule checks whether lambda ephemeral storage range. The aws lambda function element provides the relevant evidence through ephemeral storage mb, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda ephemeralStorageMb is outside the valid range 512..10240.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -322,13 +322,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that reserved concurrency non negative. The aws lambda function element owns the evidence for this decision, including reserved concurrent executions, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda has a negative reservedConcurrentExecutions value.
+The rule checks whether reserved concurrency non negative. The aws lambda function element provides the relevant evidence through reserved concurrent executions, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda has a negative reservedConcurrentExecutions value.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -360,7 +360,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that auto publish alias requires version publishing. The aws lambda function element owns the evidence for this decision, including auto publish alias, publish version, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda has autoPublishAlias but publishVersion is not true.
+The rule checks whether auto publish alias requires version publishing. The aws lambda function element provides the relevant evidence through auto publish alias, publish version, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda has autoPublishAlias but publishVersion is not true.
 
 ### When it applies
 
@@ -400,7 +400,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that code signing decision honored. The aws lambda function element owns the evidence for this decision, including code signing decision, code signing config, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda requires code signing but has no codeSigningConfig.
+The rule checks whether code signing decision honored. The aws lambda function element provides the relevant evidence through code signing decision, code signing config, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda requires code signing but has no codeSigningConfig.
 
 ### When it applies
 
@@ -440,7 +440,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production lambda should use tracing. This is a review signal about is production scoped, tracing, resource label, not a cosmetic naming preference. In this part of the model, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped Lambda does not enable active tracing. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production lambda should use tracing. It examines is production scoped, tracing, resource label. Within this part of the model, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. The gap is Production-scoped Lambda does not enable active tracing. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -480,7 +480,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that production lambda should use structured logging. This is a review signal about is production scoped, logging, resource label, not a cosmetic naming preference. In this part of the model, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped Lambda has no explicit logging configuration. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production lambda should use structured logging. It examines is production scoped, logging, resource label. Within this part of the model, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. The gap is Production-scoped Lambda has no explicit logging configuration. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -520,7 +520,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that production lambda should have failure destination or dlq. This is a review signal about is production scoped, dead letter config, event invoke configs, destination config, resource label, not a cosmetic naming preference. In this part of the model, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped Lambda has no DLQ or async failure destination. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production lambda should have failure destination or dlq. It examines is production scoped, dead letter config, event invoke configs, destination config, resource label. Within this part of the model, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. The gap is Production-scoped Lambda has no DLQ or async failure destination. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -564,9 +564,9 @@ A zip artifact is not self-describing enough for Lambda to find its entry point.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -598,13 +598,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that zip code has exactly one location. The lambda zip code config element owns the evidence for this decision, including code uri, s3 bucket, s3 key, inline zip file. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ZIP Lambda code configuration must define exactly one code location.
+The rule checks whether zip code has exactly one location. The lambda zip code config element provides the relevant evidence through code uri, s3 bucket, s3 key, inline zip file. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ZIP Lambda code configuration must define exactly one code location.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -640,9 +640,9 @@ An image-based function can only be deployed from a concrete image location. The
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -674,13 +674,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that environment variable name valid. The lambda environment variable element owns the evidence for this decision, including variable name. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda environment variable name is invalid.
+The rule checks whether environment variable name valid. The lambda environment variable element provides the relevant evidence through variable name. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda environment variable name is invalid.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -752,7 +752,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that stage specific variable should have rationale. This is a review signal about stage specific, rationale, variable name, not a cosmetic naming preference. In this part of the model, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Stage-specific environment variable has no rationale. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether stage specific variable should have rationale. It examines stage specific, rationale, variable name. Within this part of the model, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. The gap is Stage-specific environment variable has no rationale. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -792,13 +792,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that dlq has exactly one target. The lambda dead letter config element owns the evidence for this decision, including target queue, target topic. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda DLQ configuration must choose exactly one target.
+The rule checks whether dlq has exactly one target. The lambda dead letter config element provides the relevant evidence through target queue, target topic. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda DLQ configuration must choose exactly one target.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -830,13 +830,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that batch size positive. The lambda event source mapping element owns the evidence for this decision, including batch size, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda event source mapping has an invalid batchSize.
+The rule checks whether batch size positive. The lambda event source mapping element provides the relevant evidence through batch size, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda event source mapping has an invalid batchSize.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -868,13 +868,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that maximum batching window range. The lambda event source mapping element owns the evidence for this decision, including maximum batching window seconds, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda event source mapping maximumBatchingWindowSeconds is outside 0..300.
+The rule checks whether maximum batching window range. The lambda event source mapping element provides the relevant evidence through maximum batching window seconds, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda event source mapping maximumBatchingWindowSeconds is outside 0..300.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -906,13 +906,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that parallelization factor range. The lambda event source mapping element owns the evidence for this decision, including parallelization factor, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda event source mapping parallelizationFactor is outside 1..10.
+The rule checks whether parallelization factor range. The lambda event source mapping element provides the relevant evidence through parallelization factor, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda event source mapping parallelizationFactor is outside 1..10.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -944,7 +944,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that starting timestamp requires at timestamp. The lambda event source mapping element owns the evidence for this decision, including starting position timestamp, starting position, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Event source mapping has startingPositionTimestamp without AT_TIMESTAMP.
+The rule checks whether starting timestamp requires at timestamp. The lambda event source mapping element provides the relevant evidence through starting position timestamp, starting position, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Event source mapping has startingPositionTimestamp without AT_TIMESTAMP.
 
 ### When it applies
 
@@ -984,13 +984,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that queue visibility greater than function timeout. The sqs lambda event source mapping element owns the evidence for this decision, including queue, function, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SQS queue visibility timeout must be greater than Lambda timeout for mapping.
+The rule checks whether queue visibility greater than function timeout. The sqs lambda event source mapping element provides the relevant evidence through queue, function, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SQS queue visibility timeout must be greater than Lambda timeout for mapping.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1022,13 +1022,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that partial batch failure recommended for sqs. This is a review signal about report batch item failures, resource label, not a cosmetic naming preference. In this part of the model, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: SQS event source mapping does not report partial batch item failures. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether partial batch failure recommended for sqs. It examines report batch item failures, resource label. Within this part of the model, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. The gap is SQS event source mapping does not report partial batch item failures. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1060,7 +1060,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that required partial batch failure decision honored. The sqs lambda event source mapping element owns the evidence for this decision, including partial batch failure handling decision, report batch item failures, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SQS event source mapping marks partial batch failure handling as REQUIRED but does not enable it.
+The rule checks whether required partial batch failure decision honored. The sqs lambda event source mapping element provides the relevant evidence through partial batch failure handling decision, report batch item failures, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SQS event source mapping marks partial batch failure handling as REQUIRED but does not enable it.
 
 ### When it applies
 
@@ -1100,13 +1100,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that dynamo stream mapping requires stream specification. The dynamo db stream lambda event source mapping element owns the evidence for this decision, including table, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DynamoDB stream event source mapping points to a table without streamSpecification.
+The rule checks whether dynamo stream mapping requires stream specification. The dynamo db stream lambda event source mapping element provides the relevant evidence through table, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DynamoDB stream event source mapping points to a table without streamSpecification.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1138,13 +1138,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that dynamo stream mapping has starting position. The dynamo db stream lambda event source mapping element owns the evidence for this decision, including e is set, e class, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DynamoDB stream event source mapping has no startingPosition.
+The rule checks whether dynamo stream mapping has starting position. The dynamo db stream lambda event source mapping element provides the relevant evidence through e is set, e class, resource label. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DynamoDB stream event source mapping has no startingPosition.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1176,13 +1176,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that provisioned concurrency positive. The lambda provisioned concurrency config element owns the evidence for this decision, including provisioned concurrent executions. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Provisioned concurrency must be greater than zero.
+The rule checks whether provisioned concurrency positive. The lambda provisioned concurrency config element provides the relevant evidence through provisioned concurrent executions. At this level, Lambda deployment settings agree with the chosen package type, runtime, permissions, limits, event source, and production posture. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Provisioned concurrency must be greater than zero.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

@@ -6,7 +6,7 @@ Source profile: `mde/validation/cim/rules/domain-data.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Advises that domain concept has business definition. This is a review signal about glossary definition, description, label text, not a cosmetic naming preference. In this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: DomainConcept ' ' lacks a glossaryDefinition or description. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether domain concept has business definition. It examines glossary definition, description, label text. Within this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. The gap is DomainConcept ' ' lacks a glossaryDefinition or description. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,7 +56,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that identity attributes are owned attributes. The domain entity element owns the evidence for this decision, including primary identity attribute, identity attributes, attributes, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DomainEntity ' ' has identityAttributes that are not included in attributes or do not include primaryIdentityAttribute.
+The rule checks whether identity attributes are owned attributes. The domain entity element provides the relevant evidence through primary identity attribute, identity attributes, attributes, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DomainEntity ' ' has identityAttributes that are not included in attributes or do not include primaryIdentityAttribute.
 
 ### When it applies
 
@@ -96,13 +96,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that entity has owning capability. This is a review signal about owning capability, business owner, label text, not a cosmetic naming preference. In this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: DomainEntity ' ' has no owningCapability or businessOwner. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether entity has owning capability. It examines owning capability, business owner, label text. Within this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. The gap is DomainEntity ' ' has no owningCapability or businessOwner. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -134,7 +134,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that lifecycle states have single initial state. The domain entity element owns the evidence for this decision, including lifecycle states, initial, terminal, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DomainEntity ' ' has lifecycle states but does not have exactly one initial state and at least one terminal state.
+The rule checks whether lifecycle states have single initial state. The domain entity element provides the relevant evidence through lifecycle states, initial, terminal, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DomainEntity ' ' has lifecycle states but does not have exactly one initial state and at least one terminal state.
 
 ### When it applies
 
@@ -174,13 +174,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that value object should be immutable. This is a review signal about immutable, label text, not a cosmetic naming preference. In this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: ValueObject ' ' is not marked immutable. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether value object should be immutable. It examines immutable, label text. Within this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. The gap is ValueObject ' ' is not marked immutable. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -212,13 +212,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that value object defines equality. The value object element owns the evidence for this decision, including equality attributes, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ValueObject ' ' has no equalityAttributes.
+The rule checks whether value object defines equality. The value object element provides the relevant evidence through equality attributes, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ValueObject ' ' has no equalityAttributes.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -254,9 +254,9 @@ A relationship from a concept to itself may be valid in some domains, but this m
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -288,13 +288,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that domain relationship has roles and multiplicities. This is a review signal about source role, target role, source multiplicity, target multiplicity, label text, not a cosmetic naming preference. In this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: DomainRelationship ' ' lacks role names or multiplicities. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether domain relationship has roles and multiplicities. It examines source role, target role, source multiplicity, target multiplicity, label text. Within this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. The gap is DomainRelationship ' ' lacks role names or multiplicities. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -326,7 +326,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that ownership relationship uses ownership type. The domain relationship element owns the evidence for this decision, including ownership, relationship type, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DomainRelationship ' ' is marked ownership=true but relationshipType is not COMPOSITION, AGGREGATION, or OWNERSHIP.
+The rule checks whether ownership relationship uses ownership type. The domain relationship element provides the relevant evidence through ownership, relationship type, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DomainRelationship ' ' is marked ownership=true but relationshipType is not COMPOSITION, AGGREGATION, or OWNERSHIP.
 
 ### When it applies
 
@@ -366,13 +366,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that root is member. The aggregate candidate element owns the evidence for this decision, including members, root, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: AggregateCandidate ' ' has a root that is not part of members.
+The rule checks whether root is member. The aggregate candidate element provides the relevant evidence through members, root, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: AggregateCandidate ' ' has a root that is not part of members.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -404,7 +404,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that strong consistency requires rationale. The aggregate candidate element owns the evidence for this decision, including strong consistency required, consistency boundary rationale, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: AggregateCandidate ' ' requires strong consistency but has no consistencyBoundaryRationale.
+The rule checks whether strong consistency requires rationale. The aggregate candidate element provides the relevant evidence through strong consistency required, consistency boundary rationale, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: AggregateCandidate ' ' requires strong consistency but has no consistencyBoundaryRationale.
 
 ### When it applies
 
@@ -444,7 +444,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that strong consistency expectation is consistent. The aggregate candidate element owns the evidence for this decision, including strong consistency required, consistency expectation, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: AggregateCandidate ' ' sets strongConsistencyRequired=true but consistencyExpectation does not reflect strong consistency.
+The rule checks whether strong consistency expectation is consistent. The aggregate candidate element provides the relevant evidence through strong consistency required, consistency expectation, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: AggregateCandidate ' ' sets strongConsistencyRequired=true but consistencyExpectation does not reflect strong consistency.
 
 ### When it applies
 
@@ -484,7 +484,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that eventual consistency has conflict policy. This is a review signal about consistency expectation, conflict resolution policy, label text, not a cosmetic naming preference. In this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: AggregateCandidate ' ' allows eventual/manual consistency but has no conflictResolutionPolicy. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether eventual consistency has conflict policy. It examines consistency expectation, conflict resolution policy, label text. Within this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. The gap is AggregateCandidate ' ' allows eventual/manual consistency but has no conflictResolutionPolicy. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -524,7 +524,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that aggregate commands declare idempotency. This is a review signal about handled commands, duplicate submission possible, idempotency business key, label text, not a cosmetic naming preference. In this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: AggregateCandidate ' ' handles duplicate-prone commands without command-level or aggregate-level idempotencyBusinessKey. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether aggregate commands declare idempotency. It examines handled commands, duplicate submission possible, idempotency business key, label text. Within this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. The gap is AggregateCandidate ' ' handles duplicate-prone commands without command-level or aggregate-level idempotencyBusinessKey. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -564,13 +564,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that business invariant is expressed. The business invariant element owns the evidence for this decision, including natural language statement, expression, expression model, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BusinessInvariant ' ' has no naturalLanguageStatement, expression, or expressionModel.
+The rule checks whether business invariant is expressed. The business invariant element provides the relevant evidence through natural language statement, expression, expression model, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessInvariant ' ' has no naturalLanguageStatement, expression, or expressionModel.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -602,13 +602,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that business invariant constrains concepts. This is a review signal about constrained concepts, label text, not a cosmetic naming preference. In this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: BusinessInvariant ' ' is not linked to constrainedConcepts. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether business invariant constrains concepts. It examines constrained concepts, label text. Within this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. The gap is BusinessInvariant ' ' is not linked to constrainedConcepts. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -640,7 +640,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that structured items use object or list. The information item element owns the evidence for this decision, including sub items, type, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: InformationItem ' ' has subItems but is not typed as OBJECT or LIST.
+The rule checks whether structured items use object or list. The information item element provides the relevant evidence through sub items, type, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: InformationItem ' ' has subItems but is not typed as OBJECT or LIST.
 
 ### When it applies
 
@@ -680,13 +680,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that unique child names. The information item element owns the evidence for this decision, including sub items, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: InformationItem ' ' has duplicate child names.
+The rule checks whether unique child names. The information item element provides the relevant evidence through sub items, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: InformationItem ' ' has duplicate child names.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -718,13 +718,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that information item has type. The information item element owns the evidence for this decision, including type, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: InformationItem ' ' has no type.
+The rule checks whether information item has type. The information item element provides the relevant evidence through type, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: InformationItem ' ' has no type.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -756,13 +756,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that information item has business name. The information item element owns the evidence for this decision, including business name, name. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: InformationItem has neither businessName nor inherited name.
+The rule checks whether information item has business name. The information item element provides the relevant evidence through business name, name. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: InformationItem has neither businessName nor inherited name.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -794,7 +794,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that personal or sensitive information has privacy constraint. The information item element owns the evidence for this decision, including requires privacy controls, privacy constraints, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: InformationItem ' ' is personal, sensitive, financial, health, or regulated data but has no PrivacyConstraint.
+The rule checks whether personal or sensitive information has privacy constraint. The information item element provides the relevant evidence through requires privacy controls, privacy constraints, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: InformationItem ' ' is personal, sensitive, financial, health, or regulated data but has no PrivacyConstraint.
 
 ### When it applies
 
@@ -834,7 +834,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that collection information has multiplicity. The information item element owns the evidence for this decision, including collection, cardinality, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Collection InformationItem ' ' has no cardinality.
+The rule checks whether collection information has multiplicity. The information item element provides the relevant evidence through collection, cardinality, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Collection InformationItem ' ' has no cardinality.
 
 ### When it applies
 
@@ -874,7 +874,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that derived information has derivation rule. The information item element owns the evidence for this decision, including derived, derivation rule, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Derived InformationItem ' ' lacks derivationRule.
+The rule checks whether derived information has derivation rule. The information item element provides the relevant evidence through derived, derivation rule, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Derived InformationItem ' ' lacks derivationRule.
 
 ### When it applies
 
@@ -914,7 +914,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that search or report item has source of truth. This is a review signal about search relevant, reporting relevant, source of truth, label text, not a cosmetic naming preference. In this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Search/reporting InformationItem ' ' has no sourceOfTruth. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether search or report item has source of truth. It examines search relevant, reporting relevant, source of truth, label text. Within this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. The gap is Search/reporting InformationItem ' ' has no sourceOfTruth. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -954,7 +954,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that length bounds are consistent. The information item element owns the evidence for this decision, including min length, max length, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: InformationItem ' ' has minLength greater than maxLength.
+The rule checks whether length bounds are consistent. The information item element provides the relevant evidence through min length, max length, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: InformationItem ' ' has minLength greater than maxLength.
 
 ### When it applies
 
@@ -994,13 +994,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that data classification has kind. The data classification element owns the evidence for this decision, including kind, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DataClassification ' ' has no kind.
+The rule checks whether data classification has kind. The data classification element provides the relevant evidence through kind, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DataClassification ' ' has no kind.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1072,7 +1072,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that personal data has identifiability. The data classification element owns the evidence for this decision, including is personal kind, identifiability, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Personal DataClassification ' ' must declare a personal identifiability level.
+The rule checks whether personal data has identifiability. The data classification element provides the relevant evidence through is personal kind, identifiability, label text. At this level, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Personal DataClassification ' ' must declare a personal identifiability level.
 
 ### When it applies
 
@@ -1112,7 +1112,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that regulated data has regulatory category. This is a review signal about kind, regulatory category, classification rationale, label text, not a cosmetic naming preference. In this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: DataClassification ' ' is regulated/financial/health data without regulatoryCategory or classificationRationale. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether regulated data has regulatory category. It examines kind, regulatory category, classification rationale, label text. Within this part of the model, domain concepts can become schemas and persistence choices without losing ownership, identity, or privacy meaning. The gap is DataClassification ' ' is regulated/financial/health data without regulatoryCategory or classificationRationale. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 

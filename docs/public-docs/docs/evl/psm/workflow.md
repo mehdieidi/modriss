@@ -6,7 +6,7 @@ Source profile: `mde/validation/psm/rules/workflow.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that state machine has role. The step function state machine element owns the evidence for this decision, including role, resource label. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Step Functions state machine has no execution role.
+The rule checks whether state machine has role. The step function state machine element provides the relevant evidence through role, resource label. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Step Functions state machine has no execution role.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -60,9 +60,9 @@ A Step Functions resource without a definition has no executable workflow. The r
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -94,13 +94,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that state machine should use single definition source. This is a review signal about definition count, resource label, not a cosmetic naming preference. In this part of the model, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Step Functions state machine defines more than one definition source. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether state machine should use single definition source. It examines definition count, resource label. Within this part of the model, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language. The gap is Step Functions state machine defines more than one definition source. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -132,7 +132,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that state machine asl has states. The step function state machine element owns the evidence for this decision, including asl document, resource label. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Step Functions state machine has an ASL document with no states.
+The rule checks whether state machine asl has states. The step function state machine element provides the relevant evidence through asl document, resource label. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Step Functions state machine has an ASL document with no states.
 
 ### When it applies
 
@@ -172,7 +172,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that publish alias requires alias name. The step function state machine element owns the evidence for this decision, including publish alias, alias name, resource label. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Step Functions state machine publishes an alias but aliasName is empty.
+The rule checks whether publish alias requires alias name. The step function state machine element provides the relevant evidence through publish alias, alias name, resource label. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Step Functions state machine publishes an alias but aliasName is empty.
 
 ### When it applies
 
@@ -212,7 +212,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production state machine should log and trace. This is a review signal about is production scoped, logging, tracing, resource label, not a cosmetic naming preference. In this part of the model, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped state machine lacks logging or tracing. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production state machine should log and trace. It examines is production scoped, logging, tracing, resource label. Within this part of the model, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language. The gap is Production-scoped state machine lacks logging or tracing. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -256,9 +256,9 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -294,9 +294,9 @@ ASL stores states by name, effectively using the name as a JSON key. Duplicate n
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -332,9 +332,9 @@ Every execution path needs a defined completion or failure endpoint. Requiring a
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -366,13 +366,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that non terminal state has next or terminal type. The asl state element owns the evidence for this decision, including end, next state, next state name, is kind of, state name. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ASL state is not terminal and has no next state.
+The rule checks whether non terminal state has next or terminal type. The asl state element provides the relevant evidence through end, next state, next state name, is kind of, state name. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ASL state is not terminal and has no next state.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -404,7 +404,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that terminal state does not have next. The asl state element owns the evidence for this decision, including end, is kind of, next state, next state name, state name. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Terminal ASL state also defines a next state.
+The rule checks whether terminal state does not have next. The asl state element provides the relevant evidence through end, is kind of, next state, next state name, state name. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Terminal ASL state also defines a next state.
 
 ### When it applies
 
@@ -444,13 +444,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that task state has resource. The asl task state element owns the evidence for this decision, including resource, invoked resource, state name. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: AslTaskState has no resource or invokedResource.
+The rule checks whether task state has resource. The asl task state element provides the relevant evidence through resource, invoked resource, state name. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: AslTaskState has no resource or invokedResource.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -606,9 +606,9 @@ This rule checks a semantic decision. The asl wait state element owns the eviden
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -640,13 +640,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that choice state has choices. The asl choice state element owns the evidence for this decision, including choices, state name. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: AslChoiceState has no choices.
+The rule checks whether choice state has choices. The asl choice state element provides the relevant evidence through choices, state name. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: AslChoiceState has no choices.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -682,9 +682,9 @@ Retry parameters determine how long a failure can occupy capacity and how aggres
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -716,13 +716,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that catch rule has errors and next. The asl catch rule element owns the evidence for this decision, including error equals, next state. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ASL catch rule lacks errorEquals or nextState.
+The rule checks whether catch rule has errors and next. The asl catch rule element provides the relevant evidence through error equals, next state. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ASL catch rule lacks errorEquals or nextState.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -754,13 +754,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that choice rule has condition and next. The asl choice rule element owns the evidence for this decision, including condition expression, variable, next state. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ASL choice rule lacks condition/variable or nextState.
+The rule checks whether choice rule has condition and next. The asl choice rule element provides the relevant evidence through condition expression, variable, next state. At this level, the ASL document can start, traverse, recover, and terminate using data-processing fields that match its query language. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ASL choice rule lacks condition/variable or nextState.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

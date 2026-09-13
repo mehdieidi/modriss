@@ -6,13 +6,13 @@ Source module: `mde/transformations/cim-to-pim/domain-data.etl`.
 
 ## Reading this page
 
-A transformation rule is not a validation constraint: it decides whether and how a source element contributes to the target model. Read the guard as a routing decision, the target table as the model-level result, the behavior section as the important semantic side effects, and the trace/manual-decision information as the hand-off to review and later phases.
+A transformation rule determines whether a source element contributes to the target model and how it is mapped. Use the guard to understand routing and the target table to see the model-level result. The behavior section records important semantic side effects. Trace and manual-decision information identifies work for review and later phases.
 
 ---
 
 ## Supporting ETL operations
 
-These operations are not independent source-to-target rules, but they materially shape the result. They derive defaults, create secondary resources, cache correspondences, or resolve relationships after the main rule has run.
+Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
 | Operation                        | Role                                        | Source                                              |
 | -------------------------------- | ------------------------------------------- | --------------------------------------------------- |
@@ -55,7 +55,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:40`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:40`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -90,7 +90,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:75`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:75`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -117,7 +117,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `field.id`, `field.name`, `field.fieldType`, `field.required`, `field.nullable`, `field.array`, `field.descriptionForConsumers`, `field.objectSchema`, `constraint.id`, `constraint.name`, `constraint.expressionLanguage`, `constraint.expression`, `constraint.message`, `constraint.severity`.
 Trace identifiers emitted here: `TR-040`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-040`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-040`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -127,7 +127,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:95`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:95`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -155,7 +155,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `store.id`, `store.name`, `store.persistent`, `store.encrypted`, `store.containsPersonalData`, `store.storeKind`, `store.consistencyNeed`, `store.transactional`, `store.readOptimized`, `store.writeOptimized`, `store.appendOnly`, `store.changeStreamRequired`, `store.pointInTimeRecoveryRequired`, `store.expectedDataVolume`, `store.expectedAccessRate`, `dataModel.id` ….
 Trace identifiers emitted here: `TR-050`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-050`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-050`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -165,7 +165,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:175`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:175`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -191,7 +191,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `pol.id`, `pol.name`, `pol.policyScope`, `pol.productionRequired`, `pol.classification`, `pol.encryptionRequired`, `pol.maskingRequired`, `pol.tokenizationRequired`, `pol.accessAuditRequired`, `pol.deletionRequired`, `pol.retentionPeriod`, `pol.residencyRequirement`.
 Trace identifiers emitted here: `TR-060`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-060`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-060`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -201,7 +201,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:262`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:262`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -228,7 +228,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `dp.id`, `dp.name`, `dp.policyScope`, `dp.productionRequired`, `dp.classification`, `dp.encryptionRequired`, `dp.maskingRequired`, `dp.accessAuditRequired`, `dp.deletionRequired`, `dp.retentionPeriod`, `dp.residencyRequirement`, `rp.id`, `rp.name`, `rp.retentionPeriod`, `rp.deletionAfterRetention`, `rp.legalHoldPossible` ….
 Trace identifiers emitted here: `TR-060`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-060`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-060`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -238,7 +238,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:288`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:288`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -264,7 +264,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `pol.id`, `pol.name`, `pol.policyScope`, `pol.productionRequired`, `pol.regulation`, `pol.controlId`, `pol.evidenceType`, `pol.auditReportRequired`.
 Trace identifiers emitted here: `TR-060`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-060`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-060`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -274,6 +274,6 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:328`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:328`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

@@ -3242,7 +3242,7 @@ public final class ConceptualInstanceModelWorkflow {
             + " For every explicit CIM or PIM relationship, select its source and target types"
             + " and, when the authoritative Ecore represents the edge as a creatable relationship"
             + " object, select that carrier EClass too. This applies to all relationship families,"
-            + " not only workflow transitions."
+            + " including workflow transitions."
             + " Internally account for every explicit user/source requirement before answering: do"
             + " not omit requested functional concepts merely to make room for generic"
             + " cross-cutting qualities. Choose every EClass in each mandatory obligation's"

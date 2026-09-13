@@ -612,7 +612,7 @@ class TransformationServiceTest {
     assertTrue(artifact.files().containsKey("generated/reports/generation-report.md"));
     assertTrue(
         artifact.files().keySet().stream().anyMatch(path -> path.startsWith("src/")),
-        "Formal generation should produce source files, not only a placeholder scaffold.");
+        "Formal generation should produce source files alongside the project scaffold.");
     assertTrue(
         artifact.files().keySet().stream()
             .anyMatch(path -> path.startsWith("src/functions/") && path.endsWith("/handler.go")),

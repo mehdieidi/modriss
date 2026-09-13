@@ -6,7 +6,7 @@ Source profile: `mde/validation/psm/rules/identity.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -58,7 +58,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that mfa decision made for production critical pools. The cognito user pool element owns the evidence for this decision, including is production scoped, mfa decision, resource label. At this level, the deployed authentication boundary does not silently accept avoidable production weaknesses or incomplete OAuth settings; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Production-scoped Cognito user pool has no MFA decision.
+The rule checks whether mfa decision made for production critical pools. The cognito user pool element provides the relevant evidence through is production scoped, mfa decision, resource label. At this level, the deployed authentication boundary does not silently accept avoidable production weaknesses or incomplete OAuth settings. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Production-scoped Cognito user pool has no MFA decision.
 
 ### When it applies
 
@@ -98,7 +98,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production user pool should use deletion protection. This is a review signal about is production scoped, deletion protection, resource label, not a cosmetic naming preference. In this part of the model, the deployed authentication boundary does not silently accept avoidable production weaknesses or incomplete OAuth settings; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped Cognito user pool does not enable deletion protection. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production user pool should use deletion protection. It examines is production scoped, deletion protection, resource label. Within this part of the model, the deployed authentication boundary does not silently accept avoidable production weaknesses or incomplete OAuth settings. The gap is Production-scoped Cognito user pool does not enable deletion protection. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -138,7 +138,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that o auth client has callback urls. The cognito user pool client element owns the evidence for this decision, including allowed oauth flows user pool client, callback urls, resource label. At this level, the deployed authentication boundary does not silently accept avoidable production weaknesses or incomplete OAuth settings; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Cognito user pool client enables OAuth flows but has no callbackUrls.
+The rule checks whether o auth client has callback urls. The cognito user pool client element provides the relevant evidence through allowed oauth flows user pool client, callback urls, resource label. At this level, the deployed authentication boundary does not silently accept avoidable production weaknesses or incomplete OAuth settings. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Cognito user pool client enables OAuth flows but has no callbackUrls.
 
 ### When it applies
 
@@ -178,13 +178,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that prevent user existence errors recommended. This is a review signal about prevent user existence errors, resource label, not a cosmetic naming preference. In this part of the model, the deployed authentication boundary does not silently accept avoidable production weaknesses or incomplete OAuth settings; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Cognito user pool client does not explicitly prevent user-existence errors. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether prevent user existence errors recommended. It examines prevent user existence errors, resource label. Within this part of the model, the deployed authentication boundary does not silently accept avoidable production weaknesses or incomplete OAuth settings. The gap is Cognito user pool client does not explicitly prevent user-existence errors. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -216,13 +216,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that unauthenticated identities require review. This is a review signal about allow unauthenticated identities, resource label, not a cosmetic naming preference. In this part of the model, the deployed authentication boundary does not silently accept avoidable production weaknesses or incomplete OAuth settings; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Cognito identity pool allows unauthenticated identities. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether unauthenticated identities require review. It examines allow unauthenticated identities, resource label. Within this part of the model, the deployed authentication boundary does not silently accept avoidable production weaknesses or incomplete OAuth settings. The gap is Cognito identity pool allows unauthenticated identities. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

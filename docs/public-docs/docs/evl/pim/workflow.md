@@ -6,7 +6,7 @@ Source profile: `mde/validation/pim/rules/workflow.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -22,9 +22,9 @@ The workflow transformer needs a deterministic entry point; collection order is 
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,13 +56,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that end steps belong to workflow. The workflow element owns the evidence for this decision, including end steps, steps, display name. At this level, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-WF-000B] Workflow ' ' must contain at least one SuccessEndStep or FailureEndStep.
+The rule checks whether end steps belong to workflow. The workflow element provides the relevant evidence through end steps, steps, display name. At this level, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-WF-000B] Workflow ' ' must contain at least one SuccessEndStep or FailureEndStep.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -98,9 +98,9 @@ A step outside the start-reachable graph will never run, no matter how carefully
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -132,13 +132,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that workflow start and end steps are contained. The workflow element owns the evidence for this decision, including start steps, steps, end steps, display name. At this level, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-WF-001] Workflow ' ' has start/end steps outside its contained steps.
+The rule checks whether workflow start and end steps are contained. The workflow element provides the relevant evidence through start steps, steps, end steps, display name. At this level, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-WF-001] Workflow ' ' has start/end steps outside its contained steps.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -170,13 +170,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that workflow has at least one end step. The workflow element owns the evidence for this decision, including end steps, display name. At this level, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-WF-002] Workflow ' ' has no end steps.
+The rule checks whether workflow has at least one end step. The workflow element provides the relevant evidence through end steps, display name. At this level, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-WF-002] Workflow ' ' has no end steps.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -248,7 +248,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that non start step should have incoming transition. This is a review signal about workflow, is kind of, incoming transitions, display name, not a cosmetic naming preference. In this part of the model, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-WF-008] Workflow step ' ' is not a start step and has no incoming transition. Suggested fix: connect it from another step or remove the unreachable step. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether non start step should have incoming transition. It examines workflow, is kind of, incoming transitions, display name. Within this part of the model, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion. The gap is [PIM-WF-008] Workflow step ' ' is not a start step and has no incoming transition. Suggested fix: connect it from another step or remove the unreachable step. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -288,7 +288,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that timed step should use timeout policy. This is a review signal about timeout seconds, retry, catch handlers, rationale, display name, not a cosmetic naming preference. In this part of the model, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-WF-009] Workflow step ' ' has timeoutSeconds but no retry/catch/rationale. Suggested fix: define retry/error handling or explain why timeout failure needs no handling. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether timed step should use timeout policy. It examines timeout seconds, retry, catch handlers, rationale, display name. Within this part of the model, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion. The gap is [PIM-WF-009] Workflow step ' ' has timeoutSeconds but no retry/catch/rationale. Suggested fix: define retry/error handling or explain why timeout failure needs no handling. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -332,9 +332,9 @@ A choice with one branch is not expressing a choice; it is adding branching mach
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -370,9 +370,9 @@ An end step declares completion. An outgoing transition contradicts that declara
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -408,9 +408,9 @@ An end step declares completion. An outgoing transition contradicts that declara
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -446,9 +446,9 @@ A task is the point at which the workflow asks something to happen. Exactly one 
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -480,13 +480,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that same workflow. The workflow transition element owns the evidence for this decision, including source, target, workflow, display name. At this level, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-WF-010A] Transition ' ' must connect steps in its owning workflow.
+The rule checks whether same workflow. The workflow transition element provides the relevant evidence through source, target, workflow, display name. At this level, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-WF-010A] Transition ' ' must connect steps in its owning workflow.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -518,13 +518,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that transition stays inside workflow. The workflow transition element owns the evidence for this decision, including source, target, workflow, display name. At this level, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-WF-010] Transition ' ' connects steps outside its owning workflow.
+The rule checks whether transition stays inside workflow. The workflow transition element provides the relevant evidence through source, target, workflow, display name. At this level, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-WF-010] Transition ' ' connects steps outside its owning workflow.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -556,13 +556,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that conditional transition should have condition unless default. This is a review signal about default transition, condition expression, display name, not a cosmetic naming preference. In this part of the model, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-WF-011] Transition ' ' has no conditionExpression and is not marked defaultTransition. Suggested fix: add a condition or mark it as the default branch. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether conditional transition should have condition unless default. It examines default transition, condition expression, display name. Within this part of the model, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion. The gap is [PIM-WF-011] Transition ' ' has no conditionExpression and is not marked defaultTransition. Suggested fix: add a condition or mark it as the default branch. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -594,7 +594,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that next step in same workflow. The error handler element owns the evidence for this decision, including next step, step, display name. At this level, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: [PIM-WF-012A] ErrorHandler ' ' routes to a step outside the owning workflow.
+The rule checks whether next step in same workflow. The error handler element provides the relevant evidence through next step, step, display name. At this level, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-WF-012A] ErrorHandler ' ' routes to a step outside the owning workflow.
 
 ### When it applies
 
@@ -638,9 +638,9 @@ Catching an error without a recovery destination only hides the failure. The rul
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -672,13 +672,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that error handler should select errors. This is a review signal about error selector, recovery action, display name, not a cosmetic naming preference. In this part of the model, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: [PIM-WF-013] ErrorHandler ' ' lacks errorSelector or recoveryAction. Suggested fix: state which errors it handles and how recovery proceeds. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether error handler should select errors. It examines error selector, recovery action, display name. Within this part of the model, the execution graph has one understandable path through entry, work, failure handling, compensation, and completion. The gap is [PIM-WF-013] ErrorHandler ' ' lacks errorSelector or recoveryAction. Suggested fix: state which errors it handles and how recovery proceeds. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -714,9 +714,9 @@ Compensation changes the business outcome of a broader process, so it must belon
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -752,9 +752,9 @@ A compensation policy that names a condition but no action is an intention witho
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

@@ -6,7 +6,7 @@ Source profile: `mde/validation/psm/rules/security.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -22,9 +22,9 @@ Permissions say what a role may do; trust policy says who may become that role. 
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,7 +56,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production role should use permissions boundary. This is a review signal about is production scoped, permissions boundary arn, resource label, not a cosmetic naming preference. In this part of the model, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped IAM role has no permissions boundary. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production role should use permissions boundary. It examines is production scoped, permissions boundary arn, resource label. Within this part of the model, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. The gap is Production-scoped IAM role has no permissions boundary. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -96,13 +96,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that policy document has statements. The iam policy document element owns the evidence for this decision, including statements. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: IAM policy document has no statements.
+The rule checks whether policy document has statements. The iam policy document element provides the relevant evidence through statements. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: IAM policy document has no statements.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -134,13 +134,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that statement has action and resource side. The iam statement element owns the evidence for this decision, including has action side, has resource side, is trust policy statement. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: IAM statement is missing action/notAction or an applicable target side.
+The rule checks whether statement has action and resource side. The iam statement element provides the relevant evidence through has action side, has resource side, is trust policy statement. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: IAM statement is missing action/notAction or an applicable target side.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -212,7 +212,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that avoid not action in allow statements. This is a review signal about effect, not actions, not a cosmetic naming preference. In this part of the model, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: ALLOW IAM statement uses notActions, which is difficult to reason about. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether avoid not action in allow statements. It examines effect, not actions. Within this part of the model, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. The gap is ALLOW IAM statement uses notActions, which is difficult to reason about. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -252,13 +252,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that principal has type and identifiers. The iam principal element owns the evidence for this decision, including principal type, identifiers. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: IAM principal is incomplete.
+The rule checks whether principal has type and identifiers. The iam principal element provides the relevant evidence through principal type, identifiers. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: IAM principal is incomplete.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -290,13 +290,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that condition complete. The iam condition element owns the evidence for this decision, including operator, key, values. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: IAM condition is incomplete.
+The rule checks whether condition complete. The iam condition element provides the relevant evidence through operator, key, values. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: IAM condition is incomplete.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -368,13 +368,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that pending window range. The kms key element owns the evidence for this decision, including pending window in days, resource label. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: KMS key pendingWindowInDays is outside 7..30.
+The rule checks whether pending window range. The kms key element provides the relevant evidence through pending window in days, resource label. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: KMS key pendingWindowInDays is outside 7..30.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -406,13 +406,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that kms alias name valid. The kms alias element owns the evidence for this decision, including alias name. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: KMS alias is invalid.
+The rule checks whether kms alias name valid. The kms alias element provides the relevant evidence through alias name. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: KMS alias is invalid.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -448,9 +448,9 @@ A Secrets Manager secret must have a source for its initial value, whether that 
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -482,7 +482,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that rotation required has schedule. The secrets manager secret element owns the evidence for this decision, including rotation required, rotation schedule, resource label. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Secrets Manager secret requires rotation but has no rotationSchedule.
+The rule checks whether rotation required has schedule. The secrets manager secret element provides the relevant evidence through rotation required, rotation schedule, resource label. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Secrets Manager secret requires rotation but has no rotationSchedule.
 
 ### When it applies
 
@@ -522,7 +522,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production secret should use kms. This is a review signal about is production scoped, kms key, resource label, not a cosmetic naming preference. In this part of the model, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped secret has no explicit KMS key. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production secret should use kms. It examines is production scoped, kms key, resource label. Within this part of the model, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. The gap is Production-scoped secret has no explicit KMS key. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -562,13 +562,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that rotation schedule has rules or lambda. The secret rotation schedule element owns the evidence for this decision, including rotation rules json, rotation lambda, resource label. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Secret rotation schedule has no rotationRulesJson or rotationLambda.
+The rule checks whether rotation schedule has rules or lambda. The secret rotation schedule element provides the relevant evidence through rotation rules json, rotation lambda, resource label. At this level, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Secret rotation schedule has no rotationRulesJson or rotationLambda.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -640,7 +640,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that secure parameter should use kms key. This is a review signal about parameter type, kms key, parameter name, not a cosmetic naming preference. In this part of the model, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Secure SSM parameter has no explicit KMS key. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether secure parameter should use kms key. It examines parameter type, kms key, parameter name. Within this part of the model, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. The gap is Secure SSM parameter has no explicit KMS key. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 

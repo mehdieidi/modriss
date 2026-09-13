@@ -6,7 +6,7 @@ Source profile: `mde/validation/cim/rules/core-kernel-trace.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -22,9 +22,9 @@ The root must contain enough business scope, organization, and intent to make it
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,13 +56,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that cim model declares business scope. This is a review signal about domain name, business scope, organization name, not a cosmetic naming preference. In this part of the model, the CIM remains a portable, explainable source model rather than a loose collection of nouns; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: The CIM model is missing domainName, businessScope, or organizationName. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether cim model declares business scope. It examines domain name, business scope, organization name. Within this part of the model, the CIM remains a portable, explainable source model rather than a loose collection of nouns. The gap is The CIM model is missing domainName, businessScope, or organizationName. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -134,7 +134,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that transformation profile explicit auth is enforced. The cimmodel element owns the evidence for this decision, including transformation profile, commands, has human issuer, has authorization decision. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: The transformation profile requires explicit actor authorization, but at least one human-issued command lacks authorizationRequired=true and a business authorizationRule.
+The rule checks whether transformation profile explicit auth is enforced. The cimmodel element provides the relevant evidence through transformation profile, commands, has human issuer, has authorization decision. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: The transformation profile requires explicit actor authorization, but at least one human-issued command lacks authorizationRequired=true and a business authorizationRule.
 
 ### When it applies
 
@@ -174,7 +174,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that transformation profile privacy classification is enforced. The cimmodel element owns the evidence for this decision, including transformation profile, information items. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: The transformation profile requires privacy classification for all information items, but at least one item has no DataClassification.
+The rule checks whether transformation profile privacy classification is enforced. The cimmodel element provides the relevant evidence through transformation profile, information items. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: The transformation profile requires privacy classification for all information items, but at least one item has no DataClassification.
 
 ### When it applies
 
@@ -214,13 +214,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that model element name is present. The model element element owns the evidence for this decision, including name. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: A model element has no user-facing name.
+The rule checks whether model element name is present. The model element element provides the relevant evidence through name. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: A model element has no user-facing name.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -252,13 +252,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that model element avoids provider specific terms. The model element element owns the evidence for this decision, including contains provider technology term, label text. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ' ' contains provider-specific or implementation-level terms.
+The rule checks whether model element avoids provider specific terms. The model element element provides the relevant evidence through contains provider technology term, label text. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ' ' contains provider-specific or implementation-level terms.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -290,13 +290,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that model element has explanation. This is a review signal about summary, description, documentation, label text, not a cosmetic naming preference. In this part of the model, the CIM remains a portable, explainable source model rather than a loose collection of nouns; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: ' ' has a name but no explanatory summary, description, or documentation. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether model element has explanation. It examines summary, description, documentation, label text. Within this part of the model, the CIM remains a portable, explainable source model rather than a loose collection of nouns. The gap is ' ' has a name but no explanatory summary, description, or documentation. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -328,13 +328,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that traceable element has source or rationale. This is a review signal about source reference, source excerpt, source uri, rationale, label text, not a cosmetic naming preference. In this part of the model, the CIM remains a portable, explainable source model rather than a loose collection of nouns; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: ' ' has no source reference or rationale. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether traceable element has source or rationale. It examines source reference, source excerpt, source uri, rationale, label text. Within this part of the model, the CIM remains a portable, explainable source model rather than a loose collection of nouns. The gap is ' ' has no source reference or rationale. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -406,13 +406,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that trace link has reference or external id. The trace link element owns the evidence for this decision, including source, target, source element id, target element id. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: A TraceLink must identify both ends either by model references or by sourceElementId/targetElementId.
+The rule checks whether trace link has reference or external id. The trace link element provides the relevant evidence through source, target, source element id, target element id. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: A TraceLink must identify both ends either by model references or by sourceElementId/targetElementId.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -444,13 +444,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that trace link does not point to same element. The trace link element owns the evidence for this decision, including source, target, label text. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: TraceLink ' ' points from an element to itself.
+The rule checks whether trace link does not point to same element. The trace link element provides the relevant evidence through source, target, label text. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: TraceLink ' ' points from an element to itself.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

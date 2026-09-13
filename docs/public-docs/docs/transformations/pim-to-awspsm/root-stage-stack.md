@@ -6,7 +6,7 @@ Source module: `mde/transformations/pim-to-awspsm/root-stage-stack.etl`.
 
 ## Reading this page
 
-A transformation rule is not a validation constraint: it decides whether and how a source element contributes to the target model. Read the guard as a routing decision, the target table as the model-level result, the behavior section as the important semantic side effects, and the trace/manual-decision information as the hand-off to review and later phases.
+A transformation rule determines whether a source element contributes to the target model and how it is mapped. Use the guard to understand routing and the target table to see the model-level result. The behavior section records important semantic side effects. Trace and manual-decision information identifies work for review and later phases.
 
 ---
 
@@ -31,7 +31,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 ### Important behavior encoded in the rule
 
 The rule directly assigns: `a.id`, `a.name`, `a.summary`, `a.partition`, `a.accountStrategy`, `a.regionStrategy`, `a.defaultRegion`, `a.namingConvention`, `a.taggingStrategy`, `a.productionMode`, `a.traceModel`, `a.readiness`, `a.namingPolicy`, `a.taggingPolicy`, `a.securityBaseline`, `a.samGlobals`.
-Manual decisions raised by this rule: `AWS_REGION_REQUIRED`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `AWS_REGION_REQUIRED`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -39,7 +39,7 @@ Start with the manual decision(s) `AWS_REGION_REQUIRED` and complete the request
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack.etl:2`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack.etl:2`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -71,7 +71,7 @@ Verify that the environment is present and semantically complete, then rerun the
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack.etl:50`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack.etl:50`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -103,7 +103,7 @@ Verify that the deployment unit is present and semantically complete, then rerun
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack.etl:77`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack.etl:77`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -135,6 +135,6 @@ Verify that the serverless service is present and semantically complete, then re
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack.etl:96`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack.etl:96`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

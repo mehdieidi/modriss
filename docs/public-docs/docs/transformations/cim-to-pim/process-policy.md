@@ -6,13 +6,13 @@ Source module: `mde/transformations/cim-to-pim/process-policy.etl`.
 
 ## Reading this page
 
-A transformation rule is not a validation constraint: it decides whether and how a source element contributes to the target model. Read the guard as a routing decision, the target table as the model-level result, the behavior section as the important semantic side effects, and the trace/manual-decision information as the hand-off to review and later phases.
+A transformation rule determines whether a source element contributes to the target model and how it is mapped. Use the guard to understand routing and the target table to see the model-level result. The behavior section records important semantic side effects. Trace and manual-decision information identifies work for review and later phases.
 
 ---
 
 ## Supporting ETL operations
 
-These operations are not independent source-to-target rules, but they materially shape the result. They derive defaults, create secondary resources, cache correspondences, or resolve relationships after the main rule has run.
+Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
 | Operation                        | Role                                                   | Source                                                  |
 | -------------------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
@@ -22,9 +22,9 @@ These operations are not independent source-to-target rules, but they materially
 | `secondsFromDurationExpression`  | Computes seconds from duration expression.             | `mde/transformations/cim-to-pim/process-policy.etl:55`  |
 | `cloneKernelExpression`          | Computes clone kernel expression.                      | `mde/transformations/cim-to-pim/process-policy.etl:72`  |
 | `cloneConditionExpression`       | Computes clone condition expression.                   | `mde/transformations/cim-to-pim/process-policy.etl:88`  |
-| `createPolicyContextSchema`      | Creates create policy context schema.                  | `mde/transformations/cim-to-pim/process-policy.etl:96`  |
-| `createHumanTaskInputSchema`     | Creates create human task input schema.                | `mde/transformations/cim-to-pim/process-policy.etl:114` |
-| `createHumanTaskOutputSchema`    | Creates create human task output schema.               | `mde/transformations/cim-to-pim/process-policy.etl:133` |
+| `createPolicyContextSchema`      | Creates policy context schema.                         | `mde/transformations/cim-to-pim/process-policy.etl:96`  |
+| `createHumanTaskInputSchema`     | Creates human task input schema.                       | `mde/transformations/cim-to-pim/process-policy.etl:114` |
+| `createHumanTaskOutputSchema`    | Creates human task output schema.                      | `mde/transformations/cim-to-pim/process-policy.etl:133` |
 | `preferredTemporalRoutingTarget` | Computes preferred temporal routing target.            | `mde/transformations/cim-to-pim/process-policy.etl:833` |
 
 ---
@@ -41,7 +41,7 @@ Reactive, derivation, escalation, validation, and similar policies become handle
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : pol.policyType.asString() = "REACTION" or pol.policyType.asString() = "DERIVATION" or pol.policyType.asString() = "ESCALATION" or pol.policyType.asString() = "VALIDATION" or pol.triggeredBy.notEmpty() or pol.emitsCommands.notEmpty() or pol.emitsEvents.notEmpty()
@@ -59,13 +59,13 @@ Trace identifiers emitted here: `TR-100`. These identifiers are useful when foll
 
 ### How to troubleshoot or repair it
 
-Verify the policy instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the policy instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 The trace record is the best first diagnostic: it tells you whether the target was created, which transformation rule claimed it, and what source element it came from.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:152`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:152`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -81,7 +81,7 @@ Authorization, guard, compliance, and compensation policies are retained as PIM 
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : pol.policyType.asString() = "COMPLIANCE" or pol.policyType.asString() = "GUARD" or pol.policyType.asString() = "AUTHORIZATION" or pol.policyType.asString() = "COMPENSATION"
@@ -98,13 +98,13 @@ Trace identifiers emitted here: `TR-100`. These identifiers are useful when foll
 
 ### How to troubleshoot or repair it
 
-Verify the policy instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the policy instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 The trace record is the best first diagnostic: it tells you whether the target was created, which transformation rule claimed it, and what source element it came from.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:226`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:226`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -131,7 +131,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `fn.id`, `fn.name`, `fn.functionKind`, `fn.responsibility`, `fn.handlerResponsibility`, `fn.writesState`, `fn.readsState`, `fn.executionModel`, `fn.computeProfile`, `fn.stateless`, `contract.id`, `contract.name`, `contract.contractVersion`, `contract.validatesInput`, `contract.validatesOutput`, `contract.correlationIdField` ….
 Trace identifiers emitted here: `TR-100`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-100`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-100`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -141,7 +141,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:242`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:242`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -168,7 +168,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `dm.id`, `dm.name`, `dm.hitPolicy`, `decisionRuleTarget.id`, `decisionRuleTarget.name`, `condition.id`, `condition.name`, `condition.language`, `condition.body`, `condition.phase`, `condition.sideEffectFree`, `decisionRuleTarget.condition`, `outcome.id`, `outcome.name`, `outcome.language`, `outcome.body` ….
 Trace identifiers emitted here: `TR-100`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-100`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-100`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -178,7 +178,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:314`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:314`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -194,7 +194,7 @@ A business process becomes a PIM workflow only when it contains meaningful workf
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : shouldGenerateWorkflow(bp)
@@ -211,13 +211,13 @@ Trace identifiers emitted here: `TR-110`. These identifiers are useful when foll
 
 ### How to troubleshoot or repair it
 
-Verify the business process instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the business process instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 The trace record is the best first diagnostic: it tells you whether the target was created, which transformation rule claimed it, and what source element it came from.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:373`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:373`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -253,7 +253,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:400`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:400`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -289,7 +289,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:415`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:415`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -325,7 +325,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:430`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:430`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -341,7 +341,7 @@ Wait and event-wait behavior share a PIM wait representation because both suspen
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : s.isKindOf(CIMPROCESS!WaitStep) or s.isKindOf(CIMPROCESS!EventStep)
@@ -359,13 +359,13 @@ ETL annotation: `@greedy`. This affects rule selection or correspondence precede
 
 ### How to troubleshoot or repair it
 
-Verify the process step instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the process step instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 The trace record is the best first diagnostic: it tells you whether the target was created, which transformation rule claimed it, and what source element it came from.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:456`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:456`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -381,7 +381,7 @@ Command, query, policy, human, and external-interaction steps become PIM tasks, 
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : s.isKindOf(CIMPROCESS!CommandStep) or s.isKindOf(CIMPROCESS!QueryStep) or s.isKindOf(CIMPROCESS!PolicyStep) or s.isKindOf(CIMPROCESS!HumanTaskStep) or s.isKindOf(CIMPROCESS!ExternalInteractionStep)
@@ -396,7 +396,7 @@ guard : s.isKindOf(CIMPROCESS!CommandStep) or s.isKindOf(CIMPROCESS!QueryStep) o
 
 The rule directly assigns: `ws.id`, `ws.name`, `ws.orderIndex`, `ws.inputMapping`, `ws.outputMapping`, `ws.timeoutSeconds`, `ws.invokesFunction`, `ws.invokesAdapter`, `taskFn.id`, `taskFn.name`, `taskFn.functionKind`, `taskFn.responsibility`, `taskFn.handlerResponsibility`, `taskFn.sourceNameSuggestion`, `taskFn.publicEntryPoint`, `taskFn.writesState` ….
 Trace identifiers emitted here: `TR-120`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-120`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-120`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 ETL annotation: `@greedy`. This affects rule selection or correspondence precedence and is part of the mapping behavior.
 
 ### How to troubleshoot or repair it
@@ -407,7 +407,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:480`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:480`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -442,7 +442,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:546`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:546`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -468,7 +468,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `eh.id`, `eh.name`, `eh.errorSelector`, `eh.recoveryAction`, `eh.continueWorkflow`.
 Trace identifiers emitted here: `TR-130`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-130`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-130`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -478,7 +478,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:658`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:658`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -506,7 +506,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `sec.id`, `sec.name`, `sec.policyScope`, `sec.authenticationRequired`, `sec.authorizationRequired`, `sec.authStrength`, `sec.auditRequired`, `sec.encryptionInTransitRequired`, `sec.encryptionAtRestRequired`, `sec.secretsRequired`, `sec.threatModelNotes`, `auth.id`, `auth.name`, `auth.policyScope`, `auth.authenticationRequired`, `auth.authScheme` ….
 Trace identifiers emitted here: `TR-060`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-060`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-060`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -516,7 +516,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:675`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:675`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -544,7 +544,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `timeout.id`, `timeout.name`, `timeout.policyScope`, `timeout.productionRequired`, `timeout.timeoutSeconds`, `timeout.clientTimeoutSeconds`, `ordering.id`, `ordering.name`, `ordering.policyScope`, `ordering.productionRequired`, `ordering.orderingRequirement`, `ordering.orderingKey`, `ordering.strictOrderingRequired`, `target.expectedMaxDurationSeconds`, `target.resilience`, `target.timeoutSeconds` ….
 Trace identifiers emitted here: `TR-130`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-130`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-130`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -554,7 +554,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:754`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:754`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -570,7 +570,7 @@ Availability and reliability requirements become resilience policies. The rule t
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : nfr.qualityType.asString() = "AVAILABILITY" or nfr.qualityType.asString() = "RELIABILITY"
@@ -589,13 +589,13 @@ Trace identifiers emitted here: `TR-060`. These identifiers are useful when foll
 
 ### How to troubleshoot or repair it
 
-Verify the non functional requirement instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the non functional requirement instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 The trace record is the best first diagnostic: it tells you whether the target was created, which transformation rule claimed it, and what source element it came from.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:855`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:855`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -611,7 +611,7 @@ Performance, latency, and scalability requirements first become timeout-oriented
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : nfr.qualityType.asString() = "PERFORMANCE" or nfr.qualityType.asString() = "LATENCY" or nfr.qualityType.asString() = "SCALABILITY"
@@ -628,7 +628,7 @@ guard : nfr.qualityType.asString() = "PERFORMANCE" or nfr.qualityType.asString()
 
 The rule directly assigns: `pol.id`, `pol.name`, `pol.policyScope`, `pol.productionRequired`, `pol.timeoutSeconds`, `pol.clientTimeoutSeconds`, `concurrency.id`, `concurrency.name`, `concurrency.policyScope`, `concurrency.productionRequired`, `concurrency.maxConcurrency`, `concurrency.reservedConcurrencyHint`, `concurrency.burstAssumption`, `concurrency.perSourceLimitRequired`, `concurrency.scalingRationale`, `cache.id` ….
 Trace identifiers emitted here: `TR-060`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-060`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-060`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -638,7 +638,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:897`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:897`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -654,7 +654,7 @@ Auditability, operability, and maintainability requirements become observability
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : nfr.qualityType.asString() = "AUDITABILITY" or nfr.qualityType.asString() = "OPERABILITY" or nfr.qualityType.asString() = "MAINTAINABILITY"
@@ -672,13 +672,13 @@ Trace identifiers emitted here: `TR-060`. These identifiers are useful when foll
 
 ### How to troubleshoot or repair it
 
-Verify the non functional requirement instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the non functional requirement instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 The trace record is the best first diagnostic: it tells you whether the target was created, which transformation rule claimed it, and what source element it came from.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:957`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:957`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -694,7 +694,7 @@ Cost intent becomes a PIM cost policy so estimates, budgets, and optimization ch
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : nfr.qualityType.asString() = "COST"
@@ -711,13 +711,13 @@ Trace identifiers emitted here: `TR-060`. These identifiers are useful when foll
 
 ### How to troubleshoot or repair it
 
-Verify the non functional requirement instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the non functional requirement instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 The trace record is the best first diagnostic: it tells you whether the target was created, which transformation rule claimed it, and what source element it came from.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:1022`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:1022`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -733,7 +733,7 @@ Data-quality requirements have two destinations: a schema constraint where the d
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : nfr.qualityType.asString() = "DATA_QUALITY"
@@ -750,13 +750,13 @@ Trace identifiers emitted here: `TR-060`. These identifiers are useful when foll
 
 ### How to troubleshoot or repair it
 
-Verify the non functional requirement instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the non functional requirement instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 The trace record is the best first diagnostic: it tells you whether the target was created, which transformation rule claimed it, and what source element it came from.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:1042`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:1042`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -772,7 +772,7 @@ A generic compliance NFR becomes a PIM compliance policy unless it already has a
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : nfr.qualityType.asString() = "COMPLIANCE" and not nfr.isKindOf(CIMGOV!ComplianceConstraint)
@@ -789,12 +789,12 @@ Trace identifiers emitted here: `TR-060`. These identifiers are useful when foll
 
 ### How to troubleshoot or repair it
 
-Verify the non functional requirement instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the non functional requirement instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 The trace record is the best first diagnostic: it tells you whether the target was created, which transformation rule claimed it, and what source element it came from.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:1066`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:1066`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

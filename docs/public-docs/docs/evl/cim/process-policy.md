@@ -6,7 +6,7 @@ Source profile: `mde/validation/cim/rules/process-policy.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -22,9 +22,9 @@ A process without an entry and completion cannot be transformed into a reliable 
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,13 +56,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that process has trigger and completion criterion. The business process element owns the evidence for this decision, including trigger, triggering event, triggering command, triggering actor, business trigger description. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BusinessProcess ' ' lacks a trigger or completionCriterion.
+The rule checks whether process has trigger and completion criterion. The business process element provides the relevant evidence through trigger, triggering event, triggering command, triggering actor, business trigger description. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessProcess ' ' lacks a trigger or completionCriterion.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -94,7 +94,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that process trigger is typed for production. The business process element owns the evidence for this decision, including trigger, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BusinessProcess ' ' uses a generic trigger that is not a BusinessEvent, Command, or Actor.
+The rule checks whether process trigger is typed for production. The business process element provides the relevant evidence through trigger, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessProcess ' ' uses a generic trigger that is not a BusinessEvent, Command, or Actor.
 
 ### When it applies
 
@@ -174,13 +174,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that process transitions stay inside process. The business process element owns the evidence for this decision, including transitions, steps, source, target, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BusinessProcess ' ' contains a transition whose source or target is not one of its steps.
+The rule checks whether process transitions stay inside process. The business process element provides the relevant evidence through transitions, steps, source, target, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessProcess ' ' contains a transition whose source or target is not one of its steps.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -216,9 +216,9 @@ Checks that process step order indexes are unique. The business process element 
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -248,7 +248,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that compensation process has exception scenarios. This is a review signal about compensation expected, exceptions, label text, not a cosmetic naming preference. In this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: BusinessProcess ' ' expects compensation but has no ExceptionScenario. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether compensation process has exception scenarios. It examines compensation expected, exceptions, label text. Within this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. The gap is BusinessProcess ' ' expects compensation but has no ExceptionScenario. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -288,7 +288,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that process step has responsibility. This is a review signal about step kind, responsibility, responsible roles, label text, not a cosmetic naming preference. In this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: ProcessStep ' ' has no responsibility or responsibleRoles. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether process step has responsibility. It examines step kind, responsibility, responsible roles, label text. Within this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. The gap is ProcessStep ' ' has no responsibility or responsibleRoles. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -328,13 +328,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that start step kind matches class. The start step element owns the evidence for this decision, including step kind, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: StartStep ' ' must have stepKind=START.
+The rule checks whether start step kind matches class. The start step element provides the relevant evidence through step kind, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: StartStep ' ' must have stepKind=START.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -366,13 +366,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that end step kind matches class. The end step element owns the evidence for this decision, including step kind, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EndStep ' ' must have stepKind=END.
+The rule checks whether end step kind matches class. The end step element provides the relevant evidence through step kind, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EndStep ' ' must have stepKind=END.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -404,13 +404,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that command step kind matches class. The command step element owns the evidence for this decision, including step kind, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: CommandStep ' ' must have stepKind=COMMAND.
+The rule checks whether command step kind matches class. The command step element provides the relevant evidence through step kind, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: CommandStep ' ' must have stepKind=COMMAND.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -442,13 +442,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that query step kind matches class. The query step element owns the evidence for this decision, including step kind, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: QueryStep ' ' must have stepKind=QUERY.
+The rule checks whether query step kind matches class. The query step element provides the relevant evidence through step kind, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: QueryStep ' ' must have stepKind=QUERY.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -480,13 +480,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that event step kind matches class. The event step element owns the evidence for this decision, including step kind, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventStep ' ' must have stepKind=EVENT.
+The rule checks whether event step kind matches class. The event step element provides the relevant evidence through step kind, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventStep ' ' must have stepKind=EVENT.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -518,13 +518,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that policy step kind matches class. The policy step element owns the evidence for this decision, including step kind, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: PolicyStep ' ' must have stepKind=POLICY.
+The rule checks whether policy step kind matches class. The policy step element provides the relevant evidence through step kind, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: PolicyStep ' ' must have stepKind=POLICY.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -556,13 +556,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that human task step kind and description. The human task step element owns the evidence for this decision, including step kind, task description, completion evidence, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: HumanTaskStep ' ' must have stepKind=HUMAN_TASK, taskDescription, and completionEvidence.
+The rule checks whether human task step kind and description. The human task step element provides the relevant evidence through step kind, task description, completion evidence, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: HumanTaskStep ' ' must have stepKind=HUMAN_TASK, taskDescription, and completionEvidence.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -594,13 +594,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that external interaction step is explicit. The external interaction step element owns the evidence for this decision, including step kind, external system, interaction purpose, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ExternalInteractionStep ' ' lacks stepKind=EXTERNAL_INTERACTION, externalSystem, or interactionPurpose.
+The rule checks whether external interaction step is explicit. The external interaction step element provides the relevant evidence through step kind, external system, interaction purpose, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ExternalInteractionStep ' ' lacks stepKind=EXTERNAL_INTERACTION, externalSystem, or interactionPurpose.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -632,13 +632,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that external interaction declares information. This is a review signal about exchanged information, label text, not a cosmetic naming preference. In this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: ExternalInteractionStep ' ' has no exchangedInformation. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether external interaction declares information. It examines exchanged information, label text. Within this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. The gap is ExternalInteractionStep ' ' has no exchangedInformation. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -670,13 +670,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that decision step has decision logic. The decision step element owns the evidence for this decision, including step kind, condition, decision table, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DecisionStep ' ' lacks stepKind=DECISION or decision logic.
+The rule checks whether decision step has decision logic. The decision step element provides the relevant evidence through step kind, condition, decision table, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DecisionStep ' ' lacks stepKind=DECISION or decision logic.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -712,9 +712,9 @@ A decision with only one outgoing path is not a decision in the business sense. 
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -746,13 +746,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that wait step has duration or reason. The wait step element owns the evidence for this decision, including step kind, duration expression, wait reason, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: WaitStep ' ' lacks stepKind=WAIT or a duration/reason.
+The rule checks whether wait step has duration or reason. The wait step element provides the relevant evidence through step kind, duration expression, wait reason, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: WaitStep ' ' lacks stepKind=WAIT or a duration/reason.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -784,13 +784,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that transition connects different steps. The process transition element owns the evidence for this decision, including source, target, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ProcessTransition ' ' connects a step to itself.
+The rule checks whether transition connects different steps. The process transition element provides the relevant evidence through source, target, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ProcessTransition ' ' connects a step to itself.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -822,13 +822,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that transition does not leave end or enter start. The process transition element owns the evidence for this decision, including source, target, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ProcessTransition ' ' leaves an END step or enters a START step.
+The rule checks whether transition does not leave end or enter start. The process transition element provides the relevant evidence through source, target, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ProcessTransition ' ' leaves an END step or enters a START step.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -860,7 +860,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that conditional transition is labelled. This is a review signal about source, label, condition expression, condition, label text, not a cosmetic naming preference. In this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Decision transition ' ' has no label, conditionExpression, or Condition. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether conditional transition is labelled. It examines source, label, condition expression, condition, label text. Within this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. The gap is Decision transition ' ' has no label, conditionExpression, or Condition. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -904,9 +904,9 @@ Checks that decision table rules have unique priority. The decision table elemen
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -936,7 +936,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that incomplete decision table has default. This is a review signal about complete, default outcome, label text, not a cosmetic naming preference. In this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: DecisionTable ' ' is incomplete but has no defaultOutcome. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether incomplete decision table has default. It examines complete, default outcome, label text. Within this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. The gap is DecisionTable ' ' is incomplete but has no defaultOutcome. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -976,13 +976,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that decision rule has condition and outcome. The decision rule element owns the evidence for this decision, including condition, condition expression, outcome, outcome expression, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: DecisionRule ' ' lacks condition or outcome.
+The rule checks whether decision rule has condition and outcome. The decision rule element provides the relevant evidence through condition, condition expression, outcome, outcome expression, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: DecisionRule ' ' lacks condition or outcome.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1014,13 +1014,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that decision rule has executable effect. This is a review signal about resulting commands, resulting events, outcome, label text, not a cosmetic naming preference. In this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: DecisionRule ' ' has no resultingCommands, resultingEvents, or meaningful outcome. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether decision rule has executable effect. It examines resulting commands, resulting events, outcome, label text. Within this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. The gap is DecisionRule ' ' has no resultingCommands, resultingEvents, or meaningful outcome. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1052,13 +1052,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that policy either reacts or guards. The policy element owns the evidence for this decision, including triggered by, guards, constrains queries, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Policy ' ' neither reacts to events nor guards commands/queries.
+The rule checks whether policy either reacts or guards. The policy element provides the relevant evidence through triggered by, guards, constrains queries, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Policy ' ' neither reacts to events nor guards commands/queries.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1090,13 +1090,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that policy has rule definition. The policy element owns the evidence for this decision, including natural language rule, expression model, expression language, expression, decision table. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Policy ' ' has no naturalLanguageRule, executable expression, or decisionTable.
+The rule checks whether policy has rule definition. The policy element provides the relevant evidence through natural language rule, expression model, expression language, expression, decision table. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Policy ' ' has no naturalLanguageRule, executable expression, or decisionTable.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1128,7 +1128,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that mandatory or blocking policy has severity. The policy element owns the evidence for this decision, including enforcement strength, violation severity, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Mandatory/blocking Policy ' ' lacks violationSeverity.
+The rule checks whether mandatory or blocking policy has severity. The policy element provides the relevant evidence through enforcement strength, violation severity, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Mandatory/blocking Policy ' ' lacks violationSeverity.
 
 ### When it applies
 
@@ -1168,7 +1168,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that reaction policy emits outcome. This is a review signal about policy type, emits commands, emits events, label text, not a cosmetic naming preference. In this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Reaction Policy ' ' has no emitted commands or events. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether reaction policy emits outcome. It examines policy type, emits commands, emits events, label text. Within this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. The gap is Reaction Policy ' ' has no emitted commands or events. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -1208,13 +1208,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that exception scenario is actionable. The exception scenario element owns the evidence for this decision, including scenario, business impact, recoverable, recovery action, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ExceptionScenario ' ' lacks scenario/businessImpact or a recoveryAction for a recoverable scenario.
+The rule checks whether exception scenario is actionable. The exception scenario element provides the relevant evidence through scenario, business impact, recoverable, recovery action, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ExceptionScenario ' ' lacks scenario/businessImpact or a recoveryAction for a recoverable scenario.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1246,7 +1246,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that compensation scenario emits event. This is a review signal about compensation required, recovery action, resulting events, label text, not a cosmetic naming preference. In this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: ExceptionScenario ' ' requires compensation but has no recoveryAction or resultingEvents. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether compensation scenario emits event. It examines compensation required, recovery action, resulting events, label text. Within this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. The gap is ExceptionScenario ' ' requires compensation but has no recoveryAction or resultingEvents. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -1286,13 +1286,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that temporal constraint has expression. The temporal constraint element owns the evidence for this decision, including deadline expression, duration expression, ordering expression, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: TemporalConstraint ' ' has no deadline, duration, or ordering expression.
+The rule checks whether temporal constraint has expression. The temporal constraint element provides the relevant evidence through deadline expression, duration expression, ordering expression, label text. At this level, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: TemporalConstraint ' ' has no deadline, duration, or ordering expression.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1324,13 +1324,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that temporal constraint has scope. This is a review signal about constrained elements, label text, not a cosmetic naming preference. In this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: TemporalConstraint ' ' has no constrainedElements. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether temporal constraint has scope. It examines constrained elements, label text. Within this part of the model, business journeys can be refined into workflows with real entry, completion, branching, timing, and recovery. The gap is TemporalConstraint ' ' has no constrainedElements. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

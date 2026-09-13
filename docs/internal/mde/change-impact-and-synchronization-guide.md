@@ -350,7 +350,7 @@ When generation logic changes:
 - Update artifact documentation and expected generated file lists.
 - Add syntax/content assertions to `AwsPsmArtifactGenerationSyntaxTest` and
   `EpsilonEgxGeneratorTest`.
-- Run generation from `mde/samples/psm.xmi` and inspect deployable outputs, not only EGX parse
+- Run generation from `mde/samples/psm.xmi` and inspect the deployable outputs as well as the EGX parse
   success.
 
 Changes to generated artifact content do not require PostgreSQL migrations because artifact files

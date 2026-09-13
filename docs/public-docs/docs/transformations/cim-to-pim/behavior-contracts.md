@@ -6,13 +6,13 @@ Source module: `mde/transformations/cim-to-pim/behavior-contracts.etl`.
 
 ## Reading this page
 
-A transformation rule is not a validation constraint: it decides whether and how a source element contributes to the target model. Read the guard as a routing decision, the target table as the model-level result, the behavior section as the important semantic side effects, and the trace/manual-decision information as the hand-off to review and later phases.
+A transformation rule determines whether a source element contributes to the target model and how it is mapped. Use the guard to understand routing and the target table to see the model-level result. The behavior section records important semantic side effects. Trace and manual-decision information identifies work for review and later phases.
 
 ---
 
 ## Supporting ETL operations
 
-These operations are not independent source-to-target rules, but they materially shape the result. They derive defaults, create secondary resources, cache correspondences, or resolve relationships after the main rule has run.
+Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
 | Operation      | Role                    | Source                                                     |
 | -------------- | ----------------------- | ---------------------------------------------------------- |
@@ -53,7 +53,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:57`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:57`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -89,7 +89,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:76`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:76`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -125,7 +125,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:114`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:114`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -141,7 +141,7 @@ Only commands that need an immediate or user-facing entry point become API route
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : cmd.userInitiated or cmd.interactionExpectation.asString() = "IMMEDIATE_RESPONSE_EXPECTED"
@@ -156,7 +156,7 @@ guard : cmd.userInitiated or cmd.interactionExpectation.asString() = "IMMEDIATE_
 
 The rule directly assigns: `route.id`, `route.name`, `route.method`, `route.pathTemplate`, `route.operationId`, `route.publicRoute`, `route.authRequired`, `route.expectedSuccessStatus`, `route.descriptionForConsumers`, `route.requestValidationRequired`, `route.responseValidationRequired`, `route.requestSchema`, `route.responseSchema`, `route.functionIntegration`, `authz.id`, `authz.name` ….
 Trace identifiers emitted here: `TR-070`, `TR-130`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-070`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-070`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -166,7 +166,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:178`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:178`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -202,7 +202,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:270`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:270`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -229,7 +229,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `route.id`, `route.name`, `route.method`, `route.pathTemplate`, `route.operationId`, `route.publicRoute`, `route.authRequired`, `route.descriptionForConsumers`, `route.expectedSuccessStatus`, `route.paginationStyle`, `route.requestValidationRequired`, `route.responseValidationRequired`, `route.requestSchema`, `route.responseSchema`, `route.functionIntegration`, `authz.id` ….
 Trace identifiers emitted here: `TR-080`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-080`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-080`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -239,7 +239,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:312`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:312`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -255,7 +255,7 @@ A query that reads domain data becomes a named PIM access pattern. It records ke
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : q.reads.notEmpty()
@@ -270,7 +270,7 @@ guard : q.reads.notEmpty()
 
 The rule directly assigns: `ap.id`, `ap.name`, `ap.patternName`, `ap.queryBy`, `ap.sortBy`, `ap.filterBy`, `ap.projection`, `ap.highCardinality`, `ap.highFrequency`, `ap.stronglyConsistentReadRequired`, `ap.transactionalWriteRequired`, `ap.expectedItemsReturned`, `readStore.id`, `readStore.name`, `readStore.persistent`, `readStore.encrypted` ….
 Trace identifiers emitted here: `TR-080`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-080`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-080`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -280,6 +280,6 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:381`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:381`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

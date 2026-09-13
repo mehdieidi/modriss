@@ -6,20 +6,20 @@ Source module: `mde/transformations/pim-to-awspsm/workflow-security-config.etl`.
 
 ## Reading this page
 
-A transformation rule is not a validation constraint: it decides whether and how a source element contributes to the target model. Read the guard as a routing decision, the target table as the model-level result, the behavior section as the important semantic side effects, and the trace/manual-decision information as the hand-off to review and later phases.
+A transformation rule determines whether a source element contributes to the target model and how it is mapped. Use the guard to understand routing and the target table to see the model-level result. The behavior section records important semantic side effects. Trace and manual-decision information identifies work for review and later phases.
 
 ---
 
 ## Supporting ETL operations
 
-These operations are not independent source-to-target rules, but they materially shape the result. They derive defaults, create secondary resources, cache correspondences, or resolve relationships after the main rule has run.
+Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
 | Operation                          | Role                                                                                     | Source                                                               |
 | ---------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | `resolveWorkflowTaskTargets`       | Resolves workflow task references after all PIM resources have been transformed.         | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:41`  |
-| `createAslDocument`                | Creates create asl document.                                                             | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:255` |
+| `createAslDocument`                | Creates asl document.                                                                    | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:255` |
 | `createChoiceEvaluatorState`       | Creates the Lambda evaluator task that supplies input to a function-backed choice.       | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:312` |
-| `createAslState`                   | Creates create asl state.                                                                | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:333` |
+| `createAslState`                   | Creates asl state.                                                                       | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:333` |
 | `newAslStateForStep`               | Creates the concrete ASL state classifier corresponding to a PIM workflow step.          | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:440` |
 | `choiceRoutingIsComplete`          | Checks whether a choice has enough explicit routing to emit executable ASL.              | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:466` |
 | `aslJsonPathOrRoot`                | Returns a valid JSONPath root when an upstream mapping is absent or still a placeholder. | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:475` |
@@ -27,12 +27,12 @@ These operations are not independent source-to-target rules, but they materially
 | `hasExplicitWorkflowOutputMapping` | Checks whether a workflow output mapping is explicit enough to honor directly.           | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:488` |
 | `nextOrderedWorkflowStep`          | Computes complete asl state transitions.                                                 | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:493` |
 | `completeAslStateTransitions`      | Supporting ETL operation used by the module's transformation rules.                      | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:507` |
-| `createAslChoice`                  | Creates create asl choice.                                                               | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:603` |
-| `createAslRetry`                   | Creates create asl retry.                                                                | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:640` |
-| `createAslCatch`                   | Creates create asl catch.                                                                | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:662` |
-| `createStateMachineRole`           | Creates create state machine role.                                                       | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:681` |
-| `createStepFunctionLogging`        | Creates create step function logging.                                                    | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:692` |
-| `createStepFunctionTracing`        | Creates create step function tracing.                                                    | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:703` |
+| `createAslChoice`                  | Creates asl choice.                                                                      | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:603` |
+| `createAslRetry`                   | Creates asl retry.                                                                       | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:640` |
+| `createAslCatch`                   | Creates asl catch.                                                                       | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:662` |
+| `createStateMachineRole`           | Creates state machine role.                                                              | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:681` |
+| `createStepFunctionLogging`        | Creates step function logging.                                                           | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:692` |
+| `createStepFunctionTracing`        | Creates step function tracing.                                                           | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:703` |
 | `aslSummaryJson`                   | Renders asl summary json.                                                                | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:712` |
 | `renderAsl`                        | Renders render asl.                                                                      | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:717` |
 | `renderAslState`                   | Renders render asl state.                                                                | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:729` |
@@ -62,7 +62,7 @@ A PIM workflow becomes a Step Functions state machine only when it has steps. Th
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : w.steps.notEmpty()
@@ -75,7 +75,7 @@ guard : w.steps.notEmpty()
 ### Important behavior encoded in the rule
 
 The rule directly assigns: `sm.id`, `sm.stateMachineName`, `sm.stateMachineType`, `sm.publishAlias`, `sm.aliasName`, `sm.role`, `sm.aslDocument`, `sm.logging`, `sm.tracing`.
-Manual decisions raised by this rule: `WORKFLOW_HUMAN_APPROVAL_DESIGN`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `WORKFLOW_HUMAN_APPROVAL_DESIGN`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -83,7 +83,7 @@ Start with the manual decision(s) `WORKFLOW_HUMAN_APPROVAL_DESIGN` and complete 
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:2`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:2`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -108,7 +108,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 ### Important behavior encoded in the rule
 
 The rule directly assigns: `pool.id`, `pool.userPoolName`, `pool.mfaConfiguration`, `pool.mfaDecision`, `pool.mfaRationale`, `pool.policiesJson`, `pool.deletionProtection`.
-Manual decisions raised by this rule: `COGNITO_FEDERATION_DETAILS_REQUIRED`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `COGNITO_FEDERATION_DETAILS_REQUIRED`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -116,7 +116,7 @@ Start with the manual decision(s) `COGNITO_FEDERATION_DETAILS_REQUIRED` and comp
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:95`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:95`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -132,7 +132,7 @@ Service and role principals become IAM roles; human-only or unsupported principa
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : p.principalKind = PIMTYPES!PrincipalKind#SERVICE or p.principalKind = PIMTYPES!PrincipalKind#ROLE
@@ -149,11 +149,11 @@ The rule directly assigns: `role.id`, `role.roleName`, `role.path`, `role.maxSes
 
 ### How to troubleshoot or repair it
 
-Verify the principal instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the principal instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:125`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:125`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -179,7 +179,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 ### Important behavior encoded in the rule
 
 The rule directly assigns: `sec.id`, `sec.secretName`, `sec.descriptionText`, `sec.generateSecretStringJson`, `sec.rotationRequired`, `rot.id`, `rot.rotationRulesJson`, `rot.secret`, `sec.rotationSchedule`.
-Manual decisions raised by this rule: `EXTERNAL_SECRET_VALUE_REQUIRED`, `SECRET_ROTATION_LAMBDA_REQUIRED`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `EXTERNAL_SECRET_VALUE_REQUIRED`, `SECRET_ROTATION_LAMBDA_REQUIRED`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -187,7 +187,7 @@ Start with the manual decision(s) `EXTERNAL_SECRET_VALUE_REQUIRED, SECRET_ROTATI
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:161`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:161`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -219,7 +219,7 @@ Verify that the configuration set is present and semantically complete, then rer
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:196`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:196`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -235,7 +235,7 @@ Non-secret configuration becomes a CloudFormation parameter. The rule preserves 
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : not isTrue(p.secret)
@@ -251,11 +251,11 @@ The rule directly assigns: `c.id`, `c.name`, `c.parameterName`, `c.type`, `c.def
 
 ### How to troubleshoot or repair it
 
-Verify the config parameter instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs; if it is intentionally out of scope, use the trace/readiness report to record that decision rather than adding a dummy target.
+Verify the config parameter instance first: the guard shown above must evaluate to true for this rule to run. If it should run but does not, check the guarded links, enum values, and earlier transformation outputs. If it is intentionally out of scope, record that decision in the trace/readiness report instead of adding a dummy target.
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:209`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:209`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -271,7 +271,7 @@ Secret configuration parameters are bound to SecureString SSM parameters, separa
 
 ### When the rule runs
 
-The rule is conditional. It runs only when this guard is true; a false guard means the source element belongs to another refinement path or requires a different provider mapping.
+The rule is conditional. It runs only when this guard is true. A false guard means that the source element follows another refinement path or requires a different provider mapping.
 
 ```etl
 guard : isTrue(p.secret)
@@ -284,7 +284,7 @@ guard : isTrue(p.secret)
 ### Important behavior encoded in the rule
 
 The rule directly assigns: `s.id`, `s.parameterName`, `s.parameterType`, `s.tier`, `s.dataType`, `s.allowedPattern`, `s.descriptionText`, `s.value`.
-Manual decisions raised by this rule: `SECRET_PARAMETER_VALUE_REQUIRED`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `SECRET_PARAMETER_VALUE_REQUIRED`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -292,6 +292,6 @@ Start with the manual decision(s) `SECRET_PARAMETER_VALUE_REQUIRED` and complete
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:230`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:230`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

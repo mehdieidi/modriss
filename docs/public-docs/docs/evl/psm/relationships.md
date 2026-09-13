@@ -6,7 +6,7 @@ Source profile: `mde/validation/psm/rules/relationships.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -22,9 +22,9 @@ An integration view is useful only when it names both sides of the relationship.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,13 +56,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that api lambda view matches deployable objects. The api gateway lambda integration view element owns the evidence for this decision, including route, integration, function, source, target. At this level, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: API Gateway to Lambda relationship view is inconsistent with route/integration/function references.
+The rule checks whether api lambda view matches deployable objects. The api gateway lambda integration view element provides the relevant evidence through route, integration, function, source, target. At this level, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: API Gateway to Lambda relationship view is inconsistent with route/integration/function references.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -94,13 +94,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that api lambda permission recommended. This is a review signal about permission, not a cosmetic naming preference. In this part of the model, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: API Gateway to Lambda relationship view has no LambdaPermission. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether api lambda permission recommended. It examines permission. Within this part of the model, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams. The gap is API Gateway to Lambda relationship view has no LambdaPermission. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -132,13 +132,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that event bridge lambda view matches deployable objects. The event bridge lambda target view element owns the evidence for this decision, including rule, target row, function, source, target. At this level, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge to Lambda relationship view is inconsistent.
+The rule checks whether event bridge lambda view matches deployable objects. The event bridge lambda target view element provides the relevant evidence through rule, target row, function, source, target. At this level, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge to Lambda relationship view is inconsistent.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -170,13 +170,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that event bridge lambda permission recommended. This is a review signal about permission, not a cosmetic naming preference. In this part of the model, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: EventBridge to Lambda relationship view has no LambdaPermission. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether event bridge lambda permission recommended. It examines permission. Within this part of the model, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams. The gap is EventBridge to Lambda relationship view has no LambdaPermission. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -208,13 +208,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that sns lambda view matches deployable objects. The sns lambda subscription view element owns the evidence for this decision, including topic, subscription, function, source, target. At this level, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SNS to Lambda relationship view is inconsistent.
+The rule checks whether sns lambda view matches deployable objects. The sns lambda subscription view element provides the relevant evidence through topic, subscription, function, source, target. At this level, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SNS to Lambda relationship view is inconsistent.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -246,13 +246,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that sns lambda permission recommended. This is a review signal about permission, not a cosmetic naming preference. In this part of the model, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: SNS to Lambda relationship view has no LambdaPermission. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether sns lambda permission recommended. It examines permission. Within this part of the model, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams. The gap is SNS to Lambda relationship view has no LambdaPermission. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -284,13 +284,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that sqs lambda view matches mapping. The sqs lambda event source view element owns the evidence for this decision, including mapping, queue, function, source, target. At this level, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SQS to Lambda relationship view is inconsistent with its mapping.
+The rule checks whether sqs lambda view matches mapping. The sqs lambda event source view element provides the relevant evidence through mapping, queue, function, source, target. At this level, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SQS to Lambda relationship view is inconsistent with its mapping.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -322,13 +322,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that step function event bridge view matches target. The step function event bridge target view element owns the evidence for this decision, including rule, target row, state machine, source, target. At this level, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge to Step Functions relationship view is inconsistent.
+The rule checks whether step function event bridge view matches target. The step function event bridge target view element provides the relevant evidence through rule, target row, state machine, source, target. At this level, integration views continue to describe real deployable resources and permissions rather than becoming misleading diagrams. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge to Step Functions relationship view is inconsistent.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

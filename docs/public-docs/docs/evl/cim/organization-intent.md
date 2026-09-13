@@ -6,7 +6,7 @@ Source profile: `mde/validation/cim/rules/organization-intent.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that requirement has fit criterion or acceptance criteria. The requirement element owns the evidence for this decision, including fit criterion, acceptance criteria, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Requirement ' ' has neither a fitCriterion nor acceptanceCriteria.
+The rule checks whether requirement has fit criterion or acceptance criteria. The requirement element provides the relevant evidence through fit criterion, acceptance criteria, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Requirement ' ' has neither a fitCriterion nor acceptanceCriteria.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,7 +56,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that production blocking requirement is mandatory. The requirement element owns the evidence for this decision, including production blocking, mandatory, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Requirement ' ' blocks production but is not marked mandatory.
+The rule checks whether production blocking requirement is mandatory. The requirement element provides the relevant evidence through production blocking, mandatory, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Requirement ' ' blocks production but is not marked mandatory.
 
 ### When it applies
 
@@ -100,9 +100,9 @@ A self-dependency cannot explain delivery order or refinement; it is usually an 
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -134,13 +134,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that requirement supports goal or constrains element. This is a review signal about supports goals, constrains, label text, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Requirement ' ' is not connected to a business goal or constrained element. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether requirement supports goal or constrains element. It examines supports goals, constrains, label text. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is Requirement ' ' is not connected to a business goal or constrained element. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -176,9 +176,9 @@ Given/When/Then separates precondition, stimulus, and observable outcome. The ru
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -210,7 +210,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that automatable acceptance criterion has target. This is a review signal about automatable test candidate, measurable target, label text, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: AcceptanceCriterion ' ' is marked automatable but has no measurableTarget. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether automatable acceptance criterion has target. It examines automatable test candidate, measurable target, label text. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is AcceptanceCriterion ' ' is marked automatable but has no measurableTarget. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -250,13 +250,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that business goal has success criterion. The business goal element owns the evidence for this decision, including success criterion, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BusinessGoal ' ' has no successCriterion.
+The rule checks whether business goal has success criterion. The business goal element provides the relevant evidence through success criterion, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessGoal ' ' has no successCriterion.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -288,7 +288,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that critical goal has owner and kpi. This is a review signal about priority, owners, measured by, label text, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Critical BusinessGoal ' ' has no owner or KPI. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether critical goal has owner and kpi. It examines priority, owners, measured by, label text. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is Critical BusinessGoal ' ' has no owner or KPI. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -328,13 +328,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that business goal explains value and risk. This is a review signal about business value, failure consequence, label text, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: BusinessGoal ' ' does not explain businessValue or failureConsequence. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether business goal explains value and risk. It examines business value, failure consequence, label text. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is BusinessGoal ' ' does not explain businessValue or failureConsequence. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -370,9 +370,9 @@ A KPI is useful only when it names what is measured, how it is compared, and wha
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -404,13 +404,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that kpi has measurement method. This is a review signal about metric definition, measurement frequency, data source, label text, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: KPI ' ' lacks a definition, measurementFrequency, or dataSource. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether kpi has measurement method. It examines metric definition, measurement frequency, data source, label text. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is KPI ' ' lacks a definition, measurementFrequency, or dataSource. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -442,7 +442,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that kpi has recognisable operator. This is a review signal about operator, label text, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: KPI ' ' uses a non-standard operator. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether kpi has recognisable operator. It examines operator, label text. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is KPI ' ' uses a non-standard operator. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -482,13 +482,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that stakeholder concern is declared. This is a review signal about stakeholder type, concern, label text, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Stakeholder ' ' has no stakeholderType or concern. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether stakeholder concern is declared. It examines stakeholder type, concern, label text. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is Stakeholder ' ' has no stakeholderType or concern. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -520,13 +520,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that actor has type and trust level. The actor element owns the evidence for this decision, including actor type, trust level, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Actor ' ' must declare actorType and trustLevel.
+The rule checks whether actor has type and trust level. The actor element provides the relevant evidence through actor type, trust level, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Actor ' ' must declare actorType and trustLevel.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -558,7 +558,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that human actor has role. This is a review signal about actor type, plays roles, label text, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Human Actor ' ' has no assigned Role. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether human actor has role. It examines actor type, plays roles, label text. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is Human Actor ' ' has no assigned Role. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -598,7 +598,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that external actor declares auth expectations. The actor element owns the evidence for this decision, including actor type, trust level, authentication expectation, authorization expectation, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: External or untrusted Actor ' ' lacks authenticationExpectation or authorizationExpectation.
+The rule checks whether external actor declares auth expectations. The actor element provides the relevant evidence through actor type, trust level, authentication expectation, authorization expectation, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: External or untrusted Actor ' ' lacks authenticationExpectation or authorizationExpectation.
 
 ### When it applies
 
@@ -638,7 +638,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that privileged role has permission summary. The role element owns the evidence for this decision, including privileged, responsibility, business permission summary, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Privileged Role ' ' lacks responsibility or businessPermissionSummary.
+The rule checks whether privileged role has permission summary. The role element provides the relevant evidence through privileged, responsibility, business permission summary, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Privileged Role ' ' lacks responsibility or businessPermissionSummary.
 
 ### When it applies
 
@@ -678,13 +678,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that role assigned to actor. This is a review signal about assigned to, label text, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Role ' ' is not assigned to any Actor. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether role assigned to actor. It examines assigned to, label text. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is Role ' ' is not assigned to any Actor. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -716,13 +716,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that actor type matches subclass. The external system element owns the evidence for this decision, including actor type, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ExternalSystem ' ' must have actorType=EXTERNAL_SYSTEM.
+The rule checks whether actor type matches subclass. The external system element provides the relevant evidence through actor type, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ExternalSystem ' ' must have actorType=EXTERNAL_SYSTEM.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -754,13 +754,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that external system declares purpose and trust. The external system element owns the evidence for this decision, including owning organization, business purpose, trust rationale, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ExternalSystem ' ' lacks owningOrganization, businessPurpose, or trustRationale.
+The rule checks whether external system declares purpose and trust. The external system element provides the relevant evidence through owning organization, business purpose, trust rationale, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ExternalSystem ' ' lacks owningOrganization, businessPurpose, or trustRationale.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -792,7 +792,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that external system data exchange is explicit. The external system element owns the evidence for this decision, including stores business data, sends business events, receives business events, exchanged information, produced events. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ExternalSystem ' ' is marked as exchanging/storing business data but no exchangedInformation or events are linked.
+The rule checks whether external system data exchange is explicit. The external system element provides the relevant evidence through stores business data, sends business events, receives business events, exchanged information, produced events. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ExternalSystem ' ' is marked as exchanging/storing business data but no exchangedInformation or events are linked.
 
 ### When it applies
 
@@ -832,13 +832,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that capability supports goal. The business capability element owns the evidence for this decision, including supports, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BusinessCapability ' ' supports no BusinessGoal.
+The rule checks whether capability supports goal. The business capability element provides the relevant evidence through supports, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessCapability ' ' supports no BusinessGoal.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -870,13 +870,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that capability has owner or responsibility. The business capability element owns the evidence for this decision, including owner, owner name, responsibility, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BusinessCapability ' ' lacks an owner or responsibility.
+The rule checks whether capability has owner or responsibility. The business capability element provides the relevant evidence through owner, owner name, responsibility, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessCapability ' ' lacks an owner or responsibility.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -908,13 +908,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that capability has behavior or managed data. This is a review signal about contains commands, contains queries, contains events, manages entities, owns processes, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: BusinessCapability ' ' has no commands, queries, events, managed entities, or processes. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether capability has behavior or managed data. It examines contains commands, contains queries, contains events, manages entities, owns processes. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is BusinessCapability ' ' has no commands, queries, events, managed entities, or processes. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -946,7 +946,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that critical capability has requirements and nfrs. This is a review signal about criticality, realizes requirements, constrained by, label text, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Core or mission-critical BusinessCapability ' ' lacks realized requirements or non-functional constraints. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether critical capability has requirements and nfrs. It examines criticality, realizes requirements, constrained by, label text. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is Core or mission-critical BusinessCapability ' ' lacks realized requirements or non-functional constraints. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -986,13 +986,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that capability dependency is meaningful. The capability dependency element owns the evidence for this decision, including source, target, dependency reason, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: CapabilityDependency ' ' is self-referential or lacks dependencyReason.
+The rule checks whether capability dependency is meaningful. The capability dependency element provides the relevant evidence through source, target, dependency reason, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: CapabilityDependency ' ' is self-referential or lacks dependencyReason.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1024,7 +1024,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that critical dependency has rationale. This is a review signal about critical path, rationale, dependency reason, label text, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Critical-path CapabilityDependency ' ' needs a stronger rationale. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether critical dependency has rationale. It examines critical path, rationale, dependency reason, label text. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is Critical-path CapabilityDependency ' ' needs a stronger rationale. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -1064,13 +1064,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that bounded context has boundary definition. The bounded context candidate element owns the evidence for this decision, including language boundary, ownership boundary, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BoundedContextCandidate ' ' lacks languageBoundary or ownershipBoundary.
+The rule checks whether bounded context has boundary definition. The bounded context candidate element provides the relevant evidence through language boundary, ownership boundary, label text. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BoundedContextCandidate ' ' lacks languageBoundary or ownershipBoundary.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1102,13 +1102,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that bounded context has scoped content. This is a review signal about capabilities, entities, commands, queries, events, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: BoundedContextCandidate ' ' has no scoped content. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether bounded context has scoped content. It examines capabilities, entities, commands, queries, events. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is BoundedContextCandidate ' ' has no scoped content. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1140,13 +1140,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that commands target context owned aggregates. This is a review signal about commands, target aggregate, entities, capabilities, label text, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: BoundedContextCandidate ' ' contains commands that target aggregates/entities outside the context without an explicit dependency. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether commands target context owned aggregates. It examines commands, target aggregate, entities, capabilities, label text. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is BoundedContextCandidate ' ' contains commands that target aggregates/entities outside the context without an explicit dependency. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1178,13 +1178,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that ubiquitous language term has definition. The ubiquitous language term element owns the evidence for this decision, including term, definition. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: UbiquitousLanguageTerm ' ' has no definition.
+The rule checks whether ubiquitous language term has definition. The ubiquitous language term element provides the relevant evidence through term, definition. At this level, requirements and goals can guide architecture instead of leaving implementers to guess what success means. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: UbiquitousLanguageTerm ' ' has no definition.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -1216,7 +1216,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that ubiquitous language term is unique in context. This is a review signal about term, context, not a cosmetic naming preference. In this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: UbiquitousLanguageTerm ' ' is duplicated in the same bounded context. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether ubiquitous language term is unique in context. It examines term, context. Within this part of the model, requirements and goals can guide architecture instead of leaving implementers to guess what success means. The gap is UbiquitousLanguageTerm ' ' is duplicated in the same bounded context. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 

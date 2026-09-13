@@ -6,7 +6,7 @@ Source profile: `mde/validation/cim/rules/governance-readiness.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that nfr must be measurable. The non functional requirement element owns the evidence for this decision, including metric, target, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: NonFunctionalRequirement ' ' lacks metric or target.
+The rule checks whether nfr must be measurable. The non functional requirement element provides the relevant evidence through metric, target, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: NonFunctionalRequirement ' ' lacks metric or target.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,7 +56,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production blocking nfr has scenario. This is a review signal about production blocking, scenarios, label text, not a cosmetic naming preference. In this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-blocking NFR ' ' has no QualityScenario. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production blocking nfr has scenario. It examines production blocking, scenarios, label text. Within this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. The gap is Production-blocking NFR ' ' has no QualityScenario. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -96,13 +96,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that quality scenario is complete. The quality scenario element owns the evidence for this decision, including source, stimulus, environment, artifact, response. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: QualityScenario ' ' is incomplete.
+The rule checks whether quality scenario is complete. The quality scenario element provides the relevant evidence through source, stimulus, environment, artifact, response. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: QualityScenario ' ' is incomplete.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -134,13 +134,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that security constraint must constrain behavior or information. The security constraint element owns the evidence for this decision, including constrained actors, constrained commands, constrained queries, constrained information, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SecurityConstraint ' ' has no constrained actors, commands, queries, or information.
+The rule checks whether security constraint must constrain behavior or information. The security constraint element provides the relevant evidence through constrained actors, constrained commands, constrained queries, constrained information, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SecurityConstraint ' ' has no constrained actors, commands, queries, or information.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -172,13 +172,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that security constraint has rule or threat rationale. The security constraint element owns the evidence for this decision, including authentication need, authorization rule, threat rationale, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SecurityConstraint ' ' lacks authenticationNeed, authorizationRule, or threatRationale.
+The rule checks whether security constraint has rule or threat rationale. The security constraint element provides the relevant evidence through authentication need, authorization rule, threat rationale, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SecurityConstraint ' ' lacks authenticationNeed, authorizationRule, or threatRationale.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -210,7 +210,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that security constraint aligns command authorization. This is a review signal about authorization rule, constrained commands, authorization required, label text, not a cosmetic naming preference. In this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: SecurityConstraint ' ' defines an authorization rule but at least one constrained command does not. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether security constraint aligns command authorization. It examines authorization rule, constrained commands, authorization required, label text. Within this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. The gap is SecurityConstraint ' ' defines an authorization rule but at least one constrained command does not. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -250,13 +250,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that specialized scope included in generic scope. This is a review signal about constrained commands, constrained elements, constrained queries, constrained actors, constrained information, not a cosmetic naming preference. In this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: SecurityConstraint ' ' uses specialized scope references that are not included in constrainedElements. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether specialized scope included in generic scope. It examines constrained commands, constrained elements, constrained queries, constrained actors, constrained information. Within this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. The gap is SecurityConstraint ' ' uses specialized scope references that are not included in constrainedElements. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -288,13 +288,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that privacy needs purpose and legal basis. The privacy constraint element owns the evidence for this decision, including data items, purpose, legal basis, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: PrivacyConstraint ' ' covers data items but lacks purpose or a known legalBasis.
+The rule checks whether privacy needs purpose and legal basis. The privacy constraint element provides the relevant evidence through data items, purpose, legal basis, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: PrivacyConstraint ' ' covers data items but lacks purpose or a known legalBasis.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -326,13 +326,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that privacy constraint has retention or minimization. The privacy constraint element owns the evidence for this decision, including retention period, minimization rule, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: PrivacyConstraint ' ' lacks retentionPeriod and minimizationRule.
+The rule checks whether privacy constraint has retention or minimization. The privacy constraint element provides the relevant evidence through retention period, minimization rule, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: PrivacyConstraint ' ' lacks retentionPeriod and minimizationRule.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -364,7 +364,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that consent basis requires consent. The privacy constraint element owns the evidence for this decision, including legal basis, consent required, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: PrivacyConstraint ' ' uses CONSENT legal basis but consentRequired is not true.
+The rule checks whether consent basis requires consent. The privacy constraint element provides the relevant evidence through legal basis, consent required, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: PrivacyConstraint ' ' uses CONSENT legal basis but consentRequired is not true.
 
 ### When it applies
 
@@ -404,7 +404,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that data residency has allowed area. This is a review signal about data residency required, allowed residency area, label text, not a cosmetic naming preference. In this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: PrivacyConstraint ' ' requires data residency but has no allowedResidencyArea. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether data residency has allowed area. It examines data residency required, allowed residency area, label text. Within this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. The gap is PrivacyConstraint ' ' requires data residency but has no allowedResidencyArea. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -444,13 +444,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that compliance constraint is auditable. The compliance constraint element owns the evidence for this decision, including regulation, control id, control objective, evidence required, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ComplianceConstraint ' ' lacks regulation, controlId, controlObjective, or evidenceRequired.
+The rule checks whether compliance constraint is auditable. The compliance constraint element provides the relevant evidence through regulation, control id, control objective, evidence required, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ComplianceConstraint ' ' lacks regulation, controlId, controlObjective, or evidenceRequired.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -482,13 +482,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that compliance constraint has scope. This is a review signal about scoped elements, label text, not a cosmetic naming preference. In this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: ComplianceConstraint ' ' has no scopedElements. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether compliance constraint has scope. It examines scoped elements, label text. Within this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. The gap is ComplianceConstraint ' ' has no scopedElements. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -520,7 +520,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that risk is actionable when blocking. The risk element owns the evidence for this decision, including production blocking, risk statement, probability, impact, mitigation. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Production-blocking Risk ' ' is not actionable.
+The rule checks whether risk is actionable when blocking. The risk element provides the relevant evidence through production blocking, risk statement, probability, impact, mitigation. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Production-blocking Risk ' ' is not actionable.
 
 ### When it applies
 
@@ -560,13 +560,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that risk has affected elements. This is a review signal about affected elements, label text, not a cosmetic naming preference. In this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Risk ' ' has no affectedElements. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether risk has affected elements. It examines affected elements, label text. Within this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. The gap is Risk ' ' has no affectedElements. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -598,13 +598,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that assumption has statement and validation. The assumption element owns the evidence for this decision, including assumption statement, validation approach, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Assumption ' ' lacks assumptionStatement or validationApproach.
+The rule checks whether assumption has statement and validation. The assumption element provides the relevant evidence through assumption statement, validation approach, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Assumption ' ' lacks assumptionStatement or validationApproach.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -636,7 +636,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that accepted assumption has decision details. The assumption element owns the evidence for this decision, including accepted, accepted by, accepted on, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Assumption ' ' is accepted but lacks acceptedBy or acceptedOn.
+The rule checks whether accepted assumption has decision details. The assumption element provides the relevant evidence through accepted, accepted by, accepted on, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Assumption ' ' is accepted but lacks acceptedBy or acceptedOn.
 
 ### When it applies
 
@@ -676,7 +676,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that blocking hotspot requires owner. The hotspot element owns the evidence for this decision, including blocks transformation, blocks production, owner, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Blocking Hotspot ' ' has no owner.
+The rule checks whether blocking hotspot requires owner. The hotspot element provides the relevant evidence through blocks transformation, blocks production, owner, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Blocking Hotspot ' ' has no owner.
 
 ### When it applies
 
@@ -716,7 +716,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that blocking hotspot has due date and impact. This is a review signal about blocks transformation, blocks production, due date, impact, attached to, not a cosmetic naming preference. In this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Blocking Hotspot ' ' lacks dueDate, impact, or attachedTo links. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether blocking hotspot has due date and impact. It examines blocks transformation, blocks production, due date, impact, attached to. Within this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. The gap is Blocking Hotspot ' ' lacks dueDate, impact, or attachedTo links. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -756,7 +756,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that service granularity preference has rationale. This is a review signal about prefer capability as service boundary, default service granularity rationale, not a cosmetic naming preference. In this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: TransformationProfile prefers capabilities as service boundaries but has no defaultServiceGranularityRationale. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether service granularity preference has rationale. It examines prefer capability as service boundary, default service granularity rationale. Within this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. The gap is TransformationProfile prefers capabilities as service boundaries but has no defaultServiceGranularityRationale. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -796,13 +796,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that required manual decisions are owned. This is a review signal about required decisions, question, decision owner, not a cosmetic naming preference. In this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: TransformationProfile has requiredDecisions without question or decisionOwner. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether required manual decisions are owned. It examines required decisions, question, decision owner. Within this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. The gap is TransformationProfile has requiredDecisions without question or decisionOwner. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -834,7 +834,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that production ready assessment is consistent. The production readiness assessment element owns the evidence for this decision, including production ready, readiness status, checks, passed, findings. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: ProductionReadinessAssessment is marked productionReady but readinessStatus/checks/findings are inconsistent.
+The rule checks whether production ready assessment is consistent. The production readiness assessment element provides the relevant evidence through production ready, readiness status, checks, passed, findings. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ProductionReadinessAssessment is marked productionReady but readinessStatus/checks/findings are inconsistent.
 
 ### When it applies
 
@@ -874,13 +874,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that readiness assessment has assessor. This is a review signal about assessed at, assessed by, not a cosmetic naming preference. In this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: ProductionReadinessAssessment lacks assessedAt or assessedBy. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether readiness assessment has assessor. It examines assessed at, assessed by. Within this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. The gap is ProductionReadinessAssessment lacks assessedAt or assessedBy. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -912,7 +912,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that blocking finding has recommendation. The readiness finding element owns the evidence for this decision, including blocking, message, recommendation, affected elements, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Blocking ReadinessFinding ' ' lacks message, recommendation, or affectedElements.
+The rule checks whether blocking finding has recommendation. The readiness finding element provides the relevant evidence through blocking, message, recommendation, affected elements, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Blocking ReadinessFinding ' ' lacks message, recommendation, or affectedElements.
 
 ### When it applies
 
@@ -952,7 +952,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that failed readiness check has remediation. The readiness check element owns the evidence for this decision, including passed, message, remediation, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Failed ReadinessCheck ' ' lacks message or remediation.
+The rule checks whether failed readiness check has remediation. The readiness check element provides the relevant evidence through passed, message, remediation, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Failed ReadinessCheck ' ' lacks message or remediation.
 
 ### When it applies
 
@@ -992,7 +992,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that blocking manual decision has owner. The manual decision element owns the evidence for this decision, including blocking, question, decision owner, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Blocking ManualDecision ' ' lacks question or decisionOwner.
+The rule checks whether blocking manual decision has owner. The manual decision element provides the relevant evidence through blocking, question, decision owner, label text. At this level, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Blocking ManualDecision ' ' lacks question or decisionOwner.
 
 ### When it applies
 
@@ -1032,7 +1032,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that manual decision has due date. This is a review signal about blocking, due date, label text, not a cosmetic naming preference. In this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Blocking ManualDecision ' ' has no dueDate. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether manual decision has due date. It examines blocking, due date, label text. Within this part of the model, security, privacy, compliance, risk, and readiness decisions are still visible when architecture work begins. The gap is Blocking ManualDecision ' ' has no dueDate. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 

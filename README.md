@@ -2,11 +2,12 @@
 
 **Model business intent → refine architecture → generate deployable AWS serverless projects.**
 
-Varka is an AI-assisted, model-driven platform. You work in three formal modeling levels
-(CIM, PIM, AWS PSM) in the browser, validate with Eclipse Epsilon, transform between levels, and
-generate a reviewable project (infrastructure, Go handlers, contracts, tests, docs). An optional
-assistant automatically chooses a bounded conceptual generator, an inspect/contract editing loop,
-or a read-only answer, and commits changes only after structural Ecore/EMF validation.
+Varka is an AI-assisted, model-driven platform. It provides three formal modeling levels
+(CIM, PIM, AWS PSM) in the browser. Users can validate models with Eclipse Epsilon, transform them
+between levels, and generate a reviewable project containing infrastructure, Go handlers, contracts,
+tests, and documentation. An optional assistant selects a bounded conceptual generator, an
+inspect/contract editing loop, or a read-only answer. It commits changes only after structural
+Ecore/EMF validation.
 
 ```text
 CIM  ──validate/transform──▶  PIM  ──validate/transform──▶  AWS PSM  ──generate──▶  deployable project
@@ -33,9 +34,10 @@ docker compose up --build
 | Container logs (Dozzle)              | <http://127.0.0.1:9999>                 |
 | LocalStack (generated project tests) | <http://127.0.0.1:4566>                 |
 
-**First project:** register → create a project → open CIM → import
-[`mde/samples/cim.xmi`](mde/samples/cim.xmi) or model from scratch → **Generate PIM** → **Generate
-PSM** → **Generate Artifacts** → download the ZIP from the artifact explorer.
+**First project:** register, create a project, and open CIM. Import
+[`mde/samples/cim.xmi`](mde/samples/cim.xmi) or create a model from scratch. Then choose
+**Generate PIM**, **Generate PSM**, and **Generate Artifacts**, and download the ZIP from the
+artifact explorer.
 
 [Quickstart guide](docs/public-docs/docs/getting-started/quickstart.md) ·
 [Enable the AI assistant](docs/internal/ai/assistant.md)

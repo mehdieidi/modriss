@@ -37,7 +37,7 @@ Before touching the server, decide:
 - Database model: local PostgreSQL volume for early production, or managed PostgreSQL if uptime and
   backups matter immediately.
 - Email/auth model: which email account receives the first admin role.
-- Backup location: an external object store or backup server, not only a local disk.
+- Backup location: an external object store or backup server. A local disk alone is insufficient.
 - Alert destination: email, Slack, PagerDuty, or another channel that someone actually checks.
 - Recovery objective: how much data loss is acceptable and how long recovery may take.
 

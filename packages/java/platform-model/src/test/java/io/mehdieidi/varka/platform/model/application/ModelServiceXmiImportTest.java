@@ -579,7 +579,7 @@ class ModelServiceXmiImportTest {
   }
 
   /**
-   * A browser patch under graph/elements can carry a semantic edit, not only diagram coordinates.
+   * A browser patch under graph/elements can carry a semantic edit alongside diagram coordinates.
    * Such a patch must regenerate the XMI sidecar because transformations consume that sidecar.
    */
   @Test

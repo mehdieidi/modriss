@@ -6,7 +6,7 @@ Source profile: `mde/validation/psm/rules/events.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that rule has pattern or schedule. The event bridge rule element owns the evidence for this decision, including event pattern json, schedule expression, event pattern, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge rule has neither an event pattern nor a schedule expression.
+The rule checks whether rule has pattern or schedule. The event bridge rule element provides the relevant evidence through event pattern json, schedule expression, event pattern, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge rule has neither an event pattern nor a schedule expression.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,13 +56,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that rule does not mix pattern and schedule. The event bridge rule element owns the evidence for this decision, including event pattern json, event pattern, schedule expression, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge rule defines both event pattern and schedule expression.
+The rule checks whether rule does not mix pattern and schedule. The event bridge rule element provides the relevant evidence through event pattern json, event pattern, schedule expression, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge rule defines both event pattern and schedule expression.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -94,13 +94,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that rule has targets. The event bridge rule element owns the evidence for this decision, including targets, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge rule has no targets.
+The rule checks whether rule has targets. The event bridge rule element provides the relevant evidence through targets, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge rule has no targets.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -132,13 +132,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that target ids unique within rule. The event bridge rule element owns the evidence for this decision, including targets, target id, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge rule contains duplicate targetId values.
+The rule checks whether target ids unique within rule. The event bridge rule element provides the relevant evidence through targets, target id, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge rule contains duplicate targetId values.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -170,13 +170,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that target has resource or arn. The event bridge target element owns the evidence for this decision, including target resource, arn expression, target id. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge target has neither targetResource nor arnExpression.
+The rule checks whether target has resource or arn. The event bridge target element provides the relevant evidence through target resource, arn expression, target id. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge target has neither targetResource nor arnExpression.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -208,7 +208,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that critical event targets have retry or dlq. This is a review signal about target resource, retry policy, dead letter queue, target id, not a cosmetic naming preference. In this part of the model, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped EventBridge target has no explicit retry policy or DLQ. Suggested fix: add AwsRetryPolicy and/or deadLetterQueue when default EventBridge retries are not sufficient. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether critical event targets have retry or dlq. It examines target resource, retry policy, dead letter queue, target id. Within this part of the model, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. The gap is Production-scoped EventBridge target has no explicit retry policy or DLQ. Suggested fix: add AwsRetryPolicy and/or deadLetterQueue when default EventBridge retries are not sufficient. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -248,7 +248,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that sqs fifo target has message group id. The event bridge target element owns the evidence for this decision, including target resource, parameters, target id. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge target sends to a FIFO SQS queue without messageGroupId.
+The rule checks whether sqs fifo target has message group id. The event bridge target element provides the relevant evidence through target resource, parameters, target id. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge target sends to a FIFO SQS queue without messageGroupId.
 
 ### When it applies
 
@@ -288,7 +288,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that non lambda target has invoke role. The event bridge target element owns the evidence for this decision, including target kind, role, role arn, target id. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge target has no invoke role.
+The rule checks whether non lambda target has invoke role. The event bridge target element provides the relevant evidence through target kind, role, role arn, target id. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge target has no invoke role.
 
 ### When it applies
 
@@ -328,13 +328,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that retry policy ranges valid. The aws retry policy element owns the evidence for this decision, including maximum retry attempts, maximum event age in seconds. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge retry policy has invalid range values.
+The rule checks whether retry policy ranges valid. The aws retry policy element provides the relevant evidence through maximum retry attempts, maximum event age in seconds. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge retry policy has invalid range values.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -366,13 +366,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that schedule has expression and role. The event bridge schedule element owns the evidence for this decision, including schedule expression, role, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge schedule lacks scheduleExpression or role.
+The rule checks whether schedule has expression and role. The event bridge schedule element provides the relevant evidence through schedule expression, role, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge schedule lacks scheduleExpression or role.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -404,13 +404,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that schedule has target. The event bridge schedule element owns the evidence for this decision, including target, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge schedule has no resolvable target.
+The rule checks whether schedule has target. The event bridge schedule element provides the relevant evidence through target, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge schedule has no resolvable target.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -442,13 +442,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that pipe has source target and role. The event bridge pipe element owns the evidence for this decision, including source arn, source resource, target arn, target resource, role. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge pipe must have source, target, and role.
+The rule checks whether pipe has source target and role. The event bridge pipe element provides the relevant evidence through source arn, source resource, target arn, target resource, role. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge pipe must have source, target, and role.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -480,13 +480,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that api destination has endpoint and connection. The event bridge api destination element owns the evidence for this decision, including invocation endpoint, connection, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge API destination lacks invocationEndpoint or connection.
+The rule checks whether api destination has endpoint and connection. The event bridge api destination element provides the relevant evidence through invocation endpoint, connection, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge API destination lacks invocationEndpoint or connection.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -518,13 +518,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that connection auth parameters match authorization type. The event bridge connection element owns the evidence for this decision, including authorization type, auth parameters, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: EventBridge connection uses authParameters that do not match authorizationType.
+The rule checks whether connection auth parameters match authorization type. The event bridge connection element provides the relevant evidence through authorization type, auth parameters, resource label. At this level, EventBridge rules and targets describe a complete delivery path with the right role, retry, schedule, and dead-letter behavior. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: EventBridge connection uses authParameters that do not match authorizationType.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

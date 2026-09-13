@@ -468,7 +468,7 @@
               ],
               "entryCriteria": ["Build and security checks pass"],
               "exitCriteria": ["Acceptance evidence covers critical user and integration paths"],
-              "validationRules": ["Tests target the deployed candidate, not only local code"],
+              "validationRules": ["Tests target the deployed candidate as well as local code"],
               "paletteFocus": [],
               "durationEstimate": "60–180 min"
             },

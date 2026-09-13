@@ -6,13 +6,13 @@ Source module: `mde/transformations/cim-to-pim/root-scaffolding.etl`.
 
 ## Reading this page
 
-A transformation rule is not a validation constraint: it decides whether and how a source element contributes to the target model. Read the guard as a routing decision, the target table as the model-level result, the behavior section as the important semantic side effects, and the trace/manual-decision information as the hand-off to review and later phases.
+A transformation rule determines whether a source element contributes to the target model and how it is mapped. Use the guard to understand routing and the target table to see the model-level result. The behavior section records important semantic side effects. Trace and manual-decision information identifies work for review and later phases.
 
 ---
 
 ## Supporting ETL operations
 
-These operations are not independent source-to-target rules, but they materially shape the result. They derive defaults, create secondary resources, cache correspondences, or resolve relationships after the main rule has run.
+Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
 | Operation                | Role                                                               | Source                                                   |
 | ------------------------ | ------------------------------------------------------------------ | -------------------------------------------------------- |
@@ -55,7 +55,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:51`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:51`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -67,7 +67,7 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.e
 
 ### Why this rule exists
 
-CIM cannot choose a language or package manager, but the PIM still needs explicit environments and a generation profile to be reviewable. This rule creates dev, test, and production-like stages with different approval posture and marks the implementation profile for human completion instead of silently inventing a toolchain.
+CIM cannot choose a language or package manager. The PIM still needs explicit environments and a generation profile so it can be reviewed. This rule creates dev, test, and production-like stages with different approval postures and marks the implementation profile for human completion instead of silently inventing a toolchain.
 
 ### When the rule runs
 
@@ -84,7 +84,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `dev.id`, `dev.name`, `dev.environmentClass`, `dev.nameSuffix`, `dev.productionLike`, `dev.requiresApproval`, `test.id`, `test.name`, `test.environmentClass`, `test.nameSuffix`, `test.productionLike`, `test.requiresApproval`, `prod.id`, `prod.name`, `prod.environmentClass`, `prod.nameSuffix` ….
 Trace identifiers emitted here: `TR-003`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-003`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-003`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -94,7 +94,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:85`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:85`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -120,7 +120,7 @@ There is no explicit guard, so every source instance of the declared type is eli
 
 The rule directly assigns: `b.id`, `b.name`, `b.naturalLanguageRule`.
 Trace identifiers emitted here: `TR-004`. These identifiers are useful when following the generated element back to the originating CIM/PIM decision.
-Manual decisions raised by this rule: `TR-004`. These are intentional hand-off points, not transformation failures; resolve them in the model review/readiness workflow.
+Manual decisions raised by this rule: `TR-004`. These are intentional hand-off points. Resolve them in the model review/readiness workflow; they do not indicate transformation failure.
 
 ### How to troubleshoot or repair it
 
@@ -130,7 +130,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:140`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:140`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -142,7 +142,7 @@ Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.e
 
 ### Why this rule exists
 
-The goal is carried as a business rule because architecture review needs to retain why a capability exists, not only what it deploys. The transformation chooses the success criterion first, then business value, keeping the PIM rationale connected to the business outcome.
+The goal is carried as a business rule because architecture review must retain why a capability exists as well as what it deploys. The transformation chooses the success criterion first and then the business value, keeping the PIM rationale connected to the business outcome.
 
 ### When the rule runs
 
@@ -165,7 +165,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:159`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:159`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -200,7 +200,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:172`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:172`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -235,7 +235,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:185`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:185`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -270,6 +270,6 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-Read the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:203`. The documentation summarizes its purpose and observable effects; the ETL body remains the authority for exact assignments and helper calls.
+See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:203`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

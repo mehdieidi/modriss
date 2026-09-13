@@ -6,7 +6,7 @@ Source profile: `mde/validation/psm/rules/messaging.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,7 +18,7 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that fifo queue name suffix. The sqs queue element owns the evidence for this decision, including queue type, queue name, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: FIFO SQS queue must have a queueName ending in .fifo.
+The rule checks whether fifo queue name suffix. The sqs queue element provides the relevant evidence through queue type, queue name, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: FIFO SQS queue must have a queueName ending in .fifo.
 
 ### When it applies
 
@@ -58,7 +58,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that standard queue should not use fifo suffix. This is a review signal about queue type, queue name, resource label, not a cosmetic naming preference. In this part of the model, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Standard SQS queue has a .fifo suffix. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether standard queue should not use fifo suffix. It examines queue type, queue name, resource label. Within this part of the model, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics. The gap is Standard SQS queue has a .fifo suffix. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -98,13 +98,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that queue timing ranges valid. The sqs queue element owns the evidence for this decision, including delay seconds, message retention period seconds, receive message wait time seconds, visibility timeout seconds, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SQS queue has timing settings outside AWS-supported ranges.
+The rule checks whether queue timing ranges valid. The sqs queue element provides the relevant evidence through delay seconds, message retention period seconds, receive message wait time seconds, visibility timeout seconds, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SQS queue has timing settings outside AWS-supported ranges.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -136,13 +136,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that queue message size range valid. The sqs queue element owns the evidence for this decision, including maximum message size, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SQS queue has maximumMessageSize outside 1024..1048576 bytes.
+The rule checks whether queue message size range valid. The sqs queue element provides the relevant evidence through maximum message size, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SQS queue has maximumMessageSize outside 1024..1048576 bytes.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -174,7 +174,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that redrive policy valid. The sqs queue element owns the evidence for this decision, including redrive policy, queue type, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SQS queue has an invalid redrive policy.
+The rule checks whether redrive policy valid. The sqs queue element provides the relevant evidence through redrive policy, queue type, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SQS queue has an invalid redrive policy.
 
 ### When it applies
 
@@ -214,7 +214,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production queue should be encrypted. This is a review signal about is production scoped, sqs managed sse enabled, kms key, resource label, not a cosmetic naming preference. In this part of the model, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped SQS queue has no explicit encryption. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production queue should be encrypted. It examines is production scoped, sqs managed sse enabled, kms key, resource label. Within this part of the model, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics. The gap is Production-scoped SQS queue has no explicit encryption. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -254,7 +254,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that fifo topic name suffix. The sns topic element owns the evidence for this decision, including fifo topic, topic name, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: FIFO SNS topic must have a topicName ending in .fifo.
+The rule checks whether fifo topic name suffix. The sns topic element provides the relevant evidence through fifo topic, topic name, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: FIFO SNS topic must have a topicName ending in .fifo.
 
 ### When it applies
 
@@ -294,7 +294,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production topic should be encrypted. This is a review signal about is production scoped, kms key, resource label, not a cosmetic naming preference. In this part of the model, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped SNS topic has no KMS key. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production topic should be encrypted. It examines is production scoped, kms key, resource label. Within this part of the model, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics. The gap is Production-scoped SNS topic has no KMS key. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -334,13 +334,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that subscription has endpoint or resource. The sns subscription element owns the evidence for this decision, including endpoint, endpoint resource, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SNS subscription has neither endpoint nor endpointResource.
+The rule checks whether subscription has endpoint or resource. The sns subscription element provides the relevant evidence through endpoint, endpoint resource, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SNS subscription has neither endpoint nor endpointResource.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -372,7 +372,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that fifo topic to sqs requires fifo queue. The sns subscription element owns the evidence for this decision, including topic, endpoint resource, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SNS FIFO topic subscription targets a non-FIFO SQS queue.
+The rule checks whether fifo topic to sqs requires fifo queue. The sns subscription element provides the relevant evidence through topic, endpoint resource, resource label. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SNS FIFO topic subscription targets a non-FIFO SQS queue.
 
 ### When it applies
 
@@ -412,7 +412,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that external http subscriptions should have dlq. This is a review signal about protocol, dead letter queue, resource label, not a cosmetic naming preference. In this part of the model, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: HTTP/HTTPS SNS subscription has no DLQ. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether external http subscriptions should have dlq. It examines protocol, dead letter queue, resource label. Within this part of the model, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics. The gap is HTTP/HTTPS SNS subscription has no DLQ. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -452,13 +452,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that filter rule has values. The sns filter rule element owns the evidence for this decision, including field path, operator, values. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: SNS filter rule is incomplete.
+The rule checks whether filter rule has values. The sns filter rule element provides the relevant evidence through field path, operator, values. At this level, SQS and SNS behavior matches AWS naming, FIFO, timing, encryption, redrive, subscription, and filtering semantics. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: SNS filter rule is incomplete.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

@@ -6,7 +6,7 @@ Source profile: `mde/validation/cim/rules/behavior.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -22,9 +22,9 @@ A command represents an intended state change. Expected or rejection events are 
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,13 +56,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that command has behavioral owner. The command element owns the evidence for this decision, including target capability, target aggregate, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Command ' ' has no targetCapability or targetAggregate.
+The rule checks whether command has behavioral owner. The command element provides the relevant evidence through target capability, target aggregate, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Command ' ' has no targetCapability or targetAggregate.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -94,7 +94,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that actor facing command has authorization decision. The command element owns the evidence for this decision, including has human issuer, has authorization decision, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Human-issued Command ' ' lacks an explicit authorization decision.
+The rule checks whether actor facing command has authorization decision. The command element provides the relevant evidence through has human issuer, has authorization decision, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Human-issued Command ' ' lacks an explicit authorization decision.
 
 ### When it applies
 
@@ -134,7 +134,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that external or untrusted command requires audit and authorization. The command element owns the evidence for this decision, including has external or untrusted issuer, audit required, has authorization decision, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Command ' ' is issued by an external/untrusted actor but lacks auditRequired=true or an authorizationRule.
+The rule checks whether external or untrusted command requires audit and authorization. The command element provides the relevant evidence through has external or untrusted issuer, audit required, has authorization decision, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Command ' ' is issued by an external/untrusted actor but lacks auditRequired=true or an authorizationRule.
 
 ### When it applies
 
@@ -174,7 +174,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that duplicate submission command has idempotency key. This is a review signal about duplicate submission possible, idempotency business key, label text, not a cosmetic naming preference. In this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Command ' ' may be submitted more than once but has no idempotencyBusinessKey. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether duplicate submission command has idempotency key. It examines duplicate submission possible, idempotency business key, label text. Within this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning. The gap is Command ' ' may be submitted more than once but has no idempotencyBusinessKey. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -214,13 +214,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that command has preconditions or errors. This is a review signal about preconditions, possible errors, label text, not a cosmetic naming preference. In this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Command ' ' has no preconditions or possibleErrors. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether command has preconditions or errors. It examines preconditions, possible errors, label text. Within this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning. The gap is Command ' ' has no preconditions or possibleErrors. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -252,7 +252,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that command outcome links match direct collections. This is a review signal about outcomes, not a cosmetic naming preference. In this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: . If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether command outcome links match the direct collections. It examines the outcome links. In this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning. The diagnostic below gives the concrete issue. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -330,13 +330,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that query personal flag matches output. This is a review signal about contains personal data, outputs personal data, output, label text, not a cosmetic naming preference. In this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Query ' ' has containsPersonalData inconsistent with output classifications. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether query personal flag matches output. It examines contains personal data, outputs personal data, output, label text. Within this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning. The gap is Query ' ' has containsPersonalData inconsistent with output classifications. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -368,7 +368,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that list search query declares result handling. This is a review signal about query type, pagination expectation, filtering expectation, label text, not a cosmetic naming preference. In this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: List/Search Query ' ' lacks paginationExpectation or filteringExpectation. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether list search query declares result handling. It examines query type, pagination expectation, filtering expectation, label text. Within this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning. The gap is List/Search Query ' ' lacks paginationExpectation or filteringExpectation. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -408,13 +408,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Advises that query declares freshness. This is a review signal about freshness need, label text, not a cosmetic naming preference. In this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Query ' ' has no freshnessNeed. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether query declares freshness. It examines freshness need, label text. Within this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning. The gap is Query ' ' has no freshnessNeed. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -446,13 +446,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that event name past tense. The business event element owns the evidence for this decision, including name, occurred in past tense name, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BusinessEvent ' ' is not clearly named as a past-tense business fact.
+The rule checks whether event name past tense. The business event element provides the relevant evidence through name, occurred in past tense name, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessEvent ' ' is not clearly named as a past-tense business fact.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -488,9 +488,9 @@ Events describe something that happened; commands ask for something to happen. K
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -522,13 +522,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that event has business meaning. The business event element owns the evidence for this decision, including business meaning, semantic name, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BusinessEvent ' ' lacks businessMeaning or semanticName.
+The rule checks whether event has business meaning. The business event element provides the relevant evidence through business meaning, semantic name, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessEvent ' ' lacks businessMeaning or semanticName.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -560,13 +560,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that event has producer or consumer. This is a review signal about expected by commands, rejected by commands, caused by policies, caused by external systems, consumed by policies, not a cosmetic naming preference. In this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: BusinessEvent ' ' has no producer or consumer. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether event has producer or consumer. It examines expected by commands, rejected by commands, caused by policies, caused by external systems, consumed by policies. Within this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning. The gap is BusinessEvent ' ' has no producer or consumer. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -598,7 +598,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that production relevant event has versioning metadata. The business event element owns the evidence for this decision, including externally visible, audit relevant, retention relevant, semantic version, versioning rationale. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Production-relevant BusinessEvent ' ' lacks semanticVersion or versioningRationale.
+The rule checks whether production relevant event has versioning metadata. The business event element provides the relevant evidence through externally visible, audit relevant, retention relevant, semantic version, versioning rationale. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Production-relevant BusinessEvent ' ' lacks semanticVersion or versioningRationale.
 
 ### When it applies
 
@@ -638,7 +638,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that event semantic version looks like sem ver. The business event element owns the evidence for this decision, including semantic version, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BusinessEvent ' ' has semanticVersion ' ' that is not SemVer-like.
+The rule checks whether event semantic version looks like sem ver. The business event element provides the relevant evidence through semantic version, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessEvent ' ' has semanticVersion ' ' that is not SemVer-like.
 
 ### When it applies
 
@@ -678,13 +678,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that event payload information is typed. The business event element owns the evidence for this decision, including payload, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BusinessEvent ' ' has payload InformationItems without type.
+The rule checks whether event payload information is typed. The business event element provides the relevant evidence through payload, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessEvent ' ' has payload InformationItems without type.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -716,13 +716,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that business error is user understandable. The business error element owns the evidence for this decision, including error code, business meaning, user visible message, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: BusinessError ' ' lacks errorCode, businessMeaning, or userVisibleMessage.
+The rule checks whether business error is user understandable. The business error element provides the relevant evidence through error code, business meaning, user visible message, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessError ' ' lacks errorCode, businessMeaning, or userVisibleMessage.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -754,7 +754,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that retry meaningful implies recoverable. This is a review signal about retry meaningful, recoverable, label text, not a cosmetic naming preference. In this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: BusinessError ' ' says retry is meaningful but recoverable is not true. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether retry meaningful implies recoverable. It examines retry meaningful, recoverable, label text. Within this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning. The gap is BusinessError ' ' says retry is meaningful but recoverable is not true. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -798,9 +798,9 @@ A condition with no natural-language, executable, or typed expression cannot be 
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -832,7 +832,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that automatable condition has expression. The condition element owns the evidence for this decision, including must be automatable, expression model, expression language, expression, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Condition ' ' must be automatable but lacks a typed expressionModel or expressionLanguage/expression pair.
+The rule checks whether automatable condition has expression. The condition element provides the relevant evidence through must be automatable, expression model, expression language, expression, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Condition ' ' must be automatable but lacks a typed expressionModel or expressionLanguage/expression pair.
 
 ### When it applies
 
@@ -872,13 +872,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that condition references information or concepts. This is a review signal about referenced information, referenced concepts, label text, not a cosmetic naming preference. In this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Condition ' ' is not linked to referencedInformation or referencedConcepts. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether condition references information or concepts. It examines referenced information, referenced concepts, label text. Within this part of the model, business behavior can be turned into operations, events, policies, and tests without changing its meaning. The gap is Condition ' ' is not linked to referencedInformation or referencedConcepts. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

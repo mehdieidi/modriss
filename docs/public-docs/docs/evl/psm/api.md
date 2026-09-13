@@ -6,7 +6,7 @@ Source profile: `mde/validation/psm/rules/api.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -18,13 +18,13 @@ Each entry preserves the actual EVL guard and check. Read the guard as the appli
 
 ### Why this rule exists
 
-Checks that api has routes. The api gateway api element owns the evidence for this decision, including routes, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: API has no routes.
+The rule checks whether api has routes. The api gateway api element provides the relevant evidence through routes, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: API has no routes.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,13 +56,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that api should have stage. This is a review signal about stages, resource label, not a cosmetic naming preference. In this part of the model, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: API has no stage. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether api should have stage. It examines stages, resource label. Within this part of the model, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. The gap is API has no stage. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -94,7 +94,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that access logs require log group and format. The api gateway api element owns the evidence for this decision, including access logs enabled, access log group, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: API enables access logs but has no accessLogGroup.
+The rule checks whether access logs require log group and format. The api gateway api element provides the relevant evidence through access logs enabled, access log group, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: API enables access logs but has no accessLogGroup.
 
 ### When it applies
 
@@ -134,7 +134,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production api should have metrics and tracing. This is a review signal about is production scoped, metrics enabled, tracing enabled, tracing config, resource label, not a cosmetic naming preference. In this part of the model, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production-scoped API does not enable both metrics and tracing. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production api should have metrics and tracing. It examines is production scoped, metrics enabled, tracing enabled, tracing config, resource label. Within this part of the model, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. The gap is Production-scoped API does not enable both metrics and tracing. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -174,13 +174,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that unique http route within api. The http api route element owns the evidence for this decision, including http api route key, method, path, api. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: HTTP API route is duplicated in API.
+The rule checks whether unique http route within api. The http api route element provides the relevant evidence through http api route key, method, path, api. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: HTTP API route is duplicated in API.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -212,13 +212,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that unique rest route within api. The rest api route element owns the evidence for this decision, including rest api route key, method, path, api. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: REST API route is duplicated in API.
+The rule checks whether unique rest route within api. The rest api route element provides the relevant evidence through rest api route key, method, path, api. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: REST API route is duplicated in API.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -250,13 +250,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that unique web socket route key within api. The web socket route element owns the evidence for this decision, including web socket route key, route key, api. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: WebSocket routeKey is duplicated in API.
+The rule checks whether unique web socket route key within api. The web socket route element provides the relevant evidence through web socket route key, route key, api. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: WebSocket routeKey is duplicated in API.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -288,13 +288,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that route has api. The api gateway route element owns the evidence for this decision, including api, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: API route has no owning API.
+The rule checks whether route has api. The api gateway route element provides the relevant evidence through api, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: API route has no owning API.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -326,13 +326,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that protected route has required auth configuration. The api gateway route element owns the evidence for this decision, including authorization type, authorizer, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Protected route has authorizationType but no authorizer.
+The rule checks whether protected route has required auth configuration. The api gateway route element provides the relevant evidence through authorization type, authorizer, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Protected route has authorizationType but no authorizer.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -364,13 +364,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that route has integration. The api gateway route element owns the evidence for this decision, including integration, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: API route has no integration.
+The rule checks whether route has integration. The api gateway route element provides the relevant evidence through integration, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: API route has no integration.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -402,7 +402,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that integration timeout should not exceed lambda timeout. This is a review signal about integration, timeout in millis, resource label, not a cosmetic naming preference. In this part of the model, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Route may time out before Lambda. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether integration timeout should not exceed lambda timeout. It examines integration, timeout in millis, resource label. Within this part of the model, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. The gap is Route may time out before Lambda. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -442,13 +442,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that integration has single target. The api gateway integration element owns the evidence for this decision, including target count, integration type, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: API integration must have exactly one backend target, unless it is MOCK.
+The rule checks whether integration has single target. The api gateway integration element provides the relevant evidence through target count, integration type, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: API integration must have exactly one backend target, unless it is MOCK.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -480,7 +480,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that long api gateway timeout requires quota review. This is a review signal about timeout in millis, resource label, not a cosmetic naming preference. In this part of the model, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: API integration has timeoutInMillis greater than 29 seconds. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether long api gateway timeout requires quota review. It examines timeout in millis, resource label. Within this part of the model, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. The gap is API integration has timeoutInMillis greater than 29 seconds. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -520,7 +520,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that credentials arn matches credentials role. The api gateway integration element owns the evidence for this decision, including credentials arn, credentials role, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: API integration has a credentialsArn that is not a valid IAM role ARN and no credentialsRole reference.
+The rule checks whether credentials arn matches credentials role. The api gateway integration element provides the relevant evidence through credentials arn, credentials role, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: API integration has a credentialsArn that is not a valid IAM role ARN and no credentialsRole reference.
 
 ### When it applies
 
@@ -560,7 +560,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that access log stage requires group and format. The api gateway stage element owns the evidence for this decision, including access log enabled, resolved access log group, access log format, stage name. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: API stage enables access logs but lacks an access log group or format.
+The rule checks whether access log stage requires group and format. The api gateway stage element provides the relevant evidence through access log enabled, resolved access log group, access log format, stage name. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: API stage enables access logs but lacks an access log group or format.
 
 ### When it applies
 
@@ -600,7 +600,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that production stage should throttle. This is a review signal about api, throttling burst limit, throttling rate limit, stage name, not a cosmetic naming preference. In this part of the model, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Production API stage has no explicit throttling limits. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether production stage should throttle. It examines api, throttling burst limit, throttling rate limit, stage name. Within this part of the model, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. The gap is Production API stage has no explicit throttling limits. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -640,13 +640,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that jwt authorizer has issuer and audience. The jwt authorizer element owns the evidence for this decision, including issuer, audience, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: JWT authorizer is missing issuer or audience.
+The rule checks whether jwt authorizer has issuer and audience. The jwt authorizer element provides the relevant evidence through issuer, audience, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: JWT authorizer is missing issuer or audience.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -678,13 +678,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Advises that cognito authorizer should reference clients. This is a review signal about clients, resource label, not a cosmetic naming preference. In this part of the model, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; the warning makes a decision visible while it can still be discussed and changed. The concrete gap is: Cognito authorizer references a user pool but no clients. If it is left unexplained, a later transformation, generator, or reviewer has to invent an assumption.
+The rule checks whether cognito authorizer should reference clients. It examines clients, resource label. Within this part of the model, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. The gap is Cognito authorizer references a user pool but no clients. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -716,13 +716,13 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-Checks that lambda authorizer has function. The lambda authorizer element owns the evidence for this decision, including function, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Lambda authorizer has no Lambda function.
+The rule checks whether lambda authorizer has function. The lambda authorizer element provides the relevant evidence through function, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Lambda authorizer has no Lambda function.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -754,13 +754,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that domain has certificate. The api gateway domain name element owns the evidence for this decision, including certificate arn, domain name. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: API Gateway domain has no certificateArn.
+The rule checks whether domain has certificate. The api gateway domain name element provides the relevant evidence through certificate arn, domain name. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: API Gateway domain has no certificateArn.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -792,13 +792,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that usage plan key uses known type. The api gateway usage plan key element owns the evidence for this decision, including key type, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: Usage plan key has invalid keyType.
+The rule checks whether usage plan key uses known type. The api gateway usage plan key element provides the relevant evidence through key type, resource label. At this level, the concrete API Gateway configuration agrees across routes, integrations, authorizers, stages, logs, metrics, and credentials. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Usage plan key has invalid keyType.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 

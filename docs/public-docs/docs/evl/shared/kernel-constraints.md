@@ -6,7 +6,7 @@ Source profile: `mde/validation/shared/kernel-constraints.evl`.
 
 ## Reading these rules
 
-Each entry preserves the actual EVL guard and check. Read the guard as the applicability boundary, not as part of the invariant: when it is false, the rule is intentionally skipped. The diagnostic is the runtime-facing message emitted by EVL; its final sentence usually contains the repository's recommended repair.
+Each entry preserves the actual EVL guard and check. Treat the guard as the applicability boundary. When it evaluates to false, EVL skips the rule. The diagnostic is the message emitted at runtime, and its final sentence usually gives the repository's recommended repair.
 
 ---
 
@@ -22,9 +22,9 @@ Identity is the join key for persistence, references, trace links, and increment
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
@@ -56,13 +56,13 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-Checks that trace link has reference or external id. The trace link element owns the evidence for this decision, including source, target, source element id, target element id, external id. At this level, identity and traceability must survive save/reload and every refinement step; allowing the model through without that evidence would move an unresolved choice into generated infrastructure. The concrete failure this rule prevents is: TraceLink ' ' must reference a source/target element or external trace identifier.
+The rule checks whether trace link has reference or external id. The trace link element provides the relevant evidence through source, target, source element id, target element id, external id. At this level, identity and traceability must survive save/reload and every refinement step. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: TraceLink ' ' must reference a source/target element or external trace identifier.
 
 ### When it applies
 
-The rule has no guard, so it applies to every instance of this context in the validated model.
+No guard is defined, so the check runs for every instance of this context in the validated model.
 
-There is no guard expression; every instance of the context is checked.
+No guard expression is present. Every instance of the context is checked.
 
 ### What counts as valid
 
