@@ -1210,11 +1210,14 @@ public final class AgentTurnLoop {
       java.util.function.BooleanSupplier cancellationRequested,
       java.util.function.Supplier<PlatformException> stopReason) {
     String system =
-        "Choose one internal Varka assistant strategy. CONCEPTUAL_GENERATION produces a complete "
-            + "conceptual instance model and is best for empty-model generation, coherent additive "
-            + "updates, and source-grounded generation. INSPECT_AGENT is best for surgical, "
-            + "ambiguous, selected-element, or potentially destructive edits. ANSWER is only for "
-            + "questions/explanations that require no model mutation. Return only the schema.";
+        "Choose one internal Varka assistant strategy. CONCEPTUAL_GENERATION produces a complete"
+            + " conceptual instance model and is best for empty-model generation, coherent additive"
+            + " updates, and source-grounded generation. INSPECT_AGENT is best for surgical,"
+            + " ambiguous, selected-element, or potentially destructive edits. Any request to add,"
+            + " edit, refine, connect, complete, repair, apply a pattern to, or otherwise change"
+            + " the model is a mutation and must use CONCEPTUAL_GENERATION or INSPECT_AGENT, even"
+            + " when phrased conversationally or as a follow-up. ANSWER is only for questions and"
+            + " explanations that require no model mutation. Return only the schema.";
     boolean modelEmpty = hasNoModelElements(workspace);
     int sourceChars = sourceDocument == null ? 0 : sourceDocument.length();
     boolean conceptualAllowed = !destructiveConfirmed;

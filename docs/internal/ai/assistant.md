@@ -1,6 +1,6 @@
 # AI assistant setup and architecture
 
-Updated: 2026-09-09
+Updated: 2026-09-13
 
 This is the implementation reference for Varka's modeling chatbot. The supported assistant scope is
 CIM and PIM. PSM modeling remains available elsewhere in Varka, but `ChatbotController` rejects PSM
@@ -23,11 +23,11 @@ VARKA_AI_MODEL=Gemma-4-31B-IT
 VARKA_AI_OPENAI_PROTOCOL=json_schema
 VARKA_AI_NATIVE_TOOLS_PREFERRED=false
 VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
-VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=40
-VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=64
+VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=64
+VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=96
 VARKA_AI_PROVIDER_RETRY_ATTEMPTS=0
 VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION=true
-VARKA_AI_LLM_REVIEW_ENABLED=false
+VARKA_AI_LLM_REVIEW_ENABLED=true
 ```
 
 `agent-test` and `conceptual-test` are acceptance-test overrides. `unified` is the sole normal
@@ -91,17 +91,19 @@ Production durable conceptual turns run these stages:
    closure fits capacity.
 3. **Blueprint.** The LLM plans stable object IDs, exact types, legal containment, major references,
    obligation IDs, source-unit IDs, and slices. Every selected semantic type must appear.
-4. **Private slices.** Object payloads are generated into durable private work items. Large plans
-   start at two objects per slice and fall back to one after length truncation.
+4. **Private slices.** Object payloads are generated into durable private work items. Gemma plans
+   start at four objects per slice and adapt through two and one after length truncation. Other
+   provider profiles retain their configured/default slice behavior.
 5. **Optional independent obligation review.** When enabled, the LLM returns per-obligation states
    and exact object and relationship evidence. Candidate EClasses are alternatives, not a
-   conjunctive checklist. The validated Gemma deployment currently disables this extra judge call.
+   conjunctive checklist. The validated Gemma deployment enables this final evidence review, while
+   limiting whole-blueprint critique to one pass to keep interactive evolution bounded.
 6. **Compilation.** Deterministic code resolves stable IDs, attributes, containment, references,
    required features, ownership, multiplicity, and evidence into `ModelCommandBatch`.
 7. **Structural gate and commit.** The private candidate is structurally validated and committed as
    one expected-revision checkpoint.
 
-The schema maximum is 18 blueprint objects/types. Effective capacity can be lower because the
+The schema maximum is 96 blueprint objects/types. Effective capacity can be lower because the
 workflow reserves calls for routing/review/repair and required Ecore closure adds supporting types.
 Abstract required targets count toward capacity. The backend exposes exact creatable subtypes and
 the LLM chooses one; deterministic code never selects a business subtype.
@@ -192,12 +194,16 @@ items so a worker restart can resume rather than reinterpret completed stages.
 
 The current Gemma profile has live successes for active-metamodel explanation, source attachment
 to CIM, fresh CIM, fresh PIM, existing CIM evolution through the earlier agent path, and existing
-PIM conceptual evolution. The latest PIM evolution preserved its 13-node order/payment/notification
-base and added 11 cancellation/refund nodes in one structurally valid checkpoint. The edit used 10
-provider calls and completed in 268 seconds. Focused routing and conceptual-workflow tests pass
-47/47.
+PIM conceptual evolution. A fresh serverless PIM run now creates an explicit start/task/end path
+with complete `WorkflowTransition.source` and `WorkflowTransition.target` edges. The latest
+four-turn vending-machine vibe-modeling campaign preserved one active model across the initial two
+requirements, payment/event evolution, explicit workflow refinement, and saga-style refund,
+idempotency, retry, and resilience evolution. It committed four structurally valid checkpoints,
+grew from 37 to 89 inspected nodes, and finished with 10 workflow steps and 17/17 complete
+transitions. The campaign used 54 provider calls and completed in 1,482 seconds. Exact evidence is
+in `live-eval-current-pim.md` and `live-eval-pim-vibe.md`.
 
 Do not describe the assistant as perfectly reliable or production-ready. Required ten-run
 campaigns, explanation paraphrase campaigns, failure/restart matrices, repeated CIM/PIM
-preservation evidence, latency work, and visual UI verification remain incomplete. Exact evidence is recorded in
-`live-eval-gate-report.md`.
+preservation evidence, latency work, and visual UI verification remain incomplete. The live API
+campaign demonstrates functional recovery, not a statistical production-readiness claim.

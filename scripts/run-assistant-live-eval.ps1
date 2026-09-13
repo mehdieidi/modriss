@@ -146,6 +146,41 @@ function Get-EClasses {
   return @($types)
 }
 
+function Get-ObjectsByEClass {
+  param($Value, [string[]]$Names)
+  $result = [System.Collections.Generic.List[object]]::new()
+  $resultIds = [System.Collections.Generic.HashSet[string]]::new()
+  if ($null -eq $Value) { return @() }
+  $wanted = [System.Collections.Generic.HashSet[string]]::new([string[]]$Names)
+  $stack = [System.Collections.Generic.Stack[object]]::new()
+  $visited = [System.Collections.Generic.HashSet[int]]::new()
+  $stack.Push($Value)
+  while ($stack.Count -gt 0) {
+    $current = $stack.Pop()
+    if ($null -eq $current -or $current -is [string] -or $current.GetType().IsValueType) { continue }
+    $identity = [System.Runtime.CompilerServices.RuntimeHelpers]::GetHashCode($current)
+    if (-not $visited.Add($identity)) { continue }
+    $eClass = $current.PSObject.Properties["eClass"]
+    if ($eClass -and $wanted.Contains([string]$eClass.Value)) {
+      $idProperty = $current.PSObject.Properties["id"]
+      $stableId = if ($idProperty) { [string]$idProperty.Value } else { "" }
+      if ([string]::IsNullOrWhiteSpace($stableId) -or $resultIds.Add($stableId)) { $result.Add($current) }
+    }
+    if ($current -is [System.Collections.IDictionary]) {
+      foreach ($item in $current.Values) { $stack.Push($item) }
+    } elseif ($current -is [System.Collections.IEnumerable]) {
+      foreach ($item in $current) { $stack.Push($item) }
+    } else {
+      foreach ($property in $current.PSObject.Properties) {
+        if ($property.MemberType -eq "NoteProperty" -or $property.MemberType -eq "Property") {
+          $stack.Push($property.Value)
+        }
+      }
+    }
+  }
+  return @($result)
+}
+
   function Count-StructuralNodes {
     param($Value)
     if ($null -eq $Value) { return 0 }
@@ -184,12 +219,22 @@ function Inspect-Model {
   $modelJson = $model.modelJson
   $visual = $modelJson.diagram
   if ($null -eq $visual -or $null -eq $visual.elements) { $visual = $modelJson.graph }
+  $stepTypes = @("StartStep", "SuccessEndStep", "FailureEndStep", "TaskStep", "ChoiceStep", "ParallelStep", "MapStep", "WaitStep", "PassStep")
+  $workflowSteps = @(Get-ObjectsByEClass -Value $modelJson -Names $stepTypes)
+  $workflowTransitions = @(Get-ObjectsByEClass -Value $modelJson -Names @("WorkflowTransition"))
+  $completeTransitions = @($workflowTransitions | Where-Object {
+    $null -ne $_.source -and -not [string]::IsNullOrWhiteSpace([string]$_.source) -and
+    $null -ne $_.target -and -not [string]::IsNullOrWhiteSpace([string]$_.target)
+  })
   [pscustomobject]@{
     StructuralNodes = Count-StructuralNodes $modelJson
     Elements = Count-Array $visual.elements
     Relationships = Count-Array $visual.relationships
     ValidationValid = $validation.valid
     EClasses = @(Get-EClasses $modelJson)
+    WorkflowSteps = $workflowSteps.Count
+    WorkflowTransitions = $workflowTransitions.Count
+    CompleteWorkflowTransitions = $completeTransitions.Count
     ModelText = ($modelJson | ConvertTo-Json -Depth 60 -Compress)
   }
 }
@@ -259,6 +304,9 @@ function Run-Scenario {
     StructuralNodes = $inspection.StructuralNodes
     Elements = $inspection.Elements
     Relationships = $inspection.Relationships
+    WorkflowSteps = $inspection.WorkflowSteps
+    WorkflowTransitions = $inspection.WorkflowTransitions
+    CompleteWorkflowTransitions = $inspection.CompleteWorkflowTransitions
     ValidationValid = $inspection.ValidationValid
     EClasses = $inspection.EClasses
     ModelId = $turn.modelId
@@ -310,6 +358,37 @@ function Run-EditScenario {
     Revision = $turn.revision
     Message = $turn.finalMessage
     SessionId = $created.SessionId
+  }
+}
+
+function Run-PimVibeEvolutionScenario {
+  param([string]$Token, [string]$ProjectId)
+  $started = Get-Date
+  $base = Run-Scenario -Token $Token -ProjectId $ProjectId -Name "pim-vibe-evolution" -Level "pim" -Prompt "Model exactly these first two requirements for a provider-neutral vending-machine backend: R1 expose an HTTP API that accepts a purchase for a selected product; R2 persist machine inventory and purchase transactions. Connect the request handling behavior to both persistent data responsibilities."
+  if (-not $base.ModelId -or $base.State -ne "SUCCEEDED") { return $base }
+  $baseInspection = Inspect-Model -Token $Token -Level "pim" -ModelId $base.ModelId
+
+  $payment = Send-Turn -Token $Token -SessionId $base.SessionId -ModelId $base.ModelId -Revision $base.Revision -Message "Add one new requirement without replacing the existing architecture: R3 authorize payment through an external provider adapter and publish explicit payment-succeeded and payment-failed events. Reuse and connect the existing purchase behavior and transaction data."
+  if ($payment.Turn.state -ne "SUCCEEDED") { $base.State = $payment.Turn.state; $base.Message = $payment.Turn.finalMessage; return $base }
+  $workflow = Send-Turn -Token $Token -SessionId $base.SessionId -ModelId $payment.Turn.modelId -Revision $payment.Turn.revision -Message "Add R4 as an executable purchase workflow: start, validate inventory, authorize payment, update inventory, and finish with explicit success and failure outcomes. Create proper workflow transition objects with source and target references so every branch is connected; do not merely place step nodes on the canvas."
+  if ($workflow.Turn.state -ne "SUCCEEDED") { $base.State = $workflow.Turn.state; $base.Message = $workflow.Turn.finalMessage; return $base }
+  $pattern = Send-Turn -Token $Token -SessionId $base.SessionId -ModelId $workflow.Turn.modelId -Revision $workflow.Turn.revision -Message "Refine the existing purchase flow using a saga-style compensation design: if inventory update fails after payment authorization, invoke a refund through the existing payment integration. Add idempotency and retry/resilience policies where the PIM metamodel supports them. Preserve all R1-R4 elements and connect the compensation path into the workflow."
+  $final = Inspect-Model -Token $Token -Level "pim" -ModelId $pattern.Turn.modelId
+  [pscustomobject]@{
+    Scenario="pim-vibe-evolution"; Level="PIM"; State=$pattern.Turn.state; Seconds=[int]((Get-Date)-$started).TotalSeconds
+    ProviderCalls=[int]$base.ProviderCalls+[int]$payment.ProviderCalls+[int]$workflow.ProviderCalls+[int]$pattern.ProviderCalls
+    PromptTokens=[long]$base.PromptTokens+[long]$payment.PromptTokens+[long]$workflow.PromptTokens+[long]$pattern.PromptTokens
+    CompletionTokens=[long]$base.CompletionTokens+[long]$payment.CompletionTokens+[long]$workflow.CompletionTokens+[long]$pattern.CompletionTokens
+    RepairAttempts=[int]$base.RepairAttempts+[int]$payment.Turn.repairAttempts+[int]$workflow.Turn.repairAttempts+[int]$pattern.Turn.repairAttempts
+    FirstCheckpointSeconds=$base.FirstCheckpointSeconds; Checkpoints=[int]$base.Checkpoints+(Count-Checkpoint $payment.Turn)+(Count-Checkpoint $workflow.Turn)+(Count-Checkpoint $pattern.Turn)
+    SavedElements=$pattern.Turn.savedElementCount; CoveragePercent=$pattern.Turn.coveragePercent; Provenance=$pattern.Turn.provenance
+    Resumes=[int]$payment.ResumeCount+[int]$workflow.ResumeCount+[int]$pattern.ResumeCount; InitialStructuralNodes=$baseInspection.StructuralNodes
+    StructuralNodes=$final.StructuralNodes; Elements=$final.Elements; Relationships=$final.Relationships; WorkflowSteps=$final.WorkflowSteps
+    WorkflowTransitions=$final.WorkflowTransitions; CompleteWorkflowTransitions=$final.CompleteWorkflowTransitions; ValidationValid=$final.ValidationValid; EClasses=$final.EClasses
+    InitialFeaturePresent=($baseInspection.ModelText -match '(?i)purchase') -and ($baseInspection.ModelText -match '(?i)inventory')
+    InitialFeaturePreserved=($final.ModelText -match '(?i)purchase') -and ($final.ModelText -match '(?i)inventory')
+    AddedFeaturePresent=($final.ModelText -match '(?i)refund|compensat') -and ($final.ModelText -match '(?i)payment')
+    ModelId=$pattern.Turn.modelId; Revision=$pattern.Turn.revision; Message=$pattern.Turn.finalMessage; SessionId=$base.SessionId
   }
 }
 
@@ -368,6 +447,7 @@ function Run-FixtureScenario {
     "create-pim-serverless" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "pim" -Prompt "Create a complete PIM for serverless order processing with HTTP API, command-handling behavior, event publication and consumption, persistent data, external payment integration, observability, security, and workflow behavior." }
     "create-pim-doctor-booking" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "pim" -Prompt "Create a serverless model for online doctor visit appointment booking." }
     "edit-existing-pim-add-pattern" { return Run-EditScenario -Token $Token -ProjectId $ProjectId }
+    "pim-vibe-evolution" { return Run-PimVibeEvolutionScenario -Token $Token -ProjectId $ProjectId }
     "cim-feature-evolution" { return Run-CimFeatureEvolutionScenario -Token $Token -ProjectId $ProjectId }
     "answer-only" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "cim" -Prompt "Explain what a CIM model contains. Do not create, edit, or delete a model." }
     "create-cim" { return Run-Scenario -Token $Token -ProjectId $ProjectId -Name $Fixture.id -Level "cim" -Prompt "Create a compact CIM for an appointment booking service with actors, goals, concepts, and relationships." }
@@ -488,6 +568,9 @@ function Test-ScenarioGate {
         $failures += "workflow has no concrete step evidence"
       }
       if ([int]$Result.Relationships -lt 5) { $failures += "serverless PIM has too few relationships" }
+      if ([int]$Result.WorkflowSteps -lt 3) { $failures += "serverless workflow has fewer than three concrete steps" }
+      if ([int]$Result.WorkflowTransitions -lt 2) { $failures += "serverless workflow has fewer than two transition objects" }
+      if ([int]$Result.CompleteWorkflowTransitions -ne [int]$Result.WorkflowTransitions) { $failures += "one or more workflow transitions lack source/target endpoints" }
     }
     "create-pim-doctor-booking" {
       if ([int]$Result.StructuralNodes -lt 8) { $failures += "doctor-booking PIM is too shallow" }
@@ -502,6 +585,7 @@ function Test-ScenarioGate {
         $failures += "doctor-booking workflow has no concrete step"
       }
       if ([int]$Result.Relationships -lt 4) { $failures += "doctor-booking PIM has too few relationships" }
+      if ([int]$Result.WorkflowSteps -gt 1 -and [int]$Result.WorkflowTransitions -lt ([int]$Result.WorkflowSteps - 1)) { $failures += "doctor-booking workflow steps are not connected by transitions" }
     }
     "edit-existing-pim-add-pattern" {
       if ([int]$Result.StructuralNodes -lt 6) { $failures += "PIM edit did not produce enough model structure" }
@@ -509,6 +593,15 @@ function Test-ScenarioGate {
       if ($Result.InitialFeaturePreserved -ne $true) { $failures += "existing order/payment/notification architecture was not preserved" }
       if ($Result.AddedFeaturePresent -ne $true) { $failures += "cancellation/refund feature was not added" }
       if ([int]$Result.StructuralNodes -le [int]$Result.InitialStructuralNodes) { $failures += "second PIM feature request did not extend model structure" }
+    }
+    "pim-vibe-evolution" {
+      if ([int]$Result.Checkpoints -lt 4) { $failures += "not every incremental prompt produced a checkpoint" }
+      if ($Result.InitialFeaturePresent -ne $true) { $failures += "initial two requirements were not modeled" }
+      if ($Result.InitialFeaturePreserved -ne $true) { $failures += "later turns did not preserve the initial requirements" }
+      if ($Result.AddedFeaturePresent -ne $true) { $failures += "saga compensation/refund requirement was not modeled" }
+      if ([int]$Result.WorkflowSteps -lt 5) { $failures += "incremental purchase workflow is too shallow" }
+      if ([int]$Result.WorkflowTransitions -lt 4) { $failures += "incremental purchase workflow is not connected" }
+      if ([int]$Result.CompleteWorkflowTransitions -ne [int]$Result.WorkflowTransitions) { $failures += "incremental workflow has incomplete transition endpoints" }
     }
     "cim-feature-evolution" {
       if ($Result.InitialFeaturePresent -ne $true) { $failures += "initial order-tracking feature was not modeled" }
@@ -530,12 +623,13 @@ function Test-ScenarioGate {
   # modeling turns. This is an acceptance ceiling; every call and retry remains audited.
   # Explanation turns use one semantic routing call and one answer call. Allow one additional
   # audited call for a strict-schema correction; no deterministic answer is substituted.
-  $callBudget = if ($scenarioId -in @("cim-feature-evolution", "edit-existing-pim-add-pattern")) { 48 } elseif ($Fixture.route -eq "EXPLANATION") { 3 } else { 24 }
+  $callBudget = if ($scenarioId -eq "pim-vibe-evolution") { 96 } elseif ($scenarioId -in @("cim-feature-evolution", "edit-existing-pim-add-pattern")) { 48 } elseif ($Fixture.route -eq "EXPLANATION") { 3 } else { 24 }
   $callBudget += [int]$ProviderRetryCount
   if ([int]$Result.ProviderCalls -gt $callBudget) {
     $failures += "provider calls $($Result.ProviderCalls) exceed budget $callBudget"
   }
-  if ([int]$Result.Seconds -gt 420) { $failures += "latency $($Result.Seconds)s exceeds 420s" }
+  $latencyBudget = if ($scenarioId -eq "pim-vibe-evolution") { 1680 } else { 420 }
+  if ([int]$Result.Seconds -gt $latencyBudget) { $failures += "latency $($Result.Seconds)s exceeds ${latencyBudget}s" }
   [pscustomobject]@{
     Scenario = $Result.Scenario
     Passed = $failures.Count -eq 0
@@ -591,13 +685,13 @@ $lines = @(
   "",
   "Generated: $(Get-Date -Format o)",
   "",
-  "| Scenario | Level | Final state | Total latency (s) | First checkpoint (s) | Provider calls | Prompt tokens | Completion tokens | Checkpoint repairs | Provider retries | Coverage | Checkpoints | Initial nodes | Final nodes | Initial feature | Preserved | Added feature | Structural status | Message |",
-  "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | --- | --- | --- | --- |"
+  "| Scenario | Level | Final state | Total latency (s) | First checkpoint (s) | Provider calls | Prompt tokens | Completion tokens | Checkpoint repairs | Provider retries | Coverage | Checkpoints | Initial nodes | Final nodes | Workflow steps | Workflow transitions | Complete transitions | Initial feature | Preserved | Added feature | Structural status | Message |",
+  "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- |"
 )
 foreach ($result in $results) {
   $message = ([string]$result.Message).Replace("|", "\|").Replace("`r", " ").Replace("`n", " ")
   $repairs = if ($null -eq $result.RepairAttempts) { 0 } else { [int]$result.RepairAttempts }
-  $lines += "| $($result.Scenario) | $($result.Level) | $($result.State) | $($result.Seconds) | $($result.FirstCheckpointSeconds) | $($result.ProviderCalls) | $($result.PromptTokens) | $($result.CompletionTokens) | $repairs | $($result.ProviderRetryAttempts) | $($result.CoveragePercent) | $($result.Checkpoints) | $($result.InitialStructuralNodes) | $($result.StructuralNodes) | $($result.InitialFeaturePresent) | $($result.InitialFeaturePreserved) | $($result.AddedFeaturePresent) | $($result.ValidationValid) | $message |"
+  $lines += "| $($result.Scenario) | $($result.Level) | $($result.State) | $($result.Seconds) | $($result.FirstCheckpointSeconds) | $($result.ProviderCalls) | $($result.PromptTokens) | $($result.CompletionTokens) | $repairs | $($result.ProviderRetryAttempts) | $($result.CoveragePercent) | $($result.Checkpoints) | $($result.InitialStructuralNodes) | $($result.StructuralNodes) | $($result.WorkflowSteps) | $($result.WorkflowTransitions) | $($result.CompleteWorkflowTransitions) | $($result.InitialFeaturePresent) | $($result.InitialFeaturePreserved) | $($result.AddedFeaturePresent) | $($result.ValidationValid) | $message |"
 }
 # Windows PowerShell 5 does not support utf8NoBOM; UTF8 is portable across the developer and
 # CI shells used for this live gate.

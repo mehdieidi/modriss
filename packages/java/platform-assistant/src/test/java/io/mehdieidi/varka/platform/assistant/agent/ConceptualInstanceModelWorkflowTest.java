@@ -507,7 +507,21 @@ class ConceptualInstanceModelWorkflowTest {
             new AgentModelTools(contracts, models).scoped(ModelLevel.PIM, workspace),
             false);
 
+    assertTrue(provider.prompts().get(0).system().contains("WorkflowTransition"));
     String blueprintPrompt = provider.prompts().get(1).user();
+    assertTrue(
+        provider
+            .prompts()
+            .get(1)
+            .system()
+            .contains("A workflow/process with multiple steps is not connected"));
+    assertTrue(provider.prompts().get(1).system().contains("WorkflowTransition"));
+    assertTrue(
+        provider
+            .prompts()
+            .get(1)
+            .system()
+            .contains("reuse its exact ID instead of planning a duplicate edge"));
     assertTrue(
         blueprintPrompt.contains("Workflow.steps requires one or more concrete WorkflowStep"));
     assertTrue(blueprintPrompt.contains("StartStep"));
@@ -1722,6 +1736,34 @@ class ConceptualInstanceModelWorkflowTest {
     var batch = conceptual.commands(emptyCim(), contracts, ModelLevel.CIM);
 
     assertEquals("Actor", batch.creates().get(0).eClass());
+  }
+
+  @Test
+  void localizesAnIllegalReferenceToTheExactConceptualObject() throws Exception {
+    var conceptual =
+        ConceptualInstanceModelWorkflow.ConceptualModel.parse(
+            mapper,
+            """
+{
+  "transition-1": {
+    "type": "WorkflowTransition",
+    "attributes": [],
+    "associations": {
+      "compositions": [],
+      "references": [
+        {"associationName": "dataAccessTarget", "associatedClassName": "WorkflowTransition", "instanceID": "transition-1"}
+      ]
+    }
+  }
+}
+""");
+
+    PlatformException failure =
+        assertThrows(
+            PlatformException.class,
+            () -> conceptual.commands(emptyPim(), contracts, ModelLevel.PIM));
+
+    assertTrue(failure.getMessage().contains("conceptual object 'transition-1'"));
   }
 
   @Test

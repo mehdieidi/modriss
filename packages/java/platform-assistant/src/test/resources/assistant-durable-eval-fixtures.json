@@ -25,6 +25,11 @@
     "assertions": ["checkpoint", "structural_validity", "feature_preservation"]
   },
   {
+    "id": "pim-vibe-evolution",
+    "route": "COMPLEX_EDIT",
+    "assertions": ["checkpoint", "structural_validity", "feature_preservation"]
+  },
+  {
     "id": "cim-feature-evolution",
     "route": "COMPLEX_EDIT",
     "assertions": ["checkpoint", "structural_validity", "feature_preservation"]

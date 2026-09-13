@@ -9,6 +9,7 @@ import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.ReferenceContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.MetamodelKnowledgeService.TypeContract;
 import io.mehdieidi.varka.platform.assistant.metamodel.TypeContractService;
+import io.mehdieidi.varka.platform.assistant.prompt.AssistantSkills;
 import io.mehdieidi.varka.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.varka.platform.assistant.tools.AgentModelTools;
 import io.mehdieidi.varka.platform.assistant.turn.AssistantTurnStore;
@@ -265,6 +266,7 @@ public final class ConceptualInstanceModelWorkflow {
                 level,
                 contracts.requiredContainmentClosure(level, new ArrayList<>(blueprint.types())));
         LinkedHashMap<String, JsonNode> generated = restoredObjects(durableTurnId, blueprint);
+        restoreGeneratedTypesFromBlueprint(generated, blueprint);
         generateSlices(
             durableTurnId,
             level,
@@ -290,6 +292,7 @@ public final class ConceptualInstanceModelWorkflow {
                   metadata.provider(),
                   metadata.model() == null ? properties.model() : metadata.model());
         }
+        restoreGeneratedTypesFromBlueprint(generated, blueprint);
         persistObjects(durableTurnId, blueprint, generated);
         ConceptualModel conceptual = new ConceptualModel(generated);
         ModelCommandBatch batch = null;
@@ -317,6 +320,7 @@ public final class ConceptualInstanceModelWorkflow {
                     Set.of(),
                     audit,
                     maxCalls);
+            restoreGeneratedTypesFromBlueprint(generated, blueprint);
             persistObjects(durableTurnId, blueprint, generated);
             conceptual = new ConceptualModel(generated);
             compilerCorrections++;
@@ -376,41 +380,47 @@ public final class ConceptualInstanceModelWorkflow {
   private ObligationLedger planObligations(
       ModelLevel level, String request, JsonNode current, UsageAudit audit, int maxCalls) {
     String system =
-        "Interpret the request into a compact requirement-obligation ledger before model type"
+        conceptualPlanningSkills(level, current)
+            + "\n\n"
+            + "Interpret the request into a compact requirement-obligation ledger before model type"
             + " selection. Semantic interpretation and exact EClass mapping are your decisions."
-            + " Preserve every explicit functional, data, integration, security, observability,"
-            + " and workflow requirement as a separate MANDATORY obligation; use OPTIONAL only"
-            + " for genuinely nonessential enrichment. Map each obligation to the smallest jointly"
+            + " Preserve every explicit functional, data, integration, security, observability, and"
+            + " workflow requirement as a separate MANDATORY obligation; use OPTIONAL only for"
+            + " genuinely nonessential enrichment. Map each obligation to the smallest jointly"
             + " sufficient set of exact creatable EClasses from the authoritative live index."
             + " Normally use exactly one EClass per obligation; use multiple only when each is"
-            + " indispensable distinct semantic evidence. In particular, a requested behavior"
-            + " with an explicit consequence, resulting state, invariant, preservation effect,"
-            + " or pre/postcondition needs both a legal behavioral carrier and the metamodel type"
-            + " that represents that condition or state (for example, a process plus Condition),"
-            + " when the authoritative index supports that representation. Likewise explicit"
+            + " indispensable distinct semantic evidence. In particular, a requested behavior with"
+            + " an explicit consequence, resulting state, invariant, preservation effect, or"
+            + " pre/postcondition needs both a legal behavioral carrier and the metamodel type that"
+            + " represents that condition or state (for example, a process plus Condition), when"
+            + " the authoritative index supports that representation. Likewise explicit"
             + " publication/consumption can need both a channel and event type. Do not list"
-            + " containment owners, contracts,"
-            + " workflow steps, schemas, principals, policies, routes, or other structural support"
-            + " unless the request explicitly requires that concept. The Ecore closure and"
-            + " blueprint phases add necessary support. expectedEClasses is a required set, not a"
-            + " list of alternatives. Reuse the same"
-            + " EClass across obligations when appropriate. Do not match words mechanically and"
-            + " do not collapse a source list of independently modelable named actors, domain"
-            + " concepts, lifecycle states, rules, risks, acceptance behaviors, commands, queries,"
-            + " or events into one token obligation merely to shorten the ledger. Preserve the"
-            + " source's semantic granularity while grouping only statements that genuinely form"
-            + " one model concept. Never detach an action from its explicitly required consequence;"
-            + " retain every conjunct, condition, duration, preservation effect, and state"
-            + " transition in the same obligation or in a separate mandatory obligation. Set"
-            + " minimumEvidenceObjects to the number of distinct model"
-            + " instances required as evidence for the obligation: normally 1, but count every"
-            + " jointly necessary carrier, explicit outcome/condition/state, and"
-            + " explicitly named member of a finite source list when the metamodel represents"
-            + " those members as individual instances (for example, six named lifecycle states"
-            + " require 6). Never treat a comma-separated scalar value as multiple instances."
-            + " do not generate objects. Use"
-            + " stable IDs OBL-1, OBL-2, ... and return JSON only. Every obligation item must"
-            + " literally contain a non-empty string id, a non-empty string obligation,"
+            + " containment owners, contracts, workflow steps, schemas, principals, policies,"
+            + " routes, or other structural support unless the request explicitly requires that"
+            + " concept. Workflow behavior, an execution sequence, branching, or a request to"
+            + " connect/refine a workflow explicitly requires concrete steps and the metamodel"
+            + " relationship objects that connect those steps. When the live index supports them,"
+            + " represent a nontrivial workflow with a start, at least one meaningful behavioral"
+            + " step, an outcome step, and transition objects whose required source and target"
+            + " endpoints make execution order explicit. Put those exact creatable EClasses in"
+            + " expectedEClasses; do not assume containment or canvas layout implies control flow."
+            + " The Ecore closure and blueprint phases add necessary support. expectedEClasses is a"
+            + " required set, not a list of alternatives. Reuse the same EClass across obligations"
+            + " when appropriate. Do not match words mechanically and do not collapse a source list"
+            + " of independently modelable named actors, domain concepts, lifecycle states, rules,"
+            + " risks, acceptance behaviors, commands, queries, or events into one token obligation"
+            + " merely to shorten the ledger. Preserve the source's semantic granularity while"
+            + " grouping only statements that genuinely form one model concept. Never detach an"
+            + " action from its explicitly required consequence; retain every conjunct, condition,"
+            + " duration, preservation effect, and state transition in the same obligation or in a"
+            + " separate mandatory obligation. Set minimumEvidenceObjects to the number of distinct"
+            + " model instances required as evidence for the obligation: normally 1, but count"
+            + " every jointly necessary carrier, explicit outcome/condition/state, and explicitly"
+            + " named member of a finite source list when the metamodel represents those members as"
+            + " individual instances (for example, six named lifecycle states require 6). Never"
+            + " treat a comma-separated scalar value as multiple instances. do not generate"
+            + " objects. Use stable IDs OBL-1, OBL-2, ... and return JSON only. Every obligation"
+            + " item must literally contain a non-empty string id, a non-empty string obligation,"
             + " importance exactly MANDATORY or OPTIONAL, sourceUnitIds as an array, and"
             + " expectedEClasses as a non-empty array of exact creatable EClass names.";
     String user =
@@ -507,7 +517,8 @@ public final class ConceptualInstanceModelWorkflow {
     focusedContracts.forEach(type -> focusedTypes.add(type.eClass()));
     Set<String> concreteRequiredOptions = concreteRequiredOptions(level, focusedContracts);
     String system =
-        "Plan a bounded conceptual instance model for Varka's "
+        conceptualPlanningSkills(level, current)
+            + "\n\nPlan a bounded conceptual instance model for Varka's "
             + level.name()
             + " DSML. Return a small stable-ID ledger, not full attributes or association payloads."
             + " Every object needed for a coherent useful model must have one unique temporary"
@@ -532,6 +543,17 @@ public final class ConceptualInstanceModelWorkflow {
             + " generic object represents a source list of several actors, terms, states, risks,"
             + " rules, behaviors, or domain concepts. Use relationships to make the planned model"
             + " coherent rather than producing an unconnected catalogue."
+            + " A workflow/process with multiple steps is not connected merely because the steps"
+            + " share an owner or appear in referenceTargets. When the focused contracts expose a"
+            + " transition/flow relationship EClass, plan explicit instances of it, contain them"
+            + " under the legal owner, and put both endpoint step IDs in each transition object's"
+            + " referenceTargets. Plan enough transitions to form a continuous entry-to-outcome"
+            + " path and explicit branch paths requested by the requirements."
+            + " Every referenceTargets entry must be realizable through at least one writable"
+            + " EReference on the source object's exact contract whose target type accepts the"
+            + " planned target EClass. If the semantic relationship needs an intermediate carrier"
+            + " such as a Function, adapter, policy, or trace link, plan that carrier explicitly;"
+            + " never use an unrelated inherited reference as a substitute."
             + " Use only the closed focused EClass vocabulary plus the supplied concrete options"
             + " for abstract required targets. For EVERY abstract EClass in the selected"
             + " vocabulary, choose a semantically appropriate concrete subtype from the explicit"
@@ -540,6 +562,9 @@ public final class ConceptualInstanceModelWorkflow {
             + " root is rootId and must not be planned as an object. Do not include prose or"
             + " markdown. When the persisted-element index contains a concept that satisfies the"
             + " request, reuse its exact persisted ID instead of creating a semantic duplicate."
+            + " For relationship objects, compare endpoint IDs in the persisted-element index;"
+            + " when the same relationship type already connects the same endpoints, reuse its"
+            + " exact ID instead of planning a duplicate edge."
             + " Include an existing object only when it supplies obligation evidence, receives a"
             + " new relationship, or needs an attribute update. When a new nested object is owned"
             + " by a persisted element, include an exact-ID blueprint record for that persisted"
@@ -690,8 +715,10 @@ public final class ConceptualInstanceModelWorkflow {
         boolean sourceBacked =
             request != null && request.contains("SOURCE SPECIFICATION (authoritative input)");
         if (properties.llmReviewEnabled()
-            && (sourceBacked || hasPersistedElements(current))
-            && blueprintCritiques < MAX_BLUEPRINT_CRITIQUES) {
+            && (sourceBacked
+                || hasPersistedElements(current)
+                || (level == ModelLevel.PIM && isGemmaProfile()))
+            && blueprintCritiques < maxBlueprintCritiques()) {
           blueprintCritiques++;
           requireBlueprintCompletenessReview(
               level, request, current, obligations, blueprint, audit, maxCalls);
@@ -838,7 +865,20 @@ public final class ConceptualInstanceModelWorkflow {
             + " will choose the exact feature. Never demand a feature-name field that is absent"
             + " from the blueprint schema. A concrete subtype is compatible with its abstract"
             + " Ecore target. Never recommend instantiating an abstract or non-creatable EClass;"
-            + " choose an exact type from the supplied concrete options. Apply a sound"
+            + " choose an exact type from the supplied concrete options. For every planned"
+            + " workflow/process with two or more steps, inspect the supplied contracts for its"
+            + " transition/flow relationship EClass. Reject a catalogue of co-contained steps"
+            + " that has no explicit relationship instances. Each planned transition must identify"
+            + " compatible source and target step IDs through referenceTargets, and the set must"
+            + " form the requested entry-to-outcome and branch paths. Do not treat diagram"
+            + " proximity, orderIndex, prose, or common containment as execution connectivity."
+            + " In an evolution, reject a new relationship object whose type and endpoint target"
+            + " IDs duplicate a persisted relationship; require reuse of the persisted exact ID."
+            + " Also reject every referenceTargets pair for which the source EClass has no legal"
+            + " writable EReference compatible with the target EClass. Require a semantically"
+            + " appropriate intermediate carrier object when the contracts require one; never"
+            + " repurpose traceability or another unrelated inherited reference."
+            + " Apply a sound"
             + " level-appropriate abstraction"
             + " boundary: when a requirement enumerates command/query inputs, event payload, or"
             + " captured data, plan compatible InformationItem evidence and a relationship target;"
@@ -918,9 +958,26 @@ public final class ConceptualInstanceModelWorkflow {
   }
 
   private int defaultSliceSize() {
+    // The validated Gemma deployment reliably returns four compact schema-bound objects within
+    // the 8k slice ceiling. Fewer, larger calls substantially reduce time-to-checkpoint; the
+    // existing malformed/truncation path still bisects 4 -> 2 -> 1 without inventing content.
+    if (isGemmaProfile()) return 4;
     String model =
         properties.model() == null ? "" : properties.model().toLowerCase(java.util.Locale.ROOT);
     return model.startsWith("deepseek") || model.contains("/deepseek") ? 1 : 2;
+  }
+
+  private int maxBlueprintCritiques() {
+    // Gemma benefits from one independent whole-blueprint critique, but repeated full-plan
+    // critique/repair cycles add minutes and can oscillate. The final obligation review still
+    // checks the generated evidence and can request bounded object corrections.
+    return isGemmaProfile() ? 1 : MAX_BLUEPRINT_CRITIQUES;
+  }
+
+  private boolean isGemmaProfile() {
+    String model =
+        properties.model() == null ? "" : properties.model().toLowerCase(java.util.Locale.ROOT);
+    return model.startsWith("gemma-4") || model.contains("/gemma-4");
   }
 
   private String containmentIndex(ModelLevel level, Set<String> focusedTypes) {
@@ -2224,6 +2281,7 @@ public final class ConceptualInstanceModelWorkflow {
             + rejected;
     AssistantModelProvider.AssistantReply reply = audit.call(system, user, "conceptual_correction");
     applyReview(reply.content(), blueprint, generated, correctionIds.size());
+    restoreGeneratedTypesFromBlueprint(generated, blueprint);
     int structuralCorrections = 0;
     while (true) {
       try {
@@ -2437,15 +2495,31 @@ public final class ConceptualInstanceModelWorkflow {
     }
     if (affectedIds.isEmpty()) affectedIds.add(blueprint.objects().get(0).instanceId());
     List<String> directFailures = List.copyOf(affectedIds);
-    for (String id : directFailures) {
-      BlueprintObject object = plannedById.get(id);
-      if (object != null && !"rootId".equals(object.ownerInstanceId())) {
-        affectedIds.add(object.ownerInstanceId());
+    if (diagnostic != null && diagnostic.contains("no incoming composition")) {
+      LinkedHashSet<String> owners = new LinkedHashSet<>();
+      for (String id : directFailures) {
+        BlueprintObject object = plannedById.get(id);
+        if (object != null && !"rootId".equals(object.ownerInstanceId())) {
+          owners.add(object.ownerInstanceId());
+        }
       }
-      blueprint.objects().stream()
-          .filter(candidate -> candidate.referenceTargets().contains(id))
-          .map(BlueprintObject::instanceId)
-          .forEach(affectedIds::add);
+      if (!owners.isEmpty()) {
+        // Containment is authored on the parent. Replacing each child cannot repair this failure
+        // and previously consumed the durable call budget one child at a time.
+        affectedIds.clear();
+        affectedIds.addAll(owners);
+      }
+    } else {
+      for (String id : directFailures) {
+        BlueprintObject object = plannedById.get(id);
+        if (object != null && !"rootId".equals(object.ownerInstanceId())) {
+          affectedIds.add(object.ownerInstanceId());
+        }
+        blueprint.objects().stream()
+            .filter(candidate -> candidate.referenceTargets().contains(id))
+            .map(BlueprintObject::instanceId)
+            .forEach(affectedIds::add);
+      }
     }
     // Owners and relationship neighbours may be persisted reuse targets rather than staged
     // objects. They provide localization context but cannot be replaced by this turn's bounded
@@ -2502,6 +2576,7 @@ public final class ConceptualInstanceModelWorkflow {
       reply = audit.call(system, retryUser, "conceptual_correction");
       applyReview(reply.content(), blueprint, generated, correctionIds.size());
     }
+    restoreGeneratedTypesFromBlueprint(generated, blueprint);
     return reply;
   }
 
@@ -2556,6 +2631,32 @@ public final class ConceptualInstanceModelWorkflow {
             generated.put(id, value);
           });
     }
+  }
+
+  /**
+   * Restores omitted protocol metadata from the LLM-authored blueprint. Durable work items and
+   * correction responses can contain a blank {@code type} even though the same turn already chose
+   * an exact EClass. Reusing that exact choice is structural protocol normalization, not semantic
+   * model generation, and prevents an unrepairable empty-type correction loop after a long turn.
+   */
+  private static void restoreGeneratedTypesFromBlueprint(
+      LinkedHashMap<String, JsonNode> generated, Blueprint blueprint) {
+    Map<String, String> expectedTypes = new LinkedHashMap<>();
+    blueprint.objects().forEach(object -> expectedTypes.put(object.instanceId(), object.type()));
+    generated.replaceAll(
+        (id, value) -> {
+          String expected = expectedTypes.get(id);
+          if (expected == null
+              || expected.isBlank()
+              || value == null
+              || !value.isObject()
+              || (value.path("type").isTextual() && !value.path("type").asText("").isBlank())) {
+            return value;
+          }
+          var normalized = (tools.jackson.databind.node.ObjectNode) value.deepCopy();
+          normalized.put("type", expected);
+          return normalized;
+        });
   }
 
   private JsonNode strictObject(String content, String label) {
@@ -2862,15 +2963,15 @@ public final class ConceptualInstanceModelWorkflow {
         .workflow(turnId)
         .map(AssistantTurnStore.Workflow::plan)
         .map(plan -> plan.path("sliceSize").asInt(initial))
-        .map(size -> Math.max(1, Math.min(2, size)))
+        .map(size -> Math.max(1, Math.min(4, size)))
         .orElse(initial);
   }
 
   private int initialSliceSize(Blueprint blueprint) {
     int normal = defaultSliceSize();
     // Large DeepSeek blueprints would otherwise consume the entire turn budget on one-object
-    // calls. Start with two related objects and retain the existing durable split-to-one recovery
-    // if Arvan length-limits the response.
+    // calls. Start with two related objects and retain durable split-to-one recovery if Arvan
+    // length-limits the response. Other provider profiles use their tested default above.
     return normal == 1 && blueprint.objects().size() > 8 ? 2 : normal;
   }
 
@@ -2878,7 +2979,7 @@ public final class ConceptualInstanceModelWorkflow {
     if (turns == null || turnId == null || turnId.isBlank()) return;
     var workflow = turns.workflow(turnId);
     var plan = durablePlan(turnId);
-    plan.put("sliceSize", Math.max(1, Math.min(2, size)));
+    plan.put("sliceSize", Math.max(1, Math.min(4, size)));
     plan.put("lastTruncationDiagnostic", safe(diagnostic));
     turns.saveWorkflow(
         new AssistantTurnStore.Workflow(
@@ -2991,16 +3092,18 @@ public final class ConceptualInstanceModelWorkflow {
       int maxCalls) {
     int capacity = blueprintCapacity(maxCalls);
     String system =
-        "Select the exact EClasses needed to model the request as a conceptual instance model. This"
-            + " is a semantic modeling decision: choose all object, relationship, policy, contract,"
-            + " and supporting types needed for meaningful nodes and edges. Internally account for"
-            + " every explicit user/source requirement before answering: do not omit requested"
-            + " functional concepts merely to make room for generic cross-cutting qualities. Choose"
-            + " every EClass in each mandatory obligation's expectedEClasses required set. Reuse"
-            + " one type when it genuinely represents multiple obligations. Do not add unrelated"
-            + " alternatives merely for completeness; required structural support is added from"
-            + " Ecore closure after your semantic choice. "
-            + " between 1 and "
+        conceptualPlanningSkills(level, current)
+            + "\n\n"
+            + "Select the exact EClasses needed to model the request as a conceptual instance"
+            + " model. This is a semantic modeling decision: choose all object, relationship,"
+            + " policy, contract, and supporting types needed for meaningful nodes and edges."
+            + " Internally account for every explicit user/source requirement before answering: do"
+            + " not omit requested functional concepts merely to make room for generic"
+            + " cross-cutting qualities. Choose every EClass in each mandatory obligation's"
+            + " expectedEClasses required set. Reuse one type when it genuinely represents multiple"
+            + " obligations. Do not add unrelated alternatives merely for completeness; required"
+            + " structural support is added from Ecore closure after your semantic choice.  between"
+            + " 1 and "
             + capacity
             + " focused types; choose fewer only when required to fit the structural budget. Never"
             + " copy the full type index. Prefer a"
@@ -3241,12 +3344,54 @@ public final class ConceptualInstanceModelWorkflow {
       }
       item.put("ownerId", element.ownerId());
       if (element.ownerFeature() != null) item.put("ownerFeature", element.ownerFeature());
+      var relationships = item.putArray("relationships");
+      node.properties()
+          .forEach(
+              property -> {
+                if ("diagram".equals(property.getKey()) || "graph".equals(property.getKey())) {
+                  return;
+                }
+                JsonNode value = property.getValue();
+                if (value.isArray()) {
+                  for (JsonNode target : value) {
+                    appendIndexedRelationship(relationships, property.getKey(), target);
+                  }
+                } else {
+                  appendIndexedRelationship(relationships, property.getKey(), value);
+                }
+              });
     }
     return result;
   }
 
+  private static void appendIndexedRelationship(
+      tools.jackson.databind.node.ArrayNode relationships, String feature, JsonNode target) {
+    if (target == null || !target.isObject()) return;
+    String targetId = target.path("id").asText("").trim();
+    String targetType = target.path("eClass").asText("").trim();
+    if (targetId.isBlank() || targetType.isBlank()) return;
+    var relationship = relationships.addObject();
+    relationship.put("feature", feature);
+    relationship.put("targetId", targetId);
+    relationship.put("targetType", targetType);
+  }
+
   private boolean hasPersistedElements(JsonNode current) {
-    return !currentElementIndex(current).isEmpty();
+    for (JsonNode element : currentElementIndex(current)) {
+      // A fresh PIM is initialized with this platform-owned structural profile. It is not
+      // user-authored architecture and must not turn an empty-canvas generation into an expensive
+      // existing-model critique/evolution loop.
+      if (!"ImplementationProfile".equals(element.path("type").asText(""))) return true;
+    }
+    return false;
+  }
+
+  private String conceptualPlanningSkills(ModelLevel level, JsonNode current) {
+    List<String> names = new ArrayList<>();
+    names.add("construct-valid-model");
+    if (level == ModelLevel.PIM) names.add("model-pim-serverless");
+    if (hasPersistedElements(current)) names.add("evolve-existing-model");
+    return AssistantSkills.prompt(names.toArray(String[]::new));
   }
 
   private Map<String, String> currentElementTypes(JsonNode current) {
@@ -3644,7 +3789,16 @@ public final class ConceptualInstanceModelWorkflow {
       Map<String, Map<String, JsonNode>> attributes = new LinkedHashMap<>();
       for (Map.Entry<String, JsonNode> entry : effectiveObjects.entrySet()) {
         String id = entry.getKey();
-        TypeContract type = contracts.require(level, entry.getValue().path("type").asText());
+        String requestedType = entry.getValue().path("type").asText("").trim();
+        if (requestedType.isBlank()) {
+          requestedType = existingTypes.getOrDefault(id, "");
+        }
+        if (requestedType.isBlank()) {
+          throw new PlatformException(
+              422,
+              "Conceptual object '" + id + "' has no EClass type after blueprint normalization.");
+        }
+        TypeContract type = contracts.require(level, requestedType);
         if (!type.creatable() && !existingTypes.containsKey(id)) {
           throw new PlatformException(
               422, "EClass '" + type.eClass() + "' is abstract or not creatable.");
@@ -3705,6 +3859,31 @@ public final class ConceptualInstanceModelWorkflow {
       List<ModelCommandBatch.Create> creates = new ArrayList<>();
       Set<String> ready = new LinkedHashSet<>(existingTypes.keySet());
       ready.add("rootId");
+      List<String> missingContainments =
+          pending.entrySet().stream()
+              .filter(entry -> placements.get(entry.getKey()) == null)
+              .filter(
+                  entry ->
+                      rootPlacements(contracts, level, types.get(entry.getKey()).eClass())
+                          .isEmpty())
+              .map(
+                  entry ->
+                      "'"
+                          + entry.getKey()
+                          + "' ("
+                          + types.get(entry.getKey()).eClass()
+                          + ", legal placements "
+                          + contracts.containmentPlacements(
+                              level, types.get(entry.getKey()).eClass())
+                          + ")")
+              .toList();
+      if (!missingContainments.isEmpty()) {
+        throw new PlatformException(
+            422,
+            "New instances have no incoming composition: "
+                + missingContainments
+                + ". Correct their planned owner object(s) with all missing child compositions.");
+      }
       while (!pending.isEmpty()) {
         int before = pending.size();
         for (var iterator = pending.entrySet().iterator(); iterator.hasNext(); ) {
@@ -3922,6 +4101,8 @@ public final class ConceptualInstanceModelWorkflow {
                             (composition ? "Composition" : "Reference")
                                 + " '"
                                 + name
+                                + "' on conceptual object '"
+                                + sourceId
                                 + "' is not writable on "
                                 + sourceType.eClass()
                                 + ". Legal "
