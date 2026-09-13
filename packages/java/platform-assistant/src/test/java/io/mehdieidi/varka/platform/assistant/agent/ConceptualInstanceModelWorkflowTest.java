@@ -48,6 +48,15 @@ class ConceptualInstanceModelWorkflowTest {
     assertEquals(64, obligationSchema.at("/properties/obligations/maxItems").asInt());
     assertEquals(96, blueprintSchema.at("/properties/objects/maxItems").asInt());
     assertEquals(96, blueprintSchema.at("/properties/types/maxItems").asInt());
+    assertTrue(
+        blueprintSchema
+            .at("/properties/objects/items/properties/plannedReferences/items/properties/feature")
+            .isObject());
+    assertTrue(
+        blueprintSchema
+            .at("/properties/objects/items/required")
+            .toString()
+            .contains("plannedReferences"));
     assertEquals(24, blueprintPatchSchema.at("/properties/upsertObjects/maxItems").asInt());
     assertEquals(64, reviewSchema.at("/properties/coverage/maxItems").asInt());
     assertTrue(blueprintReviewSchema.at("/properties/acceptable").isObject());
@@ -312,7 +321,7 @@ class ConceptualInstanceModelWorkflowTest {
             .prompts()
             .get(3)
             .system()
-            .contains("referenceTargets are intentionally unlabelled stable target IDs"));
+            .contains("an unlabelled referenceTargets entry is not relationship evidence"));
     assertTrue(provider.prompts().get(3).user().contains("AUTHORITATIVE WRITABLE ECORE CONTRACTS"));
     assertTrue(
         provider
@@ -538,6 +547,64 @@ class ConceptualInstanceModelWorkflowTest {
         result.commandBatch().creates().stream().map(create -> create.eClass()).toList());
     assertEquals("workflow-1", result.commandBatch().creates().get(2).owner());
     assertEquals("steps", result.commandBatch().creates().get(2).reference());
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
+  void preservesAnExactNonWorkflowPimRelationshipPlannedByTheLlm() throws Exception {
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply(
+                    "{\"types\":[\"ServerlessService\",\"Function\",\"DataStore\"]}"),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"types":["ServerlessService","Function","FunctionContract","DataStore"],"objects":[
+  {"instanceId":"service","type":"ServerlessService","purpose":"Order service","ownerInstanceId":"rootId","containment":"services","referenceTargets":["function","store"],"plannedReferences":[],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"function","type":"Function","purpose":"Read orders","ownerInstanceId":"service","containment":"functions","referenceTargets":["contract","store"],"plannedReferences":[{"feature":"reads","targetId":"store"}],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"contract","type":"FunctionContract","purpose":"Order function contract","ownerInstanceId":"function","containment":"contract","referenceTargets":[],"plannedReferences":[],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"store","type":"DataStore","purpose":"Order store","ownerInstanceId":"service","containment":"stores","referenceTargets":[],"plannedReferences":[],"sourceUnitIds":[],"slice":1}
+]}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"service":{"type":"ServerlessService","attributes":[{"attributeName":"name","value":"Order service"},{"attributeName":"boundaryType","value":"CAPABILITY_BASED"}],"associations":{"compositions":[{"associationName":"functions","associatedClassName":"Function","instanceID":"function"},{"associationName":"stores","associatedClassName":"DataStore","instanceID":"store"}],"references":[]}},
+"function":{"type":"Function","attributes":[{"attributeName":"name","value":"Read orders"},{"attributeName":"functionKind","value":"QUERY_HANDLER"}],"associations":{"compositions":[{"associationName":"contract","associatedClassName":"FunctionContract","instanceID":"contract"}],"references":[]}},
+"contract":{"type":"FunctionContract","attributes":[{"attributeName":"name","value":"Order function contract"}],"associations":{"compositions":[],"references":[]}},
+"store":{"type":"DataStore","attributes":[{"attributeName":"name","value":"Order store"},{"attributeName":"storeKind","value":"KEY_VALUE"},{"attributeName":"consistencyNeed","value":"STRONG"}],"associations":{"compositions":[],"references":[]}}}
+""")));
+    AiProperties properties = properties();
+    when(properties.llmReviewEnabled()).thenReturn(false);
+    when(properties.model()).thenReturn("Gemma-4-31B-IT");
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.PIM, "model", 1, emptyPim(), new AssistantPatchCompiler(), null);
+
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.PIM,
+            "Create an order query function that reads the order store",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.PIM, workspace),
+            false);
+
+    assertTrue(
+        result.commandBatch().connections().stream()
+            .anyMatch(
+                connection ->
+                    "function".equals(connection.source())
+                        && "reads".equals(connection.reference())
+                        && "store".equals(connection.target())));
     assertEquals(0, provider.remainingSteps());
   }
 
@@ -1061,8 +1128,8 @@ class ConceptualInstanceModelWorkflowTest {
     String correctedBlueprint =
         """
 {"removeObjectIds":[],"upsertObjects":[
-  {"instanceId":"book","type":"DomainEntity","purpose":"Book","ownerInstanceId":"rootId","containment":"entities","referenceTargets":["book-id"],"sourceUnitIds":[],"slice":1},
-  {"instanceId":"book-id","type":"InformationItem","purpose":"Book identifier","ownerInstanceId":"rootId","containment":"informationItems","referenceTargets":[],"sourceUnitIds":[],"slice":2}
+  {"instanceId":"book","type":"DomainEntity","purpose":"Book","ownerInstanceId":"rootId","containment":"entities","referenceTargets":["book-id"],"plannedReferences":[{"feature":"identityAttributes","targetId":"book-id"},{"feature":"primaryIdentityAttribute","targetId":"book-id"},{"feature":"attributes","targetId":"book-id"}],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"book-id","type":"InformationItem","purpose":"Book identifier","ownerInstanceId":"rootId","containment":"informationItems","referenceTargets":[],"plannedReferences":[],"sourceUnitIds":[],"slice":2}
 ]}
 """;
     var provider =
@@ -1130,6 +1197,9 @@ class ConceptualInstanceModelWorkflowTest {
     assertTrue(
         result.commandBatch().connections().stream()
             .anyMatch(connection -> "primaryIdentityAttribute".equals(connection.reference())));
+    assertTrue(
+        result.commandBatch().connections().stream()
+            .anyMatch(connection -> "attributes".equals(connection.reference())));
     assertEquals(0, provider.remainingSteps());
   }
 

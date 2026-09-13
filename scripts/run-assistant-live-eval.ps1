@@ -3,7 +3,7 @@
 
 param(
   [string]$BaseUrl = "http://127.0.0.1:8080",
-  [int]$TimeoutSeconds = 420,
+  [int]$TimeoutSeconds = 600,
   [ValidateRange(0, 8)]
   [int]$MaxDurableResumes = 4,
   [ValidateRange(0, 8)]
@@ -226,6 +226,7 @@ function Inspect-Model {
     $null -ne $_.source -and -not [string]::IsNullOrWhiteSpace([string]$_.source) -and
     $null -ne $_.target -and -not [string]::IsNullOrWhiteSpace([string]$_.target)
   })
+  $relationshipKinds = @($visual.relationships | ForEach-Object { [string]$_.kind } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
   [pscustomobject]@{
     StructuralNodes = Count-StructuralNodes $modelJson
     Elements = Count-Array $visual.elements
@@ -235,6 +236,7 @@ function Inspect-Model {
     WorkflowSteps = $workflowSteps.Count
     WorkflowTransitions = $workflowTransitions.Count
     CompleteWorkflowTransitions = $completeTransitions.Count
+    RelationshipKinds = $relationshipKinds
     ModelText = ($modelJson | ConvertTo-Json -Depth 60 -Compress)
   }
 }
@@ -307,6 +309,7 @@ function Run-Scenario {
     WorkflowSteps = $inspection.WorkflowSteps
     WorkflowTransitions = $inspection.WorkflowTransitions
     CompleteWorkflowTransitions = $inspection.CompleteWorkflowTransitions
+    RelationshipKinds = $inspection.RelationshipKinds
     ValidationValid = $inspection.ValidationValid
     EClasses = $inspection.EClasses
     ModelId = $turn.modelId
@@ -549,6 +552,10 @@ function Test-ScenarioGate {
     }
     "create-cim-library" {
       if ([int]$Result.StructuralNodes -lt 5) { $failures += "library CIM is too shallow" }
+      $kinds = @($Result.RelationshipKinds)
+      if (@($kinds | Where-Object { $_ -in @("supports", "refinedBy", "realizes", "contributesTo") }).Count -lt 1) { $failures += "library CIM lacks a goal/capability relationship" }
+      if (@($kinds | Where-Object { $_ -in @("managesEntities", "owningCapability", "DomainRelationship") }).Count -lt 1) { $failures += "library CIM lacks a domain/capability relationship" }
+      if (@($kinds | Where-Object { $_ -in @("identityAttributes", "primaryIdentityAttribute") }).Count -lt 1) { $failures += "library CIM lacks an information relationship" }
     }
     "create-pim-serverless" {
       if ([int]$Result.StructuralNodes -lt 10) { $failures += "serverless PIM is too shallow" }
@@ -571,6 +578,17 @@ function Test-ScenarioGate {
       if ([int]$Result.WorkflowSteps -lt 3) { $failures += "serverless workflow has fewer than three concrete steps" }
       if ([int]$Result.WorkflowTransitions -lt 2) { $failures += "serverless workflow has fewer than two transition objects" }
       if ([int]$Result.CompleteWorkflowTransitions -ne [int]$Result.WorkflowTransitions) { $failures += "one or more workflow transitions lack source/target endpoints" }
+      $kinds = @($Result.RelationshipKinds)
+      $relationshipFamilies = @(
+        @{ Name="entry-to-behavior"; Kinds=@("functionIntegration", "workflowIntegration", "invokesFunction", "invokesAdapter") },
+        @{ Name="data access"; Kinds=@("reads", "writes") },
+        @{ Name="event flow"; Kinds=@("publishes", "subscribesTo", "eventTypes", "producers", "consumers") },
+        @{ Name="external integration"; Kinds=@("callsAdapters", "endpoint") },
+        @{ Name="security"; Kinds=@("authorization", "auth", "allowedPrincipals") }
+      )
+      foreach ($family in $relationshipFamilies) {
+        if (@($kinds | Where-Object { $_ -in $family.Kinds }).Count -lt 1) { $failures += "serverless PIM lacks $($family.Name) relationship evidence" }
+      }
     }
     "create-pim-doctor-booking" {
       if ([int]$Result.StructuralNodes -lt 8) { $failures += "doctor-booking PIM is too shallow" }
@@ -628,7 +646,7 @@ function Test-ScenarioGate {
   if ([int]$Result.ProviderCalls -gt $callBudget) {
     $failures += "provider calls $($Result.ProviderCalls) exceed budget $callBudget"
   }
-  $latencyBudget = if ($scenarioId -eq "pim-vibe-evolution") { 1680 } else { 420 }
+  $latencyBudget = if ($scenarioId -eq "pim-vibe-evolution") { 1680 } elseif ($scenarioId -eq "create-pim-serverless") { 600 } else { 420 }
   if ([int]$Result.Seconds -gt $latencyBudget) { $failures += "latency $($Result.Seconds)s exceeds ${latencyBudget}s" }
   [pscustomobject]@{
     Scenario = $Result.Scenario

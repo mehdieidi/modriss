@@ -15,6 +15,7 @@ Use only the exact subset supported by retrieved contracts. Typical concrete PIM
 
 - Reuse one service boundary for closely related features unless the user requests separate ownership or deployment.
 - Represent synchronous calls, event publication, subscriptions, routing, and orchestration with their exact DSML flows/references; do not encode architecture only in descriptions.
+- Record every intended non-containment edge with its exact Ecore feature and target in the conceptual relationship plan so generation cannot silently omit or substitute it. This applies equally to invocation, reads/writes, publication/subscription, integration, routing, policy attachment, traceability, and other retrieved PIM references.
 - A workflow with more than one step must contain explicit `WorkflowTransition` instances (when exposed by the retrieved contracts), each with legal `source` and `target` step references. Build a continuous start-to-outcome path and connect every modeled branch; shared containment, step order, or visual proximity is not control flow.
 - Give each `TaskStep` a legal behavioral target such as `invokesFunction`, `invokesAdapter`, or another exact target supported by its contract. A named but behaviorless task is not useful workflow evidence.
 - Add schemas/contracts when payload shape is part of the request. Add resilience, idempotency, timeout, dead-letter, security, and observability concepts when demanded by requirements or needed to make the requested architecture explicit.

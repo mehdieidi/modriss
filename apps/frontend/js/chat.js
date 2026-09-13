@@ -155,6 +155,9 @@ let activeTurnCanceling = false;
 let activeTurnId = null;
 let streamingAssistantEl = null;
 let streamingAssistantText = "";
+// Keep following new content only while the user is at the bottom of the chat. Once
+// they scroll up, assistant progress updates must not take control of the viewport.
+let chatFollowBottom = true;
 // Every project switch invalidates asynchronous work that belongs to the previous
 // project. The chat UI is shared, so callbacks must prove they still own it before
 // writing to the DOM.
@@ -188,6 +191,7 @@ function resetChatMessagesUi() {
   if (!el.chatMessages) {
     return;
   }
+  chatFollowBottom = true;
   el.chatMessages.innerHTML = "";
   el.chatMessages.appendChild(buildChatWelcomeCard());
 }
@@ -398,7 +402,19 @@ function removeChatWelcome() {
 }
 
 function scrollChatToBottom() {
+  if (!chatFollowBottom) {
+    return;
+  }
   el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
+}
+
+function updateChatScrollIntent() {
+  const messages = el.chatMessages;
+  if (!messages) {
+    return;
+  }
+  const distanceFromBottom = messages.scrollHeight - messages.scrollTop - messages.clientHeight;
+  chatFollowBottom = distanceFromBottom <= 24;
 }
 
 function stripLegacyThinkingCancelButtons() {
@@ -1053,6 +1069,8 @@ export function handleChatSendButtonClick() {
 
 export function initChatComposer() {
   stripLegacyThinkingCancelButtons();
+  el.chatMessages?.addEventListener("scroll", updateChatScrollIntent, { passive: true });
+  updateChatScrollIntent();
   updateChatComposerActionButton();
 }
 

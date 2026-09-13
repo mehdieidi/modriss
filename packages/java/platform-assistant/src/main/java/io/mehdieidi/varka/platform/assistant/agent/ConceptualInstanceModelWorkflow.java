@@ -136,11 +136,16 @@ public final class ConceptualInstanceModelWorkflow {
         + "\"objects\":{\"type\":\"array\",\"minItems\":1,\"maxItems\":"
         + MAX_BLUEPRINT_OBJECTS
         + ",\"items\":{"
-        + "\"type\":\"object\",\"required\":[\"instanceId\",\"type\",\"purpose\",\"slice\"],"
+        + "\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"instanceId\",\"type\",\"purpose\",\"plannedReferences\",\"slice\"],"
         + "\"properties\":{\"instanceId\":{\"type\":\"string\",\"minLength\":1},"
         + "\"type\":{\"type\":\"string\",\"minLength\":1},\"purpose\":{\"type\":\"string\"},"
         + "\"ownerInstanceId\":{\"type\":\"string\"},\"containment\":{\"type\":\"string\"},"
         + "\"referenceTargets\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},"
+        + "\"plannedReferences\":{\"type\":\"array\",\"maxItems\":24,\"items\":{"
+        + "\"type\":\"object\",\"additionalProperties\":false,"
+        + "\"required\":[\"feature\",\"targetId\"],\"properties\":{"
+        + "\"feature\":{\"type\":\"string\",\"minLength\":1},"
+        + "\"targetId\":{\"type\":\"string\",\"minLength\":1}}}},"
         + "\"obligationIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},"
         + "\"sourceUnitIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},"
         + "\"slice\":{\"type\":\"integer\",\"minimum\":1}}}}}}";
@@ -149,13 +154,17 @@ public final class ConceptualInstanceModelWorkflow {
   /** Strict schema for an LLM-authored edit to a rejected private blueprint. */
   public static String blueprintPatchSchema() {
     String object =
-        "{\"type\":\"object\",\"required\":[\"instanceId\",\"type\",\"purpose\",\"slice\"],"
+        "{\"type\":\"object\",\"required\":[\"instanceId\",\"type\",\"purpose\",\"plannedReferences\",\"slice\"],"
             + "\"additionalProperties\":false,\"properties\":{"
             + "\"instanceId\":{\"type\":\"string\",\"minLength\":1},"
             + "\"type\":{\"type\":\"string\",\"minLength\":1},\"purpose\":{\"type\":\"string\"},"
             + "\"ownerInstanceId\":{\"type\":\"string\"},\"containment\":{\"type\":\"string\"},"
             + "\"referenceTargets\":{\"type\":\"array\","
-            + "\"items\":{\"type\":\"string\"}},\"obligationIds\":{\"type\":\"array\","
+            + "\"items\":{\"type\":\"string\"}},\"plannedReferences\":{\"type\":\"array\","
+            + "\"maxItems\":24,\"items\":{\"type\":\"object\",\"additionalProperties\":false,"
+            + "\"required\":[\"feature\",\"targetId\"],\"properties\":{"
+            + "\"feature\":{\"type\":\"string\",\"minLength\":1},"
+            + "\"targetId\":{\"type\":\"string\",\"minLength\":1}}}},\"obligationIds\":{\"type\":\"array\","
             + "\"items\":{\"type\":\"string\"}},\"sourceUnitIds\":{\"type\":\"array\","
             + "\"items\":{\"type\":\"string\"}},\"slice\":{\"type\":\"integer\",\"minimum\":1}}}";
     return "{\"type\":\"object\",\"required\":[\"removeObjectIds\",\"upsertObjects\"],"
@@ -404,6 +413,14 @@ public final class ConceptualInstanceModelWorkflow {
             + " step, an outcome step, and transition objects whose required source and target"
             + " endpoints make execution order explicit. Put those exact creatable EClasses in"
             + " expectedEClasses; do not assume containment or canvas layout implies control flow."
+            + " Apply the same rule to every relationship kind at both CIM and PIM: explicit"
+            + " ownership, participation, realization, influence, traceability, information flow,"
+            + " invocation, data access, publication, subscription, integration, dependency, and"
+            + " policy attachment require connected source and target evidence. If Ecore models"
+            + " that relationship as its own creatable carrier EClass, include that carrier in"
+            + " expectedEClasses; otherwise allocate the source and target types so the blueprint"
+            + " can plan the exact writable reference. Never treat prose or co-containment as a"
+            + " substitute for the requested edge."
             + " The Ecore closure and blueprint phases add necessary support. expectedEClasses is a"
             + " required set, not a list of alternatives. Reuse the same EClass across obligations"
             + " when appropriate. Do not match words mechanically and do not collapse a source list"
@@ -523,7 +540,8 @@ public final class ConceptualInstanceModelWorkflow {
             + " DSML. Return a small stable-ID ledger, not full attributes or association payloads."
             + " Every object needed for a coherent useful model must have one unique temporary"
             + " instanceId, exact EClass, short purpose, containment owner/feature when known,"
-            + " major reference target IDs, source-unit allocation, and a positive slice number."
+            + " exact planned non-containment Ecore references, source-unit allocation, and a"
+            + " positive slice number."
             + " For every nested object, include that child's ID in its owner's referenceTargets"
             + " so generation can emit the required incoming containment composition."
             + " sourceUnitIds may contain ONLY IDs from the explicit available-source list; when"
@@ -547,11 +565,14 @@ public final class ConceptualInstanceModelWorkflow {
             + " share an owner or appear in referenceTargets. When the focused contracts expose a"
             + " transition/flow relationship EClass, plan explicit instances of it, contain them"
             + " under the legal owner, and put both endpoint step IDs in each transition object's"
-            + " referenceTargets. Plan enough transitions to form a continuous entry-to-outcome"
+            + " plannedReferences using the exact endpoint feature names. Plan enough transitions"
+            + " to form a continuous entry-to-outcome"
             + " path and explicit branch paths requested by the requirements."
-            + " Every referenceTargets entry must be realizable through at least one writable"
-            + " EReference on the source object's exact contract whose target type accepts the"
-            + " planned target EClass. If the semantic relationship needs an intermediate carrier"
+            + " For every intended non-containment relationship, plannedReferences MUST name its"
+            + " exact writable, non-derived Ecore feature and exact target ID. The target EClass"
+            + " must be assignable to that feature's target type. referenceTargets is retained"
+            + " only for containment/dependency grouping and is never evidence of an intended"
+            + " semantic reference. If the semantic relationship needs an intermediate carrier"
             + " such as a Function, adapter, policy, or trace link, plan that carrier explicitly;"
             + " never use an unrelated inherited reference as a substitute."
             + " Use only the closed focused EClass vocabulary plus the supplied concrete options"
@@ -588,7 +609,8 @@ public final class ConceptualInstanceModelWorkflow {
             + "\n\nAVAILABLE SOURCE UNIT IDS (closed allowlist): "
             + suppliedSourceUnits
             + "\n\nReturn {types:[exact EClass names],objects:[{instanceId,type,purpose,"
-            + "ownerInstanceId,containment,referenceTargets,obligationIds,sourceUnitIds,slice}]}."
+            + "ownerInstanceId,containment,referenceTargets,plannedReferences:[{feature,targetId}],"
+            + "obligationIds,sourceUnitIds,slice}]}."
             + " Every mandatory obligation ID must be allocated to one or more objects whose"
             + " exact EClass is one of its expected EClasses or an assignable concrete subtype."
             + " Do not emit"
@@ -859,51 +881,45 @@ public final class ConceptualInstanceModelWorkflow {
             + " relationships for interactions stated by the source. Every relationship finding"
             + " must cite an exact writable Ecore reference from the supplied contracts and a"
             + " compatible source and target type. If the metamodel has no such reference, do not"
-            + " demand or invent the relationship. Blueprint referenceTargets are intentionally"
-            + " unlabelled stable target IDs: when the source EClass has a compatible writable"
-            + " reference, that target is sufficient planning evidence and the generation phase"
-            + " will choose the exact feature. Never demand a feature-name field that is absent"
-            + " from the blueprint schema. A concrete subtype is compatible with its abstract"
-            + " Ecore target. Never recommend instantiating an abstract or non-creatable EClass;"
-            + " choose an exact type from the supplied concrete options. For every planned"
-            + " workflow/process with two or more steps, inspect the supplied contracts for its"
-            + " transition/flow relationship EClass. Reject a catalogue of co-contained steps"
-            + " that has no explicit relationship instances. Each planned transition must identify"
-            + " compatible source and target step IDs through referenceTargets, and the set must"
-            + " form the requested entry-to-outcome and branch paths. Do not treat diagram"
-            + " proximity, orderIndex, prose, or common containment as execution connectivity."
-            + " In an evolution, reject a new relationship object whose type and endpoint target"
-            + " IDs duplicate a persisted relationship; require reuse of the persisted exact ID."
-            + " Also reject every referenceTargets pair for which the source EClass has no legal"
-            + " writable EReference compatible with the target EClass. Require a semantically"
+            + " demand or invent the relationship. Every intended non-containment relationship must"
+            + " appear in plannedReferences with the exact writable Ecore feature and target ID; an"
+            + " unlabelled referenceTargets entry is not relationship evidence. Reject omitted,"
+            + " invented, read-only, containment, or target-incompatible planned references. A"
+            + " concrete subtype is compatible with its abstract Ecore target. Never recommend"
+            + " instantiating an abstract or non-creatable EClass; choose an exact type from the"
+            + " supplied concrete options. For every planned workflow/process with two or more"
+            + " steps, inspect the supplied contracts for its transition/flow relationship EClass."
+            + " Reject a catalogue of co-contained steps that has no explicit relationship"
+            + " instances. Each planned transition must identify compatible source and target step"
+            + " IDs through exact plannedReferences, and the set must form the requested"
+            + " entry-to-outcome and branch paths. Do not treat diagram proximity, orderIndex,"
+            + " prose, or common containment as execution connectivity. In an evolution, reject a"
+            + " new relationship object whose type and endpoint target IDs duplicate a persisted"
+            + " relationship; require reuse of the persisted exact ID. Require a semantically"
             + " appropriate intermediate carrier object when the contracts require one; never"
-            + " repurpose traceability or another unrelated inherited reference."
-            + " Apply a sound"
-            + " level-appropriate abstraction"
-            + " boundary: when a requirement enumerates command/query inputs, event payload, or"
-            + " captured data, plan compatible InformationItem evidence and a relationship target;"
-            + " merely mentioning those fields in an object's purpose is not final model evidence."
-            + " When an obligation states that an action causes an outcome, changes or preserves"
-            + " state, releases or retains something, or is governed by a pre/postcondition,"
-            + " require planned evidence for every distinct outcome and a legal relationship from"
-            + " its behavioral carrier. A purpose sentence alone is insufficient. Use the"
-            + " obligation's expected EClasses and authoritative metamodel vocabulary; recommend"
-            + " explicit Condition/state objects when that is the legal representation."
-            + " Cohesive sub-actions such as managing working hours, breaks, blocked times,"
-            + " and visit-type limits may remain one clearly described command. Do not demand"
-            + " separate objects merely to atomize those fields or duplicate an actor as a domain"
-            + " entity. For an evolution, compare against the persisted-element index and reject"
-            + " any new temporary-ID semantic duplicate; require reuse of the exact persisted ID."
-            + " An exact persisted-ID blueprint record is the required notation for reusing or"
-            + " updating that existing object and MUST NOT be treated as a duplicate or creation."
-            + " A new child under a persisted owner requires that exact persisted owner as a"
-            + " blueprint record with the child in referenceTargets, so generation can write the"
-            + " required parent-side containment."
-            + " Do not"
-            + " invent requirements and"
-            + " do not judge EVL semantics. Report every material omission you can identify in this"
-            + " single pass, up to the schema limit; never defer known findings to a later review."
-            + " Return only the strict review schema.";
+            + " repurpose traceability or another unrelated inherited reference. Apply a sound"
+            + " level-appropriate abstraction boundary: when a requirement enumerates command/query"
+            + " inputs, event payload, or captured data, plan compatible InformationItem evidence"
+            + " and a relationship target; merely mentioning those fields in an object's purpose is"
+            + " not final model evidence. When an obligation states that an action causes an"
+            + " outcome, changes or preserves state, releases or retains something, or is governed"
+            + " by a pre/postcondition, require planned evidence for every distinct outcome and a"
+            + " legal relationship from its behavioral carrier. A purpose sentence alone is"
+            + " insufficient. Use the obligation's expected EClasses and authoritative metamodel"
+            + " vocabulary; recommend explicit Condition/state objects when that is the legal"
+            + " representation. Cohesive sub-actions such as managing working hours, breaks,"
+            + " blocked times, and visit-type limits may remain one clearly described command. Do"
+            + " not demand separate objects merely to atomize those fields or duplicate an actor as"
+            + " a domain entity. For an evolution, compare against the persisted-element index and"
+            + " reject any new temporary-ID semantic duplicate; require reuse of the exact"
+            + " persisted ID. An exact persisted-ID blueprint record is the required notation for"
+            + " reusing or updating that existing object and MUST NOT be treated as a duplicate or"
+            + " creation. A new child under a persisted owner requires that exact persisted owner"
+            + " as a blueprint record with the child in referenceTargets, so generation can write"
+            + " the required parent-side containment. Do not invent requirements and do not judge"
+            + " EVL semantics. Report every material omission you can identify in this single pass,"
+            + " up to the schema limit; never defer known findings to a later review. Return only"
+            + " the strict review schema.";
     String user =
         "LEVEL:\n"
             + level
@@ -1135,6 +1151,7 @@ public final class ConceptualInstanceModelWorkflow {
               object.ownerInstanceId(),
               containment,
               object.referenceTargets(),
+              object.plannedReferences(),
               object.obligationIds(),
               object.sourceUnitIds(),
               object.slice()));
@@ -1206,6 +1223,56 @@ public final class ConceptualInstanceModelWorkflow {
                 + "; legal placements are "
                 + contracts.containmentPlacements(level, object.type()));
       }
+      Map<String, Integer> plannedFeatureCounts = new LinkedHashMap<>();
+      Set<String> plannedPairs = new LinkedHashSet<>();
+      for (PlannedReference relationship : object.plannedReferences()) {
+        String pair = relationship.feature() + "->" + relationship.targetId();
+        if (!plannedPairs.add(pair)) {
+          diagnostics.add(object.instanceId() + " duplicates planned relationship " + pair);
+          continue;
+        }
+        ReferenceContract reference =
+            objectType.references().stream()
+                .filter(candidate -> candidate.name().equals(relationship.feature()))
+                .findFirst()
+                .orElse(null);
+        if (reference == null || reference.readonly() || reference.containment()) {
+          diagnostics.add(
+              object.instanceId()
+                  + " plans illegal non-containment relationship "
+                  + pair
+                  + "; feature must be an exact writable non-containment EReference on "
+                  + object.type());
+          continue;
+        }
+        BlueprintObject plannedTarget = objects.get(relationship.targetId());
+        String targetType =
+            plannedTarget == null
+                ? persistedTypes.get(relationship.targetId())
+                : plannedTarget.type();
+        if (targetType == null
+            || !contracts.assignable(level, targetType, reference.targetType())) {
+          diagnostics.add(
+              object.instanceId()
+                  + " plans "
+                  + pair
+                  + " but "
+                  + object.type()
+                  + "."
+                  + reference.name()
+                  + " requires "
+                  + reference.targetType()
+                  + " and the target is "
+                  + (targetType == null ? "unknown" : targetType));
+        }
+        int count = plannedFeatureCounts.merge(reference.name(), 1, Integer::sum);
+        if (!reference.many() && count > 1) {
+          diagnostics.add(
+              object.instanceId()
+                  + " plans multiple targets for single-valued relationship "
+                  + reference.name());
+        }
+      }
       for (ReferenceContract required :
           objectType.references().stream()
               .filter(ReferenceContract::required)
@@ -1222,16 +1289,22 @@ public final class ConceptualInstanceModelWorkflow {
                           contracts.assignable(level, candidate.type(), required.targetType()));
         } else {
           planned =
-              object.referenceTargets().stream()
-                  .map(
-                      id -> {
-                        BlueprintObject target = objects.get(id);
-                        return target == null ? persistedTypes.get(id) : target.type();
-                      })
-                  .filter(java.util.Objects::nonNull)
-                  .anyMatch(
-                      candidateType ->
-                          contracts.assignable(level, candidateType, required.targetType()));
+              object.plannedReferences().stream()
+                  .anyMatch(relationship -> relationship.feature().equals(required.name()));
+          // Compatibility with private durable turns created before plannedReferences existed.
+          if (!planned && object.plannedReferences().isEmpty()) {
+            planned =
+                object.referenceTargets().stream()
+                    .map(
+                        id -> {
+                          BlueprintObject target = objects.get(id);
+                          return target == null ? persistedTypes.get(id) : target.type();
+                        })
+                    .filter(java.util.Objects::nonNull)
+                    .anyMatch(
+                        candidateType ->
+                            contracts.assignable(level, candidateType, required.targetType()));
+          }
         }
         if (!planned) {
           diagnostics.add(
@@ -1385,6 +1458,9 @@ public final class ConceptualInstanceModelWorkflow {
               + " evidence. Every writable reference marked [required] in the authoritative"
               + " contracts MUST appear under compositions or references with its exact"
               + " associationName and a compatible associatedClassName."
+              + " Every plannedReferences entry on a generated blueprint object is an exact"
+              + " LLM-authored relationship commitment and MUST appear under references with"
+              + " that exact feature and target ID; do not substitute another compatible feature."
               + " Classify each link from the authoritative contract, not from the wording of the"
               + " request: [containment] links belong ONLY in associations.compositions and"
               + " [reference] links belong ONLY in associations.references. The feature name"
@@ -1536,6 +1612,12 @@ public final class ConceptualInstanceModelWorkflow {
           .filter(java.util.Objects::nonNull)
           .map(BlueprintObject::type)
           .forEach(names::add);
+      object.plannedReferences().stream()
+          .map(PlannedReference::targetId)
+          .map(byId::get)
+          .filter(java.util.Objects::nonNull)
+          .map(BlueprintObject::type)
+          .forEach(names::add);
       blueprint.objects().stream()
           .filter(child -> child.ownerInstanceId().equals(object.instanceId()))
           .map(BlueprintObject::type)
@@ -1587,6 +1669,7 @@ public final class ConceptualInstanceModelWorkflow {
                 + ".");
       }
       normalizeAssociationBuckets(level, object.type(), value);
+      completePlannedReferences(level, object, value, current, blueprint);
       completeUnambiguousRequiredAssociations(level, object, value, current, blueprint);
       completeBlueprintSourceEvidence(object, value);
       // Canonicalize redundant target metadata before required-reference checks consume it.
@@ -1654,6 +1737,53 @@ public final class ConceptualInstanceModelWorkflow {
       (contract.containment() ? compositions : references).add(association);
     } else {
       (compositionBucket ? compositions : references).add(association);
+    }
+  }
+
+  /**
+   * Carries the LLM-authored exact relationship plan into the generated conceptual object. This is
+   * structural plan decoding: the provider chose both the Ecore feature and target ID, while this
+   * method only prevents a bounded slice from accidentally dropping that choice.
+   */
+  private void completePlannedReferences(
+      ModelLevel level,
+      BlueprintObject source,
+      JsonNode value,
+      JsonNode current,
+      Blueprint blueprint) {
+    if (!(value.path("associations")
+        instanceof tools.jackson.databind.node.ObjectNode associations)) return;
+    if (!associations.path("references").isArray()) return;
+
+    Map<String, String> knownTypes = new LinkedHashMap<>();
+    collectCurrentTypes(current, knownTypes);
+    for (BlueprintObject object : blueprint.objects()) {
+      knownTypes.put(object.instanceId(), object.type());
+    }
+    var references = (tools.jackson.databind.node.ArrayNode) associations.path("references");
+    for (PlannedReference planned : source.plannedReferences()) {
+      boolean present = false;
+      for (JsonNode association : references) {
+        if (planned.feature().equals(association.path("associationName").asText())
+            && planned.targetId().equals(association.path("instanceID").asText())) {
+          present = true;
+          break;
+        }
+      }
+      if (present) continue;
+      String targetType = knownTypes.get(planned.targetId());
+      if (targetType == null) continue;
+      boolean legal =
+          contracts.require(level, source.type()).references().stream()
+              .filter(reference -> reference.name().equals(planned.feature()))
+              .filter(reference -> !reference.readonly() && !reference.containment())
+              .anyMatch(
+                  reference -> contracts.assignable(level, targetType, reference.targetType()));
+      if (!legal) continue;
+      var association = references.addObject();
+      association.put("associationName", planned.feature());
+      association.put("associatedClassName", targetType);
+      association.put("instanceID", planned.targetId());
     }
   }
 
@@ -2237,9 +2367,16 @@ public final class ConceptualInstanceModelWorkflow {
                   affectedIds.add(object.ownerInstanceId());
                 }
                 affectedIds.addAll(object.referenceTargets());
+                object.plannedReferences().stream()
+                    .map(PlannedReference::targetId)
+                    .forEach(affectedIds::add);
               });
       blueprint.objects().stream()
-          .filter(object -> object.referenceTargets().contains(id))
+          .filter(
+              object ->
+                  object.referenceTargets().contains(id)
+                      || object.plannedReferences().stream()
+                          .anyMatch(relationship -> relationship.targetId().equals(id)))
           .map(BlueprintObject::instanceId)
           .forEach(affectedIds::add);
     }
@@ -2516,7 +2653,11 @@ public final class ConceptualInstanceModelWorkflow {
           affectedIds.add(object.ownerInstanceId());
         }
         blueprint.objects().stream()
-            .filter(candidate -> candidate.referenceTargets().contains(id))
+            .filter(
+                candidate ->
+                    candidate.referenceTargets().contains(id)
+                        || candidate.plannedReferences().stream()
+                            .anyMatch(relationship -> relationship.targetId().equals(id)))
             .map(BlueprintObject::instanceId)
             .forEach(affectedIds::add);
       }
@@ -2687,6 +2828,7 @@ public final class ConceptualInstanceModelWorkflow {
       if (!object.referenceTargets().isEmpty()) {
         item.set("referenceTargets", mapper.valueToTree(object.referenceTargets()));
       }
+      item.set("plannedReferences", mapper.valueToTree(object.plannedReferences()));
       if (!object.sourceUnitIds().isEmpty()) {
         item.set("sourceUnitIds", mapper.valueToTree(object.sourceUnitIds()));
       }
@@ -3097,6 +3239,10 @@ public final class ConceptualInstanceModelWorkflow {
             + "Select the exact EClasses needed to model the request as a conceptual instance"
             + " model. This is a semantic modeling decision: choose all object, relationship,"
             + " policy, contract, and supporting types needed for meaningful nodes and edges."
+            + " For every explicit CIM or PIM relationship, select its source and target types"
+            + " and, when the authoritative Ecore represents the edge as a creatable relationship"
+            + " object, select that carrier EClass too. This applies to all relationship families,"
+            + " not only workflow transitions."
             + " Internally account for every explicit user/source requirement before answering: do"
             + " not omit requested functional concepts merely to make room for generic"
             + " cross-cutting qualities. Choose every EClass in each mandatory obligation's"
@@ -4499,6 +4645,7 @@ public final class ConceptualInstanceModelWorkflow {
                 item.path("ownerInstanceId").asText(""),
                 item.path("containment").asText(""),
                 strings(item.path("referenceTargets")),
+                plannedReferences(item.path("plannedReferences")),
                 strings(item.path("obligationIds")),
                 strings(item.path("sourceUnitIds")),
                 slice));
@@ -4527,6 +4674,20 @@ public final class ConceptualInstanceModelWorkflow {
                     + "'.");
           }
         }
+        for (PlannedReference relationship : object.plannedReferences()) {
+          if (!ids.contains(relationship.targetId())
+              && !persistedIds.contains(relationship.targetId())) {
+            throw new PlatformException(
+                422,
+                "Blueprint relationship '"
+                    + object.instanceId()
+                    + "."
+                    + relationship.feature()
+                    + "' has unknown target '"
+                    + relationship.targetId()
+                    + "'.");
+          }
+        }
       }
       return new Blueprint(Set.copyOf(types), List.copyOf(objects), root.deepCopy());
     }
@@ -4540,7 +4701,24 @@ public final class ConceptualInstanceModelWorkflow {
       }
       return List.copyOf(result);
     }
+
+    private static List<PlannedReference> plannedReferences(JsonNode node) {
+      if (!node.isArray()) return List.of();
+      List<PlannedReference> result = new ArrayList<>();
+      for (JsonNode value : node) {
+        String feature = value.path("feature").asText("").trim();
+        String targetId = value.path("targetId").asText("").trim();
+        if (feature.isBlank() || targetId.isBlank()) {
+          throw new PlatformException(
+              422, "Every plannedReferences entry requires non-empty feature and targetId.");
+        }
+        result.add(new PlannedReference(feature, targetId));
+      }
+      return List.copyOf(result);
+    }
   }
+
+  private record PlannedReference(String feature, String targetId) {}
 
   private record BlueprintObject(
       String instanceId,
@@ -4549,6 +4727,7 @@ public final class ConceptualInstanceModelWorkflow {
       String ownerInstanceId,
       String containment,
       List<String> referenceTargets,
+      List<PlannedReference> plannedReferences,
       List<String> obligationIds,
       List<String> sourceUnitIds,
       int slice) {}

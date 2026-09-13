@@ -89,8 +89,10 @@ Production durable conceptual turns run these stages:
 2. **Type selection.** The LLM chooses exact live EClasses. Deterministic code checks that each
    mandatory obligation retains a compatible candidate and that the actual combined required Ecore
    closure fits capacity.
-3. **Blueprint.** The LLM plans stable object IDs, exact types, legal containment, major references,
-   obligation IDs, source-unit IDs, and slices. Every selected semantic type must appear.
+3. **Blueprint.** The LLM plans stable object IDs, exact types, legal containment, and every
+   intended non-containment relationship as an exact `{feature,targetId}` pair, plus obligation
+   IDs, source-unit IDs, and slices. Every selected semantic type must appear. Generic target IDs
+   are dependency/containment context and do not count as relationship intent.
 4. **Private slices.** Object payloads are generated into durable private work items. Gemma plans
    start at four objects per slice and adapt through two and one after length truncation. Other
    provider profiles retain their configured/default slice behavior.
@@ -107,6 +109,13 @@ The schema maximum is 96 blueprint objects/types. Effective capacity can be lowe
 workflow reserves calls for routing/review/repair and required Ecore closure adds supporting types.
 Abstract required targets count toward capacity. The backend exposes exact creatable subtypes and
 the LLM chooses one; deterministic code never selects a business subtype.
+
+The same relationship pipeline applies to every writable CIM/PIM EReference and to relationships
+represented by carrier EClasses; `WorkflowTransition` is not a special compiler case. Exact
+LLM-planned references are checked for writability, containment direction, target assignability,
+multiplicity, and duplicates against live Ecore contracts, then carried into bounded slices so a
+provider omission cannot silently erase the plan. No business relationship is selected by
+deterministic fallback.
 
 Every mandatory obligation must be allocated in the blueprint. When LLM review is enabled, it must
 also be independently marked `SATISFIED` with actual staged object evidence, and cited relationship
@@ -194,14 +203,19 @@ items so a worker restart can resume rather than reinterpret completed stages.
 
 The current Gemma profile has live successes for active-metamodel explanation, source attachment
 to CIM, fresh CIM, fresh PIM, existing CIM evolution through the earlier agent path, and existing
-PIM conceptual evolution. A fresh serverless PIM run now creates an explicit start/task/end path
-with complete `WorkflowTransition.source` and `WorkflowTransition.target` edges. The latest
+PIM conceptual evolution. A fresh CIM relationship run produced explicit goal refinement,
+capability ownership/support/entity-management, identity, and first-class domain-relationship
+edges. A fresh serverless PIM run preserved 25 LLM-planned references across 18 exact feature
+kinds (rendered as 20 graph edges across 16 kinds), including API invocation, schemas, storage
+writes, event publication/routing, external integration, security, observability, task invocation,
+and complete workflow transitions. The latest
 four-turn vending-machine vibe-modeling campaign preserved one active model across the initial two
 requirements, payment/event evolution, explicit workflow refinement, and saga-style refund,
 idempotency, retry, and resilience evolution. It committed four structurally valid checkpoints,
 grew from 37 to 89 inspected nodes, and finished with 10 workflow steps and 17/17 complete
 transitions. The campaign used 54 provider calls and completed in 1,482 seconds. Exact evidence is
-in `live-eval-current-pim.md` and `live-eval-pim-vibe.md`.
+in `live-eval-current-pim.md`, `live-eval-pim-vibe.md`, `live-eval-cim-relationships.md`, and
+`live-eval-pim-relationships.md`.
 
 Do not describe the assistant as perfectly reliable or production-ready. Required ten-run
 campaigns, explanation paraphrase campaigns, failure/restart matrices, repeated CIM/PIM

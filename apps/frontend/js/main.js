@@ -1005,7 +1005,6 @@ function bindEvents() {
   });
   el.chatExpandBtn?.addEventListener("click", () => {
     setChatExpanded(!el.chatWindow.classList.contains("chat-window-expanded"));
-    el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
   });
   window.addEventListener("resize", syncExpandedChatBounds);
   if (window.ResizeObserver) {
