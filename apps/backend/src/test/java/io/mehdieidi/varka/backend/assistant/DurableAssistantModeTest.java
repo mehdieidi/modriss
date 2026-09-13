@@ -25,6 +25,21 @@ class DurableAssistantModeTest {
   }
 
   @Test
+  void distinguishesAnOpenProviderCircuitFromSemanticRecoveryFailures() {
+    assertTrue(
+        DurableAssistantTurnWorker.isOpenProviderCircuit(
+            503, "AI provider circuit is open. Try again shortly."));
+    assertEquals(
+        false,
+        DurableAssistantTurnWorker.isOpenProviderCircuit(
+            503, "The upstream provider returned an unavailable response."));
+    assertEquals(
+        false,
+        DurableAssistantTurnWorker.isOpenProviderCircuit(
+            422, "AI provider circuit is open. Try again shortly."));
+  }
+
+  @Test
   void doesNotReplayNonRecoverableFailureWithoutConceptualProgress() {
     assertEquals(
         false, DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, true, 400));

@@ -314,6 +314,7 @@ public final class ConceptualInstanceModelWorkflow {
                     blueprint,
                     generated,
                     compilerFailure.getMessage(),
+                    Set.of(),
                     audit,
                     maxCalls);
             persistObjects(durableTurnId, blueprint, generated);
@@ -540,7 +541,10 @@ public final class ConceptualInstanceModelWorkflow {
             + " markdown. When the persisted-element index contains a concept that satisfies the"
             + " request, reuse its exact persisted ID instead of creating a semantic duplicate."
             + " Include an existing object only when it supplies obligation evidence, receives a"
-            + " new relationship, or needs an attribute update.";
+            + " new relationship, or needs an attribute update. When a new nested object is owned"
+            + " by a persisted element, include an exact-ID blueprint record for that persisted"
+            + " owner and include the child's ID in the owner's referenceTargets; generation must"
+            + " update the parent with the writable Ecore containment.";
     String user =
         "AUTHORITATIVE FOCUSED ECORE CONTRACTS (closed vocabulary):\n"
             + blueprintStructuralGuide(level, focusedContracts, focusedTypes)
@@ -698,14 +702,11 @@ public final class ConceptualInstanceModelWorkflow {
         lastFailure = failure;
         blueprint = null;
         if (attempt == MAX_BLUEPRINT_ATTEMPTS - 1) throw failure;
-        if (safe(failure.getMessage())
-            .contains("Independent blueprint completeness review rejected the plan:")) {
-          // A critic-produced patch is only a proposal. Re-review it independently so an
-          // incomplete or regressive repair cannot pass directly into generation. Keep the loop
-          // bounded because open-ended semantic critique can otherwise reveal an endless tail of
-          // optional refinements.
-          if (blueprintCritiques >= MAX_BLUEPRINT_CRITIQUES) throw failure;
-        }
+        // A critic-produced patch is only a proposal. Re-review it independently while critique
+        // budget remains. The last bounded critique is still repaired; the next iteration
+        // structurally checks that LLM-authored repair and then proceeds to generation, where the
+        // independent obligation review remains the semantic gate. This prevents an open-ended
+        // tail of optional refinements from failing an otherwise repairable durable turn.
         rejectionDiagnostic = safe(failure.getMessage());
       }
     }
@@ -828,7 +829,17 @@ public final class ConceptualInstanceModelWorkflow {
             + " named actors, concepts, states, risks, rules, behaviors, commands, queries, events,"
             + " or acceptance outcomes normally requires separately identifiable planned evidence;"
             + " attaching a source unit to one generic object is not coverage. Also require useful"
-            + " relationships for interactions stated by the source. Apply a sound CIM abstraction"
+            + " relationships for interactions stated by the source. Every relationship finding"
+            + " must cite an exact writable Ecore reference from the supplied contracts and a"
+            + " compatible source and target type. If the metamodel has no such reference, do not"
+            + " demand or invent the relationship. Blueprint referenceTargets are intentionally"
+            + " unlabelled stable target IDs: when the source EClass has a compatible writable"
+            + " reference, that target is sufficient planning evidence and the generation phase"
+            + " will choose the exact feature. Never demand a feature-name field that is absent"
+            + " from the blueprint schema. A concrete subtype is compatible with its abstract"
+            + " Ecore target. Never recommend instantiating an abstract or non-creatable EClass;"
+            + " choose an exact type from the supplied concrete options. Apply a sound"
+            + " level-appropriate abstraction"
             + " boundary: when a requirement enumerates command/query inputs, event payload, or"
             + " captured data, plan compatible InformationItem evidence and a relationship target;"
             + " merely mentioning those fields in an object's purpose is not final model evidence."
@@ -842,7 +853,13 @@ public final class ConceptualInstanceModelWorkflow {
             + " and visit-type limits may remain one clearly described command. Do not demand"
             + " separate objects merely to atomize those fields or duplicate an actor as a domain"
             + " entity. For an evolution, compare against the persisted-element index and reject"
-            + " any planned semantic duplicate; require reuse of the exact persisted ID. Do not"
+            + " any new temporary-ID semantic duplicate; require reuse of the exact persisted ID."
+            + " An exact persisted-ID blueprint record is the required notation for reusing or"
+            + " updating that existing object and MUST NOT be treated as a duplicate or creation."
+            + " A new child under a persisted owner requires that exact persisted owner as a"
+            + " blueprint record with the child in referenceTargets, so generation can write the"
+            + " required parent-side containment."
+            + " Do not"
             + " invent requirements and"
             + " do not judge EVL semantics. Report every material omission you can identify in this"
             + " single pass, up to the schema limit; never defer known findings to a later review."
@@ -854,6 +871,16 @@ public final class ConceptualInstanceModelWorkflow {
             + (request == null ? "" : request)
             + "\n\nOBLIGATION LEDGER:\n"
             + obligations.json()
+            + "\n\n"
+            + "AUTHORITATIVE WRITABLE ECORE CONTRACTS (use these to judge legal relationships):\n"
+            + blueprintStructuralGuide(
+                level,
+                contracts.requiredContainmentClosure(level, new ArrayList<>(blueprint.types())),
+                blueprint.types())
+            + "\n\nCONCRETE OPTIONS FOR ABSTRACT REQUIRED TARGETS:\n"
+            + concreteRequiredOptionsGuide(
+                level,
+                contracts.requiredContainmentClosure(level, new ArrayList<>(blueprint.types())))
             + "\n\nCURRENT PERSISTED ELEMENT INDEX (reuse exact IDs; do not duplicate):\n"
             + currentElementIndex(current)
             + "\n\nCANDIDATE BLUEPRINT:\n"
@@ -1087,6 +1114,19 @@ public final class ConceptualInstanceModelWorkflow {
             owner == null
                 ? persistedTypes.getOrDefault(object.ownerInstanceId(), "")
                 : owner.type();
+      }
+      if (!persistedTypes.containsKey(object.instanceId())
+          && persistedTypes.containsKey(object.ownerInstanceId())
+          && !objects.containsKey(object.ownerInstanceId())) {
+        diagnostics.add(
+            object.instanceId()
+                + " is a new nested object under persisted owner "
+                + object.ownerInstanceId()
+                + "; add that owner's exact persisted-ID blueprint record and include "
+                + object.instanceId()
+                + " in its referenceTargets so generation can write the parent-side "
+                + object.containment()
+                + " containment");
       }
       boolean legal =
           !ownerType.isBlank()
@@ -2204,6 +2244,7 @@ public final class ConceptualInstanceModelWorkflow {
                 blueprint,
                 generated,
                 structuralFailure.getMessage(),
+                Set.of(),
                 audit,
                 maxCalls);
         structuralCorrections++;
@@ -2273,7 +2314,11 @@ public final class ConceptualInstanceModelWorkflow {
   private boolean actualRelationship(
       LinkedHashMap<String, JsonNode> generated, String sourceId, String feature, String targetId) {
     JsonNode source = generated.get(sourceId);
-    if (source == null || !generated.containsKey(targetId)) return false;
+    // Persisted targets are legal evidence in an evolution turn. The staged relationship itself
+    // has already passed compilation against the union of persisted and generated instances, so
+    // evidence validation only needs to prove that the cited edge literally exists on its staged
+    // source. Requiring the target to be newly generated incorrectly rejects reuse.
+    if (source == null) return false;
     for (String kind : List.of("compositions", "references")) {
       for (JsonNode relationship : source.path("associations").path(kind)) {
         if (feature.equals(relationship.path("associationName").asText())
@@ -2352,19 +2397,37 @@ public final class ConceptualInstanceModelWorkflow {
       Blueprint blueprint,
       LinkedHashMap<String, JsonNode> generated,
       String diagnostic,
+      Set<String> preferredAffectedIds,
       UsageAudit audit,
       int maxCalls) {
     Map<String, BlueprintObject> plannedById = new LinkedHashMap<>();
     blueprint.objects().forEach(object -> plannedById.put(object.instanceId(), object));
     LinkedHashSet<String> affectedIds =
+        preferredAffectedIds == null
+            ? new LinkedHashSet<>()
+            : preferredAffectedIds.stream()
+                .filter(plannedById::containsKey)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+    List<String> associationSourceIds =
         blueprint.objects().stream()
             .filter(
                 object ->
                     diagnostic != null
-                        && (diagnostic.contains("'" + object.instanceId() + "'")
-                            || diagnostic.contains(object.instanceId() + ".")))
+                        && diagnostic.contains("Association " + object.instanceId() + "."))
             .map(BlueprintObject::instanceId)
-            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+            .toList();
+    affectedIds.addAll(associationSourceIds);
+    if (associationSourceIds.isEmpty()) {
+      affectedIds.addAll(
+          blueprint.objects().stream()
+              .filter(
+                  object ->
+                      diagnostic != null
+                          && (diagnostic.contains("'" + object.instanceId() + "'")
+                              || diagnostic.contains(object.instanceId() + ".")))
+              .map(BlueprintObject::instanceId)
+              .toList());
+    }
     if (affectedIds.isEmpty() && diagnostic != null) {
       blueprint.objects().stream()
           .filter(object -> diagnostic.contains(object.type() + "."))
@@ -2384,7 +2447,15 @@ public final class ConceptualInstanceModelWorkflow {
           .map(BlueprintObject::instanceId)
           .forEach(affectedIds::add);
     }
-    List<String> correctionIds = affectedIds.stream().limit(4).toList();
+    // Owners and relationship neighbours may be persisted reuse targets rather than staged
+    // objects. They provide localization context but cannot be replaced by this turn's bounded
+    // correction payload.
+    List<String> correctionIds =
+        affectedIds.stream().filter(generated::containsKey).limit(4).toList();
+    if (correctionIds.isEmpty()) {
+      throw new PlatformException(
+          422, "Compiler rejected the model without a repairable staged source object.");
+    }
     var rejected = JsonNodeFactory.instance.objectNode();
     correctionIds.forEach(id -> rejected.set(id, generated.get(id).deepCopy()));
     List<BlueprintObject> affectedObjects =
@@ -2399,7 +2470,8 @@ public final class ConceptualInstanceModelWorkflow {
             + correctionIds
             + ". Preserve all valid semantics. Do not echo other objects, add/delete IDs, or"
             + " return prose. For a missing incoming containment, correct the planned owner by"
-            + " adding its composition to the child; changing the child alone cannot repair it.";
+            + " adding a composition association on the parent that targets the child; changing"
+            + " the child alone cannot repair it.";
     String user =
         "REQUEST:\n"
             + request
@@ -2599,8 +2671,19 @@ public final class ConceptualInstanceModelWorkflow {
         blueprint,
         generated,
         "QUALITY REVIEW FINDINGS: " + review.path("findings"),
+        reviewFindingObjectIds(review),
         audit,
         maxCalls);
+  }
+
+  private Set<String> reviewFindingObjectIds(JsonNode review) {
+    LinkedHashSet<String> result = new LinkedHashSet<>();
+    for (JsonNode finding : review.path("findings")) {
+      for (JsonNode id : finding.path("objectIds")) {
+        if (id.isTextual() && !id.asText().isBlank()) result.add(id.asText());
+      }
+    }
+    return result;
   }
 
   private JsonNode requireReview(String content, Blueprint blueprint) {
@@ -3537,6 +3620,8 @@ public final class ConceptualInstanceModelWorkflow {
     ModelCommandBatch commands(JsonNode current, TypeContractService contracts, ModelLevel level) {
       Map<String, String> existingTypes = new LinkedHashMap<>();
       collectIds(current, existingTypes);
+      Map<String, Placement> existingPlacements = new LinkedHashMap<>();
+      collectPlacements(current, existingPlacements);
       String persistedRootId = current.path("id").asText("rootId");
       String persistedRootType = current.path("eClass").asText(contracts.rootType(level));
       Map<String, String> aliases = new LinkedHashMap<>();
@@ -3590,6 +3675,7 @@ public final class ConceptualInstanceModelWorkflow {
             existingTypes,
             types,
             aliases,
+            existingPlacements,
             sourceId,
             sourceType,
             entry.getValue().path("associations").path("compositions"),
@@ -3602,6 +3688,7 @@ public final class ConceptualInstanceModelWorkflow {
             existingTypes,
             types,
             aliases,
+            existingPlacements,
             sourceId,
             sourceType,
             entry.getValue().path("associations").path("references"),
@@ -3762,6 +3849,7 @@ public final class ConceptualInstanceModelWorkflow {
         Map<String, String> existingTypes,
         Map<String, TypeContract> responseTypes,
         Map<String, String> aliases,
+        Map<String, Placement> existingPlacements,
         String sourceId,
         TypeContract sourceType,
         JsonNode associations,
@@ -3848,9 +3936,11 @@ public final class ConceptualInstanceModelWorkflow {
           throw new PlatformException(
               422,
               "Association "
-                  + sourceType.eClass()
+                  + sourceId
                   + "."
                   + name
+                  + " on "
+                  + sourceType.eClass()
                   + " requires "
                   + reference.targetType()
                   + " but target '"
@@ -3861,6 +3951,14 @@ public final class ConceptualInstanceModelWorkflow {
         }
         if (composition) {
           if (existingTypes.containsKey(targetId)) {
+            Placement existing = existingPlacements.get(targetId);
+            if (existing != null
+                && existing.ownerId().equals(sourceId)
+                && existing.feature().equals(name)) {
+              // Repeating an existing parent-side containment is an idempotent preservation of
+              // structure, not a move and not a new patch operation.
+              continue;
+            }
             throw new PlatformException(
                 422,
                 "Conceptual generation cannot move existing instance '"
@@ -4016,6 +4114,35 @@ public final class ConceptualInstanceModelWorkflow {
         ids.put(node.path("id").asText(), node.path("eClass").asText());
       }
       if (node.isContainer()) node.forEach(child -> collectIds(child, ids));
+    }
+
+    private static void collectPlacements(JsonNode node, Map<String, Placement> placements) {
+      if (node == null || !node.isObject()) return;
+      String ownerId = node.path("id").asText("");
+      node.properties()
+          .forEach(
+              property -> {
+                if ("diagram".equals(property.getKey()) || "graph".equals(property.getKey())) {
+                  return;
+                }
+                JsonNode value = property.getValue();
+                if (value.isArray()) {
+                  for (JsonNode child : value) {
+                    recordPlacement(ownerId, property.getKey(), child, placements);
+                    collectPlacements(child, placements);
+                  }
+                } else if (value.isObject()) {
+                  recordPlacement(ownerId, property.getKey(), value, placements);
+                  collectPlacements(value, placements);
+                }
+              });
+    }
+
+    private static void recordPlacement(
+        String ownerId, String feature, JsonNode child, Map<String, Placement> placements) {
+      if (!ownerId.isBlank() && child.hasNonNull("id") && child.hasNonNull("eClass")) {
+        placements.putIfAbsent(child.path("id").asText(), new Placement(ownerId, feature));
+      }
     }
   }
 

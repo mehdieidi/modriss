@@ -49,6 +49,7 @@ public final class DurableAssistantTurnWorker {
   private final int maxProviderCallsPerTurn;
   private final int maxProviderCallsSourceTurn;
   private final boolean automaticContinuationEnabled;
+  private final Duration providerCircuitOpenDuration;
   private final String workerId = "assistant-" + UUID.randomUUID();
   // Documents up to 24k characters remain whole. Larger documents are segmented only at semantic
   // boundaries; each incremental slice also receives a map of the complete source below.
@@ -93,7 +94,9 @@ public final class DurableAssistantTurnWorker {
       @Value("${varka.ai.max-provider-calls-per-turn:24}") int maxProviderCallsPerTurn,
       @Value("${varka.ai.max-provider-calls-source-turn:20}") int maxProviderCallsSourceTurn,
       @Value("${varka.ai.automatic-continuation-enabled:true}")
-          boolean automaticContinuationEnabled) {
+          boolean automaticContinuationEnabled,
+      @Value("${varka.ai.hardening.circuit-open-duration:PT1M}")
+          Duration providerCircuitOpenDuration) {
     this.turns = turns;
     this.assistant = assistant;
     this.store = store;
@@ -105,6 +108,8 @@ public final class DurableAssistantTurnWorker {
     this.maxProviderCallsPerTurn = Math.max(1, maxProviderCallsPerTurn);
     this.maxProviderCallsSourceTurn = Math.max(1, maxProviderCallsSourceTurn);
     this.automaticContinuationEnabled = automaticContinuationEnabled;
+    this.providerCircuitOpenDuration =
+        providerCircuitOpenDuration == null ? Duration.ofMinutes(1) : providerCircuitOpenDuration;
   }
 
   @Scheduled(fixedDelayString = "${varka.ai.worker-poll-interval:PT0.5S}")
@@ -592,6 +597,38 @@ public final class DurableAssistantTurnWorker {
               turn.remainingWork());
           return;
         }
+        if (automaticContinuationEnabled
+            && isOpenProviderCircuit(ex.status(), ex.getMessage())
+            && Instant.now().plus(providerCircuitOpenDuration).isBefore(turn.deadlineAt())
+            && providerCallsAvailable(turn, turnFailure.providerCalls())) {
+          turns.appendEvent(
+              turn.id(),
+              "turn.provider_recovery_wait",
+              java.util.Map.of(
+                  "delayMillis",
+                  providerCircuitOpenDuration.toMillis(),
+                  "reason",
+                  "The AI provider circuit is cooling down."));
+          if (awaitProviderCircuit(turn)) {
+            turns.continueProgressively(
+                turn.id(), turn.revision(), "Waiting for the AI provider, then continuing.");
+            return;
+          }
+          if (turns.cancellationRequested(turn.id())) {
+            var latestCheckpoint = turns.latestCheckpoint(turn.id());
+            Long savedRevision =
+                latestCheckpoint
+                    .map(AssistantTurnStore.Checkpoint::revision)
+                    .orElse(turn.revision());
+            complete(
+                turn,
+                AssistantTurn.State.CANCELLED,
+                cancellationMessage(turn, savedRevision),
+                savedRevision,
+                turn.remainingWork());
+            return;
+          }
+        }
         var progressiveWorkflow = turns.workflow(turn.id());
         boolean hasDurableConceptualProgress =
             progressiveWorkflow
@@ -1000,6 +1037,29 @@ public final class DurableAssistantTurnWorker {
                 || failureStatus == 503
                 || failureStatus == 504);
     return progressiveRecovery || hasDurableConceptualProgress || resumableFirstSliceFailure;
+  }
+
+  static boolean isOpenProviderCircuit(int status, String message) {
+    return status == 503
+        && message != null
+        && message.toLowerCase(java.util.Locale.ROOT).contains("provider circuit is open");
+  }
+
+  private boolean awaitProviderCircuit(AssistantTurn turn) {
+    Instant readyAt = Instant.now().plus(providerCircuitOpenDuration).plusSeconds(1);
+    while (Instant.now().isBefore(readyAt)) {
+      if (turns.cancellationRequested(turn.id()) || !Instant.now().isBefore(turn.deadlineAt())) {
+        return false;
+      }
+      long remainingMillis = Math.max(1L, Duration.between(Instant.now(), readyAt).toMillis());
+      try {
+        Thread.sleep(Math.min(1000L, remainingMillis));
+      } catch (InterruptedException interrupted) {
+        Thread.currentThread().interrupt();
+        return false;
+      }
+    }
+    return true;
   }
 
   static int automaticRecoveryCount(

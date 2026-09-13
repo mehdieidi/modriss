@@ -216,7 +216,7 @@ class ConceptualInstanceModelWorkflowTest {
   }
 
   @Test
-  void independentlyRechecksARepairedEvolutionBlueprintBeforeGeneration() throws Exception {
+  void appliesAndStructurallyChecksTheFinalBoundedBlueprintCritiqueRepair() throws Exception {
     var provider =
         new ScriptedAssistantModelProvider(
             List.of(
@@ -243,7 +243,22 @@ class ConceptualInstanceModelWorkflowTest {
                         + "\"ownerInstanceId\":\"rootId\",\"containment\":\"actors\","
                         + "\"referenceTargets\":[],\"obligationIds\":[\"OBL-1\"],"
                         + "\"sourceUnitIds\":[],\"slice\":1}]}"),
-                ScriptedAssistantModelProvider.reply("{\"acceptable\":true,\"findings\":[]}"),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"acceptable":false,"findings":[{"missingConcept":"Explicit authorization purpose","reason":"The reuse intent is too terse","recommendedCorrection":"Clarify the authorization purpose"}]}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"removeObjectIds":[],"upsertObjects":[{"instanceId":"actor-existing","type":"Actor","purpose":"Authorize the persisted customer","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"obligationIds":["OBL-1"],"sourceUnitIds":[],"slice":1}]}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"acceptable":false,"findings":[{"missingConcept":"Authentication strength","reason":"The purpose does not name MFA","recommendedCorrection":"Plan strong authentication"}]}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"removeObjectIds":[],"upsertObjects":[{"instanceId":"actor-existing","type":"Actor","purpose":"Authorize the persisted customer with MFA","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"obligationIds":["OBL-1"],"sourceUnitIds":[],"slice":1}]}
+"""),
                 ScriptedAssistantModelProvider.reply(
                     "{\"actor-existing\":{\"type\":\"Actor\",\"attributes\":[{"
                         + "\"attributeName\":\"authenticationExpectation\",\"value\":\"MFA\"}],"
@@ -258,6 +273,8 @@ class ConceptualInstanceModelWorkflowTest {
     when(store.workItems("turn-recheck")).thenReturn(List.of());
     AiProperties properties = properties();
     when(properties.llmReviewEnabled()).thenReturn(true);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(14);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(14);
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
@@ -284,10 +301,99 @@ class ConceptualInstanceModelWorkflowTest {
                     false));
 
     assertEquals("conceptual_blueprint_review", provider.prompts().get(3).requiredTool());
+    assertTrue(
+        provider
+            .prompts()
+            .get(3)
+            .system()
+            .contains("exact persisted-ID blueprint record is the required notation"));
+    assertTrue(
+        provider
+            .prompts()
+            .get(3)
+            .system()
+            .contains("referenceTargets are intentionally unlabelled stable target IDs"));
+    assertTrue(provider.prompts().get(3).user().contains("AUTHORITATIVE WRITABLE ECORE CONTRACTS"));
+    assertTrue(
+        provider
+            .prompts()
+            .get(3)
+            .user()
+            .contains("CONCRETE OPTIONS FOR ABSTRACT REQUIRED TARGETS"));
     assertEquals("conceptual_blueprint_patch", provider.prompts().get(4).requiredTool());
     assertEquals("conceptual_blueprint_review", provider.prompts().get(5).requiredTool());
+    assertEquals("conceptual_blueprint_patch", provider.prompts().get(6).requiredTool());
+    assertEquals("conceptual_blueprint_review", provider.prompts().get(7).requiredTool());
+    assertEquals("conceptual_blueprint_patch", provider.prompts().get(8).requiredTool());
+    assertEquals("conceptual_instance_slice", provider.prompts().get(9).requiredTool());
     assertEquals(1, result.commandBatch().updates().size());
     assertEquals("actor-existing", result.commandBatch().updates().get(0).elementId());
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
+  void acceptsObligationEvidenceRelationshipsToPersistedTargets() throws Exception {
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"obligations":[{"id":"OBL-1","obligation":"Compensate through the existing service","importance":"MANDATORY","minimumEvidenceObjects":1,"sourceUnitIds":[],"expectedEClasses":["CompensationPolicy"]}]}
+"""),
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"CompensationPolicy\"]}"),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"types":["CompensationPolicy"],"objects":[{"instanceId":"compensation-new","type":"CompensationPolicy","purpose":"Compensate through the existing order service","ownerInstanceId":"rootId","containment":"policies","referenceTargets":["service-existing"],"obligationIds":["OBL-1"],"sourceUnitIds":[],"slice":1}]}
+"""),
+                ScriptedAssistantModelProvider.reply("{\"acceptable\":true,\"findings\":[]}"),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"compensation-new":{"type":"CompensationPolicy","attributes":[{"attributeName":"name","value":"Order Compensation"},{"attributeName":"compensationStrategy","value":"REFUND"}],"associations":{"compositions":[],"references":[{"associationName":"attachedTo","associatedClassName":"PolicyTarget","instanceID":"service-existing"}]}}}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"acceptable":true,"coverage":[{"obligationId":"OBL-1","state":"SATISFIED","evidenceObjectIds":["compensation-new"],"evidenceRelationships":[{"sourceId":"compensation-new","feature":"attachedTo","targetId":"service-existing"}],"explanation":"Policy reuses the persisted service"}],"findings":[]}
+""")));
+    AssistantTurnStore store = mock(AssistantTurnStore.class);
+    when(store.workflow("turn-persisted-evidence")).thenReturn(Optional.empty());
+    when(store.workItems("turn-persisted-evidence")).thenReturn(List.of());
+    AiProperties properties = properties();
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var current =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","services":[{"id":"service-existing","eClass":"ServerlessService","name":"Orders"}],"diagram":{"elements":[],"relationships":[]}}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.PIM, "model", 1, current, new AssistantPatchCompiler(), null);
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider,
+            new MetamodelGuideGenerator(
+                new MetamodelKnowledgeService(new AssistantMetamodelSchemaService())),
+            contracts,
+            properties,
+            store);
+
+    var result =
+        DurableTurnExecutionContext.with(
+            "turn-persisted-evidence",
+            () ->
+                workflow.run(
+                    "session",
+                    ModelLevel.PIM,
+                    "Add compensation through the existing service",
+                    workspace,
+                    new AgentModelTools(contracts, models).scoped(ModelLevel.PIM, workspace),
+                    false));
+
+    assertEquals(1, result.commandBatch().creates().size());
+    assertEquals(1, result.commandBatch().connections().size());
+    assertEquals("service-existing", result.commandBatch().connections().get(0).target());
     assertEquals(0, provider.remainingSteps());
   }
 
@@ -1084,6 +1190,143 @@ class ConceptualInstanceModelWorkflowTest {
   }
 
   @Test
+  void compilerRepairTargetsTheSourceInstanceWhenAReviewIntroducesAnInvalidReference()
+      throws Exception {
+    String blueprint =
+        """
+{"types":["Actor","BusinessGoal"],"objects":[
+  {"instanceId":"customer","type":"Actor","purpose":"Customer","ownerInstanceId":"rootId","containment":"actors","referenceTargets":[],"sourceUnitIds":[],"slice":1},
+  {"instanceId":"place-order","type":"BusinessGoal","purpose":"Place orders","ownerInstanceId":"rootId","containment":"goals","referenceTargets":["customer"],"sourceUnitIds":[],"slice":1}
+]}
+""";
+    String generated =
+        """
+{"customer":{"type":"Actor","attributes":[{"attributeName":"name","value":"Customer"}],"associations":{"compositions":[],"references":[]}},
+"place-order":{"type":"BusinessGoal","attributes":[{"attributeName":"name","value":"Place orders"}],"associations":{"compositions":[],"references":[]}}}
+""";
+    String invalidReview =
+        """
+{"acceptable":false,"findings":[{"objectIds":["place-order"],"problem":"Add an owner","recommendedCorrection":"Connect the customer"}],"corrections":{"place-order":{"type":"BusinessGoal","attributes":[{"attributeName":"name","value":"Place orders"}],"associations":{"compositions":[],"references":[{"associationName":"owners","associatedClassName":"Actor","instanceID":"customer"}]}}}}
+""";
+    String invalidCorrection =
+        """
+{"acceptable":false,"findings":[{"objectIds":["place-order"],"problem":"Add the requested owner","recommendedCorrection":"Connect the customer"}],"corrections":{"place-order":{"type":"BusinessGoal","attributes":[{"attributeName":"name","value":"Place orders"}],"associations":{"compositions":[],"references":[{"associationName":"owners","associatedClassName":"Actor","instanceID":"customer"}]}}}}
+""";
+    String repaired =
+        """
+{"acceptable":false,"findings":[{"objectIds":["place-order"],"problem":"Actor is not a Stakeholder","recommendedCorrection":"Remove the invalid optional owner"}],"corrections":{"place-order":{"type":"BusinessGoal","attributes":[{"attributeName":"name","value":"Place orders"}],"associations":{"compositions":[],"references":[]}}}}
+""";
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"Actor\",\"BusinessGoal\"]}"),
+                ScriptedAssistantModelProvider.reply(blueprint),
+                ScriptedAssistantModelProvider.reply(generated),
+                ScriptedAssistantModelProvider.reply(invalidReview),
+                ScriptedAssistantModelProvider.reply(invalidCorrection),
+                ScriptedAssistantModelProvider.reply(repaired)));
+    AiProperties properties = reviewEnabledProperties();
+    when(properties.maxProviderCallsPerTurn()).thenReturn(10);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
+    when(properties.model()).thenReturn("Gemma-4-31B-IT");
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
+
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.CIM,
+            "Create an order goal and customer",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+            false);
+
+    String qualityCorrectionPrompt = provider.prompts().get(4).user();
+    assertTrue(
+        qualityCorrectionPrompt.contains("ONLY AFFECTED REJECTED OBJECTS:\n{\"place-order\""));
+    assertTrue(!qualityCorrectionPrompt.contains("ONLY AFFECTED REJECTED OBJECTS:\n{\"customer\""));
+    String correctionPrompt = provider.prompts().get(5).user();
+    assertTrue(
+        correctionPrompt.contains("Association place-order.owners on BusinessGoal"),
+        correctionPrompt);
+    assertTrue(correctionPrompt.contains("ONLY AFFECTED REJECTED OBJECTS:\n{\"place-order\""));
+    assertTrue(!correctionPrompt.contains("ONLY AFFECTED REJECTED OBJECTS:\n{\"customer\""));
+    assertEquals(0, result.commandBatch().connections().size());
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
+  void requiresAPersistedOwnerBlueprintRecordForANewNestedObject() throws Exception {
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply("{\"types\":[\"TaskStep\"]}"),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"types":["TaskStep"],"objects":[{"instanceId":"task-new","type":"TaskStep","purpose":"Cancel an order","ownerInstanceId":"workflow-existing","containment":"steps","referenceTargets":["service-existing"],"sourceUnitIds":[],"slice":1}]}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"removeObjectIds":[],"upsertObjects":[{"instanceId":"workflow-existing","type":"Workflow","purpose":"Existing order workflow that will own the cancellation task","ownerInstanceId":"service-existing","containment":"workflows","referenceTargets":["task-new"],"sourceUnitIds":[],"slice":1}]}
+"""),
+                ScriptedAssistantModelProvider.failure(new PlatformException(502, "stop"))));
+    AiProperties properties = mock(AiProperties.class);
+    when(properties.maxProviderCallsPerTurn()).thenReturn(10);
+    when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
+    when(properties.maxRepairAttempts()).thenReturn(1);
+    when(properties.model()).thenReturn("Gemma-4-31B-IT");
+    when(properties.llmReviewEnabled()).thenReturn(false);
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider,
+            new MetamodelGuideGenerator(
+                new MetamodelKnowledgeService(new AssistantMetamodelSchemaService())),
+            contracts,
+            properties);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var current =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","services":[{"id":"service-existing","eClass":"ServerlessService","name":"Orders"}],"workflows":[{"id":"workflow-existing","eClass":"Workflow","name":"Orders workflow"}],"diagram":{"elements":[],"relationships":[]}}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.PIM, "model", 1, current, new AssistantPatchCompiler(), null);
+
+    assertThrows(
+        AgentTurnLoop.TurnExecutionException.class,
+        () ->
+            workflow.run(
+                "session",
+                ModelLevel.PIM,
+                "Add a cancellation task to the existing workflow",
+                workspace,
+                new AgentModelTools(contracts, models).scoped(ModelLevel.PIM, workspace),
+                false));
+
+    String correctionPrompt = provider.prompts().get(2).user();
+    assertEquals("conceptual_blueprint_patch", provider.prompts().get(2).requiredTool());
+    assertTrue(
+        correctionPrompt.contains(
+            "add that owner's exact persisted-ID blueprint record and include task-new in its"
+                + " referenceTargets"));
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
   void revisesUnaffordableAndTruncatedTypeSelectionsBeforeBlueprinting() throws Exception {
     String blueprint =
         """
@@ -1716,6 +1959,26 @@ class ConceptualInstanceModelWorkflowTest {
     assertEquals(1, batch.evidence().size());
     assertEquals("actor", batch.evidence().get(0).elementRef());
     assertEquals("turn:source-1", batch.evidence().get(0).sourceUnitId());
+  }
+
+  @Test
+  void treatsAnExistingContainmentRepeatedByItsCurrentParentAsIdempotent() throws Exception {
+    var conceptual =
+        ConceptualInstanceModelWorkflow.ConceptualModel.parse(
+            mapper,
+            """
+{"api-existing":{"type":"Api","attributes":[{"attributeName":"name","value":"Orders API"},{"attributeName":"apiStyle","value":"RESOURCE_ORIENTED_HTTP"}],"associations":{"compositions":[{"associationName":"routes","associatedClassName":"ApiRoute","instanceID":"route-existing"}],"references":[]}}}
+""");
+    var current =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","services":[{"id":"service-existing","eClass":"ServerlessService","apis":[{"id":"api-existing","eClass":"Api","name":"Orders API","apiStyle":"RESOURCE_ORIENTED_HTTP","routes":[{"id":"route-existing","eClass":"ApiRoute","name":"Submit order","pathTemplate":"/orders"}]}]}],"diagram":{"elements":[],"relationships":[]}}
+""");
+
+    var batch = conceptual.commands(current, contracts, ModelLevel.PIM);
+
+    assertEquals(1, batch.updates().size());
+    assertTrue(batch.connections().isEmpty());
   }
 
   private tools.jackson.databind.JsonNode emptyCim() throws Exception {
