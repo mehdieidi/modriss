@@ -10,29 +10,29 @@ docker compose up --build
 ```
 
 The root `compose.yaml` includes `deploy/compose.yaml`. Compose starts Caddy, PostgreSQL, backend,
-modeling frontend, admin app, landing site, LocalStack, Dozzle, Prometheus, Grafana, Loki, Promtail,
+modeling frontend, admin app, landing site, the selected AWS emulator (Floci by default), Dozzle, Prometheus, Grafana, Loki, Promtail,
 postgres-exporter, node-exporter, and cAdvisor.
 
 The preferred local entrypoint is Caddy:
 
-| Surface     | URL                                |
-| ----------- | ---------------------------------- |
-| Landing     | `http://localhost:8088`            |
-| Editor      | `http://editor.localhost:8088`     |
-| Backend API | `http://api.localhost:8088`        |
-| Admin app   | `http://admin.localhost:8088`      |
-| Grafana     | `http://grafana.localhost:8088`    |
-| Logs        | `http://logs.localhost:8088`       |
-| Prometheus  | `http://prometheus.localhost:8088` |
-| Loki        | `http://loki.localhost:8088`       |
-| LocalStack  | `http://localstack.localhost:8088` |
+| Surface      | URL                                |
+| ------------ | ---------------------------------- |
+| Landing      | `http://localhost:8088`            |
+| Editor       | `http://editor.localhost:8088`     |
+| Backend API  | `http://api.localhost:8088`        |
+| Admin app    | `http://admin.localhost:8088`      |
+| Grafana      | `http://grafana.localhost:8088`    |
+| Logs         | `http://logs.localhost:8088`       |
+| Prometheus   | `http://prometheus.localhost:8088` |
+| Loki         | `http://loki.localhost:8088`       |
+| AWS emulator | `http://floci.localhost:8088`      |
 
 Direct service ports remain available for debugging.
 
 ## Production Target
 
 For a first production deployment, use one Linux server with Docker Compose and Caddy as the edge.
-Only Caddy should be public. PostgreSQL, Prometheus, Loki, LocalStack, Dozzle, exporters, and direct
+Only Caddy should be public. PostgreSQL, Prometheus, Loki, the AWS emulator, Dozzle, exporters, and direct
 backend ports should stay private.
 
 Recommended public hostnames:
@@ -95,7 +95,7 @@ Required changes from local defaults:
 - Configure AI provider keys through environment variables or a secret manager.
 - Temporarily enable admin bootstrap only for first admin setup.
 - Disable admin bootstrap immediately after the first admin role is assigned.
-- Remove LocalStack and direct observability exposure unless there is a controlled operational need.
+- Remove the AWS emulator and direct observability exposure unless there is a controlled operational need.
 - Keep upload, PostgreSQL, Grafana, Prometheus, and Loki data on persistent volumes.
 
 Example:
@@ -170,7 +170,7 @@ curl https://api.example.com/actuator/health/readiness
 - Backend actuator: `/actuator/health`
 - Backend readiness: `/actuator/health/readiness`
 - Backend metrics: `/actuator/prometheus`
-- LocalStack, if deployed: `/_localstack/health`
+- Floci, if deployed: `/_floci/health`; LocalStack: `/_localstack/health`
 
 PostgreSQL uses `pg_isready`. Prometheus scrapes backend, Caddy, PostgreSQL exporter, host,
 container, and observability targets.

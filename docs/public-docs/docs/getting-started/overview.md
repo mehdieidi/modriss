@@ -19,7 +19,8 @@ Varka serves several related roles:
 | Backend      | Java 17, Spring Boot                 | `http://127.0.0.1:8080` | API, orchestration, persistence, AI   |
 | PostgreSQL   | PostgreSQL 16 with pgvector          | `localhost:5432`        | Platform and assistant state          |
 | Landing site | Static HTML/CSS/JS                   | `http://127.0.0.1:8083` | Product introduction                  |
-| LocalStack   | AWS service simulator                | `http://127.0.0.1:4566` | Generated-project deployment testing  |
+| Floci        | AWS service emulator (default)       | `http://127.0.0.1:4566` | Generated-project deployment testing  |
+| LocalStack   | Alternate AWS service emulator       | `http://127.0.0.1:4566` | Compatibility/comparison testing      |
 | Dozzle       | Container log viewer                 | `http://127.0.0.1:9999` | Development log inspection            |
 
 ## Typical Lifecycle
@@ -32,7 +33,7 @@ Varka serves several related roles:
 6. Transform PIM to AWS PSM and review provider-specific resources.
 7. Generate an AWS project from PSM.
 8. Browse, edit, and download the generated artifact.
-9. Validate and deploy it to LocalStack or a controlled AWS environment.
+9. Validate and deploy it to the selected Floci/LocalStack emulator or a controlled AWS environment.
 
 Each model is stored with a revision. Updates and transformations use optimistic concurrency so a
 client cannot silently overwrite a newer revision.

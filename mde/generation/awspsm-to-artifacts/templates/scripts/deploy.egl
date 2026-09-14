@@ -2,6 +2,7 @@
 set -euo pipefail
 
 stage_text="${1:-[%= emitCtx.get("defaultStageName") %]}"
+# For local evaluation, run: source scripts/emulator-env.sh
 bash scripts/validate-models.sh
 bash scripts/build.sh
 bash scripts/validate-template.sh

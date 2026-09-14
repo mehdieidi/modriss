@@ -92,7 +92,7 @@ python scripts/format.py --check
 7. Exercise assistant explanation, durable turn events, checkpoint, confirmation, continue, cancel,
    and undo flows.
 8. Download the artifact ZIP and run its generated validation and tests.
-9. Deploy the generated project to LocalStack and verify runtime effects.
+9. Deploy the generated project to the selected AWS emulator (Floci by default) and verify runtime effects.
 
 ## Assistant live evaluation
 

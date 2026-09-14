@@ -25,14 +25,14 @@ Thesis context and long-form rationale:
 docker compose up --build
 ```
 
-| What                                 | URL                                     |
-| ------------------------------------ | --------------------------------------- |
-| Modeling app                         | <http://127.0.0.1:8082>                 |
-| API health                           | <http://127.0.0.1:8080/api/health>      |
-| API explorer                         | <http://127.0.0.1:8080/swagger-ui.html> |
-| Landing page                         | <http://127.0.0.1:8083>                 |
-| Container logs (Dozzle)              | <http://127.0.0.1:9999>                 |
-| LocalStack (generated project tests) | <http://127.0.0.1:4566>                 |
+| What                            | URL                                     |
+| ------------------------------- | --------------------------------------- |
+| Modeling app                    | <http://127.0.0.1:8082>                 |
+| API health                      | <http://127.0.0.1:8080/api/health>      |
+| API explorer                    | <http://127.0.0.1:8080/swagger-ui.html> |
+| Landing page                    | <http://127.0.0.1:8083>                 |
+| Container logs (Dozzle)         | <http://127.0.0.1:9999>                 |
+| AWS emulator (Floci by default) | <http://127.0.0.1:4566>                 |
 
 **First project:** register, create a project, and open CIM. Import
 [`mde/samples/cim.xmi`](mde/samples/cim.xmi) or create a model from scratch. Then choose
@@ -40,6 +40,7 @@ docker compose up --build
 artifact explorer.
 
 [Quickstart guide](docs/public-docs/docs/getting-started/quickstart.md) ·
+[Floci/LocalStack emulator guide](docs/public-docs/docs/guides/floci-emulator.md) ·
 [Enable the AI assistant](docs/internal/ai/assistant.md)
 
 ## Develop it

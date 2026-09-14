@@ -3,27 +3,24 @@
 This process verifies the final downloadable project produced by the complete
 CIM -> PIM -> AWS PSM -> artifacts pipeline.
 
-## 1. Start Varka and LocalStack
+## 1. Start Varka and the selected AWS emulator
 
-LocalStack starts after the frontend and healthy backend. No `SERVICES` allowlist
-is set, so every available LocalStack service can start on demand.
+Floci is the default lightweight emulator; set `AWS_EMULATOR=localstack` for the retained
+LocalStack profile. Compose starts only the selected profile.
 
 ```powershell
-$env:LOCALSTACK_AUTH_TOKEN='<your-localstack-token>'
+$env:AWS_EMULATOR='floci' # or 'localstack'
 docker compose up -d --build
 docker compose ps
-Invoke-RestMethod http://localhost:4566/_localstack/health
+Invoke-RestMethod http://localhost:4566/_floci/health # LocalStack: /_localstack/health
 ```
 
-The default LocalStack state is intentionally non-persistent so every deployment
-test starts clean. Set `$env:LOCALSTACK_PERSISTENCE='1'` before `docker compose
-up` when retained state is required. Large CloudFormation deployments containing
-DynamoDB streams can expose a LocalStack persistence race, so use clean state
-for release evidence.
+The default Floci state is intentionally in-memory so every deployment test starts clean. Set
+`FLOCI_STORAGE_MODE=persistent` when retained state is required; use `LOCALSTACK_PERSISTENCE=1`
+for the alternate LocalStack profile.
 
-The Compose defaults use the host HTTP proxy at
-`http://host.docker.internal:2081`. Override `LOCALSTACK_HTTP_PROXY`,
-`LOCALSTACK_HTTPS_PROXY`, or `LOCALSTACK_NO_PROXY` when needed.
+Set `FLOCI_HTTP_PROXY`, `FLOCI_HTTPS_PROXY`, and `FLOCI_NO_PROXY` for Floci or the corresponding
+`LOCALSTACK_*` variables when the LocalStack profile is selected.
 
 ## 2. Generate and Review
 

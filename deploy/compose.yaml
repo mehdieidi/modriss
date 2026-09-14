@@ -137,7 +137,8 @@ services:
     restart: unless-stopped
 
   localstack:
-    image: localstack/localstack:latest
+    image: ${LOCALSTACK_IMAGE:-localstack/localstack:latest}
+    profiles: ["localstack"]
     env_file:
       - path: ../.env
         required: false
@@ -158,17 +159,49 @@ services:
     volumes:
       - varka-localstack-data:/var/lib/localstack
       - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      backend:
-        condition: service_healthy
-      frontend:
-        condition: service_started
+    networks:
+      default:
+        aliases:
+          - aws-emulator
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:4566/_localstack/health"]
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 20s
+    restart: unless-stopped
+
+  floci:
+    image: ${FLOCI_IMAGE:-floci/floci:2.0.1}
+    profiles: ["floci"]
+    environment:
+      # Resolves to loopback on the host and to Floci's embedded DNS address for spawned Lambdas.
+      FLOCI_HOSTNAME: ${FLOCI_HOSTNAME:-localhost.floci.io}
+      FLOCI_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      FLOCI_STORAGE_MODE: ${FLOCI_STORAGE_MODE:-memory}
+      FLOCI_STORAGE_PERSISTENT_PATH: /app/data
+      # Fail generated deployments when Floci cannot provision a resource. This avoids a
+      # misleading CREATE_COMPLETE backed only by a synthetic resource.
+      FLOCI_SERVICES_CLOUDFORMATION_ALLOW_STUB_UNSUPPORTED_RESOURCE_TYPES: ${FLOCI_CFN_ALLOW_STUB_UNSUPPORTED_RESOURCE_TYPES:-false}
+      QUARKUS_LOG_LEVEL: ${FLOCI_LOG_LEVEL:-INFO}
+      HTTP_PROXY: ${FLOCI_HTTP_PROXY:-}
+      HTTPS_PROXY: ${FLOCI_HTTPS_PROXY:-}
+      NO_PROXY: ${FLOCI_NO_PROXY:-localhost,127.0.0.1,localhost.floci.io,floci,aws-emulator}
+    ports:
+      - "${AWS_EMULATOR_GATEWAY_PORT:-4566}:4566"
+    volumes:
+      - varka-floci-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      default:
+        aliases:
+          - aws-emulator
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:4566/_floci/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
     restart: unless-stopped
 
   landing:
@@ -291,6 +324,7 @@ volumes:
   varka-backend-logs:
   varka-backend-uploads:
   varka-grafana-data:
+  varka-floci-data:
   varka-loki-data:
   varka-localstack-data:
   varka-prometheus-data:

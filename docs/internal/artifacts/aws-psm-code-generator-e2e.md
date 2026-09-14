@@ -23,10 +23,10 @@ It models a small serverless runtime stack:
 
 ## Test
 
-`EpsilonEgxGeneratorTest.deploysGeneratedAwsArtifactsToLocalStackAndExecutesThem` generates the
+`EpsilonEgxGeneratorTest.deploysGeneratedAwsArtifactsToSelectedEmulatorAndExecutesThem` generates the
 project from the checked-in fixture, parses generated JSON/YAML, builds the generated Go Lambda
 bootstrap, uploads generated package artifacts, deploys the generated SAM/CloudFormation template to
-LocalStack, and executes live service assertions.
+selected AWS emulator (Floci by default), and executes live service assertions.
 
 Protected-region business logic remains explicit: the generated Lambda is invoked as a generated
 bootstrap and returns the generated error response shape unless developer-owned business logic is
@@ -34,7 +34,7 @@ merged into the protected region.
 
 ## Live Evidence
 
-The test verifies these generated artifacts against LocalStack:
+The test verifies these generated artifacts against Floci or LocalStack:
 
 - `template.yaml` deploys Lambda, IAM, logs, DynamoDB, SQS, SNS, S3, SSM, Secrets Manager, and
   EventBridge resources.
@@ -60,17 +60,15 @@ Runtime assertions perform real service calls:
 - Lambda function URL HTTP POST.
 - API Gateway HTTP API POST `/runtime`.
 
-## LocalStack Mode
+## Emulator selection
 
-The test first reuses a running LocalStack container only when its health endpoint responds. If the
-compose container is unavailable or restarting, it checks `.env` for `LOCALSTACK_AUTH_TOKEN` and
-starts an isolated `localstack/localstack:latest` container with the token on a disposable Docker
-network. If no token is available, it starts the pinned community image
-`localstack/localstack:3.8.1`.
+Set `AWS_EMULATOR=floci` (default) or `AWS_EMULATOR=localstack`. The test first reuses a running
+container for the selected provider; if unavailable, it starts an isolated provider image on a
+disposable Docker network. Floci uses `floci/floci:2.0.1` and needs no token. LocalStack retains its
+existing token and image behavior.
 
-On the current verified run, the compose LocalStack container was not reused because it was
-restarting with host proxy configuration. The test-owned `localstack/localstack:latest` container
-activated with the `.env` LocalStack token and executed the live assertions.
+The verified Floci run uses the Compose container and executes all live assertions. A separate
+LocalStack smoke run confirms the alternate profile remains available.
 
 When LocalStack does not materialize the generated `AWS::Serverless::StateMachine` from the SAM
 template, the test keeps the generated SAM state machine assertion in place, then creates the

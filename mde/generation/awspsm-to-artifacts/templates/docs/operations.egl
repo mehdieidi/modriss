@@ -10,6 +10,12 @@ The generated handlers emit structured logs, generated metric hooks, and tracer 
 - Run `./scripts/validate-contracts.sh` after contract changes.
 - Review `generated/reports/manual-actions.md` before production export.
 
+## Local emulator diagnostics
+
+Run `source scripts/emulator-env.sh` and `aws sts get-caller-identity` to verify endpoint wiring.
+The selected provider is controlled by `AWS_EMULATOR=floci|localstack`; keep emulator-only tests
+separate from production-account evidence.
+
 [%=out.startPreserve("<!--", "-->", awsRoot.manualRegionId("operations-team-runbook-details"), true)%]
 Add paging policy, dashboard links, SLOs, and service ownership here.
 [%=out.stopPreserve()%]

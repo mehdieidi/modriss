@@ -305,7 +305,7 @@ validate infrastructure, security, operations, and traceability documentation.
 | ------------------------------------------------ | ------------------------------- |
 | Deploying without reading security-review report | Production security gaps        |
 | Hard-coding secrets instead of placeholders      | Credential exposure             |
-| Skipping LocalStack or staging validation        | Undetected integration failures |
+| Skipping emulator or staging validation          | Undetected integration failures |
 
 ### Phase gate checklist
 

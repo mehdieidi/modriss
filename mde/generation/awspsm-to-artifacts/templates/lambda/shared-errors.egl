@@ -1,5 +1,7 @@
 [% /* Generates the shared errors artifact. */ %]package shared
 
+import "encoding/json"
+
 type GeneratedHandlerError struct {
 	Code    string
 	Message string
@@ -16,7 +18,15 @@ func (errObj GeneratedHandlerError) Error() string {
 type GeneratedErrorResponse struct {
 	StatusCode int               `json:"statusCode"`
 	Headers    map[string]string `json:"headers"`
-	Body       any               `json:"body"`
+	Body       string            `json:"body"`
+}
+
+func JSONBody(value any) string {
+	bodyBytes, err := json.Marshal(value)
+	if err != nil {
+		return `{"code":"INTERNAL_ERROR","message":"Response serialization failed"}`
+	}
+	return string(bodyBytes)
 }
 
 func MapKnownError(err error, correlationID string) GeneratedErrorResponse {
@@ -36,6 +46,6 @@ func MapKnownError(err error, correlationID string) GeneratedErrorResponse {
 			"content-type":     "application/json",
 			"x-correlation-id": correlationID,
 		},
-		Body: map[string]any{"code": codeText, "message": messageText, "correlationId": correlationID},
+		Body: JSONBody(map[string]any{"code": codeText, "message": messageText, "correlationId": correlationID}),
 	}
 }

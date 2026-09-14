@@ -44,6 +44,7 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMLResource;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -189,9 +190,10 @@ public final class XmiModelImportService {
       ResourceSet resourceSet = newResourceSet();
       registerMetamodel(resourceSet, level);
       Resource resource =
-          resourceSet.createResource(
+          new IndexedXmiResource(
               URI.createURI(
                   "memory:/" + sanitizePurpose(purpose) + "-" + level.apiName() + ".xmi"));
+      resourceSet.getResources().add(resource);
       try (ByteArrayInputStream input = new ByteArrayInputStream(bytes)) {
         resource.load(input, Map.of(XMLResource.OPTION_DEFER_IDREF_RESOLUTION, Boolean.TRUE));
       }
@@ -373,7 +375,8 @@ public final class XmiModelImportService {
       ResourceSet resourceSet = newResourceSet();
       registerMetamodel(resourceSet, level);
       Resource resource =
-          resourceSet.createResource(URI.createURI("memory:/export-" + level.apiName() + ".xmi"));
+          new IndexedXmiResource(URI.createURI("memory:/export-" + level.apiName() + ".xmi"));
+      resourceSet.getResources().add(resource);
       ExportDiagnostics diagnostics = new ExportDiagnostics(options);
       ExportContext context = new ExportContext(resourceSet, diagnostics, level);
       EObject root = context.createContainedObject(modelJson, null);
@@ -412,6 +415,55 @@ public final class XmiModelImportService {
         .put("xmi", new XMIResourceFactoryImpl());
     resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
     return resourceSet;
+  }
+
+  /**
+   * XMI resource that indexes metamodel ID attributes before deferred reference resolution.
+   *
+   * <p>Several Varka metamodels define {@code id} as their Ecore ID attribute, while generated XMI
+   * commonly omits {@code xmi:id}. EMF's default fallback resolves those references by walking the
+   * complete resource and calling {@code EcoreUtil.getID} for every lookup. Large generated models
+   * therefore become quadratic during load. The deferred resolver runs after the document has been
+   * materialized, so the complete intrinsic-ID index can be built once and reused.
+   */
+  private static final class IndexedXmiResource extends XMIResourceImpl {
+
+    private boolean intrinsicIdIndexBuilt;
+
+    private IndexedXmiResource(URI uri) {
+      super(uri);
+    }
+
+    @Override
+    protected EObject getEObjectByID(String id) {
+      ensureIntrinsicIdIndex();
+      return super.getEObjectByID(id);
+    }
+
+    private void ensureIntrinsicIdIndex() {
+      if (intrinsicIdIndexBuilt) {
+        return;
+      }
+      Map<String, EObject> intrinsicIds = getIntrinsicIDToEObjectMap();
+      if (intrinsicIds == null) {
+        intrinsicIds = new HashMap<>();
+        setIntrinsicIDToEObjectMap(intrinsicIds);
+      }
+      for (EObject root : getContents()) {
+        indexIntrinsicId(root, intrinsicIds);
+        for (TreeIterator<EObject> contents = root.eAllContents(); contents.hasNext(); ) {
+          indexIntrinsicId(contents.next(), intrinsicIds);
+        }
+      }
+      intrinsicIdIndexBuilt = true;
+    }
+
+    private void indexIntrinsicId(EObject object, Map<String, EObject> intrinsicIds) {
+      String id = EcoreUtil.getID(object);
+      if (id != null && !id.isBlank()) {
+        intrinsicIds.putIfAbsent(id, object);
+      }
+    }
   }
 
   /**

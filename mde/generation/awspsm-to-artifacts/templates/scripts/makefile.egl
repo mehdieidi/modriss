@@ -1,7 +1,10 @@
 [% /* Generates the makefile artifact. */ %]SHELL := /usr/bin/env bash
 STAGE ?= [%= emitCtx.get("defaultStageName") %]
 
-.PHONY: validate build test deploy package local-api local-invoke[% for (awsFn in AWSPSMCOMPUTE!AwsLambdaFunction.all.sortBy(awsFn | awsFn.cfnLogicalId())) { %] build-[%= awsFn.cfnLogicalId() %][% } %]
+.PHONY: validate build test deploy package local-api local-invoke emulator-env[% for (awsFn in AWSPSMCOMPUTE!AwsLambdaFunction.all.sortBy(awsFn | awsFn.cfnLogicalId())) { %] build-[%= awsFn.cfnLogicalId() %][% } %]
+
+emulator-env:
+	@echo "Source scripts/emulator-env.sh before local AWS CLI/SAM commands."
 
 validate:
 	bash scripts/validate-models.sh

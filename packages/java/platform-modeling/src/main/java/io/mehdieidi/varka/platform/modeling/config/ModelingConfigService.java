@@ -38,12 +38,30 @@ public final class ModelingConfigService {
   /** Loader for CVS v2 notation documents. */
   private final CvsV2Loader cvsLoader = new CvsV2Loader();
 
+  /** Memoized merged configuration for this service instance. */
+  private volatile Map<String, Object> cachedConfig;
+
   /**
    * Returns the complete modeling configuration for all supported levels.
    *
    * @return configuration map consumed by the platform UI
    */
   public Map<String, Object> config() {
+    Map<String, Object> current = cachedConfig;
+    if (current != null) {
+      return current;
+    }
+    synchronized (this) {
+      if (cachedConfig != null) {
+        return cachedConfig;
+      }
+      cachedConfig = buildConfig();
+      return cachedConfig;
+    }
+  }
+
+  /** Builds the merged configuration once for the owning service instance. */
+  private Map<String, Object> buildConfig() {
     Map<String, Object> platform = readPlatformConfig();
     Map<String, Object> configuredLevels = optionalMap(platform, "levels");
     Map<String, Object> levels = new LinkedHashMap<>();

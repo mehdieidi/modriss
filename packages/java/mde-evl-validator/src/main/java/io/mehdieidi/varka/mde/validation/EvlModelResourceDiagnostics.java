@@ -7,6 +7,8 @@ import org.eclipse.emf.common.util.Diagnostic;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.Diagnostician;
+import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.emf.ecore.xmi.XMLResource;
 
 /** Converts EMF resource load and structural validation diagnostics into EVL diagnostics. */
 public final class EvlModelResourceDiagnostics {
@@ -25,6 +27,7 @@ public final class EvlModelResourceDiagnostics {
     if (resource == null) {
       return List.of();
     }
+    indexXmlIds(resource);
     List<EvlDiagnostic> diagnostics = new ArrayList<>();
     resource
         .getErrors()
@@ -41,6 +44,47 @@ public final class EvlModelResourceDiagnostics {
       collectDiagnostics(Diagnostician.INSTANCE.validate(root), modelFile, diagnostics);
     }
     return diagnostics;
+  }
+
+  /**
+   * Builds the XML resource ID index before EMF validation.
+   *
+   * <p>Generated in-memory resources do not populate the ID map while their XMI IDs are still
+   * available through the XML resource. Without this index, EMF's {@code UniqueID} validator scans
+   * the entire resource for every object, turning structural validation into a quadratic operation
+   * for larger generated models.
+   *
+   * @param resource resource whose XML IDs should be indexed
+   */
+  public static void indexXmlIds(Resource resource) {
+    if (!(resource instanceof XMLResource xmlResource)) {
+      return;
+    }
+    var idToObject = xmlResource.getIDToEObjectMap();
+    var objectToId = xmlResource.getEObjectToIDMap();
+    for (EObject root : resource.getContents()) {
+      indexXmlId(root, xmlResource, idToObject, objectToId);
+      for (var contents = root.eAllContents(); contents.hasNext(); ) {
+        indexXmlId(contents.next(), xmlResource, idToObject, objectToId);
+      }
+    }
+  }
+
+  private static void indexXmlId(
+      EObject object,
+      XMLResource xmlResource,
+      java.util.Map<String, EObject> idToObject,
+      java.util.Map<EObject, String> objectToId) {
+    String id = objectToId.get(object);
+    if (id == null || id.isBlank()) {
+      id = EcoreUtil.getID(object);
+      if (id != null && !id.isBlank()) {
+        objectToId.put(object, id);
+      }
+    }
+    if (id != null && !id.isBlank()) {
+      idToObject.putIfAbsent(id, object);
+    }
   }
 
   /**

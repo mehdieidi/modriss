@@ -12,7 +12,7 @@ flowchart TB
     DB[("PostgreSQL")]
     MDE["MDE assets<br/>Emfatic, Ecore, EVL, ETL, EGX/EGL"]
     Observability["Prometheus, Grafana, Loki, Promtail<br/>metrics, dashboards, logs"]
-    LocalStack["LocalStack<br/>AWS emulator for generated projects"]
+    AwsEmulator["Floci / LocalStack<br/>AWS emulator for generated projects"]
     AI["Arvan OpenAI-compatible AI<br/>Gemma-4-31B-IT"]
     CLIs["MDE CLI tools"]
 
@@ -27,7 +27,7 @@ flowchart TB
     Admin -->|"admin REST APIs"| Backend
     Backend --> DB
     Backend --> MDE
-    Backend --> LocalStack
+    Backend --> AwsEmulator
     Backend --> AI
     Observability --> Backend
     Observability --> Caddy
@@ -55,4 +55,5 @@ modeling configuration rather than maintaining a second independent metamodel.
   obligation-gated conceptual generation, inspect/contract editing, and enforced read-only answers.
 - Assistant mutation is structurally gated only; explicit EVL validation is a separate platform
   workflow. PSM assistant sessions are currently out of scope.
-- LocalStack is used to test generated AWS projects, not to run Varka itself.
+- Floci is the default emulator for generated AWS projects; LocalStack remains selectable for
+  compatibility testing. Neither emulator runs Varka itself.

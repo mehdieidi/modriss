@@ -85,7 +85,7 @@ Stop containers while preserving data:
 docker compose down
 ```
 
-Remove local PostgreSQL and LocalStack volumes:
+Remove local PostgreSQL and emulator volumes (only when you intentionally want a clean state):
 
 ```bash
 docker compose down -v

@@ -59,5 +59,5 @@ Before deployment:
 5. Inspect infrastructure templates, API contracts, event schemas, and workflow definitions.
 6. Deploy first to a dedicated non-production account.
 
-LocalStack proves much of the packaging and integration behavior, but it is not a substitute for a
-real AWS security review.
+Floci and LocalStack prove much of the packaging and integration behavior, but neither is a substitute
+for a real AWS security review.

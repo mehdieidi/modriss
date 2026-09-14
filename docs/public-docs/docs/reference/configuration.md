@@ -1,7 +1,7 @@
 # Configuration
 
 Varka reads configuration from Spring Boot, Docker Compose, the frontend runtime bootstrap, and
-the PostgreSQL/LocalStack helper scripts. The root `.env` and `.env.example` files contain the same
+the PostgreSQL/AWS-emulator helper scripts. The root `.env` and `.env.example` files contain the same
 active keys. `.env.example` is safe to copy; keep real credentials only in the untracked `.env`.
 
 This page contains the public field-by-field environment-variable reference, including accepted
@@ -117,8 +117,30 @@ timeouts, 16,000 completion tokens, JSON protocol, disabled native tools, and ze
 but adds overhead. `OTEL_EXPORTER_OTLP_ENDPOINT` selects the OTLP HTTP endpoint and
 `OTEL_SERVICE_NAME` names the service in the telemetry backend.
 
+## AWS emulator (Floci or LocalStack)
+
+Generated artifacts and integration tests use the standard AWS CLI/SDK endpoint contract. Compose
+starts Floci by default; LocalStack remains available through the alternate profile. Set
+`AWS_EMULATOR=floci` or `AWS_EMULATOR=localstack` and keep `COMPOSE_PROFILES=${AWS_EMULATOR}`.
+
+| Variables                                         | Default                 | Effect                                                                                                  |
+| ------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| `AWS_EMULATOR`                                    | `floci`                 | Selects the Compose profile and live-test provider (`floci` or `localstack`).                           |
+| `AWS_EMULATOR_ENDPOINT_URL`                       | `http://127.0.0.1:4566` | Host endpoint consumed by generated scripts and tests.                                                  |
+| `AWS_EMULATOR_GATEWAY_PORT`                       | `4566`                  | Host port published by the selected emulator.                                                           |
+| `AWS_DEFAULT_REGION`                              | `us-east-1`             | Region used by generated AWS clients and both emulators.                                                |
+| `FLOCI_IMAGE`                                     | `floci/floci:2.0.1`     | Floci image tag. Pin a different version only after compatibility testing.                              |
+| `FLOCI_HOSTNAME`                                  | `localhost.floci.io`    | Hostname Floci places in virtual-host and generated service URLs.                                       |
+| `FLOCI_STORAGE_MODE`                              | `memory`                | Floci state mode (`memory`, `persistent`, `hybrid`, or `wal`).                                          |
+| `FLOCI_CFN_ALLOW_STUB_UNSUPPORTED_RESOURCE_TYPES` | `false`                 | Strict CloudFormation behavior when false; true creates explicit synthetic stubs for unsupported types. |
+
+Start or switch the selected service with `scripts/aws-emulator.ps1 start` on Windows or
+`./scripts/aws-emulator.sh start` on Linux/macOS. See the [Floci emulator guide](../guides/floci-emulator.md)
+for generated-project deployment and troubleshooting.
+
 ## LocalStack
 
+LocalStack is retained for compatibility and comparison runs. Select it with `AWS_EMULATOR=localstack`.
 `LOCALSTACK_GATEWAY_PORT` publishes LocalStack's AWS-compatible endpoint. `AWS_DEFAULT_REGION`
 sets the default region. `LOCALSTACK_DEBUG` accepts `0`, `1`, `true`, or `false`; persistence accepts
 `0` or `1`; `LOCALSTACK_CFN_IGNORE_UNSUPPORTED_RESOURCE_TYPES=1` makes unsupported CloudFormation

@@ -89,3 +89,9 @@ http://localstack.localhost:8088 {
 	import access_logs
 	reverse_proxy localstack:4566
 }
+
+http://floci.localhost:8088 {
+	encode zstd gzip
+	import access_logs
+	reverse_proxy floci:4566
+}

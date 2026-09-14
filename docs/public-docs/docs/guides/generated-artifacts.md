@@ -29,9 +29,9 @@ docker run --rm -v varka-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
 
 Validate every generated Step Functions ASL definition before deployment.
 
-## Deploy to LocalStack
+## Deploy to the local AWS emulator
 
-Start the Varka stack with LocalStack, configure test AWS credentials, create an artifact bucket,
+Start the Varka stack with Floci (or select LocalStack), configure test AWS credentials, create an artifact bucket,
 then run SAM build, package, and deploy for each generated deployment-unit template.
 
 Success criteria include:
@@ -48,6 +48,6 @@ completed. That proves packaging and invocation, not business-path correctness.
 
 ## Promote to AWS
 
-Use a dedicated non-production AWS account first. Remove any LocalStack endpoint override, replace
+Use a dedicated non-production AWS account first. Remove any emulator endpoint override, replace
 all placeholders and manual actions, review security and IAM, and promote only the exact tested and
 reviewed artifact.

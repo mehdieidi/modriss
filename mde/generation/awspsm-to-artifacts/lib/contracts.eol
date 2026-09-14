@@ -167,8 +167,11 @@ operation AWSPSMAPI!ApiGatewayRoute openApiOperation(indentCount : Integer) : St
     outText = outText + spaces(indentCount + 2) + "x-amazon-apigateway-integration:\n";
     outText = outText + spaces(indentCount + 4) + "type: " + self.integration.integrationType.asString().toLowerCase().yamlScalar() + "\n";
     if (self.integration.lambdaTarget.isDefined()) {
-      outText = outText + spaces(indentCount + 4) + "uri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${" +
-        self.integration.lambdaTarget.cfnLogicalId() + ".Arn}/invocations'\n";
+      // Represent the Lambda attribute as an intrinsic node.  !Sub leaves
+      // dotted GetAtt expressions literal in an OpenAPI DefinitionBody on
+      // Floci, so Fn::Join/Fn::GetAtt is portable across AWS and emulators.
+      outText = outText + spaces(indentCount + 4) + "uri: !Join ['', ['arn:', !Ref AWS::Partition, ':apigateway:', !Ref AWS::Region, ':lambda:path/2015-03-31/functions/', !GetAtt " +
+        self.integration.lambdaTarget.cfnLogicalId() + ".Arn, '/invocations']]\n";
     }
     else if (self.integration.integrationUri.isPresent()) {
       outText = outText + spaces(indentCount + 4) + "uri: " + self.integration.integrationUri.yamlScalar() + "\n";

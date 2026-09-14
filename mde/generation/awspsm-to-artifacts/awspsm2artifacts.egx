@@ -728,6 +728,16 @@ rule PackageScript {
   post { emitCtx().recordArtifact("scripts/package.sh", "SCRIPT", "AWSPSM2ART_PackageScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("package-customizations")}); }
 }
 
+/** Generates artifacts or model elements for the selected AWS emulator environment helper. */
+rule EmulatorEnvScript {
+  template : "scripts/emulator-env.egl"
+  target : "scripts/emulator-env.sh"
+  merge : true
+  overwrite : true
+  parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
+  post { emitCtx().recordArtifact("scripts/emulator-env.sh", "SCRIPT", "AWSPSM2ART_EmulatorEnvScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-env-customizations")}); }
+}
+
 /** Generates artifacts or model elements for Ci Validate. */
 rule CiValidate {
   guard : emitCtx().get("enableCiCd") = true

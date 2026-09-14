@@ -153,6 +153,7 @@ nav:
       - End-to-End Modeling: guides/end-to-end-modeling-methodology.md
       - AI Assistant: guides/ai-assistant.md
       - Generated AWS Projects: guides/generated-artifacts.md
+      - Floci AWS Emulator: guides/floci-emulator.md
   - Reference:
       - REST API: reference/rest-api.md
       - Realtime Assistant API: reference/realtime-api.md

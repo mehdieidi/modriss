@@ -23,7 +23,7 @@ type GeneratedInput struct {
 type GeneratedResult struct {
 	StatusCode int               `json:"statusCode,omitempty"`
 	Headers    map[string]string `json:"headers,omitempty"`
-	Body       any               `json:"body,omitempty"`
+	Body       string            `json:"body,omitempty"`
 }
 
 [%=out.startPreserve("/*", "*/", awsFn.manualRegionId("custom-types"), true)%]
@@ -76,7 +76,7 @@ func Handler(ctx context.Context, lambdaEvt map[string]any) (GeneratedResult, er
 			"content-type":     "application/json",
 			"x-correlation-id": correlationID,
 		},
-		Body: map[string]any{"ok": true, "correlationId": correlationID},
+		Body: shared.JSONBody(map[string]any{"ok": true, "correlationId": correlationID}),
 	}
 
 	if err := eventPublisherObj.PublishModeledEvents(ctx, "[%= awsFn.stableKey() %]", generatedResult); err != nil {

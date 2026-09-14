@@ -1,6 +1,8 @@
 [% /* Generates the package artifact. */ %]#!/usr/bin/env bash
 set -euo pipefail
 
+# For local evaluation, run: source scripts/emulator-env.sh
+
 stage_text="${1:-[%= emitCtx.get("defaultStageName") %]}"
 bash scripts/validate-models.sh
 bash scripts/build.sh

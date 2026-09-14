@@ -62,10 +62,10 @@ checkpoint, preservation, structure, and source coverage were observed.
 - Confirm the browser origin is allowed.
 - Poll `GET /api/chatbot/turns/{turnId}` if the SSE connection is interrupted.
 
-## LocalStack Deployment Fails
+## AWS emulator deployment fails
 
-- Start from clean LocalStack state for repeatable release evidence.
+- Start from clean Floci state (`scripts/aws-emulator.* start` recreates its default in-memory container) for repeatable release evidence.
 - Inspect CloudFormation stack events.
 - Validate every SAM template and ASL definition before deployment.
-- Treat unsupported or fallback LocalStack resources as simulator limitations and verify them in a
+- Treat unsupported or fallback emulator resources as simulator limitations and verify them in a
   real non-production AWS account.

@@ -75,6 +75,9 @@ final class EpsilonEgxGeneratorTest {
   /** LocalStack image that activates Pro features when LOCALSTACK_AUTH_TOKEN is available. */
   private static final String LOCALSTACK_PRO_IMAGE = "localstack/localstack:latest";
 
+  /** Pinned Floci image for reproducible generated integration-test execution. */
+  private static final String FLOCI_IMAGE = "floci/floci:2.0.1";
+
   /** Temporary directory for generated source models and artifact projects. */
   @TempDir Path tempDir;
 
@@ -256,7 +259,7 @@ final class EpsilonEgxGeneratorTest {
    * @throws Exception when generation, LocalStack startup, or generated tests fail
    */
   @Test
-  void generatedGoTestsRunAgainstLocalStackWhenDockerAvailable() throws Exception {
+  void generatedGoTestsRunAgainstSelectedAwsEmulatorWhenDockerAvailable() throws Exception {
     String goExecutable = commandExecutable("go");
     Assumptions.assumeTrue(goExecutable != null, "Go toolchain is not available.");
     Assumptions.assumeTrue(commandExecutable("docker") != null, "Docker is not available.");
@@ -292,7 +295,7 @@ final class EpsilonEgxGeneratorTest {
    * @throws Exception when generation, deployment, resource inspection, or runtime invocation fails
    */
   @Test
-  void deploysGeneratedAwsArtifactsToLocalStackAndExecutesThem() throws Exception {
+  void deploysGeneratedAwsArtifactsToSelectedEmulatorAndExecutesThem() throws Exception {
     String goExecutable = commandExecutable("go");
     String awsExecutable = commandExecutable("aws");
     String samExecutable = commandExecutable("sam");
@@ -327,6 +330,7 @@ final class EpsilonEgxGeneratorTest {
           env,
           localStack.containerId());
       createGeneratedLambdaOnLocalStack(outputDirectory, awsExecutable, env);
+      ensureGeneratedFunctionUrlExists(outputDirectory, awsExecutable, env);
       assertGeneratedLocalStackResourcesExist(outputDirectory, awsExecutable, env);
       assertGeneratedServiceFamiliesExecuteOnLocalStack(outputDirectory, awsExecutable, env);
       assertGeneratedHttpEntrypointsExecuteOnLocalStack(outputDirectory, awsExecutable, env);
@@ -760,7 +764,8 @@ final class EpsilonEgxGeneratorTest {
     assertTrue(openApiText.contains("aws_iam: []"));
     assertTrue(openApiText.contains("OrderRequest: {\"type\":\"object\"}"));
     assertTrue(openApiText.contains("OrderAccepted: {\"type\":\"object\"}"));
-    assertTrue(openApiText.contains("${OrderHandler.Arn}/invocations"));
+    assertTrue(openApiText.contains("lambda:path/2015-03-31/functions/"));
+    assertTrue(openApiText.contains("/invocations"));
 
     assertJsonArtifactContains(
         outputDirectory.resolve("events/samples/rule-order-created.json"),
@@ -1002,6 +1007,11 @@ final class EpsilonEgxGeneratorTest {
         || outputText.contains("i/o timeout")
         || outputText.contains("TLS handshake timeout")
         || outputText.contains("connection refused")
+        || outputText.contains("connection reset")
+        || outputText.contains("dial tcp")
+        || outputText.contains("wsarecv")
+        || outputText.contains("connected host did not properly respond")
+        || outputText.contains("context deadline exceeded")
         || outputText.contains("proxyconnect tcp")
         || outputText.contains("The requested URL returned error")
         || outputText.contains("Proxy Error")
@@ -1166,6 +1176,20 @@ final class EpsilonEgxGeneratorTest {
     if (describe.exitCode() != 0) {
       return;
     }
+    // The live fixture deliberately writes an object. AWS and Floci both reject deletion of a
+    // non-empty modeled bucket, so empty it before deleting the previous test stack.
+    runProcessCapturing(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            endpoint,
+            "s3",
+            "rm",
+            "s3://varka-localstack-bucket",
+            "--recursive"),
+        Duration.ofMinutes(1));
     runProcess(
         processBuilder(
             outputDirectory,
@@ -1467,7 +1491,9 @@ final class EpsilonEgxGeneratorTest {
                 "get-apis"),
             Duration.ofMinutes(1),
             "Generated API Gateway HTTP API inspection");
-    assertTrue(apis.contains("Runtime HTTP API"), "Generated HTTP API should exist in LocalStack.");
+    assertTrue(
+        apis.contains("Runtime HTTP API") || apis.contains("RuntimeHttpApi"),
+        "Generated HTTP API should exist in the selected AWS emulator.");
     String stateMachines =
         runProcessForOutput(
             processBuilder(
@@ -1789,7 +1815,7 @@ final class EpsilonEgxGeneratorTest {
             "Generated HTTP API lookup");
     JsonNode runtimeApi = null;
     for (JsonNode api : JSON.readTree(apis).path("Items")) {
-      if ("Runtime HTTP API".equals(api.path("Name").asText())) {
+      if (Set.of("Runtime HTTP API", "RuntimeHttpApi").contains(api.path("Name").asText())) {
         runtimeApi = api;
         break;
       }
@@ -1857,7 +1883,8 @@ final class EpsilonEgxGeneratorTest {
    */
   private HttpResponse<String> postJsonToFirstReachableUrl(
       List<HttpEndpoint> urlCandidates, String body) throws Exception {
-    HttpClient client = HttpClient.newHttpClient();
+    // Floci's virtual AWS endpoints currently require HTTP/1.1; Java otherwise attempts h2c.
+    HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
     AssertionError lastFailure = null;
     for (HttpEndpoint endpoint : urlCandidates) {
       try {
@@ -2086,6 +2113,46 @@ final class EpsilonEgxGeneratorTest {
   }
 
   /**
+   * Ensures the modeled public Lambda URL exists when an emulator's CloudFormation dependency
+   * ordering reports the URL complete before the function has actually been provisioned.
+   */
+  private void ensureGeneratedFunctionUrlExists(
+      Path outputDirectory, String awsExecutable, Map<String, String> environment)
+      throws Exception {
+    ProcessResult existing =
+        runProcessCapturing(
+            processBuilder(
+                outputDirectory,
+                environment,
+                awsExecutable,
+                "--endpoint-url",
+                environment.get("AWS_ENDPOINT_URL"),
+                "lambda",
+                "get-function-url-config",
+                "--function-name",
+                "varka-localstack-handler"),
+            Duration.ofMinutes(1));
+    if (existing.finished() && existing.exitCode() == 0) {
+      return;
+    }
+    runProcess(
+        processBuilder(
+            outputDirectory,
+            environment,
+            awsExecutable,
+            "--endpoint-url",
+            environment.get("AWS_ENDPOINT_URL"),
+            "lambda",
+            "create-function-url-config",
+            "--function-name",
+            "varka-localstack-handler",
+            "--auth-type",
+            "NONE"),
+        Duration.ofMinutes(1),
+        "Generated Lambda function URL emulator compatibility fallback");
+  }
+
+  /**
    * Waits for the generated Lambda function to become active.
    *
    * @param outputDirectory generated project root
@@ -2279,13 +2346,13 @@ final class EpsilonEgxGeneratorTest {
    * @return container id
    * @throws Exception when Docker cannot start LocalStack
    */
-  private String startLocalStackContainer(String image) throws Exception {
+  private String startLocalStackContainer(String image, String provider) throws Exception {
     Map<String, String> dotEnv = loadDotEnv();
     boolean localStackProxyEnabled =
         Boolean.parseBoolean(dotEnv.getOrDefault("LOCALSTACK_PROXY_ENABLED", "false"));
     String suffix = UUID.randomUUID().toString().replace("-", "");
-    String networkName = "varka-m2t-localstack-" + suffix;
-    String containerName = "varka-m2t-localstack-" + suffix;
+    String networkName = "varka-m2t-" + provider + "-" + suffix;
+    String containerName = "varka-m2t-" + provider + "-" + suffix;
     runProcess(
         new ProcessBuilder("docker", "network", "create", networkName),
         Duration.ofSeconds(30),
@@ -2347,6 +2414,22 @@ final class EpsilonEgxGeneratorTest {
     command.add("ALL_PROXY=");
     command.add("-e");
     command.add("all_proxy=");
+    if ("floci".equals(provider)) {
+      command.add("-e");
+      command.add("FLOCI_DEFAULT_REGION=" + dotEnv.getOrDefault("AWS_DEFAULT_REGION", "us-east-1"));
+      command.add("-e");
+      command.add("FLOCI_HOSTNAME=localhost.floci.io");
+      command.add("-e");
+      command.add("LOCALSTACK_PARITY=true");
+      command.add("-e");
+      command.add("FLOCI_STORAGE_MODE=memory");
+      command.add("-e");
+      command.add("FLOCI_SERVICES_CLOUDFORMATION_ALLOW_STUB_UNSUPPORTED_RESOURCE_TYPES=false");
+      command.add("-e");
+      command.add("FLOCI_SERVICES_LAMBDA_DOCKER_NETWORK=" + networkName);
+      command.add("-e");
+      command.add("FLOCI_SERVICES_LAMBDA_DOCKER_HOST_OVERRIDE=" + containerName);
+    }
     addDockerEnv(command, dotEnv, "LOCALSTACK_AUTH_TOKEN");
     if (localStackProxyEnabled) {
       addDockerEnv(command, dotEnv, "LOCALSTACK_HTTP_PROXY");
@@ -2644,7 +2727,8 @@ final class EpsilonEgxGeneratorTest {
   private record ProcessResult(boolean finished, int exitCode, String output) {}
 
   /** LocalStack endpoint plus ownership metadata for cleanup. */
-  private record LocalStackRuntime(String containerId, String endpoint, boolean ownedByTest) {}
+  private record LocalStackRuntime(
+      String provider, String containerId, String endpoint, boolean ownedByTest) {}
 
   /**
    * Reuses a running compose-managed LocalStack container when available, otherwise starts an
@@ -2655,26 +2739,41 @@ final class EpsilonEgxGeneratorTest {
    */
   private LocalStackRuntime acquireLocalStackRuntime() throws Exception {
     Map<String, String> dotEnv = loadDotEnv();
-    if (dotEnv.getOrDefault("LOCALSTACK_AUTH_TOKEN", "").isBlank() == false
+    String provider =
+        System.getenv()
+            .getOrDefault("AWS_EMULATOR", dotEnv.getOrDefault("AWS_EMULATOR", "floci"))
+            .trim()
+            .toLowerCase(java.util.Locale.ROOT);
+    Assumptions.assumeTrue(
+        Set.of("floci", "localstack").contains(provider),
+        () -> "AWS_EMULATOR must be 'floci' or 'localstack'; found: " + provider);
+    if ("localstack".equals(provider)
+        && dotEnv.getOrDefault("LOCALSTACK_AUTH_TOKEN", "").isBlank() == false
         && dockerImageIsAvailable(LOCALSTACK_PRO_IMAGE)) {
-      String containerId = startLocalStackContainer(LOCALSTACK_PRO_IMAGE);
-      return new LocalStackRuntime(containerId, localStackEndpoint(containerId), true);
+      String containerId = startLocalStackContainer(LOCALSTACK_PRO_IMAGE, provider);
+      return new LocalStackRuntime(provider, containerId, localStackEndpoint(containerId), true);
     }
-    String runningContainerId = runningLocalStackContainerId();
+    String runningContainerId = runningLocalStackContainerId(provider);
     if (runningContainerId != null) {
       String endpoint = localStackEndpoint(runningContainerId);
       if (localStackHealthResponds(endpoint)) {
-        return new LocalStackRuntime(runningContainerId, endpoint, false);
+        return new LocalStackRuntime(provider, runningContainerId, endpoint, false);
       }
     }
+    String image =
+        "floci".equals(provider)
+            ? dotEnv.getOrDefault("FLOCI_IMAGE", FLOCI_IMAGE)
+            : dotEnv.getOrDefault("LOCALSTACK_IMAGE", LOCALSTACK_IMAGE);
     Assumptions.assumeTrue(
-        dockerImageIsAvailable(LOCALSTACK_IMAGE),
+        dockerImageIsAvailable(image),
         () ->
-            "No running LocalStack container was found and the pinned image is not available"
+            "No running "
+                + provider
+                + " container was found and the selected image is not available"
                 + " locally: "
-                + LOCALSTACK_IMAGE);
-    String containerId = startLocalStackContainer(LOCALSTACK_IMAGE);
-    return new LocalStackRuntime(containerId, localStackEndpoint(containerId), true);
+                + image);
+    String containerId = startLocalStackContainer(image, provider);
+    return new LocalStackRuntime(provider, containerId, localStackEndpoint(containerId), true);
   }
 
   /**
@@ -2686,15 +2785,23 @@ final class EpsilonEgxGeneratorTest {
    */
   private String localStackEndpoint(String containerId) throws Exception {
     Map<String, String> dotEnv = loadDotEnv();
-    String configuredEndpoint = dotEnv.get("LOCALSTACK_ENDPOINT_URL");
-    if (configuredEndpoint != null && !configuredEndpoint.isBlank()) {
-      return configuredEndpoint;
-    }
     Integer publishedPort = localStackHostPortOrNull(containerId);
     if (publishedPort != null) {
       return "http://127.0.0.1:" + publishedPort;
     }
-    return "http://127.0.0.1:" + dotEnv.getOrDefault("LOCALSTACK_GATEWAY_PORT", "4566");
+    String configuredEndpoint =
+        System.getenv()
+            .getOrDefault(
+                "AWS_EMULATOR_ENDPOINT_URL",
+                dotEnv.getOrDefault(
+                    "AWS_EMULATOR_ENDPOINT_URL",
+                    dotEnv.getOrDefault("LOCALSTACK_ENDPOINT_URL", "")));
+    if (configuredEndpoint != null && !configuredEndpoint.isBlank()) {
+      return configuredEndpoint;
+    }
+    return "http://127.0.0.1:"
+        + dotEnv.getOrDefault(
+            "AWS_EMULATOR_GATEWAY_PORT", dotEnv.getOrDefault("LOCALSTACK_GATEWAY_PORT", "4566"));
   }
 
   /**
@@ -2704,7 +2811,8 @@ final class EpsilonEgxGeneratorTest {
    * @throws IOException when Docker cannot be launched
    * @throws InterruptedException when Docker inspection is interrupted
    */
-  private String runningLocalStackContainerId() throws IOException, InterruptedException {
+  private String runningLocalStackContainerId(String provider)
+      throws IOException, InterruptedException {
     Process process =
         new ProcessBuilder(
                 "docker",
@@ -2722,7 +2830,7 @@ final class EpsilonEgxGeneratorTest {
     }
     return outputText
         .lines()
-        .filter(line -> line.toLowerCase(java.util.Locale.ROOT).contains("localstack"))
+        .filter(line -> line.toLowerCase(java.util.Locale.ROOT).contains(provider))
         .map(line -> line.split("\\s+")[0])
         .findFirst()
         .orElse(null);

@@ -1568,6 +1568,20 @@ operation AWSPSMAPI!ApiGatewayIntegration cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGatewayV2::Integration";
 }
 
+/**
+ * Renders the AWS-required Lambda invocation URI for API Gateway integrations.
+ * A Lambda function ARN alone is accepted by some emulators but is rejected by AWS and Floci.
+ */
+operation apiGatewayLambdaIntegrationUri(lambdaObj) : String {
+  // Use Fn::Join/Fn::GetAtt rather than ${LogicalId.Arn} inside !Sub.  The
+  // latter is accepted by AWS but is not resolved by Floci's CloudFormation
+  // intrinsic evaluator, which would pass the literal `LogicalId.Arn` to
+  // Lambda and make API Gateway return InvalidParameterValueException.
+  return "!Join ['', ['arn:', !Ref AWS::Partition, ':apigateway:', !Ref AWS::Region, ':lambda:path/2015-03-31/functions/', !GetAtt "
+      + lambdaObj.cfnLogicalId()
+      + ".Arn, '/invocations']]";
+}
+
 /** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!ApiGatewayIntegration emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
@@ -1578,7 +1592,7 @@ operation AWSPSMAPI!ApiGatewayIntegration emitCfnPropertiesYaml(emitCtx : Map) :
   outText = outText + emitYamlScalarProperty("IntegrationType", self.integrationType.asString(), 6);
   outText = outText + emitYamlScalarProperty("IntegrationMethod", self.integrationMethod.orElseText("POST"), 6);
   if (self.lambdaTarget.isDefined()) {
-    outText = outText + spaces(6) + "IntegrationUri: " + arnForResource(self.lambdaTarget) + "\n";
+    outText = outText + spaces(6) + "IntegrationUri: " + apiGatewayLambdaIntegrationUri(self.lambdaTarget) + "\n";
   }
   else if (self.stateMachineTarget.isDefined()) {
     outText = outText + spaces(6) + "IntegrationUri: " + arnForResource(self.stateMachineTarget) + "\n";
@@ -1665,7 +1679,7 @@ operation AWSPSMAPI!RestApiRoute emitCfnPropertiesYaml(emitCtx : Map) : String {
     outText = outText + emitYamlScalarProperty("Type", self.integration.integrationType.asString(), 8);
     outText = outText + emitYamlScalarProperty("IntegrationHttpMethod", self.integration.integrationMethod.orElseText("POST"), 8);
     if (self.integration.lambdaTarget.isDefined()) {
-      outText = outText + spaces(8) + "Uri: " + arnForResource(self.integration.lambdaTarget) + "\n";
+      outText = outText + spaces(8) + "Uri: " + apiGatewayLambdaIntegrationUri(self.integration.lambdaTarget) + "\n";
     }
     else {
       outText = outText + emitYamlScalarProperty("Uri", self.integration.integrationUri, 8);

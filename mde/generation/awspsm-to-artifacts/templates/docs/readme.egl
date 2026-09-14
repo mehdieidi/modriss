@@ -8,6 +8,14 @@ Generated AWS serverless project from the PSM model.
 - `make build` builds generated source.
 - `make test` runs generated tests.
 - `make deploy STAGE=[%= emitCtx.get("defaultStageName") %]` deploys with `samconfig.toml`.
+- `source scripts/emulator-env.sh` selects the local Floci/LocalStack endpoint for CLI and SDK tests.
+
+## Local AWS emulator
+
+The generated project is compatible with the Varka Floci emulator by default. Start the emulator
+from the repository root (`scripts/aws-emulator.ps1 start` or `./scripts/aws-emulator.sh start`),
+then source `scripts/emulator-env.sh` before `make test` or local SAM commands. Set
+`AWS_EMULATOR=localstack` for a LocalStack compatibility run.
 
 ## Project Layout
 

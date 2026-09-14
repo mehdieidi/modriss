@@ -1,6 +1,7 @@
 package io.mehdieidi.varka.platform.transformation.synchronization;
 
 import com.google.common.base.Predicate;
+import io.mehdieidi.varka.mde.validation.EvlModelResourceDiagnostics;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -1447,6 +1448,7 @@ public final class ModelSynchronizationService {
 
   /** Rejects structurally invalid candidates using the Ecore validator only. */
   private void validateStructuralResult(Resource resource) {
+    EvlModelResourceDiagnostics.indexXmlIds(resource);
     for (EObject root : resource.getContents()) {
       Diagnostic diagnostic = Diagnostician.INSTANCE.validate(root);
       if (diagnostic.getSeverity() >= Diagnostic.ERROR) {

@@ -575,7 +575,8 @@ public final class TransformationSynchronizationCoordinator {
    */
   private void mergeManualBacklog(JsonNode working, JsonNode generated, ObjectNode merged) {
     Map<String, JsonNode> workingTasks = backlogById(working);
-    Map<String, JsonNode> generatedTasks = backlogById(generated);
+    Map<String, JsonNode> generatedTasks =
+        deduplicateGeneratedBacklogTasks(backlogById(working), backlogById(generated));
     Map<String, JsonNode> workingTasksBySemanticKey = new LinkedHashMap<>();
     workingTasks.forEach(
         (id, task) -> {
@@ -607,6 +608,61 @@ public final class TransformationSynchronizationCoordinator {
 
     merged.set("manualBacklog", backlog);
     merged.withObject("graph").set("manualBacklog", backlog.deepCopy());
+  }
+
+  /**
+   * Collapses generated variants of the same decision. The rationale identifies the decision
+   * independently of the affected-element set, which can change when a retained model element is
+   * regenerated. A working task is preferred so its stable ID and review state are preserved.
+   */
+  private Map<String, JsonNode> deduplicateGeneratedBacklogTasks(
+      Map<String, JsonNode> workingTasks, Map<String, JsonNode> generatedTasks) {
+    Map<String, JsonNode> deduplicated = new LinkedHashMap<>();
+    Map<String, String> selectedIdsByDecision = new LinkedHashMap<>();
+    generatedTasks.forEach(
+        (id, task) -> {
+          if (!isGeneratedBacklogTask(task.path("category").asText(""))) {
+            deduplicated.putIfAbsent(id, task);
+            return;
+          }
+          String decisionKey = backlogDecisionKey(task);
+          String selectedId = selectedIdsByDecision.get(decisionKey);
+          if (selectedId == null) {
+            selectedIdsByDecision.put(decisionKey, id);
+            deduplicated.put(id, task);
+            return;
+          }
+          JsonNode selectedTask = deduplicated.get(selectedId);
+          if (preferGeneratedTask(id, task, selectedId, selectedTask, workingTasks)) {
+            selectedIdsByDecision.put(decisionKey, id);
+            deduplicated.remove(selectedId);
+            deduplicated.put(id, task);
+          }
+        });
+    return deduplicated;
+  }
+
+  private boolean preferGeneratedTask(
+      String candidateId,
+      JsonNode candidate,
+      String selectedId,
+      JsonNode selected,
+      Map<String, JsonNode> workingTasks) {
+    boolean candidateIsWorking = workingTasks.containsKey(candidateId);
+    boolean selectedIsWorking = workingTasks.containsKey(selectedId);
+    if (candidateIsWorking != selectedIsWorking) {
+      return candidateIsWorking;
+    }
+    return selected != null && !hasAffectedElements(selected) && hasAffectedElements(candidate);
+  }
+
+  private boolean hasAffectedElements(JsonNode task) {
+    JsonNode affectedElements = task.get("affectedElements");
+    return affectedElements != null && affectedElements.isArray() && affectedElements.size() > 0;
+  }
+
+  private String backlogDecisionKey(JsonNode task) {
+    return task.path("category").asText("") + "\u0000" + task.path("rationale").asText("");
   }
 
   private String backlogSemanticKey(JsonNode task) {

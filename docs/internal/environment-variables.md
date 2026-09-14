@@ -36,7 +36,7 @@ These mostly control Docker Compose and what ports are exposed on your host mach
 | `BACKEND_PORT`                | Any free host port, usually `8080` | The host port for the Spring Boot API. The backend still listens on `8080` inside the container.                            |
 | `FRONTEND_PORT`               | Any free host port, usually `8082` | The host port for the modeling frontend.                                                                                    |
 | `LANDING_PORT`                | Any free host port, usually `8083` | The host port for the landing page.                                                                                         |
-| `LOCALSTACK_GATEWAY_PORT`     | Any free host port, usually `4566` | The host port for LocalStack's main AWS-compatible endpoint.                                                                |
+| `AWS_EMULATOR_GATEWAY_PORT`   | Any free host port, usually `4566` | The host port for the selected emulator's AWS-compatible endpoint.                                                          |
 | `POSTGRES_HOST`               | Hostname, usually `localhost`      | Host used by the backup and restore scripts. Compose itself uses the `postgres` service name internally.                    |
 | `FREELLMAPI_NETWORK`          | Docker network name                | Network joined by the backend for host-based FreeLLM/API access; defaults to `freellmapi_default`.                          |
 | `FREELLMAPI_NETWORK_EXTERNAL` | `false`                            | Set to `true` only when `FREELLMAPI_NETWORK` already exists and should be managed outside this Compose project.             |
@@ -247,12 +247,34 @@ Observability means logs, metrics, and traces: the stuff you use to understand w
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP HTTP traces endpoint URL | Where traces are sent, for example `http://localhost:4318/v1/traces`.                         |
 | `OTEL_SERVICE_NAME`           | Service name string           | Name used to identify this backend in telemetry tools.                                        |
 
+## AWS emulator selection
+
+Compose exposes one AWS emulator at a time. Set `AWS_EMULATOR=floci` (the default) or
+`AWS_EMULATOR=localstack`; `COMPOSE_PROFILES=${AWS_EMULATOR}` activates the matching Compose
+profile. Generated projects use the same AWS CLI/SDK contract, so `AWS_ENDPOINT_URL` can point at
+either implementation.
+
+| Variable                                          | Possible values                         | What it means                                                                                    |
+| ------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `AWS_EMULATOR`                                    | `floci`, `localstack`                   | Selects the emulator profile used by Compose and the live generated-artifact test.               |
+| `COMPOSE_PROFILES`                                | `${AWS_EMULATOR}`                       | Compose profile selector; keep it aligned with `AWS_EMULATOR`.                                   |
+| `AWS_EMULATOR_ENDPOINT_URL`                       | URL, usually `http://127.0.0.1:4566`    | Host endpoint exported to generated tests and helper scripts.                                    |
+| `AWS_DEFAULT_REGION`                              | AWS region such as `us-east-1`          | Default region used by both emulators and generated-project tests.                               |
+| `FLOCI_IMAGE`                                     | Image tag, default `floci/floci:2.0.1`  | Pinned Floci image used by the Compose profile.                                                  |
+| `FLOCI_HOSTNAME`                                  | Hostname, default `localhost.floci.io`  | Hostname Floci embeds in S3/SQS/SNS and virtual endpoint URLs.                                   |
+| `FLOCI_STORAGE_MODE`                              | `memory`, `persistent`, `hybrid`, `wal` | Floci state mode; `memory` gives clean state after container recreation.                         |
+| `FLOCI_CFN_ALLOW_STUB_UNSUPPORTED_RESOURCE_TYPES` | `true`, `false`                         | Whether unsupported CloudFormation resources are synthetic stubs; `false` is the strict default. |
+| `FLOCI_HTTP_PROXY`, `FLOCI_HTTPS_PROXY`           | Empty or proxy URL                      | Optional outbound proxy for the Floci container.                                                 |
+| `FLOCI_NO_PROXY`                                  | Comma-separated hosts                   | Hosts that bypass the Floci proxy.                                                               |
+
 ## LocalStack
 
-LocalStack is the local AWS emulator used for generated-project deployment tests.
+LocalStack remains available for compatibility and comparison testing. Select it with
+`AWS_EMULATOR=localstack` and keep its existing variables below.
 
 | Variable                                           | Possible values                                            | What it means                                                                                                                     |
 | -------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `LOCALSTACK_GATEWAY_PORT`                          | Any free host port, usually `4566`                         | Host port for LocalStack when its profile is selected.                                                                            |
 | `AWS_DEFAULT_REGION`                               | AWS region code like `us-east-1`, `eu-west-1`              | Default AWS region used by LocalStack and generated-project tests.                                                                |
 | `LOCALSTACK_DEBUG`                                 | `0`, `1`, `true`, `false`                                  | LocalStack debug logging switch. `1` or `true` is noisier.                                                                        |
 | `LOCALSTACK_AUTH_TOKEN`                            | Empty or LocalStack auth token                             | Token for LocalStack features that require authentication. Treat as a secret.                                                     |

@@ -11,18 +11,18 @@ tests do not invoke EVL semantic validation.
 
 The primary tests are in `packages/java/mde-m2t-runner/src/test/java/io/mehdieidi/varka/mde/generation`.
 
-| Test                                                                                     | Coverage role                                                                                                                                                                                                                                                                                                                       |
-| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AwsPsmArtifactGenerationSyntaxTest.everyEglTemplateParsesWithoutErrors`                 | Parses every EGL template.                                                                                                                                                                                                                                                                                                          |
-| `AwsPsmArtifactGenerationSyntaxTest.egxCoordinatorReferencesExistingImportsAndTemplates` | Ensures EGX imports and templates resolve.                                                                                                                                                                                                                                                                                          |
-| `EpsilonEgxGeneratorTest.generatesArtifactsForRepresentativeAwsPsmModel`                 | Executes every traceable EGX artifact rule against a synthetic AWS PSM model and checks source coverage plus artifact validity.                                                                                                                                                                                                     |
-| `EpsilonEgxGeneratorTest.generatesSamForBroadAwsPsmResourceSurface`                      | Executes broad AWS resource, ASL, and structured-document variants and verifies rendered SAM/ASL/document evidence.                                                                                                                                                                                                                 |
-| `EpsilonEgxGeneratorTest.honorsEgxGuardsForMinimalAwsPsmModel`                           | Exercises negative/guard behavior for empty stacks, default environment generation, API/ASL/Lambda guards, and trace exclusions.                                                                                                                                                                                                    |
-| `EpsilonEgxGeneratorTest.generatedGoTestsRunAgainstLocalStackWhenDockerAvailable`        | Runs generated Go tests with LocalStack endpoint variables when Go, Docker, and the pinned LocalStack image are available.                                                                                                                                                                                                          |
-| `EpsilonEgxGeneratorTest.deploysGeneratedAwsArtifactsToLocalStackAndExecutesThem`        | Generates from `src/test/resources/awspsm/e2e/localstack-serverless-system.awspsm.xmi`, packages the generated Lambda/ASL artifacts, deploys supported AWS artifacts to LocalStack, invokes Lambda, executes service APIs, starts the generated Step Functions workflow, and runs generated Go tests against the deployed function. |
-| `EpsilonEgxGeneratorTest.generatesCompleteUniqueTraceForRepositoryPsmSample`             | Regression-runs the repository PSM sample and verifies trace completeness and SAM invariants.                                                                                                                                                                                                                                       |
-| `EpsilonEgxGeneratorTest.preservesProtectedRegionsWhenRegeneratingExistingArtifacts`     | Verifies merge/protected-region preservation.                                                                                                                                                                                                                                                                                       |
-| `EpsilonEgxGeneratorTest.generatorCoverageMatrixListsEveryEgxRule`                       | Fails when an EGX artifact rule is missing from this matrix.                                                                                                                                                                                                                                                                        |
+| Test                                                                                       | Coverage role                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AwsPsmArtifactGenerationSyntaxTest.everyEglTemplateParsesWithoutErrors`                   | Parses every EGL template.                                                                                                                                                                                                                                                                                                                   |
+| `AwsPsmArtifactGenerationSyntaxTest.egxCoordinatorReferencesExistingImportsAndTemplates`   | Ensures EGX imports and templates resolve.                                                                                                                                                                                                                                                                                                   |
+| `EpsilonEgxGeneratorTest.generatesArtifactsForRepresentativeAwsPsmModel`                   | Executes every traceable EGX artifact rule against a synthetic AWS PSM model and checks source coverage plus artifact validity.                                                                                                                                                                                                              |
+| `EpsilonEgxGeneratorTest.generatesSamForBroadAwsPsmResourceSurface`                        | Executes broad AWS resource, ASL, and structured-document variants and verifies rendered SAM/ASL/document evidence.                                                                                                                                                                                                                          |
+| `EpsilonEgxGeneratorTest.honorsEgxGuardsForMinimalAwsPsmModel`                             | Exercises negative/guard behavior for empty stacks, default environment generation, API/ASL/Lambda guards, and trace exclusions.                                                                                                                                                                                                             |
+| `EpsilonEgxGeneratorTest.generatedGoTestsRunAgainstSelectedAwsEmulatorWhenDockerAvailable` | Runs generated Go tests with the selected Floci/LocalStack endpoint when Go, Docker, and the provider image are available.                                                                                                                                                                                                                   |
+| `EpsilonEgxGeneratorTest.deploysGeneratedAwsArtifactsToSelectedEmulatorAndExecutesThem`    | Generates from `src/test/resources/awspsm/e2e/localstack-serverless-system.awspsm.xmi`, packages the generated Lambda/ASL artifacts, deploys supported AWS artifacts to Floci or LocalStack, invokes Lambda, executes service APIs, starts the generated Step Functions workflow, and runs generated Go tests against the deployed function. |
+| `EpsilonEgxGeneratorTest.generatesCompleteUniqueTraceForRepositoryPsmSample`               | Regression-runs the repository PSM sample and verifies trace completeness and SAM invariants.                                                                                                                                                                                                                                                |
+| `EpsilonEgxGeneratorTest.preservesProtectedRegionsWhenRegeneratingExistingArtifacts`       | Verifies merge/protected-region preservation.                                                                                                                                                                                                                                                                                                |
+| `EpsilonEgxGeneratorTest.generatorCoverageMatrixListsEveryEgxRule`                         | Fails when an EGX artifact rule is missing from this matrix.                                                                                                                                                                                                                                                                                 |
 
 ## Rule Matrix
 
@@ -79,6 +79,7 @@ The primary tests are in `packages/java/mde-m2t-runner/src/test/java/io/mehdieid
 | `LocalInvokeScript`           | `AWSPSM2ART_LocalInvokeScript`                | `scripts/local-invoke.egl`                | `SCRIPT`                | `EpsilonEgxGeneratorTest` | Script exists, uses strict shell settings, and performs SAM build before local invocation.                                                                                                                                                   |
 | `LocalStartApiScript`         | `AWSPSM2ART_LocalStartApiScript`              | `scripts/local-start-api.egl`             | `SCRIPT`                | `EpsilonEgxGeneratorTest` | Script exists, uses strict shell settings, and is present in the generated project tree.                                                                                                                                                     |
 | `PackageScript`               | `AWSPSM2ART_PackageScript`                    | `scripts/package.egl`                     | `SCRIPT`                | `EpsilonEgxGeneratorTest` | Script exists, uses strict shell settings, and enforces SAM/model validation before packaging.                                                                                                                                               |
+| `EmulatorEnvScript`           | `AWSPSM2ART_EmulatorEnvScript`                | `scripts/emulator-env.egl`                | `SCRIPT`                | `EpsilonEgxGeneratorTest` | Script exports the selected Floci/LocalStack endpoint, region, local credentials, and metadata-service safeguards for generated tests.                                                                                                       |
 | `CiValidate`                  | `AWSPSM2ART_CiValidate`                       | `cicd/github-actions-validate.egl`        | `CI_WORKFLOW`           | `EpsilonEgxGeneratorTest` | Workflow exists and is checked for Go-only setup and required validation gates.                                                                                                                                                              |
 | `CiDeployDev`                 | `AWSPSM2ART_CiDeployDev`                      | `cicd/github-actions-deploy-dev.egl`      | `CI_WORKFLOW`           | `EpsilonEgxGeneratorTest` | Workflow exists and participates in trace coverage.                                                                                                                                                                                          |
 | `CiDeployProd`                | `AWSPSM2ART_CiDeployProd`                     | `cicd/github-actions-deploy-prod.egl`     | `CI_WORKFLOW`           | `EpsilonEgxGeneratorTest` | Workflow exists and participates in trace coverage.                                                                                                                                                                                          |
@@ -147,6 +148,7 @@ This inventory is synchronized by `AwsPsmArtifactGenerationSyntaxTest.coverageRe
 - `lambda/shared-validation.egl`
 - `scripts/build.egl`
 - `scripts/deploy.egl`
+- `scripts/emulator-env.egl`
 - `scripts/local-invoke.egl`
 - `scripts/local-start-api.egl`
 - `scripts/makefile.egl`
@@ -285,6 +287,7 @@ This inventory is synchronized by `AwsPsmArtifactGenerationSyntaxTest.coverageRe
 - `cfn.eol:AWSPSMAPI!WebSocketApi.emitCfnPropertiesYaml`
 - `cfn.eol:AWSPSMAPI!ApiGatewayIntegration.cfnTypeText`
 - `cfn.eol:AWSPSMAPI!ApiGatewayIntegration.emitCfnPropertiesYaml`
+- `cfn.eol:apiGatewayLambdaIntegrationUri`
 - `cfn.eol:AWSPSMAPI!HttpApiRoute.cfnTypeText`
 - `cfn.eol:AWSPSMAPI!WebSocketRoute.cfnTypeText`
 - `cfn.eol:AWSPSMAPI!RestApiRoute.cfnTypeText`
@@ -535,21 +538,20 @@ This inventory is synchronized by `AwsPsmArtifactGenerationSyntaxTest.coverageRe
 ## Runtime Preconditions
 
 Generated Go tests run when a Go toolchain is available on PATH or at `C:/Program Files/Go/bin/go.exe`.
-The LocalStack-backed tests are wired to Docker with `AWS_ENDPOINT_URL`, region, and test credentials
-loaded from `.env` with safe defaults. They first reuse a running LocalStack container only when its
-health endpoint responds; otherwise they start the pinned community image
-`localstack/localstack:3.8.1` on a disposable Docker network. They are skipped only when Docker is
-unavailable and no usable LocalStack runtime/image exists.
+The emulator-backed tests are wired to Docker with `AWS_ENDPOINT_URL`, region, and test credentials
+loaded from `.env` with safe defaults. `AWS_EMULATOR=floci` is the default; set `localstack` for the
+alternate profile. Tests reuse a healthy running provider or start its pinned image on a disposable
+Docker network, and are skipped only when Docker and the selected image are unavailable.
 
-The deployment test clears proxy variables for LocalStack and AWS CLI subprocesses by default,
+The deployment test clears proxy variables for the selected emulator and AWS CLI subprocesses by default,
 deploys supported CloudFormation resources, packages the generated Go Lambda bootstrap with
 executable mode, uploads generated ASL definitions referenced by `DefinitionUri`, waits for Lambda
 `function-active-v2`, invokes the generated Lambda, executes generated service resources through
 SQS, DynamoDB, S3, SSM, Secrets Manager, SNS, EventBridge, and Step Functions APIs, and then runs
 generated Go tests with `GENERATED_LAMBDA_FUNCTION_NAME` set. `.env` proxy values are used only
-when `LOCALSTACK_PROXY_ENABLED=true`.
+when the corresponding provider proxy switch is enabled.
 
-LocalStack Community currently omits the generated `AWS::Serverless::StateMachine` from this SAM
+Some emulator modes can omit the generated `AWS::Serverless::StateMachine` from this SAM
 deployment. The test verifies the SAM template still contains the generated state machine, then
 creates and executes the workflow from the generated ASL file to retain live ASL coverage. See
 `docs/internal/artifacts/aws-psm-code-generator-e2e.md`.

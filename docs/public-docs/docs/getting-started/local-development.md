@@ -38,7 +38,7 @@ docker compose ps
 ```
 
 Use the full stack when you are checking integration between apps, Caddy routing, observability,
-LocalStack, or production-like behavior:
+the selected AWS emulator (Floci by default), or production-like behavior:
 
 ```powershell
 docker compose up --build
@@ -46,17 +46,17 @@ docker compose up --build
 
 Useful local entrypoints:
 
-| Surface     | Direct URL              | Caddy URL                          |
-| ----------- | ----------------------- | ---------------------------------- |
-| Landing     | `http://127.0.0.1:8083` | `http://localhost:8088`            |
-| Editor      | `http://127.0.0.1:8082` | `http://editor.localhost:8088`     |
-| Backend API | `http://127.0.0.1:8080` | `http://api.localhost:8088`        |
-| Admin app   | `http://127.0.0.1:8084` | `http://admin.localhost:8088`      |
-| Grafana     | `http://127.0.0.1:3000` | `http://grafana.localhost:8088`    |
-| Prometheus  | `http://127.0.0.1:9090` | `http://prometheus.localhost:8088` |
-| Loki        | `http://127.0.0.1:3100` | `http://loki.localhost:8088`       |
-| Dozzle      | `http://127.0.0.1:9999` | `http://logs.localhost:8088`       |
-| LocalStack  | `http://127.0.0.1:4566` | `http://localstack.localhost:8088` |
+| Surface                      | Direct URL              | Caddy URL                          |
+| ---------------------------- | ----------------------- | ---------------------------------- |
+| Landing                      | `http://127.0.0.1:8083` | `http://localhost:8088`            |
+| Editor                       | `http://127.0.0.1:8082` | `http://editor.localhost:8088`     |
+| Backend API                  | `http://127.0.0.1:8080` | `http://api.localhost:8088`        |
+| Admin app                    | `http://127.0.0.1:8084` | `http://admin.localhost:8088`      |
+| Grafana                      | `http://127.0.0.1:3000` | `http://grafana.localhost:8088`    |
+| Prometheus                   | `http://127.0.0.1:9090` | `http://prometheus.localhost:8088` |
+| Loki                         | `http://127.0.0.1:3100` | `http://loki.localhost:8088`       |
+| Dozzle                       | `http://127.0.0.1:9999` | `http://logs.localhost:8088`       |
+| AWS emulator (Floci default) | `http://127.0.0.1:4566` | `http://floci.localhost:8088`      |
 
 Use split-process development when you are iterating on backend code and static frontend files:
 
@@ -178,4 +178,4 @@ docker compose down
 ```
 
 Keep volumes when you want local data to survive. Use volume deletion only when you intentionally
-want a clean database, uploads, Prometheus, Loki, Grafana, and LocalStack state.
+want a clean database, uploads, Prometheus, Loki, Grafana, and selected emulator state.
