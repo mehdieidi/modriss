@@ -78,21 +78,21 @@ var t = e((e) => {
     }
     var x = (b.prototype = new y());
     (x.constructor = b), g(x, v.prototype), (x.isPureReactComponent = !0);
-    var S = Array.isArray;
-    function C() {}
-    var w = { H: null, A: null, T: null, S: null },
-      ee = Object.prototype.hasOwnProperty;
-    function te(e, n, r) {
+    var ee = Array.isArray;
+    function S() {}
+    var C = { H: null, A: null, T: null, S: null },
+      te = Object.prototype.hasOwnProperty;
+    function w(e, n, r) {
       var i = r.ref;
       return { $$typeof: t, type: e, key: n, ref: i === void 0 ? null : i, props: r };
     }
     function ne(e, t) {
-      return te(e.type, t, e.props);
+      return w(e.type, t, e.props);
     }
-    function re(e) {
+    function T(e) {
       return typeof e == `object` && !!e && e.$$typeof === t;
     }
-    function ie(e) {
+    function re(e) {
       var t = { "=": `=0`, ":": `=2` };
       return (
         `$` +
@@ -101,11 +101,11 @@ var t = e((e) => {
         })
       );
     }
-    var ae = /\/+/g;
-    function oe(e, t) {
-      return typeof e == `object` && e && e.key != null ? ie(`` + e.key) : t.toString(36);
+    var ie = /\/+/g;
+    function ae(e, t) {
+      return typeof e == `object` && e && e.key != null ? re(`` + e.key) : t.toString(36);
     }
-    function se(e) {
+    function oe(e) {
       switch (e.status) {
         case `fulfilled`:
           return e.value;
@@ -114,7 +114,7 @@ var t = e((e) => {
         default:
           switch (
             (typeof e.status == `string`
-              ? e.then(C, C)
+              ? e.then(S, S)
               : ((e.status = `pending`),
                 e.then(
                   function (t) {
@@ -134,7 +134,7 @@ var t = e((e) => {
       }
       throw e;
     }
-    function ce(e, r, i, a, o) {
+    function se(e, r, i, a, o) {
       var s = typeof e;
       (s === `undefined` || s === `boolean`) && (e = null);
       var c = !1;
@@ -153,27 +153,27 @@ var t = e((e) => {
                 c = !0;
                 break;
               case d:
-                return (c = e._init), ce(c(e._payload), r, i, a, o);
+                return (c = e._init), se(c(e._payload), r, i, a, o);
             }
         }
       if (c)
         return (
           (o = o(e)),
-          (c = a === `` ? `.` + oe(e, 0) : a),
-          S(o)
+          (c = a === `` ? `.` + ae(e, 0) : a),
+          ee(o)
             ? ((i = ``),
-              c != null && (i = c.replace(ae, `$&/`) + `/`),
-              ce(o, r, i, ``, function (e) {
+              c != null && (i = c.replace(ie, `$&/`) + `/`),
+              se(o, r, i, ``, function (e) {
                 return e;
               }))
             : o != null &&
-              (re(o) &&
+              (T(o) &&
                 (o = ne(
                   o,
                   i +
                     (o.key == null || (e && e.key === o.key)
                       ? ``
-                      : (`` + o.key).replace(ae, `$&/`) + `/`) +
+                      : (`` + o.key).replace(ie, `$&/`) + `/`) +
                     c,
                 )),
               r.push(o)),
@@ -181,13 +181,13 @@ var t = e((e) => {
         );
       c = 0;
       var l = a === `` ? `.` : a + `:`;
-      if (S(e))
-        for (var u = 0; u < e.length; u++) (a = e[u]), (s = l + oe(a, u)), (c += ce(a, r, i, s, o));
+      if (ee(e))
+        for (var u = 0; u < e.length; u++) (a = e[u]), (s = l + ae(a, u)), (c += se(a, r, i, s, o));
       else if (((u = m(e)), typeof u == `function`))
         for (e = u.call(e), u = 0; !(a = e.next()).done; )
-          (a = a.value), (s = l + oe(a, u++)), (c += ce(a, r, i, s, o));
+          (a = a.value), (s = l + ae(a, u++)), (c += se(a, r, i, s, o));
       else if (s === `object`) {
-        if (typeof e.then == `function`) return ce(se(e), r, i, a, o);
+        if (typeof e.then == `function`) return se(oe(e), r, i, a, o);
         throw (
           ((r = String(e)),
           Error(
@@ -201,18 +201,18 @@ var t = e((e) => {
       }
       return c;
     }
-    function le(e, t, n) {
+    function ce(e, t, n) {
       if (e == null) return e;
       var r = [],
         i = 0;
       return (
-        ce(e, r, ``, ``, function (e) {
+        se(e, r, ``, ``, function (e) {
           return t.call(n, e, i++);
         }),
         r
       );
     }
-    function ue(e) {
+    function le(e) {
       if (e._status === -1) {
         var t = e._result;
         (t = t()),
@@ -229,7 +229,7 @@ var t = e((e) => {
       if (e._status === 1) return e._result.default;
       throw e._result;
     }
-    var T =
+    var E =
         typeof reportError == `function`
           ? reportError
           : function (e) {
@@ -250,10 +250,10 @@ var t = e((e) => {
               }
               console.error(e);
             },
-      E = {
-        map: le,
+      D = {
+        map: ce,
         forEach: function (e, t, n) {
-          le(
+          ce(
             e,
             function () {
               t.apply(this, arguments);
@@ -264,7 +264,7 @@ var t = e((e) => {
         count: function (e) {
           var t = 0;
           return (
-            le(e, function () {
+            ce(e, function () {
               t++;
             }),
             t
@@ -272,30 +272,30 @@ var t = e((e) => {
         },
         toArray: function (e) {
           return (
-            le(e, function (e) {
+            ce(e, function (e) {
               return e;
             }) || []
           );
         },
         only: function (e) {
-          if (!re(e))
+          if (!T(e))
             throw Error(`React.Children.only expected to receive a single React element child.`);
           return e;
         },
       };
     (e.Activity = f),
-      (e.Children = E),
+      (e.Children = D),
       (e.Component = v),
       (e.Fragment = r),
       (e.Profiler = a),
       (e.PureComponent = b),
       (e.StrictMode = i),
       (e.Suspense = l),
-      (e.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = w),
+      (e.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = C),
       (e.__COMPILER_RUNTIME = {
         __proto__: null,
         c: function (e) {
-          return w.H.useMemoCache(e);
+          return C.H.useMemoCache(e);
         },
       }),
       (e.cache = function (e) {
@@ -313,7 +313,7 @@ var t = e((e) => {
           i = e.key;
         if (t != null)
           for (a in (t.key !== void 0 && (i = `` + t.key), t))
-            !ee.call(t, a) ||
+            !te.call(t, a) ||
               a === `key` ||
               a === `__self` ||
               a === `__source` ||
@@ -325,7 +325,7 @@ var t = e((e) => {
           for (var o = Array(a), s = 0; s < a; s++) o[s] = arguments[s + 2];
           r.children = o;
         }
-        return te(e.type, i, r);
+        return w(e.type, i, r);
       }),
       (e.createContext = function (e) {
         return (
@@ -348,7 +348,7 @@ var t = e((e) => {
           a = null;
         if (t != null)
           for (r in (t.key !== void 0 && (a = `` + t.key), t))
-            ee.call(t, r) && r !== `key` && r !== `__self` && r !== `__source` && (i[r] = t[r]);
+            te.call(t, r) && r !== `key` && r !== `__self` && r !== `__source` && (i[r] = t[r]);
         var o = arguments.length - 2;
         if (o === 1) i.children = n;
         else if (1 < o) {
@@ -357,7 +357,7 @@ var t = e((e) => {
         }
         if (e && e.defaultProps)
           for (r in ((o = e.defaultProps), o)) i[r] === void 0 && (i[r] = o[r]);
-        return te(e, a, i);
+        return w(e, a, i);
       }),
       (e.createRef = function () {
         return { current: null };
@@ -365,85 +365,85 @@ var t = e((e) => {
       (e.forwardRef = function (e) {
         return { $$typeof: c, render: e };
       }),
-      (e.isValidElement = re),
+      (e.isValidElement = T),
       (e.lazy = function (e) {
-        return { $$typeof: d, _payload: { _status: -1, _result: e }, _init: ue };
+        return { $$typeof: d, _payload: { _status: -1, _result: e }, _init: le };
       }),
       (e.memo = function (e, t) {
         return { $$typeof: u, type: e, compare: t === void 0 ? null : t };
       }),
       (e.startTransition = function (e) {
-        var t = w.T,
+        var t = C.T,
           n = {};
-        w.T = n;
+        C.T = n;
         try {
           var r = e(),
-            i = w.S;
+            i = C.S;
           i !== null && i(n, r),
-            typeof r == `object` && r && typeof r.then == `function` && r.then(C, T);
+            typeof r == `object` && r && typeof r.then == `function` && r.then(S, E);
         } catch (e) {
-          T(e);
+          E(e);
         } finally {
-          t !== null && n.types !== null && (t.types = n.types), (w.T = t);
+          t !== null && n.types !== null && (t.types = n.types), (C.T = t);
         }
       }),
       (e.unstable_useCacheRefresh = function () {
-        return w.H.useCacheRefresh();
+        return C.H.useCacheRefresh();
       }),
       (e.use = function (e) {
-        return w.H.use(e);
+        return C.H.use(e);
       }),
       (e.useActionState = function (e, t, n) {
-        return w.H.useActionState(e, t, n);
+        return C.H.useActionState(e, t, n);
       }),
       (e.useCallback = function (e, t) {
-        return w.H.useCallback(e, t);
+        return C.H.useCallback(e, t);
       }),
       (e.useContext = function (e) {
-        return w.H.useContext(e);
+        return C.H.useContext(e);
       }),
       (e.useDebugValue = function () {}),
       (e.useDeferredValue = function (e, t) {
-        return w.H.useDeferredValue(e, t);
+        return C.H.useDeferredValue(e, t);
       }),
       (e.useEffect = function (e, t) {
-        return w.H.useEffect(e, t);
+        return C.H.useEffect(e, t);
       }),
       (e.useEffectEvent = function (e) {
-        return w.H.useEffectEvent(e);
+        return C.H.useEffectEvent(e);
       }),
       (e.useId = function () {
-        return w.H.useId();
+        return C.H.useId();
       }),
       (e.useImperativeHandle = function (e, t, n) {
-        return w.H.useImperativeHandle(e, t, n);
+        return C.H.useImperativeHandle(e, t, n);
       }),
       (e.useInsertionEffect = function (e, t) {
-        return w.H.useInsertionEffect(e, t);
+        return C.H.useInsertionEffect(e, t);
       }),
       (e.useLayoutEffect = function (e, t) {
-        return w.H.useLayoutEffect(e, t);
+        return C.H.useLayoutEffect(e, t);
       }),
       (e.useMemo = function (e, t) {
-        return w.H.useMemo(e, t);
+        return C.H.useMemo(e, t);
       }),
       (e.useOptimistic = function (e, t) {
-        return w.H.useOptimistic(e, t);
+        return C.H.useOptimistic(e, t);
       }),
       (e.useReducer = function (e, t, n) {
-        return w.H.useReducer(e, t, n);
+        return C.H.useReducer(e, t, n);
       }),
       (e.useRef = function (e) {
-        return w.H.useRef(e);
+        return C.H.useRef(e);
       }),
       (e.useState = function (e) {
-        return w.H.useState(e);
+        return C.H.useState(e);
       }),
       (e.useSyncExternalStore = function (e, t, n) {
-        return w.H.useSyncExternalStore(e, t, n);
+        return C.H.useSyncExternalStore(e, t, n);
       }),
       (e.useTransition = function () {
-        return w.H.useTransition();
+        return C.H.useTransition();
       }),
       (e.version = `19.2.7`);
   }),
@@ -526,31 +526,31 @@ var t = e((e) => {
     }
     function x(e) {
       if (((h = !1), b(e), !m))
-        if (n(c) !== null) (m = !0), S || ((S = !0), re());
+        if (n(c) !== null) (m = !0), ee || ((ee = !0), T());
         else {
           var t = n(l);
-          t !== null && oe(x, t.startTime - e);
+          t !== null && ae(x, t.startTime - e);
         }
     }
-    var S = !1,
-      C = -1,
-      w = 5,
-      ee = -1;
-    function te() {
-      return g ? !0 : !(e.unstable_now() - ee < w);
+    var ee = !1,
+      S = -1,
+      C = 5,
+      te = -1;
+    function w() {
+      return g ? !0 : !(e.unstable_now() - te < C);
     }
     function ne() {
-      if (((g = !1), S)) {
+      if (((g = !1), ee)) {
         var t = e.unstable_now();
-        ee = t;
+        te = t;
         var i = !0;
         try {
           a: {
-            (m = !1), h && ((h = !1), v(C), (C = -1)), (p = !0);
+            (m = !1), h && ((h = !1), v(S), (S = -1)), (p = !0);
             var a = f;
             try {
               b: {
-                for (b(t), d = n(c); d !== null && !(d.expirationTime > t && te()); ) {
+                for (b(t), d = n(c); d !== null && !(d.expirationTime > t && w()); ) {
                   var o = d.callback;
                   if (typeof o == `function`) {
                     (d.callback = null), (f = d.priorityLevel);
@@ -566,7 +566,7 @@ var t = e((e) => {
                 if (d !== null) i = !0;
                 else {
                   var u = n(l);
-                  u !== null && oe(x, u.startTime - t), (i = !1);
+                  u !== null && ae(x, u.startTime - t), (i = !1);
                 }
               }
               break a;
@@ -576,28 +576,28 @@ var t = e((e) => {
             i = void 0;
           }
         } finally {
-          i ? re() : (S = !1);
+          i ? T() : (ee = !1);
         }
       }
     }
-    var re;
+    var T;
     if (typeof y == `function`)
-      re = function () {
+      T = function () {
         y(ne);
       };
     else if (typeof MessageChannel < `u`) {
-      var ie = new MessageChannel(),
-        ae = ie.port2;
-      (ie.port1.onmessage = ne),
-        (re = function () {
-          ae.postMessage(null);
+      var re = new MessageChannel(),
+        ie = re.port2;
+      (re.port1.onmessage = ne),
+        (T = function () {
+          ie.postMessage(null);
         });
     } else
-      re = function () {
+      T = function () {
         _(ne, 0);
       };
-    function oe(t, n) {
-      C = _(function () {
+    function ae(t, n) {
+      S = _(function () {
         t(e.unstable_now());
       }, n);
     }
@@ -615,7 +615,7 @@ var t = e((e) => {
           ? console.error(
               `forceFrameRate takes a positive int between 0 and 125, forcing frame rates higher than 125 fps is not supported`,
             )
-          : (w = 0 < e ? Math.floor(1e3 / e) : 5);
+          : (C = 0 < e ? Math.floor(1e3 / e) : 5);
       }),
       (e.unstable_getCurrentPriorityLevel = function () {
         return f;
@@ -696,12 +696,12 @@ var t = e((e) => {
           a > o
             ? ((r.sortIndex = a),
               t(l, r),
-              n(c) === null && r === n(l) && (h ? (v(C), (C = -1)) : (h = !0), oe(x, a - o)))
-            : ((r.sortIndex = s), t(c, r), m || p || ((m = !0), S || ((S = !0), re()))),
+              n(c) === null && r === n(l) && (h ? (v(S), (S = -1)) : (h = !0), ae(x, a - o)))
+            : ((r.sortIndex = s), t(c, r), m || p || ((m = !0), ee || ((ee = !0), T()))),
           r
         );
       }),
-      (e.unstable_shouldYield = te),
+      (e.unstable_shouldYield = w),
       (e.unstable_wrapCallback = function (e) {
         var t = f;
         return function () {
@@ -1013,25 +1013,25 @@ var t = e((e) => {
       y = Symbol.for(`react.fragment`),
       b = Symbol.for(`react.strict_mode`),
       x = Symbol.for(`react.profiler`),
-      S = Symbol.for(`react.consumer`),
-      C = Symbol.for(`react.context`),
-      w = Symbol.for(`react.forward_ref`),
-      ee = Symbol.for(`react.suspense`),
-      te = Symbol.for(`react.suspense_list`),
+      ee = Symbol.for(`react.consumer`),
+      S = Symbol.for(`react.context`),
+      C = Symbol.for(`react.forward_ref`),
+      te = Symbol.for(`react.suspense`),
+      w = Symbol.for(`react.suspense_list`),
       ne = Symbol.for(`react.memo`),
-      re = Symbol.for(`react.lazy`),
-      ie = Symbol.for(`react.activity`),
-      ae = Symbol.for(`react.memo_cache_sentinel`),
-      oe = Symbol.iterator;
-    function se(e) {
+      T = Symbol.for(`react.lazy`),
+      re = Symbol.for(`react.activity`),
+      ie = Symbol.for(`react.memo_cache_sentinel`),
+      ae = Symbol.iterator;
+    function oe(e) {
       return typeof e != `object` || !e
         ? null
-        : ((e = (oe && e[oe]) || e[`@@iterator`]), typeof e == `function` ? e : null);
+        : ((e = (ae && e[ae]) || e[`@@iterator`]), typeof e == `function` ? e : null);
     }
-    var ce = Symbol.for(`react.client.reference`);
-    function le(e) {
+    var se = Symbol.for(`react.client.reference`);
+    function ce(e) {
       if (e == null) return null;
-      if (typeof e == `function`) return e.$$typeof === ce ? null : e.displayName || e.name || null;
+      if (typeof e == `function`) return e.$$typeof === se ? null : e.displayName || e.name || null;
       if (typeof e == `string`) return e;
       switch (e) {
         case y:
@@ -1040,22 +1040,22 @@ var t = e((e) => {
           return `Profiler`;
         case b:
           return `StrictMode`;
-        case ee:
-          return `Suspense`;
         case te:
+          return `Suspense`;
+        case w:
           return `SuspenseList`;
-        case ie:
+        case re:
           return `Activity`;
       }
       if (typeof e == `object`)
         switch (e.$$typeof) {
           case v:
             return `Portal`;
-          case C:
-            return e.displayName || `Context`;
           case S:
+            return e.displayName || `Context`;
+          case ee:
             return (e._context.displayName || `Context`) + `.Consumer`;
-          case w:
+          case C:
             var t = e.render;
             return (
               (e = e.displayName),
@@ -1065,34 +1065,34 @@ var t = e((e) => {
               e
             );
           case ne:
-            return (t = e.displayName || null), t === null ? le(e.type) || `Memo` : t;
-          case re:
+            return (t = e.displayName || null), t === null ? ce(e.type) || `Memo` : t;
+          case T:
             (t = e._payload), (e = e._init);
             try {
-              return le(e(t));
+              return ce(e(t));
             } catch {}
         }
       return null;
     }
-    var ue = Array.isArray,
-      T = r.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
-      E = a.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
-      de = { pending: !1, data: null, method: null, action: null },
-      fe = [],
-      pe = -1;
-    function me(e) {
+    var le = Array.isArray,
+      E = r.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
+      D = a.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
+      ue = { pending: !1, data: null, method: null, action: null },
+      de = [],
+      fe = -1;
+    function pe(e) {
       return { current: e };
     }
-    function D(e) {
-      0 > pe || ((e.current = fe[pe]), (fe[pe] = null), pe--);
+    function me(e) {
+      0 > fe || ((e.current = de[fe]), (de[fe] = null), fe--);
     }
     function O(e, t) {
-      pe++, (fe[pe] = e.current), (e.current = t);
+      fe++, (de[fe] = e.current), (e.current = t);
     }
-    var he = me(null),
-      ge = me(null),
-      _e = me(null),
-      ve = me(null);
+    var he = pe(null),
+      ge = pe(null),
+      _e = pe(null),
+      ve = pe(null);
     function ye(e, t) {
       switch ((O(_e, t), O(ge, e), O(he, null), t.nodeType)) {
         case 9:
@@ -1113,10 +1113,10 @@ var t = e((e) => {
                 e = 0;
             }
       }
-      D(he), O(he, e);
+      me(he), O(he, e);
     }
     function be() {
-      D(he), D(ge), D(_e);
+      me(he), me(ge), me(_e);
     }
     function xe(e) {
       e.memoizedState !== null && O(ve, e);
@@ -1125,7 +1125,7 @@ var t = e((e) => {
       t !== n && (O(ge, e), O(he, n));
     }
     function Se(e) {
-      ge.current === e && (D(he), D(ge)), ve.current === e && (D(ve), (Qf._currentValue = de));
+      ge.current === e && (me(he), me(ge)), ve.current === e && (me(ve), (Qf._currentValue = ue));
     }
     var Ce, we;
     function Te(e) {
@@ -1549,15 +1549,15 @@ Error generating stack: ` +
       return (e &= -e), 2 < e ? (8 < e ? (e & 134217727 ? 32 : 268435456) : 8) : 2;
     }
     function pt() {
-      var e = E.p;
+      var e = D.p;
       return e === 0 ? ((e = window.event), e === void 0 ? 32 : mp(e.type)) : e;
     }
     function mt(e, t) {
-      var n = E.p;
+      var n = D.p;
       try {
-        return (E.p = e), t();
+        return (D.p = e), t();
       } finally {
-        E.p = n;
+        D.p = n;
       }
     }
     var ht = Math.random().toString(36).slice(2),
@@ -1847,7 +1847,7 @@ Error generating stack: ` +
       if (t == null) {
         if (r != null) {
           if (n != null) throw Error(s(92));
-          if (ue(r)) {
+          if (le(r)) {
             if (1 < r.length) throw Error(s(93));
             r = r[0];
           }
@@ -2894,8 +2894,8 @@ Error generating stack: ` +
         o = Uf(e, n, he.current) ? 26 : e === `html` || e === `head` || e === `body` ? 27 : 5;
       else
         a: switch (e) {
-          case ie:
-            return (e = _i(31, n, t, i)), (e.elementType = ie), (e.lanes = a), e;
+          case re:
+            return (e = _i(31, n, t, i)), (e.elementType = re), (e.lanes = a), e;
           case y:
             return Si(n.children, i, a, t);
           case b:
@@ -2903,26 +2903,26 @@ Error generating stack: ` +
             break;
           case x:
             return (e = _i(12, n, t, i | 2)), (e.elementType = x), (e.lanes = a), e;
-          case ee:
-            return (e = _i(13, n, t, i)), (e.elementType = ee), (e.lanes = a), e;
           case te:
-            return (e = _i(19, n, t, i)), (e.elementType = te), (e.lanes = a), e;
+            return (e = _i(13, n, t, i)), (e.elementType = te), (e.lanes = a), e;
+          case w:
+            return (e = _i(19, n, t, i)), (e.elementType = w), (e.lanes = a), e;
           default:
             if (typeof e == `object` && e)
               switch (e.$$typeof) {
-                case C:
+                case S:
                   o = 10;
                   break a;
-                case S:
+                case ee:
                   o = 9;
                   break a;
-                case w:
+                case C:
                   o = 11;
                   break a;
                 case ne:
                   o = 14;
                   break a;
-                case re:
+                case T:
                   (o = 16), (r = null);
                   break a;
               }
@@ -3131,14 +3131,14 @@ Error generating stack: ` +
     function Qi(e) {
       Ui === null ? (Ui = [e]) : Ui.push(e);
     }
-    var $i = me(null),
+    var $i = pe(null),
       ea = null,
       ta = null;
     function na(e, t, n) {
       O($i, t._currentValue), (t._currentValue = n);
     }
     function ra(e) {
-      (e._currentValue = $i.current), D($i);
+      (e._currentValue = $i.current), me($i);
     }
     function ia(e, t, n) {
       for (; e !== null; ) {
@@ -3262,7 +3262,7 @@ Error generating stack: ` +
       pa = t.unstable_scheduleCallback,
       ma = t.unstable_NormalPriority,
       M = {
-        $$typeof: C,
+        $$typeof: S,
         Consumer: null,
         Provider: null,
         _currentValue: null,
@@ -3329,13 +3329,13 @@ Error generating stack: ` +
         r
       );
     }
-    var wa = T.S;
-    T.S = function (e, t) {
+    var wa = E.S;
+    E.S = function (e, t) {
       (tu = Fe()),
         typeof t == `object` && t && typeof t.then == `function` && xa(e, t),
         wa !== null && wa(e, t);
     };
-    var Ta = me(null);
+    var Ta = pe(null);
     function Ea() {
       var e = Ta.current;
       return e === null ? G.pooledCache : e;
@@ -3474,7 +3474,7 @@ Error generating stack: ` +
           ? d(e, t, n.props.children, r, n.key)
           : t !== null &&
               (t.elementType === a ||
-                (typeof a == `object` && a && a.$$typeof === re && Fa(a) === t.type))
+                (typeof a == `object` && a && a.$$typeof === T && Fa(a) === t.type))
             ? ((t = i(t, n.props)), Ha(t, n), (t.return = e), t)
             : ((t = xi(n.type, n.key, n.props, null, e.mode, r)), Ha(t, n), (t.return = e), t);
       }
@@ -3500,12 +3500,12 @@ Error generating stack: ` +
               return (n = xi(t.type, t.key, t.props, null, e.mode, n)), Ha(n, t), (n.return = e), n;
             case v:
               return (t = Ti(t, e.mode, n)), (t.return = e), t;
-            case re:
+            case T:
               return (t = Fa(t)), f(e, t, n);
           }
-          if (ue(t) || se(t)) return (t = Si(t, e.mode, n, null)), (t.return = e), t;
+          if (le(t) || oe(t)) return (t = Si(t, e.mode, n, null)), (t.return = e), t;
           if (typeof t.then == `function`) return f(e, Va(t), n);
-          if (t.$$typeof === C) return f(e, ua(e, t), n);
+          if (t.$$typeof === S) return f(e, ua(e, t), n);
           Ua(e, t);
         }
         return null;
@@ -3520,12 +3520,12 @@ Error generating stack: ` +
               return n.key === i ? l(e, t, n, r) : null;
             case v:
               return n.key === i ? u(e, t, n, r) : null;
-            case re:
+            case T:
               return (n = Fa(n)), p(e, t, n, r);
           }
-          if (ue(n) || se(n)) return i === null ? d(e, t, n, r, null) : null;
+          if (le(n) || oe(n)) return i === null ? d(e, t, n, r, null) : null;
           if (typeof n.then == `function`) return p(e, t, Va(n), r);
-          if (n.$$typeof === C) return p(e, t, ua(e, n), r);
+          if (n.$$typeof === S) return p(e, t, ua(e, n), r);
           Ua(e, n);
         }
         return null;
@@ -3539,12 +3539,12 @@ Error generating stack: ` +
               return (e = e.get(r.key === null ? n : r.key) || null), l(t, e, r, i);
             case v:
               return (e = e.get(r.key === null ? n : r.key) || null), u(t, e, r, i);
-            case re:
+            case T:
               return (r = Fa(r)), m(e, t, n, r, i);
           }
-          if (ue(r) || se(r)) return (e = e.get(n) || null), d(t, e, r, i, null);
+          if (le(r) || oe(r)) return (e = e.get(n) || null), d(t, e, r, i, null);
           if (typeof r.then == `function`) return m(e, t, n, Va(r), i);
-          if (r.$$typeof === C) return m(e, t, n, ua(t, r), i);
+          if (r.$$typeof === S) return m(e, t, n, ua(t, r), i);
           Ua(t, r);
         }
         return null;
@@ -3649,7 +3649,7 @@ Error generating stack: ` +
                       }
                     } else if (
                       r.elementType === l ||
-                      (typeof l == `object` && l && l.$$typeof === re && Fa(l) === r.type)
+                      (typeof l == `object` && l && l.$$typeof === T && Fa(l) === r.type)
                     ) {
                       n(e, r.sibling), (c = i(r, a.props)), Ha(c, a), (c.return = e), (e = c);
                       break a;
@@ -3688,16 +3688,16 @@ Error generating stack: ` +
                 (c = Ti(a, e.mode, c)), (c.return = e), (e = c);
               }
               return o(e);
-            case re:
+            case T:
               return (a = Fa(a)), b(e, r, a, c);
           }
-          if (ue(a)) return h(e, r, a, c);
-          if (se(a)) {
-            if (((l = se(a)), typeof l != `function`)) throw Error(s(150));
+          if (le(a)) return h(e, r, a, c);
+          if (oe(a)) {
+            if (((l = oe(a)), typeof l != `function`)) throw Error(s(150));
             return (a = l.call(a)), g(e, r, a, c);
           }
           if (typeof a.then == `function`) return b(e, r, Va(a), c);
-          if (a.$$typeof === C) return b(e, r, ua(e, a), c);
+          if (a.$$typeof === S) return b(e, r, ua(e, a), c);
           Ua(e, a);
         }
         return (typeof a == `string` && a !== ``) || typeof a == `number` || typeof a == `bigint`
@@ -3893,8 +3893,8 @@ Error generating stack: ` +
       var n = e.callbacks;
       if (n !== null) for (e.callbacks = null, e = 0; e < n.length; e++) ro(n[e], t);
     }
-    var ao = me(null),
-      oo = me(0);
+    var ao = pe(null),
+      oo = pe(0);
     function so(e, t) {
       (e = Gl), O(oo, e), O(ao, t), (Gl = e | t.baseLanes);
     }
@@ -3902,9 +3902,9 @@ Error generating stack: ` +
       O(oo, Gl), O(ao, ao.current);
     }
     function lo() {
-      (Gl = oo.current), D(ao), D(oo);
+      (Gl = oo.current), me(ao), me(oo);
     }
-    var uo = me(null),
+    var uo = pe(null),
       fo = null;
     function po(e) {
       var t = e.alternate;
@@ -3922,9 +3922,9 @@ Error generating stack: ` +
       O(N, N.current), O(uo, uo.current);
     }
     function _o(e) {
-      D(uo), fo === e && (fo = null), D(N);
+      me(uo), fo === e && (fo = null), me(N);
     }
-    var N = me(0);
+    var N = pe(0);
     function vo(e) {
       for (var t = e; t !== null; ) {
         if (t.tag === 13) {
@@ -3977,7 +3977,7 @@ Error generating stack: ` +
         (t.memoizedState = null),
         (t.updateQueue = null),
         (t.lanes = 0),
-        (T.H = e === null || e.memoizedState === null ? Ws : Gs),
+        (E.H = e === null || e.memoizedState === null ? Ws : Gs),
         (So = !1),
         (a = n(r, i)),
         (So = !1),
@@ -3987,7 +3987,7 @@ Error generating stack: ` +
       );
     }
     function ko(e) {
-      T.H = Us;
+      E.H = Us;
       var t = F !== null && F.next !== null;
       if (((yo = 0), (I = F = P = null), (bo = !1), (wo = 0), (To = null), t)) throw Error(s(300));
       e === null || z || ((e = e.dependencies), e !== null && sa(e) && (z = !0));
@@ -4004,12 +4004,12 @@ Error generating stack: ` +
             (a.stores = null),
             a.memoCache != null && (a.memoCache.index = 0);
         }
-        (T.H = Ks), (a = t(n, r));
+        (E.H = Ks), (a = t(n, r));
       } while (xo);
       return a;
     }
     function jo() {
-      var e = T.H,
+      var e = E.H,
         t = e.useState()[0];
       return (
         (t = typeof t.then == `function` ? Lo(t) : t),
@@ -4071,14 +4071,14 @@ Error generating stack: ` +
         (e = Pa(To, e, t)),
         (t = P),
         (I === null ? t.memoizedState : I.next) === null &&
-          ((t = t.alternate), (T.H = t === null || t.memoizedState === null ? Ws : Gs)),
+          ((t = t.alternate), (E.H = t === null || t.memoizedState === null ? Ws : Gs)),
         e
       );
     }
     function Ro(e) {
       if (typeof e == `object` && e) {
         if (typeof e.then == `function`) return Lo(e);
-        if (e.$$typeof === C) return la(e);
+        if (e.$$typeof === S) return la(e);
       }
       throw Error(s(438, String(e)));
     }
@@ -4106,7 +4106,7 @@ Error generating stack: ` +
         (n = t.data[t.index]),
         n === void 0)
       )
-        for (n = t.data[t.index] = Array(e), r = 0; r < e; r++) n[r] = ae;
+        for (n = t.data[t.index] = Array(e), r = 0; r < e; r++) n[r] = ie;
       return t.index++, n;
     }
     function Bo(e, t) {
@@ -4312,7 +4312,7 @@ Error generating stack: ` +
             a.listeners.push(e);
           },
         };
-        T.T === null ? (a.isTransition = !1) : n(!0),
+        E.T === null ? (a.isTransition = !1) : n(!0),
           r(a),
           (n = t.pending),
           n === null
@@ -4325,17 +4325,17 @@ Error generating stack: ` +
         r = t.payload,
         i = e.state;
       if (t.isTransition) {
-        var a = T.T,
+        var a = E.T,
           o = {};
-        T.T = o;
+        E.T = o;
         try {
           var s = n(i, r),
-            c = T.S;
+            c = E.S;
           c !== null && c(o, s), es(e, t, s);
         } catch (n) {
           ns(e, t, n);
         } finally {
-          a !== null && o.types !== null && (a.types = o.types), (T.T = a);
+          a !== null && o.types !== null && (a.types = o.types), (E.T = a);
         }
       } else
         try {
@@ -4589,14 +4589,14 @@ Error generating stack: ` +
           : ((e = Ts(e, n, r)), jr(e, t) || (z = !0), e);
     }
     function Ds(e, t, n, r, i) {
-      var a = E.p;
-      E.p = a !== 0 && 8 > a ? a : 8;
-      var o = T.T,
+      var a = D.p;
+      D.p = a !== 0 && 8 > a ? a : 8;
+      var o = E.T,
         s = {};
-      (T.T = s), zs(e, !1, t, n);
+      (E.T = s), zs(e, !1, t, n);
       try {
         var c = i(),
-          l = T.S;
+          l = E.S;
         l !== null && l(s, c),
           typeof c == `object` && c && typeof c.then == `function`
             ? Rs(e, t, Ca(c, r), pu(e))
@@ -4604,7 +4604,7 @@ Error generating stack: ` +
       } catch (n) {
         Rs(e, t, { then: function () {}, status: `rejected`, reason: n }, pu());
       } finally {
-        (E.p = a), o !== null && s.types !== null && (o.types = s.types), (T.T = o);
+        (D.p = a), o !== null && s.types !== null && (o.types = s.types), (E.T = o);
       }
     }
     function Os() {}
@@ -4615,7 +4615,7 @@ Error generating stack: ` +
         e,
         i,
         t,
-        de,
+        ue,
         n === null
           ? Os
           : function () {
@@ -4627,15 +4627,15 @@ Error generating stack: ` +
       var t = e.memoizedState;
       if (t !== null) return t;
       t = {
-        memoizedState: de,
-        baseState: de,
+        memoizedState: ue,
+        baseState: ue,
         baseQueue: null,
         queue: {
           pending: null,
           lanes: 0,
           dispatch: null,
           lastRenderedReducer: Bo,
-          lastRenderedState: de,
+          lastRenderedState: ue,
         },
         next: null,
       };
@@ -5930,7 +5930,7 @@ Error generating stack: ` +
             else {
               if (e != null) {
                 var i = e.$$typeof;
-                if (i === w) {
+                if (i === C) {
                   (t.tag = 11), (t = lc(null, t, e, r, n));
                   break a;
                 } else if (i === ne) {
@@ -5938,7 +5938,7 @@ Error generating stack: ` +
                   break a;
                 }
               }
-              throw ((t = le(e) || e), Error(s(306, t, ``)));
+              throw ((t = ce(e) || e), Error(s(306, t, ``)));
             }
           }
           return t;
@@ -6419,7 +6419,7 @@ Error generating stack: ` +
         case 10:
           return ra(t.type), B(t), null;
         case 19:
-          if ((D(N), (r = t.memoizedState), r === null)) return B(t), null;
+          if ((me(N), (r = t.memoizedState), r === null)) return B(t), null;
           if (((i = (t.flags & 128) != 0), (a = r.rendering), a === null))
             if (i) Vc(r, !1);
             else {
@@ -6503,7 +6503,7 @@ Error generating stack: ` +
               t.memoizedState.cachePool !== null &&
               (r = t.memoizedState.cachePool.pool),
             r !== n && (t.flags |= 2048),
-            e !== null && D(Ta),
+            e !== null && me(Ta),
             null
           );
         case 24:
@@ -6550,7 +6550,7 @@ Error generating stack: ` +
           }
           return (e = t.flags), e & 65536 ? ((t.flags = (e & -65537) | 128), t) : null;
         case 19:
-          return D(N), null;
+          return me(N), null;
         case 4:
           return be(), null;
         case 10:
@@ -6560,7 +6560,7 @@ Error generating stack: ` +
           return (
             _o(t),
             lo(),
-            e !== null && D(Ta),
+            e !== null && me(Ta),
             (e = t.flags),
             e & 65536 ? ((t.flags = (e & -65537) | 128), t) : null
           );
@@ -6592,14 +6592,14 @@ Error generating stack: ` +
           _o(t);
           break;
         case 19:
-          D(N);
+          me(N);
           break;
         case 10:
           ra(t.type);
           break;
         case 22:
         case 23:
-          _o(t), lo(), e !== null && D(Ta);
+          _o(t), lo(), e !== null && me(Ta);
           break;
         case 24:
           ra(M);
@@ -7903,7 +7903,7 @@ Error generating stack: ` +
       du = 0,
       fu = null;
     function pu() {
-      return W & 2 && q !== 0 ? q & -q : T.T === null ? pt() : dd();
+      return W & 2 && q !== 0 ? q & -q : E.T === null ? pt() : dd();
     }
     function mu() {
       if (Yl === 0)
@@ -8104,7 +8104,7 @@ Error generating stack: ` +
     }
     function Cu(e, t) {
       (P = null),
-        (T.H = Us),
+        (E.H = Us),
         t === ka || t === ja
           ? ((t = La()), (J = 3))
           : t === Aa
@@ -8124,12 +8124,12 @@ Error generating stack: ` +
             : !1;
     }
     function Tu() {
-      var e = T.H;
-      return (T.H = Us), e === null ? Us : e;
+      var e = E.H;
+      return (E.H = Us), e === null ? Us : e;
     }
     function Eu() {
-      var e = T.A;
-      return (T.A = zl), e;
+      var e = E.A;
+      return (E.A = zl), e;
     }
     function Du() {
       (Y = 4),
@@ -8177,8 +8177,8 @@ Error generating stack: ` +
         t && e.shellSuspendCounter++,
         (ta = ea = null),
         (W = r),
-        (T.H = i),
-        (T.A = a),
+        (E.H = i),
+        (E.A = a),
         K === null && ((G = null), (q = 0), li()),
         o
       );
@@ -8260,8 +8260,8 @@ Error generating stack: ` +
       while (1);
       return (
         (ta = ea = null),
-        (T.H = r),
-        (T.A = i),
+        (E.H = r),
+        (E.A = i),
         (W = n),
         K === null ? ((G = null), (q = 0), li(), Y) : 0
       );
@@ -8383,11 +8383,11 @@ Error generating stack: ` +
           (r = (t.flags & 13878) != 0),
           t.subtreeFlags & 13878 || r)
         ) {
-          (r = T.T), (T.T = null), (i = E.p), (E.p = 2), (o = W), (W |= 4);
+          (r = E.T), (E.T = null), (i = D.p), (D.p = 2), (o = W), (W |= 4);
           try {
             sl(e, t, n);
           } finally {
-            (W = o), (E.p = i), (T.T = r);
+            (W = o), (D.p = i), (E.T = r);
           }
         }
         (X = 1), Ru(), zu(), Bu();
@@ -8400,9 +8400,9 @@ Error generating stack: ` +
           t = ou,
           n = (t.flags & 13878) != 0;
         if (t.subtreeFlags & 13878 || n) {
-          (n = T.T), (T.T = null);
-          var r = E.p;
-          E.p = 2;
+          (n = E.T), (E.T = null);
+          var r = D.p;
+          D.p = 2;
           var i = W;
           W |= 4;
           try {
@@ -8456,7 +8456,7 @@ Error generating stack: ` +
             }
             (sp = !!Rd), (zd = Rd = null);
           } finally {
-            (W = i), (E.p = r), (T.T = n);
+            (W = i), (D.p = r), (E.T = n);
           }
         }
         (e.current = t), (X = 2);
@@ -8469,15 +8469,15 @@ Error generating stack: ` +
           t = ou,
           n = (t.flags & 8772) != 0;
         if (t.subtreeFlags & 8772 || n) {
-          (n = T.T), (T.T = null);
-          var r = E.p;
-          E.p = 2;
+          (n = E.T), (E.T = null);
+          var r = D.p;
+          D.p = 2;
           var i = W;
           W |= 4;
           try {
             cl(e, t.alternate, t);
           } finally {
-            (W = i), (E.p = r), (T.T = n);
+            (W = i), (D.p = r), (E.T = n);
           }
         }
         X = 3;
@@ -8504,14 +8504,14 @@ Error generating stack: ` +
             Ge.onCommitFiberRoot(We, t, void 0, (t.current.flags & 128) == 128);
           } catch {}
         if (r !== null) {
-          (t = T.T), (i = E.p), (E.p = 2), (T.T = null);
+          (t = E.T), (i = D.p), (D.p = 2), (E.T = null);
           try {
             for (var a = e.onRecoverableError, o = 0; o < r.length; o++) {
               var s = r[o];
               a(s.value, { componentStack: s.stack });
             }
           } finally {
-            (T.T = t), (E.p = i);
+            (E.T = t), (D.p = i);
           }
         }
         su & 3 && Hu(),
@@ -8534,10 +8534,10 @@ Error generating stack: ` +
         t = cu;
       cu = 0;
       var n = ft(su),
-        r = T.T,
-        i = E.p;
+        r = E.T,
+        i = D.p;
       try {
-        (E.p = 32 > n ? 32 : n), (T.T = null), (n = lu), (lu = null);
+        (D.p = 32 > n ? 32 : n), (E.T = null), (n = lu), (lu = null);
         var a = au,
           o = su;
         if (((X = 0), (ou = au = null), (su = 0), W & 6)) throw Error(s(331));
@@ -8555,7 +8555,7 @@ Error generating stack: ` +
           } catch {}
         return !0;
       } finally {
-        (E.p = i), (T.T = r), Vu(e, t);
+        (D.p = i), (E.T = r), Vu(e, t);
       }
     }
     function Wu(e, t, n) {
@@ -10312,8 +10312,8 @@ Error generating stack: ` +
           ? e
           : e.ownerDocument;
     }
-    var _f = E.d;
-    E.d = { f: vf, r: yf, D: Sf, C: Cf, L: wf, m: Tf, X: Df, S: Ef, M: Of };
+    var _f = D.d;
+    D.d = { f: vf, r: yf, D: Sf, C: Cf, L: wf, m: Tf, X: Df, S: Ef, M: Of };
     function vf() {
       var e = _f.f(),
         t = bu();
@@ -10862,11 +10862,11 @@ Error generating stack: ` +
       }
     }
     var Qf = {
-      $$typeof: C,
+      $$typeof: S,
       Provider: null,
       Consumer: null,
-      _currentValue: de,
-      _currentValue2: de,
+      _currentValue: ue,
+      _currentValue2: ue,
       _threadCount: 0,
     };
     function $f(e, t, n, r, i, a, o, s, c) {
@@ -10957,23 +10957,23 @@ Error generating stack: ` +
     }
     var sp = !0;
     function cp(e, t, n, r) {
-      var i = T.T;
-      T.T = null;
-      var a = E.p;
+      var i = E.T;
+      E.T = null;
+      var a = D.p;
       try {
-        (E.p = 2), up(e, t, n, r);
+        (D.p = 2), up(e, t, n, r);
       } finally {
-        (E.p = a), (T.T = i);
+        (D.p = a), (E.T = i);
       }
     }
     function lp(e, t, n, r) {
-      var i = T.T;
-      T.T = null;
-      var a = E.p;
+      var i = E.T;
+      E.T = null;
+      var a = D.p;
       try {
-        (E.p = 8), up(e, t, n, r);
+        (D.p = 8), up(e, t, n, r);
       } finally {
-        (E.p = a), (T.T = i);
+        (D.p = a), (E.T = i);
       }
     }
     function up(e, t, n, r) {
@@ -11384,7 +11384,7 @@ Error generating stack: ` +
     };
     var Lp = r.version;
     if (Lp !== `19.2.7`) throw Error(s(527, Lp, `19.2.7`));
-    E.findDOMNode = function (e) {
+    D.findDOMNode = function (e) {
       var t = e._reactInternals;
       if (t === void 0)
         throw typeof e.render == `function`
@@ -11396,7 +11396,7 @@ Error generating stack: ` +
       bundleType: 0,
       version: `19.2.7`,
       rendererPackageName: `react-dom`,
-      currentDispatcherRef: T,
+      currentDispatcherRef: E,
       reconcilerVersion: `19.2.7`,
     };
     if (typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ < `u`) {
@@ -11466,8 +11466,12 @@ Error generating stack: ` +
   g = `http://127.0.0.1:8080`.replace(/\/$/, ``),
   _ = `https://api.ipify.org?format=json`,
   v = `https://github.com/mehdieidi/varka/tree/main/docs/public-docs`,
-  y = `https://github.com/mehdieidi/varka`;
-async function b() {
+  y = `https://github.com/mehdieidi/varka`,
+  b = `https://www.sharif.ir/en/web/me_ce/home`,
+  x = `https://www.sharif.ir/en/web/me_ce/w/mehdi-eidi`,
+  ee = `https://mehdieidi.github.io/`,
+  S = `https://www.scitepress.org/Link.aspx?doi=10.5220/0014634200004058`;
+async function C() {
   let e = new AbortController(),
     t = window.setTimeout(() => e.abort(), 1500);
   try {
@@ -11484,8 +11488,8 @@ async function b() {
     window.clearTimeout(t);
   }
 }
-async function x() {
-  let e = await b(),
+async function te() {
+  let e = await C(),
     t = JSON.stringify({
       app: `landing`,
       kind: `page_view`,
@@ -11502,15 +11506,15 @@ async function x() {
       keepalive: !0,
     }).catch(() => void 0);
 }
-x();
-function S({ name: e, size: t = 20 }) {
+te();
+function w({ name: e, size: t = 20 }) {
   let n = {
       width: t,
       height: t,
       viewBox: `0 0 24 24`,
       fill: `none`,
       stroke: `currentColor`,
-      strokeWidth: 1.8,
+      strokeWidth: 1.7,
       strokeLinecap: `round`,
       strokeLinejoin: `round`,
       "aria-hidden": !0,
@@ -11530,7 +11534,6 @@ function S({ name: e, size: t = 20 }) {
           (0, m.jsx)(`path`, { d: `M4 19a2.5 2.5 0 0 1 2.5-2.5H20` }),
         ],
       }),
-      check: (0, m.jsx)(`path`, { d: `m5 12 4.2 4.2L19 6.5` }),
       code: (0, m.jsx)(m.Fragment, {
         children: (0, m.jsx)(`path`, { d: `m8 9-3 3 3 3M16 9l3 3-3 3M14 5l-4 14` }),
       }),
@@ -11548,10 +11551,18 @@ function S({ name: e, size: t = 20 }) {
           (0, m.jsx)(`path`, { d: `m3 12 9 5 9-5M3 17l9 5 9-5` }),
         ],
       }),
-      shield: (0, m.jsxs)(m.Fragment, {
+      model: (0, m.jsxs)(m.Fragment, {
         children: [
-          (0, m.jsx)(`path`, { d: `M12 3 5 6v5c0 5 3 8.4 7 10 4-1.6 7-5 7-10V6l-7-3Z` }),
-          (0, m.jsx)(`path`, { d: `m9 12 2 2 4-4` }),
+          (0, m.jsx)(`rect`, { x: `3`, y: `4`, width: `7`, height: `6`, rx: `1` }),
+          (0, m.jsx)(`rect`, { x: `14`, y: `14`, width: `7`, height: `6`, rx: `1` }),
+          (0, m.jsx)(`path`, { d: `M10 7h4a3 3 0 0 1 3 3v4` }),
+        ],
+      }),
+      process: (0, m.jsxs)(m.Fragment, {
+        children: [
+          (0, m.jsx)(`circle`, { cx: `5`, cy: `5`, r: `2` }),
+          (0, m.jsx)(`circle`, { cx: `19`, cy: `19`, r: `2` }),
+          (0, m.jsx)(`path`, { d: `M7 5h8a4 4 0 0 1 4 4v8M5 7v5a4 4 0 0 0 4 4h8` }),
         ],
       }),
       spark: (0, m.jsxs)(m.Fragment, {
@@ -11559,30 +11570,68 @@ function S({ name: e, size: t = 20 }) {
           (0, m.jsx)(`path`, {
             d: `m12 3-1.4 5.6L5 10l5.6 1.4L12 17l1.4-5.6L19 10l-5.6-1.4L12 3Z`,
           }),
-          (0, m.jsx)(`path`, { d: `m19 16-.6 2.4L16 19l2.4.6L19 22l.6-2.4L22 19l-2.4-.6L19 16Z` }),
+          (0, m.jsx)(`path`, { d: `M19 16v6M16 19h6` }),
         ],
       }),
-      terminal: (0, m.jsxs)(m.Fragment, {
-        children: [
-          (0, m.jsx)(`path`, { d: `m5 7 4 5-4 5M12 17h7` }),
-          (0, m.jsx)(`rect`, { x: `3`, y: `3`, width: `18`, height: `18`, rx: `2` }),
-        ],
-      }),
-      workflow: (0, m.jsxs)(m.Fragment, {
-        children: [
-          (0, m.jsx)(`circle`, { cx: `6`, cy: `6`, r: `2.5` }),
-          (0, m.jsx)(`circle`, { cx: `18`, cy: `18`, r: `2.5` }),
-          (0, m.jsx)(`circle`, { cx: `18`, cy: `6`, r: `2.5` }),
-          (0, m.jsx)(`path`, { d: `M8.5 6H15.5M6 8.5V18h9.5` }),
-        ],
+      transform: (0, m.jsx)(m.Fragment, {
+        children: (0, m.jsx)(`path`, { d: `M4 7h12l-3-3M16 7l-3 3M20 17H8l3 3M8 17l3-3` }),
       }),
     };
   return (0, m.jsx)(`svg`, { ...n, children: r[e] });
 }
-function C() {
+var ne = [
+    [
+      `01`,
+      `Development process`,
+      `An iterative and incremental process is being defined for serverless projects. It connects technical modeling work with phases, roles, tasks, work products, decision gates, iteration, and supporting activities across the software lifecycle.`,
+    ],
+    [
+      `02`,
+      `Modeling framework`,
+      `A set of domain-specific modeling languages represents the problem domain, platform-independent serverless architecture, and AWS deployment design. Their abstract syntax is specified through Ecore metamodels.`,
+    ],
+    [
+      `03`,
+      `Automated refinement`,
+      `Explicit model-to-model transformations refine CIM models into PIM and AWS PSM models. Model-to-text transformations generate an inspectable serverless project from the provider-specific model.`,
+    ],
+    [
+      `04`,
+      `AI-assisted modeling`,
+      `A conversational assistant supports model creation, inspection, explanation, and controlled modification. It works with the live metamodel and keeps generated changes subject to structural conformance and human control.`,
+    ],
+  ],
+  T = [
+    [
+      `Abstract syntax`,
+      `Ecore metamodels define the concepts, attributes, containments, references, and multiplicities of each DSML.`,
+    ],
+    [
+      `Semantics and rules`,
+      `EVL constraints, critiques, and well-formedness rules support explicit semantic validation workflows at the CIM, PIM, and PSM levels.`,
+    ],
+    [
+      `Concrete syntax`,
+      `Browser-based editors provide palettes, diagram notation, relationships, layout, and model views for the formal languages.`,
+    ],
+    [
+      `Model transformation`,
+      `ETL rules support semi-automated CIM-to-PIM and PIM-to-AWS-PSM refinement while leaving ambiguous decisions for human review.`,
+    ],
+    [
+      `Code generation`,
+      `EGX and EGL templates produce infrastructure definitions, application baselines, contracts, tests, automation, documentation, and trace reports.`,
+    ],
+    [
+      `Traceability`,
+      `Links and reports preserve correspondences between source concepts, refined architecture elements, and generated artefacts.`,
+    ],
+  ];
+function re() {
   let [e, t] = (0, l.useState)(!1),
     n = () => t(!1);
   return (0, m.jsxs)(`main`, {
+    id: `top`,
     children: [
       (0, m.jsxs)(`nav`, {
         className: `nav`,
@@ -11592,8 +11641,13 @@ function C() {
             className: `brand`,
             href: `#top`,
             onClick: n,
-            "aria-label": `Varka home`,
-            children: [(0, m.jsx)(`img`, { className: `brand-wolf`, src: f, alt: `` }), `VARKA`],
+            "aria-label": `Varka research project home`,
+            children: [
+              (0, m.jsx)(`img`, { src: f, alt: `` }),
+              (0, m.jsxs)(`span`, {
+                children: [`VARKA`, (0, m.jsx)(`small`, { children: `Research project` })],
+              }),
+            ],
           }),
           (0, m.jsxs)(`button`, {
             className: `menu`,
@@ -11605,193 +11659,130 @@ function C() {
           (0, m.jsxs)(`div`, {
             className: `nav-links ${e ? `open` : ``}`,
             children: [
-              (0, m.jsx)(`a`, { href: `#how-it-works`, onClick: n, children: `How it works` }),
-              (0, m.jsx)(`a`, { href: `#capabilities`, onClick: n, children: `Capabilities` }),
-              (0, m.jsx)(`a`, { href: `#outputs`, onClick: n, children: `Outputs` }),
-              (0, m.jsx)(`a`, { href: `#trust`, onClick: n, children: `Trust & control` }),
-              (0, m.jsxs)(`a`, {
-                className: `nav-resource`,
-                href: v,
-                children: [(0, m.jsx)(S, { name: `book`, size: 16 }), ` Documentation`],
-              }),
+              (0, m.jsx)(`a`, { href: `#research`, onClick: n, children: `Research` }),
+              (0, m.jsx)(`a`, { href: `#methodology`, onClick: n, children: `Methodology` }),
+              (0, m.jsx)(`a`, { href: `#framework`, onClick: n, children: `Framework` }),
+              (0, m.jsx)(`a`, { href: `#publication`, onClick: n, children: `Publication` }),
+              (0, m.jsx)(`a`, { href: v, children: `Documentation` }),
               (0, m.jsx)(`a`, {
-                className: `nav-github`,
+                className: `nav-icon`,
                 href: y,
-                "aria-label": `Varka on GitHub`,
-                children: (0, m.jsx)(S, { name: `github`, size: 18 }),
-              }),
-              (0, m.jsxs)(`a`, {
-                className: `nav-cta`,
-                href: h,
-                children: [`Open workspace `, (0, m.jsx)(S, { name: `arrow`, size: 16 })],
+                "aria-label": `Varka source code on GitHub`,
+                children: (0, m.jsx)(w, { name: `github`, size: 18 }),
               }),
             ],
           }),
         ],
       }),
-      (0, m.jsxs)(`section`, {
+      (0, m.jsxs)(`header`, {
         className: `hero`,
-        id: `top`,
         children: [
           (0, m.jsxs)(`div`, {
             className: `hero-copy`,
             children: [
-              (0, m.jsxs)(`div`, {
-                className: `eyebrow`,
-                children: [
-                  (0, m.jsx)(`span`, { className: `pulse` }),
-                  ` AI-assisted model-driven engineering for AWS serverless`,
-                ],
+              (0, m.jsxs)(`p`, {
+                className: `kicker`,
+                children: [(0, m.jsx)(`span`, {}), ` MSc thesis research · Software engineering`],
               }),
               (0, m.jsxs)(`h1`, {
                 children: [
-                  `From domain intent`,
-                  (0, m.jsx)(`br`, {}),
-                  `to `,
-                  (0, m.jsx)(`em`, { children: `defensible systems.` }),
+                  `A model-driven methodology for `,
+                  (0, m.jsx)(`i`, { children: `serverless software development` }),
                 ],
               }),
               (0, m.jsx)(`p`, {
-                className: `hero-lede`,
-                children: `Varka connects business intent, software architecture, and AWS deployment design in one traceable modeling pipeline, then generates a project your team can inspect, test, and own.`,
+                className: `lede`,
+                children: `Varka is an ongoing academic research project on how serverless software can be developed through an explicit process, formal modeling languages, model transformations, and code generation. The work is conducted at the Methodology Engineering Laboratory, Sharif University of Technology.`,
               }),
               (0, m.jsxs)(`div`, {
                 className: `hero-actions`,
                 children: [
                   (0, m.jsxs)(`a`, {
                     className: `button primary`,
+                    href: `#research`,
+                    children: [
+                      `Read about the research `,
+                      (0, m.jsx)(w, { name: `arrow`, size: 17 }),
+                    ],
+                  }),
+                  (0, m.jsx)(`a`, {
+                    className: `button secondary`,
                     href: h,
-                    children: [`Start modeling `, (0, m.jsx)(S, { name: `arrow`, size: 18 })],
+                    children: `Open the research prototype`,
                   }),
-                  (0, m.jsxs)(`a`, {
-                    className: `button text`,
-                    href: `#how-it-works`,
-                    children: [`See the workflow `, (0, m.jsx)(`span`, { children: `↓` })],
-                  }),
-                ],
-              }),
-              (0, m.jsx)(`p`, {
-                className: `microcopy`,
-                children: `Open source under the MIT License. Bring your own AI provider when you need it.`,
-              }),
-            ],
-          }),
-          (0, m.jsxs)(`div`, {
-            className: `hero-visual`,
-            children: [
-              (0, m.jsx)(`div`, { className: `ambient a` }),
-              (0, m.jsx)(`div`, { className: `ambient b` }),
-              (0, m.jsx)(`figure`, {
-                className: `workspace-shot`,
-                children: (0, m.jsx)(`img`, {
-                  src: d,
-                  alt: `The Varka browser workspace with its modeling canvas, palette, lifecycle actions, and AI assistant.`,
-                }),
-              }),
-            ],
-          }),
-        ],
-      }),
-      (0, m.jsxs)(`section`, {
-        className: `proof-strip`,
-        "aria-label": `Key product facts`,
-        children: [
-          (0, m.jsxs)(`span`, {
-            children: [(0, m.jsx)(`b`, { children: `CIM` }), ` business intent`],
-          }),
-          (0, m.jsx)(`i`, {}),
-          (0, m.jsxs)(`span`, {
-            children: [(0, m.jsx)(`b`, { children: `PIM` }), ` architecture`],
-          }),
-          (0, m.jsx)(`i`, {}),
-          (0, m.jsxs)(`span`, {
-            children: [(0, m.jsx)(`b`, { children: `AWS PSM` }), ` deployment design`],
-          }),
-          (0, m.jsx)(`i`, {}),
-          (0, m.jsxs)(`span`, {
-            children: [(0, m.jsx)(`b`, { children: `EVL · ETL · EGX/EGL` }), ` checked pipeline`],
-          }),
-        ],
-      }),
-      (0, m.jsxs)(`section`, {
-        className: `section story`,
-        id: `how-it-works`,
-        children: [
-          (0, m.jsxs)(`div`, {
-            className: `section-intro`,
-            children: [
-              (0, m.jsx)(`div`, {
-                className: `eyebrow`,
-                children: `A connected path, not a handoff`,
-              }),
-              (0, m.jsxs)(`h2`, {
-                children: [
-                  `Keep intent`,
-                  (0, m.jsx)(`br`, {}),
-                  (0, m.jsx)(`em`, { children: `connected to implementation.` }),
                 ],
               }),
             ],
           }),
-          (0, m.jsx)(`p`, {
-            className: `section-copy`,
-            children: `Varka applies a model-driven engineering pipeline: validate each model, transform it with explicit rules, then generate artifacts from the AWS-specific design. Traceability remains available across the chain.`,
-          }),
-          (0, m.jsxs)(`div`, {
-            className: `journey`,
+          (0, m.jsxs)(`aside`, {
+            className: `research-card`,
+            "aria-label": `Research context`,
             children: [
-              (0, m.jsxs)(`article`, {
-                className: `journey-card intent`,
+              (0, m.jsxs)(`div`, {
+                className: `card-rule`,
                 children: [
-                  (0, m.jsx)(`div`, { className: `card-index`, children: `01` }),
-                  (0, m.jsx)(`div`, {
-                    className: `journey-icon`,
-                    children: (0, m.jsx)(S, { name: `layers` }),
+                  (0, m.jsx)(`span`, { children: `Research record` }),
+                  (0, m.jsx)(`b`, { children: `01` }),
+                ],
+              }),
+              (0, m.jsxs)(`dl`, {
+                children: [
+                  (0, m.jsxs)(`div`, {
+                    children: [
+                      (0, m.jsx)(`dt`, { children: `Researcher` }),
+                      (0, m.jsx)(`dd`, {
+                        children: (0, m.jsx)(`a`, { href: ee, children: `Mehdi Eidi ↗` }),
+                      }),
+                    ],
                   }),
-                  (0, m.jsx)(`h3`, { children: `Specify the domain` }),
-                  (0, m.jsx)(`p`, {
-                    children: `Use a computation-independent model to express capabilities, actors, policies, concepts, events, and processes without premature technology choices.`,
+                  (0, m.jsxs)(`div`, {
+                    children: [
+                      (0, m.jsx)(`dt`, { children: `Context` }),
+                      (0, m.jsx)(`dd`, { children: `MSc thesis research` }),
+                    ],
                   }),
-                  (0, m.jsx)(`span`, {
-                    className: `model-label`,
-                    children: `CIM · validate · ETL`,
+                  (0, m.jsxs)(`div`, {
+                    children: [
+                      (0, m.jsx)(`dt`, { children: `Laboratory` }),
+                      (0, m.jsx)(`dd`, {
+                        children: (0, m.jsx)(`a`, {
+                          href: b,
+                          children: `Methodology Engineering Laboratory ↗`,
+                        }),
+                      }),
+                    ],
+                  }),
+                  (0, m.jsxs)(`div`, {
+                    children: [
+                      (0, m.jsx)(`dt`, { children: `Institution` }),
+                      (0, m.jsxs)(`dd`, {
+                        children: [
+                          `Department of Computer Engineering`,
+                          (0, m.jsx)(`br`, {}),
+                          `Sharif University of Technology`,
+                        ],
+                      }),
+                    ],
+                  }),
+                  (0, m.jsxs)(`div`, {
+                    children: [
+                      (0, m.jsx)(`dt`, { children: `Status` }),
+                      (0, m.jsxs)(`dd`, {
+                        children: [
+                          (0, m.jsx)(`span`, { className: `status-dot` }),
+                          ` Ongoing research and development`,
+                        ],
+                      }),
+                    ],
                   }),
                 ],
               }),
-              (0, m.jsxs)(`article`, {
-                className: `journey-card architecture`,
+              (0, m.jsxs)(`a`, {
+                className: `text-link`,
+                href: x,
                 children: [
-                  (0, m.jsx)(`div`, { className: `card-index`, children: `02` }),
-                  (0, m.jsx)(`div`, {
-                    className: `journey-icon`,
-                    children: (0, m.jsx)(S, { name: `workflow` }),
-                  }),
-                  (0, m.jsx)(`h3`, { children: `Engineer the architecture` }),
-                  (0, m.jsx)(`p`, {
-                    children: `Refine intent into services, contracts, workflows, data, security, identities, and integrations in a platform-independent model.`,
-                  }),
-                  (0, m.jsx)(`span`, {
-                    className: `model-label`,
-                    children: `PIM · validate · ETL`,
-                  }),
-                ],
-              }),
-              (0, m.jsxs)(`article`, {
-                className: `journey-card build`,
-                children: [
-                  (0, m.jsx)(`div`, { className: `card-index`, children: `03` }),
-                  (0, m.jsx)(`div`, {
-                    className: `journey-icon`,
-                    children: (0, m.jsx)(S, { name: `code` }),
-                  }),
-                  (0, m.jsx)(`h3`, { children: `Generate a reviewable baseline` }),
-                  (0, m.jsx)(`p`, {
-                    children: `Map the architecture to AWS and generate infrastructure, Go handlers, contracts, tests, automation, and documentation for human review.`,
-                  }),
-                  (0, m.jsx)(`span`, {
-                    className: `model-label`,
-                    children: `AWS PSM · validate · EGX/EGL`,
-                  }),
+                  `University researcher profile `,
+                  (0, m.jsx)(w, { name: `arrow`, size: 15 }),
                 ],
               }),
             ],
@@ -11799,441 +11790,444 @@ function C() {
         ],
       }),
       (0, m.jsxs)(`section`, {
-        className: `section capabilities`,
-        id: `capabilities`,
+        className: `research-question`,
+        id: `research`,
         children: [
           (0, m.jsxs)(`div`, {
-            className: `capability-feature`,
+            className: `section-label`,
+            children: [(0, m.jsx)(`span`, { children: `01` }), ` Research premise`],
+          }),
+          (0, m.jsxs)(`div`, {
+            className: `question-layout`,
             children: [
-              (0, m.jsx)(`div`, {
-                className: `feature-art`,
-                children: (0, m.jsxs)(`div`, {
-                  className: `validation-panel`,
-                  children: [
-                    (0, m.jsxs)(`div`, {
-                      className: `panel-head`,
-                      children: [
-                        (0, m.jsx)(`span`, { children: `Model assurance` }),
-                        (0, m.jsx)(`b`, { children: `validation gate` }),
-                      ],
-                    }),
-                    (0, m.jsxs)(`div`, {
-                      className: `validation-row`,
-                      children: [
-                        (0, m.jsx)(`span`, { className: `success-dot`, children: `✓` }),
-                        (0, m.jsxs)(`div`, {
-                          children: [
-                            (0, m.jsx)(`strong`, { children: `Structure is checked` }),
-                            (0, m.jsx)(`small`, {
-                              children: `Ecore conformance, references & multiplicities`,
-                            }),
-                          ],
-                        }),
-                      ],
-                    }),
-                    (0, m.jsxs)(`div`, {
-                      className: `validation-row`,
-                      children: [
-                        (0, m.jsx)(`span`, { className: `success-dot`, children: `✓` }),
-                        (0, m.jsxs)(`div`, {
-                          children: [
-                            (0, m.jsx)(`strong`, { children: `Semantics are checked` }),
-                            (0, m.jsx)(`small`, {
-                              children: `Domain constraints and critiques in EVL`,
-                            }),
-                          ],
-                        }),
-                      ],
-                    }),
-                    (0, m.jsxs)(`div`, {
-                      className: `validation-row`,
-                      children: [
-                        (0, m.jsx)(`span`, { className: `success-dot`, children: `✓` }),
-                        (0, m.jsxs)(`div`, {
-                          children: [
-                            (0, m.jsx)(`strong`, { children: `Transformation is explicit` }),
-                            (0, m.jsx)(`small`, { children: `Rule-based CIM → PIM → AWS PSM` }),
-                          ],
-                        }),
-                      ],
-                    }),
-                  ],
-                }),
+              (0, m.jsx)(`h2`, {
+                children: `Serverless development needs a methodology that addresses its full lifecycle.`,
               }),
               (0, m.jsxs)(`div`, {
-                className: `feature-copy`,
+                className: `prose`,
                 children: [
-                  (0, m.jsx)(`div`, {
-                    className: `eyebrow`,
-                    children: `Formal models, practical workbenches`,
-                  }),
-                  (0, m.jsxs)(`h2`, {
-                    children: [
-                      `Visual modeling.`,
-                      (0, m.jsx)(`br`, {}),
-                      (0, m.jsx)(`em`, { children: `Explicit semantics.` }),
-                    ],
+                  (0, m.jsx)(`p`, {
+                    children: `Serverless computing removes much of the direct work of server management, but it creates architectural and development concerns that extend beyond function implementation. Existing model-driven approaches for serverless systems remain limited in their process coverage, modeling support, and treatment of serverless-specific concerns.`,
                   }),
                   (0, m.jsx)(`p`, {
-                    children: `Varka’s editors implement domain-specific modeling languages (DSMLs) defined by Ecore metamodels. Structural conformance and domain-specific EVL constraints are evaluated before transformation, so diagramming is connected to a machine-checkable model.`,
+                    children: `This research studies the design of a model-driven software development methodology for the serverless paradigm. The methodology is intended to connect domain understanding, architectural design, cloud-specific configuration, and generated implementation artefacts within one traceable development path.`,
                   }),
                   (0, m.jsxs)(`a`, {
-                    className: `inline-link`,
-                    href: v,
+                    className: `text-link`,
+                    href: S,
                     children: [
-                      `Explore the modeling method `,
-                      (0, m.jsx)(S, { name: `arrow`, size: 17 }),
+                      `Read the study that frames the research gap `,
+                      (0, m.jsx)(w, { name: `arrow`, size: 15 }),
                     ],
                   }),
                 ],
               }),
             ],
           }),
-          (0, m.jsxs)(`div`, {
-            className: `capability-grid`,
-            children: [
-              (0, m.jsxs)(`article`, {
-                children: [
-                  (0, m.jsx)(S, { name: `layers` }),
-                  (0, m.jsx)(`h3`, { children: `Three modeling levels` }),
-                  (0, m.jsx)(`p`, {
-                    children: `Focused workbenches for business intent, platform-independent architecture, and AWS-specific deployment design.`,
-                  }),
-                ],
-              }),
-              (0, m.jsxs)(`article`, {
-                children: [
-                  (0, m.jsx)(S, { name: `terminal` }),
-                  (0, m.jsx)(`h3`, { children: `Traceable, reviewable delivery` }),
-                  (0, m.jsx)(`p`, {
-                    children: `Rule-based transformations and model-to-text generation produce inspectable artifacts rather than opaque output.`,
-                  }),
-                ],
-              }),
-              (0, m.jsxs)(`article`, {
-                children: [
-                  (0, m.jsx)(S, { name: `shield` }),
-                  (0, m.jsx)(`h3`, { children: `Human-governed AI assistance` }),
-                  (0, m.jsx)(`p`, {
-                    children: `A model-grounded agent uses metamodel-checked tools; destructive batches require confirmation, and checkpoints support undo.`,
-                  }),
-                ],
-              }),
-            ],
-          }),
         ],
       }),
       (0, m.jsxs)(`section`, {
-        className: `section outputs`,
-        id: `outputs`,
+        className: `methodology`,
+        id: `methodology`,
         children: [
           (0, m.jsxs)(`div`, {
-            className: `outputs-intro`,
+            className: `section-heading`,
             children: [
-              (0, m.jsx)(`div`, { className: `eyebrow`, children: `What Varka produces` }),
-              (0, m.jsxs)(`h2`, {
-                children: [
-                  `A project baseline,`,
-                  (0, m.jsx)(`br`, {}),
-                  (0, m.jsx)(`em`, { children: `not a black box.` }),
-                ],
+              (0, m.jsxs)(`div`, {
+                className: `section-label light`,
+                children: [(0, m.jsx)(`span`, { children: `02` }), ` Proposed contribution`],
+              }),
+              (0, m.jsx)(`h2`, {
+                children: `The methodology joins process guidance with a formal modeling framework.`,
               }),
               (0, m.jsx)(`p`, {
-                children: `Generation begins from the validated AWS PSM and emits an inspectable serverless project. The exact contents depend on the model; generated code remains a starting point for normal engineering review and completion.`,
+                children: `In this research, a methodology contains two related parts. The process explains how the development work is carried out. The modeling framework provides the languages, rules, transformations, and tools used to perform that work.`,
               }),
             ],
           }),
           (0, m.jsxs)(`div`, {
-            className: `output-grid`,
+            className: `method-equation`,
+            "aria-label": `Varka methodology consists of a development process and a modeling framework`,
             children: [
               (0, m.jsxs)(`article`, {
                 children: [
-                  (0, m.jsx)(`span`, { className: `output-index`, children: `01` }),
-                  (0, m.jsx)(S, { name: `code` }),
-                  (0, m.jsx)(`h3`, { children: `Infrastructure` }),
-                  (0, m.jsx)(`p`, {
-                    children: `SAM or CloudFormation resources, stages, configuration, IAM, APIs, storage, messaging, and workflows.`,
+                  (0, m.jsx)(`div`, {
+                    className: `equation-icon`,
+                    children: (0, m.jsx)(w, { name: `process`, size: 25 }),
+                  }),
+                  (0, m.jsx)(`p`, { children: `Part A` }),
+                  (0, m.jsx)(`h3`, { children: `Development process` }),
+                  (0, m.jsx)(`span`, {
+                    children: `Lifecycle, phases, roles, tasks, work products, decision points, iteration, risk, and umbrella activities`,
                   }),
                 ],
               }),
+              (0, m.jsx)(`b`, { children: `+` }),
               (0, m.jsxs)(`article`, {
                 children: [
-                  (0, m.jsx)(`span`, { className: `output-index`, children: `02` }),
-                  (0, m.jsx)(S, { name: `terminal` }),
-                  (0, m.jsx)(`h3`, { children: `Application runtime` }),
-                  (0, m.jsx)(`p`, {
-                    children: `Go Lambda handlers and shared runtime packages shaped by the modeled services, flows, and contracts.`,
+                  (0, m.jsx)(`div`, {
+                    className: `equation-icon`,
+                    children: (0, m.jsx)(w, { name: `model`, size: 25 }),
+                  }),
+                  (0, m.jsx)(`p`, { children: `Part B` }),
+                  (0, m.jsx)(`h3`, { children: `Modeling framework` }),
+                  (0, m.jsx)(`span`, {
+                    children: `DSMLs, metamodels, semantics, constraints, transformations, code generation, notation, and tool support`,
                   }),
                 ],
-              }),
-              (0, m.jsxs)(`article`, {
-                children: [
-                  (0, m.jsx)(`span`, { className: `output-index`, children: `03` }),
-                  (0, m.jsx)(S, { name: `workflow` }),
-                  (0, m.jsx)(`h3`, { children: `Contracts & verification` }),
-                  (0, m.jsx)(`p`, {
-                    children: `OpenAPI, JSON Schema, ASL, sample events, and unit, integration, contract, workflow, event, and security tests.`,
-                  }),
-                ],
-              }),
-              (0, m.jsxs)(`article`, {
-                children: [
-                  (0, m.jsx)(`span`, { className: `output-index`, children: `04` }),
-                  (0, m.jsx)(S, { name: `book` }),
-                  (0, m.jsx)(`h3`, { children: `Operational evidence` }),
-                  (0, m.jsx)(`p`, {
-                    children: `Build and deployment scripts, GitHub Actions workflows, documentation, trace reports, and manual-action reports.`,
-                  }),
-                ],
-              }),
-            ],
-          }),
-        ],
-      }),
-      (0, m.jsxs)(`section`, {
-        className: `section use-cases`,
-        children: [
-          (0, m.jsxs)(`div`, {
-            className: `section-intro`,
-            children: [
-              (0, m.jsx)(`div`, { className: `eyebrow`, children: `Where Varka fits` }),
-              (0, m.jsxs)(`h2`, {
-                children: [
-                  `For systems where`,
-                  (0, m.jsx)(`br`, {}),
-                  (0, m.jsx)(`em`, { children: `reasoning must survive delivery.` }),
-                ],
-              }),
-            ],
-          }),
-          (0, m.jsxs)(`div`, {
-            className: `use-case-grid`,
-            children: [
-              (0, m.jsxs)(`article`, {
-                children: [
-                  (0, m.jsx)(`h3`, { children: `New serverless products` }),
-                  (0, m.jsx)(`p`, {
-                    children: `Turn an early domain model into a documented AWS baseline without losing the decisions that shaped it.`,
-                  }),
-                ],
-              }),
-              (0, m.jsxs)(`article`, {
-                children: [
-                  (0, m.jsx)(`h3`, { children: `Complex event-driven systems` }),
-                  (0, m.jsx)(`p`, {
-                    children: `Make service boundaries, events, workflows, data ownership, and operational concerns explicit before implementation.`,
-                  }),
-                ],
-              }),
-              (0, m.jsxs)(`article`, {
-                children: [
-                  (0, m.jsx)(`h3`, { children: `Architecture review & research` }),
-                  (0, m.jsx)(`p`, {
-                    children: `Use an inspectable chain of models, constraints, transformations, traces, and generated artifacts as evidence for design decisions.`,
-                  }),
-                ],
-              }),
-            ],
-          }),
-        ],
-      }),
-      (0, m.jsxs)(`section`, {
-        className: `section feature-matrix`,
-        "aria-labelledby": `feature-matrix-title`,
-        children: [
-          (0, m.jsxs)(`div`, {
-            className: `matrix-heading`,
-            children: [
-              (0, m.jsx)(`div`, { className: `eyebrow`, children: `Platform capabilities` }),
-              (0, m.jsxs)(`h2`, {
-                id: `feature-matrix-title`,
-                children: [
-                  `What is carried`,
-                  (0, m.jsx)(`br`, {}),
-                  (0, m.jsx)(`em`, { children: `through the pipeline.` }),
-                ],
-              }),
-              (0, m.jsx)(`p`, {
-                children: `Each capability belongs to a defined stage of the engineering workflow, making both the result and its provenance available for review.`,
               }),
             ],
           }),
           (0, m.jsx)(`div`, {
-            className: `matrix-wrap`,
-            children: (0, m.jsxs)(`table`, {
-              children: [
-                (0, m.jsx)(`thead`, {
-                  children: (0, m.jsxs)(`tr`, {
-                    children: [
-                      (0, m.jsx)(`th`, { scope: `col`, children: `Capability` }),
-                      (0, m.jsx)(`th`, { scope: `col`, children: `How Varka implements it` }),
-                      (0, m.jsx)(`th`, { scope: `col`, children: `Engineering value` }),
-                    ],
-                  }),
-                }),
-                (0, m.jsxs)(`tbody`, {
+            className: `contribution-list`,
+            children: ne.map(([e, t, n]) =>
+              (0, m.jsxs)(
+                `article`,
+                {
                   children: [
-                    (0, m.jsxs)(`tr`, {
+                    (0, m.jsx)(`span`, { children: e }),
+                    (0, m.jsxs)(`div`, {
                       children: [
-                        (0, m.jsx)(`th`, { scope: `row`, children: `Domain-specific models` }),
-                        (0, m.jsx)(`td`, {
-                          children: `Browser workbenches for CIM, PIM, and AWS PSM, defined by Ecore metamodels.`,
-                        }),
-                        (0, m.jsx)(`td`, {
-                          children: `Captures intent, architecture, and deployment concerns at appropriate abstraction levels.`,
-                        }),
-                      ],
-                    }),
-                    (0, m.jsxs)(`tr`, {
-                      children: [
-                        (0, m.jsx)(`th`, { scope: `row`, children: `Validation gates` }),
-                        (0, m.jsx)(`td`, {
-                          children: `Structural Ecore checks plus EVL constraints and critiques before transformation.`,
-                        }),
-                        (0, m.jsx)(`td`, {
-                          children: `Finds model conformance and domain-rule issues before they reach generated artifacts.`,
-                        }),
-                      ],
-                    }),
-                    (0, m.jsxs)(`tr`, {
-                      children: [
-                        (0, m.jsx)(`th`, { scope: `row`, children: `Explicit transformations` }),
-                        (0, m.jsx)(`td`, {
-                          children: `Rule-based ETL transformations from CIM to PIM and PIM to AWS PSM.`,
-                        }),
-                        (0, m.jsx)(`td`, {
-                          children: `Makes refinement logic inspectable instead of hiding design decisions in a generator.`,
-                        }),
-                      ],
-                    }),
-                    (0, m.jsxs)(`tr`, {
-                      children: [
-                        (0, m.jsx)(`th`, { scope: `row`, children: `Reviewable generation` }),
-                        (0, m.jsx)(`td`, {
-                          children: `EGX/EGL generation of AWS infrastructure, Go code, contracts, tests, automation, and documentation.`,
-                        }),
-                        (0, m.jsx)(`td`, {
-                          children: `Provides a maintainable project baseline with protected regions and manual-action reports.`,
-                        }),
-                      ],
-                    }),
-                    (0, m.jsxs)(`tr`, {
-                      children: [
-                        (0, m.jsx)(`th`, { scope: `row`, children: `Traceability` }),
-                        (0, m.jsx)(`td`, {
-                          children: `Trace links and reports connect source concepts, refined elements, and generated artifacts.`,
-                        }),
-                        (0, m.jsx)(`td`, {
-                          children: `Supports impact analysis, architecture review, and defensible design rationale.`,
-                        }),
-                      ],
-                    }),
-                    (0, m.jsxs)(`tr`, {
-                      children: [
-                        (0, m.jsx)(`th`, { scope: `row`, children: `Bounded AI assistance` }),
-                        (0, m.jsx)(`td`, {
-                          children: `A durable agent loop uses metamodel-checked model tools, validation, checkpoints, confirmations, and undo.`,
-                        }),
-                        (0, m.jsx)(`td`, {
-                          children: `Accelerates multi-step modeling while preserving human control and an observable change history.`,
-                        }),
+                        (0, m.jsx)(`h3`, { children: t }),
+                        (0, m.jsx)(`p`, { children: n }),
                       ],
                     }),
                   ],
-                }),
-              ],
-            }),
+                },
+                e,
+              ),
+            ),
           }),
         ],
       }),
       (0, m.jsxs)(`section`, {
-        className: `section trust`,
-        id: `trust`,
+        className: `pipeline-section`,
+        "aria-labelledby": `pipeline-title`,
         children: [
           (0, m.jsxs)(`div`, {
-            className: `trust-heading`,
+            className: `section-label`,
+            children: [(0, m.jsx)(`span`, { children: `03` }), ` Model-driven path`],
+          }),
+          (0, m.jsxs)(`div`, {
+            className: `pipeline-intro`,
             children: [
-              (0, m.jsx)(`div`, { className: `eyebrow`, children: `Bounded AI agency` }),
-              (0, m.jsxs)(`h2`, {
-                children: [
-                  `An agent that`,
-                  (0, m.jsx)(`br`, {}),
-                  (0, m.jsx)(`em`, { children: `works on the model.` }),
-                ],
+              (0, m.jsx)(`h2`, {
+                id: `pipeline-title`,
+                children: `From domain knowledge to reviewable AWS artefacts`,
               }),
               (0, m.jsx)(`p`, {
-                children: `Varka uses a tool-using AI agent for multi-step modeling work. Its authority is intentionally bounded by the live metamodel, backend validation, and user controls; it does not replace architectural judgment.`,
+                children: `The current framework organizes models at three abstraction levels. Transformations provide a systematic refinement path, while modelers review and complete decisions at every level.`,
               }),
             ],
           }),
           (0, m.jsxs)(`div`, {
-            className: `trust-list`,
+            className: `pipeline`,
             children: [
               (0, m.jsxs)(`article`, {
                 children: [
-                  (0, m.jsx)(`span`, { children: `01` }),
-                  (0, m.jsxs)(`div`, {
-                    children: [
-                      (0, m.jsx)(`h3`, { children: `Model-grounded tool use` }),
-                      (0, m.jsx)(`p`, {
-                        children: `The agent reads and changes the working model through explicit tools, including inspection, planning, validation, and model-edit operations.`,
-                      }),
-                    ],
+                  (0, m.jsx)(`span`, { children: `01 · CIM` }),
+                  (0, m.jsx)(`h3`, { children: `Problem and domain` }),
+                  (0, m.jsx)(`p`, {
+                    children: `Capabilities, actors, concepts, events, processes, policies, governance, and requirements without a software or cloud commitment.`,
                   }),
+                  (0, m.jsx)(`small`, { children: `Computation-independent model` }),
                 ],
               }),
+              (0, m.jsx)(`i`, { children: (0, m.jsx)(w, { name: `arrow` }) }),
               (0, m.jsxs)(`article`, {
                 children: [
-                  (0, m.jsx)(`span`, { children: `02` }),
-                  (0, m.jsxs)(`div`, {
-                    children: [
-                      (0, m.jsx)(`h3`, { children: `Contract-checked mutations` }),
-                      (0, m.jsx)(`p`, {
-                        children: `The backend rejects invalid types, attributes, references, containments, and enumeration values before a mutation is committed.`,
-                      }),
-                    ],
+                  (0, m.jsx)(`span`, { children: `02 · PIM` }),
+                  (0, m.jsx)(`h3`, { children: `Serverless architecture` }),
+                  (0, m.jsx)(`p`, {
+                    children: `Services, functions, contracts, data, events, workflows, integrations, security, policies, and deployment concerns.`,
                   }),
+                  (0, m.jsx)(`small`, { children: `Platform-independent model` }),
                 ],
               }),
+              (0, m.jsx)(`i`, { children: (0, m.jsx)(w, { name: `arrow` }) }),
               (0, m.jsxs)(`article`, {
                 children: [
-                  (0, m.jsx)(`span`, { children: `03` }),
-                  (0, m.jsxs)(`div`, {
-                    children: [
-                      (0, m.jsx)(`h3`, { children: `Observable, reversible work` }),
-                      (0, m.jsx)(`p`, {
-                        children: `Durable turns, tool events, checkpoints, confirmation for destructive batches, cancellation, and undo keep the process inspectable and controlled.`,
-                      }),
-                    ],
+                  (0, m.jsx)(`span`, { children: `03 · AWS PSM` }),
+                  (0, m.jsx)(`h3`, { children: `Provider design` }),
+                  (0, m.jsx)(`p`, {
+                    children: `AWS resources and their configuration for compute, APIs, storage, messaging, identity, networking, and observability.`,
                   }),
+                  (0, m.jsx)(`small`, { children: `Platform-specific model` }),
                 ],
               }),
+              (0, m.jsx)(`i`, { children: (0, m.jsx)(w, { name: `arrow` }) }),
+              (0, m.jsxs)(`article`, {
+                className: `artefact`,
+                children: [
+                  (0, m.jsx)(`span`, { children: `04 · M2T` }),
+                  (0, m.jsx)(`h3`, { children: `Generated artefacts` }),
+                  (0, m.jsx)(`p`, {
+                    children: `Infrastructure, Go handlers, contracts, tests, workflows, scripts, documentation, and trace information for review.`,
+                  }),
+                  (0, m.jsx)(`small`, { children: `Engineering project baseline` }),
+                ],
+              }),
+            ],
+          }),
+          (0, m.jsxs)(`p`, {
+            className: `pipeline-note`,
+            children: [
+              (0, m.jsx)(w, { name: `transform`, size: 18 }),
+              ` ETL supports model-to-model refinement. EGX and EGL coordinate model-to-text generation. Semantic EVL checks remain explicit user-initiated validation activities.`,
             ],
           }),
         ],
       }),
       (0, m.jsxs)(`section`, {
-        className: `final-cta`,
+        className: `framework`,
+        id: `framework`,
         children: [
-          (0, m.jsx)(`div`, { className: `final-orbit orbit-one` }),
-          (0, m.jsx)(`div`, { className: `final-orbit orbit-two` }),
           (0, m.jsxs)(`div`, {
-            className: `final-content`,
+            className: `framework-copy`,
             children: [
-              (0, m.jsx)(`div`, {
-                className: `eyebrow light`,
-                children: `A model is a shared engineering argument`,
+              (0, m.jsxs)(`div`, {
+                className: `section-label`,
+                children: [(0, m.jsx)(`span`, { children: `04` }), ` Modeling framework`],
               }),
-              (0, m.jsxs)(`h2`, {
-                children: [`Design systems`, (0, m.jsx)(`br`, {}), `you can explain.`],
+              (0, m.jsx)(`h2`, {
+                children: `Formal languages made usable in a web-based workbench`,
               }),
               (0, m.jsx)(`p`, {
-                children: `Make the path from domain knowledge to deployable AWS software explicit, checked, traceable, and open to review.`,
+                children: `The browser platform is the concrete research artefact through which the methodology can be enacted and examined. It makes the DSMLs available as visual editors and connects them with validation, transformation, generation, traceability, and project management functions.`,
               }),
               (0, m.jsxs)(`a`, {
-                className: `button light-button`,
-                href: h,
-                children: [`Open the Varka workspace `, (0, m.jsx)(S, { name: `arrow`, size: 18 })],
+                className: `text-link`,
+                href: v,
+                children: [
+                  `Examine the technical documentation `,
+                  (0, m.jsx)(w, { name: `arrow`, size: 15 }),
+                ],
+              }),
+            ],
+          }),
+          (0, m.jsx)(`div`, {
+            className: `framework-list`,
+            children: T.map(([e, t], n) =>
+              (0, m.jsxs)(
+                `article`,
+                {
+                  children: [
+                    (0, m.jsx)(`span`, { children: String(n + 1).padStart(2, `0`) }),
+                    (0, m.jsxs)(`div`, {
+                      children: [
+                        (0, m.jsx)(`h3`, { children: e }),
+                        (0, m.jsx)(`p`, { children: t }),
+                      ],
+                    }),
+                  ],
+                },
+                e,
+              ),
+            ),
+          }),
+        ],
+      }),
+      (0, m.jsxs)(`section`, {
+        className: `prototype`,
+        id: `prototype`,
+        children: [
+          (0, m.jsxs)(`div`, {
+            className: `prototype-heading`,
+            children: [
+              (0, m.jsxs)(`div`, {
+                children: [
+                  (0, m.jsxs)(`div`, {
+                    className: `section-label light`,
+                    children: [(0, m.jsx)(`span`, { children: `05` }), ` Research prototype`],
+                  }),
+                  (0, m.jsx)(`h2`, {
+                    children: `The methodology is realized as an integrated low-code environment.`,
+                  }),
+                ],
+              }),
+              (0, m.jsx)(`p`, {
+                children: `The prototype provides project workspaces, graphical modeling editors, process guidance, model import and export, impact analysis, transformations, generated-artefact inspection, and a conversational modeling assistant.`,
+              }),
+            ],
+          }),
+          (0, m.jsxs)(`figure`, {
+            className: `workspace-shot`,
+            children: [
+              (0, m.jsx)(`img`, {
+                src: d,
+                alt: `Varka browser-based CIM modeling workbench with a visual process model, modeling palette, lifecycle actions, and conversational assistant.`,
+              }),
+              (0, m.jsxs)(`figcaption`, {
+                children: [
+                  (0, m.jsx)(`span`, { children: `Figure 1.` }),
+                  ` The Varka modeling workbench, showing the CIM editor and the LLM-based modeling assistant.`,
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+      (0, m.jsxs)(`section`, {
+        className: `assistant-section`,
+        children: [
+          (0, m.jsxs)(`div`, {
+            className: `assistant-title`,
+            children: [
+              (0, m.jsx)(`div`, {
+                className: `assistant-mark`,
+                children: (0, m.jsx)(w, { name: `spark`, size: 28 }),
+              }),
+              (0, m.jsxs)(`div`, {
+                children: [
+                  (0, m.jsxs)(`div`, {
+                    className: `section-label`,
+                    children: [(0, m.jsx)(`span`, { children: `06` }), ` LLM-supported modeling`],
+                  }),
+                  (0, m.jsx)(`h2`, {
+                    children: `A conversational assistant grounded in the modeling languages`,
+                  }),
+                ],
+              }),
+            ],
+          }),
+          (0, m.jsxs)(`div`, {
+            className: `assistant-grid`,
+            children: [
+              (0, m.jsxs)(`div`, {
+                className: `prose`,
+                children: [
+                  (0, m.jsx)(`p`, {
+                    children: `The assistant supports modeling activity through natural-language interaction. It can use the current model and uploaded source material to create, inspect, explain, or modify CIM and PIM models. The live Ecore metamodel provides its modeling vocabulary and structural contract.`,
+                  }),
+                  (0, m.jsx)(`p`, {
+                    children: `The assistant is part of the research framework, rather than an independent code generator. Its operations are recorded as durable turns, and changes can use checkpoints, confirmation, cancellation, and undo.`,
+                  }),
+                ],
+              }),
+              (0, m.jsxs)(`aside`, {
+                children: [
+                  (0, m.jsx)(`h3`, { children: `Validation boundary` }),
+                  (0, m.jsx)(`p`, {
+                    children: `Assistant-generated output is gated by structural Ecore/EMF conformance. EVL semantic validation is kept outside assistant apply, repair, and commit paths, and is performed only through explicit model-validation workflows. PSM chatbot sessions are currently outside the implemented scope.`,
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+      (0, m.jsxs)(`section`, {
+        className: `publication`,
+        id: `publication`,
+        children: [
+          (0, m.jsxs)(`div`, {
+            className: `section-label`,
+            children: [(0, m.jsx)(`span`, { children: `07` }), ` Research output`],
+          }),
+          (0, m.jsxs)(`article`, {
+            className: `paper-card`,
+            children: [
+              (0, m.jsxs)(`div`, {
+                className: `paper-meta`,
+                children: [
+                  (0, m.jsx)(`span`, { children: `Conference paper` }),
+                  (0, m.jsx)(`b`, { children: `2026` }),
+                ],
+              }),
+              (0, m.jsxs)(`div`, {
+                className: `paper-main`,
+                children: [
+                  (0, m.jsxs)(`div`, {
+                    children: [
+                      (0, m.jsx)(`p`, {
+                        children: `MODELSWARD 2026 · 14th International Conference on Model-Based Software and Systems Engineering`,
+                      }),
+                      (0, m.jsx)(`h2`, {
+                        children: `Model-Driven Approaches for Serverless Software Development: Evaluation and Future Directions`,
+                      }),
+                      (0, m.jsx)(`p`, {
+                        className: `authors`,
+                        children: `Mehdi Eidi and Raman Ramsin`,
+                      }),
+                    ],
+                  }),
+                  (0, m.jsxs)(`div`, {
+                    className: `abstract`,
+                    children: [
+                      (0, m.jsx)(`h3`, { children: `Relation to Varka` }),
+                      (0, m.jsx)(`p`, {
+                        children: `The paper reviews selected model-driven approaches for serverless and microservices development through a process-centered template. Its evaluation framework identifies gaps in existing serverless approaches and provides part of the research basis for developing the Varka methodology.`,
+                      }),
+                      (0, m.jsxs)(`dl`, {
+                        children: [
+                          (0, m.jsxs)(`div`, {
+                            children: [
+                              (0, m.jsx)(`dt`, { children: `Pages` }),
+                              (0, m.jsx)(`dd`, { children: `560–567` }),
+                            ],
+                          }),
+                          (0, m.jsxs)(`div`, {
+                            children: [
+                              (0, m.jsx)(`dt`, { children: `DOI` }),
+                              (0, m.jsx)(`dd`, { children: `10.5220/0014634200004058` }),
+                            ],
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              (0, m.jsxs)(`a`, {
+                className: `paper-link`,
+                href: S,
+                children: [`View publication `, (0, m.jsx)(w, { name: `arrow`, size: 17 })],
+              }),
+            ],
+          }),
+        ],
+      }),
+      (0, m.jsxs)(`section`, {
+        className: `status-section`,
+        children: [
+          (0, m.jsxs)(`div`, {
+            children: [
+              (0, m.jsxs)(`div`, {
+                className: `section-label light`,
+                children: [(0, m.jsx)(`span`, { children: `08` }), ` Current status`],
+              }),
+              (0, m.jsx)(`h2`, {
+                children: `An evolving research methodology and its executable artefact`,
+              }),
+            ],
+          }),
+          (0, m.jsxs)(`div`, {
+            children: [
+              (0, m.jsx)(`p`, {
+                children: `Varka is under active research and development. The repository includes the three modeling languages, formal validation rules, transformation profiles, code generation, modeling subprocesses, lifecycle material, and the web platform. Evaluation and refinement of the methodology and assistant continue as part of the thesis work.`,
+              }),
+              (0, m.jsx)(`p`, {
+                children: `Generated projects are research outputs and engineering baselines. They still require human review, completion of recorded manual actions, testing, and deployment-specific decisions.`,
+              }),
+              (0, m.jsxs)(`div`, {
+                className: `status-links`,
+                children: [
+                  (0, m.jsxs)(`a`, {
+                    href: y,
+                    children: [(0, m.jsx)(w, { name: `github`, size: 17 }), ` Source repository`],
+                  }),
+                  (0, m.jsxs)(`a`, {
+                    href: v,
+                    children: [
+                      (0, m.jsx)(w, { name: `book`, size: 17 }),
+                      ` Research documentation`,
+                    ],
+                  }),
+                  (0, m.jsxs)(`a`, {
+                    href: h,
+                    children: [(0, m.jsx)(w, { name: `model`, size: 17 }), ` Modeling prototype`],
+                  }),
+                ],
               }),
             ],
           }),
@@ -12241,18 +12235,30 @@ function C() {
       }),
       (0, m.jsxs)(`footer`, {
         children: [
-          (0, m.jsxs)(`a`, {
-            className: `brand`,
-            href: `#top`,
-            children: [(0, m.jsx)(`img`, { className: `brand-wolf`, src: f, alt: `` }), `varka`],
+          (0, m.jsxs)(`div`, {
+            className: `footer-brand`,
+            children: [
+              (0, m.jsx)(`img`, { src: f, alt: `` }),
+              (0, m.jsxs)(`div`, {
+                children: [
+                  (0, m.jsx)(`b`, { children: `VARKA` }),
+                  (0, m.jsx)(`span`, {
+                    children: `Model-driven methodology for serverless software development`,
+                  }),
+                ],
+              }),
+            ],
           }),
           (0, m.jsx)(`p`, {
-            children: `Model intent. Validate semantics. Transform explicitly. Generate reviewable systems.`,
+            children: `An MSc thesis research project at the Methodology Engineering Laboratory, Department of Computer Engineering, Sharif University of Technology.`,
           }),
           (0, m.jsxs)(`div`, {
+            className: `footer-links`,
             children: [
-              (0, m.jsx)(`a`, { href: v, children: `Documentation` }),
-              (0, m.jsx)(`a`, { href: y, children: `GitHub` }),
+              (0, m.jsx)(`a`, { href: b, children: `Laboratory` }),
+              (0, m.jsx)(`a`, { href: x, children: `University profile` }),
+              (0, m.jsx)(`a`, { href: ee, children: `Researcher` }),
+              (0, m.jsx)(`a`, { href: S, children: `Publication` }),
             ],
           }),
         ],
@@ -12260,4 +12266,4 @@ function C() {
     ],
   });
 }
-(0, u.createRoot)(document.getElementById(`root`)).render((0, m.jsx)(C, {}));
+(0, u.createRoot)(document.getElementById(`root`)).render((0, m.jsx)(re, {}));
