@@ -118,16 +118,11 @@
 }
 
 .app-logo-img {
-  content: url("../assets/icons/wolf.png");
-}
-
-.app-logo-img:hover,
-.app-logo-img:focus-visible {
-  content: url("../assets/icons/wolf-red.png");
+  content: url("../assets/icons/logo/modriss-logo-w.svg");
 }
 
 html.light .app-logo-img {
-  content: url("../assets/icons/wolf.png");
+  content: url("../assets/icons/logo/modriss-logo.svg");
 }
 
 .app-brand-text {

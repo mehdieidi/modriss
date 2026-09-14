@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import workspaceScreenshot from './assets/modriss-workspace.png'
-import wolfLogo from './assets/wolf.png'
+import modrissLogo from './assets/modriss-logo.svg'
 import './styles.css'
 
 const appUrl = import.meta.env.VITE_APP_URL ?? 'http://127.0.0.1:8082'
@@ -59,6 +59,8 @@ async function sendLandingVisit() {
 
 void sendLandingVisit()
 
+document.querySelector('link[rel="icon"]')?.setAttribute('href', modrissLogo)
+
 function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true }
   const paths: Record<IconName, React.ReactNode> = {
@@ -98,7 +100,7 @@ function App() {
   return <main id="top">
     <nav className="nav" aria-label="Main navigation">
       <a className="brand" href="#top" onClick={closeMenu} aria-label="MODRISS research project home">
-        <img src={wolfLogo} alt="" />
+        <img src={modrissLogo} alt="" />
         <span>MODRISS<small>Research project</small></span>
       </a>
       <button className="menu" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-label="Toggle navigation"><span /><span /></button>
@@ -260,7 +262,7 @@ function App() {
     </section>
 
     <footer>
-      <div className="footer-brand"><img src={wolfLogo} alt="" /><div><b>MODRISS</b><span>Model-driven methodology for serverless software development</span></div></div>
+      <div className="footer-brand"><img src={modrissLogo} alt="" /><div><b>MODRISS</b><span>Model-driven methodology for serverless software development</span></div></div>
       <p>An MSc thesis research project at the Methodology Engineering Laboratory, Department of Computer Engineering, Sharif University of Technology.</p>
       <div className="footer-links"><a href={labUrl}>Laboratory</a><a href={universityProfileUrl}>University profile</a><a href={researcherUrl}>Researcher</a><a href={paperUrl}>Publication</a></div>
     </footer>

@@ -11445,8 +11445,8 @@ Error generating stack: ` +
   }),
   l = n(),
   u = c(),
-  d = `/assets/modriss-workspace-CecBCW2L.png`,
-  f = `/assets/wolf-DYnExGea.png`,
+  d = `/assets/modriss-workspace-vfPsDieO.png`,
+  f = `/assets/modriss-logo-se-EH_hn.svg`,
   p = e((e) => {
     var t = Symbol.for(`react.transitional.element`),
       n = Symbol.for(`react.fragment`);
@@ -11506,7 +11506,7 @@ async function te() {
       keepalive: !0,
     }).catch(() => void 0);
 }
-te();
+te(), document.querySelector(`link[rel="icon"]`)?.setAttribute(`href`, f);
 function w({ name: e, size: t = 20 }) {
   let n = {
       width: t,

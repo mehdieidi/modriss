@@ -8,6 +8,8 @@ const THEME_DARK_ICON = "/assets/icons/dark_mode.svg";
 const THEME_LIGHT_ICON = "/assets/icons/light_mode.svg";
 const THEME_PROFILE_STORAGE = "modriss.activeThemeProfileId";
 const THEME_SCHEME_STORAGE = "modriss.themeScheme";
+const APP_FAVICON_LIGHT = "/assets/icons/logo/modriss-logo.svg";
+const APP_FAVICON_DARK = "/assets/icons/logo/modriss-logo-w.svg";
 
 let activeProfileId = "";
 
@@ -17,10 +19,17 @@ function isLightTheme() {
 
 function updateThemeToggleIcon() {
   if (!el.themeRailToggleIcon) {
+    updateThemeFavicon();
     return;
   }
   const iconUrl = isLightTheme() ? THEME_DARK_ICON : THEME_LIGHT_ICON;
   el.themeRailToggleIcon.style.setProperty("--icon-src", `url('${iconUrl}')`);
+  updateThemeFavicon();
+}
+
+function updateThemeFavicon() {
+  const favicon = document.getElementById("app-favicon");
+  favicon?.setAttribute("href", isLightTheme() ? APP_FAVICON_LIGHT : APP_FAVICON_DARK);
 }
 
 function setLightClass(light) {
