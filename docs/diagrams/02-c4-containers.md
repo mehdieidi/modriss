@@ -4,7 +4,7 @@
 flowchart TB
     user["Person: Modeler"]
 
-    subgraph varka["Varka System"]
+    subgraph modriss["MODRISS System"]
         caddy["Container: Caddy Edge<br/>Reverse proxy, access logs, local host routing"]
         landing["Container: Landing Site<br/>Static HTML/CSS/JS<br/>Product story and case study"]
         frontend["Container: Modeling Frontend<br/>Plain HTML/CSS/JavaScript<br/>AntV G6 renderer"]

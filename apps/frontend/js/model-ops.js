@@ -1879,7 +1879,7 @@ async function runAutoLayoutCurrentDiagram({
       state.tabs[state.activeType].diagram = state.diagram;
       saveCurrentTabGraphState(state.activeType);
     }
-    window.varkaLayoutAudit = {
+    window.modrissLayoutAudit = {
       modelId: state.modelId,
       viewId: view.id,
       expectedNodes: response.nodeCount,
@@ -2301,12 +2301,12 @@ async function locateIssueTarget(detail) {
 let locateIssueTargetBound = false;
 if (!locateIssueTargetBound) {
   locateIssueTargetBound = true;
-  window.addEventListener("varka:locate-issue-target", (event) => {
+  window.addEventListener("modriss:locate-issue-target", (event) => {
     void locateIssueTarget(event?.detail || {}).catch((error) => {
       setError(error, { prefix: "Failed to locate issue target." });
     });
   });
-  window.addEventListener("varka:manual-task-toggle", async (event) => {
+  window.addEventListener("modriss:manual-task-toggle", async (event) => {
     const detail = event?.detail || {};
     const manualTaskId = String(detail.manualTaskId || "").trim();
     const resolved = Boolean(detail.resolved);

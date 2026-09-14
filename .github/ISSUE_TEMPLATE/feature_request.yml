@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an enhancement for Varka
+description: Suggest an enhancement for MODRISS
 title: "[Feature] "
 labels:
   - enhancement
@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Suggest an enhancement for Varka. Describe the problem and the outcome you want.
+        Suggest an enhancement for MODRISS. Describe the problem and the outcome you want.
 
   - type: textarea
     id: problem

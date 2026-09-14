@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/awspsm/identity/1.0", prefix="awspsmidentity")
+@namespace(uri="https://modriss.org/awspsm/identity/1.0", prefix="awspsmidentity")
 package awspsmidentity;
 
 import "../shared/kernel.ecore";

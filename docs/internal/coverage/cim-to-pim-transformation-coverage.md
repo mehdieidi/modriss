@@ -19,7 +19,7 @@ models: <https://eclipse.dev/epsilon/doc/etl/>.
 - Source metamodel: `mde/metamodels/cim/cim-combined.ecore`
 - Target metamodel: `mde/metamodels/pim/pim-combined.ecore`
 - Test class:
-  `packages/java/mde-etl-runner/src/test/java/io/mehdieidi/varka/mde/etl/CimToPimEtlRegressionTest.java`
+  `packages/java/mde-etl-runner/src/test/java/io/mehdieidi/modriss/mde/etl/CimToPimEtlRegressionTest.java`
 - Verification command:
   `mvn -pl packages/java/mde-etl-runner -Dtest=CimToPimEtlRegressionTest test`
 - Helper utility verification:

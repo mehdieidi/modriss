@@ -148,7 +148,7 @@ function buildProcessDefinition(level) {
   const lastPhase = phases[phases.length - 1];
 
   return {
-    processId: `varka.${level}.modeling`,
+    processId: `modriss.${level}.modeling`,
     spemVersion: "2.0",
     level,
     displayName: level.toUpperCase(),
@@ -170,7 +170,7 @@ function buildProcessDefinition(level) {
 
 function buildEndToEnd() {
   return {
-    processId: "varka.end-to-end.modeling",
+    processId: "modriss.end-to-end.modeling",
     spemVersion: "2.0",
     level: "end-to-end",
     displayName: "CIM → PIM → PSM → Artifacts",

@@ -2,4 +2,4 @@ logging:
   file:
     name: logs/backend.log
   level:
-    io.mehdieidi.varka: DEBUG
+    io.mehdieidi.modriss: DEBUG

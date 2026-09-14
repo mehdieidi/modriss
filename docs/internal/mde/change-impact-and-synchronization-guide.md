@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document is the repository-specific playbook for changing Varka without leaving the
+This document is the repository-specific playbook for changing MODRISS without leaving the
 metamodels, transformations, validation, generated artifacts, backend, frontend, persistence, AI,
 samples, tests, and documentation out of sync.
 

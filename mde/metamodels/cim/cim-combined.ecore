@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore">
-  <ecore:EPackage name="cim" nsURI="https://varka.org/cim/1.0" nsPrefix="cim">
+  <ecore:EPackage name="cim" nsURI="https://modriss.org/cim/1.0" nsPrefix="cim">
     <eClassifiers xsi:type="ecore:EClass" name="CIMModel" eSuperTypes="#/8/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="domainName" lowerBound="1"
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -71,7 +71,7 @@
           containment="true"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="cimbehavior" nsURI="https://varka.org/cim/behavior/1.0" nsPrefix="cimbehavior">
+  <ecore:EPackage name="cimbehavior" nsURI="https://modriss.org/cim/behavior/1.0" nsPrefix="cimbehavior">
     <eClassifiers xsi:type="ecore:EClass" name="Command" eSuperTypes="#/8/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="intent" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="userInitiated" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
@@ -206,7 +206,7 @@
           eType="#/2/DomainConcept"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="cimdomain" nsURI="https://varka.org/cim/domain-data/1.0" nsPrefix="cimdomain">
+  <ecore:EPackage name="cimdomain" nsURI="https://modriss.org/cim/domain-data/1.0" nsPrefix="cimdomain">
     <eClassifiers xsi:type="ecore:EClass" name="DomainConcept" abstract="true" eSuperTypes="#/8/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="glossaryDefinition" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="examples" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -363,7 +363,7 @@
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="identifiability" eType="#/7/Identifiability"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="cimgov" nsURI="https://varka.org/cim/governance/1.0" nsPrefix="cimgov">
+  <ecore:EPackage name="cimgov" nsURI="https://modriss.org/cim/governance/1.0" nsPrefix="cimgov">
     <eClassifiers xsi:type="ecore:EClass" name="NonFunctionalRequirement" eSuperTypes="#/4/Requirement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="metric" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="target" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -441,7 +441,7 @@
           eType="#/8/ModelElement"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="cimorg" nsURI="https://varka.org/cim/organization/1.0" nsPrefix="cimorg">
+  <ecore:EPackage name="cimorg" nsURI="https://modriss.org/cim/organization/1.0" nsPrefix="cimorg">
     <eClassifiers xsi:type="ecore:EClass" name="Requirement" eSuperTypes="#/8/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="mandatory" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="productionBlocking" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
@@ -623,7 +623,7 @@
           eOpposite="#/4/BoundedContextCandidate/glossaryTerms"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="cimprocess" nsURI="https://varka.org/cim/process-policy/1.0"
+  <ecore:EPackage name="cimprocess" nsURI="https://modriss.org/cim/process-policy/1.0"
       nsPrefix="cimprocess">
     <eClassifiers xsi:type="ecore:EClass" name="BusinessProcess" eSuperTypes="#/8/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="businessTriggerDescription"
@@ -794,7 +794,7 @@
           upperBound="-1" eType="#/8/ModelElement"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="cimtransform" nsURI="https://varka.org/cim/transformation/1.0"
+  <ecore:EPackage name="cimtransform" nsURI="https://modriss.org/cim/transformation/1.0"
       nsPrefix="cimtransform">
     <eClassifiers xsi:type="ecore:EClass" name="Risk" eSuperTypes="#/8/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="riskStatement" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -840,7 +840,7 @@
           eType="#/8/ManualDecision"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="cimtypes" nsURI="https://varka.org/cim/types/1.0" nsPrefix="cimtypes">
+  <ecore:EPackage name="cimtypes" nsURI="https://modriss.org/cim/types/1.0" nsPrefix="cimtypes">
     <eClassifiers xsi:type="ecore:EEnum" name="RequirementType">
       <eLiterals name="FUNCTIONAL"/>
       <eLiterals name="BUSINESS_RULE" value="1"/>
@@ -1040,7 +1040,7 @@
       <eLiterals name="MANUAL_RECONCILIATION_ACCEPTABLE" value="3"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="kernel" nsURI="https://varka.org/kernel/1.0" nsPrefix="kernel">
+  <ecore:EPackage name="kernel" nsURI="https://modriss.org/kernel/1.0" nsPrefix="kernel">
     <eClassifiers xsi:type="ecore:EEnum" name="Priority">
       <eLiterals name="LOW"/>
       <eLiterals name="MEDIUM" value="1"/>

@@ -1,14 +1,14 @@
 declare global {
   interface Window {
-    VARKA_ADMIN_BACKEND_BASE_URL?: string;
-    VARKA_PUBLIC_IP_LOOKUP_URL?: string;
+    MODRISS_ADMIN_BACKEND_BASE_URL?: string;
+    MODRISS_PUBLIC_IP_LOOKUP_URL?: string;
   }
 }
 
 const baseUrl = () =>
-  (window.VARKA_ADMIN_BACKEND_BASE_URL || "http://127.0.0.1:8080").replace(/\/$/, "");
+  (window.MODRISS_ADMIN_BACKEND_BASE_URL || "http://127.0.0.1:8080").replace(/\/$/, "");
 const publicIpLookupUrl = () =>
-  window.VARKA_PUBLIC_IP_LOOKUP_URL || "https://api.ipify.org?format=json";
+  window.MODRISS_PUBLIC_IP_LOOKUP_URL || "https://api.ipify.org?format=json";
 
 let publicIpPromise: Promise<string> | null = null;
 

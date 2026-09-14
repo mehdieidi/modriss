@@ -1,8 +1,8 @@
 # Iterative and evolutionary model transformations
 
-Varka's model-to-model pipeline is designed for repeated evolution, not one-time waterfall
+MODRISS's model-to-model pipeline is designed for repeated evolution, not one-time waterfall
 generation. A generated PIM or AWS PSM is a persistent working model that users can refine. When its
-upstream model changes, Varka generates a new candidate and performs an ancestor-based, three-way
+upstream model changes, MODRISS generates a new candidate and performs an ancestor-based, three-way
 EMF merge. Independent user edits survive, safe upstream changes propagate, and incompatible edits
 become explicit conflicts.
 
@@ -36,7 +36,7 @@ The essential invariant is:
 > The baseline is always the untouched raw output of the most recent successfully accepted ETL
 > generation. It is never the user-refined merged Working model.
 
-Keeping Base separate from Working is what lets Varka distinguish a user edit from a generator
+Keeping Base separate from Working is what lets MODRISS distinguish a user edit from a generator
 change on the next execution.
 
 ```mermaid
@@ -344,7 +344,7 @@ generates `30`. EMF Compare sees a left-only change, so `60` remains. If ETL ind
 another feature such as `description`, that right-only difference is applied without touching the
 timeout.
 
-If both user and generator change timeout to different values, Varka can prove that neither side is
+If both user and generator change timeout to different values, MODRISS can prove that neither side is
 merely unchanged from Base. It therefore reports a conflict and waits for an explicit decision.
 
 ```mermaid

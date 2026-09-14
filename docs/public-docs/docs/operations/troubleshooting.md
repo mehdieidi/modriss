@@ -3,7 +3,7 @@
 ## Backend Cannot Connect to PostgreSQL
 
 - Confirm `docker compose ps` reports PostgreSQL healthy.
-- Verify `VARKA_DB_URL`, user, password, and mapped port.
+- Verify `MODRISS_DB_URL`, user, password, and mapped port.
 - From inside Compose, use host `postgres`, not `localhost`.
 - Inspect Flyway errors before retrying; do not casually edit applied migrations.
 
@@ -35,11 +35,11 @@ generator issue.
 
 ## Assistant Is Unavailable
 
-- Confirm `VARKA_AI_ENABLED=true`.
-- Confirm the Arvan base URL/key, `Gemma-4-31B-IT`, `VARKA_AI_MODE=unified`, JSON schema
+- Confirm `MODRISS_AI_ENABLED=true`.
+- Confirm the Arvan base URL/key, `Gemma-4-31B-IT`, `MODRISS_AI_MODE=unified`, JSON schema
   protocol, native tools disabled, and request timeout.
 - Check dedicated AI proxy configuration.
-- Set `VARKA_AI_ENABLED=false` while diagnosing provider or durable turn issues.
+- Set `MODRISS_AI_ENABLED=false` while diagnosing provider or durable turn issues.
 - Make sure message requests include an `idempotencyKey`.
 - Restart or rebuild the backend after Ecore/metamodel changes so packaged MDE resources and
   Ecore-derived assistant contracts are fresh. EVL-only changes do not alter the assistant gate.

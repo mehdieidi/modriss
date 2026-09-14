@@ -3,7 +3,7 @@ import { el } from "./dom.js";
 import { api } from "./api.js";
 import { formatUserError } from "./errors.js";
 
-const AUTH_TOKEN_KEY = "varka.authToken";
+const AUTH_TOKEN_KEY = "modriss.authToken";
 
 export function getAuthToken() {
   return window.localStorage.getItem(AUTH_TOKEN_KEY) || "";
@@ -38,7 +38,7 @@ function setAuthMode(mode) {
     el.authConfirmPasswordInput.classList.toggle("hidden", !registerMode);
   }
   if (el.authTitle) {
-    el.authTitle.textContent = registerMode ? "Create your Varka account" : "Sign in to Varka";
+    el.authTitle.textContent = registerMode ? "Create your MODRISS account" : "Sign in to MODRISS";
   }
   if (el.authSubtitle) {
     el.authSubtitle.textContent = registerMode
@@ -61,7 +61,7 @@ function setAuthChoiceVisible(visible) {
     el.authSubmitBtn.classList.toggle("hidden", visible);
   }
   if (el.authTitle) {
-    el.authTitle.textContent = visible ? "How would you like to continue?" : "Sign in to Varka";
+    el.authTitle.textContent = visible ? "How would you like to continue?" : "Sign in to MODRISS";
   }
   if (el.authSubtitle) {
     el.authSubtitle.textContent = visible

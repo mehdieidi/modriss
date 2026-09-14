@@ -99,7 +99,7 @@ function emptyLayoutStrategyConfig() {
 function selectedLayoutStrategy() {
   const strategies = layoutStrategies();
   const view = activeView();
-  const stored = window.localStorage.getItem(`varka.layoutStrategy.${state.activeType}`);
+  const stored = window.localStorage.getItem(`modriss.layoutStrategy.${state.activeType}`);
   const fallback = defaultLayoutStrategy();
   if (!strategies.length) {
     return String(view?.layoutStrategy || stored || fallback || "").toUpperCase();
@@ -155,7 +155,7 @@ function setLayoutStrategy(strategyId) {
   if (view) {
     view.layoutStrategy = selected;
   }
-  window.localStorage.setItem(`varka.layoutStrategy.${state.activeType}`, selected);
+  window.localStorage.setItem(`modriss.layoutStrategy.${state.activeType}`, selected);
   layoutMenuOpen = false;
   renderViewWorkbench();
   setStatus("Layout strategy selected. Run Auto Layout to apply it.");

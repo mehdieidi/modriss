@@ -11445,7 +11445,7 @@ Error generating stack: ` +
   }),
   l = n(),
   u = c(),
-  d = `/assets/varka-workspace-CecBCW2L.png`,
+  d = `/assets/modriss-workspace-CecBCW2L.png`,
   f = `/assets/wolf-DYnExGea.png`,
   p = e((e) => {
     var t = Symbol.for(`react.transitional.element`),
@@ -11465,8 +11465,8 @@ Error generating stack: ` +
   h = `http://127.0.0.1:8082`,
   g = `http://127.0.0.1:8080`.replace(/\/$/, ``),
   _ = `https://api.ipify.org?format=json`,
-  v = `https://github.com/mehdieidi/varka/tree/main/docs/public-docs`,
-  y = `https://github.com/mehdieidi/varka`,
+  v = `https://github.com/mehdieidi/modriss/tree/main/docs/public-docs`,
+  y = `https://github.com/mehdieidi/modriss`,
   b = `https://www.sharif.ir/en/web/me_ce/home`,
   x = `https://www.sharif.ir/en/web/me_ce/w/mehdi-eidi`,
   ee = `https://mehdieidi.github.io/`,
@@ -11641,11 +11641,11 @@ function re() {
             className: `brand`,
             href: `#top`,
             onClick: n,
-            "aria-label": `Varka research project home`,
+            "aria-label": `MODRISS research project home`,
             children: [
               (0, m.jsx)(`img`, { src: f, alt: `` }),
               (0, m.jsxs)(`span`, {
-                children: [`VARKA`, (0, m.jsx)(`small`, { children: `Research project` })],
+                children: [`MODRISS`, (0, m.jsx)(`small`, { children: `Research project` })],
               }),
             ],
           }),
@@ -11667,7 +11667,7 @@ function re() {
               (0, m.jsx)(`a`, {
                 className: `nav-icon`,
                 href: y,
-                "aria-label": `Varka source code on GitHub`,
+                "aria-label": `MODRISS source code on GitHub`,
                 children: (0, m.jsx)(w, { name: `github`, size: 18 }),
               }),
             ],
@@ -11692,7 +11692,7 @@ function re() {
               }),
               (0, m.jsx)(`p`, {
                 className: `lede`,
-                children: `Varka is an ongoing academic research project on how serverless software can be developed through an explicit process, formal modeling languages, model transformations, and code generation. The work is conducted at the Methodology Engineering Laboratory, Sharif University of Technology.`,
+                children: `MODRISS is an ongoing academic research project on how serverless software can be developed through an explicit process, formal modeling languages, model transformations, and code generation. The work is conducted at the Methodology Engineering Laboratory, Sharif University of Technology.`,
               }),
               (0, m.jsxs)(`div`, {
                 className: `hero-actions`,
@@ -11847,7 +11847,7 @@ function re() {
           }),
           (0, m.jsxs)(`div`, {
             className: `method-equation`,
-            "aria-label": `Varka methodology consists of a development process and a modeling framework`,
+            "aria-label": `MODRISS methodology consists of a development process and a modeling framework`,
             children: [
               (0, m.jsxs)(`article`, {
                 children: [
@@ -12055,12 +12055,12 @@ function re() {
             children: [
               (0, m.jsx)(`img`, {
                 src: d,
-                alt: `Varka browser-based CIM modeling workbench with a visual process model, modeling palette, lifecycle actions, and conversational assistant.`,
+                alt: `MODRISS browser-based CIM modeling workbench with a visual process model, modeling palette, lifecycle actions, and conversational assistant.`,
               }),
               (0, m.jsxs)(`figcaption`, {
                 children: [
                   (0, m.jsx)(`span`, { children: `Figure 1.` }),
-                  ` The Varka modeling workbench, showing the CIM editor and the LLM-based modeling assistant.`,
+                  ` The MODRISS modeling workbench, showing the CIM editor and the LLM-based modeling assistant.`,
                 ],
               }),
             ],
@@ -12154,9 +12154,9 @@ function re() {
                   (0, m.jsxs)(`div`, {
                     className: `abstract`,
                     children: [
-                      (0, m.jsx)(`h3`, { children: `Relation to Varka` }),
+                      (0, m.jsx)(`h3`, { children: `Relation to MODRISS` }),
                       (0, m.jsx)(`p`, {
-                        children: `The paper reviews selected model-driven approaches for serverless and microservices development through a process-centered template. Its evaluation framework identifies gaps in existing serverless approaches and provides part of the research basis for developing the Varka methodology.`,
+                        children: `The paper reviews selected model-driven approaches for serverless and microservices development through a process-centered template. Its evaluation framework identifies gaps in existing serverless approaches and provides part of the research basis for developing the MODRISS methodology.`,
                       }),
                       (0, m.jsxs)(`dl`, {
                         children: [
@@ -12204,7 +12204,7 @@ function re() {
           (0, m.jsxs)(`div`, {
             children: [
               (0, m.jsx)(`p`, {
-                children: `Varka is under active research and development. The repository includes the three modeling languages, formal validation rules, transformation profiles, code generation, modeling subprocesses, lifecycle material, and the web platform. Evaluation and refinement of the methodology and assistant continue as part of the thesis work.`,
+                children: `MODRISS is under active research and development. The repository includes the three modeling languages, formal validation rules, transformation profiles, code generation, modeling subprocesses, lifecycle material, and the web platform. Evaluation and refinement of the methodology and assistant continue as part of the thesis work.`,
               }),
               (0, m.jsx)(`p`, {
                 children: `Generated projects are research outputs and engineering baselines. They still require human review, completion of recorded manual actions, testing, and deployment-specific decisions.`,
@@ -12241,7 +12241,7 @@ function re() {
               (0, m.jsx)(`img`, { src: f, alt: `` }),
               (0, m.jsxs)(`div`, {
                 children: [
-                  (0, m.jsx)(`b`, { children: `VARKA` }),
+                  (0, m.jsx)(`b`, { children: `MODRISS` }),
                   (0, m.jsx)(`span`, {
                     children: `Model-driven methodology for serverless software development`,
                   }),

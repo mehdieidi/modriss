@@ -7,7 +7,7 @@ flowchart TB
     host["Developer / deployment host"]
     browser["Browser"]
 
-    subgraph compose["Docker Compose project: varka"]
+    subgraph compose["Docker Compose project: modriss"]
         caddy["caddy<br/>edge proxy<br/>port 8088"]
         frontend["frontend<br/>python:3.13-alpine static server<br/>port 8082"]
         admin["admin<br/>nginx static React app<br/>port 8084"]
@@ -23,9 +23,9 @@ flowchart TB
         pgexp["postgres-exporter"]
         nodeexp["node-exporter"]
         cadvisor["cAdvisor"]
-        dbvolume[("varka-postgres-data")]
-        uploadvolume[("varka-backend-uploads")]
-        logvolume[("varka-backend-logs / varka-caddy-logs")]
+        dbvolume[("modriss-postgres-data")]
+        uploadvolume[("modriss-backend-uploads")]
+        logvolume[("modriss-backend-logs / modriss-caddy-logs")]
     end
 
     proxy["Host AI proxy<br/>host.docker.internal:2081 by default"]

@@ -78,7 +78,7 @@
   <modelVersion>4.0.0</modelVersion>
   <name>platform-storage-postgres</name>
   <parent>
-    <artifactId>varka</artifactId>
+    <artifactId>modriss</artifactId>
     <groupId>io.mehdieidi</groupId>
     <relativePath>../../../pom.xml</relativePath>
     <version>0.0.1-SNAPSHOT</version>

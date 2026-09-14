@@ -1,6 +1,6 @@
 # PIM Methodology Activity Diagram
 
-This activity view shows one service-slice revolution of `varka.pim.modeling` after CIM-to-PIM ETL.
+This activity view shows one service-slice revolution of `modriss.pim.modeling` after CIM-to-PIM ETL.
 
 ```mermaid
 flowchart TD

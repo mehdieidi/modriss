@@ -1,6 +1,6 @@
 # AI modeling assistant
 
-Varka provides one durable conversational assistant for CIM and PIM. PSM assistant sessions are
+MODRISS provides one durable conversational assistant for CIM and PIM. PSM assistant sessions are
 currently out of scope and are rejected by the API. The deployed provider is Arvan
 `Gemma-4-31B-IT`.
 
@@ -75,14 +75,14 @@ Assistant output is gated only by structural Ecore/EMF conformance through
 validation, or full `ModelService.validate(...)` during generation, repair, apply, review, or
 commit. Run explicit model validation separately when semantic EVL feedback is required.
 
-Structural validity alone does not prove that a model is useful. Varka also uses an LLM obligation
+Structural validity alone does not prove that a model is useful. MODRISS also uses an LLM obligation
 review and stronger live-evaluation gates, but the required repeated reliability campaigns are not
 complete. The assistant must not yet be described as perfectly reliable or production-ready.
 
 ## Provider limitations
 
 Arvan may emit extensive reasoning despite non-thinking controls and may finish a small structured
-stage with `finish_reason=length`. Varka uses bounded stage-specific retries and durable accounting,
+stage with `finish_reason=length`. MODRISS uses bounded stage-specific retries and durable accounting,
 but broad PIM generation can still take several minutes or fail atomically.
 
 For transport details, see [REST API](../reference/rest-api.md),

@@ -1,6 +1,6 @@
-# Varka DSML reference
+# MODRISS DSML reference
 
-This is the complete modeler-facing reference for Varka's three serverless domain-specific modeling languages. It explains the abstract syntax declared in Emfatic, the role of every declared attribute, accepted value shapes and examples, containment/reference relationships, and the way each level participates in refinement and generation.
+This is the complete modeler-facing reference for MODRISS's three serverless domain-specific modeling languages. It explains the abstract syntax declared in Emfatic, the role of every declared attribute, accepted value shapes and examples, containment/reference relationships, and the way each level participates in refinement and generation.
 
 The reference is intentionally split into module pages. Use the page for the concern you are modeling, then follow the links in its relationship tables to understand how the element connects to the rest of the model.
 

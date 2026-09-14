@@ -1,6 +1,6 @@
 [% /* Generates the sample event artifact. */ %]{
   "id": "[%= (eventOwnerObj.stableKey().toSlug() + "-sample").jsonEscape() %]",
-  "source": "[%= ("varka." + eventKindText).jsonEscape() %]",
+  "source": "[%= ("modriss." + eventKindText).jsonEscape() %]",
   "detail-type": "[%= eventOwnerObj.eClass().getName().jsonEscape() %]",
   "time": "2026-01-01T00:00:00Z",
   "detail": {

@@ -82,8 +82,8 @@ If an account is suspected to be compromised:
 ## Production Checklist
 
 - `GRAFANA_ADMIN_PASSWORD` is not the default.
-- `VARKA_ADMIN_BOOTSTRAP_EMAILS` is empty or tightly controlled after bootstrap.
-- `VARKA_ALLOWED_ORIGINS` contains only trusted browser origins.
+- `MODRISS_ADMIN_BOOTSTRAP_EMAILS` is empty or tightly controlled after bootstrap.
+- `MODRISS_ALLOWED_ORIGINS` contains only trusted browser origins.
 - PostgreSQL is private.
 - Admin app is private or identity-protected.
 - Backups are encrypted.

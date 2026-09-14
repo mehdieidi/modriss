@@ -1,6 +1,6 @@
 # Data and Storage
 
-Varka stores runtime state in PostgreSQL through Spring JDBC. Flyway owns schema creation and
+MODRISS stores runtime state in PostgreSQL through Spring JDBC. Flyway owns schema creation and
 migration. Static metamodels, constraints, transformations, generators, and UI metadata remain
 versioned repository assets rather than database records.
 
@@ -67,7 +67,7 @@ after that checkpoint.
 ## Inspecting a Local Database
 
 ```powershell
-docker exec -it varka-postgres-1 psql -U varka -d varka
+docker exec -it modriss-postgres-1 psql -U modriss -d modriss
 ```
 
 Useful checks:

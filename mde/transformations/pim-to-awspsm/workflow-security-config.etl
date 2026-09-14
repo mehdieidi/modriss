@@ -873,20 +873,20 @@ operation jsonataCondition(expression) {
   }
   // Source conditions are FEEL-like expressions. Prefix bare input fields while
   // preserving boolean/null literals; unsupported prose remains a blocking review item.
-  var converted = text.replaceAll("\\$\\.", "VARKA_PATH_");
-  converted = converted.replaceAll("\\b(and|or|not)\\b", "VARKA_OPERATOR_$1");
-  converted = converted.replaceAll("\\b(true|false|null)\\b", "VARKA_LITERAL_$1");
-  converted = converted.replaceAll("\\b([A-Za-z_][A-Za-z0-9_]*)\\b", "VARKA_INPUT_$1");
-  converted = converted.replace("VARKA_INPUT_VARKA_OPERATOR_", "VARKA_OPERATOR_");
-  converted = converted.replace("VARKA_INPUT_VARKA_LITERAL_", "VARKA_LITERAL_");
-  converted = converted.replace("VARKA_OPERATOR_and", "and");
-  converted = converted.replace("VARKA_OPERATOR_or", "or");
-  converted = converted.replace("VARKA_OPERATOR_not", "not");
-  converted = converted.replace("VARKA_LITERAL_true", "true");
-  converted = converted.replace("VARKA_LITERAL_false", "false");
-  converted = converted.replace("VARKA_LITERAL_null", "null");
-  converted = converted.replace("VARKA_INPUT_VARKA_PATH_", "\\$states.input.");
-  converted = converted.replace("VARKA_INPUT_", "\\$states.input.");
+  var converted = text.replaceAll("\\$\\.", "MODRISS_PATH_");
+  converted = converted.replaceAll("\\b(and|or|not)\\b", "MODRISS_OPERATOR_$1");
+  converted = converted.replaceAll("\\b(true|false|null)\\b", "MODRISS_LITERAL_$1");
+  converted = converted.replaceAll("\\b([A-Za-z_][A-Za-z0-9_]*)\\b", "MODRISS_INPUT_$1");
+  converted = converted.replace("MODRISS_INPUT_MODRISS_OPERATOR_", "MODRISS_OPERATOR_");
+  converted = converted.replace("MODRISS_INPUT_MODRISS_LITERAL_", "MODRISS_LITERAL_");
+  converted = converted.replace("MODRISS_OPERATOR_and", "and");
+  converted = converted.replace("MODRISS_OPERATOR_or", "or");
+  converted = converted.replace("MODRISS_OPERATOR_not", "not");
+  converted = converted.replace("MODRISS_LITERAL_true", "true");
+  converted = converted.replace("MODRISS_LITERAL_false", "false");
+  converted = converted.replace("MODRISS_LITERAL_null", "null");
+  converted = converted.replace("MODRISS_INPUT_MODRISS_PATH_", "\\$states.input.");
+  converted = converted.replace("MODRISS_INPUT_", "\\$states.input.");
   converted = converted.replaceAll("==", "=");
   return "{% " + converted + " %}";
 }

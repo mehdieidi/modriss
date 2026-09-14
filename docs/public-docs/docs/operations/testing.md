@@ -59,9 +59,9 @@ mvn test -Pllm-provider-tests -Dgroups=llm-provider
 ```
 
 Live provider tests use the Arvan OpenAI-compatible configuration in the ignored `.env`:
-`VARKA_AI_PROVIDER=openai`, the Arvan `OPENAI_COMPATIBLE_BASE_URL` and key,
-`VARKA_AI_MODEL=Gemma-4-31B-IT`, JSON schema protocol, native tools disabled, and unified mode.
-Use `VARKA_AI_TEST_MODEL` only for an intentional evaluation override.
+`MODRISS_AI_PROVIDER=openai`, the Arvan `OPENAI_COMPATIBLE_BASE_URL` and key,
+`MODRISS_AI_MODEL=Gemma-4-31B-IT`, JSON schema protocol, native tools disabled, and unified mode.
+Use `MODRISS_AI_TEST_MODEL` only for an intentional evaluation override.
 
 ## PostgreSQL integration tests
 

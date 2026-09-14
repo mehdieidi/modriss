@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/pim/security/1.0", prefix="security")
+@namespace(uri="https://modriss.org/pim/security/1.0", prefix="security")
 package security;
 
 import "../shared/kernel.ecore";

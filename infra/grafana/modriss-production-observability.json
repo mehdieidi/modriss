@@ -1,0 +1,173 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "targets": [{ "expr": "up", "legendFormat": "{{job}} {{instance}}" }],
+      "title": "Scrape target health",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 6 },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "sum(rate(caddy_http_requests_total[5m])) by (handler)",
+          "legendFormat": "{{handler}}"
+        }
+      ],
+      "title": "Caddy edge request rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 6 },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "sum(increase(modriss_frontend_telemetry_events_total[1h])) by (app, kind)",
+          "legendFormat": "{{app}} {{kind}}"
+        }
+      ],
+      "title": "Browser telemetry events (1h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 13 },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "pg_up",
+          "legendFormat": "postgres up"
+        },
+        {
+          "expr": "pg_stat_activity_count",
+          "legendFormat": "connections"
+        }
+      ],
+      "title": "PostgreSQL health",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 13 },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "1 - (avg(node_memory_MemAvailable_bytes) / avg(node_memory_MemTotal_bytes))",
+          "legendFormat": "memory used"
+        },
+        {
+          "expr": "1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))",
+          "legendFormat": "cpu used"
+        }
+      ],
+      "title": "Host CPU and memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 20 },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{name!=\"\"}) by (name)",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "title": "Container memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 20 },
+      "id": 7,
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{name!=\"\"}[5m])) by (name)",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "title": "Container CPU",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 27 },
+      "id": 8,
+      "targets": [
+        {
+          "expr": "{service=\"caddy\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Caddy access logs",
+      "type": "logs"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 27 },
+      "id": 9,
+      "targets": [
+        {
+          "expr": "{compose_project=\"modriss\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Container logs",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["modriss", "production", "observability"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "Prometheus", "value": "prometheus" },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "MODRISS Production Observability",
+  "uid": "modriss-production-observability",
+  "version": 1,
+  "weekStart": ""
+}

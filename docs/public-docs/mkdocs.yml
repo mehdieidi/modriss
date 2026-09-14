@@ -1,6 +1,6 @@
-site_name: Varka Documentation
-site_description: Public documentation for the Varka AI-assisted model-driven serverless platform
-repo_name: varka
+site_name: MODRISS Documentation
+site_description: Public documentation for the MODRISS AI-assisted model-driven serverless platform
+repo_name: modriss
 theme:
   name: material
   features:

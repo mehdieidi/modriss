@@ -3,7 +3,7 @@
 This process verifies the final downloadable project produced by the complete
 CIM -> PIM -> AWS PSM -> artifacts pipeline.
 
-## 1. Start Varka and the selected AWS emulator
+## 1. Start MODRISS and the selected AWS emulator
 
 Floci is the default lightweight emulator; set `AWS_EMULATOR=localstack` for the retained
 LocalStack profile. Compose starts only the selected profile.
@@ -48,10 +48,10 @@ Prerequisites are Docker, AWS CLI, AWS SAM CLI, Go 1.24, and `make`.
 
 ```powershell
 sam validate --lint --template-file .\template-<deployment-unit>.yaml
-docker run --rm -v varka-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
+docker run --rm -v modriss-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
   -e GOPROXY=https://proxy.golang.org,direct -e GOSUMDB=off `
   golang:1.24-bookworm bash scripts/test.sh
-docker run --rm -v varka-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
+docker run --rm -v modriss-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
   -e GOPROXY=https://proxy.golang.org,direct -e GOSUMDB=off `
   golang:1.24-bookworm bash scripts/build.sh
 ```
@@ -74,13 +74,13 @@ $env:AWS_DEFAULT_REGION='us-east-1'
 $env:AWS_ENDPOINT_URL='http://localhost:4566'
 $env:NO_PROXY='localhost,127.0.0.1'
 
-aws --endpoint-url http://localhost:4566 s3 mb s3://varka-sam-artifacts
+aws --endpoint-url http://localhost:4566 s3 mb s3://modriss-sam-artifacts
 sam build --template-file .\template-<deployment-unit>.yaml
 sam package --template-file .\.aws-sam\build\template.yaml `
-  --s3-bucket varka-sam-artifacts --output-template-file packaged.yaml
+  --s3-bucket modriss-sam-artifacts --output-template-file packaged.yaml
 sam deploy --template-file packaged.yaml --stack-name <stack-name> `
   --region us-east-1 --capabilities CAPABILITY_IAM `
-  --s3-bucket varka-sam-artifacts --no-confirm-changeset
+  --s3-bucket modriss-sam-artifacts --no-confirm-changeset
 ```
 
 Deploy every generated deployment-unit template as a separate stack. Success

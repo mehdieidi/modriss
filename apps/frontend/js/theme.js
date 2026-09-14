@@ -6,8 +6,8 @@ const THEME_DARK = "dark";
 const THEME_LIGHT = "light";
 const THEME_DARK_ICON = "/assets/icons/dark_mode.svg";
 const THEME_LIGHT_ICON = "/assets/icons/light_mode.svg";
-const THEME_PROFILE_STORAGE = "varka.activeThemeProfileId";
-const THEME_SCHEME_STORAGE = "varka.themeScheme";
+const THEME_PROFILE_STORAGE = "modriss.activeThemeProfileId";
+const THEME_SCHEME_STORAGE = "modriss.themeScheme";
 
 let activeProfileId = "";
 
@@ -65,7 +65,7 @@ function applyThemeProfile(profile) {
   setLightClass(storedScheme ? storedScheme === THEME_LIGHT : inferLightTheme(profile.tokens));
   updateThemeToggleIcon();
   document.documentElement.dispatchEvent(
-    new CustomEvent("varka:theme-change", { detail: { profile } }),
+    new CustomEvent("modriss:theme-change", { detail: { profile } }),
   );
   return true;
 }

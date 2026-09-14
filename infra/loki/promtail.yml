@@ -9,31 +9,31 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: varka-backend-file
+  - job_name: modriss-backend-file
     static_configs:
       - targets:
           - localhost
         labels:
-          job: varka-backend
-          service: varka-backend
-          __path__: /var/log/varka/*.log
+          job: modriss-backend
+          service: modriss-backend
+          __path__: /var/log/modriss/*.log
 
-  - job_name: varka-caddy-file
+  - job_name: modriss-caddy-file
     static_configs:
       - targets:
           - localhost
         labels:
-          job: varka-caddy
+          job: modriss-caddy
           service: caddy
           __path__: /var/log/caddy/*.log
 
-  - job_name: varka-docker-containers
+  - job_name: modriss-docker-containers
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 15s
     relabel_configs:
       - source_labels: ["__meta_docker_container_label_com_docker_compose_project"]
-        regex: varka
+        regex: modriss
         action: keep
       - source_labels: ["__meta_docker_container_name"]
         regex: "/(.*)"

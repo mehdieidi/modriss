@@ -1,19 +1,19 @@
 # End-to-End Methodology Activity Diagram
 
-This activity view shows the full `varka.end-to-end.modeling` vertical-slice process.
+This activity view shows the full `modriss.end-to-end.modeling` vertical-slice process.
 
 ```mermaid
 flowchart TD
     start((Start capability increment)) --> plan["Business Modeler: plan thin vertical slice<br/>and definition of done"]
-    plan --> cim["Run CIM child process<br/>(varka.cim.modeling)"]
+    plan --> cim["Run CIM child process<br/>(modriss.cim.modeling)"]
     cim --> cimGate{"CIM semantic validation<br/>passes?"}
     cimGate -- "No: rework CIM" --> cim
     cimGate -- "Yes" --> cp["Solution Architect: run CIM → PIM ETL"]
-    cp --> pim["Refine PIM child process<br/>(varka.pim.modeling)"]
+    cp --> pim["Refine PIM child process<br/>(modriss.pim.modeling)"]
     pim --> pimGate{"PIM semantic validation<br/>passes?"}
     pimGate -- "No: rework PIM" --> pim
     pimGate -- "Yes" --> pp["Cloud Platform Engineer: run PIM → PSM ETL"]
-    pp --> psm["Refine PSM child process<br/>(varka.psm.modeling)"]
+    pp --> psm["Refine PSM child process<br/>(modriss.psm.modeling)"]
     psm --> psmGate{"PSM semantic validation<br/>passes?"}
     psmGate -- "No: rework PSM" --> psm
     psmGate -- "Yes" --> m2t["Generate artifacts<br/>(awspsm-to-artifacts M2T)"]

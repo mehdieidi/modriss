@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://varka.org/notation/cvs-v2.schema.json",
-  "title": "Varka Concrete Visual Syntax v2",
+  "$id": "https://modriss.org/notation/cvs-v2.schema.json",
+  "title": "MODRISS Concrete Visual Syntax v2",
   "description": "Formal concrete visual syntax specification derived from Ecore metamodels.",
   "type": "object",
   "required": [

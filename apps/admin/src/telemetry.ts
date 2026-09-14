@@ -2,7 +2,7 @@ const APP_NAME = "admin";
 const MAX_MESSAGE = 300;
 
 function endpoint() {
-  const base = (window.VARKA_ADMIN_BACKEND_BASE_URL || "").replace(/\/$/, "");
+  const base = (window.MODRISS_ADMIN_BACKEND_BASE_URL || "").replace(/\/$/, "");
   return `${base}/api/telemetry/frontend`;
 }
 

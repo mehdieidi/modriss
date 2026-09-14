@@ -1,6 +1,6 @@
 # Platform assistant
 
-`platform-assistant` is the provider-neutral runtime behind Varka's single modeling chatbot. The
+`platform-assistant` is the provider-neutral runtime behind MODRISS's single modeling chatbot. The
 supported product scope is CIM and PIM; `ChatbotController` rejects PSM assistant sessions with
 HTTP 422. Production uses the Arvan OpenAI-compatible endpoint with `Gemma-4-31B-IT`.
 
@@ -77,15 +77,15 @@ validation, and persistence.
 The deployed Arvan profile uses JSON content rather than native tool calls:
 
 ```dotenv
-VARKA_AI_PROVIDER=openai
-VARKA_AI_MODEL=Gemma-4-31B-IT
-VARKA_AI_MODE=unified
-VARKA_AI_METAMODEL_MODE=normal
-VARKA_AI_OPENAI_PROTOCOL=json_schema
-VARKA_AI_NATIVE_TOOLS_PREFERRED=false
-VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
-VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION=true
-VARKA_AI_LLM_REVIEW_ENABLED=false
+MODRISS_AI_PROVIDER=openai
+MODRISS_AI_MODEL=Gemma-4-31B-IT
+MODRISS_AI_MODE=unified
+MODRISS_AI_METAMODEL_MODE=normal
+MODRISS_AI_OPENAI_PROTOCOL=json_schema
+MODRISS_AI_NATIVE_TOOLS_PREFERRED=false
+MODRISS_AI_FORCED_TOOL_CHOICE_RELIABLE=false
+MODRISS_AI_PREFER_LLM_SOURCE_EXTRACTION=true
+MODRISS_AI_LLM_REVIEW_ENABLED=false
 ```
 
 The adapter sends temperature zero and a non-thinking request hint when supported. Arvan can still return
@@ -101,8 +101,8 @@ including cancellation paths.
 
 ## Assistant metamodel modes
 
-`VARKA_AI_METAMODEL_MODE=normal` preserves the complete existing CIM/PIM contract surface.
-`VARKA_AI_METAMODEL_MODE=excerpt` exposes the curated profile in
+`MODRISS_AI_METAMODEL_MODE=normal` preserves the complete existing CIM/PIM contract surface.
+`MODRISS_AI_METAMODEL_MODE=excerpt` exposes the curated profile in
 `src/main/resources/assistant/metamodel/excerpt-metamodel.json`. The excerpt keeps the central CIM
 business/process/data concepts and the central PIM service/function/API/event/data/workflow
 concepts, including the supporting types needed to construct them.

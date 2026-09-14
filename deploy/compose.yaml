@@ -1,4 +1,4 @@
-name: varka
+name: modriss
 
 # Run from the repository root so Compose can substitute ${VAR} from ./.env:
 #   docker compose up --build
@@ -24,9 +24,9 @@ services:
       - "${CADDY_HTTP_PORT:-8088}:8088"
     volumes:
       - ../infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - varka-caddy-logs:/var/log/caddy
-      - varka-caddy-data:/data
-      - varka-caddy-config:/config
+      - modriss-caddy-logs:/var/log/caddy
+      - modriss-caddy-data:/data
+      - modriss-caddy-config:/config
     depends_on:
       backend:
         condition: service_healthy
@@ -49,13 +49,13 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-varka}
-      POSTGRES_USER: ${POSTGRES_USER:-varka}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-varka}
+      POSTGRES_DB: ${POSTGRES_DB:-modriss}
+      POSTGRES_USER: ${POSTGRES_USER:-modriss}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-modriss}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - varka-postgres-data:/var/lib/postgresql/data
+      - modriss-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -73,19 +73,19 @@ services:
         required: false
     environment:
       # Container-specific overrides only (take precedence over env_file).
-      # All other VARKA_* / provider settings come from ../.env via env_file.
-      VARKA_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-varka}
-      VARKA_DB_USER: ${POSTGRES_USER:-varka}
-      VARKA_DB_PASSWORD: ${POSTGRES_PASSWORD:-varka}
-      VARKA_UPLOAD_ROOT: ${VARKA_CONTAINER_UPLOAD_ROOT:-/app/uploads}
-      VARKA_ALLOWED_ORIGINS: ${VARKA_ALLOWED_ORIGINS:-http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:${BACKEND_PORT:-8080},http://localhost:${BACKEND_PORT:-8080},http://127.0.0.1:${FRONTEND_PORT:-8082},http://localhost:${FRONTEND_PORT:-8082},http://127.0.0.1:${LANDING_PORT:-8083},http://localhost:${LANDING_PORT:-8083},http://127.0.0.1:${ADMIN_PORT:-8084},http://localhost:${ADMIN_PORT:-8084},http://localhost:${CADDY_HTTP_PORT:-8088},http://127.0.0.1:${CADDY_HTTP_PORT:-8088},http://admin.localhost:${CADDY_HTTP_PORT:-8088},http://api.localhost:${CADDY_HTTP_PORT:-8088},http://editor.localhost:${CADDY_HTTP_PORT:-8088}}
+      # All other MODRISS_* / provider settings come from ../.env via env_file.
+      MODRISS_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-modriss}
+      MODRISS_DB_USER: ${POSTGRES_USER:-modriss}
+      MODRISS_DB_PASSWORD: ${POSTGRES_PASSWORD:-modriss}
+      MODRISS_UPLOAD_ROOT: ${MODRISS_CONTAINER_UPLOAD_ROOT:-/app/uploads}
+      MODRISS_ALLOWED_ORIGINS: ${MODRISS_ALLOWED_ORIGINS:-http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:${BACKEND_PORT:-8080},http://localhost:${BACKEND_PORT:-8080},http://127.0.0.1:${FRONTEND_PORT:-8082},http://localhost:${FRONTEND_PORT:-8082},http://127.0.0.1:${LANDING_PORT:-8083},http://localhost:${LANDING_PORT:-8083},http://127.0.0.1:${ADMIN_PORT:-8084},http://localhost:${ADMIN_PORT:-8084},http://localhost:${CADDY_HTTP_PORT:-8088},http://127.0.0.1:${CADDY_HTTP_PORT:-8088},http://admin.localhost:${CADDY_HTTP_PORT:-8088},http://api.localhost:${CADDY_HTTP_PORT:-8088},http://editor.localhost:${CADDY_HTTP_PORT:-8088}}
       LOGGING_FILE_NAME: /app/logs/backend.log
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     volumes:
       - ../mde:/app/mde
-      - varka-backend-uploads:/app/uploads
-      - varka-backend-logs:/app/logs
+      - modriss-backend-uploads:/app/uploads
+      - modriss-backend-logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -110,7 +110,7 @@ services:
       - -c
       - |
         cp -a /app/. /srv/
-        printf '%s\n' "window.VARKA_BACKEND_BASE_URL = \"http://127.0.0.1:${BACKEND_PORT:-8080}\";" > /srv/backend-config.js
+        printf '%s\n' "window.MODRISS_BACKEND_BASE_URL = \"http://127.0.0.1:${BACKEND_PORT:-8080}\";" > /srv/backend-config.js
         exec python3 -m http.server --bind 0.0.0.0 8082 --directory /srv
     ports:
       - "${FRONTEND_PORT:-8082}:8082"
@@ -126,7 +126,7 @@ services:
       - sh
       - -c
       - |
-        printf '%s\n' "window.VARKA_ADMIN_BACKEND_BASE_URL = \"http://admin.localhost:${CADDY_HTTP_PORT:-8088}\";" \
+        printf '%s\n' "window.MODRISS_ADMIN_BACKEND_BASE_URL = \"http://admin.localhost:${CADDY_HTTP_PORT:-8088}\";" \
           > /usr/share/nginx/html/admin-config.js
         exec nginx -g 'daemon off;'
     ports:
@@ -157,7 +157,7 @@ services:
       - "${LOCALSTACK_GATEWAY_PORT:-4566}:4566"
       - "4510-4559:4510-4559"
     volumes:
-      - varka-localstack-data:/var/lib/localstack
+      - modriss-localstack-data:/var/lib/localstack
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       default:
@@ -190,7 +190,7 @@ services:
     ports:
       - "${AWS_EMULATOR_GATEWAY_PORT:-4566}:4566"
     volumes:
-      - varka-floci-data:/app/data
+      - modriss-floci-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       default:
@@ -231,8 +231,8 @@ services:
       - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - ../infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ../infra/prometheus/varka-alerts.yml:/etc/prometheus/rules/varka-alerts.yml:ro
-      - varka-prometheus-data:/prometheus
+      - ../infra/prometheus/modriss-alerts.yml:/etc/prometheus/rules/modriss-alerts.yml:ro
+      - modriss-prometheus-data:/prometheus
     depends_on:
       backend:
         condition: service_healthy
@@ -247,7 +247,7 @@ services:
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:v0.16.0
     environment:
-      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER:-varka}:${POSTGRES_PASSWORD:-varka}@postgres:5432/${POSTGRES_DB:-varka}?sslmode=disable
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER:-modriss}:${POSTGRES_PASSWORD:-modriss}@postgres:5432/${POSTGRES_DB:-modriss}?sslmode=disable
     depends_on:
       postgres:
         condition: service_healthy
@@ -282,7 +282,7 @@ services:
       - "${LOKI_PORT:-3100}:3100"
     volumes:
       - ../infra/loki/loki.yml:/etc/loki/loki.yml:ro
-      - varka-loki-data:/loki
+      - modriss-loki-data:/loki
     restart: unless-stopped
 
   promtail:
@@ -290,8 +290,8 @@ services:
     command: ["-config.file=/etc/promtail/promtail.yml"]
     volumes:
       - ../infra/loki/promtail.yml:/etc/promtail/promtail.yml:ro
-      - varka-backend-logs:/var/log/varka:ro
-      - varka-caddy-logs:/var/log/caddy:ro
+      - modriss-backend-logs:/var/log/modriss:ro
+      - modriss-caddy-logs:/var/log/caddy:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
     depends_on:
@@ -311,28 +311,28 @@ services:
     volumes:
       - ../infra/grafana/provisioning:/etc/grafana/provisioning:ro
       - ../infra/grafana:/var/lib/grafana/dashboards:ro
-      - varka-grafana-data:/var/lib/grafana
+      - modriss-grafana-data:/var/lib/grafana
     depends_on:
       - prometheus
       - loki
     restart: unless-stopped
 
 volumes:
-  varka-caddy-config:
-  varka-caddy-data:
-  varka-caddy-logs:
-  varka-backend-logs:
-  varka-backend-uploads:
-  varka-grafana-data:
-  varka-floci-data:
-  varka-loki-data:
-  varka-localstack-data:
-  varka-prometheus-data:
-  varka-postgres-data:
+  modriss-caddy-config:
+  modriss-caddy-data:
+  modriss-caddy-logs:
+  modriss-backend-logs:
+  modriss-backend-uploads:
+  modriss-grafana-data:
+  modriss-floci-data:
+  modriss-loki-data:
+  modriss-localstack-data:
+  modriss-prometheus-data:
+  modriss-postgres-data:
 
 networks:
   freellmapi:
-    # Create the network for a standalone Varka deployment. Set
+    # Create the network for a standalone MODRISS deployment. Set
     # FREELLMAPI_NETWORK_EXTERNAL=true when attaching to an existing FreeLLM
     # network instead.
     external: ${FREELLMAPI_NETWORK_EXTERNAL:-false}

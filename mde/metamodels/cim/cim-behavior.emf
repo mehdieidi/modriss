@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/cim/behavior/1.0", prefix="cimbehavior")
+@namespace(uri="https://modriss.org/cim/behavior/1.0", prefix="cimbehavior")
 package cimbehavior;
 
 import "../shared/kernel.ecore";

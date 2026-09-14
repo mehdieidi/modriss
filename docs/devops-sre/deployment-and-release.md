@@ -1,6 +1,6 @@
 # Deployment and Release Operations
 
-This guide covers the operational path for changing and running Varka. It does not replace
+This guide covers the operational path for changing and running MODRISS. It does not replace
 environment-specific production infrastructure design; it defines the baseline expectations.
 
 For an end-to-end real-server launch plan, use
@@ -43,16 +43,16 @@ Use `.env` for local overrides. Use a secret manager or orchestrator-managed sec
 
 Important values:
 
-| Variable                       | Purpose                                                                                        |
-| ------------------------------ | ---------------------------------------------------------------------------------------------- |
-| `POSTGRES_*`                   | PostgreSQL database, user, password, and published port.                                       |
-| `CADDY_HTTP_PORT`              | Published local port for the Caddy edge proxy.                                                 |
-| `VARKA_DB_*`                   | Backend JDBC connection settings.                                                              |
-| `VARKA_ALLOWED_ORIGINS`        | CORS origins for browser apps.                                                                 |
-| `VARKA_ADMIN_BOOTSTRAP_EMAILS` | Initial admin role bootstrap emails.                                                           |
-| `VARKA_METRICS_ENABLED`        | Prometheus metrics export.                                                                     |
-| `GRAFANA_ADMIN_PASSWORD`       | Grafana local admin password.                                                                  |
-| `VARKA_AI_*`                   | Unified mode, Arvan/Gemma JSON protocol, budgets, timeouts, rate limits, and circuit behavior. |
+| Variable                         | Purpose                                                                                        |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `POSTGRES_*`                     | PostgreSQL database, user, password, and published port.                                       |
+| `CADDY_HTTP_PORT`                | Published local port for the Caddy edge proxy.                                                 |
+| `MODRISS_DB_*`                   | Backend JDBC connection settings.                                                              |
+| `MODRISS_ALLOWED_ORIGINS`        | CORS origins for browser apps.                                                                 |
+| `MODRISS_ADMIN_BOOTSTRAP_EMAILS` | Initial admin role bootstrap emails.                                                           |
+| `MODRISS_METRICS_ENABLED`        | Prometheus metrics export.                                                                     |
+| `GRAFANA_ADMIN_PASSWORD`         | Grafana local admin password.                                                                  |
+| `MODRISS_AI_*`                   | Unified mode, Arvan/Gemma JSON protocol, budgets, timeouts, rate limits, and circuit behavior. |
 
 ## Release Checklist
 

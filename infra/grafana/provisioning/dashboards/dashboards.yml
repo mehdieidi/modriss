@@ -1,9 +1,9 @@
 apiVersion: 1
 
 providers:
-  - name: Varka
+  - name: MODRISS
     orgId: 1
-    folder: Varka
+    folder: MODRISS
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30

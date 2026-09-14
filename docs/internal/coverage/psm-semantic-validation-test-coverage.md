@@ -6,7 +6,7 @@ This document traces the PSM EVL semantic validation coverage added for the AWS/
 
 - DSML: PSM only.
 - EVL entrypoint: `mde/validation/psm/psm-semantic-validation.evl`.
-- Test class: `packages/java/mde-evl-validator/src/test/java/io/mehdieidi/varka/mde/validation/PsmSemanticValidationTest.java`.
+- Test class: `packages/java/mde-evl-validator/src/test/java/io/mehdieidi/modriss/mde/validation/PsmSemanticValidationTest.java`.
 - Verification command: `mvn -pl packages/java/mde-evl-validator -Dtest=PsmSemanticValidationTest test`.
 
 Per the project validation boundary, chatbot/LLM assistant generated model output must still be gated only by structural Ecore/EMF conformance. These tests are an explicit semantic validation workflow for the PSM EVL rules.

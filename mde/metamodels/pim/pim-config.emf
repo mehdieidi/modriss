@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/pim/config/1.0", prefix="config")
+@namespace(uri="https://modriss.org/pim/config/1.0", prefix="config")
 package config;
 
 import "../shared/kernel.ecore";

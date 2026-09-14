@@ -1,25 +1,25 @@
 # Alerting Runbooks
 
-Operational alert rules and response procedures for Varka production deployments.
+Operational alert rules and response procedures for MODRISS production deployments.
 
 ## Prerequisites
 
 - Prometheus scraping `http://<backend>:8080/actuator/prometheus`
-- Grafana dashboard: `infra/grafana/varka-overview.json`
+- Grafana dashboard: `infra/grafana/modriss-overview.json`
 - Log aggregation with `requestId` (and `traceId` when tracing is enabled)
 - On-call rotation and escalation path defined by your organization
 
 ## Alert catalog
 
-### `VarkaBackendDown`
+### `MODRISSBackendDown`
 
-| Field         | Value                                        |
-| ------------- | -------------------------------------------- |
-| **Condition** | `up{job="varka-backend"} == 0` for 2 minutes |
-| **Severity**  | Critical                                     |
-| **Runbook**   | [Backend unavailable](#backend-unavailable)  |
+| Field         | Value                                          |
+| ------------- | ---------------------------------------------- |
+| **Condition** | `up{job="modriss-backend"} == 0` for 2 minutes |
+| **Severity**  | Critical                                       |
+| **Runbook**   | [Backend unavailable](#backend-unavailable)    |
 
-### `VarkaReadinessFailing`
+### `MODRISSReadinessFailing`
 
 | Field         | Value                                                        |
 | ------------- | ------------------------------------------------------------ |
@@ -27,7 +27,7 @@ Operational alert rules and response procedures for Varka production deployments
 | **Severity**  | Critical                                                     |
 | **Runbook**   | [Readiness failing](#readiness-failing)                      |
 
-### `VarkaHighErrorRate`
+### `MODRISSHighErrorRate`
 
 | Field         | Value                                    |
 | ------------- | ---------------------------------------- |
@@ -35,7 +35,7 @@ Operational alert rules and response procedures for Varka production deployments
 | **Severity**  | Warning → Critical if > 15%              |
 | **Runbook**   | [Elevated 5xx rate](#elevated-5xx-rate)  |
 
-### `VarkaDatabasePoolExhausted`
+### `MODRISSDatabasePoolExhausted`
 
 | Field         | Value                                                                        |
 | ------------- | ---------------------------------------------------------------------------- |
@@ -43,23 +43,23 @@ Operational alert rules and response procedures for Varka production deployments
 | **Severity**  | Warning                                                                      |
 | **Runbook**   | [Database pool pressure](#database-pool-pressure)                            |
 
-### `VarkaMdeJobFailures`
+### `MODRISSMdeJobFailures`
 
-| Field         | Value                                            |
-| ------------- | ------------------------------------------------ |
-| **Condition** | `increase(varka_mde_jobs_failed_total[15m]) > 5` |
-| **Severity**  | Warning                                          |
-| **Runbook**   | [MDE job failures](#mde-job-failures)            |
+| Field         | Value                                              |
+| ------------- | -------------------------------------------------- |
+| **Condition** | `increase(modriss_mde_jobs_failed_total[15m]) > 5` |
+| **Severity**  | Warning                                            |
+| **Runbook**   | [MDE job failures](#mde-job-failures)              |
 
-### `VarkaAssistantCircuitOpen`
+### `MODRISSAssistantCircuitOpen`
 
-| Field         | Value                                                  |
-| ------------- | ------------------------------------------------------ |
-| **Condition** | `increase(varka_assistant_circuit_open_total[5m]) > 0` |
-| **Severity**  | Warning                                                |
-| **Runbook**   | [Assistant circuit open](#assistant-circuit-open)      |
+| Field         | Value                                                    |
+| ------------- | -------------------------------------------------------- |
+| **Condition** | `increase(modriss_assistant_circuit_open_total[5m]) > 0` |
+| **Severity**  | Warning                                                  |
+| **Runbook**   | [Assistant circuit open](#assistant-circuit-open)        |
 
-### `VarkaPostgresDiskLow`
+### `MODRISSPostgresDiskLow`
 
 | Field         | Value                                       |
 | ------------- | ------------------------------------------- |
@@ -96,24 +96,24 @@ Operational alert rules and response procedures for Varka production deployments
 ### Database pool pressure
 
 1. Review slow queries and long-running MDE jobs holding connections.
-2. Temporarily reduce `VARKA_MDE_MAX_CONCURRENT_JOBS` if jobs dominate pool usage.
-3. Increase `VARKA_DB_MAX_POOL_SIZE` only after confirming PostgreSQL `max_connections` headroom.
+2. Temporarily reduce `MODRISS_MDE_MAX_CONCURRENT_JOBS` if jobs dominate pool usage.
+3. Increase `MODRISS_DB_MAX_POOL_SIZE` only after confirming PostgreSQL `max_connections` headroom.
 4. Investigate connection leaks if active connections never return to idle.
 
 ### MDE job failures
 
 1. Query failed jobs via API or `mde_jobs` table; read `mde_job_diagnostics`.
 2. Reproduce with sample models under `mde/samples/` in a staging environment.
-3. Check Epsilon runner timeouts (`VARKA_MDE_EXECUTION_TIMEOUT`, `VARKA_MDE_JOB_TIMEOUT`).
+3. Check Epsilon runner timeouts (`MODRISS_MDE_EXECUTION_TIMEOUT`, `MODRISS_MDE_JOB_TIMEOUT`).
 4. File a bug if validation/transformation rules regressed; communicate workaround to users.
 
 ### Assistant circuit open
 
 1. Confirm provider API status and credential validity.
-2. Check proxy settings (`VARKA_AI_PROXY_*`) and outbound network policy.
+2. Check proxy settings (`MODRISS_AI_PROXY_*`) and outbound network policy.
 3. Review `assistant.circuit.rejected` metrics and recent provider errors in logs.
-4. Wait for `VARKA_AI_CIRCUIT_OPEN_DURATION` to elapse or restart after fixing provider issues.
-5. Set `VARKA_AI_ENABLED=false` if the assistant must remain disabled during provider outage.
+4. Wait for `MODRISS_AI_CIRCUIT_OPEN_DURATION` to elapse or restart after fixing provider issues.
+5. Set `MODRISS_AI_ENABLED=false` if the assistant must remain disabled during provider outage.
 
 ### Database disk space
 
@@ -124,21 +124,21 @@ Operational alert rules and response procedures for Varka production deployments
 
 ## Example Prometheus rules
 
-Save as `infra/prometheus/varka-alerts.yml` and load into Prometheus:
+Save as `infra/prometheus/modriss-alerts.yml` and load into Prometheus:
 
 ```yaml
 groups:
-  - name: varka
+  - name: modriss
     rules:
-      - alert: VarkaBackendDown
-        expr: up{job="varka-backend"} == 0
+      - alert: MODRISSBackendDown
+        expr: up{job="modriss-backend"} == 0
         for: 2m
         labels:
           severity: critical
         annotations:
-          summary: Varka backend is unreachable
+          summary: MODRISS backend is unreachable
 
-      - alert: VarkaHighErrorRate
+      - alert: MODRISSHighErrorRate
         expr: |
           sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
           /
@@ -147,10 +147,10 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: Varka 5xx error rate above 5%
+          summary: MODRISS 5xx error rate above 5%
 
-      - alert: VarkaAssistantCircuitOpen
-        expr: increase(varka_assistant_circuit_open_total[5m]) > 0
+      - alert: MODRISSAssistantCircuitOpen
+        expr: increase(modriss_assistant_circuit_open_total[5m]) > 0
         for: 1m
         labels:
           severity: warning

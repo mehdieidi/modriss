@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/awspsm/api/1.0", prefix="awspsmapi")
+@namespace(uri="https://modriss.org/awspsm/api/1.0", prefix="awspsmapi")
 package awspsmapi;
 
 import "../shared/kernel.ecore";

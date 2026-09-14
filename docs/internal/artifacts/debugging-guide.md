@@ -78,7 +78,7 @@ $artifact | Format-List path, artifactKind, generatedBy, sourceStableIds
 ```
 
 The `generatedBy` value is the owning EGX rule. Locate the rule and its EGL
-template from the Varka repository root:
+template from the MODRISS repository root:
 
 ```powershell
 $rule = $artifact.generatedBy
@@ -154,7 +154,7 @@ temporary object, then add an ETL regression test.
 For an EGX/EGL exception, start with the named EGX rule/template and source
 stable ID. The Java entry point is:
 
-`packages/java/mde-m2t-runner/src/main/java/io/mehdieidi/varka/mde/generation/EpsilonEgxGenerator.java`
+`packages/java/mde-m2t-runner/src/main/java/io/mehdieidi/modriss/mde/generation/EpsilonEgxGenerator.java`
 
 ### Static Validation Fails
 
@@ -281,7 +281,7 @@ artifact-specific string replacements and special cases tied to sample names.
 Regenerate from the original failing model, prove the original command now
 passes, and verify that an unrelated representative model still works.
 
-Run the relevant regression suites from the Varka repository root:
+Run the relevant regression suites from the MODRISS repository root:
 
 ```powershell
 mvn -pl packages/java/mde-etl-runner -am `

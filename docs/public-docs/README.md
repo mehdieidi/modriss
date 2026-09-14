@@ -1,6 +1,6 @@
-# Varka Public Documentation
+# MODRISS Public Documentation
 
-This directory is the source package for the public Varka documentation website. It is organized
+This directory is the source package for the public MODRISS documentation website. It is organized
 as a self-contained MkDocs project so it can be previewed locally or deployed by any static-site
 pipeline that supports MkDocs.
 

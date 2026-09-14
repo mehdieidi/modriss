@@ -12,7 +12,7 @@
 - AWS credentials are configured for the target stage.
 - Manual actions with `BLOCKER` severity are resolved.
 
-For local evaluation, start the selected Varka emulator and run `source scripts/emulator-env.sh`
+For local evaluation, start the selected MODRISS emulator and run `source scripts/emulator-env.sh`
 before SAM/AWS CLI commands. `AWS_EMULATOR=floci` is the default; `localstack` remains supported.
 
 [%=out.startPreserve("<!--", "-->", awsRoot.manualRegionId("deployment-account-notes"), true)%]

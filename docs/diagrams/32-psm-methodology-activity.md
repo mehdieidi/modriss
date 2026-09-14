@@ -1,6 +1,6 @@
 # AWS PSM Methodology Activity Diagram
 
-This activity view shows one deployable-slice revolution of `varka.psm.modeling` after PIM-to-PSM ETL.
+This activity view shows one deployable-slice revolution of `modriss.psm.modeling` after PIM-to-PSM ETL.
 
 ```mermaid
 flowchart TD

@@ -1,0 +1,1323 @@
+package io.mehdieidi.modriss.platform.model.application;
+
+import io.mehdieidi.modriss.mde.validation.EpsilonEvlValidator;
+import io.mehdieidi.modriss.mde.validation.EvlConstraintKind;
+import io.mehdieidi.modriss.mde.validation.EvlConstraintViolation;
+import io.mehdieidi.modriss.mde.validation.EvlDiagnostic;
+import io.mehdieidi.modriss.mde.validation.EvlModelConfiguration;
+import io.mehdieidi.modriss.mde.validation.EvlModelResourceDiagnostics;
+import io.mehdieidi.modriss.mde.validation.EvlValidationException;
+import io.mehdieidi.modriss.mde.validation.EvlValidationReport;
+import io.mehdieidi.modriss.mde.validation.EvlValidationRequest;
+import io.mehdieidi.modriss.mde.validation.ResourceEvlModelConfiguration;
+import io.mehdieidi.modriss.mde.validation.ValidationPhase;
+import io.mehdieidi.modriss.mde.validation.ValidationSeverity;
+import io.mehdieidi.modriss.platform.kernel.ModelLevel;
+import io.mehdieidi.modriss.platform.kernel.PlatformException;
+import io.mehdieidi.modriss.platform.model.domain.ModelRecord;
+import io.mehdieidi.modriss.platform.modeling.config.ModelingConfigService;
+import io.mehdieidi.modriss.platform.modeling.metamodel.MetamodelDescriptor;
+import io.mehdieidi.modriss.platform.modeling.metamodel.MetamodelResolver;
+import io.mehdieidi.modriss.platform.modeling.runtime.MdeRuntimeOptions;
+import io.mehdieidi.modriss.platform.modeling.runtime.MdeRuntimePaths;
+import io.mehdieidi.modriss.platform.modeling.xmi.XmiModelImportService;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.resource.Resource;
+import tools.jackson.databind.JsonNode;
+
+/**
+ * EVL and JSON validation for platform models, including validation caching and per-thread timing
+ * capture.
+ */
+final class ModelValidationService {
+
+  private static final Pattern REQUIRED_FEATURE_DIAGNOSTIC =
+      Pattern.compile(
+          "required feature '([^']+)' of '.*?([A-Za-z][A-Za-z0-9_]*)@[^']*#([^}]+)\\}[^']*' must be"
+              + " set",
+          Pattern.CASE_INSENSITIVE);
+
+  private static final Pattern REQUIRED_COLLECTION_DIAGNOSTIC =
+      Pattern.compile(
+          "feature '([^']+)' of '.*?([A-Za-z][A-Za-z0-9_]*)@([^}]+)\\}' with (\\d+) values? must"
+              + " have at least (\\d+) values?",
+          Pattern.CASE_INSENSITIVE);
+
+  /** Per-worker timing data captured by the last stored validation on the current thread. */
+  private static final ThreadLocal<Map<String, Long>> LAST_VALIDATION_TIMINGS =
+      ThreadLocal.withInitial(LinkedHashMap::new);
+
+  /** Modeling configuration service used for JSON-level validation. */
+  private final ModelingConfigService modelingConfig;
+
+  /** Runtime path resolver for validation assets. */
+  private final MdeRuntimePaths mdePaths;
+
+  /** Metamodel resolver used for validation model configuration. */
+  private final MetamodelResolver metamodelResolver;
+
+  /** XMI bridge between JSON and EMF resources. */
+  private final XmiModelImportService xmiImportService;
+
+  /** EVL validator used for semantic validation. */
+  private final EpsilonEvlValidator evlValidator;
+
+  /** Hydrates semantic references before JSON-to-XMI export for validation. */
+  private final UnaryOperator<JsonNode> semanticReferenceHydrator;
+
+  /** Small LRU validation cache keyed by model revision and XMI hash. */
+  private final Map<String, ModelService.ValidationResult> validationCache =
+      Collections.synchronizedMap(
+          new LinkedHashMap<>(128, 0.75f, true) {
+            /**
+             * Evicts the least-recently used validation result once the cache reaches its fixed
+             * service-local capacity.
+             *
+             * @param eldest least-recently accessed cache entry
+             * @return {@code true} when the eldest entry should be removed
+             */
+            @Override
+            protected boolean removeEldestEntry(
+                Map.Entry<String, ModelService.ValidationResult> eldest) {
+              return size() > 128;
+            }
+          });
+
+  /**
+   * Creates a model validation service.
+   *
+   * @param modelingConfig modeling configuration service
+   * @param runtimeOptions runtime limits and asset roots
+   * @param mdePaths runtime path resolver
+   * @param metamodelResolver metamodel resolver
+   * @param xmiImportService XMI import/export bridge
+   * @param semanticReferenceHydrator hydrates graph endpoints into semantic JSON
+   */
+  ModelValidationService(
+      ModelingConfigService modelingConfig,
+      MdeRuntimeOptions runtimeOptions,
+      MdeRuntimePaths mdePaths,
+      MetamodelResolver metamodelResolver,
+      XmiModelImportService xmiImportService,
+      UnaryOperator<JsonNode> semanticReferenceHydrator) {
+    this.modelingConfig = modelingConfig;
+    this.mdePaths = mdePaths;
+    this.metamodelResolver = metamodelResolver;
+    this.xmiImportService = xmiImportService;
+    this.semanticReferenceHydrator = semanticReferenceHydrator;
+    this.evlValidator =
+        new EpsilonEvlValidator(
+            runtimeOptions.executionTimeout(), runtimeOptions.maxCapturedOutputBytes());
+  }
+
+  /**
+   * Returns and clears timing data captured by the last stored validation on the current thread.
+   *
+   * @return immutable timing map
+   */
+  static Map<String, Long> consumeLastValidationTimings() {
+    Map<String, Long> timings = Map.copyOf(LAST_VALIDATION_TIMINGS.get());
+    LAST_VALIDATION_TIMINGS.remove();
+    return timings;
+  }
+
+  /**
+   * Validates model JSON using level-specific preflight checks followed by EVL.
+   *
+   * @param level model level
+   * @param modelJson model JSON
+   * @return validation result
+   */
+  ModelService.ValidationResult validate(ModelLevel level, JsonNode modelJson) {
+    if (modelJson == null || modelJson.isNull()) {
+      return new ModelService.ValidationResult(
+          false, List.of(issue("ERROR", "ModelRequired", "Model JSON is required.")));
+    }
+    List<ModelService.ValidationIssue> structuralIssues = validateConfiguredModel(level, modelJson);
+    if (structuralIssues.stream().anyMatch(issue -> "ERROR".equals(issue.severity()))) {
+      return new ModelService.ValidationResult(false, structuralIssues);
+    }
+    List<ModelService.ValidationIssue> issues = new ArrayList<>(validateWithEvl(level, modelJson));
+    issues.addAll(structuralIssues);
+    boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
+    return new ModelService.ValidationResult(valid, issues);
+  }
+
+  /**
+   * Validates model JSON for EMF/Ecore structural conformance without executing EVL constraints or
+   * JSON-level semantic checks.
+   *
+   * @param level model level
+   * @param modelJson model JSON
+   * @return structural validation result
+   */
+  ModelService.ValidationResult validateStructural(ModelLevel level, JsonNode modelJson) {
+    if (modelJson == null || modelJson.isNull()) {
+      return new ModelService.ValidationResult(
+          false, List.of(issue("ERROR", "ModelRequired", "Model JSON is required.")));
+    }
+    List<ModelService.ValidationIssue> issues =
+        new ArrayList<>(validateConfiguredModel(level, modelJson));
+    if (issues.stream().anyMatch(issue -> "ERROR".equals(issue.severity()))) {
+      return new ModelService.ValidationResult(false, issues);
+    }
+    issues.addAll(validateStructure(level, modelJson));
+    boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
+    return new ModelService.ValidationResult(valid, issues);
+  }
+
+  /**
+   * Validates generated or uploaded XMI bytes with EVL.
+   *
+   * @param level model level
+   * @param xmiBytes XMI payload
+   * @return validation result
+   */
+  ModelService.ValidationResult validateGeneratedXmi(ModelLevel level, byte[] xmiBytes) {
+    return validateGeneratedXmi(level, xmiBytes, null);
+  }
+
+  ModelService.ValidationResult validateGeneratedXmi(
+      ModelLevel level, byte[] xmiBytes, JsonNode modelJson) {
+    List<ModelService.ValidationIssue> issues = validateWithEvl(level, xmiBytes, modelJson);
+    boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
+    return new ModelService.ValidationResult(valid, issues);
+  }
+
+  /**
+   * Validates generated XMI against Ecore structural conformance without executing EVL.
+   *
+   * @param level model level
+   * @param xmiBytes XMI payload
+   * @param modelJson matching semantic projection, when available
+   * @return structural validation result
+   */
+  ModelService.ValidationResult validateStructuralGeneratedXmi(
+      ModelLevel level, byte[] xmiBytes, JsonNode modelJson) {
+    List<ModelService.ValidationIssue> issues;
+    try {
+      long phaseStarted = System.nanoTime();
+      metamodelResolver.resolve(level);
+      addValidationTiming("validation.metamodelResolveMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      Resource resource = xmiImportService.loadResource(level, xmiBytes, "structural-validation");
+      addValidationTiming("validation.xmiLoadResourceMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      issues =
+          EvlModelResourceDiagnostics.validate(resource, null).stream()
+              .map(diagnostic -> structuralValidationIssue(diagnostic, modelJson))
+              .toList();
+      addValidationTiming("validation.structuralValidationMs", System.nanoTime() - phaseStarted);
+    } catch (PlatformException ex) {
+      issues =
+          List.of(
+              issue(
+                  "ERROR",
+                  "XmiLoad",
+                  "The generated model could not be read for structural validation.",
+                  structuralExportGuidance(ex)));
+    } catch (Exception ex) {
+      issues =
+          List.of(
+              issue(
+                  "ERROR",
+                  "StructuralValidationExecution",
+                  "Structural validation could not be completed for the generated model."));
+    }
+    boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
+    return new ModelService.ValidationResult(valid, issues);
+  }
+
+  /** Resets per-thread validation timing capture for a stored validation call. */
+  void resetValidationTimings() {
+    LAST_VALIDATION_TIMINGS.set(new LinkedHashMap<>());
+  }
+
+  /**
+   * Records a validation phase duration in milliseconds.
+   *
+   * @param name timing key
+   * @param elapsedNanos elapsed nanoseconds
+   */
+  void addValidationTiming(String name, long elapsedNanos) {
+    LAST_VALIDATION_TIMINGS.get().merge(name, Math.max(0L, elapsedNanos / 1_000_000L), Long::sum);
+  }
+
+  /**
+   * Returns a cached validation result when present.
+   *
+   * @param cacheKey validation cache key
+   * @return cached result, or {@code null}
+   */
+  ModelService.ValidationResult cachedResult(String cacheKey) {
+    return validationCache.get(cacheKey);
+  }
+
+  /**
+   * Stores a validation result in the LRU cache.
+   *
+   * @param cacheKey validation cache key
+   * @param result validation result
+   */
+  void putCachedResult(String cacheKey, ModelService.ValidationResult result) {
+    validationCache.put(cacheKey, result);
+  }
+
+  /**
+   * Detects validation failures that can be repaired by regenerating source XMI from JSON.
+   *
+   * @param result validation result
+   * @return {@code true} when stale source XMI is likely
+   */
+  boolean hasRecoverableStaleSourceError(ModelService.ValidationResult result) {
+    return hasRelationshipEndpointLoadingError(result) || hasTraceEndpointError(result);
+  }
+
+  /** Returns whether every issue in a result is a known stale source-XMI endpoint diagnostic. */
+  boolean hasOnlyRecoverableStaleSourceErrors(ModelService.ValidationResult result) {
+    return result != null
+        && !result.issues().isEmpty()
+        && result.issues().stream()
+            .allMatch(
+                issue ->
+                    hasRelationshipEndpointLoadingError(
+                            new ModelService.ValidationResult(false, List.of(issue)))
+                        || hasTraceEndpointError(
+                            new ModelService.ValidationResult(false, List.of(issue))));
+  }
+
+  /**
+   * Builds a validation cache key from model identity and content metadata.
+   *
+   * @param model model record
+   * @return cache key
+   */
+  String validationCacheKey(ModelRecord model) {
+    return model.level().name()
+        + ":"
+        + model.id()
+        + ":"
+        + model.revision()
+        + ":"
+        + String.valueOf(model.sourceXmiHash());
+  }
+
+  /**
+   * Creates a compact validation issue.
+   *
+   * @param severity issue severity
+   * @param constraint issue constraint identifier
+   * @param message issue message
+   * @return validation issue
+   */
+  private static ModelService.ValidationIssue issue(
+      String severity, String constraint, String message) {
+    return issue(severity, constraint, message, null);
+  }
+
+  /** Creates a compact validation issue with separate remediation guidance. */
+  private static ModelService.ValidationIssue issue(
+      String severity, String constraint, String message, String guidance) {
+    return new ModelService.ValidationIssue(
+        severity, constraint, "MODEL", message, guidance, null, null);
+  }
+
+  /**
+   * Detects missing relationship endpoint errors from EMF model loading.
+   *
+   * @param result validation result
+   * @return {@code true} when endpoint loading failed
+   */
+  private boolean hasRelationshipEndpointLoadingError(ModelService.ValidationResult result) {
+    return result != null
+        && result.issues().stream()
+            .anyMatch(
+                issue ->
+                    "ERROR".equals(issue.severity())
+                            && "EVL_MODEL_LOADING".equals(issue.constraint())
+                            && (issue.message().contains("required feature 'source'")
+                                || issue.message().contains("required feature 'target'")
+                                || issue.message().contains("missing its required source")
+                                || issue.message().contains("missing its required target"))
+                        || ("ERROR".equals(issue.severity())
+                            && "RequiredReference".equals(issue.constraint())));
+  }
+
+  /**
+   * Detects TraceLink endpoint validation errors that can be repaired from graph endpoint ids.
+   *
+   * @param result validation result
+   * @return {@code true} when TraceLink endpoints are stale
+   */
+  private boolean hasTraceEndpointError(ModelService.ValidationResult result) {
+    return result != null
+        && result.issues().stream()
+            .anyMatch(
+                issue ->
+                    "ERROR".equals(issue.severity())
+                        && "TraceLinkHasReferenceOrExternalId".equals(issue.constraint()));
+  }
+
+  /**
+   * Exports model JSON to an in-memory EMF resource and validates it with EVL.
+   *
+   * @param level model level
+   * @param modelJson model JSON
+   * @return validation issues
+   */
+  private List<ModelService.ValidationIssue> validateWithEvl(ModelLevel level, JsonNode modelJson) {
+    try {
+      long phaseStarted = System.nanoTime();
+      MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
+      addValidationTiming("validation.metamodelResolveMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      Resource resource =
+          xmiImportService.exportResource(level, semanticReferenceHydrator.apply(modelJson));
+      addValidationTiming("validation.xmiExportResourceMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      EvlValidationReport report =
+          evlValidator.validate(
+              new EvlValidationRequest(
+                  mdePaths.validationRoot(level),
+                  List.of(mdePaths.validationEntryFile(level)),
+                  validationModelConfigurations(level, resource, metamodel.packages()),
+                  true));
+      addValidationTiming("validation.evlTotalMs", System.nanoTime() - phaseStarted);
+      addValidationReportTimings(report);
+      return validationIssues(report, modelJson);
+    } catch (PlatformException ex) {
+      return List.of(
+          issue(
+              "ERROR",
+              "XmiExport",
+              "The model could not be prepared for validation. Review the affected model data and"
+                  + " try again."));
+    } catch (EvlValidationException ex) {
+      addValidationReportTimings(ex.getReport());
+      return validationIssues(ex.getReport());
+    } catch (Exception ex) {
+      return List.of(
+          issue(
+              "ERROR",
+              "EvlValidationExecution",
+              "Validation could not be completed. Correct any rule or model issues shown here, then"
+                  + " run validation again."));
+    }
+  }
+
+  private List<ModelService.ValidationIssue> validateStructure(
+      ModelLevel level, JsonNode modelJson) {
+    try {
+      long phaseStarted = System.nanoTime();
+      metamodelResolver.resolve(level);
+      addValidationTiming("validation.metamodelResolveMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      Resource resource =
+          xmiImportService.exportResource(level, semanticReferenceHydrator.apply(modelJson));
+      addValidationTiming("validation.xmiExportResourceMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      List<ModelService.ValidationIssue> issues =
+          EvlModelResourceDiagnostics.validate(resource, null).stream()
+              .map(diagnostic -> structuralValidationIssue(diagnostic, modelJson))
+              .toList();
+      addValidationTiming("validation.structuralValidationMs", System.nanoTime() - phaseStarted);
+      return issues;
+    } catch (PlatformException ex) {
+      return List.of(
+          issue(
+              "ERROR",
+              "XmiExport",
+              "The model could not be prepared for structural validation. Review the affected model"
+                  + " data and try again.",
+              structuralExportGuidance(ex)));
+    } catch (Exception ex) {
+      return List.of(
+          issue(
+              "ERROR",
+              "StructuralValidationExecution",
+              "Structural validation could not be completed. Review the affected model data and try"
+                  + " again."));
+    }
+  }
+
+  private String structuralExportGuidance(PlatformException failure) {
+    String detail = failure == null || failure.getMessage() == null ? "" : failure.getMessage();
+    detail = detail.replace('\r', ' ').replace('\n', ' ').trim();
+    if (detail.isBlank()) {
+      return "Inspect the rejected EClass, attribute, containment, or reference.";
+    }
+    if (detail.length() > 1000) {
+      detail = detail.substring(0, 1000);
+    }
+    return detail;
+  }
+
+  /**
+   * Loads XMI bytes into an EMF resource and validates it with EVL.
+   *
+   * @param level model level
+   * @param xmiBytes source XMI bytes
+   * @return validation issues
+   */
+  private List<ModelService.ValidationIssue> validateWithEvl(
+      ModelLevel level, byte[] xmiBytes, JsonNode modelJson) {
+    try {
+      long phaseStarted = System.nanoTime();
+      MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
+      addValidationTiming("validation.metamodelResolveMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      Resource resource = xmiImportService.loadResource(level, xmiBytes, "validation");
+      addValidationTiming("validation.xmiLoadResourceMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      EvlValidationReport report =
+          evlValidator.validate(
+              new EvlValidationRequest(
+                  mdePaths.validationRoot(level),
+                  List.of(mdePaths.validationEntryFile(level)),
+                  validationModelConfigurations(level, resource, metamodel.packages()),
+                  true));
+      addValidationTiming("validation.evlTotalMs", System.nanoTime() - phaseStarted);
+      addValidationReportTimings(report);
+      return validationIssues(report, modelJson);
+    } catch (PlatformException ex) {
+      return List.of(
+          issue(
+              "ERROR",
+              "XmiLoad",
+              "The saved model could not be read for validation. Re-save the model and try"
+                  + " again."));
+    } catch (EvlValidationException ex) {
+      addValidationReportTimings(ex.getReport());
+      return validationIssues(ex.getReport(), modelJson);
+    } catch (Exception ex) {
+      return List.of(
+          issue(
+              "ERROR",
+              "EvlValidationExecution",
+              "Validation could not be completed. Correct any rule or model issues shown here, then"
+                  + " run validation again."));
+    }
+  }
+
+  /**
+   * Converts an EVL report to platform validation issues.
+   *
+   * @param report EVL validation report
+   * @return validation issues
+   */
+  private List<ModelService.ValidationIssue> validationIssues(EvlValidationReport report) {
+    return validationIssues(report, null);
+  }
+
+  private List<ModelService.ValidationIssue> validationIssues(
+      EvlValidationReport report, JsonNode modelJson) {
+    if (report == null) {
+      return List.of(
+          issue("ERROR", "EvlValidationExecution", "EVL validation failed without a report."));
+    }
+    List<ModelService.ValidationIssue> issues = new ArrayList<>();
+    report.violations().forEach(violation -> issues.add(validationIssue(violation)));
+    report.diagnostics().forEach(diagnostic -> issues.add(validationIssue(diagnostic, modelJson)));
+    return issues;
+  }
+
+  private void addValidationReportTimings(EvlValidationReport report) {
+    if (report == null) {
+      return;
+    }
+    addValidationDuration("validation.moduleDiscoveryMs", report.moduleDiscoveryDuration());
+    addValidationDuration("validation.reportDurationMs", report.duration());
+    report
+        .moduleReports()
+        .forEach(
+            moduleReport -> {
+              addValidationDuration("validation.moduleDurationMs", moduleReport.duration());
+              addValidationDuration("validation.parseMs", moduleReport.parseDuration());
+              addValidationDuration("validation.modelLoadMs", moduleReport.modelLoadDuration());
+              addValidationDuration(
+                  "validation.structuralValidationMs", moduleReport.structuralValidationDuration());
+              addValidationDuration("validation.evlExecuteMs", moduleReport.evlExecuteDuration());
+              addValidationDuration(
+                  "validation.violationMappingMs", moduleReport.violationMappingDuration());
+              addValidationDuration("validation.disposeMs", moduleReport.disposeDuration());
+            });
+  }
+
+  private void addValidationDuration(String name, Duration duration) {
+    if (duration == null) {
+      return;
+    }
+    LAST_VALIDATION_TIMINGS.get().merge(name, Math.max(0L, duration.toMillis()), Long::sum);
+  }
+
+  /**
+   * Converts an EVL constraint violation to a platform validation issue.
+   *
+   * @param violation EVL violation
+   * @return validation issue
+   */
+  private ModelService.ValidationIssue validationIssue(EvlConstraintViolation violation) {
+    String severity = violation.kind() == EvlConstraintKind.MANDATORY ? "ERROR" : "WARNING";
+    String elementId = validationElementId(violation.element().attributes());
+    String elementName =
+        violation.element().attributes().getOrDefault("name", violation.element().summary());
+    UserFacingIssueText text = splitUserFacingIssueText(violation.message());
+    String guidance =
+        violation.fixes().isEmpty() ? text.guidance() : violation.fixes().get(0).title();
+    if (guidance.isBlank()) {
+      guidance =
+          elementName == null || elementName.isBlank()
+              ? "Update the affected model data described above, then validate the model again."
+              : "Update '"
+                  + elementName
+                  + "' to satisfy the requirement above, then validate the model again.";
+    }
+    return new ModelService.ValidationIssue(
+        severity,
+        textOrDefault(violation.constraintName(), "EvlConstraint"),
+        violation.contextType(),
+        text.message(),
+        guidance,
+        elementId,
+        elementName,
+        violation.file() == null ? null : violation.file().toString(),
+        violation.line(),
+        violation.column());
+  }
+
+  /**
+   * Converts an EVL diagnostic to a platform validation issue.
+   *
+   * @param diagnostic EVL diagnostic
+   * @return validation issue
+   */
+  private ModelService.ValidationIssue validationIssue(
+      EvlDiagnostic diagnostic, JsonNode modelJson) {
+    String severity = diagnostic.severity() == ValidationSeverity.ERROR ? "ERROR" : "WARNING";
+    String constraint = "EVL_" + diagnostic.phase().name();
+    StructuralIssueText structural = explainStructuralDiagnostic(diagnostic.reason(), modelJson);
+    if (structural != null) {
+      return new ModelService.ValidationIssue(
+          severity,
+          constraint,
+          "ECORE_DIAGNOSTIC",
+          structural.message(),
+          structural.guidance(),
+          structural.elementId(),
+          structural.elementName(),
+          diagnostic.file() == null ? null : diagnostic.file().toString(),
+          diagnostic.line(),
+          diagnostic.column());
+    }
+    // Structural diagnostics carry the useful detail in reason; authored EVL text is generic.
+    String message =
+        diagnostic.phase() == ValidationPhase.MODEL_LOADING && !diagnostic.reason().isBlank()
+            ? humanizeStructuralReason(diagnostic.reason())
+            : !diagnostic.whatWentWrong().isBlank()
+                ? diagnostic.whatWentWrong()
+                : !diagnostic.reason().isBlank()
+                    ? diagnostic.reason()
+                    : "The validation rule could not be checked.";
+    UserFacingIssueText text = splitUserFacingIssueText(message);
+    String guidance = !diagnostic.howToFix().isBlank() ? diagnostic.howToFix() : text.guidance();
+    return new ModelService.ValidationIssue(
+        severity,
+        constraint,
+        "EVL_DIAGNOSTIC",
+        text.message(),
+        guidance,
+        null,
+        null,
+        diagnostic.file() == null ? null : diagnostic.file().toString(),
+        diagnostic.line(),
+        diagnostic.column());
+  }
+
+  /** Returns the stable model identity regardless of which XMI/EMF adapter supplied it. */
+  private String validationElementId(Map<String, String> attributes) {
+    for (String key : List.of("id", "xmi:id", "elementId", "element-id")) {
+      String value = attributes.get(key);
+      if (value != null && !value.isBlank()) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  /** Maps EMF resource diagnostics without implying that structural-only callers executed EVL. */
+  private ModelService.ValidationIssue structuralValidationIssue(
+      EvlDiagnostic diagnostic, JsonNode modelJson) {
+    String severity = diagnostic.severity() == ValidationSeverity.ERROR ? "ERROR" : "WARNING";
+    StructuralIssueText structural = explainStructuralDiagnostic(diagnostic.reason(), modelJson);
+    if (structural != null) {
+      return new ModelService.ValidationIssue(
+          severity,
+          "ECORE_" + diagnostic.phase().name(),
+          "ECORE_DIAGNOSTIC",
+          structural.message(),
+          structural.guidance(),
+          structural.elementId(),
+          structural.elementName(),
+          diagnostic.file() == null ? null : diagnostic.file().toString(),
+          diagnostic.line(),
+          diagnostic.column());
+    }
+    String message =
+        !diagnostic.reason().isBlank()
+            ? humanizeStructuralReason(diagnostic.reason())
+            : !diagnostic.whatWentWrong().isBlank()
+                ? diagnostic.whatWentWrong()
+                : !diagnostic.reason().isBlank()
+                    ? diagnostic.reason()
+                    : "The model does not conform to its Ecore metamodel.";
+    UserFacingIssueText text = splitUserFacingIssueText(message);
+    String guidance =
+        text.guidance().isBlank()
+            ? "Satisfy the reported Ecore feature, type, multiplicity, or reference constraint."
+            : text.guidance();
+    return new ModelService.ValidationIssue(
+        severity,
+        "ECORE_" + diagnostic.phase().name(),
+        "ECORE_DIAGNOSTIC",
+        text.message(),
+        guidance,
+        null,
+        null,
+        diagnostic.file() == null ? null : diagnostic.file().toString(),
+        diagnostic.line(),
+        diagnostic.column());
+  }
+
+  private StructuralIssueText explainStructuralDiagnostic(String reason, JsonNode modelJson) {
+    if (reason == null || reason.isBlank()) {
+      return null;
+    }
+    Matcher matcher = REQUIRED_FEATURE_DIAGNOSTIC.matcher(reason);
+    if (matcher.find()) {
+      return explainMissingFeature(matcher.group(1), matcher.group(2), matcher.group(3), modelJson);
+    }
+    Matcher collectionMatcher = REQUIRED_COLLECTION_DIAGNOSTIC.matcher(reason);
+    if (!collectionMatcher.find()) {
+      return null;
+    }
+    int minimum = Integer.parseInt(collectionMatcher.group(5));
+    return explainMissingCollection(
+        collectionMatcher.group(1),
+        collectionMatcher.group(2),
+        collectionMatcher.group(3),
+        minimum,
+        modelJson);
+  }
+
+  private StructuralIssueText explainMissingFeature(
+      String feature, String type, String elementId, JsonNode modelJson) {
+    JsonNode element = findSemanticElement(modelJson, elementId);
+    String elementName =
+        element == null ? null : element.path("name").asText(element.path("label").asText(null));
+    String displayName = elementName == null || elementName.isBlank() ? elementId : elementName;
+    String message =
+        "The "
+            + typeLabel(type)
+            + " '"
+            + displayName
+            + "' is missing its required "
+            + featureLabel(feature)
+            + ".";
+    String guidance =
+        "Open this element and set its " + featureLabel(feature) + " before validating the model.";
+    return new StructuralIssueText(message, guidance, elementId, elementName);
+  }
+
+  private StructuralIssueText explainMissingCollection(
+      String feature, String type, String fragment, int minimum, JsonNode modelJson) {
+    JsonNode element = findSemanticElement(modelJson, fragment, type);
+    String elementId =
+        element == null ? extractDiagnosticElementId(fragment) : element.path("id").asText(null);
+    String elementName =
+        element == null ? null : element.path("name").asText(element.path("label").asText(null));
+    String typeText = typeLabel(type);
+    boolean hasDistinctName = hasDistinctElementName(elementName, typeText);
+    String subject = hasDistinctName ? typeText + " '" + elementName + "'" : typeText;
+    String quantity = minimum == 1 ? "at least one" : "at least " + minimum;
+    String featureText = minimum == 1 ? singularFeatureLabel(feature) : featureLabel(feature);
+    String message =
+        (hasDistinctName ? "The " : "A ")
+            + subject
+            + " must contain "
+            + quantity
+            + " "
+            + featureText
+            + ".";
+    String guidance =
+        "Add "
+            + (minimum == 1 ? "a" : "at least " + minimum)
+            + " "
+            + singularFeatureLabel(feature)
+            + " to this "
+            + typeText
+            + ", then validate the model again.";
+    return new StructuralIssueText(message, guidance, elementId, elementName);
+  }
+
+  private boolean hasDistinctElementName(String elementName, String typeText) {
+    return elementName != null
+        && !elementName.isBlank()
+        && !elementName.trim().equalsIgnoreCase(typeText);
+  }
+
+  private String humanizeStructuralReason(String reason) {
+    String detail =
+        reason
+            .replaceAll("org\\.eclipse\\.emf\\.ecore\\.impl\\.[A-Za-z0-9_$]+/", "")
+            .replaceAll("\\{memory:[^}]+\\}", "")
+            .replaceAll("\\s+", " ")
+            .trim();
+    return detail.isBlank()
+        ? "The model contains a structural problem that must be corrected before validation."
+        : "The model contains a structural problem: " + detail;
+  }
+
+  private JsonNode findSemanticElement(JsonNode modelJson, String elementId) {
+    return findSemanticElement(modelJson, elementId, null);
+  }
+
+  private JsonNode findSemanticElement(JsonNode modelJson, String elementId, String type) {
+    if (modelJson == null || elementId == null || elementId.isBlank()) {
+      return null;
+    }
+    List<JsonNode> elements = new ArrayList<>();
+    collectSemanticElements(modelJson, elements);
+    List<String> identityCandidates = new ArrayList<>();
+    identityCandidates.add(elementId);
+    int hash = elementId.lastIndexOf('#');
+    if (hash >= 0 && hash + 1 < elementId.length()) {
+      String fragmentIdentity = elementId.substring(hash + 1).replaceFirst("[}].*$", "");
+      identityCandidates.add(fragmentIdentity);
+    }
+    JsonNode exact =
+        elements.stream()
+            .filter(
+                element ->
+                    identityCandidates.stream()
+                        .anyMatch(candidate -> candidate.equals(element.path("id").asText(""))))
+            .findFirst()
+            .orElse(null);
+    if (exact != null) {
+      return exact;
+    }
+    JsonNode byFragment = resolveSemanticFragment(modelJson, elementId);
+    if (byFragment != null && (type == null || type.equals(byFragment.path("eClass").asText("")))) {
+      return byFragment;
+    }
+    if (type == null) {
+      return null;
+    }
+    List<JsonNode> sameType =
+        elements.stream()
+            .filter(element -> type.equals(element.path("eClass").asText("")))
+            .toList();
+    return sameType.size() == 1 ? sameType.get(0) : null;
+  }
+
+  /**
+   * Extracts a stable semantic ID from an EMF diagnostic fragment when the JSON model is not
+   * available for full fragment resolution. Ecore commonly reports IDs as {@code
+   * {memory:/resource.xmi#element-id}}, while containment paths use forms such as {@code
+   * //@processes.0}; paths are deliberately not treated as IDs.
+   */
+  private String extractDiagnosticElementId(String fragment) {
+    if (fragment == null || fragment.isBlank()) {
+      return null;
+    }
+    int hash = fragment.lastIndexOf('#');
+    if (hash < 0 || hash + 1 >= fragment.length()) {
+      return null;
+    }
+    String candidate = fragment.substring(hash + 1).trim();
+    candidate = candidate.replaceFirst("[}\\]\\\"'].*$", "");
+    return candidate.isBlank() || candidate.startsWith("/") || candidate.startsWith("@")
+        ? null
+        : candidate;
+  }
+
+  /**
+   * Resolves an EMF resource fragment such as {@code //@processes.0} against the semantic JSON.
+   * Ecore diagnostics use these containment paths for collection multiplicity errors, so they must
+   * be translated before an issue can expose an element ID or support Locate.
+   */
+  private JsonNode resolveSemanticFragment(JsonNode modelJson, String fragment) {
+    int hash = fragment.lastIndexOf('#');
+    String path = hash >= 0 ? fragment.substring(hash + 1) : fragment;
+    path = path.replaceFirst("^/+", "").replaceFirst("^@", "");
+    if (path.isBlank()) {
+      return null;
+    }
+    JsonNode current = modelJson;
+    for (String rawSegment : path.split("/")) {
+      String segment = rawSegment.replaceFirst("^@", "");
+      if (segment.isBlank()) {
+        continue;
+      }
+      int dot = segment.lastIndexOf('.');
+      String feature = dot > 0 ? segment.substring(0, dot) : segment;
+      String indexText = dot > 0 ? segment.substring(dot + 1) : "";
+      current = current.path(feature);
+      if (current.isMissingNode()) {
+        return null;
+      }
+      if (!indexText.isBlank()) {
+        try {
+          current = current.path(Integer.parseInt(indexText));
+        } catch (NumberFormatException ex) {
+          return null;
+        }
+      }
+    }
+    return current != null && current.hasNonNull("eClass") ? current : null;
+  }
+
+  private record StructuralIssueText(
+      String message, String guidance, String elementId, String elementName) {}
+
+  /**
+   * Separates legacy EVL message text from its remediation text. EVL rules predate the structured
+   * guidance field, so their messages commonly contain a "Fix:" or "Suggestion:" sentence.
+   */
+  private UserFacingIssueText splitUserFacingIssueText(String value) {
+    String text = textOrDefault(value, "The model does not meet this validation rule.").trim();
+    text = text.replaceFirst("^(?i:(?:error|warning)\\s+)?\\[[A-Za-z0-9_-]+\\]\\s*", "");
+    int splitAt = -1;
+    int markerLength = 0;
+    for (String marker : List.of("Suggested fix:", "Suggestion:", "Fix:")) {
+      int index =
+          text.toLowerCase(java.util.Locale.ROOT)
+              .indexOf(marker.toLowerCase(java.util.Locale.ROOT));
+      if (index >= 0 && (splitAt < 0 || index < splitAt)) {
+        splitAt = index;
+        markerLength = marker.length();
+      }
+    }
+    if (splitAt < 0) {
+      return new UserFacingIssueText(text, "");
+    }
+    String message = text.substring(0, splitAt).trim();
+    String guidance = text.substring(splitAt + markerLength).trim();
+    return new UserFacingIssueText(
+        message.isBlank() ? "The model does not meet this validation rule." : message, guidance);
+  }
+
+  /** Text intentionally formatted for separate issue-board message and remediation regions. */
+  private record UserFacingIssueText(String message, String guidance) {}
+
+  /**
+   * Performs level-independent JSON checks using merged modeling metadata.
+   *
+   * @param level model level
+   * @param modelJson model JSON
+   * @return validation issues
+   */
+  private List<ModelService.ValidationIssue> validateConfiguredModel(
+      ModelLevel level, JsonNode modelJson) {
+    List<ModelService.ValidationIssue> issues = new java.util.ArrayList<>();
+    Map<String, Object> config = modelingConfig.config();
+    Map<?, ?> levels = (Map<?, ?>) config.get("levels");
+    Map<?, ?> levelConfig = (Map<?, ?>) levels.get(level.apiName());
+    Map<String, Map<?, ?>> definitionsByType = new java.util.HashMap<>();
+    if (levelConfig != null && levelConfig.get("elements") instanceof List<?> elements) {
+      elements.stream()
+          .filter(Map.class::isInstance)
+          .map(Map.class::cast)
+          .forEach(
+              element -> {
+                Object type = element.get("type");
+                if (type != null) {
+                  definitionsByType.put(String.valueOf(type), element);
+                }
+              });
+    }
+    Map<String, JsonNode> graphObjectsById = new java.util.HashMap<>();
+    indexGraphObjects(modelJson.path("graph").path("elements"), graphObjectsById);
+    indexGraphObjects(modelJson.path("graph").path("relationships"), graphObjectsById);
+    List<JsonNode> graphRelationships = new java.util.ArrayList<>();
+    collectGraphRelationships(modelJson.path("graph").path("relationships"), graphRelationships);
+    List<JsonNode> elements = new java.util.ArrayList<>();
+    collectSemanticElements(modelJson, elements);
+    if (elements.isEmpty()) {
+      issues.add(
+          issue(
+              "WARNING",
+              "ModelElementsMissing",
+              "The "
+                  + level.apiName().toUpperCase(java.util.Locale.ROOT)
+                  + " model has no semantic elements.",
+              "Add an element from the model level's available palette."));
+      return issues;
+    }
+    for (JsonNode element : elements) {
+      String type = element.path("eClass").asText(element.path("type").asText(""));
+      String elementId = element.path("id").asText(null);
+      String elementName = element.path("name").asText(element.path("label").asText(null));
+      Map<?, ?> definition = definitionsByType.get(type);
+      if (definition == null) {
+        issues.add(
+            new ModelService.ValidationIssue(
+                "ERROR",
+                "UnknownModelElement",
+                type,
+                "The element type '"
+                    + type
+                    + "' is not available in the "
+                    + level.apiName().toUpperCase(java.util.Locale.ROOT)
+                    + " metamodel.",
+                "Choose a supported element type for this model level, then recreate or change this"
+                    + " element.",
+                elementId,
+                elementName));
+        continue;
+      }
+      JsonNode fallback = resolveGraphFallback(element, graphObjectsById, graphRelationships);
+      validateRequiredFeatures(element, fallback, definition, issues, elementId, elementName);
+    }
+    return issues;
+  }
+
+  /**
+   * Indexes graph objects by id.
+   *
+   * @param nodes graph object array
+   * @param index mutable index
+   */
+  private void indexGraphObjects(JsonNode nodes, Map<String, JsonNode> index) {
+    if (!nodes.isArray()) {
+      return;
+    }
+    for (JsonNode node : nodes) {
+      String id = node.path("id").asText("");
+      if (!id.isBlank()) {
+        index.put(id, node);
+      }
+    }
+  }
+
+  /**
+   * Appends graph relationships to a mutable list.
+   *
+   * @param nodes graph relationship array
+   * @param relationships mutable relationship sink
+   */
+  private void collectGraphRelationships(JsonNode nodes, List<JsonNode> relationships) {
+    if (!nodes.isArray()) {
+      return;
+    }
+    nodes.forEach(relationships::add);
+  }
+
+  /**
+   * Resolves a graph object that can supply missing semantic fields.
+   *
+   * @param element semantic element
+   * @param graphObjectsById graph objects keyed by id
+   * @param graphRelationships graph relationship list
+   * @return fallback graph object, or {@code null}
+   */
+  private JsonNode resolveGraphFallback(
+      JsonNode element, Map<String, JsonNode> graphObjectsById, List<JsonNode> graphRelationships) {
+    String id = element.path("id").asText("");
+    if (!id.isBlank()) {
+      JsonNode byId = graphObjectsById.get(id);
+      if (byId != null) {
+        return byId;
+      }
+    }
+    String type = element.path("eClass").asText("");
+    String name = element.path("name").asText("");
+    for (JsonNode relationship : graphRelationships) {
+      if (!type.equals(relationship.path("eClass").asText(""))) {
+        continue;
+      }
+      if (!name.isBlank() && name.equals(relationship.path("name").asText(""))) {
+        return relationship;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Recursively collects semantic objects while skipping transport graph data.
+   *
+   * @param node current JSON node
+   * @param elements mutable semantic element sink
+   */
+  private void collectSemanticElements(JsonNode node, List<JsonNode> elements) {
+    if (node == null || node.isNull()) {
+      return;
+    }
+    if (node.isObject()) {
+      if (node.hasNonNull("eClass")) {
+        elements.add(node);
+      }
+      node.properties()
+          .forEach(
+              entry -> {
+                if ("graph".equals(entry.getKey()) || "diagram".equals(entry.getKey())) {
+                  return;
+                }
+                collectSemanticElements(entry.getValue(), elements);
+              });
+      return;
+    }
+    if (node.isArray()) {
+      node.forEach(child -> collectSemanticElements(child, elements));
+    }
+  }
+
+  /**
+   * Returns the primary Epsilon model name used for validation.
+   *
+   * @param level model level
+   * @return validation model name
+   */
+  private String validationModelName(ModelLevel level) {
+    return switch (level) {
+      case CIM -> "CIM";
+      case PIM -> "PIM";
+      case PSM -> "AWSPSM";
+    };
+  }
+
+  /**
+   * Returns additional model aliases used by EVL validation.
+   *
+   * @param level model level
+   * @return validation model aliases
+   */
+  private List<String> validationModelAliases(ModelLevel level) {
+    return switch (level) {
+      case CIM, PIM -> List.of("KERNEL");
+      case PSM -> List.of("AWSPSMENUMS", "KERNEL");
+    };
+  }
+
+  private List<EvlModelConfiguration> validationModelConfigurations(
+      ModelLevel level, Resource resource, List<EPackage> metamodelPackages) {
+    List<EvlModelConfiguration> configurations = new ArrayList<>();
+    configurations.add(
+        ResourceEvlModelConfiguration.readOnly(
+            validationModelName(level), resource, metamodelPackages));
+    validationModelAliases(level)
+        .forEach(
+            alias ->
+                configurations.add(
+                    new ResourceEvlModelConfiguration(
+                        alias, List.of(), resource, metamodelPackages, true, true, false)));
+    return List.copyOf(configurations);
+  }
+
+  /**
+   * Validates required attributes and references for one semantic element.
+   *
+   * @param element semantic element
+   * @param fallbackElement graph fallback object
+   * @param definition metadata definition
+   * @param issues mutable issue sink
+   * @param elementId element identifier
+   * @param elementName element display name
+   */
+  private void validateRequiredFeatures(
+      JsonNode element,
+      JsonNode fallbackElement,
+      Map<?, ?> definition,
+      List<ModelService.ValidationIssue> issues,
+      String elementId,
+      String elementName) {
+    validateRequiredFeatureList(
+        element,
+        fallbackElement,
+        definition,
+        definition.get("attributes"),
+        "RequiredAttribute",
+        issues,
+        elementId,
+        elementName);
+    validateRequiredFeatureList(
+        element,
+        fallbackElement,
+        definition,
+        definition.get("references"),
+        "RequiredReference",
+        issues,
+        elementId,
+        elementName);
+  }
+
+  /**
+   * Validates one configured required feature list.
+   *
+   * @param element semantic element
+   * @param fallbackElement graph fallback object
+   * @param definition metadata definition
+   * @param fieldsObject configured field list
+   * @param constraint validation constraint name
+   * @param issues mutable issue sink
+   * @param elementId element identifier
+   * @param elementName element display name
+   */
+  private void validateRequiredFeatureList(
+      JsonNode element,
+      JsonNode fallbackElement,
+      Map<?, ?> definition,
+      Object fieldsObject,
+      String constraint,
+      List<ModelService.ValidationIssue> issues,
+      String elementId,
+      String elementName) {
+    if (!(fieldsObject instanceof List<?> fields)) {
+      return;
+    }
+    for (Object fieldObject : fields) {
+      if (!(fieldObject instanceof Map<?, ?> field)
+          || !Boolean.TRUE.equals(field.get("required"))) {
+        continue;
+      }
+      if ("RequiredReference".equals(constraint) && Boolean.TRUE.equals(field.get("readonly"))) {
+        continue;
+      }
+      String name = String.valueOf(field.get("name"));
+      if ("RequiredReference".equals(constraint)
+          && Boolean.TRUE.equals(definition.get("relationshipElement"))
+          && ("source".equals(name) || "target".equals(name))) {
+        continue;
+      }
+      JsonNode value = element.get(name);
+      if ((value == null
+              || value.isNull()
+              || (value.isTextual() && value.asText().isBlank())
+              || (value.isArray() && value.isEmpty()))
+          && fallbackElement != null) {
+        value = fallbackElement.get(name);
+      }
+      if (value == null
+          || value.isNull()
+          || (value.isTextual() && value.asText().isBlank())
+          || (value.isArray() && value.isEmpty())) {
+        if (impliedEnumValue(element, field) != null) {
+          continue;
+        }
+        issues.add(
+            new ModelService.ValidationIssue(
+                "ERROR",
+                constraint,
+                element.path("eClass").asText(),
+                missingFeatureMessage(element, constraint, name, elementName),
+                missingFeatureGuidance(constraint, name),
+                elementId,
+                elementName));
+      }
+    }
+  }
+
+  /** Infers a discriminator enum only when the concrete type uniquely names one option. */
+  private String impliedEnumValue(JsonNode element, Map<?, ?> field) {
+    Object optionsObject = field.get("options");
+    if (!(optionsObject instanceof List<?> options) || options.size() == 0) {
+      return null;
+    }
+    String type =
+        element
+            .path("eClass")
+            .asText("")
+            .replaceFirst("(Step|State)$", "")
+            .replaceAll("([a-z])([A-Z])", "$1_$2")
+            .toUpperCase(java.util.Locale.ROOT);
+    if (type.isBlank()) {
+      return null;
+    }
+    List<String> matches =
+        options.stream().map(String::valueOf).filter(option -> option.equals(type)).toList();
+    return matches.size() == 1 ? matches.get(0) : null;
+  }
+
+  private String missingFeatureMessage(
+      JsonNode element, String constraint, String featureName, String elementName) {
+    String type = element.path("eClass").asText("model element");
+    String displayName = elementName == null || elementName.isBlank() ? type : elementName;
+    if ("RequiredReference".equals(constraint)) {
+      if (isCollectionFeature(featureName)) {
+        return "The "
+            + typeLabel(type)
+            + " '"
+            + displayName
+            + "' must contain at least one "
+            + singularFeatureLabel(featureName)
+            + ".";
+      }
+      return "The "
+          + typeLabel(type)
+          + " '"
+          + displayName
+          + "' is missing its required "
+          + featureLabel(featureName)
+          + ".";
+    }
+    return "The "
+        + typeLabel(type)
+        + " '"
+        + displayName
+        + "' is missing a required value for "
+        + featureLabel(featureName)
+        + ".";
+  }
+
+  private String missingFeatureGuidance(String constraint, String featureName) {
+    if ("RequiredReference".equals(constraint)) {
+      if (isCollectionFeature(featureName)) {
+        return "Add a "
+            + singularFeatureLabel(featureName)
+            + " to this element before validating the model again.";
+      }
+      return "Open this element and select the related "
+          + featureLabel(featureName)
+          + " from the existing model elements.";
+    }
+    return "Open this element and enter a value for " + featureLabel(featureName) + ".";
+  }
+
+  private String typeLabel(String type) {
+    return type.replaceAll("(?<!^)([A-Z])", " $1").toLowerCase(java.util.Locale.ROOT);
+  }
+
+  private String featureLabel(String featureName) {
+    return featureName.replaceAll("(?<!^)([A-Z])", " $1").toLowerCase(java.util.Locale.ROOT);
+  }
+
+  private String singularFeatureLabel(String featureName) {
+    String label = featureLabel(featureName);
+    return label.endsWith("s") && !label.endsWith("ss")
+        ? label.substring(0, label.length() - 1)
+        : label;
+  }
+
+  private boolean isCollectionFeature(String featureName) {
+    return featureName != null && featureName.endsWith("s") && !featureName.endsWith("ss");
+  }
+
+  /**
+   * Returns a fallback when a string is blank.
+   *
+   * @param value candidate value
+   * @param fallback fallback value
+   * @return non-blank value
+   */
+  private String textOrDefault(String value, String fallback) {
+    return value == null || value.isBlank() ? fallback : value;
+  }
+}

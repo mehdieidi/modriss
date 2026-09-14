@@ -204,7 +204,7 @@ export function materializeActiveView() {
   const visible = materializeViewGraph(view, visibleElementIds, relationshipIds);
   const materializedNodeIds = new Set(visible.nodes.map((node) => node.id));
   const materializedEdgeIds = new Set(visible.connections.map((edge) => edge.id));
-  window.varkaViewAudit = {
+  window.modrissViewAudit = {
     viewId: view.id,
     graphNodes: state.graph.elementsById.size,
     graphEdges: state.graph.relationshipsById.size,

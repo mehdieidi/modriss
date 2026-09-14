@@ -4,15 +4,15 @@ const APP_NAME = "frontend";
 const MAX_MESSAGE = 300;
 
 function telemetryEnabled() {
-  if (typeof window.VARKA_FRONTEND_TELEMETRY_ENABLED === "boolean") {
-    return window.VARKA_FRONTEND_TELEMETRY_ENABLED;
+  if (typeof window.MODRISS_FRONTEND_TELEMETRY_ENABLED === "boolean") {
+    return window.MODRISS_FRONTEND_TELEMETRY_ENABLED;
   }
   const localHosts = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"]);
   if (localHosts.has(window.location.hostname)) {
     return false;
   }
   try {
-    const backendHost = new URL(window.VARKA_BACKEND_BASE_URL || window.location.href).hostname;
+    const backendHost = new URL(window.MODRISS_BACKEND_BASE_URL || window.location.href).hostname;
     return !localHosts.has(backendHost);
   } catch {
     return true;

@@ -1,6 +1,6 @@
 # Local Development Workflow
 
-This workflow describes a normal Varka development day from first checkout through implementation,
+This workflow describes a normal MODRISS development day from first checkout through implementation,
 verification, and handoff. It assumes PowerShell on Windows, but the same commands work with small
 shell syntax changes on Linux or macOS.
 

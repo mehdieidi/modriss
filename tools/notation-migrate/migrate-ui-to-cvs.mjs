@@ -14,15 +14,15 @@ const repoRoot = resolve(__dirname, "../..");
 const METAMODEL = {
   cim: {
     ecore: "mde/metamodels/cim/cim-combined.ecore",
-    nsUri: "https://varka.org/cim/1.0",
+    nsUri: "https://modriss.org/cim/1.0",
   },
   pim: {
     ecore: "mde/metamodels/pim/pim-combined.ecore",
-    nsUri: "https://varka.org/pim/1.0",
+    nsUri: "https://modriss.org/pim/1.0",
   },
   psm: {
     ecore: "mde/metamodels/psm/psm-combined.ecore",
-    nsUri: "https://varka.org/psm/aws/1.0",
+    nsUri: "https://modriss.org/psm/aws/1.0",
   },
 };
 

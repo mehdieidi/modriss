@@ -1,6 +1,6 @@
 # DevOps and SRE Handbook
 
-This folder documents how Varka is operated as a running platform: deployment, reliability,
+This folder documents how MODRISS is operated as a running platform: deployment, reliability,
 observability, incident response, backups, access control, and production-readiness practices.
 
 ## DevOps or SRE?
@@ -8,10 +8,10 @@ observability, incident response, backups, access control, and production-readin
 Both terms apply, but they emphasize different concerns.
 
 - **DevOps** is the engineering practice of making development, release, infrastructure, and
-  operations work as one system. In Varka this includes Docker Compose, container builds,
+  operations work as one system. In MODRISS this includes Docker Compose, container builds,
   environment configuration, database migrations, deployment scripts, and CI/CD expectations.
 - **SRE** is the reliability practice of running the platform against explicit service objectives.
-  In Varka this includes monitoring, alerting, incident response, error budgets, operational
+  In MODRISS this includes monitoring, alerting, incident response, error budgets, operational
   runbooks, capacity planning, and post-incident learning.
 
 For this project, use **DevOps/SRE** as the umbrella term. The admin panel is the operational

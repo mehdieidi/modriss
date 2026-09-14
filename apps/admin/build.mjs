@@ -31,7 +31,7 @@ await writeFile(
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex,nofollow" />
-    <title>Varka Admin</title>
+    <title>MODRISS Admin</title>
     <link rel="stylesheet" href="/assets/index.css" />
   </head>
   <body>

@@ -1,6 +1,6 @@
 # Security
 
-Varka combines user-authored models, generated files, external AI calls, and cloud deployment
+MODRISS combines user-authored models, generated files, external AI calls, and cloud deployment
 artifacts. Security controls therefore span the platform runtime and the projects it generates.
 
 ## Platform Controls

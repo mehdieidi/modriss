@@ -1,7 +1,7 @@
 # CIM Semantic Validation Test Coverage
 
 This document traces the CIM EVL semantic validation coverage added in
-`packages/java/mde-evl-validator/src/test/java/io/mehdieidi/varka/mde/validation/CimSemanticValidationTest.java`.
+`packages/java/mde-evl-validator/src/test/java/io/mehdieidi/modriss/mde/validation/CimSemanticValidationTest.java`.
 
 ## Scope
 

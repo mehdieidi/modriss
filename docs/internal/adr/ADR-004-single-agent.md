@@ -2,7 +2,7 @@
 
 Status: amended by the unified adaptive assistant, 2026-08-12
 
-Varka uses one provider model without parallel planner, repair, source, summarizer, voting, or
+MODRISS uses one provider model without parallel planner, repair, source, summarizer, voting, or
 specialist-agent workers. The current runtime does route between two internal workflows:
 
 - an obligation-ledger, type-selection, blueprint, private-slice, independent-review prompt chain

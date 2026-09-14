@@ -20,8 +20,8 @@ CREATE TABLE theme_settings
 INSERT INTO theme_profiles (id, name, description, tokens, built_in)
 VALUES
     (
-        'varka-dark',
-        'Varka Dark',
+        'modriss-dark',
+        'MODRISS Dark',
         'Default dark frontend theme.',
         jsonb_build_object(
             '--bg', '#101416',
@@ -68,8 +68,8 @@ VALUES
         true
     ),
     (
-        'varka-light',
-        'Varka Light',
+        'modriss-light',
+        'MODRISS Light',
         'Default light frontend theme.',
         jsonb_build_object(
             '--bg', '#edf3fa',
@@ -165,4 +165,4 @@ VALUES
     );
 
 INSERT INTO theme_settings (id, active_profile_id)
-VALUES (true, 'varka-dark');
+VALUES (true, 'modriss-dark');

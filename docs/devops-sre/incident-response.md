@@ -1,6 +1,6 @@
 # Incident Response
 
-This runbook defines a practical incident process for Varka operators.
+This runbook defines a practical incident process for MODRISS operators.
 
 ## Severity
 
@@ -34,7 +34,7 @@ docker compose logs grafana --tail=100
 Database inspection:
 
 ```powershell
-docker exec -it varka-postgres-1 psql -U varka -d varka
+docker exec -it modriss-postgres-1 psql -U modriss -d modriss
 ```
 
 Common SQL probes:

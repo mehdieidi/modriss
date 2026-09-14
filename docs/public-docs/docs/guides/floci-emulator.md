@@ -1,6 +1,6 @@
 # Floci AWS emulator
 
-Varka can run generated AWS artifacts against Floci or LocalStack without changing the generated
+MODRISS can run generated AWS artifacts against Floci or LocalStack without changing the generated
 CloudFormation, SAM, OpenAPI, or AWS SDK code. Floci is the default because it starts quickly and
 uses the same single edge endpoint (`4566`) used by the generated tests.
 
@@ -54,7 +54,7 @@ with Lambda proxy and Function URL responses.
 ## State and compatibility
 
 The Compose profile uses `FLOCI_STORAGE_MODE=memory` by default, so recreating the container gives a
-clean evaluation run. Set `persistent` (and keep the `varka-floci-data` volume) when state must
+clean evaluation run. Set `persistent` (and keep the `modriss-floci-data` volume) when state must
 survive restarts. Remove that named volume only when intentionally discarding emulator state.
 
 Set `FLOCI_CFN_ALLOW_STUB_UNSUPPORTED_RESOURCE_TYPES=false` for strict thesis evidence: an

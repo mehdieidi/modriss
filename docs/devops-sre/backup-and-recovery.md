@@ -1,6 +1,6 @@
 # Backup and Recovery
 
-PostgreSQL is the primary persistent system of record for Varka runtime state.
+PostgreSQL is the primary persistent system of record for MODRISS runtime state.
 
 ## What Must Be Backed Up
 
@@ -13,7 +13,7 @@ PostgreSQL is the primary persistent system of record for Varka runtime state.
 | Jobs                 | PostgreSQL tables `mde_jobs`, `mde_job_diagnostics`, `mde_job_idempotency`. |
 | Assistant state      | PostgreSQL assistant tables.                                                |
 | Admin audit          | PostgreSQL table `admin_audit_events`.                                      |
-| Upload files         | `varka-backend-uploads` volume or production upload storage.                |
+| Upload files         | `modriss-backend-uploads` volume or production upload storage.              |
 
 ## Local Backup
 
@@ -28,7 +28,7 @@ The script writes a timestamped PostgreSQL custom-format dump.
 ## Local Restore
 
 ```powershell
-.\deploy\scripts\restore-postgres.ps1 -BackupFile backups\varka-YYYYMMDDTHHMMSSZ.dump
+.\deploy\scripts\restore-postgres.ps1 -BackupFile backups\modriss-YYYYMMDDTHHMMSSZ.dump
 ```
 
 Restore into a non-production environment first when testing migrations or recovery.

@@ -522,7 +522,7 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction localInputSchemaJson(profileMap : Map)
   }
   return "{\n" +
     "  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n" +
-    "  \"$id\": \"urn:varka:" + firstText(profileMap.get("projectSlug"), "varka") + ":" + self.stableKey().toSlug() + ":lambda-input\",\n" +
+    "  \"$id\": \"urn:modriss:" + firstText(profileMap.get("projectSlug"), "modriss") + ":" + self.stableKey().toSlug() + ":lambda-input\",\n" +
     "  \"title\": " + self.schemaTitle("lambda-input").jsonString() + ",\n" +
     "  \"description\": " + firstText(self.summary, "Generated Lambda input event schema.").jsonString() + ",\n" +
     "  \"oneOf\": [\n" + oneOfText + "\n  ],\n" +
@@ -534,7 +534,7 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction localInputSchemaJson(profileMap : Map)
 operation AWSPSMCOMPUTE!AwsLambdaFunction wrapLocalSchemaDocument(profileMap : Map, bodyText : String) : String {
   return "{\n" +
     "  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n" +
-    "  \"$id\": \"urn:varka:" + firstText(profileMap.get("projectSlug"), "varka") + ":" + self.stableKey().toSlug() + ":lambda-input\",\n" +
+    "  \"$id\": \"urn:modriss:" + firstText(profileMap.get("projectSlug"), "modriss") + ":" + self.stableKey().toSlug() + ":lambda-input\",\n" +
     "  \"title\": " + self.schemaTitle("lambda-input").jsonString() + ",\n" +
     "  \"description\": " + firstText(self.summary, "Generated Lambda input event schema.").jsonString() + ",\n" +
     "  \"allOf\": [\n" + indentJsonBlock(bodyText, 4) + "\n  ],\n" +

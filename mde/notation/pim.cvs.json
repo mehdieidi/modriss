@@ -4,7 +4,7 @@
   "metamodelRef": {
     "level": "pim",
     "ecore": "mde/metamodels/pim/pim-combined.ecore",
-    "nsUri": "https://varka.org/pim/1.0"
+    "nsUri": "https://modriss.org/pim/1.0"
   },
   "elementVisualDefaults": {
     "icon": "category",

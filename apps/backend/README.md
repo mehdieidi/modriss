@@ -1,4 +1,4 @@
-# Varka Backend
+# MODRISS Backend
 
 Spring Boot API for [`apps/frontend`](../frontend/README.md): auth, projects, models, MDE jobs,
 artifacts, layout, and the AI assistant (REST + authenticated SSE).
@@ -19,10 +19,10 @@ mvn -pl apps/backend -am spring-boot:run
 Defaults in `src/main/resources/application.yml`; overrides via environment or `.env`.
 Copy [`.env.example`](../../.env.example) at the repo root.
 
-| Concern      | Variables                                                                                                          |
-| ------------ | ------------------------------------------------------------------------------------------------------------------ |
-| Database     | `VARKA_DB_URL`, `VARKA_DB_USER`, `VARKA_DB_PASSWORD`                                                               |
-| AI assistant | `VARKA_AI_ENABLED`, `VARKA_AI_PROVIDER`, provider keys: see [assistant setup](../../docs/internal/ai/assistant.md) |
+| Concern      | Variables                                                                                                              |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Database     | `MODRISS_DB_URL`, `MODRISS_DB_USER`, `MODRISS_DB_PASSWORD`                                                             |
+| AI assistant | `MODRISS_AI_ENABLED`, `MODRISS_AI_PROVIDER`, provider keys: see [assistant setup](../../docs/internal/ai/assistant.md) |
 
 Start only Postgres: `docker compose up -d postgres`
 

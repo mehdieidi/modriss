@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/cim/1.0", prefix="cim")
+@namespace(uri="https://modriss.org/cim/1.0", prefix="cim")
 package cim;
 
 import "../shared/kernel.ecore";

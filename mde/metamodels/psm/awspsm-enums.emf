@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/awspsm/enums/1.0", prefix="awspsmenums")
+@namespace(uri="https://modriss.org/awspsm/enums/1.0", prefix="awspsmenums")
 package awspsmenums;
 
 enum AwsEnvironmentClass {

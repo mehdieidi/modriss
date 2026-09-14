@@ -52,7 +52,7 @@ Common statuses are `400`, `401`, `403`, `404`, `409`, `413`, `500`, and `501`.
 Guest accounts are normal authenticated accounts with an anonymous display name; their projects,
 models, uploads, and assistant history remain isolated by the same ownership checks as registered
 users. The server atomically counts accepted assistant prompts and returns `403` once the guest
-allowance is exhausted. The limit defaults to five and can be configured with `VARKA_GUEST_PROMPT_LIMIT`.
+allowance is exhausted. The limit defaults to five and can be configured with `MODRISS_GUEST_PROMPT_LIMIT`.
 
 ### Projects
 

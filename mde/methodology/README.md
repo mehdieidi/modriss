@@ -1,4 +1,4 @@
-# Varka Modeling Methodologies
+# MODRISS Modeling Methodologies
 
 The complete Persian software-project lifecycle process, including initiation, iterative MDE
 construction, transition, release, operations, maintenance, roles, artifacts, gates, umbrella

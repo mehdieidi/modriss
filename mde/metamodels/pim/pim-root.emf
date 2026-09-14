@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/pim/1.0", prefix="pim")
+@namespace(uri="https://modriss.org/pim/1.0", prefix="pim")
 package pim;
 
 import "pim-types.ecore";

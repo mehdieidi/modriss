@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/pim/types/1.0", prefix="pimtypes")
+@namespace(uri="https://modriss.org/pim/types/1.0", prefix="pimtypes")
 package pimtypes;
 
 enum ArchitectureStyle {

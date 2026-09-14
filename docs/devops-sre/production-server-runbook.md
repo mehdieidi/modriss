@@ -1,6 +1,6 @@
 # Production Server Deployment and Operations Runbook
 
-This runbook describes how to deploy Varka to a real internet-facing server with a domain name,
+This runbook describes how to deploy MODRISS to a real internet-facing server with a domain name,
 TLS, persistent data, monitoring, backups, and ongoing maintenance.
 
 It assumes a first production deployment on one Linux server with Docker Compose. That is a valid
@@ -116,22 +116,22 @@ Required production changes:
 
 - Generate strong random database passwords.
 - Generate strong Grafana credentials if Grafana is deployed.
-- Temporarily set `VARKA_ADMIN_BOOTSTRAP_ENABLED=true` and
-  `VARKA_ADMIN_BOOTSTRAP_EMAILS` to the initial admin email before first admin login.
-- Set `VARKA_ADMIN_BOOTSTRAP_TOKEN` to a long random one-time setup token before first admin login.
-- Set `VARKA_ALLOWED_ORIGINS` to only the real HTTPS origins.
+- Temporarily set `MODRISS_ADMIN_BOOTSTRAP_ENABLED=true` and
+  `MODRISS_ADMIN_BOOTSTRAP_EMAILS` to the initial admin email before first admin login.
+- Set `MODRISS_ADMIN_BOOTSTRAP_TOKEN` to a long random one-time setup token before first admin login.
+- Set `MODRISS_ALLOWED_ORIGINS` to only the real HTTPS origins.
 - Set all public URLs to `https://...`.
 - Configure the Arvan base URL/key only through environment variables or a secret manager. Set
-  `VARKA_AI_PROVIDER=openai`, `VARKA_AI_MODEL=Gemma-4-31B-IT`, `VARKA_AI_MODE=unified`,
-  `VARKA_AI_OPENAI_PROTOCOL=json_schema`, and keep native/forced tool flags false.
+  `MODRISS_AI_PROVIDER=openai`, `MODRISS_AI_MODEL=Gemma-4-31B-IT`, `MODRISS_AI_MODE=unified`,
+  `MODRISS_AI_OPENAI_PROTOCOL=json_schema`, and keep native/forced tool flags false.
 - Disable or remove LocalStack unless it is explicitly needed.
 - Set upload and data paths to durable volumes.
-- Avoid local default passwords such as `admin`, `varka`, `password`, or `changeme`.
+- Avoid local default passwords such as `admin`, `modriss`, `password`, or `changeme`.
 
 Example origin shape:
 
 ```env
-VARKA_ALLOWED_ORIGINS=https://example.com,https://editor.example.com,https://admin.example.com,https://api.example.com
+MODRISS_ALLOWED_ORIGINS=https://example.com,https://editor.example.com,https://admin.example.com,https://api.example.com
 ```
 
 Secrets policy:
@@ -228,7 +228,7 @@ First deployment checklist:
 8. Confirm Caddy obtains TLS certificates.
 9. Confirm backend readiness.
 10. Log in as the bootstrap admin.
-11. Set `VARKA_ADMIN_BOOTSTRAP_ENABLED=false` and remove bootstrap admin emails and the bootstrap
+11. Set `MODRISS_ADMIN_BOOTSTRAP_ENABLED=false` and remove bootstrap admin emails and the bootstrap
     token after roles are assigned.
 12. Confirm audit logs record admin actions.
 13. Confirm metrics and logs are flowing.
@@ -470,7 +470,7 @@ Do not launch publicly until all items are true:
 - Only intended public routes are exposed.
 - Admin login works for the correct account.
 - Non-admin users cannot access admin APIs.
-- `VARKA_ADMIN_BOOTSTRAP_ENABLED=false` and `VARKA_ADMIN_BOOTSTRAP_TOKEN` is empty after first
+- `MODRISS_ADMIN_BOOTSTRAP_ENABLED=false` and `MODRISS_ADMIN_BOOTSTRAP_TOKEN` is empty after first
   admin setup.
 - Database migrations have run successfully.
 - Backups are configured and restore-tested.

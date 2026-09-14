@@ -1,5 +1,5 @@
 {
-  "processId": "varka.artifact.deployment-readiness",
+  "processId": "modriss.artifact.deployment-readiness",
   "spemVersion": "2.0",
   "level": "artifact",
   "displayName": "Generated Artifacts & Deployment Readiness",
@@ -108,7 +108,7 @@
     }
   ],
   "processEngine": {
-    "id": "varka.artifact.readiness.engine",
+    "id": "modriss.artifact.readiness.engine",
     "displayName": "Artifact Deployment-Readiness Engine",
     "description": "Refines generated AWS SAM project artifacts into a reviewed, verified, releasable, and operable deployment package.",
     "incrementUnit": "release-candidate",

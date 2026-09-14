@@ -70,7 +70,7 @@ OBJECT_STORE_XSI = "data:ObjectStore"
 def ensure_data_namespace(root_open: str) -> str:
     if "xmlns:data=" in root_open:
         return root_open
-    return root_open[:-1] + ' xmlns:data="https://varka.org/pim/data/1.0">'
+    return root_open[:-1] + ' xmlns:data="https://modriss.org/pim/data/1.0">'
 
 
 def rename_element_tag(element: ET.Element, new_local_name: str) -> None:

@@ -1,6 +1,6 @@
 # Caddy Edge Proxy
 
-Caddy is the local edge proxy for the Varka stack. It gives one browser-facing entrypoint while
+Caddy is the local edge proxy for the MODRISS stack. It gives one browser-facing entrypoint while
 keeping the existing service ports available for direct debugging.
 
 ## Local Entry Points
@@ -46,7 +46,7 @@ friction during local development.
 - `infra/caddy/Caddyfile` owns host routing and shared security headers.
 - `deploy/compose.yaml` defines the `caddy` container, port publishing, volumes, and dependencies.
 - `.env` and `.env.example` define `CADDY_HTTP_PORT`.
-- Caddy writes JSON access logs to the `varka-caddy-logs` Docker volume.
+- Caddy writes JSON access logs to the `modriss-caddy-logs` Docker volume.
 - Caddy exposes internal Prometheus metrics on `caddy:2019/metrics`.
 
 To restart only the edge proxy after a config change:

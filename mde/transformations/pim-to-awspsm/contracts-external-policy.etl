@@ -219,7 +219,7 @@ operation applyObservability(source, resource) {
       copyAwsResource(metric, mf, "MetricFilter", "AWS::Logs::MetricFilter");
       mf.id = generatedId("metric_filter", metric, source.name);
       mf.filterPattern = "{$.metric = \"" + escapeJson(metric.metricName) + "\"}";
-      mf.metricTransformationsJson = "{ \"MetricName\": \"" + escapeJson(metric.metricName) + "\", \"MetricNamespace\": \"Varka/" + escapeJson(rootName()) + "\", \"MetricValue\": \"1\" }";
+      mf.metricTransformationsJson = "{ \"MetricName\": \"" + escapeJson(metric.metricName) + "\", \"MetricNamespace\": \"MODRISS/" + escapeJson(rootName()) + "\", \"MetricValue\": \"1\" }";
       mf.logGroup = resource;
     }
     else {

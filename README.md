@@ -1,8 +1,8 @@
-# Varka
+# MODRISS
 
 **Model business intent → refine architecture → generate deployable AWS serverless projects.**
 
-Varka is an AI-assisted, model-driven platform. It provides three formal modeling levels
+MODRISS is an AI-assisted, model-driven platform. It provides three formal modeling levels
 (CIM, PIM, AWS PSM) in the browser. Users can validate models with Eclipse Epsilon, transform them
 between levels, and generate a reviewable project containing infrastructure, Go handlers, contracts,
 tests, and documentation. An optional assistant selects a bounded conceptual generator, an

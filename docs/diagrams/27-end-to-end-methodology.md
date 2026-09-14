@@ -1,19 +1,19 @@
 # End-to-End Modeling Methodology
 
-The full MDE lifecycle is `varka.end-to-end.modeling` (`mde/methodology/process-definitions/end-to-end.json`). One SPEM phase (`e2e.ph1`) contains **eight stages** that orchestrate child process engines, ETL transforms, EVL gates, M2T, and cross-level rework loops.
+The full MDE lifecycle is `modriss.end-to-end.modeling` (`mde/methodology/process-definitions/end-to-end.json`). One SPEM phase (`e2e.ph1`) contains **eight stages** that orchestrate child process engines, ETL transforms, EVL gates, M2T, and cross-level rework loops.
 
 ## Pipeline Overview
 
 ```mermaid
 flowchart LR
     p0["e2e.p0.increment-planning"]
-    p1["e2e.p1.cim-modeling<br/>varka.cim.modeling · 5 phases"]
+    p1["e2e.p1.cim-modeling<br/>modriss.cim.modeling · 5 phases"]
     evl1["cim-semantic-validation<br/>e2e.m1.cim-ready"]
     p2["e2e.p2.cim-to-pim"]
-    p3["e2e.p3.pim-refinement<br/>varka.pim.modeling · 6 phases"]
+    p3["e2e.p3.pim-refinement<br/>modriss.pim.modeling · 6 phases"]
     evl2["pim-semantic-validation<br/>e2e.m2.pim-ready"]
     p4["e2e.p4.pim-to-psm"]
-    p5["e2e.p5.psm-refinement<br/>varka.psm.modeling · 6 phases"]
+    p5["e2e.p5.psm-refinement<br/>modriss.psm.modeling · 6 phases"]
     evl3["psm-semantic-validation<br/>e2e.m3.psm-ready"]
     p6["e2e.p6.m2t-generation"]
     p7["e2e.p7.artifact-completion<br/>e2e.m4.artifacts"]
@@ -106,14 +106,14 @@ sequenceDiagram
 
 ## Child Process Reference
 
-| E2E stage ID                 | Child / transform     | SPEM phases             |
-| ---------------------------- | --------------------- | ----------------------- |
-| `e2e.p1.cim-modeling`        | `varka.cim.modeling`  | 5 (`cim.ph1`–`cim.ph5`) |
-| `e2e.p2.cim-to-pim`          | `cim-to-pim` ETL      | :                       |
-| `e2e.p3.pim-refinement`      | `varka.pim.modeling`  | 6 (`pim.ph1`–`pim.ph6`) |
-| `e2e.p4.pim-to-psm`          | `pim-to-awspsm` ETL   | :                       |
-| `e2e.p5.psm-refinement`      | `varka.psm.modeling`  | 6 (`psm.ph1`–`psm.ph6`) |
-| `e2e.p6.m2t-generation`      | `awspsm-to-artifacts` | :                       |
-| `e2e.p7.artifact-completion` | Manual review         | :                       |
+| E2E stage ID                 | Child / transform      | SPEM phases             |
+| ---------------------------- | ---------------------- | ----------------------- |
+| `e2e.p1.cim-modeling`        | `modriss.cim.modeling` | 5 (`cim.ph1`–`cim.ph5`) |
+| `e2e.p2.cim-to-pim`          | `cim-to-pim` ETL       | :                       |
+| `e2e.p3.pim-refinement`      | `modriss.pim.modeling` | 6 (`pim.ph1`–`pim.ph6`) |
+| `e2e.p4.pim-to-psm`          | `pim-to-awspsm` ETL    | :                       |
+| `e2e.p5.psm-refinement`      | `modriss.psm.modeling` | 6 (`psm.ph1`–`psm.ph6`) |
+| `e2e.p6.m2t-generation`      | `awspsm-to-artifacts`  | :                       |
+| `e2e.p7.artifact-completion` | Manual review          | :                       |
 
 See [24-cim-methodology.md](24-cim-methodology.md), [25-pim-methodology.md](25-pim-methodology.md), and [26-psm-methodology.md](26-psm-methodology.md).

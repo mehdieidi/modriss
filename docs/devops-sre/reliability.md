@@ -1,6 +1,6 @@
 # Reliability Model
 
-Reliability work should start with explicit expectations. Varka has several different user-visible
+Reliability work should start with explicit expectations. MODRISS has several different user-visible
 surfaces, so one generic uptime number is not enough.
 
 ## Critical User Journeys

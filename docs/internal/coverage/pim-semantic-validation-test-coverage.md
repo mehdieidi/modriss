@@ -1,7 +1,7 @@
 # PIM Semantic Validation Test Coverage
 
 This document traces the PIM EVL semantic validation coverage added in
-`packages/java/mde-evl-validator/src/test/java/io/mehdieidi/varka/mde/validation/PimSemanticValidationTest.java`.
+`packages/java/mde-evl-validator/src/test/java/io/mehdieidi/modriss/mde/validation/PimSemanticValidationTest.java`.
 
 ## Scope
 

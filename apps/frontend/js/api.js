@@ -4,7 +4,7 @@ import { ApiError, buildUserMessage, isServerErrorStatus } from "./errors.js";
 export { ApiError, isPlannedFeatureError } from "./errors.js";
 
 export function apiAuthHeaders(extraHeaders = {}) {
-  const token = window.localStorage.getItem("varka.authToken");
+  const token = window.localStorage.getItem("modriss.authToken");
   return {
     ...(token ? { "X-Auth-Token": token } : {}),
     ...extraHeaders,

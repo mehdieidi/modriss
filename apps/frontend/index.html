@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
-    <title>Varka</title>
+    <title>MODRISS</title>
     <link href="/assets/icons/wolf.png" rel="icon" type="image/png" />
     <link
       rel="preload"
@@ -21,7 +21,7 @@
     />
     <script>
       try {
-        if (localStorage.getItem("varka.themeScheme") === "dark") {
+        if (localStorage.getItem("modriss.themeScheme") === "dark") {
           document.documentElement.classList.remove("light");
         }
       } catch {
@@ -42,14 +42,14 @@
     <link href="/css/project.css" rel="stylesheet" />
     <link href="/css/mobile.css" rel="stylesheet" />
     <script>
-      window.varkaFrontendBoot = {
+      window.modrissFrontendBoot = {
         build: "g6-wired-2026-05-31-02",
       };
     </script>
     <script src="/vendor/antv/g6.min.js?v=g6wired-20260624a"></script>
     <script>
-      window.varkaFrontendBoot.g6GlobalAfterScript = Boolean(window.G6?.Graph);
-      window.varkaFrontendBoot.g6Version = window.G6?.version || "";
+      window.modrissFrontendBoot.g6GlobalAfterScript = Boolean(window.G6?.Graph);
+      window.modrissFrontendBoot.g6Version = window.G6?.version || "";
     </script>
     <script src="/vendor/monaco/vs/loader.js"></script>
   </head>
@@ -59,10 +59,10 @@
       <header class="topbar">
         <div class="topbar-menu-strip">
           <div class="topbar-left">
-            <a aria-label="Open Varka landing page" class="app-brand" href="/landing/">
-              <img alt="Varka wolf logo" class="app-logo-img" src="/assets/icons/wolf.png" />
+            <a aria-label="Open MODRISS landing page" class="app-brand" href="/landing/">
+              <img alt="MODRISS wolf logo" class="app-logo-img" src="/assets/icons/wolf.png" />
               <span class="app-brand-text">
-                <span class="app-brand-name">Varka</span>
+                <span class="app-brand-name">MODRISS</span>
                 <!--            <span class="app-brand-subtitle">Model Engineering Studio</span>-->
               </span>
             </a>
@@ -1144,8 +1144,8 @@
       <div class="project-overlay hidden" id="projectOverlay">
         <div class="project-dialog">
           <div class="project-dialog-brand">
-            <img alt="Varka wolf logo" class="app-logo-img" src="/assets/icons/wolf.png" />
-            <span class="app-brand-name">VARKA</span>
+            <img alt="MODRISS wolf logo" class="app-logo-img" src="/assets/icons/wolf.png" />
+            <span class="app-brand-name">MODRISS</span>
           </div>
           <h2 class="project-dialog-title">Welcome</h2>
           <p class="project-dialog-subtitle">
@@ -1200,7 +1200,7 @@
         role="dialog"
       >
         <div class="modal-dialog auth-dialog">
-          <h3 class="modal-title" id="authTitle">Sign in to VARKA</h3>
+          <h3 class="modal-title" id="authTitle">Sign in to MODRISS</h3>
           <p class="modal-subtitle" id="authSubtitle">Use your account to continue.</p>
           <div class="auth-choice" id="authChoice">
             <button class="btn btn-primary btn-full" id="authGuestBtn" type="button">
@@ -1497,7 +1497,7 @@
           <div class="not-found-code">404</div>
           <h1 class="not-found-title">This model wandered off the map.</h1>
           <p class="not-found-copy">
-            The route you opened does not match a Varka workspace. The canvas is still here; the
+            The route you opened does not match a MODRISS workspace. The canvas is still here; the
             address just needs a clean starting point.
           </p>
           <button class="btn btn-primary" id="notFoundGoHomeBtn" type="button">

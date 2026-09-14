@@ -1,0 +1,186 @@
+groups:
+  - name: modriss
+    rules:
+      - alert: MODRISSBackendDown
+        expr: up{job="modriss-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: MODRISS backend is unreachable
+          description: Prometheus cannot scrape the MODRISS backend target.
+
+      - alert: MODRISSHighErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{application="modriss-backend",status=~"5.."}[5m]))
+          /
+          sum(rate(http_server_requests_seconds_count{application="modriss-backend"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: MODRISS 5xx error rate above 5%
+
+      - alert: MODRISSDatabasePoolExhausted
+        expr: |
+          hikaricp_connections_active{application="modriss-backend"}
+          /
+          hikaricp_connections_max{application="modriss-backend"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: HikariCP pool above 90% utilization
+
+      - alert: MODRISSMdeJobFailures
+        expr: increase(modriss_mde_jobs_failed_total[15m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Elevated MDE job failure count
+
+      - alert: MODRISSAssistantCircuitOpen
+        expr: increase(modriss_assistant_circuit_open_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant circuit breaker rejected provider calls
+
+      - alert: MODRISSAssistantProviderErrors
+        expr: increase(modriss_assistant_provider_calls_total{result="failure"}[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant provider calls are failing
+
+      - alert: MODRISSAssistantDeadlineBreaches
+        expr: increase(modriss_assistant_turn_outcome_total{outcome="TIMED_OUT"}[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant turns are exceeding the durable deadline
+
+      - alert: MODRISSAssistantPartialTurnRate
+        expr: increase(modriss_assistant_turn_outcome_total{outcome="PARTIAL"}[30m]) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant partial-turn rate is elevated
+
+      - alert: MODRISSAssistantStructuralFailures
+        expr: increase(modriss_assistant_turn_outcome_total{outcome=~"FAILED|CONFLICTED"}[15m]) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant durable turns are failing or conflicting
+
+      - alert: MODRISSAssistantZeroProgressTurns
+        expr: increase(modriss_assistant_turn_outcome_total{outcome="PARTIAL"}[15m]) > 0 and increase(modriss_assistant_phase_seconds_count{phase="durable_turn"}[15m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant turns are completing without full progress
+
+      - alert: MODRISSAssistantQueueLatencySlo
+        expr: histogram_quantile(0.95, sum(rate(modriss_assistant_phase_seconds_bucket{phase="queue"}[15m])) by (le)) > 30
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant queue p95 exceeds the 30 second SLO
+
+      - alert: MODRISSAssistantTurnLatencySlo
+        expr: histogram_quantile(0.95, sum(rate(modriss_assistant_phase_seconds_bucket{phase="durable_turn"}[15m])) by (le)) > 300
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant end-to-end turn p95 exceeds the five minute SLO
+
+      - alert: MODRISSAssistantSuccessRateSlo
+        expr: |
+          sum(rate(modriss_assistant_turn_outcome_total{outcome=~"SUCCEEDED|PARTIAL"}[30m]))
+          / clamp_min(sum(rate(modriss_assistant_turn_outcome_total[30m])), 1) < 0.90
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant durable-turn success rate is below 90 percent
+
+      - alert: MODRISSAssistantStructuralValiditySlo
+        expr: |
+          sum(rate(modriss_assistant_structural_validation_total{result="invalid"}[30m]))
+          / clamp_min(sum(rate(modriss_assistant_structural_validation_total[30m])), 1) > 0.05
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Assistant structural-validation failure rate exceeds five percent
+
+      - alert: MODRISSEdgeDown
+        expr: up{job="modriss-caddy"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Caddy edge proxy metrics are unreachable
+
+      - alert: MODRISSPostgresExporterDown
+        expr: up{job="modriss-postgres"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: PostgreSQL exporter is unreachable
+
+      - alert: MODRISSContainerTelemetryDown
+        expr: up{job="modriss-containers"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Container metrics exporter is unreachable
+
+      - alert: MODRISSHostTelemetryDown
+        expr: up{job="modriss-host"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host metrics exporter is unreachable
+
+      - alert: MODRISSHostDiskFilling
+        expr: |
+          (
+            node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"}
+            /
+            node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"}
+          ) < 0.15
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host filesystem has less than 15% free space
+
+      - alert: MODRISSFrontendErrors
+        expr: increase(modriss_frontend_telemetry_events_total{kind=~"js_error|unhandled_rejection"}[15m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Browser-side frontend errors have been reported
+
+      - alert: MODRISSObservabilityTargetDown
+        expr: up{job="modriss-observability"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: One or more observability services are unreachable

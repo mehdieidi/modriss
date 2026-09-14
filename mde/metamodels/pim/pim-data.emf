@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/pim/data/1.0", prefix="data")
+@namespace(uri="https://modriss.org/pim/data/1.0", prefix="data")
 package data;
 
 import "../shared/kernel.ecore";

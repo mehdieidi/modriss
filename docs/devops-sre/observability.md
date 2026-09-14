@@ -1,6 +1,6 @@
 # Observability Stack
 
-Varka uses application metrics, structured request logs, admin audit events, and health probes to
+MODRISS uses application metrics, structured request logs, admin audit events, and health probes to
 make the running system inspectable.
 
 ## Components
@@ -37,7 +37,7 @@ infra/prometheus/prometheus.yml
 Alert rules live at:
 
 ```text
-infra/prometheus/varka-alerts.yml
+infra/prometheus/modriss-alerts.yml
 ```
 
 Useful metric groups:
@@ -49,9 +49,9 @@ Useful metric groups:
 - `pg_*` for PostgreSQL exporter metrics.
 - `node_*` for host metrics.
 - `container_*` for Docker container metrics from cAdvisor.
-- `varka_frontend_telemetry_events_total` for browser-side app telemetry.
-- `varka.mde.jobs.*` for transformation/generation job activity.
-- `varka.assistant.*` for assistant requests, provider calls, rate limits, and failures.
+- `modriss_frontend_telemetry_events_total` for browser-side app telemetry.
+- `modriss.mde.jobs.*` for transformation/generation job activity.
+- `modriss.assistant.*` for assistant requests, provider calls, rate limits, and failures.
 
 For assistant diagnosis, correlate metrics/logs with `assistantTurnId`, then inspect durable
 workflow kind/phase, work items, provider calls and prompts, validation attempts, checkpoints,
@@ -62,14 +62,14 @@ deadline. The internal strategy is not a client-selected dimension.
 ## Logs
 
 The backend writes logs to `/app/logs/backend.log` inside the backend container. Compose mounts this
-through the `varka-backend-logs` volume. Caddy writes JSON access logs to `/var/log/caddy/access.log`
+through the `modriss-backend-logs` volume. Caddy writes JSON access logs to `/var/log/caddy/access.log`
 inside the Caddy container. Promtail reads those volumes and Docker container JSON logs, then pushes
 entries to Loki.
 
 Useful Loki queries:
 
 ```logql
-{service="varka-backend"}
+{service="modriss-backend"}
 ```
 
 ```logql
@@ -77,7 +77,7 @@ Useful Loki queries:
 ```
 
 ```logql
-{compose_project="varka"}
+{compose_project="modriss"}
 ```
 
 Every backend response includes `X-Request-Id`. The same value is placed in log MDC as `requestId`.
@@ -94,8 +94,8 @@ Grafana provisions:
 
 - Prometheus datasource: `http://prometheus:9090`
 - Loki datasource: `http://loki:3100`
-- Varka overview dashboard from `infra/grafana/varka-overview.json`
-- Varka production observability dashboard from `infra/grafana/varka-production-observability.json`
+- MODRISS overview dashboard from `infra/grafana/modriss-overview.json`
+- MODRISS production observability dashboard from `infra/grafana/modriss-production-observability.json`
 
 Local Grafana defaults:
 
@@ -117,8 +117,8 @@ GRAFANA_ADMIN_PASSWORD=...
 Tracing is configurable but disabled by default:
 
 ```env
-VARKA_TRACING_ENABLED=false
-VARKA_TRACING_SAMPLE_RATE=0.1
+MODRISS_TRACING_ENABLED=false
+MODRISS_TRACING_SAMPLE_RATE=0.1
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318/v1/traces
 ```
 

@@ -5,7 +5,7 @@
 /** @type {Record<string, import('./process-types.mjs').ProcessEngineSpec>} */
 export const PROCESS_ENGINES = {
   cim: {
-    id: "varka.cim.engine",
+    id: "modriss.cim.engine",
     displayName: "CIM Modeling Engine",
     description:
       "Revolves through increment framing → context discovery → domain exploration → synthesis → readiness/review per capability slice.",
@@ -64,7 +64,7 @@ export const PROCESS_ENGINES = {
     },
   },
   pim: {
-    id: "varka.pim.engine",
+    id: "modriss.pim.engine",
     displayName: "PIM Modeling Engine",
     description:
       "Revolves through service-slice framing → contracts/data → compute/API → integration → assurance → readiness per service slice.",
@@ -127,7 +127,7 @@ export const PROCESS_ENGINES = {
     },
   },
   psm: {
-    id: "varka.psm.engine",
+    id: "modriss.psm.engine",
     displayName: "AWS PSM Modeling Engine",
     description:
       "Revolves through deployable-slice framing → network/identity → storage/messaging → events/compute → API/workflow → readiness per deployable slice.",
@@ -190,7 +190,7 @@ export const PROCESS_ENGINES = {
     },
   },
   "end-to-end": {
-    id: "varka.end-to-end.engine",
+    id: "modriss.end-to-end.engine",
     displayName: "End-to-End MDE Engine",
     description: "One vertical CIM → PIM → PSM → artifacts revolution per capability increment.",
     incrementUnit: "capability-slice",
@@ -209,7 +209,7 @@ export const PROCESS_ENGINES = {
         id: "e2e.p1.cim-modeling",
         name: "CIM Engine",
         type: "child-process",
-        childProcessId: "varka.cim.modeling",
+        childProcessId: "modriss.cim.modeling",
       },
       {
         id: "e2e.p2.cim-to-pim",
@@ -222,7 +222,7 @@ export const PROCESS_ENGINES = {
         id: "e2e.p3.pim-refinement",
         name: "PIM Engine",
         type: "child-process",
-        childProcessId: "varka.pim.modeling",
+        childProcessId: "modriss.pim.modeling",
       },
       {
         id: "e2e.p4.pim-to-psm",
@@ -235,7 +235,7 @@ export const PROCESS_ENGINES = {
         id: "e2e.p5.psm-refinement",
         name: "PSM Engine",
         type: "child-process",
-        childProcessId: "varka.psm.modeling",
+        childProcessId: "modriss.psm.modeling",
       },
       {
         id: "e2e.p6.m2t-generation",

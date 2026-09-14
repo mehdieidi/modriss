@@ -42,8 +42,8 @@ The test verifies these generated artifacts against Floci or LocalStack:
   over HTTP, and verified to return the generated handler response.
 - The generated API Gateway HTTP API is looked up through `apigatewayv2 get-apis`, invoked over
   HTTP at `/runtime`, and verified to return the generated handler response.
-- `asl/varka-localstack-workflow.asl.json` parses and is executed through Step Functions.
-- `src/functions/varka-localstack-handler/handler.go` compiles to the Lambda `bootstrap`, is
+- `asl/modriss-localstack-workflow.asl.json` parses and is executed through Step Functions.
+- `src/functions/modriss-localstack-handler/handler.go` compiles to the Lambda `bootstrap`, is
   accepted by LocalStack Lambda, reaches `function-active-v2`, and responds to invocation.
 - Generated Go tests run with `GENERATED_LAMBDA_FUNCTION_NAME` pointed at the deployed function.
 

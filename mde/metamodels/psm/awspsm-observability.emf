@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/awspsm/observability/1.0", prefix="awspsmobservability")
+@namespace(uri="https://modriss.org/awspsm/observability/1.0", prefix="awspsmobservability")
 package awspsmobservability;
 
 import "../shared/kernel.ecore";

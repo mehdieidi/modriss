@@ -1,6 +1,6 @@
 {
   "level": "cim",
-  "processId": "varka.cim.modeling",
+  "processId": "modriss.cim.modeling",
   "generatedAt": "2026-07-07T15:28:43.262Z",
   "totalConcepts": 122,
   "coveredConcepts": 122,

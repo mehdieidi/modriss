@@ -49,7 +49,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `varka.pim.modeling` · 6 phases · 31 atomic tasks · PIM metamodel coverage enforced in CI.
+Process `modriss.pim.modeling` · 6 phases · 31 atomic tasks · PIM metamodel coverage enforced in CI.
 
 ### Architecture & Slice Framing (`pim.ph1`)
 

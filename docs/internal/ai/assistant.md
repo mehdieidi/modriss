@@ -2,8 +2,8 @@
 
 Updated: 2026-09-13
 
-This is the implementation reference for Varka's modeling chatbot. The supported assistant scope is
-CIM and PIM. PSM modeling remains available elsewhere in Varka, but `ChatbotController` rejects PSM
+This is the implementation reference for MODRISS's modeling chatbot. The supported assistant scope is
+CIM and PIM. PSM modeling remains available elsewhere in MODRISS, but `ChatbotController` rejects PSM
 assistant sessions with HTTP 422.
 
 ## Production configuration
@@ -12,29 +12,29 @@ The only validated deployment provider/model pair is Arvan `Gemma-4-31B-IT` thro
 OpenAI-compatible JSON-content adapter:
 
 ```dotenv
-VARKA_AI_ENABLED=true
-VARKA_AI_METAMODEL_MODE=normal
-VARKA_AI_MODE=unified
-VARKA_AI_WORKFLOW_ENGINE_V2=true
-VARKA_AI_PROVIDER=openai
+MODRISS_AI_ENABLED=true
+MODRISS_AI_METAMODEL_MODE=normal
+MODRISS_AI_MODE=unified
+MODRISS_AI_WORKFLOW_ENGINE_V2=true
+MODRISS_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_BASE_URL=<Arvan endpoint>
 OPENAI_COMPATIBLE_API_KEY=<secret>
-VARKA_AI_MODEL=Gemma-4-31B-IT
-VARKA_AI_OPENAI_PROTOCOL=json_schema
-VARKA_AI_NATIVE_TOOLS_PREFERRED=false
-VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
-VARKA_AI_MAX_PROVIDER_CALLS_PER_TURN=64
-VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=96
-VARKA_AI_PROVIDER_RETRY_ATTEMPTS=0
-VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION=true
-VARKA_AI_LLM_REVIEW_ENABLED=true
+MODRISS_AI_MODEL=Gemma-4-31B-IT
+MODRISS_AI_OPENAI_PROTOCOL=json_schema
+MODRISS_AI_NATIVE_TOOLS_PREFERRED=false
+MODRISS_AI_FORCED_TOOL_CHOICE_RELIABLE=false
+MODRISS_AI_MAX_PROVIDER_CALLS_PER_TURN=64
+MODRISS_AI_MAX_PROVIDER_CALLS_SOURCE_TURN=96
+MODRISS_AI_PROVIDER_RETRY_ATTEMPTS=0
+MODRISS_AI_PREFER_LLM_SOURCE_EXTRACTION=true
+MODRISS_AI_LLM_REVIEW_ENABLED=true
 ```
 
 `agent-test` and `conceptual-test` are acceptance-test overrides. `unified` is the sole normal
 mode. The code contains other provider-family adapters, but they are not validated alternatives for
 this deployment.
 
-`VARKA_AI_METAMODEL_MODE` is independent of the workflow `VARKA_AI_MODE`. Its default, `normal`,
+`MODRISS_AI_METAMODEL_MODE` is independent of the workflow `MODRISS_AI_MODE`. Its default, `normal`,
 retains the complete existing metamodel surface. Set it to `excerpt` to restrict LLM discovery,
 retrieval, planning, and patch compilation to the curated core CIM/PIM concepts in
 `assistant/metamodel/excerpt-metamodel.json`. The profile only selects EClasses; their exact

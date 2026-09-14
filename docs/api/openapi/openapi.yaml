@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Varka Backend API
+  title: MODRISS Backend API
   version: 0.0.1
   description: REST API for authentication, projects, CIM/PIM/PSM models, transformations, artifacts, modeling metadata, and diagram layout.
   license:
@@ -1976,7 +1976,7 @@ components:
           example: UP
         service:
           type: string
-          example: varka-backend
+          example: modriss-backend
         timestamp:
           type: string
           format: date-time

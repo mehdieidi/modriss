@@ -4,7 +4,7 @@
   "metamodelRef": {
     "level": "psm",
     "ecore": "mde/metamodels/psm/psm-combined.ecore",
-    "nsUri": "https://varka.org/psm/aws/1.0"
+    "nsUri": "https://modriss.org/psm/aws/1.0"
   },
   "elementVisualDefaults": {
     "icon": "aws-cloud",

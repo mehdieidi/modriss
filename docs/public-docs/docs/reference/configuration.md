@@ -1,6 +1,6 @@
 # Configuration
 
-Varka reads configuration from Spring Boot, Docker Compose, the frontend runtime bootstrap, and
+MODRISS reads configuration from Spring Boot, Docker Compose, the frontend runtime bootstrap, and
 the PostgreSQL/AWS-emulator helper scripts. The root `.env` and `.env.example` files contain the same
 active keys. `.env.example` is safe to copy; keep real credentials only in the untracked `.env`.
 
@@ -11,7 +11,7 @@ values and behavior, in the sections below.
 
 - Spring placeholders in `apps/backend/src/main/resources/application.yml` configure database,
   MDE, uploads, AI, metrics, tracing, and OTLP.
-- `@ConfigurationProperties` binds the `varka.*` backend and assistant settings. Invalid values
+- `@ConfigurationProperties` binds the `modriss.*` backend and assistant settings. Invalid values
   can prevent the backend from starting; zero or negative limits may be normalized to safe defaults.
 - Compose substitutes host ports and infrastructure values from `.env`, then passes `.env` through
   `env_file`. It overrides the backend database connection to use the `postgres` service and the
@@ -21,52 +21,52 @@ values and behavior, in the sections below.
 
 ## Database and runtime
 
-| Variables                                            | Default                                | Effect                                                                                                            |
-| ---------------------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`  | `varka`, `varka`, `varka`              | Create the PostgreSQL database and credentials. Change all matching backend credentials together.                 |
-| `POSTGRES_HOST`, `POSTGRES_PORT`                     | `localhost`, `5432`                    | Host/port used by database helper scripts and the host-side port published by Compose.                            |
-| `VARKA_DB_URL`, `VARKA_DB_USER`, `VARKA_DB_PASSWORD` | local JDBC URL and `varka` credentials | Backend database connection when running outside Compose; Compose supplies container-specific values.             |
-| `VARKA_DB_MAX_POOL_SIZE`, `VARKA_DB_MIN_IDLE`        | `10`, `2`                              | Connection-pool capacity. Higher values support more concurrent work but consume more database connections.       |
-| `SPRING_PROFILES_ACTIVE`                             | `dev`                                  | Selects Spring profiles such as `dev`, `prod`, or `test`; profiles can change logging and observability behavior. |
-| `VARKA_STORAGE_ROOT`, `VARKA_SESSION_TTL`            | `storage`, `30d`                       | Local backend data location and authenticated-session lifetime.                                                   |
+| Variables                                                  | Default                                  | Effect                                                                                                            |
+| ---------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`        | `modriss`, `modriss`, `modriss`          | Create the PostgreSQL database and credentials. Change all matching backend credentials together.                 |
+| `POSTGRES_HOST`, `POSTGRES_PORT`                           | `localhost`, `5432`                      | Host/port used by database helper scripts and the host-side port published by Compose.                            |
+| `MODRISS_DB_URL`, `MODRISS_DB_USER`, `MODRISS_DB_PASSWORD` | local JDBC URL and `modriss` credentials | Backend database connection when running outside Compose; Compose supplies container-specific values.             |
+| `MODRISS_DB_MAX_POOL_SIZE`, `MODRISS_DB_MIN_IDLE`          | `10`, `2`                                | Connection-pool capacity. Higher values support more concurrent work but consume more database connections.       |
+| `SPRING_PROFILES_ACTIVE`                                   | `dev`                                    | Selects Spring profiles such as `dev`, `prod`, or `test`; profiles can change logging and observability behavior. |
+| `MODRISS_STORAGE_ROOT`, `MODRISS_SESSION_TTL`              | `storage`, `30d`                         | Local backend data location and authenticated-session lifetime.                                                   |
 
 ## Ports, origins, and frontend
 
-| Variable                      | Default                   | Effect                                                                                                                                                |
-| ----------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BACKEND_PORT`                | `8080`                    | Host port for the API; the container still listens on `8080`.                                                                                         |
-| `FRONTEND_PORT`               | `8082`                    | Host port for the modeling frontend.                                                                                                                  |
-| `LANDING_PORT`                | `8083`                    | Host port for the landing site.                                                                                                                       |
-| `VARKA_DIAGRAM_RENDERER`      | `antv-g6`                 | Selects the diagram editor renderer. Unsupported values can make the modeling editor fail to initialize.                                              |
-| `VARKA_ALLOWED_ORIGINS`       | derived by Compose        | Comma-separated CORS origins for browser REST/SSE requests. Setting it replaces the generated origin list; an incorrect list blocks browser requests. |
-| `VARKA_CONTAINER_UPLOAD_ROOT` | `/app/uploads` in Compose | Backend-container upload path. Change it only if the corresponding storage mount/path exists.                                                         |
-| `FREELLMAPI_NETWORK`          | `freellmapi_default`      | Docker network used by the backend for host-based FreeLLM/API access.                                                                                 |
-| `FREELLMAPI_NETWORK_EXTERNAL` | `false`                   | Set to `true` when the configured FreeLLM network already exists and is managed outside this Compose project.                                         |
+| Variable                        | Default                   | Effect                                                                                                                                                |
+| ------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BACKEND_PORT`                  | `8080`                    | Host port for the API; the container still listens on `8080`.                                                                                         |
+| `FRONTEND_PORT`                 | `8082`                    | Host port for the modeling frontend.                                                                                                                  |
+| `LANDING_PORT`                  | `8083`                    | Host port for the landing site.                                                                                                                       |
+| `MODRISS_DIAGRAM_RENDERER`      | `antv-g6`                 | Selects the diagram editor renderer. Unsupported values can make the modeling editor fail to initialize.                                              |
+| `MODRISS_ALLOWED_ORIGINS`       | derived by Compose        | Comma-separated CORS origins for browser REST/SSE requests. Setting it replaces the generated origin list; an incorrect list blocks browser requests. |
+| `MODRISS_CONTAINER_UPLOAD_ROOT` | `/app/uploads` in Compose | Backend-container upload path. Change it only if the corresponding storage mount/path exists.                                                         |
+| `FREELLMAPI_NETWORK`            | `freellmapi_default`      | Docker network used by the backend for host-based FreeLLM/API access.                                                                                 |
+| `FREELLMAPI_NETWORK_EXTERNAL`   | `false`                   | Set to `true` when the configured FreeLLM network already exists and is managed outside this Compose project.                                         |
 
 ## MDE and uploads
 
-`VARKA_MDE_EXECUTION_TIMEOUT` and `VARKA_MDE_JOB_TIMEOUT` control command and queued-job
-deadlines. The remaining `VARKA_MDE_*` keys limit output size, concurrency, queue depth, model
+`MODRISS_MDE_EXECUTION_TIMEOUT` and `MODRISS_MDE_JOB_TIMEOUT` control command and queued-job
+deadlines. The remaining `MODRISS_MDE_*` keys limit output size, concurrency, queue depth, model
 uploads, generated file count/size, artifact size, and staged-import lifetime. Increasing limits
 permits larger or slower jobs but increases memory, disk, and CPU risk; decreasing them causes
 large or long-running jobs to be rejected or terminated.
 
-`VARKA_UPLOAD_ROOT`, `VARKA_UPLOAD_MAX_FILE_BYTES`, and `VARKA_UPLOAD_MAX_TEXT_CHARS` control
+`MODRISS_UPLOAD_ROOT`, `MODRISS_UPLOAD_MAX_FILE_BYTES`, and `MODRISS_UPLOAD_MAX_TEXT_CHARS` control
 non-MDE uploads. Smaller limits reduce resource usage; larger limits allow larger inputs and longer
 assistant context, but increase storage and processing costs.
 
 ## AI assistant
 
-Set `VARKA_AI_ENABLED=true` to enable provider calls. The deployed configuration uses
-`VARKA_AI_PROVIDER=openai`, Arvan's `OPENAI_COMPATIBLE_BASE_URL` and
-`OPENAI_COMPATIBLE_API_KEY`, and `VARKA_AI_MODEL=Gemma-4-31B-IT`. The code retains other provider
+Set `MODRISS_AI_ENABLED=true` to enable provider calls. The deployed configuration uses
+`MODRISS_AI_PROVIDER=openai`, Arvan's `OPENAI_COMPATIBLE_BASE_URL` and
+`OPENAI_COMPATIBLE_API_KEY`, and `MODRISS_AI_MODEL=Gemma-4-31B-IT`. The code retains other provider
 adapters, but they are not the validated production configuration described here.
 
-`VARKA_AI_MODE=unified` is the only normal mode. `agent-test` and `conceptual-test` are strict
+`MODRISS_AI_MODE=unified` is the only normal mode. `agent-test` and `conceptual-test` are strict
 acceptance-test overrides, and any other value fails startup. Clients never select this mode or an
 internal strategy per request.
 
-`VARKA_AI_METAMODEL_MODE=normal` exposes the complete CIM/PIM metamodel to the assistant and is the
+`MODRISS_AI_METAMODEL_MODE=normal` exposes the complete CIM/PIM metamodel to the assistant and is the
 default. Set it to `excerpt` to expose only the curated core business, process, data, service,
 function, API, event, workflow, integration, security, and configuration concepts. This setting
 changes only assistant discovery and patch contracts; generated models are still structurally
@@ -74,30 +74,30 @@ validated against the complete canonical Ecore metamodel. Restart the backend af
 
 Timeouts, token budgets, context limits, agent steps, provider-call limits, repair attempts, source
 passes, rate limits, retries, and recent-message windows all trade completeness and resilience
-against latency, memory use, and provider cost. `VARKA_AI_MAX_PROVIDER_CALLS_SOURCE_TURN` and
-`VARKA_AI_SOURCE_TURN_TIMEOUT` are the separately configurable budgets used for source-backed
+against latency, memory use, and provider cost. `MODRISS_AI_MAX_PROVIDER_CALLS_SOURCE_TURN` and
+`MODRISS_AI_SOURCE_TURN_TIMEOUT` are the separately configurable budgets used for source-backed
 attachment turns. The tested Gemma profile uses 40 calls for normal turns and 64 calls for source turns, with
 12- and 25-minute timeouts respectively. Increasing them allows more complex documents; lowering
 them makes failures faster and cheaper but can starve review or correction.
-`VARKA_AI_FALLBACK_PROVIDER` is used only after an HTTP 429 from the primary provider. The current
+`MODRISS_AI_FALLBACK_PROVIDER` is used only after an HTTP 429 from the primary provider. The current
 single-provider Arvan deployment must leave it empty; configuring another adapter does not make that
 provider supported in production. Durable assistant message submission currently requires an
 `idempotencyKey` in the request body so retries
 cannot apply duplicate work.
 
-Model selection uses one production model: `VARKA_AI_MODEL`. Tests and evaluations that need a
-different model can use `VARKA_AI_TEST_MODEL`; when it is empty, they fall back to
-`VARKA_AI_MODEL`. Production must set `Gemma-4-31B-IT` explicitly rather than relying on an
+Model selection uses one production model: `MODRISS_AI_MODEL`. Tests and evaluations that need a
+different model can use `MODRISS_AI_TEST_MODEL`; when it is empty, they fall back to
+`MODRISS_AI_MODEL`. Production must set `Gemma-4-31B-IT` explicitly rather than relying on an
 adapter default.
 
-For Arvan, use `VARKA_AI_OPENAI_PROTOCOL=json_schema`,
-`VARKA_AI_NATIVE_TOOLS_PREFERRED=false`, and
-`VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false`. Structured requests use temperature zero and the
+For Arvan, use `MODRISS_AI_OPENAI_PROTOCOL=json_schema`,
+`MODRISS_AI_NATIVE_TOOLS_PREFERRED=false`, and
+`MODRISS_AI_FORCED_TOOL_CHOICE_RELIABLE=false`. Structured requests use temperature zero and the
 model-family-specific generation controls. The full-source profile uses
-`VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION=true` and `VARKA_AI_LLM_REVIEW_ENABLED=true`: source
+`MODRISS_AI_PREFER_LLM_SOURCE_EXTRACTION=true` and `MODRISS_AI_LLM_REVIEW_ENABLED=true`: source
 interpretation, pre-generation blueprint critique, and the final obligation verdict remain
-LLM-based. `VARKA_AI_PREFER_LLM_SOURCE_EXTRACTION` and
-`VARKA_AI_LLM_CONTRACT_RERANK_ENABLED` can improve source/retrieval quality at the cost of extra
+LLM-based. `MODRISS_AI_PREFER_LLM_SOURCE_EXTRACTION` and
+`MODRISS_AI_LLM_CONTRACT_RERANK_ENABLED` can improve source/retrieval quality at the cost of extra
 provider calls. The proxy variables accept `DIRECT`, `HTTP`, or `SOCKS`; proxy settings affect AI
 provider traffic only.
 
@@ -112,8 +112,8 @@ timeouts, 16,000 completion tokens, JSON protocol, disabled native tools, and ze
 
 ## Observability
 
-`VARKA_METRICS_ENABLED` controls Prometheus metrics. `VARKA_TRACING_ENABLED` enables tracing and
-`VARKA_TRACING_SAMPLE_RATE` accepts `0.0` through `1.0`; higher sampling gives more diagnostic data
+`MODRISS_METRICS_ENABLED` controls Prometheus metrics. `MODRISS_TRACING_ENABLED` enables tracing and
+`MODRISS_TRACING_SAMPLE_RATE` accepts `0.0` through `1.0`; higher sampling gives more diagnostic data
 but adds overhead. `OTEL_EXPORTER_OTLP_ENDPOINT` selects the OTLP HTTP endpoint and
 `OTEL_SERVICE_NAME` names the service in the telemetry backend.
 

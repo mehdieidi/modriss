@@ -1,6 +1,6 @@
-# Contributing to Varka
+# Contributing to MODRISS
 
-Thank you for helping improve Varka. This file is the short entry point; detailed guides
+Thank you for helping improve MODRISS. This file is the short entry point; detailed guides
 live in the public documentation site.
 
 ## Before You Start

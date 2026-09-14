@@ -83,15 +83,15 @@ const TOPBAR_MENU_BREAKPOINT = 1100;
 const CHAT_INPUT_MAX_HEIGHT = 132;
 const getElementTarget = (event) => (event.target instanceof Element ? event.target : null);
 
-window.varkaFrontendBoot = {
-  ...(window.varkaFrontendBoot || {}),
+window.modrissFrontendBoot = {
+  ...(window.modrissFrontendBoot || {}),
   mainModuleLoaded: true,
   mainBuild: "g6-wired-2026-05-31-02",
 };
-window.varkaG6Debug =
-  window.varkaG6Debug ||
+window.modrissG6Debug =
+  window.modrissG6Debug ||
   (() => ({
-    bootstrap: window.varkaFrontendBoot || null,
+    bootstrap: window.modrissFrontendBoot || null,
     ...getModelingRendererDebug(),
   }));
 
@@ -104,7 +104,7 @@ function showNotFoundPage() {
   if (!el.notFoundOverlay) {
     return false;
   }
-  document.title = "Not Found - Varka";
+  document.title = "Not Found - MODRISS";
   el.notFoundOverlay.classList.remove("hidden");
   document.body.classList.add("modal-open");
   el.notFoundGoHomeBtn?.addEventListener(
@@ -697,7 +697,7 @@ function bindEvents() {
   if (el.themeRailToggleBtn) {
     el.themeRailToggleBtn.addEventListener("click", toggleTheme);
   }
-  document.documentElement.addEventListener("varka:theme-change", () => {
+  document.documentElement.addEventListener("modriss:theme-change", () => {
     renderDiagram();
     renderPalette();
   });

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Backup the Varka PostgreSQL database to a timestamped custom-format dump.
+# Backup the MODRISS PostgreSQL database to a timestamped custom-format dump.
 # Usage: ./deploy/scripts/backup-postgres.sh [output-directory]
 
 set -euo pipefail
@@ -8,14 +8,14 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OUTPUT_DIR="${1:-${ROOT}/backups}"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 
-POSTGRES_DB="${POSTGRES_DB:-varka}"
-POSTGRES_USER="${POSTGRES_USER:-varka}"
+POSTGRES_DB="${POSTGRES_DB:-modriss}"
+POSTGRES_USER="${POSTGRES_USER:-modriss}"
 POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
-export PGPASSWORD="${POSTGRES_PASSWORD:-${VARKA_DB_PASSWORD:-varka}}"
+export PGPASSWORD="${POSTGRES_PASSWORD:-${MODRISS_DB_PASSWORD:-modriss}}"
 
 mkdir -p "${OUTPUT_DIR}"
-OUTPUT_FILE="${OUTPUT_DIR}/varka-${TIMESTAMP}.dump"
+OUTPUT_FILE="${OUTPUT_DIR}/modriss-${TIMESTAMP}.dump"
 
 echo "Backing up ${POSTGRES_DB}@${POSTGRES_HOST}:${POSTGRES_PORT} -> ${OUTPUT_FILE}"
 pg_dump \

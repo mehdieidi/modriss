@@ -1,6 +1,6 @@
 # CLI Tools
 
-Varka includes standalone Java command-line tools for formal MDE tasks. Build a tool with Maven
+MODRISS includes standalone Java command-line tools for formal MDE tasks. Build a tool with Maven
 from the repository root using `-pl <module> -am package`.
 
 ## Metamodel Compiler
@@ -76,7 +76,7 @@ Module: `tools/notation-migrate`
 Migrates legacy `*-ui-metadata.json` files to Concrete Visual Syntax (CVS) v2 JSON:
 
 ```powershell
-npm run migrate:all -w @varka/notation-migrate
+npm run migrate:all -w @modriss/notation-migrate
 ```
 
 The CVS formalism and migration workflow are maintained in the repository's internal document

@@ -1,12 +1,12 @@
 # Model-Driven Engineering
 
-Varka treats models as executable engineering assets rather than diagrams that merely describe
+MODRISS treats models as executable engineering assets rather than diagrams that merely describe
 code. A formal metamodel defines what can exist, constraints define valid meaning, transformations
 derive the next abstraction level, and generators produce deployable project assets.
 
 ## Core Terms
 
-| Term                          | Meaning in Varka                                                                    |
+| Term                          | Meaning in MODRISS                                                                  |
 | ----------------------------- | ----------------------------------------------------------------------------------- |
 | Metamodel                     | The formal abstract syntax of a modeling level                                      |
 | Model                         | An instance conforming to a metamodel                                               |

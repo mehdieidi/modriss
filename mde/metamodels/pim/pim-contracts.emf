@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/pim/contracts/1.0", prefix="contracts")
+@namespace(uri="https://modriss.org/pim/contracts/1.0", prefix="contracts")
 package contracts;
 
 import "../shared/kernel.ecore";

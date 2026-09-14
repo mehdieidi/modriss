@@ -3,7 +3,7 @@
 ## Purpose
 
 This case study defines a research-grade, real-world evaluation project for the CIM level of the
-Varka low-code platform. It is designed to stress the platform's ability to model:
+MODRISS low-code platform. It is designed to stress the platform's ability to model:
 
 - business goals, KPIs, stakeholders, actors, and roles;
 - bounded contexts and ubiquitous language;
@@ -257,7 +257,7 @@ Serverless architecture is a natural later-stage target because the business pro
 - strong need for audit logging, elasticity, and pay-per-use economics.
 
 At the same time, the CIM avoids naming concrete providers or products. This is important for
-evaluating whether Varka can keep business semantics clean while still producing
+evaluating whether MODRISS can keep business semantics clean while still producing
 transformation-ready models.
 
 ## Evaluation Use

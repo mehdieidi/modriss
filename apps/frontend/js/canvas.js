@@ -1137,13 +1137,13 @@ function moveG6ConnectionDrag(sourceId, targetId) {
 }
 
 function ensureCanvas() {
-  window.varkaEnsureG6Canvas = ensureCanvas;
+  window.modrissEnsureG6Canvas = ensureCanvas;
   const renderer =
     state.modelingConfig.config?.diagramEditor?.renderer ||
-    window.varkaFrontendBoot?.renderer ||
+    window.modrissFrontendBoot?.renderer ||
     "antv-g6";
-  window.varkaG6State = {
-    ...(window.varkaG6State || {}),
+  window.modrissG6State = {
+    ...(window.modrissG6State || {}),
     ensureCalled: true,
     rendererRequested: renderer,
     activeType: state.activeType,
@@ -1213,7 +1213,7 @@ export function getModelingRendererDebug() {
   const canvasGrid = el.canvasGrid;
   return {
     renderer: canvasGrid?.dataset?.renderer || "",
-    ensureCalled: Boolean(window.varkaG6State?.ensureCalled),
+    ensureCalled: Boolean(window.modrissG6State?.ensureCalled),
     g6Available: isCanvasRendererAvailable(),
     mounted: Boolean(editor),
     graphReady: Boolean(editor?.graph),
@@ -1232,8 +1232,8 @@ export function getModelingRendererDebug() {
       : null,
     hostChildren: host?.children?.length || 0,
     hasCanvasDescendant: Boolean(host?.querySelector?.("canvas")),
-    lastError: window.varkaG6State?.lastError || "",
-    g6State: window.varkaG6State || null,
+    lastError: window.modrissG6State?.lastError || "",
+    g6State: window.modrissG6State || null,
   };
 }
 
@@ -1399,7 +1399,7 @@ function diagramBounds({ forFit = false } = {}) {
     width: Math.max(1, maxX - minX),
     height: Math.max(1, maxY - minY),
   };
-  window.varkaLastDiagramFitBounds = {
+  window.modrissLastDiagramFitBounds = {
     activeType: state.activeType,
     nodeCount: state.diagram.nodes.length,
     edgeCount: state.diagram.connections.length,
@@ -2113,10 +2113,10 @@ export function renderPalette() {
         state.paletteDragType = type;
         event.dataTransfer.effectAllowed = "copy";
         event.dataTransfer.setData(
-          "application/x-varka-palette-item",
+          "application/x-modriss-palette-item",
           JSON.stringify({ level: state.activeType, type }),
         );
-        event.dataTransfer.setData("application/x-varka-node-type", type);
+        event.dataTransfer.setData("application/x-modriss-node-type", type);
         event.dataTransfer.setData("text/node-type", type);
         event.dataTransfer.setData("text/plain", type);
       });
@@ -2946,13 +2946,13 @@ export function setupDnD() {
     e.preventDefault();
     let paletteItem = null;
     try {
-      paletteItem = JSON.parse(e.dataTransfer.getData("application/x-varka-palette-item"));
+      paletteItem = JSON.parse(e.dataTransfer.getData("application/x-modriss-palette-item"));
     } catch {
       paletteItem = null;
     }
     const type = String(
       paletteItem?.type ||
-        e.dataTransfer.getData("application/x-varka-node-type") ||
+        e.dataTransfer.getData("application/x-modriss-node-type") ||
         e.dataTransfer.getData("text/node-type") ||
         state.paletteDragType ||
         "",

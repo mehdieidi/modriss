@@ -2,7 +2,7 @@
 
 Updated: 2026-09-09
 
-Varka exposes one chatbot and uses three internal outcomes. This document compares their current
+MODRISS exposes one chatbot and uses three internal outcomes. This document compares their current
 evidence boundary; exact immutable run details are in `live-eval-gate-report.md` and reports under
 `target/live-eval/`.
 

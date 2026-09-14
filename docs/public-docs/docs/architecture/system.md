@@ -56,4 +56,4 @@ modeling configuration rather than maintaining a second independent metamodel.
 - Assistant mutation is structurally gated only; explicit EVL validation is a separate platform
   workflow. PSM assistant sessions are currently out of scope.
 - Floci is the default emulator for generated AWS projects; LocalStack remains selectable for
-  compatibility testing. Neither emulator runs Varka itself.
+  compatibility testing. Neither emulator runs MODRISS itself.

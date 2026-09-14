@@ -1,6 +1,6 @@
-# Varka
+# MODRISS
 
-Varka is an AI-assisted, model-driven low-code platform for designing and producing serverless
+MODRISS is an AI-assisted, model-driven low-code platform for designing and producing serverless
 software. It combines formal domain-specific modeling languages, visual editing, semantic
 validation, model transformation, artifact generation, and bounded AI assistance in one workflow.
 
@@ -13,7 +13,7 @@ flowchart LR
     PSM --> ART["Generated project<br/>Infrastructure, code, contracts, tests, docs"]
 ```
 
-## What Varka Provides
+## What MODRISS Provides
 
 - A browser-based visual editor for CIM, PIM, and PSM models.
 - Formal metamodels authored in Emfatic and compiled to Ecore.
@@ -35,11 +35,11 @@ flowchart LR
 | Integrate through HTTP               | [REST API](reference/rest-api.md)                                |
 | Use the assistant safely             | [AI Assistant](guides/ai-assistant.md)                           |
 | Extend a metamodel or transformation | [Change Guide](contributing/change-guide.md)                     |
-| Operate or troubleshoot Varka        | [Deployment](operations/deployment.md)                           |
+| Operate or troubleshoot MODRISS      | [Deployment](operations/deployment.md)                           |
 
 ## Current Scope
 
-Varka currently targets AWS serverless architecture. The formal pipeline, backend services,
+MODRISS currently targets AWS serverless architecture. The formal pipeline, backend services,
 frontend workbenches, storage, assistant, CLI tools, diagram editing, impact-analysis APIs,
 and generated AWS project templates are implemented. Admin workspace APIs under `/api/admin/**`
 remain planned endpoints.

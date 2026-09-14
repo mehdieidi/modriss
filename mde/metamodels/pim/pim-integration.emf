@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/pim/integration/1.0", prefix="integration")
+@namespace(uri="https://modriss.org/pim/integration/1.0", prefix="integration")
 package integration;
 
 import "../shared/kernel.ecore";

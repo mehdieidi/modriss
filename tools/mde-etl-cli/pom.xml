@@ -35,7 +35,7 @@
                 </transformer>
                 <transformer
                   implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>io.mehdieidi.varka.mdeetlcli.MdeEtlCliApplication</mainClass>
+                  <mainClass>io.mehdieidi.modriss.mdeetlcli.MdeEtlCliApplication</mainClass>
                 </transformer>
               </transformers>
             </configuration>
@@ -68,7 +68,7 @@
   <packaging>jar</packaging>
 
   <parent>
-    <artifactId>varka</artifactId>
+    <artifactId>modriss</artifactId>
     <groupId>io.mehdieidi</groupId>
     <relativePath>../../pom.xml</relativePath>
     <version>0.0.1-SNAPSHOT</version>

@@ -4,7 +4,7 @@
   "metamodelRef": {
     "level": "cim",
     "ecore": "mde/metamodels/cim/cim-combined.ecore",
-    "nsUri": "https://varka.org/cim/1.0"
+    "nsUri": "https://modriss.org/cim/1.0"
   },
   "elementVisualDefaults": {
     "icon": "category",

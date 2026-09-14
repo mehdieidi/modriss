@@ -1,5 +1,5 @@
 {
-  "processId": "varka.pim.modeling",
+  "processId": "modriss.pim.modeling",
   "spemVersion": "2.0",
   "level": "pim",
   "displayName": "PIM",
@@ -131,7 +131,7 @@
     }
   ],
   "processEngine": {
-    "id": "varka.pim.engine",
+    "id": "modriss.pim.engine",
     "displayName": "PIM Modeling Engine",
     "description": "Revolves through service-slice framing → contracts/data → compute/API → integration → assurance → readiness per service slice.",
     "incrementUnit": "service-slice",

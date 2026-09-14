@@ -6,7 +6,7 @@ flowchart LR
     owner["Person: Project Owner<br/>Manages projects, members, and permissions"]
     operator["Person: Platform Operator<br/>Runs PostgreSQL, backend, AI configuration, and deployments"]
 
-    subgraph varka["Software System: Varka"]
+    subgraph modriss["Software System: MODRISS"]
         system["AI-assisted model-driven low-code platform<br/>Models, validates, transforms, and generates AWS serverless systems"]
     end
 

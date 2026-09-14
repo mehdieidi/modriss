@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/cim/process-policy/1.0", prefix="cimprocess")
+@namespace(uri="https://modriss.org/cim/process-policy/1.0", prefix="cimprocess")
 package cimprocess;
 
 import "../shared/kernel.ecore";

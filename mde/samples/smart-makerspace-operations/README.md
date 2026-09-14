@@ -1,6 +1,6 @@
 # Smart Makerspace Operations Case Study
 
-This directory is an executable end-to-end Varka case study for a deployable workshop demo.
+This directory is an executable end-to-end MODRISS case study for a deployable workshop demo.
 
 ## Model pipeline
 

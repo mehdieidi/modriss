@@ -29,7 +29,7 @@ audit, and SSE replay are deterministic and shared by both mutation strategies.
 
 ## Routing behavior
 
-`VARKA_AI_MODE=unified` is the normal production configuration. `agent-test` and
+`MODRISS_AI_MODE=unified` is the normal production configuration. `agent-test` and
 `conceptual-test` exist only to isolate strategies in acceptance tests. Parsing is strict; any
 other value prevents startup.
 
@@ -116,7 +116,7 @@ spending the remaining generation budget before the complete compiler reports th
 all private slices are staged, an independent bounded LLM verdict can report `SATISFIED`, `PARTIAL`,
 or `MISSING` for every obligation and cite exact staged object IDs and structured
 source-feature-target relationship evidence. This verdict runs only when
-`VARKA_AI_LLM_REVIEW_ENABLED=true`; the backend then verifies every cited ID and relationship. When
+`MODRISS_AI_LLM_REVIEW_ENABLED=true`; the backend then verifies every cited ID and relationship. When
 review is disabled, no verdict or judge call occurs and structural Ecore conformance alone gates
 the candidate. There is no semantic fallback, and neither mode invokes EVL validation.
 
@@ -230,13 +230,13 @@ only one final atomic checkpoint.
 The active normal-mode deployment is:
 
 ```dotenv
-VARKA_AI_PROVIDER=openai
-VARKA_AI_MODEL=Gemma-4-31B-IT
-VARKA_AI_MODE=unified
-VARKA_AI_METAMODEL_MODE=normal
-VARKA_AI_OPENAI_PROTOCOL=json_schema
-VARKA_AI_NATIVE_TOOLS_PREFERRED=false
-VARKA_AI_FORCED_TOOL_CHOICE_RELIABLE=false
+MODRISS_AI_PROVIDER=openai
+MODRISS_AI_MODEL=Gemma-4-31B-IT
+MODRISS_AI_MODE=unified
+MODRISS_AI_METAMODEL_MODE=normal
+MODRISS_AI_OPENAI_PROTOCOL=json_schema
+MODRISS_AI_NATIVE_TOOLS_PREFERRED=false
+MODRISS_AI_FORCED_TOOL_CHOICE_RELIABLE=false
 ```
 
 `json_schema` selects structured JSON content in the provider adapter. For the Arvan endpoint this
@@ -256,7 +256,7 @@ object capacity is derived from the remaining call budget and
 slice size and is capped by the 64-object schema. Stage-specific completion limits keep every
 response bounded below the provider's broad global maximum.
 
-LLM review is configurable with `VARKA_AI_LLM_REVIEW_ENABLED`. When disabled, no reviewer or judge
+LLM review is configurable with `MODRISS_AI_LLM_REVIEW_ENABLED`. When disabled, no reviewer or judge
 call runs and only structural Ecore/EMF conformance gates the candidate. Progressive conceptual
 work is durable: one bounded automatic recovery pass can reuse the obligation ledger, selected
 types, blueprint, and generated objects without requiring a user-visible Resume action.

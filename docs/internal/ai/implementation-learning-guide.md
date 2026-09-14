@@ -1,4 +1,4 @@
-# How the Varka AI assistant works
+# How the MODRISS AI assistant works
 
 Updated: 2026-09-09
 
@@ -34,7 +34,7 @@ only restricts the legal workflow based on model state and safety facts.
    obligation/source allocations, and slices.
 4. `conceptual_instance_slice` generates private object payloads. Large blueprints start at two
    objects per slice and fall back to one after a length truncation.
-5. When `VARKA_AI_LLM_REVIEW_ENABLED=true`, `conceptual_obligation_review` independently judges
+5. When `MODRISS_AI_LLM_REVIEW_ENABLED=true`, `conceptual_obligation_review` independently judges
    every obligation and cites exact staged object IDs and relationship triples. The validated Gemma
    profile currently sets this to `false`.
 6. The compiler resolves IDs, attributes, containment, references, required features, and evidence

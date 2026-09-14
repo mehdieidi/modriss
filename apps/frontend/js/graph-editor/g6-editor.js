@@ -8,8 +8,8 @@ import {
   cssVar,
   G6_BASE_EDGE_TYPE,
   G6_BASE_NODE_TYPE,
-  VARKA_EDGE_TYPE,
-  VARKA_NODE_TYPE,
+  MODRISS_EDGE_TYPE,
+  MODRISS_NODE_TYPE,
   nodeSizeForDiagram,
 } from "./g6-style.js";
 import {
@@ -81,8 +81,8 @@ export function isG6Available() {
 }
 
 function updateDebugState(patch = {}) {
-  window.varkaG6State = {
-    ...(window.varkaG6State || {}),
+  window.modrissG6State = {
+    ...(window.modrissG6State || {}),
     ...patch,
     available: isG6Available(),
     mounted: Boolean(editor?.graph),
@@ -91,7 +91,7 @@ function updateDebugState(patch = {}) {
 }
 
 function installDebugProbe() {
-  window.varkaG6Debug = () => {
+  window.modrissG6Debug = () => {
     const host = el.g6EditorHost;
     const graph = editor?.graph || null;
     const hostRect = host?.getBoundingClientRect?.();
@@ -102,7 +102,7 @@ function installDebugProbe() {
       graphSize = `getSize failed: ${error.message}`;
     }
     return {
-      ...(window.varkaG6State || {}),
+      ...(window.modrissG6State || {}),
       activeType: state.activeType,
       stateNodes: state.diagram.nodes.length,
       stateEdges: state.diagram.connections.length,
@@ -460,7 +460,7 @@ function _notationGlyphPath(geometry, left, top, width, height) {
   return null;
 }
 
-function registerVarkaG6Extensions() {
+function registerModrissG6Extensions() {
   if (extensionsRegistered) {
     return;
   }
@@ -474,7 +474,7 @@ function registerVarkaG6Extensions() {
   }
   const { register, ExtensionCategory, Rect, BaseEdge } = api;
 
-  class VarkaNode extends Rect {
+  class MODRISSNode extends Rect {
     render(attributes = this.parsedAttributes, container) {
       const size = attributes.size || [attributes.width || 120, attributes.height || 118];
       const width = Number(size[0]) || Number(attributes.width) || 120;
@@ -610,7 +610,7 @@ function registerVarkaG6Extensions() {
     }
   }
 
-  class VarkaEdge extends BaseEdge {
+  class MODRISSEdge extends BaseEdge {
     getKeyPath(attributes) {
       const routeStart = attributes.routeStart;
       const routeEnd = attributes.routeEnd;
@@ -794,8 +794,8 @@ function registerVarkaG6Extensions() {
     }
   }
 
-  register(ExtensionCategory.NODE, VARKA_NODE_TYPE, VarkaNode);
-  register(ExtensionCategory.EDGE, VARKA_EDGE_TYPE, VarkaEdge);
+  register(ExtensionCategory.NODE, MODRISS_NODE_TYPE, MODRISSNode);
+  register(ExtensionCategory.EDGE, MODRISS_EDGE_TYPE, MODRISSEdge);
   extensionsRegistered = true;
 }
 
@@ -1822,9 +1822,9 @@ export function mountG6Editor(container, { callbacks = {}, mapper = {} } = {}) {
     throw new Error("AntV G6 is not available");
   }
   try {
-    registerVarkaG6Extensions();
+    registerModrissG6Extensions();
   } catch (error) {
-    console.warn("Varka G6 custom extensions unavailable; using built-in G6 shapes", error);
+    console.warn("MODRISS G6 custom extensions unavailable; using built-in G6 shapes", error);
     updateDebugState({
       lastExtensionError: error.message || String(error),
     });
@@ -2670,7 +2670,7 @@ export function fitG6CanvasToDiagram(bounds = null, { fit = false, fitArea = nul
       fit && area
         ? Math.max(minScale, Math.min(maxScale, rawScale))
         : state.viewport.scale || readGraphZoom() || 1;
-    window.varkaLastFitAudit = {
+    window.modrissLastFitAudit = {
       activeType: state.activeType,
       nodeCount,
       graphNodeCount: graphNodes.length,

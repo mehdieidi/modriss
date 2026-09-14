@@ -1,4 +1,4 @@
-# SPEM 2.0 Method Content: Varka Agile MDE Methodologies
+# SPEM 2.0 Method Content: MODRISS Agile MDE Methodologies
 
 Formal method content for CIM, PIM, AWS PSM, and end-to-end modeling aligned with
 [SPEM 2.0](https://www.omg.org/spec/SPEM/2.0) and executable via
@@ -12,19 +12,19 @@ metadata; it _is_ the iteration.
 
 Each level-specific process embeds `processEngine`:
 
-| Level      | Engine ID                 | Delivers per cycle                              |
-| ---------- | ------------------------- | ----------------------------------------------- |
-| CIM        | `varka.cim.engine`        | One capability / bounded-context slice          |
-| PIM        | `varka.pim.engine`        | One serverless service slice                    |
-| PSM        | `varka.psm.engine`        | One deployable AWS slice                        |
-| End-to-end | `varka.end-to-end.engine` | Full CIM → PIM → PSM → artifacts vertical slice |
+| Level      | Engine ID                   | Delivers per cycle                              |
+| ---------- | --------------------------- | ----------------------------------------------- |
+| CIM        | `modriss.cim.engine`        | One capability / bounded-context slice          |
+| PIM        | `modriss.pim.engine`        | One serverless service slice                    |
+| PSM        | `modriss.psm.engine`        | One deployable AWS slice                        |
+| End-to-end | `modriss.end-to-end.engine` | Full CIM → PIM → PSM → artifacts vertical slice |
 
 ### Engine structure
 
 ```json
 {
   "processEngine": {
-    "id": "varka.cim.engine",
+    "id": "modriss.cim.engine",
     "incrementUnit": "capability-slice",
     "deliverable": { "name": "...", "description": "..." },
     "cycle": [ { "id": "...", "type": "phase", "phaseIds": ["..."] } ],

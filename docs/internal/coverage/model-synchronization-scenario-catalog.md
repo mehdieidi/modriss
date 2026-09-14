@@ -271,7 +271,7 @@ newer, larger, or marked `manuallyMaintained`.
 ### Mixed decisions
 
 A session can keep user changes for some conflicts and take generated changes for others. After all
-decisions are supplied, Varka must replay the same normalized three-way comparison, apply decisions
+decisions are supplied, MODRISS must replay the same normalized three-way comparison, apply decisions
 and dependencies, validate the complete candidate, and commit atomically. A decision is not a
 request to bypass structural or semantic validity.
 

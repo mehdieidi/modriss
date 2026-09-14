@@ -1,6 +1,6 @@
 import { emptyDiagram } from "./utils.js";
 
-const LAST_MODELING_TYPE_STORAGE_PREFIX = "varka.lastModelingType";
+const LAST_MODELING_TYPE_STORAGE_PREFIX = "modriss.lastModelingType";
 
 function modelingTypeStorageKey(projectId) {
   const userId = state.auth?.user?.id || state.auth?.user?.email || "anonymous";

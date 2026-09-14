@@ -5,10 +5,10 @@ ALTER TABLE theme_settings
 
 UPDATE theme_settings
 SET active_light_profile_id = COALESCE(
-        (SELECT id FROM theme_profiles WHERE id = 'varka-light'),
+        (SELECT id FROM theme_profiles WHERE id = 'modriss-light'),
         active_profile_id
     ),
-    active_dark_profile_id = COALESCE(active_profile_id, 'varka-dark');
+    active_dark_profile_id = COALESCE(active_profile_id, 'modriss-dark');
 
 ALTER TABLE theme_settings
     ALTER COLUMN active_light_profile_id SET NOT NULL,

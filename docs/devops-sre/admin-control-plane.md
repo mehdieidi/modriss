@@ -15,20 +15,20 @@ Admin access is separate from ordinary application authentication.
   disable guests and revoke their sessions through the same audited controls used for registered users.
   An `ADMIN` can also permanently delete a guest and the projects it owns; this is audited and
   intentionally unavailable for registered accounts.
-- Bootstrap access is controlled by `VARKA_ADMIN_BOOTSTRAP_ENABLED` and
-  `VARKA_ADMIN_BOOTSTRAP_EMAILS`, and `VARKA_ADMIN_BOOTSTRAP_TOKEN`.
+- Bootstrap access is controlled by `MODRISS_ADMIN_BOOTSTRAP_ENABLED` and
+  `MODRISS_ADMIN_BOOTSTRAP_EMAILS`, and `MODRISS_ADMIN_BOOTSTRAP_TOKEN`.
 
 Bootstrap flow:
 
-1. Set `VARKA_ADMIN_BOOTSTRAP_ENABLED=true` in `.env`.
-2. Set `VARKA_ADMIN_BOOTSTRAP_EMAILS` to the first administrator email.
-3. Set `VARKA_ADMIN_BOOTSTRAP_TOKEN` to a long random setup token.
+1. Set `MODRISS_ADMIN_BOOTSTRAP_ENABLED=true` in `.env`.
+2. Set `MODRISS_ADMIN_BOOTSTRAP_EMAILS` to the first administrator email.
+3. Set `MODRISS_ADMIN_BOOTSTRAP_TOKEN` to a long random setup token.
 4. Start the stack.
 5. Register or login as one of those emails in the user app.
 6. Open `http://admin.localhost:8088`.
 7. Enter the same email, password, and one-time setup token.
 8. Grant additional admin roles from the Users view.
-9. Set `VARKA_ADMIN_BOOTSTRAP_ENABLED=false` and remove the bootstrap email and token once durable
+9. Set `MODRISS_ADMIN_BOOTSTRAP_ENABLED=false` and remove the bootstrap email and token once durable
    admin roles exist.
 
 Bootstrap is intentionally one-time: it only grants the first `ADMIN` role while `admin_roles` is
@@ -83,7 +83,7 @@ preserve domain invariants:
 - Put the admin app behind HTTPS.
 - Restrict admin access by network policy, VPN, identity-aware proxy, or equivalent control.
 - Set a strong `GRAFANA_ADMIN_PASSWORD`; do not use the local default in production.
-- Keep `VARKA_ADMIN_BOOTSTRAP_ENABLED=false` and `VARKA_ADMIN_BOOTSTRAP_TOKEN` empty after the
+- Keep `MODRISS_ADMIN_BOOTSTRAP_ENABLED=false` and `MODRISS_ADMIN_BOOTSTRAP_TOKEN` empty after the
   first administrator is created.
 - Do not expose PostgreSQL, Loki, Prometheus, or Actuator directly to the public internet.
 - Review audit events regularly and export them to a longer-retention store if required.

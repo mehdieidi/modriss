@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/cim/governance/1.0", prefix="cimgov")
+@namespace(uri="https://modriss.org/cim/governance/1.0", prefix="cimgov")
 package cimgov;
 
 import "../shared/kernel.ecore";

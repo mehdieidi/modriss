@@ -1,6 +1,6 @@
 # CIM Methodology Activity Diagram
 
-This activity view shows one capability-slice revolution of `varka.cim.modeling`.
+This activity view shows one capability-slice revolution of `modriss.cim.modeling`.
 
 ```mermaid
 flowchart TD

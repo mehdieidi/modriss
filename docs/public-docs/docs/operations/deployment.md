@@ -91,7 +91,7 @@ Required changes from local defaults:
 
 - Use strong random `POSTGRES_PASSWORD`.
 - Use strong `GRAFANA_ADMIN_PASSWORD`.
-- Set `VARKA_ALLOWED_ORIGINS` to the exact HTTPS app, admin, and API origins.
+- Set `MODRISS_ALLOWED_ORIGINS` to the exact HTTPS app, admin, and API origins.
 - Configure AI provider keys through environment variables or a secret manager.
 - Temporarily enable admin bootstrap only for first admin setup.
 - Disable admin bootstrap immediately after the first admin role is assigned.
@@ -101,10 +101,10 @@ Required changes from local defaults:
 Example:
 
 ```env
-VARKA_ALLOWED_ORIGINS=https://example.com,https://editor.example.com,https://admin.example.com,https://api.example.com
-VARKA_ADMIN_BOOTSTRAP_ENABLED=true
-VARKA_ADMIN_BOOTSTRAP_EMAILS=owner@example.com
-VARKA_ADMIN_BOOTSTRAP_TOKEN=replace-with-long-random-token
+MODRISS_ALLOWED_ORIGINS=https://example.com,https://editor.example.com,https://admin.example.com,https://api.example.com
+MODRISS_ADMIN_BOOTSTRAP_ENABLED=true
+MODRISS_ADMIN_BOOTSTRAP_EMAILS=owner@example.com
+MODRISS_ADMIN_BOOTSTRAP_TOKEN=replace-with-long-random-token
 ```
 
 ## Caddy Production Routing

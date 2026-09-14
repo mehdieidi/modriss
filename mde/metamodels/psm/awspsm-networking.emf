@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/awspsm/networking/1.0", prefix="awspsmnetworking")
+@namespace(uri="https://modriss.org/awspsm/networking/1.0", prefix="awspsmnetworking")
 package awspsmnetworking;
 
 import "../shared/kernel.ecore";

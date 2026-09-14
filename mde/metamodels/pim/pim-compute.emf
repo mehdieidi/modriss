@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/pim/compute/1.0", prefix="compute")
+@namespace(uri="https://modriss.org/pim/compute/1.0", prefix="compute")
 package compute;
 
 import "../shared/kernel.ecore";

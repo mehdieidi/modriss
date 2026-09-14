@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import workspaceScreenshot from './assets/varka-workspace.png'
+import workspaceScreenshot from './assets/modriss-workspace.png'
 import wolfLogo from './assets/wolf.png'
 import './styles.css'
 
 const appUrl = import.meta.env.VITE_APP_URL ?? 'http://127.0.0.1:8082'
 const backendUrl = (import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://127.0.0.1:8080').replace(/\/$/, '')
 const publicIpLookupUrl = import.meta.env.VITE_PUBLIC_IP_LOOKUP_URL ?? 'https://api.ipify.org?format=json'
-const docsUrl = import.meta.env.VITE_DOCS_URL ?? 'https://github.com/mehdieidi/varka/tree/main/docs/public-docs'
-const githubUrl = import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/mehdieidi/varka'
+const docsUrl = import.meta.env.VITE_DOCS_URL ?? 'https://github.com/mehdieidi/modriss/tree/main/docs/public-docs'
+const githubUrl = import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/mehdieidi/modriss'
 const labUrl = 'https://www.sharif.ir/en/web/me_ce/home'
 const universityProfileUrl = 'https://www.sharif.ir/en/web/me_ce/w/mehdi-eidi'
 const researcherUrl = 'https://mehdieidi.github.io/'
@@ -97,9 +97,9 @@ function App() {
 
   return <main id="top">
     <nav className="nav" aria-label="Main navigation">
-      <a className="brand" href="#top" onClick={closeMenu} aria-label="Varka research project home">
+      <a className="brand" href="#top" onClick={closeMenu} aria-label="MODRISS research project home">
         <img src={wolfLogo} alt="" />
-        <span>VARKA<small>Research project</small></span>
+        <span>MODRISS<small>Research project</small></span>
       </a>
       <button className="menu" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-label="Toggle navigation"><span /><span /></button>
       <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
@@ -108,7 +108,7 @@ function App() {
         <a href="#framework" onClick={closeMenu}>Framework</a>
         <a href="#publication" onClick={closeMenu}>Publication</a>
         <a href={docsUrl}>Documentation</a>
-        <a className="nav-icon" href={githubUrl} aria-label="Varka source code on GitHub"><Icon name="github" size={18} /></a>
+        <a className="nav-icon" href={githubUrl} aria-label="MODRISS source code on GitHub"><Icon name="github" size={18} /></a>
       </div>
     </nav>
 
@@ -116,7 +116,7 @@ function App() {
       <div className="hero-copy">
         <p className="kicker"><span /> MSc thesis research · Software engineering</p>
         <h1>A model-driven methodology for <i>serverless software development</i></h1>
-        <p className="lede">Varka is an ongoing academic research project on how serverless software can be developed through an explicit process, formal modeling languages, model transformations, and code generation. The work is conducted at the Methodology Engineering Laboratory, Sharif University of Technology.</p>
+        <p className="lede">MODRISS is an ongoing academic research project on how serverless software can be developed through an explicit process, formal modeling languages, model transformations, and code generation. The work is conducted at the Methodology Engineering Laboratory, Sharif University of Technology.</p>
         <div className="hero-actions">
           <a className="button primary" href="#research">Read about the research <Icon name="arrow" size={17} /></a>
           <a className="button secondary" href={appUrl}>Open the research prototype</a>
@@ -154,7 +154,7 @@ function App() {
         <p>In this research, a methodology contains two related parts. The process explains how the development work is carried out. The modeling framework provides the languages, rules, transformations, and tools used to perform that work.</p>
       </div>
 
-      <div className="method-equation" aria-label="Varka methodology consists of a development process and a modeling framework">
+      <div className="method-equation" aria-label="MODRISS methodology consists of a development process and a modeling framework">
         <article>
           <div className="equation-icon"><Icon name="process" size={25} /></div>
           <p>Part A</p><h3>Development process</h3>
@@ -216,8 +216,8 @@ function App() {
         <p>The prototype provides project workspaces, graphical modeling editors, process guidance, model import and export, impact analysis, transformations, generated-artefact inspection, and a conversational modeling assistant.</p>
       </div>
       <figure className="workspace-shot">
-        <img src={workspaceScreenshot} alt="Varka browser-based CIM modeling workbench with a visual process model, modeling palette, lifecycle actions, and conversational assistant." />
-        <figcaption><span>Figure 1.</span> The Varka modeling workbench, showing the CIM editor and the LLM-based modeling assistant.</figcaption>
+        <img src={workspaceScreenshot} alt="MODRISS browser-based CIM modeling workbench with a visual process model, modeling palette, lifecycle actions, and conversational assistant." />
+        <figcaption><span>Figure 1.</span> The MODRISS modeling workbench, showing the CIM editor and the LLM-based modeling assistant.</figcaption>
       </figure>
     </section>
 
@@ -241,7 +241,7 @@ function App() {
         <div className="paper-meta"><span>Conference paper</span><b>2026</b></div>
         <div className="paper-main">
           <div><p>MODELSWARD 2026 · 14th International Conference on Model-Based Software and Systems Engineering</p><h2>Model-Driven Approaches for Serverless Software Development: Evaluation and Future Directions</h2><p className="authors">Mehdi Eidi and Raman Ramsin</p></div>
-          <div className="abstract"><h3>Relation to Varka</h3><p>The paper reviews selected model-driven approaches for serverless and microservices development through a process-centered template. Its evaluation framework identifies gaps in existing serverless approaches and provides part of the research basis for developing the Varka methodology.</p><dl><div><dt>Pages</dt><dd>560–567</dd></div><div><dt>DOI</dt><dd>10.5220/0014634200004058</dd></div></dl></div>
+          <div className="abstract"><h3>Relation to MODRISS</h3><p>The paper reviews selected model-driven approaches for serverless and microservices development through a process-centered template. Its evaluation framework identifies gaps in existing serverless approaches and provides part of the research basis for developing the MODRISS methodology.</p><dl><div><dt>Pages</dt><dd>560–567</dd></div><div><dt>DOI</dt><dd>10.5220/0014634200004058</dd></div></dl></div>
         </div>
         <a className="paper-link" href={paperUrl}>View publication <Icon name="arrow" size={17} /></a>
       </article>
@@ -253,14 +253,14 @@ function App() {
         <h2>An evolving research methodology and its executable artefact</h2>
       </div>
       <div>
-        <p>Varka is under active research and development. The repository includes the three modeling languages, formal validation rules, transformation profiles, code generation, modeling subprocesses, lifecycle material, and the web platform. Evaluation and refinement of the methodology and assistant continue as part of the thesis work.</p>
+        <p>MODRISS is under active research and development. The repository includes the three modeling languages, formal validation rules, transformation profiles, code generation, modeling subprocesses, lifecycle material, and the web platform. Evaluation and refinement of the methodology and assistant continue as part of the thesis work.</p>
         <p>Generated projects are research outputs and engineering baselines. They still require human review, completion of recorded manual actions, testing, and deployment-specific decisions.</p>
         <div className="status-links"><a href={githubUrl}><Icon name="github" size={17} /> Source repository</a><a href={docsUrl}><Icon name="book" size={17} /> Research documentation</a><a href={appUrl}><Icon name="model" size={17} /> Modeling prototype</a></div>
       </div>
     </section>
 
     <footer>
-      <div className="footer-brand"><img src={wolfLogo} alt="" /><div><b>VARKA</b><span>Model-driven methodology for serverless software development</span></div></div>
+      <div className="footer-brand"><img src={wolfLogo} alt="" /><div><b>MODRISS</b><span>Model-driven methodology for serverless software development</span></div></div>
       <p>An MSc thesis research project at the Methodology Engineering Laboratory, Department of Computer Engineering, Sharif University of Technology.</p>
       <div className="footer-links"><a href={labUrl}>Laboratory</a><a href={universityProfileUrl}>University profile</a><a href={researcherUrl}>Researcher</a><a href={paperUrl}>Publication</a></div>
     </footer>

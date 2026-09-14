@@ -131,10 +131,10 @@ operation isTargetModelReference(element) {
     return false;
   }
   var nsUri = element.eClass().ePackage.nsURI.asString();
-  if (nsUri = "https://varka.org/kernel/1.0") {
+  if (nsUri = "https://modriss.org/kernel/1.0") {
     return true;
   }
-  return nsUri.startsWith("https://varka.org/pim/");
+  return nsUri.startsWith("https://modriss.org/pim/");
 }
 
 /** Adds or records append target affected elements. */

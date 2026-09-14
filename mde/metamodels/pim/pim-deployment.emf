@@ -1,4 +1,4 @@
-@namespace(uri="https://varka.org/pim/deployment/1.0", prefix="deployment")
+@namespace(uri="https://modriss.org/pim/deployment/1.0", prefix="deployment")
 package deployment;
 
 import "../shared/kernel.ecore";

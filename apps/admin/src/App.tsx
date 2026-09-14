@@ -91,7 +91,7 @@ const navItems: Array<{ view: View; label: string; icon: ReactNode }> = [
 ];
 
 export function App() {
-  const [token, setToken] = useState(() => localStorage.getItem("varka_admin_token") || "");
+  const [token, setToken] = useState(() => localStorage.getItem("modriss_admin_token") || "");
   const [data, setData] = useState<DataState>(emptyData);
   const [view, setView] = useState<View>("overview");
   const [query, setQuery] = useState("");
@@ -160,11 +160,11 @@ export function App() {
 
   function saveToken(value: string) {
     setToken(value);
-    localStorage.setItem("varka_admin_token", value);
+    localStorage.setItem("modriss_admin_token", value);
   }
 
   function logout() {
-    localStorage.removeItem("varka_admin_token");
+    localStorage.removeItem("modriss_admin_token");
     setToken("");
     setData(emptyData);
   }
@@ -188,7 +188,7 @@ export function App() {
             <Shield size={22} />
           </div>
           <div>
-            <strong>Varka Admin</strong>
+            <strong>MODRISS Admin</strong>
             <span>Control plane</span>
           </div>
         </div>
@@ -334,7 +334,7 @@ function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
             <Shield size={25} />
           </div>
           <div>
-            <strong>Varka Admin</strong>
+            <strong>MODRISS Admin</strong>
             <span>Protected operations workspace</span>
           </div>
         </div>

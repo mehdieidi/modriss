@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore">
-  <ecore:EPackage name="pim" nsURI="https://varka.org/pim/1.0" nsPrefix="pim">
+  <ecore:EPackage name="pim" nsURI="https://modriss.org/pim/1.0" nsPrefix="pim">
     <eClassifiers xsi:type="ecore:EClass" name="PIMModel" eSuperTypes="#/1/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="domainName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="architectureStyle" lowerBound="1"
@@ -56,7 +56,7 @@
           containment="true"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="kernel" nsURI="https://varka.org/kernel/1.0" nsPrefix="kernel">
+  <ecore:EPackage name="kernel" nsURI="https://modriss.org/kernel/1.0" nsPrefix="kernel">
     <eClassifiers xsi:type="ecore:EEnum" name="Priority">
       <eLiterals name="LOW"/>
       <eLiterals name="MEDIUM" value="1"/>
@@ -344,7 +344,7 @@
           eType="#/1/ModelElement"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="api" nsURI="https://varka.org/pim/api/1.0" nsPrefix="api">
+  <ecore:EPackage name="api" nsURI="https://modriss.org/pim/api/1.0" nsPrefix="api">
     <eClassifiers xsi:type="ecore:EClass" name="Api" eSuperTypes="#/1/TraceableElement #/1/DeployableElement #/1/FlowEndpoint #/1/PolicyTarget #/1/ProtectedResource #/1/ConfigurableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="publicName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="version" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -408,7 +408,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="errorSchema" eType="#/5/Schema"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="compute" nsURI="https://varka.org/pim/compute/1.0" nsPrefix="compute">
+  <ecore:EPackage name="compute" nsURI="https://modriss.org/pim/compute/1.0" nsPrefix="compute">
     <eClassifiers xsi:type="ecore:EClass" name="ComputeElement" abstract="true" eSuperTypes="#/1/TraceableElement #/1/FlowEndpoint #/1/PolicyTarget #/1/ProtectedResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="responsibility" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="stateless" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
@@ -488,7 +488,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="batchPolicy" eType="#/10/BatchPolicy"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="config" nsURI="https://varka.org/pim/config/1.0" nsPrefix="config">
+  <ecore:EPackage name="config" nsURI="https://modriss.org/pim/config/1.0" nsPrefix="config">
     <eClassifiers xsi:type="ecore:EClass" name="ConfigurationSet" eSuperTypes="#/1/TraceableElement #/1/DeployableElement #/1/PolicyTarget #/1/ConfigurableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="scope" lowerBound="1"
           eType="#/12/ConfigScope"/>
@@ -547,7 +547,7 @@
           eOpposite="#/4/Secret/usedForCredentials"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="contracts" nsURI="https://varka.org/pim/contracts/1.0" nsPrefix="contracts">
+  <ecore:EPackage name="contracts" nsURI="https://modriss.org/pim/contracts/1.0" nsPrefix="contracts">
     <eClassifiers xsi:type="ecore:EClass" name="Schema" eSuperTypes="#/1/TraceableElement #/1/PolicyTarget">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="semanticVersion" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="additionalPropertiesAllowed"
@@ -683,7 +683,7 @@
           eType="#/1/FunctionTarget"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="data" nsURI="https://varka.org/pim/data/1.0" nsPrefix="data">
+  <ecore:EPackage name="data" nsURI="https://modriss.org/pim/data/1.0" nsPrefix="data">
     <eClassifiers xsi:type="ecore:EClass" name="StorageElement" abstract="true" eSuperTypes="#/1/TraceableElement #/1/DeployableElement #/1/FlowEndpoint #/1/PolicyTarget #/1/ProtectedResource #/1/DataAccessTarget #/1/ConfigurableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="persistent" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="encrypted" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
@@ -845,7 +845,7 @@
           eType="#/6/AccessPattern"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="deployment" nsURI="https://varka.org/pim/deployment/1.0" nsPrefix="deployment">
+  <ecore:EPackage name="deployment" nsURI="https://modriss.org/pim/deployment/1.0" nsPrefix="deployment">
     <eClassifiers xsi:type="ecore:EClass" name="ServerlessService" eSuperTypes="#/1/TraceableElement #/1/PolicyTarget #/1/ConfigurableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="responsibility" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="ownerTeam" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -944,7 +944,7 @@
           eType="#/1/ModelElement"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="external" nsURI="https://varka.org/pim/external/1.0" nsPrefix="external">
+  <ecore:EPackage name="external" nsURI="https://modriss.org/pim/external/1.0" nsPrefix="external">
     <eClassifiers xsi:type="ecore:EClass" name="ExternalEndpoint" eSuperTypes="#/1/TraceableElement #/1/ExternalCallTarget #/1/PolicyTarget #/1/ProtectedResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="externalSystemName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="protocolFamily" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -976,7 +976,7 @@
       <eStructuralFeatures xsi:type="ecore:EReference" name="idempotency" eType="#/10/IdempotencyPolicy"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="integration" nsURI="https://varka.org/pim/integration/1.0"
+  <ecore:EPackage name="integration" nsURI="https://modriss.org/pim/integration/1.0"
       nsPrefix="integration">
     <eClassifiers xsi:type="ecore:EClass" name="IntegrationElement" abstract="true"
         eSuperTypes="#/1/TraceableElement #/1/FlowEndpoint #/1/PolicyTarget #/1/ProtectedResource">
@@ -1120,7 +1120,7 @@
           eType="#/8/ExternalAdapter"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="policy" nsURI="https://varka.org/pim/policy/1.0" nsPrefix="policy">
+  <ecore:EPackage name="policy" nsURI="https://modriss.org/pim/policy/1.0" nsPrefix="policy">
     <eClassifiers xsi:type="ecore:EClass" name="ArchitecturePolicy" abstract="true"
         eSuperTypes="#/1/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="policyScope" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -1377,7 +1377,7 @@
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="maxAgeSeconds" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EIntegerObject"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="security" nsURI="https://varka.org/pim/security/1.0" nsPrefix="security">
+  <ecore:EPackage name="security" nsURI="https://modriss.org/pim/security/1.0" nsPrefix="security">
     <eClassifiers xsi:type="ecore:EClass" name="IdentityProvider" eSuperTypes="#/1/TraceableElement #/1/DeployableElement #/1/PolicyTarget #/1/ProtectedResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="federationRequired" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="mfaRequired" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
@@ -1465,7 +1465,7 @@
           eType="#/11/Permission"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="pimtypes" nsURI="https://varka.org/pim/types/1.0" nsPrefix="pimtypes">
+  <ecore:EPackage name="pimtypes" nsURI="https://modriss.org/pim/types/1.0" nsPrefix="pimtypes">
     <eClassifiers xsi:type="ecore:EEnum" name="ArchitectureStyle">
       <eLiterals name="EVENT_DRIVEN_SERVERLESS"/>
       <eLiterals name="API_FIRST_SERVERLESS" value="1"/>
@@ -1739,7 +1739,7 @@
       <eLiterals name="UNSUPPORTED" value="4"/>
     </eClassifiers>
   </ecore:EPackage>
-  <ecore:EPackage name="workflow" nsURI="https://varka.org/pim/workflow/1.0" nsPrefix="workflow">
+  <ecore:EPackage name="workflow" nsURI="https://modriss.org/pim/workflow/1.0" nsPrefix="workflow">
     <eClassifiers xsi:type="ecore:EClass" name="Workflow" eSuperTypes="#/1/TraceableElement #/1/DeployableElement #/1/InvocationTarget #/1/WorkflowTarget #/1/SubscriptionTarget #/1/RoutingTarget #/1/FlowEndpoint #/1/PolicyTarget #/1/ProtectedResource #/1/ConfigurableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="executionSemantics" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="longRunning" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>

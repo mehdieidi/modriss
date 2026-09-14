@@ -2,7 +2,7 @@
 
 The Computation-Independent Model (CIM) captures business intent, domain structure, behavior, and
 governance without platform or implementation detail. This guide is the canonical walkthrough for
-Varka CIM modeling: **5 sequential phases**, each containing **stages** (with optional
+MODRISS CIM modeling: **5 sequential phases**, each containing **stages** (with optional
 sub-stages) and **atomic tasks** that produce SPEM artifacts bound to CIM metamodel elements. Work is
 ordered by metamodel dependencies and EVL gates, not a linear waterfall.
 
@@ -79,7 +79,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `varka.cim.modeling` · 5 phases · 25 atomic tasks · CIM metamodel coverage enforced in CI.
+Process `modriss.cim.modeling` · 5 phases · 25 atomic tasks · CIM metamodel coverage enforced in CI.
 
 ### Increment Framing (`cim.ph1`)
 
@@ -89,7 +89,7 @@ Frame the current capability slice, establish or refresh the CIM program contain
 
 **Phase entry:**
 
-- Varka project created or prior CIM increment selected for evolution
+- MODRISS project created or prior CIM increment selected for evolution
 
 **Phase exit:**
 

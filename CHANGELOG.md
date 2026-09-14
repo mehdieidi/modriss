@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial Varka platform: CIM/PIM/PSM modeling, MDE toolchain, Spring Boot backend, PostgreSQL storage, and browser frontend
+- Initial MODRISS platform: CIM/PIM/PSM modeling, MDE toolchain, Spring Boot backend, PostgreSQL storage, and browser frontend
 
-[Unreleased]: https://github.com/mehdieidi/varka/compare/v0.0.1-SNAPSHOT...HEAD
-[0.0.1-SNAPSHOT]: https://github.com/mehdieidi/varka/releases/tag/v0.0.1-SNAPSHOT
+[Unreleased]: https://github.com/mehdieidi/modriss/compare/v0.0.1-SNAPSHOT...HEAD
+[0.0.1-SNAPSHOT]: https://github.com/mehdieidi/modriss/releases/tag/v0.0.1-SNAPSHOT
