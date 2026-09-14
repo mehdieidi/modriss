@@ -752,7 +752,6 @@ footer {
 .footer-brand img {
   width: 48px;
   height: 48px;
-  filter: invert(1);
   object-fit: contain;
 }
 .footer-brand div {

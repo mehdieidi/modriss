@@ -8,8 +8,7 @@ const THEME_DARK_ICON = "/assets/icons/dark_mode.svg";
 const THEME_LIGHT_ICON = "/assets/icons/light_mode.svg";
 const THEME_PROFILE_STORAGE = "modriss.activeThemeProfileId";
 const THEME_SCHEME_STORAGE = "modriss.themeScheme";
-const APP_FAVICON_LIGHT = "/assets/icons/logo/modriss-logo.svg";
-const APP_FAVICON_DARK = "/assets/icons/logo/modriss-logo-w.svg";
+const APP_FAVICON = "/assets/icons/logo/modriss-favicon.svg";
 
 let activeProfileId = "";
 
@@ -29,7 +28,7 @@ function updateThemeToggleIcon() {
 
 function updateThemeFavicon() {
   const favicon = document.getElementById("app-favicon");
-  favicon?.setAttribute("href", isLightTheme() ? APP_FAVICON_LIGHT : APP_FAVICON_DARK);
+  favicon?.setAttribute("href", APP_FAVICON);
 }
 
 function setLightClass(light) {
