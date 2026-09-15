@@ -174,7 +174,6 @@ select[multiple] option {
   padding: 8px 0;
   background: var(--workspace-bar-bg);
   border-right: none;
-  border-top-right-radius: var(--radius-md);
   box-shadow: none;
   backdrop-filter: var(--glass-pane-blur);
   -webkit-backdrop-filter: var(--glass-pane-blur);

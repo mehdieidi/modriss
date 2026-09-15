@@ -106,9 +106,10 @@ button {
 
 .hero {
   width: min(1320px, calc(100% - 64px));
-  min-height: 690px;
+  min-height: calc(100vh - 92px);
+  min-height: calc(100svh - 92px);
   margin: auto;
-  padding: 96px 0 110px;
+  padding: clamp(28px, 5.5vh, 80px) 0;
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(330px, 0.75fr);
   gap: clamp(70px, 9vw, 140px);
@@ -116,7 +117,7 @@ button {
   position: relative;
 }
 .hero::before {
-  content: "V";
+  content: "";
   position: absolute;
   right: 19%;
   top: 20px;
@@ -145,6 +146,7 @@ button {
   background: var(--copper);
 }
 .hero h1 {
+  min-width: 0;
   max-width: 850px;
   margin: 25px 0 29px;
   font: 400 clamp(52px, 5.8vw, 82px) / 1.01 var(--serif);
@@ -192,6 +194,7 @@ button {
 }
 
 .research-card {
+  min-width: 0;
   padding: 28px;
   background: rgba(252, 251, 247, 0.8);
   border: 1px solid var(--line);
@@ -821,6 +824,33 @@ footer > p {
   }
 }
 
+@media (min-width: 761px) and (max-height: 820px) {
+  .hero {
+    padding: 24px 0 28px;
+    gap: 40px;
+  }
+  .hero h1 {
+    margin: 17px 0 20px;
+    font-size: clamp(44px, 5.4vw, 68px);
+  }
+  .lede {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .hero-actions {
+    margin-top: 25px;
+  }
+  .research-card {
+    padding: 20px 24px;
+  }
+  .research-card dl > div {
+    padding: 11px 0;
+  }
+  .text-link {
+    margin-top: 15px;
+  }
+}
+
 @media (max-width: 760px) {
   .nav {
     width: calc(100% - 36px);
@@ -872,6 +902,7 @@ footer > p {
   .hero {
     width: calc(100% - 36px);
     min-height: 0;
+    height: auto;
     padding: 70px 0 88px;
     grid-template-columns: 1fr;
     gap: 55px;
@@ -986,6 +1017,40 @@ footer > p {
     padding: 48px 18px;
     grid-template-columns: 1fr;
     gap: 30px;
+  }
+}
+
+@media (max-width: 760px) and (max-height: 740px) {
+  .hero {
+    padding: 32px 0 60px;
+  }
+  .hero h1 {
+    margin: 17px 0 20px;
+    font-size: clamp(38px, 11vw, 52px);
+  }
+  .lede {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .hero-actions {
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 350px) and (max-height: 740px) {
+  .hero {
+    padding-top: 24px;
+  }
+  .hero h1 {
+    margin: 13px 0 16px;
+    font-size: 36px;
+  }
+  .lede {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .hero-actions {
+    margin-top: 18px;
   }
 }
 
