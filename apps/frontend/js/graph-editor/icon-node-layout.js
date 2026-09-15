@@ -46,6 +46,8 @@ function appendG6WrappedText(shape, container, key, lines, options = {}) {
     fontFamily = FONT_UI,
     lineHeight = 13,
     textAlign = "center",
+    stroke = "transparent",
+    lineWidth = 0,
   } = options;
   const value = Array.isArray(lines) ? lines.filter(Boolean) : [];
   if (!value.length) {
@@ -64,6 +66,9 @@ function appendG6WrappedText(shape, container, key, lines, options = {}) {
       fontWeight,
       lineHeight,
       fill,
+      stroke,
+      lineWidth,
+      paintOrder: lineWidth > 0 ? "stroke" : undefined,
       textAlign,
       textBaseline: "top",
       pointerEvents: "none",
@@ -107,7 +112,9 @@ export function renderIconCentricNodeG6(shape, container, options = {}) {
     ? originalIcon
     : getTintedIconUrlSync(originalIcon, accent) || originalIcon;
   const kindFill = warm ? "rgba(35, 28, 18, 0.72)" : accent;
-  const nameFill = warm ? "rgba(24, 20, 14, 0.92)" : cssVar("--text", "#e3e8f2");
+  const nameFill = warm
+    ? "rgba(24, 20, 14, 0.92)"
+    : cssVar("--node-title", cssVar("--text-strong", "#f5f8fb"));
 
   const hitPath = nodeHitPathLocal(width, height, low, labelText, isContainer, kindText);
 
@@ -198,6 +205,8 @@ export function renderIconCentricNodeG6(shape, container, options = {}) {
     fontWeight: 600,
     lineHeight: layout.nameLineHeight,
     textAlign: "center",
+    stroke: cssVar("--canvas-bg", "#101a25"),
+    lineWidth: 3,
   });
 
   const showOpen = isContainer && (hovered || openControlHover);

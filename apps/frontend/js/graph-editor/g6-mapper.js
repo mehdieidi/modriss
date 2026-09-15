@@ -285,7 +285,7 @@ export function mapNodeToG6(
       elementId: node.id,
       nodeType: node.type,
       labelText: node.label || node.id,
-      labelFill: "rgba(227, 232, 242, 0.96)",
+      labelFill: cssVar("--node-title", cssVar("--text-strong", "#f5f8fb")),
       labelFontSize: 12,
       labelFontWeight: 700,
       labelPlacement: "center",

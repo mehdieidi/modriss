@@ -106,10 +106,8 @@ export function nodeAccent(node, definition = null) {
 }
 
 export function stickyColor(node, definition = null) {
-  return resolveThemeColor(
-    definition?.notation?.fill || definition?.color,
-    cssVar("--node-warm", "#fde68a"),
-  );
+  const explicitFill = definition?.notation?.fill;
+  return explicitFill ? resolveThemeColor(explicitFill, "") : "";
 }
 
 export function edgeStyleForKind(kind, presentation = {}) {

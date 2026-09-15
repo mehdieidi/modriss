@@ -21,55 +21,59 @@
   --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-mono: "Space Grotesk", "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
 
-  --bg: #102c3a;
-  --surface: #153543;
-  --surface-2: #183d4a;
-  --surface-3: #1f4a55;
-  --surface-high: #2b5a63;
-  --surface-contrast: #0a202b;
+  --bg: #111923;
+  --surface: #182430;
+  --surface-1: #1b2a36;
+  --surface-2: #1e2e3c;
+  --surface-3: #263a4a;
+  --surface-high: #30485a;
+  --surface-elevated: #2b4150;
+  --surface-contrast: #0c131b;
 
   --panel: var(--surface-2);
   --panel-2: var(--surface-3);
-  --panel-3: #2b5a63;
-  --input-bg: #102c3a;
-  --canvas-bg: #0f2b36;
-  --node-bg: #153543;
-  --node-border: #58707a;
+  --panel-3: #30485a;
+  --input-bg: #111d28;
+  --canvas-bg: #101a25;
+  --node-bg: #1d2c3a;
+  --node-border: #627b8e;
 
-  --border: #58707a;
-  --border-subtle: #3c535d;
-  --outline: #a8d2cd;
-  --outline-soft: rgba(168, 210, 205, 0.2);
+  --border: #496274;
+  --border-strong: #6b8798;
+  --border-subtle: #304657;
+  --outline: #a7c1d1;
+  --outline-soft: rgba(167, 193, 209, 0.2);
 
-  --text: #eaf5f2;
-  --text-strong: #fcfbf7;
-  --muted: #b7c5c9;
-  --muted-2: #8fa7a8;
+  --text: #e7eff4;
+  --text-strong: #f7fafc;
+  --muted: #a6bac7;
+  --muted-2: #7f97a7;
   --text-muted: var(--muted);
-  --text-soft: #d3e4e0;
-  --node-title: #e1f0ed;
+  --text-soft: #cbdbe4;
+  --node-title: #f7fafc;
 
-  --accent: #075d5b;
-  --accent-dark: #064846;
-  --accent-light: #087b78;
-  --accent-glow: rgba(7, 93, 91, 0.3);
-  --accent-select: #73bab2;
-  --accent-2: #e1a27e;
+  --accent: #179b95;
+  --accent-dark: #117a76;
+  --accent-light: #6cd4c9;
+  --accent-glow: rgba(23, 155, 149, 0.2);
+  --accent-select: #9de9df;
+  --accent-2: #e4a168;
 
-  --danger: #e07c70;
-  --danger-dark: #b9574d;
-  --success: #73bab2;
-  --warning: #e1a27e;
+  --danger: #f07f79;
+  --danger-dark: #bd574f;
+  --success: #78dba7;
+  --warning: #edb26f;
+  --node-warm: #f6cf83;
 
-  --chat-user-bg: #075d5b;
-  --chat-user-text: #fcfbf7;
-  --chat-assistant-bg: #153543;
-  --chat-assistant-border: #58707a;
+  --chat-user-bg: #137c79;
+  --chat-user-text: #f7fafc;
+  --chat-assistant-bg: #1e2e3c;
+  --chat-assistant-border: #496274;
 
-  --grid-line-major: rgba(168, 210, 205, 0.16);
-  --grid-line-minor: rgba(168, 210, 205, 0.07);
+  --grid-line-major: rgba(167, 193, 209, 0.13);
+  --grid-line-minor: rgba(167, 193, 209, 0.045);
   --grid-size: 28px;
-  --canvas-dot: rgb(168 210 205 / 0.28);
+  --canvas-dot: rgb(167 193 209 / 0.18);
 
   --radius-sm: 6px;
   --radius: 10px;
@@ -84,8 +88,8 @@
   --modal-overlay-bg: rgba(9, 13, 15, 0.58);
   --mobile-backdrop-bg: rgba(9, 13, 15, 0.54);
 
-  --glass-pane-bg: color-mix(in srgb, var(--canvas-custom-bg, var(--surface)) 88%, transparent);
-  --workspace-bar-bg: color-mix(in srgb, var(--topbar-custom-bg, var(--surface)) 78%, transparent);
+  --glass-pane-bg: color-mix(in srgb, var(--canvas-custom-bg, var(--surface)) 94%, transparent);
+  --workspace-bar-bg: color-mix(in srgb, var(--topbar-custom-bg, var(--surface)) 92%, transparent);
   --workspace-bar-border-color: color-mix(in srgb, var(--border) 66%, transparent);
   --glass-pane-border: 1px solid color-mix(in srgb, var(--border) 66%, transparent);
   --glass-pane-highlight: inset 0 1px 0 color-mix(in srgb, #ffffff 5%, transparent);
@@ -119,9 +123,11 @@ html.light {
 
   --bg: #f5f3ed;
   --surface: #fcfbf7;
+  --surface-1: #f6f7f3;
   --surface-2: #ebe8df;
   --surface-3: #d7e9e5;
   --surface-high: #ffffff;
+  --surface-elevated: #ffffff;
   --surface-contrast: #fcfbf7;
 
   --panel: #fcfbf7;
@@ -133,6 +139,7 @@ html.light {
   --node-border: #abc9c3;
 
   --border: #ccd2cf;
+  --border-strong: #91aaa6;
   --border-subtle: #e2e5e1;
   --outline: #617178;
   --outline-soft: rgba(7, 93, 91, 0.16);
@@ -156,6 +163,7 @@ html.light {
   --danger-dark: #8f3831;
   --success: #087b78;
   --warning: #b4653c;
+  --node-warm: #f4d98b;
 
   --chat-user-bg: #075d5b;
   --chat-user-text: #fcfbf7;
