@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="apps/frontend/assets/icons/logo/modriss-favicon.svg" alt="MODRISS" width="96">
+</p>
+
 # MODRISS
 
 MODRISS is an ongoing MSc thesis research project at the Methodology Engineering Laboratory,
