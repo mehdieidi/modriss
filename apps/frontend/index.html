@@ -78,6 +78,8 @@
           </div>
 
           <button
+            aria-controls="topbarCollapse"
+            aria-expanded="false"
             class="btn btn-secondary btn-sm topbar-menu-toggle"
             id="topbarMenuToggleBtn"
             title="Toggle topbar menu"
@@ -564,6 +566,20 @@
                     Fit
                   </button>
                 </div>
+                <button
+                  aria-label="Return to previous canvas"
+                  class="canvas-focus-back hidden"
+                  id="canvasFocusBackBtn"
+                  title="Return to previous canvas"
+                  type="button"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="canvas-focus-back-icon icon-svg icon-mask"
+                    style="--icon-src: url(&quot;/assets/icons/undo.svg&quot;)"
+                  ></span>
+                  <span>Back</span>
+                </button>
                 <div
                   aria-label="Canvas minimap"
                   class="canvas-minimap"
@@ -889,20 +905,6 @@
           <span class="mobile-dock-label">Palette</span>
         </button>
         <button
-          aria-label="Open inspector"
-          class="mobile-dock-item"
-          data-dock-action="inspector"
-          id="mobileDockInspectorBtn"
-          type="button"
-        >
-          <span
-            aria-hidden="true"
-            class="mobile-dock-icon icon-svg icon-mask"
-            style="--icon-src: url(&quot;/assets/icons/description.svg&quot;)"
-          ></span>
-          <span class="mobile-dock-label">Inspector</span>
-        </button>
-        <button
           aria-label="Open assistant"
           class="mobile-dock-item"
           data-dock-action="chat"
@@ -917,14 +919,29 @@
           <span class="mobile-dock-label">Assistant</span>
         </button>
         <button
-          aria-label="Model validation status"
+          aria-label="Open validation issues"
           class="mobile-dock-item mobile-dock-validation validation-state-ok"
           data-dock-action="validation"
           id="mobileDockValidationBtn"
           type="button"
         >
           <span aria-hidden="true" class="mobile-dock-validation-dot validation-status-dot"></span>
-          <span class="mobile-dock-label" id="mobileDockValidationLabel">OK</span>
+          <span class="mobile-dock-label" id="mobileDockValidationLabel">Issues</span>
+        </button>
+        <button
+          aria-label="Save model"
+          class="mobile-dock-item mobile-dock-save hidden"
+          data-dock-action="save"
+          id="mobileDockSaveBtn"
+          title="Save current model (Ctrl+S)"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="mobile-dock-icon icon-svg icon-mask"
+            style="--icon-src: url(&quot;/assets/icons/save.svg&quot;)"
+          ></span>
+          <span class="mobile-dock-label" id="mobileDockSaveLabel">Save</span>
         </button>
         <button
           aria-label="Open tools and lifecycle actions"

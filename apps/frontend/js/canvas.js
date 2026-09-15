@@ -106,6 +106,7 @@ function configuredRelationshipSemantic(name) {
 
 const INTERNAL_TARGET_SUMMARY_PREFIX = "internal-target";
 const edgeIdsByNodeId = new Map(); // nodeId -> Set(edgeId)
+let lastTouchNodeClick = null;
 
 function resolveIconSource(src) {
   return resolveModelingIconSource(src);
@@ -535,6 +536,16 @@ export function activeCanvasFocus() {
   return current;
 }
 
+function syncCanvasFocusChrome() {
+  const button = el.canvasFocusBackBtn;
+  if (!button) {
+    return;
+  }
+  const visible = Boolean(activeCanvasFocus());
+  button.classList.toggle("hidden", !visible);
+  button.setAttribute("aria-hidden", String(!visible));
+}
+
 // Switching to a normal view abandons the temporary container-navigation state
 // without changing the selected view. The saved focus view itself is retained
 // so reopening the container can preserve its layout.
@@ -542,6 +553,7 @@ export function clearCanvasFocus() {
   const stack = focusStack();
   const hadFocus = stack.length > 0;
   stack.length = 0;
+  syncCanvasFocusChrome();
   return hadFocus;
 }
 
@@ -1005,6 +1017,7 @@ export function openContainerFocus(elementId) {
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = null;
   materializeActiveView();
+  syncCanvasFocusChrome();
   void renderDiagramAsync({ full: true });
   renderPalette();
   notifyModelToolsChanged();
@@ -1054,6 +1067,7 @@ export function openNeighborhoodFocus(elementId, depth = 1) {
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = null;
   materializeActiveView();
+  syncCanvasFocusChrome();
   void renderDiagramAsync({ full: true });
   notifyModelToolsChanged();
   setStatus(`Opened ${node.label || node.id} neighborhood depth ${normalizedDepth}.`);
@@ -1072,6 +1086,7 @@ export function closeCanvasFocus() {
       ? focus.previousViewId
       : state.views.byId.keys().next().value || null;
   materializeActiveView();
+  syncCanvasFocusChrome();
   void renderDiagramAsync({ full: true });
   renderPalette();
   notifyModelToolsChanged();
@@ -2123,6 +2138,7 @@ export function renderPalette() {
       item.addEventListener("dragend", () => {
         state.paletteDragType = "";
       });
+      bindPaletteTouchDrag(item, type);
       items.appendChild(item);
     });
     group.appendChild(items);
@@ -2603,6 +2619,14 @@ function eventModifierState(event) {
 }
 
 function handleG6NodeClick(nodeId, event = {}) {
+  const sourceEvent = event?.originalEvent || event;
+  const now = Date.now();
+  if (lastTouchNodeClick?.nodeId === nodeId && now - lastTouchNodeClick.time < 260) {
+    return;
+  }
+  if (sourceEvent?.pointerType === "touch") {
+    lastTouchNodeClick = { nodeId, time: now };
+  }
   if (state.issueLocateTargetId === nodeId) {
     state.issueLocateTargetId = null;
     updateCanvasImpactState();
@@ -2612,7 +2636,6 @@ function handleG6NodeClick(nodeId, event = {}) {
     toggleNodeInSelection(nodeId);
     return;
   }
-  setNodeMultiSelection([nodeId]);
   activateNode(nodeId);
   updateCanvasSelection();
 }
@@ -2935,6 +2958,115 @@ function applyPaletteDropToCanvas(node) {
 
 // ── Drag-and-drop from palette ────────────────────────────────────────────────
 
+let paletteTouchDrag = null;
+
+function closePaletteAfterTouchDragStarts() {
+  const isMobile =
+    typeof window.matchMedia === "function" && window.matchMedia("(max-width: 920px)").matches;
+  if (!isMobile) {
+    return;
+  }
+  el.workspace?.classList.remove("mobile-left-open");
+  el.mobileBackdrop?.classList.add("hidden");
+  el.mobileDockPaletteBtn?.classList.remove("is-active");
+}
+
+function queuePaletteDrop(type, clientX, clientY) {
+  const containerFocus = activeContainerFocus();
+  const allowedTypes = new Set(paletteTypesForActiveView());
+  if (!type || !allowedTypes.has(type)) {
+    setStatus(
+      type
+        ? containerFocus
+          ? `${type} is not containable in ${containerFocus.label || containerFocus.elementType}`
+          : `${type} is not a standalone palette element`
+        : "Invalid palette drop",
+    );
+    return;
+  }
+  const pos = toCanvasCoordinates(clientX, clientY);
+  const node = getDefaultNode(state.activeType, type, Math.round(pos.x), Math.round(pos.y));
+  requestAnimationFrame(() => {
+    pushDiagramUndoSnapshot(captureAddElementUndoSnapshot(node.id));
+    assignNodeToSemanticContainer(node);
+    addNodeToGraphAndActiveView(node);
+    applyPaletteDropToCanvas(node);
+    const created = state.graph.elementsById.get(node.id);
+    setStatus(`Added ${created?.eClass || type}`);
+    markModelDirty();
+  });
+}
+
+function bindPaletteTouchDrag(item, type) {
+  item.addEventListener("pointerdown", (event) => {
+    if (event.pointerType !== "touch" || event.button !== 0 || paletteTouchDrag) {
+      return;
+    }
+    paletteTouchDrag = {
+      item,
+      type,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      dragging: false,
+    };
+    item.draggable = false;
+    item.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  });
+
+  item.addEventListener("pointermove", (event) => {
+    const drag = paletteTouchDrag;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+    const moved = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) >= 8;
+    if (moved && !drag.dragging) {
+      drag.dragging = true;
+      state.paletteDragType = type;
+      item.classList.add("is-touch-dragging");
+      closePaletteAfterTouchDragStarts();
+    }
+    if (drag.dragging) {
+      event.preventDefault();
+    }
+  });
+
+  const finish = (event, cancelled = false) => {
+    const drag = paletteTouchDrag;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+    paletteTouchDrag = null;
+    item.classList.remove("is-touch-dragging");
+    item.draggable = true;
+    state.paletteDragType = "";
+    if (!cancelled && drag.dragging) {
+      const rect = el.canvasViewport?.getBoundingClientRect?.();
+      const insideCanvas =
+        rect &&
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom;
+      if (insideCanvas) {
+        queuePaletteDrop(drag.type, event.clientX, event.clientY);
+      } else {
+        setStatus("Drop the palette element on the canvas");
+      }
+    }
+    try {
+      item.releasePointerCapture?.(event.pointerId);
+    } catch {
+      // The browser may release capture before pointerup/pointercancel.
+    }
+    event.preventDefault();
+  };
+
+  item.addEventListener("pointerup", (event) => finish(event));
+  item.addEventListener("pointercancel", (event) => finish(event, true));
+}
+
 export function setupDnD() {
   ensureCanvas();
   renderCanvasDiagram();
@@ -2958,33 +3090,11 @@ export function setupDnD() {
         "",
     ).trim();
     state.paletteDragType = "";
-    const containerFocus = activeContainerFocus();
-    const allowedTypes = new Set(paletteTypesForActiveView());
-    if (
-      !type ||
-      (paletteItem?.level && paletteItem.level !== state.activeType) ||
-      !allowedTypes.has(type)
-    ) {
-      setStatus(
-        type
-          ? containerFocus
-            ? `${type} is not containable in ${containerFocus.label || containerFocus.elementType}`
-            : `${type} is not a standalone palette element`
-          : "Invalid palette drop",
-      );
+    if (paletteItem?.level && paletteItem.level !== state.activeType) {
+      setStatus("Palette element belongs to a different modeling level");
       return;
     }
-    const pos = toCanvasCoordinates(e.clientX, e.clientY);
-    const node = getDefaultNode(state.activeType, type, Math.round(pos.x), Math.round(pos.y));
-    requestAnimationFrame(() => {
-      pushDiagramUndoSnapshot(captureAddElementUndoSnapshot(node.id));
-      assignNodeToSemanticContainer(node);
-      addNodeToGraphAndActiveView(node);
-      applyPaletteDropToCanvas(node);
-      const created = state.graph.elementsById.get(node.id);
-      setStatus(`Added ${created?.eClass || type}`);
-      markModelDirty();
-    });
+    queuePaletteDrop(type, e.clientX, e.clientY);
   });
 }
 

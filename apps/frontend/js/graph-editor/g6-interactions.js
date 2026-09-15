@@ -454,6 +454,21 @@ export function bindG6Interactions(editor, callbacks = {}) {
   let visibilityChange = null;
   let openControlPress = null;
   let suppressOpenControlClickNodeId = null;
+  let ignoreTouchCanvasClickUntil = 0;
+
+  const suppressFollowingCanvasClick = (event) => {
+    ignoreTouchCanvasClickUntil =
+      performance.now() + (originalEvent(event)?.pointerType === "touch" ? 220 : 120);
+  };
+
+  const suppressFollowingNodeClick = (nodeId) => {
+    lastClickSuppressedNodeId = nodeId;
+    window.setTimeout(() => {
+      if (lastClickSuppressedNodeId === nodeId) {
+        lastClickSuppressedNodeId = null;
+      }
+    }, 220);
+  };
 
   currentCanvasCursorMode = "";
   setCanvasCursor("grab");
@@ -762,14 +777,13 @@ export function bindG6Interactions(editor, callbacks = {}) {
       : nodePositionFromGraph(graph, nodeId, editor);
     callbacks.onNodeDragEnd?.(nodeId, position, { moved: wasDragged });
     if (wasDragged) {
-      lastClickSuppressedNodeId = nodeId;
-      window.setTimeout(() => {
-        if (lastClickSuppressedNodeId === nodeId) {
-          lastClickSuppressedNodeId = null;
-        }
-      }, 120);
+      suppressFollowingNodeClick(nodeId);
     } else if (!cancelClick) {
-      callbacks.onNodeClick?.(nodeId, dragState.startEvent);
+      if (lastClickSuppressedNodeId !== nodeId) {
+        suppressFollowingNodeClick(nodeId);
+        suppressFollowingCanvasClick(dragState.startEvent);
+        callbacks.onNodeClick?.(nodeId, dragState.startEvent);
+      }
     }
     if (dragState.pointerId != null) {
       try {
@@ -1129,6 +1143,8 @@ export function bindG6Interactions(editor, callbacks = {}) {
       callbacks.onOpenContainer?.(id);
       return;
     }
+    suppressFollowingNodeClick(id);
+    suppressFollowingCanvasClick(event);
     callbacks.onNodeClick?.(id, originalEvent(event));
   });
 
@@ -1165,6 +1181,9 @@ export function bindG6Interactions(editor, callbacks = {}) {
 
   graph.on("canvas:click", (event) => {
     if (linkDrag) {
+      return;
+    }
+    if (performance.now() < ignoreTouchCanvasClickUntil) {
       return;
     }
     callbacks.onCanvasClick?.(originalEvent(event));

@@ -1307,14 +1307,20 @@ html.light .tier-badge-artifact {
   #attributePanel,
   #modelTreePanel,
   #impactPanel {
-    position: absolute;
-    top: 0;
+    position: fixed;
+    top: var(--topbar-h);
     right: 0;
-    bottom: auto;
+    bottom: var(--mobile-dock-h, 0px);
     width: min(92vw, 400px);
     min-width: 0;
     max-width: none;
-    z-index: 50;
+    z-index: 120;
+  }
+
+  #attributePanel:not(.hidden),
+  #modelTreePanel:not(.hidden),
+  #impactPanel:not(.hidden) {
+    transform: translateX(0);
   }
 
   .right-pane {
@@ -1326,13 +1332,27 @@ html.light .tier-badge-artifact {
   }
 
   .attr-tabbar {
+    position: sticky;
+    top: -12px;
+    z-index: 8;
+    flex: 0 0 auto;
     grid-template-columns: repeat(3, minmax(72px, 1fr));
+    margin: -12px -14px 2px;
+    padding: 12px 14px 8px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+    background: var(--glass-pane-bg);
     overflow-x: auto;
     scrollbar-width: none;
   }
 
   .attr-tabbar::-webkit-scrollbar {
     display: none;
+  }
+
+  .attr-tab-btn {
+    position: relative;
+    z-index: 1;
+    touch-action: manipulation;
   }
 
   .attr-overview-row {
@@ -1351,7 +1371,17 @@ html.light .tier-badge-artifact {
   #attributePanel,
   #modelTreePanel,
   #impactPanel {
+    top: auto;
+    right: 0;
+    bottom: var(--mobile-dock-h, 0px);
     width: 100%;
+    height: min(72dvh, calc(100dvh - var(--topbar-h) - var(--mobile-dock-h, 0px) - 12px));
+  }
+
+  #attributePanel:not(.hidden),
+  #modelTreePanel:not(.hidden),
+  #impactPanel:not(.hidden) {
+    transform: translateY(0);
   }
 
   .attr-contained-table {
@@ -1390,6 +1420,11 @@ html.light .tier-badge-artifact {
 
   .attr-panel-body,
   .attr-panel-footer {
+    padding-inline: 12px;
+  }
+
+  .attr-tabbar {
+    margin-inline: -12px;
     padding-inline: 12px;
   }
 }

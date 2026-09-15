@@ -43,6 +43,7 @@ let bound = false;
 let treeBound = false;
 let viewMenuOpen = false;
 let layoutMenuOpen = false;
+let inspectMenuOpen = false;
 let treeBodyScrollTop = 0;
 let modelTreeMode = "elements";
 let modelTreeFilter = "";
@@ -177,13 +178,10 @@ function viewMatchesLevel(view) {
 }
 
 function canvasFocusToolMarkup() {
-  if (!activeCanvasFocus()) {
-    return "";
-  }
-  return `<div class="workbench-context-actions workbench-focus-actions">
-      <button class="sidebar-inline-action context-action-primary"
-              id="canvasFocusBackBtn" type="button">Back</button>
-    </div>`;
+  // Canvas navigation is represented by the floating control on the canvas.
+  // Keeping it out of the topbar prevents a second Back action from competing
+  // with the view and lifecycle controls at compact widths.
+  return "";
 }
 
 function metadataViewKeys() {
@@ -607,9 +605,9 @@ export function renderViewWorkbench() {
       ${contextTools ? `<div class="workbench-divider"></div><div class="workbench-context-slot">${contextTools}</div>` : ""}
       <div class="workbench-divider"></div>
       <div class="workbench-action-group">
-        <div class="workbench-tool-cluster" aria-label="Inspect model structure">
+        <div class="workbench-tool-cluster workbench-inspect-cluster" aria-label="Inspect model structure">
           <span class="workbench-control-label">Inspect</span>
-          <div class="workbench-btn-group">
+          <div class="workbench-btn-group workbench-inspect-inline">
             <button class="sidebar-inline-action" id="rootModelAttributesBtn"
                     type="button" aria-label="Edit root model attributes"
                     title="Edit root model attributes">Root</button>
@@ -623,6 +621,40 @@ export function renderViewWorkbench() {
                 ? " is-active"
                 : ""
             }" id="relationshipTreeToggleBtn" type="button">Relationships</button>
+          </div>
+          <div class="workbench-view-select-wrap workbench-inspect-menu-wrap${inspectMenuOpen ? " is-open" : ""}">
+            <button class="sidebar-select workbench-view-select workbench-inspect-select"
+                    id="inspectMenuToggle"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="${inspectMenuOpen ? "true" : "false"}"
+                    title="Inspect model structure">
+              <span class="workbench-view-select-label">Inspect</span>
+            </button>
+            <span class="workbench-view-select-caret" aria-hidden="true"></span>
+            <div class="workbench-view-menu workbench-inspect-menu${inspectMenuOpen ? "" : " hidden"}"
+                 id="inspectMenu"
+                 role="listbox"
+                 aria-label="Inspect model structure">
+              <button class="workbench-view-option" type="button" role="option" data-inspect-action="root">
+                <span class="workbench-view-option-label">Root</span>
+              </button>
+              <button class="workbench-view-option${
+                modelTreeMode === "elements" && !el.modelTreePanel?.classList.contains("hidden")
+                  ? " is-active"
+                  : ""
+              }" type="button" role="option" data-inspect-action="elements">
+                <span class="workbench-view-option-label">Elements</span>
+              </button>
+              <button class="workbench-view-option${
+                modelTreeMode === "relationships" &&
+                !el.modelTreePanel?.classList.contains("hidden")
+                  ? " is-active"
+                  : ""
+              }" type="button" role="option" data-inspect-action="relationships">
+                <span class="workbench-view-option-label">Relationships</span>
+              </button>
+            </div>
           </div>
         </div>
         <div class="workbench-tool-cluster workbench-arrange-cluster" aria-label="Arrange active view">
@@ -937,6 +969,7 @@ function bindWorkbenchEvents() {
     if (target?.closest("#activeViewSelect")) {
       viewMenuOpen = !viewMenuOpen;
       layoutMenuOpen = false;
+      inspectMenuOpen = false;
       renderViewWorkbench();
       event.stopPropagation();
       return;
@@ -944,6 +977,7 @@ function bindWorkbenchEvents() {
     if (target?.closest("#layoutStrategySelect")) {
       layoutMenuOpen = !layoutMenuOpen;
       viewMenuOpen = false;
+      inspectMenuOpen = false;
       renderViewWorkbench();
       event.stopPropagation();
       return;
@@ -971,6 +1005,28 @@ function bindWorkbenchEvents() {
       openRootModelAttributePanel();
       return;
     }
+    if (target?.closest("#inspectMenuToggle")) {
+      inspectMenuOpen = !inspectMenuOpen;
+      viewMenuOpen = false;
+      layoutMenuOpen = false;
+      renderViewWorkbench();
+      event.stopPropagation();
+      return;
+    }
+    const inspectAction = target?.closest("[data-inspect-action]")?.dataset?.inspectAction;
+    if (inspectAction) {
+      inspectMenuOpen = false;
+      if (inspectAction === "root") {
+        openRootModelAttributePanel();
+        renderViewWorkbench();
+      } else if (inspectAction === "elements" || inspectAction === "relationships") {
+        const open =
+          el.modelTreePanel?.classList.contains("hidden") || modelTreeMode !== inspectAction;
+        setTreeOpen(open, inspectAction);
+        renderViewWorkbench();
+      }
+      return;
+    }
     if (target?.closest("#modelTreeToggleBtn")) {
       const open = el.modelTreePanel?.classList.contains("hidden") || modelTreeMode !== "elements";
       setTreeOpen(open, "elements");
@@ -994,11 +1050,16 @@ function bindWorkbenchEvents() {
       layoutMenuOpen = false;
       renderViewWorkbench();
     }
+    if (!target?.closest(".workbench-inspect-menu-wrap") && inspectMenuOpen) {
+      inspectMenuOpen = false;
+      renderViewWorkbench();
+    }
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && (viewMenuOpen || layoutMenuOpen)) {
+    if (event.key === "Escape" && (viewMenuOpen || layoutMenuOpen || inspectMenuOpen)) {
       viewMenuOpen = false;
       layoutMenuOpen = false;
+      inspectMenuOpen = false;
       renderViewWorkbench();
     }
   });

@@ -47,6 +47,8 @@ export function updateModelSaveUi() {
       : "Save model";
   const saveButton = document.getElementById("saveModelBtn");
   const saveLabel = document.getElementById("saveModelBtnLabel");
+  const mobileSaveButton = document.getElementById("mobileDockSaveBtn");
+  const mobileSaveLabel = document.getElementById("mobileDockSaveLabel");
 
   if (saveButton) {
     saveButton.disabled = !isModeling || current.saving;
@@ -59,6 +61,18 @@ export function updateModelSaveUi() {
   }
   if (saveLabel) {
     saveLabel.textContent = "Save";
+  }
+  if (mobileSaveButton) {
+    mobileSaveButton.disabled = !isModeling || current.saving;
+    mobileSaveButton.classList.toggle("is-saving", current.saving);
+    mobileSaveButton.classList.toggle("is-dirty", current.dirty && !current.saving);
+    mobileSaveButton.classList.toggle("is-error", Boolean(current.error));
+    mobileSaveButton.classList.toggle("hidden", !isModeling);
+    mobileSaveButton.setAttribute("aria-label", label);
+    mobileSaveButton.title = current.error || `${label} (Ctrl+S)`;
+  }
+  if (mobileSaveLabel) {
+    mobileSaveLabel.textContent = "Save";
   }
 }
 

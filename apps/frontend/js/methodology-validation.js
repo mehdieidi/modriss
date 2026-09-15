@@ -328,15 +328,7 @@ function renderValidationCenter() {
     el.validationFabText.textContent = status.label;
   }
   if (el.mobileDockValidationLabel) {
-    let dockLabel = status.label;
-    if (dockLabel.startsWith("Errors")) {
-      dockLabel = dockLabel.replace("Errors", "Err");
-    } else if (dockLabel.startsWith("Warnings")) {
-      dockLabel = dockLabel.replace("Warnings", "Warn");
-    } else if (dockLabel.startsWith("Manual Tasks")) {
-      dockLabel = dockLabel.replace("Manual Tasks", "Tasks");
-    }
-    el.mobileDockValidationLabel.textContent = dockLabel;
+    el.mobileDockValidationLabel.textContent = "Issues";
   }
   el.validationFab.classList.toggle("validation-is-running", !!state.validation.inProgress);
   el.mobileDockValidationBtn?.classList.toggle(

@@ -32,12 +32,14 @@
     padding: 6px max(4px, var(--safe-area-left)) calc(6px + var(--safe-area-bottom))
       max(4px, var(--safe-area-right));
     border-top: var(--glass-pane-border);
-    background: color-mix(in srgb, var(--glass-pane-bg) 94%, var(--surface-2) 6%);
+    background: var(--workspace-bar-bg);
     box-shadow:
       var(--glass-pane-highlight),
       0 -8px 24px rgba(2, 6, 8, 0.22);
     backdrop-filter: var(--glass-pane-blur);
     -webkit-backdrop-filter: var(--glass-pane-blur);
+    display: flex;
+    align-items: stretch;
   }
 
   .mobile-dock-item {
@@ -59,6 +61,8 @@
       border-color var(--transition),
       transform var(--transition);
     -webkit-tap-highlight-color: transparent;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .mobile-dock-item:hover,
@@ -160,5 +164,251 @@
 @media (min-width: 921px) {
   .mobile-dock {
     display: none;
+  }
+}
+
+/* Keep the primary row intentionally small on phones.  Lifecycle actions and
+ * view tools belong to the Tools surface at this size; letting them remain
+ * inline makes the topbar grow unpredictably and pushes controls over the
+ * canvas. */
+@media (max-width: 920px) {
+  .palette-item {
+    touch-action: none;
+  }
+
+  .palette-item.is-touch-dragging {
+    opacity: 0.52;
+    outline: 1px solid color-mix(in srgb, var(--accent) 68%, transparent);
+  }
+
+  .topbar {
+    min-height: var(--topbar-h);
+    height: var(--topbar-h);
+  }
+
+  .topbar-menu-strip {
+    min-height: var(--topbar-main-h);
+    height: var(--topbar-main-h);
+    flex: 0 0 var(--topbar-main-h);
+    justify-content: space-between;
+  }
+
+  .topbar-left {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .mobile-dock-save.is-dirty {
+    color: var(--warning);
+    border-color: color-mix(in srgb, var(--warning) 54%, transparent);
+    background: color-mix(in srgb, var(--warning) 12%, transparent);
+  }
+
+  .topbar .topbar-menu-toggle {
+    display: none !important;
+  }
+
+  .topbar-collapse,
+  .topbar.mobile-menu-open .topbar-collapse {
+    display: none !important;
+    position: fixed;
+    left: max(8px, var(--safe-area-left));
+    right: max(8px, var(--safe-area-right));
+    top: calc(var(--topbar-h) + 8px);
+    bottom: calc(var(--mobile-dock-h, 0px) + 8px);
+    width: auto;
+    height: auto;
+    max-height: none;
+    min-width: 0;
+    padding: 12px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    border: var(--glass-pane-border);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--glass-pane-bg) 96%, var(--surface-2) 4%);
+    box-shadow: var(--glass-pane-highlight), var(--shadow-lg);
+    backdrop-filter: var(--glass-pane-blur);
+    -webkit-backdrop-filter: var(--glass-pane-blur);
+  }
+
+  .topbar.mobile-menu-open .topbar-collapse {
+    display: flex !important;
+  }
+
+  .topbar-collapse .model-lifecycle {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .topbar-collapse .model-lifecycle-heading {
+    display: grid;
+    min-width: 0;
+    padding: 0 2px;
+  }
+
+  .topbar-collapse .model-lifecycle-tools {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .topbar-collapse .model-lifecycle-group {
+    min-width: 0;
+    padding: 5px;
+  }
+
+  .topbar-collapse .model-lifecycle-group-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .topbar-collapse .model-lifecycle-group-deliver .model-lifecycle-group-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .topbar-collapse .topbar-ide-btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .topbar-collapse .tabs {
+    display: flex;
+    width: 100%;
+    flex: 0 0 auto;
+    margin: 0;
+    overflow: visible;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  }
+
+  .topbar-collapse .tab {
+    width: 100%;
+    text-align: left;
+  }
+
+  .topbar-collapse .modeling-context-bar {
+    display: contents;
+  }
+
+  .topbar-collapse .model-workbench-commandbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    align-content: start;
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .topbar-collapse .workbench-divider,
+  .topbar-collapse .workbench-section-label,
+  .topbar-collapse .workbench-control-label {
+    display: none;
+  }
+
+  .topbar-collapse .workbench-view-section,
+  .topbar-collapse .workbench-context-slot,
+  .topbar-collapse .workbench-action-group,
+  .topbar-collapse .workbench-persist-group {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .topbar-collapse .workbench-inspect-inline {
+    display: none;
+  }
+
+  .topbar-collapse .workbench-view-section,
+  .topbar-collapse .workbench-context-slot,
+  .topbar-collapse .workbench-persist-group {
+    display: flex;
+  }
+
+  .topbar-collapse #saveModelBtn {
+    display: none !important;
+  }
+
+  .topbar-collapse .workbench-view-select-wrap,
+  .topbar-collapse .workbench-view-select,
+  .topbar-collapse .workbench-inspect-menu-wrap,
+  .topbar-collapse .workbench-inspect-select,
+  .topbar-collapse .workbench-context-slot > *,
+  .topbar-collapse .workbench-persist-group > * {
+    width: 100%;
+    max-width: none;
+  }
+
+  .topbar-collapse .workbench-action-group {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .topbar-collapse .workbench-tool-cluster {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+    gap: 4px;
+  }
+
+  .topbar-collapse .workbench-btn-group {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .topbar-collapse .workbench-btn-group .sidebar-inline-action {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .topbar-collapse .workbench-persist-group {
+    display: flex;
+  }
+
+  .topbar-collapse .validation-status-chip {
+    width: 100%;
+    justify-content: flex-start;
+    margin: 0;
+  }
+
+  .canvas-zoom-control {
+    bottom: 4px;
+  }
+}
+
+@media (min-width: 921px) and (max-width: 1100px) {
+  .topbar-collapse .validation-status-chip {
+    align-self: flex-end;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar-collapse .model-lifecycle-tools {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .topbar-collapse .workbench-btn-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .topbar-collapse #relationshipTreeToggleBtn {
+    grid-column: 1 / -1;
   }
 }

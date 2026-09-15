@@ -140,7 +140,17 @@
   overflow: visible;
 }
 
+.workbench-action-group:has(.workbench-inspect-menu-wrap.is-open) {
+  position: relative;
+  z-index: 71;
+  overflow: visible;
+}
+
 .model-workbench-commandbar:has(.workbench-layout-select-wrap.is-open) {
+  overflow: visible;
+}
+
+.model-workbench-commandbar:has(.workbench-inspect-menu-wrap.is-open) {
   overflow: visible;
 }
 
@@ -165,6 +175,14 @@
   gap: 5px;
   min-width: 0;
   flex: 0 0 auto;
+}
+
+.workbench-inspect-menu-wrap {
+  position: relative;
+  display: none;
+  align-items: center;
+  min-width: 0;
+  min-height: var(--workbench-action-h, 28px);
 }
 
 .workbench-btn-group {
@@ -284,7 +302,12 @@
 }
 
 .workbench-context-slot {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
+}
+
+.workbench-context-actions,
+.workbench-context-actions .sidebar-inline-action {
+  flex: 0 0 auto;
 }
 
 .workbench-view-select-wrap {
@@ -431,6 +454,16 @@
   padding: 10px 12px;
   color: var(--muted);
   font: 500 12px/1.4 var(--font-ui);
+}
+
+.workbench-inspect-menu-wrap {
+  flex: 0 0 auto;
+}
+
+.workbench-view-select.workbench-inspect-select {
+  width: 112px;
+  min-width: 112px;
+  max-width: 112px;
 }
 
 .model-workbench-strip .sidebar-inline-action {
@@ -617,10 +650,21 @@
   color: var(--text-strong);
 }
 
-@media (max-width: 1200px) {
+/* Collapse the inspect actions before the topbar's fixed Save/Issues actions
+ * run out of room. This is intentionally earlier than the topbar Menu
+ * breakpoint so compact desktop widths keep the primary topbar visible. */
+@media (max-width: 1400px) {
   .workbench-view-section {
     flex-basis: 200px;
     min-width: 140px;
+  }
+
+  .workbench-inspect-inline {
+    display: none;
+  }
+
+  .workbench-inspect-menu-wrap {
+    display: inline-flex;
   }
 }
 
@@ -1160,6 +1204,45 @@
   cursor: default;
 }
 
+.canvas-focus-back {
+  position: absolute;
+  top: calc(var(--topbar-h) + 10px);
+  left: var(--canvas-controls-left);
+  z-index: 133;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 10px 5px 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 7px;
+  background: var(--workspace-bar-bg);
+  box-shadow: var(--glass-pane-highlight), var(--shadow-sm);
+  backdrop-filter: var(--glass-pane-blur);
+  -webkit-backdrop-filter: var(--glass-pane-blur);
+  color: var(--text-strong);
+  cursor: pointer;
+  font: 700 10px/1 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.canvas-focus-back:hover,
+.canvas-focus-back:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 54%, var(--border) 46%);
+  background: color-mix(in srgb, var(--workspace-bar-bg) 78%, var(--accent-glow) 22%);
+}
+
+.canvas-focus-back:active {
+  transform: translateY(1px);
+}
+
+.canvas-focus-back-icon {
+  width: 15px;
+  height: 15px;
+}
+
 .canvas-zoom-control button {
   min-width: 0;
   min-height: 28px;
@@ -1278,6 +1361,11 @@
 }
 
 @media (max-width: 920px) {
+  .canvas-focus-back {
+    top: 12px;
+    left: 12px;
+  }
+
   .canvas-zoom-control {
     left: 10px;
     right: auto;

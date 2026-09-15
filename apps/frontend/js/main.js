@@ -4,6 +4,7 @@ import { initFrontendTelemetry } from "./telemetry.js";
 import { initTheme, toggleTheme } from "./theme.js";
 import {
   applyViewport,
+  closeCanvasFocus,
   fitViewportToDiagram,
   getModelingRendererDebug,
   initializeModelingRenderer,
@@ -79,7 +80,7 @@ import {
   syncMethodologyRailState,
 } from "./guided-modeling.js";
 
-const TOPBAR_MENU_BREAKPOINT = 1100;
+const TOPBAR_MENU_BREAKPOINT = 1200;
 const CHAT_INPUT_MAX_HEIGHT = 132;
 const getElementTarget = (event) => (event.target instanceof Element ? event.target : null);
 
@@ -804,6 +805,10 @@ function bindEvents() {
     el.validationFab?.click();
     syncMobileDockState();
   });
+  el.mobileDockSaveBtn?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    document.getElementById("saveModelBtn")?.click();
+  });
   el.mobileDockMenuBtn?.addEventListener("click", (event) => {
     event.stopPropagation();
     closeMobilePanels();
@@ -888,6 +893,9 @@ function bindEvents() {
   el.canvasZoomResetBtn?.addEventListener("click", resetCanvasView);
   el.canvasZoomFitBtn?.addEventListener("click", () => {
     void fitViewportToDiagram({ fit: true });
+  });
+  el.canvasFocusBackBtn?.addEventListener("click", () => {
+    closeCanvasFocus();
   });
 
   const collapseChatInput = () => {
