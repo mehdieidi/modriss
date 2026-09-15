@@ -172,7 +172,7 @@ select[multiple] option {
   overflow: visible;
   gap: 2px;
   padding: 8px 0;
-  background: var(--glass-pane-bg);
+  background: var(--workspace-bar-bg);
   border-right: none;
   border-top-right-radius: var(--radius-md);
   box-shadow: none;

@@ -85,6 +85,7 @@
   --mobile-backdrop-bg: rgba(9, 13, 15, 0.54);
 
   --glass-pane-bg: color-mix(in srgb, var(--canvas-custom-bg, var(--surface)) 88%, transparent);
+  --workspace-bar-bg: color-mix(in srgb, var(--topbar-custom-bg, var(--surface)) 78%, transparent);
   --workspace-bar-border-color: color-mix(in srgb, var(--border) 66%, transparent);
   --glass-pane-border: 1px solid color-mix(in srgb, var(--border) 66%, transparent);
   --glass-pane-highlight: inset 0 1px 0 color-mix(in srgb, #ffffff 5%, transparent);

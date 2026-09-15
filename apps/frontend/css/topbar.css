@@ -20,7 +20,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--topbar-custom-bg, var(--surface)) 78%, transparent);
+  background: var(--workspace-bar-bg);
   backdrop-filter: var(--glass-pane-blur);
   -webkit-backdrop-filter: var(--glass-pane-blur);
   pointer-events: none;
