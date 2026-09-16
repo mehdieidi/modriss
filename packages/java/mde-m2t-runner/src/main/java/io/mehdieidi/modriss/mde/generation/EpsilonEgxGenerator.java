@@ -88,6 +88,7 @@ public final class EpsilonEgxGenerator {
    *     finalization fails
    */
   public EgxGenerationReport generate(EgxGenerationRequest request) throws EgxGenerationException {
+    Instant startedAt = Instant.now();
     Path output = request.outputDirectory().toAbsolutePath().normalize();
     Path parent = output.getParent();
     if (parent == null) {
@@ -126,8 +127,34 @@ public final class EpsilonEgxGenerator {
       throw ex;
     } catch (Exception ex) {
       deleteTree(staging);
+      List<GenerationDiagnostic> diagnostics =
+          List.of(
+              GenerationDiagnostic.error(
+                  GenerationPhase.UNEXPECTED,
+                  request.moduleFile(),
+                  -1,
+                  -1,
+                  ex.getMessage(),
+                  "The generation output could not be staged or published atomically.",
+                  "Inspect the output directory, filesystem permissions, and any antivirus or"
+                      + " file-locking process before retrying generation.",
+                  ex));
       throw new EgxGenerationException(
-          "Could not stage or publish EGX generation output.", null, ex);
+          "Could not stage or publish EGX generation output.",
+          new EgxGenerationReport(
+              GenerationStatus.FAILED,
+              request.moduleFile(),
+              output,
+              startedAt,
+              Instant.now(),
+              Duration.between(startedAt, Instant.now()),
+              new EgxPhaseTiming(),
+              diagnostics,
+              listGeneratedFiles(output),
+              "",
+              "",
+              ""),
+          ex);
     }
   }
 
@@ -214,13 +241,20 @@ public final class EpsilonEgxGenerator {
     } catch (EgxGenerationException ex) {
       throw ex;
     } catch (EolModelLoadingException ex) {
+      Throwable internalCause = ex.getInternal();
+      String reason =
+          internalCause == null
+              ? "Epsilon reported a model-loading failure without a root cause."
+              : internalCause.getMessage() == null
+                  ? internalCause.getClass().getName()
+                  : internalCause.getMessage();
       diagnostics.add(
           GenerationDiagnostic.error(
               GenerationPhase.MODEL_LOADING,
               request.moduleFile(),
               -1,
               -1,
-              ex.getMessage(),
+              reason,
               "An EMF model or metamodel could not be loaded for EGX generation.",
               "Check model paths, metamodel paths, namespace aliases, and referenced Ecore files.",
               ex));

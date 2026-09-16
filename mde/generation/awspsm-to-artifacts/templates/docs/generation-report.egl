@@ -3,7 +3,7 @@
 - Project: `[%= emitCtx.get("projectName") %]`
 - Generator version: `[%= emitCtx.get("generatorVersion") %]`
 - Primary language: `[%= emitCtx.primaryLanguage() %]`
-- Planned artifacts: `[%= emitCtx.get("traceRows").size() %]`
+- Planned artifacts: `[%= emitCtx.get("traceRows").size() + 1 %]`
 - Manual issues: `[%= emitCtx.get("manualIssueList").size() %]`
 
 ## Artifact Kinds

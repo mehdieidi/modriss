@@ -10,11 +10,11 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"[%= emitCtx.goModulePath() %]/src/shared"
-)
 
 [%=out.startPreserve("/*", "*/", awsFn.manualRegionId("custom-imports"), true)%]
 // TODO: add developer-owned imports here.
 [%=out.stopPreserve()%]
+)
 
 type GeneratedInput struct {
 	Payload any `json:"payload,omitempty"`
@@ -24,6 +24,7 @@ type GeneratedResult struct {
 	StatusCode int               `json:"statusCode,omitempty"`
 	Headers    map[string]string `json:"headers,omitempty"`
 	Body       string            `json:"body,omitempty"`
+	BatchItemFailures []map[string]string `json:"batchItemFailures,omitempty"`
 }
 
 [%=out.startPreserve("/*", "*/", awsFn.manualRegionId("custom-types"), true)%]

@@ -1,0 +1,42 @@
+{
+  "status": "FAILED",
+  "evlRoot": "D:\\Repositories\\modriss\\mde\\validation\\psm",
+  "startedAt": "2026-09-16T14:01:41.216884900Z",
+  "finishedAt": "2026-09-16T14:01:42.422891900Z",
+  "durationMillis": 1206,
+  "totalMillis": 1206,
+  "moduleDiscoveryMillis": 2,
+  "mandatoryViolationCount": 0,
+  "optionalViolationCount": 0,
+  "modules": [
+    {
+      "moduleFile": "D:\\Repositories\\modriss\\mde\\validation\\psm\\psm-semantic-validation.evl",
+      "totalMillis": 1200,
+      "parseMillis": 382,
+      "modelLoadMillis": 0,
+      "structuralValidationMillis": 0,
+      "evlExecuteMillis": 0,
+      "violationMappingMillis": 0,
+      "disposeMillis": 0,
+      "violationCount": 0,
+      "diagnosticCount": 1
+    }
+  ],
+  "violations": [],
+  "diagnostics": [
+    {
+      "severity": "ERROR",
+      "phase": "MODEL_LOADING",
+      "file": "D:\\Repositories\\modriss\\mde\\validation\\psm\\psm-semantic-validation.evl",
+      "line": -1,
+      "column": -1,
+      "reason": "Error whilst loading model AWSPSM: Value 'org.eclipse.emf.ecore.impl.DynamicEObjectImpl@60dce7ea (eClass: org.eclipse.emf.ecore.impl.EClassImpl@73a2e526 (name: SnsSubscription) (instanceClassName: null) (abstract: false, interface: false))' is not legal. (file:/D:/Repositories/modriss/mde/samples/orderpulse/orderpulse.awspsm.xmi, -1, -1)",
+      "whatWentWrong": "An EMF model or metamodel could not be loaded.",
+      "howToFix": "Check model paths, metamodel paths, aliases, namespace URIs, and Ecore availability.",
+      "exceptionType": "org.eclipse.epsilon.eol.exceptions.models.EolModelLoadingException"
+    }
+  ],
+  "standardOutput": "",
+  "warningOutput": "",
+  "errorOutput": ""
+}

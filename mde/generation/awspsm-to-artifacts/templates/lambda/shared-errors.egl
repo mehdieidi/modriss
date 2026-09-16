@@ -36,8 +36,13 @@ func MapKnownError(err error, correlationID string) GeneratedErrorResponse {
 	if generatedErr, ok := err.(GeneratedHandlerError); ok {
 		codeText = generatedErr.Code
 		messageText = generatedErr.Message
-		if generatedErr.Code == "VALIDATION_ERROR" {
+		switch generatedErr.Code {
+		case "VALIDATION_ERROR":
 			statusCode = 400
+		case "NOT_FOUND":
+			statusCode = 404
+		case "CONFLICT":
+			statusCode = 409
 		}
 	}
 	return GeneratedErrorResponse{

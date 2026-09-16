@@ -1,0 +1,20 @@
+[% /* Generates a provider-neutral emulator preflight check. */ %]
+param(
+  [string]$EndpointUrl = $(if ($env:AWS_ENDPOINT_URL) { $env:AWS_ENDPOINT_URL } else { 'http://127.0.0.1:4566' })
+)
+$ErrorActionPreference = 'Stop'
+
+$env:AWS_DEFAULT_REGION = if ($env:AWS_DEFAULT_REGION) { $env:AWS_DEFAULT_REGION } else { '[%= awsRoot.defaultRegion.orElseText("us-east-1") %]' }
+$env:AWS_REGION = $env:AWS_DEFAULT_REGION
+$env:AWS_ACCESS_KEY_ID = if ($env:AWS_ACCESS_KEY_ID) { $env:AWS_ACCESS_KEY_ID } else { 'test' }
+$env:AWS_SECRET_ACCESS_KEY = if ($env:AWS_SECRET_ACCESS_KEY) { $env:AWS_SECRET_ACCESS_KEY } else { 'test' }
+$env:AWS_EC2_METADATA_DISABLED = 'true'
+$env:AWS_PAGER = ''
+
+Write-Host "Checking AWS emulator endpoint $EndpointUrl"
+& aws sts get-caller-identity --endpoint-url $EndpointUrl --region $env:AWS_REGION | Out-Host
+if ($LASTEXITCODE -ne 0) { throw "AWS emulator is not reachable at $EndpointUrl." }
+
+Write-Host 'Checking Docker availability for Lambda emulation'
+& docker version --format '{{.Server.Version}}' | Out-Host
+if ($LASTEXITCODE -ne 0) { throw 'Docker daemon is not reachable; Floci Lambda execution cannot be tested.' }

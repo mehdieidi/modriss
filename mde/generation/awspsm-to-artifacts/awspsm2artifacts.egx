@@ -673,6 +673,16 @@ rule BuildScript {
   post { emitCtx().recordArtifact("scripts/build.sh", "SCRIPT", "AWSPSM2ART_BuildScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("build-customizations")}); }
 }
 
+/** Generates the Windows PowerShell build equivalent. */
+rule BuildPowerShellScript {
+  template : "scripts/build.ps1.egl"
+  target : "scripts/build.ps1"
+  merge : true
+  overwrite : true
+  parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
+  post { emitCtx().recordArtifact("scripts/build.ps1", "SCRIPT", "AWSPSM2ART_BuildPowerShellScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("build-powershell-customizations")}); }
+}
+
 /** Generates artifacts or model elements for Test Script. */
 rule TestScript {
   template : "scripts/test.egl"
@@ -736,6 +746,37 @@ rule EmulatorEnvScript {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   post { emitCtx().recordArtifact("scripts/emulator-env.sh", "SCRIPT", "AWSPSM2ART_EmulatorEnvScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-env-customizations")}); }
+}
+
+/** Generates the Windows PowerShell emulator environment equivalent. */
+rule EmulatorEnvPowerShellScript {
+  template : "scripts/emulator-env.ps1.egl"
+  target : "scripts/emulator-env.ps1"
+  merge : true
+  overwrite : true
+  parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
+  post { emitCtx().recordArtifact("scripts/emulator-env.ps1", "SCRIPT", "AWSPSM2ART_EmulatorEnvPowerShellScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-env-powershell-customizations")}); }
+}
+
+/** Generates an executable emulator connectivity preflight. */
+rule EmulatorPreflightPowerShellScript {
+  template : "scripts/emulator-preflight.ps1.egl"
+  target : "scripts/emulator-preflight.ps1"
+  merge : true
+  overwrite : true
+  parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
+  post { emitCtx().recordArtifact("scripts/emulator-preflight.ps1", "SCRIPT", "AWSPSM2ART_EmulatorPreflightPowerShellScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-preflight-powershell-customizations")}); }
+}
+
+/** Generates a native emulator Step Functions execution probe. */
+rule EmulatorWorkflowPowerShellScript {
+  guard : AWSPSMWORKFLOW!StepFunctionStateMachine.all.notEmpty()
+  template : "scripts/emulator-workflow.ps1.egl"
+  target : "scripts/emulator-workflow.ps1"
+  merge : true
+  overwrite : true
+  parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
+  post { emitCtx().recordArtifact("scripts/emulator-workflow.ps1", "SCRIPT", "AWSPSM2ART_EmulatorWorkflowPowerShellScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-workflow-powershell-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Ci Validate. */

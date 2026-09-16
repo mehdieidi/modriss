@@ -76,7 +76,7 @@ public final class AwsPsmToArtifactsCommand implements Callable<Integer> {
       reportWriter.write(logFile, report);
       return 0;
     } catch (EgxGenerationException ex) {
-      writeFailure(err, ex.getReport());
+      writeFailure(err, ex);
       reportWriter.write(logFile, ex.getReport());
       return 2;
     }
@@ -104,7 +104,8 @@ public final class AwsPsmToArtifactsCommand implements Callable<Integer> {
    * @param err destination writer
    * @param report failed generation report
    */
-  private void writeFailure(PrintWriter err, EgxGenerationReport report) {
+  private void writeFailure(PrintWriter err, EgxGenerationException exception) {
+    EgxGenerationReport report = exception.getReport();
     err.printf("AWS PSM artifact generation failed in %d ms.%n", report.duration().toMillis());
     err.printf("Module: %s%n", report.moduleFile());
     err.printf("Output: %s%n", report.outputDirectory());
@@ -132,6 +133,9 @@ public final class AwsPsmToArtifactsCommand implements Callable<Integer> {
     }
     if (verbose) {
       writeCaptured(err, report);
+      if (exception.getCause() != null) {
+        err.printf("Root cause type: %s%n", exception.getCause().getClass().getName());
+      }
     }
   }
 

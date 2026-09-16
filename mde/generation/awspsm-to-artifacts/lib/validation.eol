@@ -78,6 +78,24 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
     }
   }
 
+  for (subscriptionObj in AWSPSMMESSAGING!SnsSubscription.all.sortBy(subscriptionObj | subscriptionObj.cfnLogicalId())) {
+    var subscriptionTopic = subscriptionObj.topic;
+    if (subscriptionTopic.isUndefined()) {
+      var sameStackTopics = AWSPSMMESSAGING!SnsTopic.all.select(topicCandidate |
+        AWSPSMCORE!SamStack.all.exists(stackCandidate |
+          stackCandidate.resources.includes(subscriptionObj) and stackCandidate.resources.includes(topicCandidate)));
+      if (sameStackTopics.size() = 1) {
+        subscriptionTopic = sameStackTopics.first();
+      }
+    }
+    if (subscriptionTopic.isUndefined()) {
+      issueSeq.add(self.issueTuple("SNS_SUBSCRIPTION_TOPIC_UNRESOLVED", "BLOCKER", "SNS subscription does not resolve to a topic in its stack: " + subscriptionObj.stableKey(), subscriptionObj, true));
+    }
+    if (subscriptionObj.endpointResource.isUndefined() and not subscriptionObj.endpoint.isPresent()) {
+      issueSeq.add(self.issueTuple("SNS_SUBSCRIPTION_ENDPOINT_MISSING", "BLOCKER", "SNS subscription has no endpoint: " + subscriptionObj.stableKey(), subscriptionObj, true));
+    }
+  }
+
   for (ruleObj in AWSPSMEVENTS!EventBridgeRule.all.sortBy(ruleObj | ruleObj.cfnLogicalId())) {
     if (ruleObj.eventPattern.isUndefined() and not ruleObj.eventPatternJson.isPresent() and not ruleObj.scheduleExpression.isPresent()) {
       issueSeq.add(self.issueTuple("EVENTBRIDGE_RULE_TRIGGER_MISSING", "BLOCKER", "EventBridge rule has neither event pattern nor schedule: " + ruleObj.stableKey(), ruleObj, profileMap.get("productionMode") = true));

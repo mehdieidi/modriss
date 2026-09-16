@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<awspsm:AwsPsmModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:awspsm="https://modriss.org/awspsm/1.0" xmlns:awspsmcore="https://modriss.org/awspsm/core/1.0" xmlns:awspsmapi="https://modriss.org/awspsm/api/1.0" xmlns:awspsmcompute="https://modriss.org/awspsm/compute/1.0" xmlns:awspsmevents="https://modriss.org/awspsm/events/1.0" xmlns:awspsmmessaging="https://modriss.org/awspsm/messaging/1.0" xmlns:awspsmobservability="https://modriss.org/awspsm/observability/1.0" xmlns:awspsmsecurity="https://modriss.org/awspsm/security/1.0" xmlns:awspsmstorage="https://modriss.org/awspsm/storage/1.0" xmlns:awspsmworkflow="https://modriss.org/awspsm/workflow/1.0" id="orderpulse-aws-psm" name="OrderPulse AWS PSM" summary="A serverless order intake and processing system modeled for AWS and executable in Floci." accountStrategy="single-account" regionStrategy="single-region" defaultRegion="us-east-1" namingConvention="PascalCase logical IDs and stable kebab-case physical names" taggingStrategy="stage-and-service" productionMode="false">
+  <stages id="stage_orderpulse" name="Floci Test" stageName="floci" region="us-east-1" requiresManualApproval="false" environmentClass="TEST" deploysStacks="stack_orderpulse"/>
+  <stacks id="stack_orderpulse" name="OrderPulse Stack" stackName="orderpulse-floci" templatePath="template.yaml" templateDescription="OrderPulse serverless order intake and processing stack." useSamTransform="true" packageIndividually="false" validateWithSam="true" validateWithCfnLint="true">
+    <capabilities>CAPABILITY_IAM</capabilities>
+
+    <resources xsi:type="awspsmsecurity:IamRole" id="role_orderpulse" name="OrderPulse Lambda Role" logicalId="OrderPulseLambdaRole" productionCritical="false" importedResource="false" roleName="orderpulse-floci-role" path="/" maxSessionDuration="3600" descriptionText="Execution role for OrderPulse Lambda functions.">
+      <assumeRolePolicy id="policy_orderpulse_assume" name="OrderPulse Assume Policy" version="2012-10-17">
+        <statements id="stmt_orderpulse_assume" name="Lambda Trust" effect="ALLOW" actions="sts:AssumeRole">
+          <principals id="principal_orderpulse_lambda" name="Lambda Service" principalType="Service" identifiers="lambda.amazonaws.com"/>
+        </statements>
+      </assumeRolePolicy>
+    </resources>
+    <resources xsi:type="awspsmsecurity:IamPolicy" id="policy_orderpulse_runtime" name="OrderPulse Runtime Policy" logicalId="OrderPulseRuntimePolicy" productionCritical="false" importedResource="false" policyName="orderpulse-floci-policy" roles="role_orderpulse">
+      <document id="document_orderpulse_runtime" name="OrderPulse Runtime Policy Document" version="2012-10-17">
+        <statements id="stmt_orderpulse_dynamodb" name="Orders Table Access" sid="OrdersTableAccess" effect="ALLOW" actions="dynamodb:PutItem dynamodb:GetItem dynamodb:UpdateItem">
+          <resources>!GetAtt OrdersTable.Arn</resources>
+        </statements>
+        <statements id="stmt_orderpulse_queue" name="Processing Queue Access" sid="ProcessingQueueAccess" effect="ALLOW" actions="sqs:SendMessage sqs:ReceiveMessage sqs:DeleteMessage sqs:GetQueueAttributes">
+          <resources>!GetAtt OrderProcessingQueue.Arn</resources>
+        </statements>
+        <statements id="stmt_orderpulse_logs" name="Lambda Log Access" sid="LambdaLogAccess" effect="ALLOW" actions="logs:CreateLogGroup logs:CreateLogStream logs:PutLogEvents">
+          <resources>!Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/orderpulse-*:*'</resources>
+        </statements>
+      </document>
+    </resources>
+
+    <resources xsi:type="awspsmobservability:CloudWatchLogGroup" id="log_create_order" name="Create Order Logs" logicalId="CreateOrderLogGroup" productionCritical="false" importedResource="false" logGroupName="/aws/lambda/orderpulse-create-order" retentionDays="7"/>
+    <resources xsi:type="awspsmobservability:CloudWatchLogGroup" id="log_get_order" name="Get Order Logs" logicalId="GetOrderLogGroup" productionCritical="false" importedResource="false" logGroupName="/aws/lambda/orderpulse-get-order" retentionDays="7"/>
+    <resources xsi:type="awspsmobservability:CloudWatchLogGroup" id="log_process_order" name="Process Order Logs" logicalId="ProcessOrderLogGroup" productionCritical="false" importedResource="false" logGroupName="/aws/lambda/orderpulse-process-order" retentionDays="7"/>
+
+    <resources xsi:type="awspsmstorage:DynamoDbTable" id="table_orders" name="Orders Table" logicalId="OrdersTable" productionCritical="false" importedResource="false" tableName="orderpulse-orders" pointInTimeRecoveryEnabled="true" deletionProtectionEnabled="false">
+      <attributeDefinitions id="attribute_order_id" name="Order ID Attribute" attributeName="orderId"/>
+      <keySchema id="key_order_id" name="Order ID Key" attributeName="orderId" keyType="HASH"/>
+    </resources>
+    <resources xsi:type="awspsmstorage:S3Bucket" id="bucket_receipts" name="Receipt Bucket" logicalId="ReceiptBucket" productionCritical="false" importedResource="false" bucketName="orderpulse-receipts" versioningStatus="ENABLED" publicAccessMode="STRICT_BLOCK_ALL"/>
+
+    <resources xsi:type="awspsmmessaging:SqsQueue" id="queue_order_processing_dlq" name="Order Processing DLQ" logicalId="OrderProcessingDlq" productionCritical="false" importedResource="false" queueName="orderpulse-processing-dlq" visibilityTimeoutSeconds="60" sqsManagedSseEnabled="true"/>
+    <resources xsi:type="awspsmmessaging:SqsQueue" xmi:id="queue_order_processing_xmi" id="queue_order_processing" name="Order Processing Queue" logicalId="OrderProcessingQueue" productionCritical="false" importedResource="false" queueName="orderpulse-processing" visibilityTimeoutSeconds="60" messageRetentionPeriodSeconds="345600" sqsManagedSseEnabled="true">
+      <redrivePolicy id="redrive_order_processing" name="Order Processing Redrive" maxReceiveCount="3" deadLetterQueue="queue_order_processing_dlq"/>
+    </resources>
+    <resources xsi:type="awspsmmessaging:SnsTopic" xmi:id="topic_order_events_xmi" id="topic_order_events" name="Order Events Topic" logicalId="OrderEventsTopic" productionCritical="false" importedResource="false" topicName="orderpulse-events" fifoTopic="false"/>
+    <resources xsi:type="awspsmmessaging:SnsSubscription" xmi:id="subscription_order_events_xmi" id="subscription_order_events" name="Order Events Queue Subscription" logicalId="OrderEventsQueueSubscription" productionCritical="false" importedResource="false" protocol="SQS" topic="topic_order_events_xmi" endpoint="!Sub 'arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:orderpulse-processing'" rawMessageDelivery="true"/>
+    <resources xsi:type="awspsmmessaging:SqsQueuePolicy" xmi:id="policy_order_events_queue_xmi" id="policy_order_events_queue" name="Order Events Queue Policy" logicalId="OrderEventsQueuePolicy" productionCritical="false" importedResource="false" queues="queue_order_processing_xmi">
+      <policyDocument id="document_order_events_queue" name="Order Events Queue Policy Document" version="2012-10-17">
+        <statements id="stmt_order_events_to_queue" name="SNS to SQS Delivery" sid="SnsToSqsDelivery" effect="ALLOW" actions="sqs:SendMessage">
+          <resources>!GetAtt OrderProcessingQueue.Arn</resources>
+          <principals id="principal_order_events_sns" name="SNS Service" principalType="Service" identifiers="sns.amazonaws.com"/>
+          <conditions id="condition_order_events_source" name="Order Events Topic Source" operator="ArnEquals" key="aws:SourceArn">
+            <values>!Ref OrderEventsTopic</values>
+          </conditions>
+        </statements>
+      </policyDocument>
+    </resources>
+
+    <resources xsi:type="awspsmevents:EventBridgeBus" id="bus_orderpulse" name="OrderPulse Event Bus" logicalId="OrderPulseEventBus" productionCritical="false" importedResource="false" busName="orderpulse-bus"/>
+    <resources xsi:type="awspsmevents:EventBridgeRule" id="rule_order_created" name="Order Created Rule" logicalId="OrderCreatedRule" productionCritical="false" importedResource="false" ruleName="orderpulse-order-created" eventPatternJson="{&quot;source&quot;:[&quot;orderpulse.orders&quot;],&quot;detail-type&quot;:[&quot;OrderCreated&quot;]}" state="ENABLED" bus="#//@stacks.0/@resources.10">
+      <targets id="target_order_created_queue" name="Order Created Queue Target" targetId="OrderProcessingQueueTarget" targetKind="SQS" targetResource="queue_order_processing"/>
+    </resources>
+
+    <resources xsi:type="awspsmcompute:AwsLambdaFunction" id="lambda_create_order" name="Create Order" logicalId="CreateOrder" productionCritical="false" importedResource="false" functionName="orderpulse-create-order" descriptionText="Validates and persists a new order, then queues it for processing." memorySizeMb="256" timeoutSeconds="15" codeSigningDecision="NOT_REQUIRED" logGroup="log_create_order" role="role_orderpulse">
+      <code xsi:type="awspsmcompute:LambdaZipCodeConfig" id="code_create_order" name="Create Order Code" runtimeIdentifier="provided.al2023" handler="bootstrap"/>
+      <environment id="env_create_table" name="Orders Table Environment" variableName="ORDERS_TABLE_NAME" stageSpecific="false"><value id="value_create_table" name="Orders Table Ref" sourceKind="CLOUDFORMATION_REF" resource="table_orders"/></environment>
+      <environment id="env_create_queue" name="Processing Queue Environment" variableName="PROCESSING_QUEUE_URL" stageSpecific="false"><value id="value_create_queue" name="Processing Queue Ref" sourceKind="CLOUDFORMATION_REF" resource="queue_order_processing"/></environment>
+      <permissions id="permission_create_api" name="Create Order API Permission" logicalId="CreateOrderApiPermission" productionCritical="false" importedResource="false" action="lambda:InvokeFunction" principal="apigateway.amazonaws.com" sourceArn="!Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/POST/orders'"/>
+      <functionUrl id="url_create_order" name="Create Order Function URL" logicalId="CreateOrderUrl" productionCritical="false" importedResource="false"/>
+    </resources>
+    <resources xsi:type="awspsmcompute:AwsLambdaFunction" id="lambda_get_order" name="Get Order" logicalId="GetOrder" productionCritical="false" importedResource="false" functionName="orderpulse-get-order" descriptionText="Reads an order by identifier from DynamoDB." memorySizeMb="256" timeoutSeconds="10" codeSigningDecision="NOT_REQUIRED" logGroup="log_get_order" role="role_orderpulse">
+      <code xsi:type="awspsmcompute:LambdaZipCodeConfig" id="code_get_order" name="Get Order Code" runtimeIdentifier="provided.al2023" handler="bootstrap"/>
+      <environment id="env_get_table" name="Orders Table Environment" variableName="ORDERS_TABLE_NAME" stageSpecific="false"><value id="value_get_table" name="Orders Table Ref" sourceKind="CLOUDFORMATION_REF" resource="table_orders"/></environment>
+      <permissions id="permission_get_api" name="Get Order API Permission" logicalId="GetOrderApiPermission" productionCritical="false" importedResource="false" action="lambda:InvokeFunction" principal="apigateway.amazonaws.com" sourceArn="!Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/GET/orders/*'"/>
+    </resources>
+    <resources xsi:type="awspsmcompute:AwsLambdaFunction" id="lambda_process_order" name="Process Order" logicalId="ProcessOrder" productionCritical="false" importedResource="false" functionName="orderpulse-process-order" descriptionText="Consumes order messages and marks them processed." memorySizeMb="256" timeoutSeconds="20" codeSigningDecision="NOT_REQUIRED" logGroup="log_process_order" role="role_orderpulse">
+      <code xsi:type="awspsmcompute:LambdaZipCodeConfig" id="code_process_order" name="Process Order Code" runtimeIdentifier="provided.al2023" handler="bootstrap"/>
+      <environment id="env_process_table" name="Orders Table Environment" variableName="ORDERS_TABLE_NAME" stageSpecific="false"><value id="value_process_table" name="Orders Table Ref" sourceKind="CLOUDFORMATION_REF" resource="table_orders"/></environment>
+      <eventSourceMappings xsi:type="awspsmcompute:SqsLambdaEventSourceMapping" id="mapping_process_queue" name="Processing Queue invokes Process Order" logicalId="ProcessOrderQueueMapping" productionCritical="false" importedResource="false" batchSize="1" maximumBatchingWindowSeconds="0" maximumRetryAttempts="3" reportBatchItemFailures="true" partialBatchFailureHandlingDecision="REQUIRED" partialBatchFailureHandlingRationale="A failed order must remain available for retry and eventual DLQ routing." queue="queue_order_processing"/>
+    </resources>
+
+    <resources xsi:type="awspsmapi:HttpApi" id="api_orderpulse" name="OrderPulse HTTP API" logicalId="OrderPulseHttpApi" productionCritical="false" importedResource="false" apiName="OrderPulse API" descriptionText="HTTP API for order creation and lookup." openApiVersion="3.0.3" protocolType="HTTP" corsEnabled="true">
+      <routes xsi:type="awspsmapi:HttpApiRoute" id="route_create_order" name="Create Order Route" logicalId="CreateOrderRoute" productionCritical="false" importedResource="false" operationName="createOrder" integration="integration_create_order" path="/orders" routeKey="POST /orders" method="POST" authorizationType="NONE"/>
+      <routes xsi:type="awspsmapi:HttpApiRoute" id="route_get_order" name="Get Order Route" logicalId="GetOrderRoute" productionCritical="false" importedResource="false" operationName="getOrder" integration="integration_get_order" path="/orders/{orderId}" routeKey="GET /orders/{orderId}" method="GET" authorizationType="NONE"/>
+    </resources>
+    <resources xsi:type="awspsmapi:ApiGatewayIntegration" id="integration_create_order" name="Create Order Integration" logicalId="CreateOrderIntegration" productionCritical="false" importedResource="false" integrationMethod="POST" payloadFormatVersion="2.0" integrationType="AWS_PROXY" lambdaTarget="lambda_create_order"/>
+    <resources xsi:type="awspsmapi:ApiGatewayIntegration" id="integration_get_order" name="Get Order Integration" logicalId="GetOrderIntegration" productionCritical="false" importedResource="false" integrationMethod="POST" payloadFormatVersion="2.0" integrationType="AWS_PROXY" lambdaTarget="lambda_get_order"/>
+
+    <resources xsi:type="awspsmworkflow:StepFunctionStateMachine" id="workflow_orderpulse" name="Order Processing Workflow" logicalId="OrderProcessingWorkflow" productionCritical="false" importedResource="false" stateMachineName="orderpulse-workflow" role="role_orderpulse">
+      <aslDocument id="asl_orderpulse" name="Order Processing Workflow Definition" comment="Validates the workflow input and completes an order-processing orchestration." startAt="AcceptOrder">
+        <states xsi:type="awspsmworkflow:AslPassState" id="state_accept_order" name="Accept Order" stateName="AcceptOrder" nextState="state_complete_order"/>
+        <states xsi:type="awspsmworkflow:AslSucceedState" id="state_complete_order" name="Complete Order" stateName="CompleteOrder"/>
+      </aslDocument>
+    </resources>
+
+    <resources xsi:type="awspsmobservability:CloudWatchAlarm" id="alarm_create_order" name="Create Order Errors" logicalId="CreateOrderErrorsAlarm" productionCritical="false" importedResource="false" alarmName="orderpulse-create-order-errors" alarmDescription="Alerts when Create Order reports Lambda errors." namespace="AWS/Lambda" metricName="Errors" statistic="Sum" period="60" evaluationPeriods="1" datapointsToAlarm="1" threshold="1.0" comparisonOperator="GREATER_THAN_OR_EQUAL_TO_THRESHOLD" treatMissingData="notBreaching" monitoredResource="lambda_create_order"/>
+  </stacks>
+</awspsm:AwsPsmModel>

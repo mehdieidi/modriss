@@ -1,0 +1,26 @@
+[% /* Generates the Windows PowerShell build artifact. */ %]
+param(
+  [switch]$InstallOnly
+)
+$ErrorActionPreference = 'Stop'
+
+go mod tidy
+if ($InstallOnly) {
+  exit 0
+}
+go test ./...
+[% for (awsFn in AWSPSMCOMPUTE!AwsLambdaFunction.all.sortBy(awsFn | awsFn.cfnLogicalId())) { %]
+New-Item -ItemType Directory -Force -Path 'bin/[%= awsFn.functionPathSegment(emitCtx) %]' | Out-Null
+$env:GOOS = 'linux'
+[% if (awsFn.architecture.isDefined() and awsFn.architecture.asString() = "ARM64") { %]
+$env:GOARCH = 'arm64'
+[% } else { %]
+$env:GOARCH = 'amd64'
+[% } %]
+& go build -o 'bin/[%= awsFn.functionPathSegment(emitCtx) %]/bootstrap' './src/functions/[%= awsFn.functionPathSegment(emitCtx) %]'
+if ($LASTEXITCODE -ne 0) { throw 'Go build failed for [%= awsFn.cfnLogicalId() %].' }
+[% } %]
+
+[%=out.startPreserve('#', '', awsRoot.manualRegionId('build-powershell-customizations'), true)%]
+# Add project-specific PowerShell build steps here.
+[%=out.stopPreserve()%]

@@ -168,7 +168,9 @@ final class EpsilonEgxGeneratorTest {
     assertTrue(
         Files.readString(outputDirectory.resolve("template.yaml"))
             .contains("Handler: 'bootstrap'"));
-    assertTrue(Files.readString(outputDirectory.resolve("template.yaml")).contains("CodeUri: '.'"));
+    assertTrue(
+        Files.readString(outputDirectory.resolve("template.yaml"))
+            .contains("CodeUri: 'bin/order-handler'"));
     assertTrue(
         Files.readString(outputDirectory.resolve("Makefile"))
             .contains("$(ARTIFACTS_DIR)/bootstrap"));
@@ -890,7 +892,7 @@ final class EpsilonEgxGeneratorTest {
             "DefinitionSubstitutions:",
             "Logging:",
             "Tracing:",
-            "CodeUri: '.'",
+            "CodeUri: 'bin/broad-function'",
             "Runtime: 'provided.al2023'",
             "Handler: 'bootstrap'")) {
       assertTrue(
@@ -1293,7 +1295,7 @@ final class EpsilonEgxGeneratorTest {
       throws IOException {
     String templateText = Files.readString(outputDirectory.resolve("template.yaml"));
     Matcher codeUriMatcher =
-        Pattern.compile("(?m)^(\\s*)CodeUri:\\s*['\"]?\\.['\"]?\\s*$").matcher(templateText);
+        Pattern.compile("(?m)^(\\s*)CodeUri:\\s*['\"]?[^'\"\\s]+['\"]?\\s*$").matcher(templateText);
     if (!codeUriMatcher.find()) {
       Files.writeString(outputDirectory.resolve("packaged-template.yaml"), templateText);
       return;

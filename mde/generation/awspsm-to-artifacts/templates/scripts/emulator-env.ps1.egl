@@ -1,0 +1,19 @@
+[% /* Generates the Windows PowerShell AWS emulator environment helper. */ %]
+param(
+  [ValidateSet('floci', 'localstack')]
+  [string]$Provider = $(if ($env:AWS_EMULATOR) { $env:AWS_EMULATOR } else { 'floci' })
+)
+$ErrorActionPreference = 'Stop'
+
+$env:AWS_EMULATOR = $Provider
+$env:AWS_DEFAULT_REGION = if ($env:AWS_DEFAULT_REGION) { $env:AWS_DEFAULT_REGION } else { '[%= awsRoot.defaultRegion.orElseText("us-east-1") %]' }
+$env:AWS_REGION = if ($env:AWS_REGION) { $env:AWS_REGION } else { $env:AWS_DEFAULT_REGION }
+$env:AWS_ENDPOINT_URL = if ($env:AWS_ENDPOINT_URL) { $env:AWS_ENDPOINT_URL } elseif ($env:AWS_EMULATOR_ENDPOINT_URL) { $env:AWS_EMULATOR_ENDPOINT_URL } else { 'http://127.0.0.1:4566' }
+$env:AWS_ACCESS_KEY_ID = if ($env:AWS_ACCESS_KEY_ID) { $env:AWS_ACCESS_KEY_ID } else { 'test' }
+$env:AWS_SECRET_ACCESS_KEY = if ($env:AWS_SECRET_ACCESS_KEY) { $env:AWS_SECRET_ACCESS_KEY } else { 'test' }
+$env:AWS_EC2_METADATA_DISABLED = 'true'
+$env:AWS_PAGER = ''
+$env:NO_PROXY = if ($env:NO_PROXY) { $env:NO_PROXY } else { 'localhost,127.0.0.1,localhost.floci.io,floci,localstack' }
+$env:no_proxy = $env:NO_PROXY
+
+Write-Host "AWS emulator: $($env:AWS_EMULATOR) ($($env:AWS_ENDPOINT_URL))"

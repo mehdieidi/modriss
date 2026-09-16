@@ -1,0 +1,37 @@
+[% /* Generates a Floci/LocalStack-native Step Functions execution probe. */ %]
+param(
+  [string]$InputJson = '{}'
+)
+$ErrorActionPreference = 'Stop'
+
+$endpoint = if ($env:AWS_ENDPOINT_URL) { $env:AWS_ENDPOINT_URL } else { 'http://127.0.0.1:4566' }
+$region = if ($env:AWS_REGION) { $env:AWS_REGION } else { '[%= awsRoot.defaultRegion.orElseText("us-east-1") %]' }
+$workflowName = '[%= AWSPSMWORKFLOW!StepFunctionStateMachine.all.first().stateMachineName %]'
+[% var workflowRole = AWSPSMWORKFLOW!StepFunctionStateMachine.all.first().role; %]
+[% var workflowRoleName = workflowRole.roleName; %]
+$roleArn = 'arn:aws:iam::000000000000:role/[% if (workflowRoleName.isPresent()) { %][%= workflowRoleName %][% } else { %][%= workflowRole.physicalName %][% } %]'
+$definitionPath = Join-Path $PSScriptRoot '..\asl\[%= AWSPSMWORKFLOW!StepFunctionStateMachine.all.first().stateMachineName.toSlug() %].asl.json'
+$definition = Get-Content -Raw -LiteralPath $definitionPath
+
+$common = @('--endpoint-url', $endpoint, '--region', $region, '--output', 'json')
+$machines = & aws stepfunctions list-state-machines @common | ConvertFrom-Json
+$machine = $machines.stateMachines | Where-Object { $_.name -eq $workflowName } | Select-Object -First 1
+if ($machine) {
+  & aws stepfunctions update-state-machine --state-machine-arn $machine.stateMachineArn --definition $definition --role-arn $roleArn @common | Out-Null
+  $machineArn = $machine.stateMachineArn
+} else {
+  $created = & aws stepfunctions create-state-machine --name $workflowName --definition $definition --role-arn $roleArn @common | ConvertFrom-Json
+  $machineArn = $created.stateMachineArn
+}
+
+$started = & aws stepfunctions start-execution --state-machine-arn $machineArn --input $InputJson @common | ConvertFrom-Json
+$deadline = (Get-Date).AddSeconds(90)
+do {
+  Start-Sleep -Seconds 1
+  $execution = & aws stepfunctions describe-execution --execution-arn $started.executionArn @common | ConvertFrom-Json
+} while ($execution.status -eq 'RUNNING' -and (Get-Date) -lt $deadline)
+
+if ($execution.status -ne 'SUCCEEDED') {
+  throw "Workflow execution did not succeed. Status: $($execution.status)"
+}
+Write-Output ($execution | ConvertTo-Json -Depth 10)

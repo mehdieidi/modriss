@@ -902,7 +902,23 @@ operation AWSPSMMESSAGING!SnsSubscription cfnTypeText(emitCtx : Map) : String {
 
 /** Renders emit cfn properties yaml. */
 operation AWSPSMMESSAGING!SnsSubscription emitCfnPropertiesYaml(emitCtx : Map) : String {
-  var outText = spaces(6) + "TopicArn: !Ref " + self.topic.cfnLogicalId() + "\n";
+  // Standalone XMI commonly restores a cross-reference as undefined. Resolve a
+  // unique topic in the same stack so a valid subscription is still emitted,
+  // while ambiguous subscriptions remain visible for validation/manual review.
+  var topicObj = self.topic;
+  if (topicObj.isUndefined()) {
+    var sameStackTopics = AWSPSMMESSAGING!SnsTopic.all.select(topicCandidate |
+      AWSPSMCORE!SamStack.all.exists(stackCandidate |
+        stackCandidate.resources.includes(self) and stackCandidate.resources.includes(topicCandidate)));
+    if (sameStackTopics.size() = 1) {
+      topicObj = sameStackTopics.first();
+    }
+  }
+  var topicArnText = "''";
+  if (topicObj.isDefined()) {
+    topicArnText = "!Ref " + topicObj.cfnLogicalId();
+  }
+  var outText = spaces(6) + "TopicArn: " + topicArnText + "\n";
   outText = outText + emitYamlScalarProperty("Protocol", self.protocol.snsProtocolText(), 6);
   if (self.endpointResource.isDefined()) {
     outText = outText + spaces(6) + "Endpoint: " + arnForResource(self.endpointResource) + "\n";
@@ -1001,8 +1017,17 @@ operation AWSPSMEVENTS!EventBridgeRule cfnTypeText(emitCtx : Map) : String {
 operation AWSPSMEVENTS!EventBridgeRule emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.ruleName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
-  if (self.bus.isDefined()) {
-    outText = outText + spaces(6) + "EventBusName: " + self.refForResourceInSameStack(self.bus) + "\n";
+  var busObj = self.bus;
+  if (busObj.isUndefined()) {
+    var sameStackBuses = AWSPSMEVENTS!EventBridgeBus.all.select(busCandidate |
+      AWSPSMCORE!SamStack.all.exists(stackCandidate |
+        stackCandidate.resources.includes(self) and stackCandidate.resources.includes(busCandidate)));
+    if (sameStackBuses.size() = 1) {
+      busObj = sameStackBuses.first();
+    }
+  }
+  if (busObj.isDefined()) {
+    outText = outText + spaces(6) + "EventBusName: " + self.refForResourceInSameStack(busObj) + "\n";
   }
   outText = outText + emitYamlScalarProperty("ScheduleExpression", self.scheduleExpression, 6);
   outText = outText + emitYamlScalarProperty("State", self.state, 6);

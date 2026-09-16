@@ -35,10 +35,10 @@ operation AWSPSMSECURITY!IamStatement emitIamStatementYaml(indentCount : Integer
   }
   outText = outText + self.actions.emitIamListYaml("Action", indentCount + 2);
   outText = outText + self.notActions.emitIamListYaml("NotAction", indentCount + 2);
-  if (self.principals.isEmpty()) {
-    outText = outText + self.resources.emitIamListYaml("Resource", indentCount + 2);
-    outText = outText + self.notResources.emitIamListYaml("NotResource", indentCount + 2);
-  }
+  // Resource policies also have Principals, but still require Resource. Keep
+  // these fields independent so SNS-to-SQS and similar policies are valid.
+  outText = outText + self.resources.emitIamListYaml("Resource", indentCount + 2);
+  outText = outText + self.notResources.emitIamListYaml("NotResource", indentCount + 2);
   if (self.principals.notEmpty()) {
     outText = outText + spaces(indentCount + 2) + "Principal:\n";
     for (principalObj in self.principals) {

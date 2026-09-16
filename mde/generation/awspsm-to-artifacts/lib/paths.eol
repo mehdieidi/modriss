@@ -53,7 +53,7 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction generatedHandlerName(profileMap : Map)
 
 /** Computes generated code uri. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction generatedCodeUri(profileMap : Map) : String {
-  return ".";
+  return "bin/" + self.functionPathSegment(profileMap);
 }
 
 /** Computes unit test path. */
