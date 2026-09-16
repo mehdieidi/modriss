@@ -28,7 +28,7 @@ fi
 echo "Updating the checkout with fast-forward-only Git pull..."
 git pull --ff-only
 
-compose_args=(-f deploy/compose.base.yaml -f deploy/compose.prod.yaml)
+compose_args=(--env-file "$REPO_ROOT/.env" -f deploy/compose.base.yaml -f deploy/compose.prod.yaml)
 
 echo "Validating the production Compose configuration..."
 docker compose "${compose_args[@]}" config -q
