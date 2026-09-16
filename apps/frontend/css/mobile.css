@@ -83,12 +83,12 @@
   }
 
   .mobile-dock-icon {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
   }
 
   .mobile-dock-label {
-    font: 700 8px/1 var(--font-display);
+    font: 700 9px/1 var(--font-display);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     white-space: nowrap;
@@ -152,7 +152,7 @@
   }
 
   .mobile-dock-label {
-    font-size: 7px;
+    font-size: 8px;
   }
 
   .mobile-dock-item {

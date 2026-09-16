@@ -8,6 +8,7 @@ import {
   fitViewportToDiagram,
   getModelingRendererDebug,
   initializeModelingRenderer,
+  openContainerFocus,
   renderDiagram,
   renderDiagramAsync,
   renderPalette,
@@ -117,6 +118,26 @@ function showNotFoundPage() {
     { once: true },
   );
   return true;
+}
+
+function configureLandingBrandLink() {
+  const brand = document.querySelector(".app-brand");
+  if (!brand) {
+    return;
+  }
+  const landingUrl = new URL(window.location.href);
+  const hostname = landingUrl.hostname;
+  if (hostname === "editor.localhost") {
+    landingUrl.hostname = "localhost";
+  } else if (hostname.startsWith("editor.")) {
+    landingUrl.hostname = hostname.slice("editor.".length);
+  } else if ((hostname === "localhost" || hostname === "127.0.0.1") && landingUrl.port === "8082") {
+    landingUrl.port = "8083";
+  }
+  landingUrl.pathname = "/";
+  landingUrl.search = "";
+  landingUrl.hash = "";
+  brand.setAttribute("href", landingUrl.toString());
 }
 
 function refreshCurrentUserLabel() {
@@ -632,6 +653,7 @@ function renderConfiguredModelTabs() {
 // ── Bind all DOM event handlers ───────────────────────────────────────────────
 
 function bindEvents() {
+  configureLandingBrandLink();
   bindCriticalActions();
 
   // Tab switching
@@ -1120,6 +1142,14 @@ function bindEvents() {
 
   // Attribute panel
   el.attrPanelCloseBtn?.addEventListener("click", closeAttributePanel);
+  el.attrPanelOpenBtn?.addEventListener("click", () => {
+    const nodeId = state.selectedNodeId;
+    if (!nodeId) {
+      return;
+    }
+    closeAttributePanel();
+    openContainerFocus(nodeId);
+  });
   bindConnectionDrawStateListener();
   el.attrPanelApplyBtn?.addEventListener("click", () => {
     if (!applyAttributePanel()) {

@@ -15,6 +15,8 @@ import { fingerprintElement, scheduleGraphDraw } from "./g6-performance.js";
 
 let currentCanvasCursorMode = "";
 const DEFERRED_NODE_DRAG_EDGE_THRESHOLD = 350;
+const PINCH_MIN_SCALE = 0.01;
+const PINCH_MAX_SCALE = 2.5;
 
 function originalEvent(event) {
   return event?.originalEvent || event;
@@ -455,6 +457,9 @@ export function bindG6Interactions(editor, callbacks = {}) {
   let openControlPress = null;
   let suppressOpenControlClickNodeId = null;
   let ignoreTouchCanvasClickUntil = 0;
+  let ignoreTouchGestureClickUntil = 0;
+  const touchPointers = new Map();
+  let pinchGesture = null;
 
   const suppressFollowingCanvasClick = (event) => {
     ignoreTouchCanvasClickUntil =
@@ -570,6 +575,128 @@ export function bindG6Interactions(editor, callbacks = {}) {
     }
   };
 
+  const isTouchPointer = (event) => originalEvent(event)?.pointerType === "touch";
+
+  const updateTouchPointer = (event) => {
+    if (!isTouchPointer(event) || !Number.isFinite(event.pointerId)) {
+      return;
+    }
+    touchPointers.set(event.pointerId, {
+      x: Number(event.clientX),
+      y: Number(event.clientY),
+    });
+  };
+
+  const pinchPoints = () => {
+    const points = [...touchPointers.values()];
+    if (points.length < 2) {
+      return null;
+    }
+    const first = points[0];
+    const second = points[1];
+    return {
+      distance: Math.hypot(second.x - first.x, second.y - first.y),
+      midpoint: {
+        x: (first.x + second.x) / 2,
+        y: (first.y + second.y) / 2,
+      },
+    };
+  };
+
+  const beginPinchGesture = () => {
+    const points = pinchPoints();
+    if (!points || points.distance < 1 || linkDrag) {
+      return false;
+    }
+    // A second finger changes the gesture from selection/panning to zooming.
+    // Finish the one-pointer gesture first so its compositor translation is not
+    // left behind when G6 applies the pinch transform.
+    openControlPress = null;
+    editor?.setOpenControlHover?.(null);
+    if (nodeDrag) {
+      cancelNodeDrag();
+    }
+    if (canvasPan) {
+      finishCanvasPan();
+    }
+    const scale = Math.max(
+      PINCH_MIN_SCALE,
+      Math.min(PINCH_MAX_SCALE, Number(graph.getZoom?.()) || state.viewport.scale || 1),
+    );
+    pinchGesture = {
+      initialDistance: points.distance,
+      initialScale: scale,
+      graphPoint: graphCanvasPoint(graph, points.midpoint.x, points.midpoint.y),
+    };
+    touchPointers.forEach((_point, pointerId) => {
+      try {
+        el.g6EditorHost?.setPointerCapture?.(pointerId);
+      } catch {
+        // Pointer capture is a best-effort upgrade for touches leaving the host.
+      }
+    });
+    return true;
+  };
+
+  const updatePinchGesture = () => {
+    if (!pinchGesture) {
+      return false;
+    }
+    const points = pinchPoints();
+    if (!points || points.distance < 1) {
+      return true;
+    }
+    const rect =
+      graph?.getCanvas?.()?.getContainer?.()?.getBoundingClientRect?.() ||
+      el.g6EditorHost?.getBoundingClientRect?.() ||
+      el.canvasViewport?.getBoundingClientRect?.();
+    if (!rect) {
+      return true;
+    }
+    const scale = Math.max(
+      PINCH_MIN_SCALE,
+      Math.min(
+        PINCH_MAX_SCALE,
+        pinchGesture.initialScale * (points.distance / pinchGesture.initialDistance),
+      ),
+    );
+    const nextX = points.midpoint.x - rect.left - pinchGesture.graphPoint.x * scale;
+    const nextY = points.midpoint.y - rect.top - pinchGesture.graphPoint.y * scale;
+    state.viewport.scale = scale;
+    state.viewport.x = nextX;
+    state.viewport.y = nextY;
+    try {
+      graph.zoomTo?.(scale, false);
+      graph.translateTo?.([nextX, nextY], false);
+    } catch {
+      // G6 will report a normal viewport update on the next successful frame.
+    }
+    callbacks.onViewportChange?.();
+    return true;
+  };
+
+  const finishPinchGesture = () => {
+    if (!pinchGesture) {
+      return;
+    }
+    pinchGesture = null;
+    touchPointers.clear();
+    ignoreTouchCanvasClickUntil = Math.max(ignoreTouchCanvasClickUntil, performance.now() + 350);
+    ignoreTouchGestureClickUntil = performance.now() + 350;
+    setCanvasPointerCaptureActive(Boolean(nodeDrag || linkDrag));
+    setCanvasCursor("grab");
+  };
+
+  const finishTouchPointer = (event) => {
+    if (!isTouchPointer(event)) {
+      return;
+    }
+    touchPointers.delete(event.pointerId);
+    if (pinchGesture && touchPointers.size < 2) {
+      finishPinchGesture();
+    }
+  };
+
   const finishCanvasPan = () => {
     if (!canvasPan) {
       return;
@@ -590,6 +717,15 @@ export function bindG6Interactions(editor, callbacks = {}) {
   };
 
   const hostPointerDown = (event) => {
+    updateTouchPointer(event);
+    if (isTouchPointer(event) && touchPointers.size >= 2 && !linkDrag) {
+      if (!pinchGesture) {
+        beginPinchGesture();
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (event.button !== 0 || linkDrag) {
       return;
     }
@@ -799,6 +935,12 @@ export function bindG6Interactions(editor, callbacks = {}) {
   };
 
   const hostPointerMove = (event) => {
+    updateTouchPointer(event);
+    if (isTouchPointer(event) && pinchGesture) {
+      updatePinchGesture();
+      event.preventDefault();
+      return;
+    }
     const setHoveredOpenControl = (nodeId) => {
       editor?.setOpenControlHover?.(nodeId || null);
     };
@@ -854,12 +996,25 @@ export function bindG6Interactions(editor, callbacks = {}) {
     }
   };
 
+  const pinchPointerMoveCapture = (event) => {
+    if (!isTouchPointer(event) || !pinchGesture) {
+      return;
+    }
+    updateTouchPointer(event);
+    updatePinchGesture();
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+
   el.g6EditorHost?.addEventListener("pointerdown", hostPointerDown, true);
+  el.g6EditorHost?.addEventListener("pointermove", pinchPointerMoveCapture, true);
   el.g6EditorHost?.addEventListener("pointermove", hostPointerMove);
   el.g6EditorHost?.addEventListener("pointerleave", hostPointerLeave);
   el.g6EditorHost?.addEventListener("lostpointercapture", finishNodeDrag);
   window.addEventListener("pointerup", finishCanvasPan);
   window.addEventListener("pointercancel", finishCanvasPan);
+  window.addEventListener("pointerup", finishTouchPointer);
+  window.addEventListener("pointercancel", finishTouchPointer);
   window.addEventListener("pointerup", finishNodeDrag);
   window.addEventListener("pointercancel", cancelNodeDrag);
   window.addEventListener("mouseup", finishNodeDrag);
@@ -916,13 +1071,18 @@ export function bindG6Interactions(editor, callbacks = {}) {
     }
     removeNodeDragPreview(nodeDrag);
     setCanvasPointerCaptureActive(false);
+    pinchGesture = null;
+    touchPointers.clear();
     pendingNodeDragMove = null;
     el.g6EditorHost?.removeEventListener("pointerdown", hostPointerDown, true);
+    el.g6EditorHost?.removeEventListener("pointermove", pinchPointerMoveCapture, true);
     el.g6EditorHost?.removeEventListener("pointermove", hostPointerMove);
     el.g6EditorHost?.removeEventListener("pointerleave", hostPointerLeave);
     el.g6EditorHost?.removeEventListener("lostpointercapture", finishNodeDrag);
     window.removeEventListener("pointerup", finishCanvasPan);
     window.removeEventListener("pointercancel", finishCanvasPan);
+    window.removeEventListener("pointerup", finishTouchPointer);
+    window.removeEventListener("pointercancel", finishTouchPointer);
     window.removeEventListener("pointerup", finishNodeDrag);
     window.removeEventListener("pointercancel", cancelNodeDrag);
     window.removeEventListener("mouseup", finishNodeDrag);
@@ -1118,6 +1278,9 @@ export function bindG6Interactions(editor, callbacks = {}) {
   });
 
   graph.on("node:click", (event) => {
+    if (isTouchPointer(event) && performance.now() < ignoreTouchGestureClickUntil) {
+      return;
+    }
     const id = nodeIdFromEvent(event, editor);
     if (!id || lastClickSuppressedNodeId === id) {
       lastClickSuppressedNodeId = null;
@@ -1173,6 +1336,9 @@ export function bindG6Interactions(editor, callbacks = {}) {
   });
 
   graph.on("edge:click", (event) => {
+    if (isTouchPointer(event) && performance.now() < ignoreTouchGestureClickUntil) {
+      return;
+    }
     const id = targetId(event, editor);
     if (id) {
       callbacks.onEdgeClick?.(id, originalEvent(event));

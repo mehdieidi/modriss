@@ -273,6 +273,18 @@
   min-width: 0;
 }
 
+.attr-panel-header-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.attr-panel-open-btn {
+  min-height: 30px;
+  padding-inline: 10px;
+}
+
 .attr-panel-type {
   font: 700 10px/1.2 var(--font-display);
   letter-spacing: 0.1em;

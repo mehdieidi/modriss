@@ -43,6 +43,7 @@ import {
   refIds,
   impliedEnumValues,
 } from "./model-utils.js";
+import { isContainerElement } from "./view-materializer.js";
 import {
   captureConnectionUndoSnapshot,
   captureDeleteElementUndoSnapshot,
@@ -171,6 +172,17 @@ function activeModelName() {
   ).trim();
 }
 
+function setAttributePanelOpenAction(node = null) {
+  if (!el.attrPanelOpenBtn) {
+    return;
+  }
+  const canOpen = Boolean(node && isContainerElement(node));
+  el.attrPanelOpenBtn.hidden = !canOpen;
+  if (canOpen) {
+    el.attrPanelOpenBtn.title = `Open ${node.label || node.id || "container"}`;
+  }
+}
+
 function ensureRootModel() {
   if (!state.baseModel || typeof state.baseModel !== "object") {
     state.baseModel = defaultRootModel(state.activeType, activeModelName());
@@ -191,6 +203,7 @@ export function openRootModelAttributePanel() {
   const rootType = modelingRootType(state.activeType);
   const definition = rootType ? modelingElementDefinition(state.activeType, rootType) : null;
 
+  setAttributePanelOpenAction();
   state.selectedRootModel = true;
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
@@ -231,6 +244,7 @@ export function openAttributePanel(nodeId) {
   state.selectedNodeIds = new Set([nodeId]);
   state.selectedConnectionId = null;
 
+  setAttributePanelOpenAction(node);
   el.attrPanelType.textContent = node.type;
   el.attrPanelTitle.textContent = node.label;
   if (el.attrPanelApplyBtn) {
@@ -264,6 +278,7 @@ export function closeAttributePanel() {
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = null;
+  setAttributePanelOpenAction();
   el.attributePanel.classList.add("hidden");
   el.workspace.classList.remove("attr-open");
   el.workspace.classList.remove("mobile-right-open");
@@ -280,6 +295,7 @@ export function openConnectionPanel(connectionId) {
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = connectionId;
+  setAttributePanelOpenAction();
 
   const source = state.nodesById.get(connection.sourceId);
   const target = state.nodesById.get(connection.targetId);

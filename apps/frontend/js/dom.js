@@ -149,6 +149,7 @@ export const el = {
   attributePanel: document.getElementById("attributePanel"),
   attrPanelType: document.getElementById("attrPanelType"),
   attrPanelTitle: document.getElementById("attrPanelTitle"),
+  attrPanelOpenBtn: document.getElementById("attrPanelOpenBtn"),
   attrPanelBody: document.getElementById("attrPanelBody"),
   attrPanelCloseBtn: document.getElementById("attrPanelCloseBtn"),
   attrPanelApplyBtn: document.getElementById("attrPanelApplyBtn"),

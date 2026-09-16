@@ -64,7 +64,7 @@
       <header class="topbar">
         <div class="topbar-menu-strip">
           <div class="topbar-left">
-            <a aria-label="Open MODRISS landing page" class="app-brand" href="/landing/">
+            <a aria-label="Open MODRISS landing page" class="app-brand" href="/">
               <img
                 alt="MODRISS logo"
                 class="app-logo-img"
@@ -823,26 +823,38 @@
                   <div class="attr-panel-type" id="attrPanelType"></div>
                   <div class="attr-panel-title" id="attrPanelTitle"></div>
                 </div>
-                <button
-                  aria-label="Close attributes panel"
-                  class="btn-icon-xs chat-header-icon-btn attr-panel-close-btn"
-                  id="attrPanelCloseBtn"
-                  title="Close"
-                  type="button"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="chat-header-icon"
-                    fill="currentColor"
-                    height="18"
-                    viewBox="0 -960 960 960"
-                    width="18"
+                <div class="attr-panel-header-actions">
+                  <button
+                    aria-label="Open selected container"
+                    class="btn btn-secondary btn-sm attr-panel-open-btn"
+                    id="attrPanelOpenBtn"
+                    title="Open selected container"
+                    type="button"
+                    hidden
                   >
-                    <path
-                      d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
-                    />
-                  </svg>
-                </button>
+                    Open
+                  </button>
+                  <button
+                    aria-label="Close attributes panel"
+                    class="btn-icon-xs chat-header-icon-btn attr-panel-close-btn"
+                    id="attrPanelCloseBtn"
+                    title="Close"
+                    type="button"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="chat-header-icon"
+                      fill="currentColor"
+                      height="18"
+                      viewBox="0 -960 960 960"
+                      width="18"
+                    >
+                      <path
+                        d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
               <div class="attr-panel-body" id="attrPanelBody"></div>
               <div class="attr-panel-footer">
