@@ -101,9 +101,13 @@ function App() {
 
   return <main id="top">
     <nav className="nav" aria-label="Main navigation">
-      <a className="brand" href="#top" onClick={closeMenu} aria-label="MODRISS research project home">
+      <a className="brand" href="#top" onClick={closeMenu} aria-label="MODRISS model-driven methodology research project home">
         <img src={modrissLogoBlack} alt="" />
-        <span>MODRISS<small>Research project</small></span>
+        <span>
+          MODRISS
+          <small>Model-driven methodology for serverless software development</small>
+          <small>Research project</small>
+        </span>
       </a>
       <button className="menu" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-label="Toggle navigation"><span /><span /></button>
       <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
