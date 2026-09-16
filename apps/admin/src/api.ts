@@ -6,7 +6,7 @@ declare global {
 }
 
 const baseUrl = () =>
-  (window.MODRISS_ADMIN_BACKEND_BASE_URL || "http://127.0.0.1:8080").replace(/\/$/, "");
+  (window.MODRISS_ADMIN_BACKEND_BASE_URL || window.location.origin).replace(/\/$/, "");
 const publicIpLookupUrl = () =>
   window.MODRISS_PUBLIC_IP_LOOKUP_URL || "https://api.ipify.org?format=json";
 

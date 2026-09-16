@@ -6,8 +6,8 @@ import modrissLogoBlack from './assets/modriss-logo.svg'
 import modrissLogoWhite from './assets/modriss-logo-w.svg'
 import './styles.css'
 
-const appUrl = import.meta.env.VITE_APP_URL ?? 'http://127.0.0.1:8082'
-const backendUrl = (import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://127.0.0.1:8080').replace(/\/$/, '')
+const appUrl = import.meta.env.VITE_APP_URL ?? window.location.origin
+const backendUrl = (import.meta.env.VITE_BACKEND_BASE_URL ?? window.location.origin).replace(/\/$/, '')
 const publicIpLookupUrl = import.meta.env.VITE_PUBLIC_IP_LOOKUP_URL ?? 'https://api.ipify.org?format=json'
 const docsUrl = import.meta.env.VITE_DOCS_URL ?? 'https://github.com/mehdieidi/modriss/tree/main/docs/public-docs'
 const githubUrl = import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/mehdieidi/modriss'

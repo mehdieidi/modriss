@@ -8,7 +8,7 @@ keeping the existing service ports available for direct debugging.
 Start the stack from the repository root:
 
 ```powershell
-docker compose up --build
+./scripts/dev.sh
 ```
 
 The Caddy listener defaults to `CADDY_HTTP_PORT=8088`.
@@ -43,8 +43,8 @@ friction during local development.
 
 ## Configuration Files
 
-- `infra/caddy/Caddyfile` owns host routing and shared security headers.
-- `deploy/compose.yaml` defines the `caddy` container, port publishing, volumes, and dependencies.
+- `infra/caddy/Caddyfile.dev` owns local host routing; `infra/caddy/Caddyfile.prod` owns production HTTPS routing.
+- `deploy/compose.base.yaml` defines the shared `caddy` container, volumes, and dependencies; the dev/prod overlays own port publishing.
 - `.env` and `.env.example` define `CADDY_HTTP_PORT`.
 - Caddy writes JSON access logs to the `modriss-caddy-logs` Docker volume.
 - Caddy exposes internal Prometheus metrics on `caddy:2019/metrics`.
@@ -58,15 +58,15 @@ docker compose up --force-recreate -d caddy
 Validate the Caddyfile before relying on it:
 
 ```powershell
-$caddyfile = (Resolve-Path infra\caddy\Caddyfile).Path
+$caddyfile = (Resolve-Path infra\caddy\Caddyfile.dev).Path
 docker run --rm -v "${caddyfile}:/etc/caddy/Caddyfile:ro" caddy:2.8-alpine caddy validate --config /etc/caddy/Caddyfile
 ```
 
 ## Production Guidance
 
-The checked-in Caddyfile is intentionally local-first and has `auto_https off` because it listens on
-a local high port. A production edge should use real hostnames, HTTPS, and environment-specific
-routing.
+The development Caddyfile has `auto_https off` because it listens on a local high port. The production
+Caddyfile uses real hostnames and Caddy-managed HTTPS. See [deployment environments](deployment-environments.md)
+for the complete production procedure.
 
 Production expectations:
 

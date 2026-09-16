@@ -1,0 +1,61 @@
+services:
+  caddy:
+    ports:
+      - "${CADDY_HTTP_PORT:-8088}:8088"
+    volumes:
+      - ../infra/caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+
+  backend:
+    environment:
+      MODRISS_ALLOWED_ORIGINS: ${MODRISS_ALLOWED_ORIGINS:-http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:8080,http://localhost:8080,http://127.0.0.1:8082,http://localhost:8082,http://127.0.0.1:8083,http://localhost:8083,http://127.0.0.1:8084,http://localhost:8084,http://localhost:8088,http://127.0.0.1:8088,http://admin.localhost:8088,http://api.localhost:8088,http://editor.localhost:8088}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+
+  frontend:
+    environment:
+      MODRISS_FRONTEND_BACKEND_BASE_URL: ${MODRISS_FRONTEND_BACKEND_BASE_URL:-http://api.localhost:8088}
+    ports:
+      - "${FRONTEND_PORT:-8082}:8082"
+
+  admin:
+    environment:
+      MODRISS_ADMIN_BACKEND_BASE_URL: ${MODRISS_ADMIN_URL:-http://admin.localhost:8088}
+    ports:
+      - "${ADMIN_PORT:-8084}:8084"
+
+  landing:
+    build:
+      args:
+        VITE_BACKEND_BASE_URL: ${MODRISS_PUBLIC_URL:-http://localhost:8088}
+        VITE_APP_URL: ${MODRISS_EDITOR_URL:-http://editor.localhost:8088}
+    ports:
+      - "${LANDING_PORT:-8083}:8083"
+
+  postgres:
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  localstack:
+    ports:
+      - "${LOCALSTACK_GATEWAY_PORT:-4566}:4566"
+      - "4510-4559:4510-4559"
+
+  floci:
+    ports:
+      - "${AWS_EMULATOR_GATEWAY_PORT:-4566}:4566"
+
+  dozzle:
+    ports:
+      - "9999:8080"
+
+  prometheus:
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+
+  loki:
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+
+  grafana:
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"

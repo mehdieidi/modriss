@@ -20,10 +20,10 @@ observability stack.
 
 ## Local Stack
 
-The canonical local stack is `deploy/compose.yaml`, included by the root `compose.yaml`.
+The canonical local stack is `deploy/compose.base.yaml` plus `deploy/compose.dev.yaml`, included by the root `compose.yaml`. Production uses those shared services with `deploy/compose.prod.yaml`; see [deployment environments](deployment-environments.md).
 
 ```powershell
-docker compose up --build
+./scripts/dev.sh
 ```
 
 Primary endpoints:

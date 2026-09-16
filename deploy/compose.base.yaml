@@ -1,7 +1,7 @@
 name: modriss
 
-# Run from the repository root so Compose can substitute ${VAR} from ./.env:
-#   docker compose up --build
+# This file contains the environment-neutral MODRISS stack. The root compose.yaml includes it
+# together with the development overlay; production uses it with compose.prod.yaml.
 #
 # The repository's mde directory is mounted into the backend so CVS activation writes the active
 # notation directly into the Git-tracked working tree. Backups are written below mde/notation/backup.
@@ -13,17 +13,14 @@ name: modriss
 # After changing renderer settings, recreate the backend container:
 #   docker compose up --build --force-recreate backend
 # The backend loads ../.env via env_file and only overrides container-specific
-# settings in deploy/compose.yaml (database host, upload path, CORS origins).
+# settings in the environment overlays (database host, upload path, CORS origins).
 # After changing secrets or AI settings, recreate the backend container:
 #   docker compose up --build --force-recreate backend
 
 services:
   caddy:
     image: caddy:2.8-alpine
-    ports:
-      - "${CADDY_HTTP_PORT:-8088}:8088"
     volumes:
-      - ../infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - modriss-caddy-logs:/var/log/caddy
       - modriss-caddy-data:/data
       - modriss-caddy-config:/config
@@ -52,8 +49,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-modriss}
       POSTGRES_USER: ${POSTGRES_USER:-modriss}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-modriss}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - modriss-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -80,8 +75,6 @@ services:
       MODRISS_UPLOAD_ROOT: ${MODRISS_CONTAINER_UPLOAD_ROOT:-/app/uploads}
       MODRISS_ALLOWED_ORIGINS: ${MODRISS_ALLOWED_ORIGINS:-http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:${BACKEND_PORT:-8080},http://localhost:${BACKEND_PORT:-8080},http://127.0.0.1:${FRONTEND_PORT:-8082},http://localhost:${FRONTEND_PORT:-8082},http://127.0.0.1:${LANDING_PORT:-8083},http://localhost:${LANDING_PORT:-8083},http://127.0.0.1:${ADMIN_PORT:-8084},http://localhost:${ADMIN_PORT:-8084},http://localhost:${CADDY_HTTP_PORT:-8088},http://127.0.0.1:${CADDY_HTTP_PORT:-8088},http://admin.localhost:${CADDY_HTTP_PORT:-8088},http://api.localhost:${CADDY_HTTP_PORT:-8088},http://editor.localhost:${CADDY_HTTP_PORT:-8088}}
       LOGGING_FILE_NAME: /app/logs/backend.log
-    ports:
-      - "${BACKEND_PORT:-8080}:8080"
     volumes:
       - ../mde:/app/mde
       - modriss-backend-uploads:/app/uploads
@@ -105,15 +98,16 @@ services:
     env_file:
       - path: ../.env
         required: false
+    environment:
+      # The empty production value makes the browser use same-origin /api routes through Caddy.
+      MODRISS_FRONTEND_BACKEND_BASE_URL: ${MODRISS_FRONTEND_BACKEND_BASE_URL:-}
     command:
       - sh
       - -c
       - |
         cp -a /app/. /srv/
-        printf '%s\n' "window.MODRISS_BACKEND_BASE_URL = \"http://127.0.0.1:${BACKEND_PORT:-8080}\";" > /srv/backend-config.js
+        printf '%s\n' "window.MODRISS_BACKEND_BASE_URL = \"$${MODRISS_FRONTEND_BACKEND_BASE_URL}\";" > /srv/backend-config.js
         exec python3 -m http.server --bind 0.0.0.0 8082 --directory /srv
-    ports:
-      - "${FRONTEND_PORT:-8082}:8082"
     volumes:
       - ../apps/frontend:/app:ro
     restart: unless-stopped
@@ -122,15 +116,18 @@ services:
     build:
       context: ../apps/admin
       dockerfile: Dockerfile
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      MODRISS_ADMIN_BACKEND_BASE_URL: ${MODRISS_ADMIN_URL:-http://admin.localhost:8088}
     command:
       - sh
       - -c
       - |
-        printf '%s\n' "window.MODRISS_ADMIN_BACKEND_BASE_URL = \"http://admin.localhost:${CADDY_HTTP_PORT:-8088}\";" \
+        printf '%s\n' "window.MODRISS_ADMIN_BACKEND_BASE_URL = \"$${MODRISS_ADMIN_BACKEND_BASE_URL}\";" \
           > /usr/share/nginx/html/admin-config.js
         exec nginx -g 'daemon off;'
-    ports:
-      - "${ADMIN_PORT:-8084}:8084"
     depends_on:
       backend:
         condition: service_healthy
@@ -153,9 +150,6 @@ services:
       HTTP_PROXY: ${LOCALSTACK_HTTP_PROXY:-}
       HTTPS_PROXY: ${LOCALSTACK_HTTPS_PROXY:-}
       NO_PROXY: ${LOCALSTACK_NO_PROXY:-localhost,127.0.0.1,localstack}
-    ports:
-      - "${LOCALSTACK_GATEWAY_PORT:-4566}:4566"
-      - "4510-4559:4510-4559"
     volumes:
       - modriss-localstack-data:/var/lib/localstack
       - /var/run/docker.sock:/var/run/docker.sock
@@ -187,8 +181,6 @@ services:
       HTTP_PROXY: ${FLOCI_HTTP_PROXY:-}
       HTTPS_PROXY: ${FLOCI_HTTPS_PROXY:-}
       NO_PROXY: ${FLOCI_NO_PROXY:-localhost,127.0.0.1,localhost.floci.io,floci,aws-emulator}
-    ports:
-      - "${AWS_EMULATOR_GATEWAY_PORT:-4566}:4566"
     volumes:
       - modriss-floci-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
@@ -207,16 +199,10 @@ services:
   landing:
     build:
       context: ../apps/landing
-      args:
-        VITE_BACKEND_BASE_URL: http://localhost:${CADDY_HTTP_PORT:-8088}
-    ports:
-      - "${LANDING_PORT:-8083}:8083"
     restart: unless-stopped
 
   dozzle:
     image: amir20/dozzle:latest
-    ports:
-      - "9999:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
@@ -227,8 +213,6 @@ services:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
       - --web.enable-lifecycle
-    ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - ../infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ../infra/prometheus/modriss-alerts.yml:/etc/prometheus/rules/modriss-alerts.yml:ro
@@ -278,8 +262,6 @@ services:
   loki:
     image: grafana/loki:3.3.2
     command: ["-config.file=/etc/loki/loki.yml"]
-    ports:
-      - "${LOKI_PORT:-3100}:3100"
     volumes:
       - ../infra/loki/loki.yml:/etc/loki/loki.yml:ro
       - modriss-loki-data:/loki
@@ -306,8 +288,6 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_METRICS_ENABLED: "true"
-    ports:
-      - "${GRAFANA_PORT:-3000}:3000"
     volumes:
       - ../infra/grafana/provisioning:/etc/grafana/provisioning:ro
       - ../infra/grafana:/var/lib/grafana/dashboards:ro

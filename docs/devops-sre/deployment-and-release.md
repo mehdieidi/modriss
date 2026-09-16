@@ -11,10 +11,10 @@ For an end-to-end real-server launch plan, use
 Run the full stack from the repository root:
 
 ```powershell
-docker compose up --build
+./scripts/dev.sh
 ```
 
-The root `compose.yaml` includes `deploy/compose.yaml`, which is the canonical stack definition.
+The root `compose.yaml` includes the shared `deploy/compose.base.yaml` and local `deploy/compose.dev.yaml` overlays.
 The preferred browser entrypoint is the Caddy edge proxy at `http://localhost:8088`; direct service
 ports remain available for debugging.
 
@@ -39,7 +39,8 @@ The current Compose stack includes application workloads (`backend`, `frontend`,
 
 ## Configuration
 
-Use `.env` for local overrides. Use a secret manager or orchestrator-managed secrets in production.
+Use `.env` for both environments. See [deployment environments](deployment-environments.md) for the
+production URL values, port policy, and deployment script.
 
 Important values:
 

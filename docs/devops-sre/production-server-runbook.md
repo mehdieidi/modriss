@@ -3,6 +3,10 @@
 This runbook describes how to deploy MODRISS to a real internet-facing server with a domain name,
 TLS, persistent data, monitoring, backups, and ongoing maintenance.
 
+The executable deployment path is documented in [deployment environments](deployment-environments.md):
+production uses the tracked `deploy/compose.base.yaml` and `deploy/compose.prod.yaml` files plus the
+server's `.env`, with `./scripts/deploy-prod.sh` as the normal entrypoint.
+
 It assumes a first production deployment on one Linux server with Docker Compose. That is a valid
 starting point for a small product, but the same operational rules apply later if the system moves
 to Kubernetes, managed databases, or managed observability.
@@ -11,21 +15,20 @@ to Kubernetes, managed databases, or managed observability.
 
 Recommended public surfaces:
 
-| Surface                | Example hostname              | Public?                                 | Notes                                                                |
-| ---------------------- | ----------------------------- | --------------------------------------- | -------------------------------------------------------------------- |
-| Landing                | `https://example.com`         | Yes                                     | Primary customer-facing website.                                     |
-| Editor                 | `https://editor.example.com`  | Yes                                     | Modeling application.                                                |
-| Backend API            | `https://api.example.com`     | Yes, restricted by auth and rate limits | Used by browser apps and integrations.                               |
-| Admin app              | `https://admin.example.com`   | Limited                                 | Protect with admin auth and preferably VPN, SSO, or IP allowlisting. |
-| Public docs or landing | `https://example.com`         | Yes                                     | Optional marketing/docs surface.                                     |
-| Grafana                | `https://grafana.example.com` | No by default                           | Expose only behind VPN/SSO/IP allowlist.                             |
-| Prometheus             | Internal only                 | No                                      | Do not expose publicly.                                              |
-| Loki                   | Internal only                 | No                                      | Do not expose publicly.                                              |
-| PostgreSQL             | Internal only                 | No                                      | Never expose directly to the internet.                               |
-| Actuator               | Internal only or admin-only   | No public anonymous access              | Health can be public only if it reveals no sensitive detail.         |
+| Surface     | Example hostname              | Public?                                 | Notes                                                                |
+| ----------- | ----------------------------- | --------------------------------------- | -------------------------------------------------------------------- |
+| Landing     | `https://modriss.site`        | Yes                                     | Primary customer-facing website.                                     |
+| Editor      | `https://editor.modriss.site` | Yes                                     | Modeling application.                                                |
+| Backend API | `https://api.modriss.site`    | Yes, restricted by auth and rate limits | Used by browser apps and integrations.                               |
+| Admin app   | `https://admin.modriss.site`  | Limited                                 | Protect with admin auth and preferably VPN, SSO, or IP allowlisting. |
+| Grafana     | Internal only                 | No                                      | Expose only behind VPN/SSO/IP allowlist.                             |
+| Prometheus  | Internal only                 | No                                      | Do not expose publicly.                                              |
+| Loki        | Internal only                 | No                                      | Do not expose publicly.                                              |
+| PostgreSQL  | Internal only                 | No                                      | Never expose directly to the internet.                               |
+| Actuator    | Internal only or admin-only   | No public anonymous access              | Health can be public only if it reveals no sensitive detail.         |
 
 For the first production version, prefer Caddy as the public edge proxy and keep backend services on
-private Docker networks. Only ports `80` and `443` should be reachable from the internet unless
+private Docker networks. Only ports `80`, `443/tcp`, and `443/udp` should be reachable from the internet unless
 there is a specific operational reason.
 
 ## Phase 1: Preflight Decisions
@@ -74,6 +77,7 @@ Example firewall intent:
 ufw allow OpenSSH
 ufw allow 80/tcp
 ufw allow 443/tcp
+ufw allow 443/udp
 ufw enable
 ufw status
 ```
@@ -87,14 +91,13 @@ Create DNS records before starting TLS.
 
 Example records:
 
-| Type | Name                  | Target                                     |
-| ---- | --------------------- | ------------------------------------------ |
-| `A`  | `example.com`         | Server IPv4                                |
-| `A`  | `example.com`         | Server IPv4                                |
-| `A`  | `editor.example.com`  | Server IPv4                                |
-| `A`  | `api.example.com`     | Server IPv4                                |
-| `A`  | `admin.example.com`   | Server IPv4                                |
-| `A`  | `grafana.example.com` | Server IPv4, only if intentionally exposed |
+| Type | Name                  | Target      |
+| ---- | --------------------- | ----------- |
+| `A`  | `modriss.site`        | Server IPv4 |
+| `A`  | `www.modriss.site`    | Server IPv4 |
+| `A`  | `editor.modriss.site` | Server IPv4 |
+| `A`  | `api.modriss.site`    | Server IPv4 |
+| `A`  | `admin.modriss.site`  | Server IPv4 |
 
 Use a low TTL during launch, such as 300 seconds. After the deployment is stable, raise the TTL if
 desired.
@@ -102,10 +105,11 @@ desired.
 Verify DNS from outside the server:
 
 ```bash
-dig example.com
-dig editor.example.com
-dig api.example.com
-dig admin.example.com
+dig modriss.site
+dig www.modriss.site
+dig editor.modriss.site
+dig api.modriss.site
+dig admin.modriss.site
 ```
 
 ## Phase 4: Production Configuration
@@ -131,7 +135,7 @@ Required production changes:
 Example origin shape:
 
 ```env
-MODRISS_ALLOWED_ORIGINS=https://example.com,https://editor.example.com,https://admin.example.com,https://api.example.com
+MODRISS_ALLOWED_ORIGINS=https://modriss.site,https://editor.modriss.site,https://admin.modriss.site,https://api.modriss.site
 ```
 
 Secrets policy:
@@ -143,38 +147,17 @@ Secrets policy:
 
 ## Phase 5: Production Caddy Routing
 
-Use Caddy for HTTPS and host routing. The local Caddyfile is a starting point, not the final
-production policy.
+Use the tracked `infra/caddy/Caddyfile.prod` for HTTPS and host routing. It is mounted by the
+production Compose overlay; no server-side Caddyfile editing is required.
 
 Production Caddy expectations:
 
-- Remove `auto_https off`.
-- Listen on real hostnames, not `localhost`.
-- Redirect HTTP to HTTPS.
-- Proxy only the surfaces intended to be public.
-- Keep observability tools private or protected.
-- Add stricter security headers after testing each app.
-- Add request body limits for upload endpoints if needed.
-
-Example shape:
-
-```caddyfile
-example.com {
-  reverse_proxy landing:8083
-}
-
-editor.example.com {
-  reverse_proxy frontend:8082
-}
-
-api.example.com {
-  reverse_proxy backend:8080
-}
-
-admin.example.com {
-  reverse_proxy admin:8084
-}
-```
+- It listens on `modriss.site`, `www.modriss.site`, `editor.modriss.site`, `admin.modriss.site`, and
+  `api.modriss.site`.
+- Caddy automatically obtains and renews Let's Encrypt certificates and redirects HTTP to HTTPS.
+- `www.modriss.site` permanently redirects to `https://modriss.site`.
+- It proxies only the public application surfaces; observability remains internal.
+- Caddy's admin/metrics API is bound to the container network on `:2019`; it has no host port mapping.
 
 For admin and operational tools, prefer one of these before going public:
 
@@ -185,11 +168,11 @@ For admin and operational tools, prefer one of these before going public:
 
 ## Phase 6: Compose Production Adjustments
 
-The development Compose stack publishes many ports for convenience. Production should not.
+The development Compose overlay publishes many ports for convenience. Production should not.
 
 Production Compose changes:
 
-- Publish only Caddy ports `80:80` and `443:443`.
+- Publish only Caddy ports `80:80`, `443:443`, and `443:443/udp`.
 - Remove public port mappings from backend, admin, frontend, PostgreSQL, Prometheus, Loki, Grafana,
   LocalStack, and Dozzle unless there is an explicit reason.
 - Put services on private Docker networks.
@@ -203,14 +186,14 @@ Preferred release model:
 1. CI builds versioned images.
 2. CI runs tests, migration checks, and image scans.
 3. Server pulls immutable image tags.
-4. Server runs `docker compose up -d`.
+4. Server runs `./scripts/deploy-prod.sh`.
 
 Acceptable first deployment model:
 
 1. Pull the repository on the server.
 2. Check out a known commit or tag.
 3. Build on the server.
-4. Run `docker compose up --build -d`.
+4. Run `./scripts/deploy-prod.sh`.
 
 The first model is better for repeatability and rollback.
 
@@ -221,29 +204,26 @@ First deployment checklist:
 1. Confirm DNS points to the server.
 2. Confirm firewall allows `80` and `443`.
 3. Create the production `.env`.
-4. Configure production Caddy hostnames.
+4. Set the production URL and secret values in `.env`.
 5. Confirm persistent volumes are defined.
-6. Run Compose config validation.
-7. Start the stack.
-8. Confirm Caddy obtains TLS certificates.
-9. Confirm backend readiness.
-10. Log in as the bootstrap admin.
-11. Set `MODRISS_ADMIN_BOOTSTRAP_ENABLED=false` and remove bootstrap admin emails and the bootstrap
+6. Run `./scripts/deploy-prod.sh` (it validates, builds, starts, and checks the public endpoints).
+7. Confirm Caddy obtains TLS certificates.
+8. Confirm backend readiness.
+9. Log in as the bootstrap admin.
+10. Set `MODRISS_ADMIN_BOOTSTRAP_ENABLED=false` and remove bootstrap admin emails and the bootstrap
     token after roles are assigned.
-12. Confirm audit logs record admin actions.
-13. Confirm metrics and logs are flowing.
-14. Create and restore-test the first backup.
+11. Confirm audit logs record admin actions.
+12. Confirm metrics and logs are flowing.
+13. Create and restore-test the first backup.
 
 Useful commands:
 
 ```bash
-docker compose config -q
-docker compose up -d
-docker compose ps
-docker compose logs -f caddy backend
-curl -I https://example.com
-curl -I https://editor.example.com
-curl https://api.example.com/actuator/health/readiness
+./scripts/deploy-prod.sh
+docker compose -f deploy/compose.base.yaml -f deploy/compose.prod.yaml logs -f caddy backend
+curl -I https://modriss.site
+curl -I https://editor.modriss.site
+curl https://api.modriss.site/actuator/health/readiness
 ```
 
 Do not announce the service publicly until login, admin access, backups, and monitoring have all

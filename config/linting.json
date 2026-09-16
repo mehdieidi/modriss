@@ -38,7 +38,9 @@
         "-c",
         "config/yamllint.yml",
         "compose.yaml",
-        "deploy/compose.yaml",
+        "deploy/compose.base.yaml",
+        "deploy/compose.dev.yaml",
+        "deploy/compose.prod.yaml",
         "docs",
         "apps/backend/src/main/resources"
       ]

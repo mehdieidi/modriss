@@ -22,8 +22,8 @@
     "test:frontend": "node --test tests/frontend/*.test.mjs",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
-    "docker:up:deploy": "docker compose -f deploy/compose.yaml up --build",
-    "docker:down:deploy": "docker compose -f deploy/compose.yaml down"
+    "docker:up:deploy": "./scripts/deploy-prod.sh",
+    "docker:down:deploy": "docker compose -f deploy/compose.base.yaml -f deploy/compose.prod.yaml down"
   },
   "devDependencies": {
     "@eslint/js": "9.27.0",

@@ -69,7 +69,7 @@ SAM CLI, and Go are needed when verifying or deploying generated projects.
 From the repository root:
 
 ```bash
-docker compose up --build
+./scripts/dev.sh
 ```
 
 | Service                        | Address                                 |

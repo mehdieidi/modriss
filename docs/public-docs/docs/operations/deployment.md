@@ -6,10 +6,10 @@ This page is the public production checklist. Use the published
 ## Local Compose Deployment
 
 ```bash
-docker compose up --build
+./scripts/dev.sh
 ```
 
-The root `compose.yaml` includes `deploy/compose.yaml`. Compose starts Caddy, PostgreSQL, backend,
+The root `compose.yaml` includes `deploy/compose.base.yaml` and `deploy/compose.dev.yaml`. Compose starts Caddy, PostgreSQL, backend,
 modeling frontend, admin app, landing site, the selected AWS emulator (Floci by default), Dozzle, Prometheus, Grafana, Loki, Promtail,
 postgres-exporter, node-exporter, and cAdvisor.
 
@@ -31,19 +31,20 @@ Direct service ports remain available for debugging.
 
 ## Production Target
 
-For a first production deployment, use one Linux server with Docker Compose and Caddy as the edge.
-Only Caddy should be public. PostgreSQL, Prometheus, Loki, the AWS emulator, Dozzle, exporters, and direct
-backend ports should stay private.
+For a first production deployment, use one Linux server with Docker Compose and Caddy as the edge. Follow
+the [deployment environments](../../../devops-sre/deployment-environments.md) procedure. Only Caddy is
+public; PostgreSQL, Prometheus, Loki, the AWS emulator, Dozzle, exporters, and direct backend ports stay private.
 
 Recommended public hostnames:
 
-| Surface | Example hostname              | Exposure                                  |
+| Surface | Hostname                      | Exposure                                  |
 | ------- | ----------------------------- | ----------------------------------------- |
-| Editor  | `https://editor.example.com`  | Public                                    |
-| API     | `https://api.example.com`     | Public, authenticated and rate-limited    |
-| Admin   | `https://admin.example.com`   | Restricted by admin auth and network rule |
-| Landing | `https://example.com`         | Public                                    |
-| Grafana | `https://grafana.example.com` | VPN, SSO, or IP allowlist only            |
+| Landing | `https://modriss.site`        | Public                                    |
+| Editor  | `https://editor.modriss.site` | Public                                    |
+| API     | `https://api.modriss.site`    | Public, authenticated and rate-limited    |
+| Admin   | `https://admin.modriss.site`  | Restricted by admin auth and network rule |
+| WWW     | `https://www.modriss.site`    | Permanent redirect to the landing site    |
+| Grafana | Internal only                 | Not exposed by default                    |
 
 ## Domain and DNS
 
@@ -54,10 +55,11 @@ Recommended public hostnames:
 5. Confirm records from outside the server.
 
 ```bash
-dig example.com
-dig editor.example.com
-dig api.example.com
-dig admin.example.com
+dig modriss.site
+dig www.modriss.site
+dig editor.modriss.site
+dig api.modriss.site
+dig admin.modriss.site
 ```
 
 ## Server Setup
@@ -89,6 +91,9 @@ Create `.env` on the server and never commit it.
 
 Required changes from local defaults:
 
+- Set `MODRISS_PUBLIC_URL=https://modriss.site`, `MODRISS_EDITOR_URL=https://editor.modriss.site`,
+  `MODRISS_ADMIN_URL=https://admin.modriss.site`, and leave `MODRISS_FRONTEND_BACKEND_BASE_URL` empty
+  for same-origin editor API calls.
 - Use strong random `POSTGRES_PASSWORD`.
 - Use strong `GRAFANA_ADMIN_PASSWORD`.
 - Set `MODRISS_ALLOWED_ORIGINS` to the exact HTTPS app, admin, and API origins.
@@ -101,7 +106,7 @@ Required changes from local defaults:
 Example:
 
 ```env
-MODRISS_ALLOWED_ORIGINS=https://example.com,https://editor.example.com,https://admin.example.com,https://api.example.com
+MODRISS_ALLOWED_ORIGINS=https://modriss.site,https://editor.modriss.site,https://admin.modriss.site,https://api.modriss.site
 MODRISS_ADMIN_BOOTSTRAP_ENABLED=true
 MODRISS_ADMIN_BOOTSTRAP_EMAILS=owner@example.com
 MODRISS_ADMIN_BOOTSTRAP_TOKEN=replace-with-long-random-token
@@ -109,28 +114,12 @@ MODRISS_ADMIN_BOOTSTRAP_TOKEN=replace-with-long-random-token
 
 ## Caddy Production Routing
 
-The local Caddyfile uses `localhost` and disables automatic HTTPS. Production should use real
-hostnames and Caddy-managed TLS.
+The development and production Caddyfiles are tracked separately. The production Compose overlay mounts
+`infra/caddy/Caddyfile.prod`, which uses the real MODRISS hostnames and Caddy-managed TLS. Do not edit a
+server-side Caddyfile.
 
-Example shape:
-
-```caddyfile
-example.com {
-  reverse_proxy landing:8083
-}
-
-editor.example.com {
-  reverse_proxy frontend:8082
-}
-
-api.example.com {
-  reverse_proxy backend:8080
-}
-
-admin.example.com {
-  reverse_proxy admin:8084
-}
-```
+The complete tracked route definition is in `infra/caddy/Caddyfile.prod`; it is selected automatically by
+`deploy/compose.prod.yaml`.
 
 Protect admin and observability routes with VPN, SSO, IP allowlisting, or another access-control
 layer before exposing them on the internet.
@@ -142,26 +131,23 @@ First deployment checklist:
 1. Confirm DNS points to the server.
 2. Confirm ports `80` and `443` are open.
 3. Copy or create the production `.env`.
-4. Configure production Caddy hostnames.
-5. Validate Compose.
-6. Start the stack.
-7. Confirm Caddy obtains TLS certificates.
-8. Confirm backend readiness.
-9. Log in and complete admin bootstrap.
-10. Disable admin bootstrap and remove the bootstrap token.
-11. Confirm metrics, logs, and audit events work.
-12. Create and restore-test the first backup.
+4. Set the production values in `.env`.
+5. Run `./scripts/deploy-prod.sh`.
+6. Confirm Caddy obtains TLS certificates.
+7. Confirm backend readiness.
+8. Log in and complete admin bootstrap.
+9. Disable admin bootstrap and remove the bootstrap token.
+10. Confirm metrics, logs, and audit events work.
+11. Create and restore-test the first backup.
 
 Useful commands:
 
 ```bash
-docker compose config -q
-docker compose up -d
-docker compose ps
-docker compose logs -f caddy backend
-curl -I https://example.com
-curl -I https://editor.example.com
-curl https://api.example.com/actuator/health/readiness
+./scripts/deploy-prod.sh
+docker compose -f deploy/compose.base.yaml -f deploy/compose.prod.yaml logs -f caddy backend
+curl -I https://modriss.site
+curl -I https://editor.modriss.site
+curl https://api.modriss.site/actuator/health/readiness
 ```
 
 ## Health Checks

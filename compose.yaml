@@ -1,3 +1,4 @@
-# Convenience entry point: canonical stack definition lives in deploy/compose.yaml.
+# Convenience entry point: local development is the default.
 include:
-  - deploy/compose.yaml
+  - deploy/compose.base.yaml
+  - deploy/compose.dev.yaml

@@ -1,0 +1,39 @@
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in production .env}
+
+  caddy:
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ../infra/caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
+
+  backend:
+    environment:
+      MODRISS_DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in production .env}
+      SPRING_PROFILES_ACTIVE: ${MODRISS_PROD_SPRING_PROFILE:-prod}
+      MODRISS_ALLOWED_ORIGINS: ${MODRISS_ALLOWED_ORIGINS:-https://modriss.site,https://editor.modriss.site,https://admin.modriss.site,https://api.modriss.site}
+
+  frontend:
+    environment:
+      MODRISS_FRONTEND_BACKEND_BASE_URL: ${MODRISS_FRONTEND_BACKEND_BASE_URL:-}
+
+  admin:
+    environment:
+      MODRISS_ADMIN_BACKEND_BASE_URL: ${MODRISS_ADMIN_URL:-https://admin.modriss.site}
+
+  landing:
+    build:
+      args:
+        VITE_BACKEND_BASE_URL: ${MODRISS_PUBLIC_URL:-https://modriss.site}
+        VITE_APP_URL: ${MODRISS_EDITOR_URL:-https://editor.modriss.site}
+
+  grafana:
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set in production .env}
+
+  # Production keeps application and infrastructure services on the Docker network only.
+  # Do not add host port mappings here: Caddy is the only public edge.

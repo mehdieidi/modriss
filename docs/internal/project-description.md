@@ -90,7 +90,7 @@ extensible, and modifiable.
 ## Runtime
 
 The backend now uses PostgreSQL for persisted application state, with schema migrations managed by
-Flyway and container orchestration are documented in `deploy/compose.yaml` (root `compose.yaml`
+Flyway and container orchestration are documented in `deploy/compose.base.yaml` and its environment overlays (root `compose.yaml`
 includes it). Storage operations and migration
 workflow are documented in `docs/internal/operations/postgres-storage.md`.
 
