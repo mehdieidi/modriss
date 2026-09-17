@@ -2,7 +2,6 @@ declare global {
   interface Window {
     MODRISS_ADMIN_BACKEND_BASE_URL?: string;
     MODRISS_PUBLIC_IP_LOOKUP_URL?: string;
-    MODRISS_PUBLIC_COUNTRY_LOOKUP_URL?: string;
   }
 }
 

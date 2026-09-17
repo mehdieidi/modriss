@@ -70,6 +70,11 @@ modriss:
     root: ${MODRISS_UPLOAD_ROOT:uploads}
     max-file-bytes: ${MODRISS_UPLOAD_MAX_FILE_BYTES:1048576}
     max-text-chars: ${MODRISS_UPLOAD_MAX_TEXT_CHARS:120000}
+  analytics:
+    country-lookup-url: ${MODRISS_COUNTRY_LOOKUP_URL:https://ipapi.co/{ip}/country/}
+    country-lookup-timeout-ms: ${MODRISS_COUNTRY_LOOKUP_TIMEOUT_MS:2000}
+    caddy-log-root: ${MODRISS_CADDY_LOG_ROOT:}
+    caddy-log-interval: ${MODRISS_CADDY_LOG_INTERVAL:PT15S}
   ai:
     enabled: ${MODRISS_AI_ENABLED:false}
     metamodel-mode: ${MODRISS_AI_METAMODEL_MODE:normal}
