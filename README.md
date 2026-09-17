@@ -16,7 +16,7 @@ and transformation-based architecture are intended to support future extensions 
 platforms, including Microsoft Azure and Google Cloud Platform (GCP), through corresponding
 platform-specific models, transformations, and artifact generators.
 
-![Low-code platform screenshot](apps\landing\src\assets\modriss-workspace.png)
+![Low-code platform screenshot](apps/landing/src/assets/modriss-workspace.png)
 
 ## Research context
 
