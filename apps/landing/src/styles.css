@@ -162,6 +162,7 @@ button {
   color: var(--ink-soft);
   font-size: 17px;
   line-height: 1.78;
+  text-align: justify;
 }
 .hero-actions {
   display: flex;
