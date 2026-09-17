@@ -328,6 +328,12 @@ public class AdminController {
     return queries.landingPageVisits();
   }
 
+  @GetMapping("/page-visits")
+  List<AdminQueryService.PageVisit> pageVisits(@RequestHeader("X-Auth-Token") String token) {
+    access.requireAdmin(auth.user(token));
+    return queries.pageVisits();
+  }
+
   @GetMapping("/metrics-summary")
   Map<String, ?> metricsSummary(@RequestHeader("X-Auth-Token") String token) {
     access.requireAdmin(auth.user(token));

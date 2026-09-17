@@ -28,7 +28,7 @@ import {
   AssistantProviderCallPrompt,
   AuditEvent,
   JobSummary,
-  LandingPageVisit,
+  PageVisit,
   ModelSummary,
   Overview,
   ProjectSummary,
@@ -58,7 +58,7 @@ type DataState = {
   jobs: JobSummary[];
   assistantTurns: AssistantTurnSummary[];
   userLoginEvents: UserLoginEvent[];
-  landingPageVisits: LandingPageVisit[];
+  pageVisits: PageVisit[];
   themeProfiles: ThemeProfile[];
   auditEvents: AuditEvent[];
 };
@@ -72,7 +72,7 @@ const emptyData: DataState = {
   jobs: [],
   assistantTurns: [],
   userLoginEvents: [],
-  landingPageVisits: [],
+  pageVisits: [],
   themeProfiles: [],
   auditEvents: [],
 };
@@ -114,7 +114,7 @@ export function App() {
         jobs,
         assistantTurns,
         userLoginEvents,
-        landingPageVisits,
+        pageVisits,
         themeProfiles,
         auditEvents,
       ] =
@@ -127,7 +127,7 @@ export function App() {
           api<JobSummary[]>("/api/admin/jobs", token),
           api<AssistantTurnSummary[]>("/api/admin/assistant/turns", token),
           api<UserLoginEvent[]>("/api/admin/user-login-events", token),
-          api<LandingPageVisit[]>("/api/admin/landing-page-visits", token),
+          api<PageVisit[]>("/api/admin/page-visits", token),
           api<ThemeProfile[]>("/api/admin/theme-profiles", token),
           api<AuditEvent[]>("/api/admin/audit-events", token),
         ]);
@@ -140,7 +140,7 @@ export function App() {
         jobs,
         assistantTurns,
         userLoginEvents,
-        landingPageVisits,
+        pageVisits,
         themeProfiles,
         auditEvents,
       });
@@ -280,7 +280,7 @@ export function App() {
         {view === "visitors" && (
           <VisitorsView
             loginRows={filterRows(data.userLoginEvents, query)}
-            landingRows={filterRows(data.landingPageVisits, query)}
+            pageRows={filterRows(data.pageVisits, query)}
           />
         )}
         {view === "visual-syntax" && (
@@ -640,10 +640,10 @@ function AssistantView(props: {
 
 function VisitorsView({
   loginRows,
-  landingRows,
+  pageRows,
 }: {
   loginRows: UserLoginEvent[];
-  landingRows: LandingPageVisit[];
+  pageRows: PageVisit[];
 }) {
   return (
     <div className="visitor-admin">
@@ -666,19 +666,19 @@ function VisitorsView({
 
       <section>
         <div className="section-heading-row">
-          <h2>Landing Page Visits</h2>
+          <h2>Website Visits</h2>
           <span>Retained for 3 days</span>
         </div>
         <Table
-          headers={["Visit", "IP", "Country", "OS", "Browser", "Device", "Referrer", "Occurred"]}
-          rows={landingRows.map((visit) => [
-            <RecordTitle title={visit.path || "/"} subtitle={visit.id} key="visit" />,
+          headers={["Website", "Page", "IP", "Country", "OS", "Browser", "Device", "Occurred"]}
+          rows={pageRows.map((visit) => [
+            <RecordTitle title={websiteLabel(visit.app)} subtitle={visit.app} key="website" />,
+            visit.path || "/",
             visit.ipAddress || "-",
             visit.country || "-",
             visit.os || "-",
             visit.browser || "-",
             visit.device || "-",
-            visit.referrer || "-",
             formatDate(visit.occurredAt),
           ])}
         />
@@ -1223,12 +1223,25 @@ function subtitle(view: View) {
     case "assistant":
       return "Durable assistant turns, provider usage, and cancellation control.";
     case "visitors":
-      return "Successful user logins and short-retention landing page visits.";
+      return "Successful logins and short-retention visits across the landing page, editor, and admin site.";
     case "visual-syntax":
       return "Concrete visual syntax documents for CIM, PIM, and PSM.";
     case "theme-control":
       return "Frontend color profiles, active theme selection, and modular CSS tokens.";
     case "audit":
       return "Administrative actions with actor, target, reason, and request IDs.";
+  }
+}
+
+function websiteLabel(app: string) {
+  switch (app) {
+    case "frontend":
+      return "Editor";
+    case "landing":
+      return "Landing";
+    case "admin":
+      return "Admin";
+    default:
+      return app || "Unknown";
   }
 }

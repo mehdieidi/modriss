@@ -11,7 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-/** Captures admin-visible request analytics for logins and public landing visits. */
+/** Captures admin-visible request analytics for logins and browser page visits. */
 @Service
 public class VisitorAnalyticsService {
 
@@ -23,7 +23,9 @@ public class VisitorAnalyticsService {
           "CF-IPCountry",
           "X-Vercel-IP-Country",
           "X-Appengine-Country",
-          "CloudFront-Viewer-Country");
+          "CloudFront-Viewer-Country",
+          "X-Country-Code",
+          "X-Country");
 
   private final JdbcTemplate jdbc;
 
@@ -32,7 +34,7 @@ public class VisitorAnalyticsService {
   }
 
   public void recordLogin(UserRecord user, HttpServletRequest request, String reportedPublicIp) {
-    ClientInfo info = clientInfo(request, reportedPublicIp);
+    ClientInfo info = clientInfo(request, reportedPublicIp, "");
     jdbc.update(
         """
         INSERT INTO user_login_events (
@@ -55,15 +57,26 @@ public class VisitorAnalyticsService {
 
   public void recordLandingVisit(
       HttpServletRequest request, String path, String referrer, String reportedPublicIp) {
-    ClientInfo info = clientInfo(request, reportedPublicIp);
+    recordPageVisit(request, "landing", path, referrer, reportedPublicIp, "");
+  }
+
+  public void recordPageVisit(
+      HttpServletRequest request,
+      String app,
+      String path,
+      String referrer,
+      String reportedPublicIp,
+      String reportedCountry) {
+    ClientInfo info = clientInfo(request, reportedPublicIp, reportedCountry);
     jdbc.update(
         """
         INSERT INTO landing_page_visits (
-          id, ip_address, country, os, browser, device, user_agent, path, referrer, request_id,
-          occurred_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          id, app, ip_address, country, os, browser, device, user_agent, path, referrer,
+          request_id, occurred_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         UUID.randomUUID().toString(),
+        truncate(app),
         info.ipAddress(),
         info.country(),
         info.os(),
@@ -81,11 +94,12 @@ public class VisitorAnalyticsService {
     jdbc.update("DELETE FROM landing_page_visits WHERE occurred_at < now() - interval '3 days'");
   }
 
-  private ClientInfo clientInfo(HttpServletRequest request, String reportedPublicIp) {
+  private ClientInfo clientInfo(
+      HttpServletRequest request, String reportedPublicIp, String reportedCountry) {
     String userAgent = truncate(request.getHeader("User-Agent"));
     return new ClientInfo(
         truncate(clientIp(request, reportedPublicIp)),
-        truncate(country(request)),
+        truncate(country(request, reportedCountry)),
         truncate(os(userAgent)),
         truncate(browser(userAgent)),
         truncate(device(userAgent)),
@@ -176,14 +190,22 @@ public class VisitorAnalyticsService {
     return "";
   }
 
-  private String country(HttpServletRequest request) {
+  private String country(HttpServletRequest request, String reportedCountry) {
     for (String header : COUNTRY_HEADERS) {
       String value = request.getHeader(header);
       if (value != null && !value.isBlank() && !"XX".equalsIgnoreCase(value.trim())) {
-        return value.trim().toUpperCase(Locale.ROOT);
+        return normalizeCountry(value);
       }
     }
-    return "";
+    return normalizeCountry(reportedCountry);
+  }
+
+  private String normalizeCountry(String value) {
+    if (value == null) {
+      return "";
+    }
+    String normalized = value.trim().toUpperCase(Locale.ROOT);
+    return normalized.matches("[A-Z]{2}") && !"XX".equals(normalized) ? normalized : "";
   }
 
   private String os(String userAgent) {

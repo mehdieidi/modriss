@@ -282,12 +282,37 @@ ORDER BY p.updated_at DESC
         SELECT id, ip_address, country, os, browser, device, user_agent, path, referrer,
           request_id, occurred_at
         FROM landing_page_visits
-        WHERE occurred_at >= now() - interval '3 days'
+        WHERE app = 'landing' AND occurred_at >= now() - interval '3 days'
         ORDER BY occurred_at DESC LIMIT 500
         """,
         (rs, row) ->
             new LandingPageVisit(
                 rs.getString("id"),
+                rs.getString("ip_address"),
+                rs.getString("country"),
+                rs.getString("os"),
+                rs.getString("browser"),
+                rs.getString("device"),
+                rs.getString("user_agent"),
+                rs.getString("path"),
+                rs.getString("referrer"),
+                rs.getString("request_id"),
+                instant(rs, "occurred_at")));
+  }
+
+  public List<PageVisit> pageVisits() {
+    return jdbc.query(
+        """
+        SELECT id, app, ip_address, country, os, browser, device, user_agent, path, referrer,
+          request_id, occurred_at
+        FROM landing_page_visits
+        WHERE occurred_at >= now() - interval '3 days'
+        ORDER BY occurred_at DESC LIMIT 500
+        """,
+        (rs, row) ->
+            new PageVisit(
+                rs.getString("id"),
+                rs.getString("app"),
                 rs.getString("ip_address"),
                 rs.getString("country"),
                 rs.getString("os"),
@@ -469,6 +494,20 @@ ORDER BY p.updated_at DESC
 
   public record LandingPageVisit(
       String id,
+      String ipAddress,
+      String country,
+      String os,
+      String browser,
+      String device,
+      String userAgent,
+      String path,
+      String referrer,
+      String requestId,
+      Instant occurredAt) {}
+
+  public record PageVisit(
+      String id,
+      String app,
       String ipAddress,
       String country,
       String os,

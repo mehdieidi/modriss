@@ -9,6 +9,7 @@ import './styles.css'
 const appUrl = import.meta.env.VITE_APP_URL ?? window.location.origin
 const backendUrl = (import.meta.env.VITE_BACKEND_BASE_URL ?? window.location.origin).replace(/\/$/, '')
 const publicIpLookupUrl = import.meta.env.VITE_PUBLIC_IP_LOOKUP_URL ?? 'https://api.ipify.org?format=json'
+const publicCountryLookupUrl = import.meta.env.VITE_PUBLIC_COUNTRY_LOOKUP_URL ?? 'https://ipapi.co/country/'
 const docsUrl = import.meta.env.VITE_DOCS_URL ?? 'https://github.com/mehdieidi/modriss/tree/main/docs/public-docs'
 const githubUrl = import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/mehdieidi/modriss'
 const labUrl = 'https://www.sharif.ir/en/web/me_ce/home'
@@ -37,13 +38,32 @@ async function lookupPublicIp() {
   }
 }
 
+async function lookupPublicCountry() {
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), 1500)
+  try {
+    const response = await fetch(publicCountryLookupUrl, { signal: controller.signal, cache: 'no-store' })
+    if (!response.ok) return ''
+    const contentType = response.headers.get('Content-Type') || ''
+    if (contentType.includes('application/json')) {
+      const body = await response.json() as { country_code?: unknown }
+      return typeof body.country_code === 'string' ? body.country_code : ''
+    }
+    return (await response.text()).trim()
+  } catch {
+    return ''
+  } finally {
+    window.clearTimeout(timeout)
+  }
+}
+
 async function sendLandingVisit() {
-  const publicIp = await lookupPublicIp()
+  const [publicIp, country] = await Promise.all([lookupPublicIp(), lookupPublicCountry()])
   const body = JSON.stringify({
     app: 'landing',
     kind: 'page_view',
     url: window.location.pathname + window.location.search,
-    attributes: { referrer: document.referrer, publicIp },
+    attributes: { referrer: document.referrer, publicIp, country },
     occurredAt: new Date().toISOString(),
   })
   const endpoint = `${backendUrl}/api/telemetry/frontend`

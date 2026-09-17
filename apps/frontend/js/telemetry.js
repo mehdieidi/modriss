@@ -2,6 +2,9 @@ import { apiUrl } from "./config.js";
 
 const APP_NAME = "frontend";
 const MAX_MESSAGE = 300;
+const publicCountryLookupUrl =
+  window.MODRISS_PUBLIC_COUNTRY_LOOKUP_URL || "https://ipapi.co/country/";
+let publicCountryPromise;
 
 function telemetryEnabled() {
   if (typeof window.MODRISS_FRONTEND_TELEMETRY_ENABLED === "boolean") {
@@ -52,6 +55,37 @@ function sendTelemetry(kind, payload = {}) {
   }).catch(() => {});
 }
 
+async function lookupPublicCountry() {
+  if (!publicCountryPromise) {
+    publicCountryPromise = (async () => {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 1500);
+      try {
+        const response = await fetch(publicCountryLookupUrl, { signal: controller.signal, cache: "no-store" });
+        if (!response.ok) return "";
+        const contentType = response.headers.get("Content-Type") || "";
+        if (contentType.includes("application/json")) {
+          const body = await response.json();
+          return typeof body.country_code === "string" ? body.country_code : "";
+        }
+        return (await response.text()).trim();
+      } catch {
+        return "";
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    })();
+  }
+  return publicCountryPromise;
+}
+
+async function sendPageView() {
+  const country = await lookupPublicCountry();
+  sendTelemetry("page_view", {
+    attributes: { country, referrer: document.referrer },
+  });
+}
+
 export function initFrontendTelemetry() {
   window.addEventListener("error", (event) => {
     sendTelemetry("js_error", {
@@ -69,6 +103,7 @@ export function initFrontendTelemetry() {
     });
   });
   window.addEventListener("load", () => {
+    void sendPageView();
     window.setTimeout(() => {
       const navigation = performance.getEntriesByType("navigation")[0];
       if (navigation) {

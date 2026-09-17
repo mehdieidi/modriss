@@ -46,13 +46,15 @@ public class TelemetryController {
         event.url(),
         event.durationMs(),
         truncate(request.getHeader("User-Agent"), 180));
-    if ("landing".equals(app) && "page_view".equals(kind)) {
+    if ("page_view".equals(kind)) {
       Map<String, String> attributes = event.attributes();
-      analytics.recordLandingVisit(
+      analytics.recordPageVisit(
           request,
+          app,
           event.url(),
           attributes == null ? "" : attributes.getOrDefault("referrer", ""),
-          attributes == null ? "" : attributes.getOrDefault("publicIp", ""));
+          attributes == null ? "" : attributes.getOrDefault("publicIp", ""),
+          attributes == null ? "" : attributes.getOrDefault("country", ""));
     }
     return ResponseEntity.accepted().build();
   }

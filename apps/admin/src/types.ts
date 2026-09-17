@@ -145,6 +145,21 @@ export type LandingPageVisit = {
   occurredAt: string;
 };
 
+export type PageVisit = {
+  id: string;
+  app: string;
+  ipAddress: string;
+  country: string;
+  os: string;
+  browser: string;
+  device: string;
+  userAgent: string;
+  path: string;
+  referrer: string;
+  requestId: string | null;
+  occurredAt: string;
+};
+
 export type ThemeProfile = {
   id: string;
   name: string;

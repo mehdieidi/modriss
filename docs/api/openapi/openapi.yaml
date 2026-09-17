@@ -1695,7 +1695,7 @@ paths:
   /api/telemetry/frontend:
     post:
       tags: [Telemetry]
-      summary: Record frontend telemetry
+      summary: Record browser telemetry and page views
       security: []
       responses:
         "202":
@@ -1777,6 +1777,12 @@ paths:
       summary: List landing page visits
       responses:
         "200": { description: Landing page visits }
+  /api/admin/page-visits:
+    get:
+      tags: [Admin]
+      summary: List recent visits across all browser applications
+      responses:
+        "200": { description: Page visits with application, path, and country }
   /api/admin/notation/{level}:
     get:
       tags: [Admin]
