@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 384" role="img" aria-labelledby="mde-path-title mde-path-desc">
+    <title id="mde-path-title">MODRISS model-driven modeling path</title>
+    <desc id="mde-path-desc">A four-stage path from a computation-independent model through a platform-independent serverless architecture and AWS platform-specific model to generated AWS artifacts.</desc>
+
+    <defs><style>@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;display=swap');</style>
+      <marker id="mde-path-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#617178"/>
+      </marker>
+      <marker id="mde-path-arrow-copper" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#b4653c"/>
+      </marker>
+    </defs>
+
+    <rect width="1280" height="384" fill="#f5f3ed"/>
+
+    <!-- Provider-independent boundary -->
+    <rect x="48" y="64" width="560" height="276" rx="8" fill="#d7e9e5" fill-opacity="0.32" stroke="#087b78" stroke-opacity="0.52" stroke-width="1" stroke-dasharray="6 5"/>
+    <rect x="68" y="54" width="216" height="18" rx="2" fill="#f5f3ed"/>
+    <text x="76" y="66" fill="#075d5b" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="8" font-weight="600" letter-spacing="0.12em">PROVIDER-INDEPENDENT FOUNDATION</text>
+
+    <!-- Handoff connectors: drawn before labels and stage cards -->
+    <line x1="296" y1="200" x2="368" y2="200" stroke="#617178" stroke-width="1.4" marker-end="url(#mde-path-arrow)"/>
+    <line x1="592" y1="200" x2="664" y2="200" stroke="#617178" stroke-width="1.4" marker-end="url(#mde-path-arrow)"/>
+    <line x1="888" y1="200" x2="960" y2="200" stroke="#b4653c" stroke-width="1.6" marker-end="url(#mde-path-arrow-copper)"/>
+
+    <!-- Connector labels with opaque masks and visible separation -->
+    <rect x="300" y="158" width="64" height="16" rx="2" fill="#f5f3ed"/>
+    <text x="332" y="169" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="7" font-weight="600" letter-spacing="0.02em" text-anchor="middle">ETL REFINEMENT</text>
+    <rect x="596" y="158" width="64" height="16" rx="2" fill="#f5f3ed"/>
+    <text x="628" y="169" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="7" font-weight="600" letter-spacing="0.02em" text-anchor="middle">ETL REFINEMENT</text>
+    <rect x="892" y="158" width="64" height="16" rx="2" fill="#f5f3ed"/>
+    <text x="924" y="169" fill="#b4653c" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="7" font-weight="600" letter-spacing="0.02em" text-anchor="middle">EGX / EGL</text>
+
+    <!-- Stage 1: CIM -->
+    <rect x="72" y="96" width="224" height="208" rx="6" fill="#fcfbf7" stroke="#102c3a" stroke-width="1.2"/>
+    <text x="92" y="122" fill="#087b78" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="8" font-weight="600" letter-spacing="0.16em">01 · MODEL</text>
+    <text x="92" y="162" fill="#102c3a" font-family="Georgia, 'Times New Roman', serif" font-size="28">CIM</text>
+    <text x="92" y="188" fill="#2c4652" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="12" font-weight="600">Problem and Business</text>
+    <text x="92" y="204" fill="#2c4652" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="12" font-weight="600">Domain</text>
+    <line x1="92" y1="220" x2="276" y2="220" stroke="#ccd2cf" stroke-width="1"/>
+    <text x="92" y="240" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="10">Requirements, stakeholders,</text>
+    <text x="92" y="256" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="10">domain language, behavior,</text>
+    <text x="92" y="272" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="10">processes, policies, governance.</text>
+    <rect x="92" y="284" width="156" height="16" rx="2" fill="#d7e9e5"/>
+    <text x="170" y="295" fill="#075d5b" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="8" font-weight="600" letter-spacing="0.08em" text-anchor="middle">COMPUTATION-INDEPENDENT</text>
+
+    <!-- Stage 2: PIM -->
+    <rect x="368" y="96" width="224" height="208" rx="6" fill="#fcfbf7" stroke="#102c3a" stroke-width="1.2"/>
+    <text x="388" y="122" fill="#087b78" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="8" font-weight="600" letter-spacing="0.16em">02 · MODEL</text>
+    <text x="388" y="162" fill="#102c3a" font-family="Georgia, 'Times New Roman', serif" font-size="28">PIM</text>
+    <text x="388" y="188" fill="#2c4652" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="12" font-weight="600">Generic Serverless</text>
+    <text x="388" y="204" fill="#2c4652" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="12" font-weight="600">Architecture</text>
+    <line x1="388" y1="220" x2="572" y2="220" stroke="#ccd2cf" stroke-width="1"/>
+    <text x="388" y="240" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="10">Services, functions, APIs,</text>
+    <text x="388" y="256" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="10">contracts, data stores, channels,</text>
+    <text x="388" y="272" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="10">workflows, policies, identity.</text>
+    <rect x="388" y="284" width="142" height="16" rx="2" fill="#d7e9e5"/>
+    <text x="459" y="295" fill="#075d5b" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="8" font-weight="600" letter-spacing="0.08em" text-anchor="middle">PLATFORM-INDEPENDENT</text>
+
+    <!-- Stage 3: AWS PSM -->
+    <rect x="664" y="96" width="224" height="208" rx="6" fill="#f4e5dc" stroke="#b4653c" stroke-width="1.6"/>
+    <text x="684" y="122" fill="#b4653c" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="8" font-weight="600" letter-spacing="0.16em">03 · MODEL · CURRENT TARGET</text>
+    <text x="684" y="162" fill="#102c3a" font-family="Georgia, 'Times New Roman', serif" font-size="28">AWS PSM</text>
+    <text x="684" y="188" fill="#2c4652" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="12" font-weight="600">AWS Serverless</text>
+    <text x="684" y="204" fill="#2c4652" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="12" font-weight="600">Ecosystem</text>
+    <line x1="684" y1="220" x2="868" y2="220" stroke="#d8b8a6" stroke-width="1"/>
+    <text x="684" y="240" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="10">AWS resources,</text>
+    <text x="684" y="256" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="10">CloudFormation/SAM configuration,</text>
+    <text x="684" y="272" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="10">integration wiring, controls.</text>
+    <rect x="684" y="284" width="112" height="16" rx="2" fill="#b4653c"/>
+    <text x="740" y="295" fill="#fcfbf7" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="8" font-weight="600" letter-spacing="0.08em" text-anchor="middle">PLATFORM-SPECIFIC</text>
+
+    <!-- Stage 4: generated baseline -->
+    <rect x="960" y="96" width="224" height="208" rx="6" fill="#fcfbf7" stroke="#102c3a" stroke-width="1.2"/>
+    <text x="980" y="122" fill="#087b78" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="8" font-weight="600" letter-spacing="0.16em">04 · M2T OUTPUT</text>
+    <text x="980" y="162" fill="#102c3a" font-family="Georgia, 'Times New Roman', serif" font-size="25">ARTIFACTS</text>
+    <text x="980" y="188" fill="#2c4652" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="12" font-weight="600">Generated Project</text>
+    <text x="980" y="204" fill="#2c4652" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="12" font-weight="600">Artifacts</text>
+    <line x1="980" y1="220" x2="1164" y2="220" stroke="#ccd2cf" stroke-width="1"/>
+    <text x="980" y="240" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="10">SAM/CloudFormation, handlers,</text>
+    <text x="980" y="256" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="10">contracts, tests, scripts,</text>
+    <text x="980" y="272" fill="#617178" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="10">documentation, trace records.</text>
+    <rect x="980" y="284" width="106" height="16" rx="2" fill="#102c3a"/>
+    <text x="1033" y="295" fill="#fcfbf7" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="8" font-weight="600" letter-spacing="0.08em" text-anchor="middle">M2T OUTPUT</text>
+  </svg>

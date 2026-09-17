@@ -1,8 +1,8 @@
 # MODRISS Diagram Package
 
-This directory is the diagram source of truth for the implemented MODRISS repository. Every
-diagram is Mermaid embedded in Markdown so it renders in GitHub, compatible IDE previews, and
-Mermaid tooling.
+This directory is the diagram source of truth for the implemented MODRISS repository. Most
+diagrams are Mermaid embedded in Markdown so they render in GitHub, compatible IDE previews, and
+Mermaid tooling; standalone SVGs are used where a polished documentation graphic is needed.
 
 The diagrams were derived from:
 
@@ -48,6 +48,7 @@ The diagrams were derived from:
 | Methodology   | [27-end-to-end-methodology.md](27-end-to-end-methodology.md)                                     | CIM→PIM→PSM pipeline with EVL/ETL gates            |
 | DevOps/SRE    | [28-devops-sre-runtime.md](28-devops-sre-runtime.md)                                             | Edge routing, workloads, observability, triage     |
 | AI assistant  | [29-agents-pattern-assessment.md](29-agents-pattern-assessment.md)                               | Router/prompt-chain/agent pattern mapping          |
+| MDE           | [34-mde-modeling-path.svg](34-mde-modeling-path.svg)                                             | CIM→PIM→AWS PSM→generated AWS project baseline     |
 
 ## API Coverage
 
