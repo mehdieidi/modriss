@@ -1,7 +1,5 @@
 package io.mehdieidi.modriss.backend.analytics;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modriss.platform.identity.domain.UserRecord;
 import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +27,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /** Captures admin-visible request analytics for logins and browser page visits. */
 @Service
@@ -212,7 +212,7 @@ public class VisitorAnalyticsService {
       String id =
           UUID.nameUUIDFromBytes(("caddy:" + line).getBytes(StandardCharsets.UTF_8)).toString();
       recordCaddyPageVisit(id, app, path, referrer, ip, userAgent, occurredAt);
-    } catch (IOException | RuntimeException ex) {
+    } catch (RuntimeException ex) {
       // A malformed or non-Caddy line should not stop later access-log entries from importing.
     }
   }
