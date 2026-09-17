@@ -1,9 +1,19 @@
 services:
   caddy:
+    command:
+      - caddy
+      - run
+      - --config
+      - /etc/caddy/Caddyfile.dev
+      - --adapter
+      - caddyfile
     ports:
       - "${CADDY_HTTP_PORT:-8088}:8088"
     volumes:
-      - ../infra/caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      # Mount the directory instead of a single file. Docker Desktop can create a
+      # missing file bind source as a directory, which makes Caddy fail with a
+      # file/directory mount error before it can serve requests.
+      - ../infra/caddy:/etc/caddy:ro
 
   backend:
     environment:

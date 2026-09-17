@@ -4,12 +4,19 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in production .env}
 
   caddy:
+    command:
+      - caddy
+      - run
+      - --config
+      - /etc/caddy/Caddyfile.prod
+      - --adapter
+      - caddyfile
     ports:
       - "80:80"
       - "443:443"
       - "443:443/udp"
     volumes:
-      - ../infra/caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - ../infra/caddy:/etc/caddy:ro
 
   backend:
     environment:
