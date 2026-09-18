@@ -21,7 +21,7 @@ import {
   modelingLevelConfig,
 } from "./modeling-config-data.js";
 import { syncMobileDockState } from "./mobile-ui.js";
-import { isPhoneViewport } from "./responsive.js";
+import { isMobileViewport } from "./responsive.js";
 import {
   openAttributePanel,
   openConnectionPanel,
@@ -48,7 +48,7 @@ let inspectMenuOpen = false;
 let treeBodyScrollTop = 0;
 let modelTreeMode = "elements";
 let modelTreeFilter = "";
-let lastPhoneViewport = null;
+let lastMobileViewport = null;
 
 function layoutStrategies() {
   return modelingLayoutStrategies();
@@ -581,7 +581,7 @@ export function renderViewWorkbench() {
     return;
   }
   ensureActiveGraphAndViews();
-  const phoneViewport = isPhoneViewport();
+  const mobileViewport = isMobileViewport();
   const contextTools = canvasFocusToolMarkup();
   panel.innerHTML = `
     <div class="model-workbench-commandbar">
@@ -625,7 +625,7 @@ export function renderViewWorkbench() {
                 : ""
             }" id="relationshipTreeToggleBtn" type="button">Relationships</button>
           </div>
-          ${phoneViewport ? "" : `<div class="workbench-view-select-wrap workbench-inspect-menu-wrap${inspectMenuOpen ? " is-open" : ""}">
+          ${mobileViewport ? "" : `<div class="workbench-view-select-wrap workbench-inspect-menu-wrap${inspectMenuOpen ? " is-open" : ""}">
             <button class="sidebar-select workbench-view-select workbench-inspect-select"
                     id="inspectMenuToggle"
                     type="button"
@@ -1077,13 +1077,13 @@ export function initViewWorkbench({ renderDiagram, renderPalette } = {}) {
   ensureHost();
   bindWorkbenchEvents();
   bindTreeEvents();
-  lastPhoneViewport = isPhoneViewport();
+  lastMobileViewport = isMobileViewport();
   window.addEventListener("resize", () => {
-    const nextPhoneViewport = isPhoneViewport();
-    if (nextPhoneViewport === lastPhoneViewport) {
+    const nextMobileViewport = isMobileViewport();
+    if (nextMobileViewport === lastMobileViewport) {
       return;
     }
-    lastPhoneViewport = nextPhoneViewport;
+    lastMobileViewport = nextMobileViewport;
     renderViewWorkbench();
   });
   renderViewWorkbench();

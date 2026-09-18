@@ -12,7 +12,7 @@ import {
 } from "./icon-node-metrics.js";
 import { clearConnectionPreview, updateConnectionPreview } from "./g6-overlays.js";
 import { fingerprintElement, scheduleGraphDraw } from "./g6-performance.js";
-import { isPhoneViewport } from "../responsive.js";
+import { isMobileViewport } from "../responsive.js";
 
 let currentCanvasCursorMode = "";
 const DEFERRED_NODE_DRAG_EDGE_THRESHOLD = 350;
@@ -819,7 +819,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
           lastX: topLeft.x,
           lastY: topLeft.y,
           deferred: state.diagram.connections.length >= DEFERRED_NODE_DRAG_EDGE_THRESHOLD,
-          phoneEdgeHold: isTouchPointer(event) && isPhoneViewport(),
+          phoneEdgeHold: isTouchPointer(event) && isMobileViewport(),
         };
         if (nodeDrag.deferred) {
           createNodeDragPreview(nodeDrag, state.nodesById.get(id), point.x, point.y);
@@ -1065,6 +1065,10 @@ export function bindG6Interactions(editor, callbacks = {}) {
     }
   };
 
+  const preventCanvasTextSelection = (event) => {
+    event.preventDefault();
+  };
+
   const pinchPointerMoveCapture = (event) => {
     if (!isTouchPointer(event) || !pinchGesture) {
       return;
@@ -1079,6 +1083,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
   el.g6EditorHost?.addEventListener("pointermove", pinchPointerMoveCapture, true);
   el.g6EditorHost?.addEventListener("pointermove", hostPointerMove);
   el.g6EditorHost?.addEventListener("pointerleave", hostPointerLeave);
+  el.canvasViewport?.addEventListener("selectstart", preventCanvasTextSelection, true);
   el.g6EditorHost?.addEventListener("lostpointercapture", finishNodeDrag);
   window.addEventListener("pointerup", finishCanvasPan);
   window.addEventListener("pointercancel", finishCanvasPan);
@@ -1148,6 +1153,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     el.g6EditorHost?.removeEventListener("pointermove", pinchPointerMoveCapture, true);
     el.g6EditorHost?.removeEventListener("pointermove", hostPointerMove);
     el.g6EditorHost?.removeEventListener("pointerleave", hostPointerLeave);
+    el.canvasViewport?.removeEventListener("selectstart", preventCanvasTextSelection, true);
     el.g6EditorHost?.removeEventListener("lostpointercapture", finishNodeDrag);
     window.removeEventListener("pointerup", finishCanvasPan);
     window.removeEventListener("pointercancel", finishCanvasPan);

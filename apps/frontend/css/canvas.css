@@ -1111,6 +1111,15 @@
   position: relative;
 }
 
+/* Graph labels are part of the canvas interaction surface, not document text.
+ * Prevent a long touch drag from selecting SVG/text labels on mobile browsers. */
+.canvas-viewport,
+.canvas-viewport * {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
 .canvas-viewport.is-panning {
   cursor: grabbing;
 }

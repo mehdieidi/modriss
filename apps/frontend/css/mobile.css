@@ -165,7 +165,7 @@
   display: none;
 }
 
-@media (max-width: 560px) {
+@media (max-width: 920px) {
   .topbar-menu-strip {
     align-items: center;
     gap: 6px;
