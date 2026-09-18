@@ -47,6 +47,13 @@ fi
 echo "Building and starting the production stack..."
 docker compose "${compose_args[@]}" up -d --build --remove-orphans
 
+# The editor is a static Python server. Its startup command copies the bind-mounted
+# checkout into /srv, so an ordinary `up` does not refresh an already-running
+# frontend container after git pull. Recreate it explicitly, together with Caddy
+# so changes to the production edge configuration are loaded as well.
+echo "Refreshing the static editor frontend and production edge configuration..."
+docker compose "${compose_args[@]}" up -d --no-deps --force-recreate frontend caddy
+
 echo "Production services:"
 docker compose "${compose_args[@]}" ps
 

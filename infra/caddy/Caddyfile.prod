@@ -49,6 +49,10 @@ editor.modriss.site {
 	import security_headers
 	import access_logs
 	import backend_routes
+	header {
+		# The editor serves unhashed JS/CSS files. Always revalidate them after a deployment.
+		Cache-Control "no-cache, must-revalidate"
+	}
 
 	reverse_proxy frontend:8082
 }
