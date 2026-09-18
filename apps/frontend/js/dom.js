@@ -122,6 +122,7 @@ export const el = {
   artifactEditor: document.getElementById("artifactEditor"),
   artifactEditorFileName: document.getElementById("artifactEditorFileName"),
   artifactEditorContent: document.getElementById("artifactEditorContent"),
+  artifactEditorLoading: document.getElementById("artifactEditorLoading"),
   artifactEditorStatusBar: document.getElementById("artifactEditorStatusBar"),
   artifactEditorStatusPosition: document.getElementById("artifactEditorStatusPosition"),
   artifactEditorStatusIndent: document.getElementById("artifactEditorStatusIndent"),

@@ -46,9 +46,11 @@ public class ArtifactController {
    * @return accessible project artifacts
    */
   @GetMapping
-  List<ArtifactRecord> list(
+  List<ArtifactSummary> list(
       @RequestHeader("X-Auth-Token") String token, @RequestParam("projectId") String projectId) {
-    return artifacts.list(auth.user(token), projectId);
+    return artifacts.listSummaries(auth.user(token), projectId).stream()
+        .map(ArtifactSummary::from)
+        .toList();
   }
 
   /**
@@ -125,4 +127,24 @@ public class ArtifactController {
    * @param content replacement file content
    */
   public record SaveFileRequest(@NotBlank String path, String content) {}
+
+  /** Lightweight artifact listing payload; file contents and model metadata stay server-side. */
+  public record ArtifactSummary(
+      String id,
+      String projectId,
+      String name,
+      List<String> filePaths,
+      java.time.Instant createdAt,
+      java.time.Instant updatedAt) {
+
+    static ArtifactSummary from(ArtifactRecord artifact) {
+      return new ArtifactSummary(
+          artifact.id(),
+          artifact.projectId(),
+          artifact.name(),
+          artifact.files() == null ? List.of() : artifact.files().keySet().stream().toList(),
+          artifact.createdAt(),
+          artifact.updatedAt());
+    }
+  }
 }

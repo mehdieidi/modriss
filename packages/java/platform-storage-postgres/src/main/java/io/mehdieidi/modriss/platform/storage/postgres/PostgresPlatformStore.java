@@ -2,6 +2,7 @@ package io.mehdieidi.modriss.platform.storage.postgres;
 
 import io.mehdieidi.modriss.platform.artifact.domain.ArtifactIndexRecord;
 import io.mehdieidi.modriss.platform.artifact.domain.ArtifactRecord;
+import io.mehdieidi.modriss.platform.artifact.storage.ArtifactStorage;
 import io.mehdieidi.modriss.platform.identity.domain.AuthSession;
 import io.mehdieidi.modriss.platform.identity.domain.UserRecord;
 import io.mehdieidi.modriss.platform.kernel.ModelLevel;
@@ -44,7 +45,7 @@ import tools.jackson.databind.ObjectMapper;
  * <p>Logical keys remain at the application boundary for compatibility, but every supported record
  * is persisted in an explicit relational table.
  */
-public final class PostgresPlatformStore implements PlatformStore {
+public final class PostgresPlatformStore implements PlatformStore, ArtifactStorage {
 
   private final JdbcTemplate jdbc;
   private final TransactionTemplate transactions;
@@ -337,6 +338,52 @@ public final class PostgresPlatformStore implements PlatformStore {
         throw unsupported(directory, type);
       }
       return values.stream().map(type::cast).toList();
+    } catch (DataAccessException ex) {
+      throw persistenceFailure(ex);
+    }
+  }
+
+  @Override
+  public List<ArtifactRecord> listSummaries(String projectId) {
+    try {
+      return jdbc.query(
+          """
+          SELECT a.*, COALESCE(
+            array_agg(f.path ORDER BY f.path) FILTER (WHERE f.path IS NOT NULL),
+            ARRAY[]::text[]) AS file_paths
+          FROM artifacts a
+          LEFT JOIN artifact_files f ON f.artifact_id = a.id
+          WHERE a.project_id = ?
+          GROUP BY a.id
+          ORDER BY a.updated_at DESC
+          """,
+          this::artifactSummary,
+          projectId);
+    } catch (DataAccessException ex) {
+      throw persistenceFailure(ex);
+    }
+  }
+
+  @Override
+  public Optional<String> readFile(String artifactId, String path) {
+    try {
+      return maybeOne(
+          "SELECT content FROM artifact_files WHERE artifact_id = ? AND path = ?",
+          (rs, row) -> rs.getString(1),
+          artifactId,
+          path);
+    } catch (DataAccessException ex) {
+      throw persistenceFailure(ex);
+    }
+  }
+
+  @Override
+  public List<ArtifactStorage.ArtifactFile> listFiles(String artifactId) {
+    try {
+      return jdbc.query(
+          "SELECT path, content FROM artifact_files WHERE artifact_id = ? ORDER BY path",
+          (rs, row) -> new ArtifactStorage.ArtifactFile(rs.getString(1), rs.getString(2)),
+          artifactId);
     } catch (DataAccessException ex) {
       throw persistenceFailure(ex);
     }
@@ -662,6 +709,29 @@ ON CONFLICT (id) DO UPDATE SET project_id=EXCLUDED.project_id,
         rs.getString("name"),
         tree(rs.getString("model_json")),
         files,
+        instant(rs, "created_at"),
+        instant(rs, "updated_at"));
+  }
+
+  private ArtifactRecord artifactSummary(ResultSet rs, int row) throws SQLException {
+    Map<String, String> paths = new LinkedHashMap<>();
+    java.sql.Array filePaths = rs.getArray("file_paths");
+    if (filePaths != null) {
+      Object values = filePaths.getArray();
+      if (values instanceof Object[] pathsArray) {
+        for (Object value : pathsArray) {
+          if (value != null) {
+            paths.put(String.valueOf(value), "");
+          }
+        }
+      }
+    }
+    return new ArtifactRecord(
+        rs.getString("id"),
+        rs.getString("project_id"),
+        rs.getString("name"),
+        tree(rs.getString("model_json")),
+        paths,
         instant(rs, "created_at"),
         instant(rs, "updated_at"));
   }

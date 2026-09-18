@@ -2,6 +2,7 @@ package io.mehdieidi.modriss.platform.artifact.application;
 
 import io.mehdieidi.modriss.platform.artifact.domain.ArtifactIndexRecord;
 import io.mehdieidi.modriss.platform.artifact.domain.ArtifactRecord;
+import io.mehdieidi.modriss.platform.artifact.storage.ArtifactStorage;
 import io.mehdieidi.modriss.platform.identity.domain.UserRecord;
 import io.mehdieidi.modriss.platform.kernel.PlatformException;
 import io.mehdieidi.modriss.platform.project.application.ProjectService;
@@ -54,6 +55,44 @@ public final class ArtifactService {
     }
     projectService.get(user, projectId);
     return store.list(Path.of("projects", projectId, "artifacts"), ArtifactRecord.class).stream()
+        .sorted(Comparator.comparing(ArtifactRecord::updatedAt).reversed())
+        .toList();
+  }
+
+  /**
+   * Lists artifact metadata and file paths without transferring file contents.
+   *
+   * @param user requesting user
+   * @param projectId project identifier
+   * @return accessible artifact summaries ordered by last update
+   */
+  public List<ArtifactRecord> listSummaries(UserRecord user, String projectId) {
+    if (projectId == null || projectId.isBlank()) {
+      return List.of();
+    }
+    projectService.get(user, projectId);
+    if (store instanceof ArtifactStorage optimized) {
+      return optimized.listSummaries(projectId).stream()
+          .sorted(Comparator.comparing(ArtifactRecord::updatedAt).reversed())
+          .toList();
+    }
+    return list(user, projectId).stream()
+        .map(
+            artifact ->
+                new ArtifactRecord(
+                    artifact.id(),
+                    artifact.projectId(),
+                    artifact.name(),
+                    artifact.modelJson(),
+                    artifact.files().keySet().stream()
+                        .collect(
+                            java.util.stream.Collectors.toMap(
+                                path -> path,
+                                path -> "",
+                                (left, right) -> left,
+                                LinkedHashMap::new)),
+                    artifact.createdAt(),
+                    artifact.updatedAt()))
         .sorted(Comparator.comparing(ArtifactRecord::updatedAt).reversed())
         .toList();
   }
@@ -126,8 +165,22 @@ public final class ArtifactService {
    * @return file content
    */
   public String readFile(UserRecord user, String artifactId, String path) {
-    ArtifactRecord artifact = get(user, artifactId);
     String normalized = normalizePath(path);
+    if (store instanceof ArtifactStorage optimized) {
+      var index = store.read(artifactIndexPath(artifactId), ArtifactIndexRecord.class);
+      if (index.isEmpty()) {
+        ArtifactRecord artifact = get(user, artifactId);
+        if (!artifact.files().containsKey(normalized)) {
+          throw new PlatformException(404, "Artifact file not found.");
+        }
+        return artifact.files().get(normalized);
+      }
+      projectService.get(user, index.get().projectId());
+      return optimized
+          .readFile(artifactId, normalized)
+          .orElseThrow(() -> new PlatformException(404, "Artifact file not found."));
+    }
+    ArtifactRecord artifact = get(user, artifactId);
     if (!artifact.files().containsKey(normalized)) {
       throw new PlatformException(404, "Artifact file not found.");
     }
@@ -182,10 +235,20 @@ public final class ArtifactService {
     ArtifactRecord artifact = get(user, artifactId);
     try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         ZipOutputStream zip = new ZipOutputStream(bytes, StandardCharsets.UTF_8)) {
-      for (Map.Entry<String, String> entry : artifact.files().entrySet()) {
-        zip.putNextEntry(new ZipEntry(normalizePath(entry.getKey())));
-        zip.write(entry.getValue().getBytes(StandardCharsets.UTF_8));
-        zip.closeEntry();
+      if (store instanceof ArtifactStorage optimized) {
+        for (ArtifactStorage.ArtifactFile entry : optimized.listFiles(artifactId)) {
+          zip.putNextEntry(new ZipEntry(normalizePath(entry.path())));
+          zip.write(
+              String.valueOf(entry.content() == null ? "" : entry.content())
+                  .getBytes(StandardCharsets.UTF_8));
+          zip.closeEntry();
+        }
+      } else {
+        for (Map.Entry<String, String> entry : artifact.files().entrySet()) {
+          zip.putNextEntry(new ZipEntry(normalizePath(entry.getKey())));
+          zip.write(entry.getValue().getBytes(StandardCharsets.UTF_8));
+          zip.closeEntry();
+        }
       }
       zip.finish();
       return bytes.toByteArray();

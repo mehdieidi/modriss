@@ -865,6 +865,8 @@ export async function downloadCurrentProject() {
   const fallbackFilename = `${
     projectName.replaceAll(/[^A-Za-z0-9._-]+/g, "-").replaceAll(/^-+|-+$/g, "") || "project"
   }.zip`;
+  state.artifact.downloading = true;
+  updateGenerateButtonState();
   try {
     const response = await fetch(apiUrl(`/projects/${state.project.id}/download`), {
       headers: apiAuthHeaders(),
@@ -898,6 +900,9 @@ export async function downloadCurrentProject() {
     setStatus(`Downloaded project: ${filename}`);
   } catch (error) {
     setError(error, { prefix: "Project download failed." });
+  } finally {
+    state.artifact.downloading = false;
+    updateGenerateButtonState();
   }
 }
 

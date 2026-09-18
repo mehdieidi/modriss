@@ -1462,15 +1462,18 @@ export function updateGenerateButtonState() {
         }
       : null;
   const isVisible = Boolean(buttonConfig);
+  const isDownloading = isArtifactLevel(state.activeType) && state.artifact.downloading;
   el.generateContextBtn.classList.toggle("hidden", !isVisible);
-  el.generateContextBtn.disabled = !isVisible;
+  el.generateContextBtn.disabled = !isVisible || isDownloading;
+  el.generateContextBtn.classList.toggle("is-loading", isDownloading);
+  el.generateContextBtn.setAttribute("aria-busy", isDownloading ? "true" : "false");
   el.generateContextBtn.classList.toggle("topbar-download-btn", isArtifactLevel(state.activeType));
   if (!buttonConfig) {
     return;
   }
   const label = el.generateContextBtn.querySelector(".topbar-btn-label");
   if (label) {
-    label.textContent = buttonConfig.label;
+    label.textContent = isDownloading ? "Downloading…" : buttonConfig.label;
   } else {
     el.generateContextBtn.textContent = buttonConfig.label;
   }

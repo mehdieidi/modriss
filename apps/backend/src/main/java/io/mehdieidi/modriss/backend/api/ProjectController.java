@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 /** Provides authenticated project lifecycle and membership endpoints. */
 @RestController
@@ -84,11 +85,11 @@ public class ProjectController {
    * @return ZIP download response
    */
   @GetMapping("/{id}/download")
-  ResponseEntity<byte[]> download(
+  ResponseEntity<StreamingResponseBody> download(
       @RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id) {
     UserRecord user = auth.user(token);
     ProjectRecord project = projects.get(user, id);
-    byte[] bytes = archives.zip(user, id);
+    StreamingResponseBody body = output -> archives.writeZip(user, id, output);
     return ResponseEntity.ok()
         .contentType(MediaType.parseMediaType("application/zip"))
         .header(
@@ -97,7 +98,7 @@ public class ProjectController {
                 .filename(downloadFileName(project), StandardCharsets.UTF_8)
                 .build()
                 .toString())
-        .body(bytes);
+        .body(body);
   }
 
   /**

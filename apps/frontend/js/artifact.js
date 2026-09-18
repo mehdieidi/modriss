@@ -43,6 +43,14 @@ let monacoModel = null;
 let monacoThemeObserver = null;
 let applyingProgrammaticEdit = false;
 let currentLanguageLabel = FALLBACK_LANGUAGE_LABEL;
+let artifactFileRequestId = 0;
+
+function setArtifactFileLoading(loading) {
+  state.artifact.openingFile = Boolean(loading);
+  el.artifactEditorLoading?.classList.toggle("hidden", !loading);
+  el.fileTree?.classList.toggle("is-loading", loading);
+  el.fileTree?.setAttribute("aria-busy", loading ? "true" : "false");
+}
 
 function toFileDisplayName(filePath) {
   if (!filePath) {
@@ -502,11 +510,15 @@ export async function initArtifactEditor() {
 }
 
 export function clearArtifactState() {
+  artifactFileRequestId += 1;
   state.artifact.id = null;
   state.artifact.name = "";
   state.artifact.files = [];
   state.artifact.activeFile = null;
+  state.artifact.openingFile = false;
+  state.artifact.downloading = false;
   state.artifact.treeCollapsed = false;
+  setArtifactFileLoading(false);
   setExplorerRootLabel("No artifact loaded");
   updateTreeToggleButton();
   renderFileTree([]);
@@ -536,8 +548,10 @@ export async function loadArtifactRecord(record, { collapseTree = true } = {}) {
   state.artifact.name = record.name || "artifact";
   setArtifactDirty(false);
 
-  const files = record.files || record.modelJson?.files || {};
-  state.artifact.files = Object.keys(files).map((path) => ({ path }));
+  const filePaths = Array.isArray(record.filePaths)
+    ? record.filePaths
+    : Object.keys(record.files || record.modelJson?.files || {});
+  state.artifact.files = filePaths.map((path) => ({ path }));
   if (typeof collapseTree === "boolean") {
     state.artifact.treeCollapsed = collapseTree;
   }
@@ -629,6 +643,8 @@ export async function openArtifactFile(filePath) {
   if (!state.artifact.id) {
     return;
   }
+  const requestId = ++artifactFileRequestId;
+  setArtifactFileLoading(true);
   try {
     const editorReady = await initArtifactEditor();
     if (!editorReady) {
@@ -645,6 +661,9 @@ export async function openArtifactFile(filePath) {
       throw new Error(`HTTP ${response.status}`);
     }
     const content = await response.text();
+    if (requestId !== artifactFileRequestId) {
+      return;
+    }
 
     state.artifact.activeFile = filePath;
     setArtifactDirty(false);
@@ -661,6 +680,10 @@ export async function openArtifactFile(filePath) {
     setStatus(`Opened: ${filePath}`);
   } catch (error) {
     setStatus(error, { prefix: "Failed to open file.", error: true });
+  } finally {
+    if (requestId === artifactFileRequestId) {
+      setArtifactFileLoading(false);
+    }
   }
 }
 

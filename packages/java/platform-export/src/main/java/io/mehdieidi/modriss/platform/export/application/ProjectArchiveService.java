@@ -1,6 +1,7 @@
 package io.mehdieidi.modriss.platform.export.application;
 
 import io.mehdieidi.modriss.platform.artifact.domain.ArtifactRecord;
+import io.mehdieidi.modriss.platform.artifact.storage.ArtifactStorage;
 import io.mehdieidi.modriss.platform.identity.domain.UserRecord;
 import io.mehdieidi.modriss.platform.kernel.ModelLevel;
 import io.mehdieidi.modriss.platform.kernel.PlatformException;
@@ -11,11 +12,16 @@ import io.mehdieidi.modriss.platform.storage.api.PlatformStore;
 import io.mehdieidi.modriss.platform.transformation.domain.MdeJobRecord;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Packages a complete project repository and generated artifact files as a ZIP archive. */
 public final class ProjectArchiveService {
@@ -29,19 +35,27 @@ public final class ProjectArchiveService {
   }
 
   public byte[] zip(UserRecord user, String projectId) {
+    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+    writeZip(user, projectId, bytes);
+    return bytes.toByteArray();
+  }
+
+  /** Writes a project archive directly to the response stream. */
+  public void writeZip(UserRecord user, String projectId, OutputStream output) {
     ProjectRecord project = projects.get(user, projectId);
-    try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        ZipOutputStream zip = new ZipOutputStream(bytes)) {
-      addStoredProjectRecords(zip, project);
-      addExpandedArtifactFiles(zip, project.id());
+    List<ArtifactRecord> artifacts = artifactRecords(project.id());
+    try (ZipOutputStream zip = new ZipOutputStream(output)) {
+      zip.setLevel(Deflater.BEST_SPEED);
+      addStoredProjectRecords(zip, project, artifacts);
+      addExpandedArtifactFiles(zip, artifacts);
       zip.finish();
-      return bytes.toByteArray();
     } catch (IOException ex) {
       throw new PlatformException(500, "Could not package project.");
     }
   }
 
-  private void addStoredProjectRecords(ZipOutputStream zip, ProjectRecord project)
+  private void addStoredProjectRecords(
+      ZipOutputStream zip, ProjectRecord project, List<ArtifactRecord> artifacts)
       throws IOException {
     addJsonEntry(zip, "modriss-project/project.json", project);
     for (ModelLevel level : ModelLevel.values()) {
@@ -56,9 +70,9 @@ public final class ProjectArchiveService {
             .ifPresent(bytes -> addFileEntryUnchecked(zip, root + ".xmi", bytes));
       }
     }
-    for (ArtifactRecord artifact :
-        store.list(Path.of("projects", project.id(), "artifacts"), ArtifactRecord.class)) {
-      addJsonEntry(zip, "modriss-project/artifacts/" + artifact.id() + ".json", artifact);
+    for (ArtifactRecord artifact : artifacts) {
+      addJsonEntry(
+          zip, "modriss-project/artifacts/" + artifact.id() + ".json", metadataOnly(artifact));
     }
     for (MdeJobRecord job :
         store.list(Path.of("projects", project.id(), "mde-jobs"), MdeJobRecord.class)) {
@@ -66,24 +80,57 @@ public final class ProjectArchiveService {
     }
   }
 
-  private void addExpandedArtifactFiles(ZipOutputStream zip, String projectId) throws IOException {
-    for (ArtifactRecord artifact :
-        store.list(Path.of("projects", projectId, "artifacts"), ArtifactRecord.class)) {
+  private void addExpandedArtifactFiles(ZipOutputStream zip, List<ArtifactRecord> artifacts)
+      throws IOException {
+    for (ArtifactRecord artifact : artifacts) {
       String artifactRoot =
           "artifacts/"
               + archiveSegment(artifact.name(), artifact.id())
               + "-"
               + archiveSegment(shortId(artifact.id()), artifact.id());
-      Map<String, String> artifactFiles = artifact.files() == null ? Map.of() : artifact.files();
-      for (Map.Entry<String, String> file : artifactFiles.entrySet()) {
-        String normalizedPath = normalizeArtifactPath(file.getKey());
+      Iterable<ArtifactStorage.ArtifactFile> artifactFiles = artifactFiles(artifact);
+      for (ArtifactStorage.ArtifactFile file : artifactFiles) {
+        String normalizedPath = normalizeArtifactPath(file.path());
         addFileEntry(
             zip,
             artifactRoot + "/" + normalizedPath,
-            String.valueOf(file.getValue() == null ? "" : file.getValue())
+            String.valueOf(file.content() == null ? "" : file.content())
                 .getBytes(StandardCharsets.UTF_8));
       }
     }
+  }
+
+  private List<ArtifactRecord> artifactRecords(String projectId) {
+    if (store instanceof ArtifactStorage optimized) {
+      return optimized.listSummaries(projectId);
+    }
+    return store.list(Path.of("projects", projectId, "artifacts"), ArtifactRecord.class);
+  }
+
+  private Iterable<ArtifactStorage.ArtifactFile> artifactFiles(ArtifactRecord artifact) {
+    if (store instanceof ArtifactStorage optimized) {
+      return optimized.listFiles(artifact.id());
+    }
+    Map<String, String> files = artifact.files() == null ? Map.of() : artifact.files();
+    return files.entrySet().stream()
+        .map(entry -> new ArtifactStorage.ArtifactFile(entry.getKey(), entry.getValue()))
+        .toList();
+  }
+
+  private ArtifactRecord metadataOnly(ArtifactRecord artifact) {
+    JsonNode modelJson = artifact.modelJson();
+    if (modelJson != null && modelJson.isObject()) {
+      modelJson = ((ObjectNode) modelJson).deepCopy();
+      ((ObjectNode) modelJson).remove("files");
+    }
+    return new ArtifactRecord(
+        artifact.id(),
+        artifact.projectId(),
+        artifact.name(),
+        modelJson,
+        Map.of(),
+        artifact.createdAt(),
+        artifact.updatedAt());
   }
 
   private void addJsonEntry(ZipOutputStream zip, String name, Object value) throws IOException {

@@ -126,6 +126,7 @@
                         class="topbar-btn-icon icon-svg icon-mask"
                         style="--icon-src: url(&quot;/assets/icons/generate.svg&quot;)"
                       ></span>
+                      <span aria-hidden="true" class="topbar-btn-spinner"></span>
                       <span class="topbar-btn-label">Generate</span>
                     </button>
                   </div>
@@ -640,6 +641,14 @@
                   </button>
                 </div>
                 <div class="artifact-editor-body">
+                  <div
+                    aria-live="polite"
+                    class="artifact-editor-loading hidden"
+                    id="artifactEditorLoading"
+                  >
+                    <span aria-hidden="true" class="artifact-loading-spinner"></span>
+                    <span>Opening file…</span>
+                  </div>
                   <div
                     aria-label="Artifact code editor"
                     class="artifact-editor-host"

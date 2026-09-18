@@ -101,6 +101,11 @@
   scrollbar-gutter: stable both-edges;
 }
 
+.file-tree.is-loading {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
 .file-tree-empty {
   padding: 12px 10px;
   color: var(--muted);
@@ -262,7 +267,53 @@
   flex: 1;
   min-height: 0;
   display: flex;
+  position: relative;
   background: color-mix(in srgb, var(--canvas-bg) 98%, var(--surface) 2%);
+}
+
+.artifact-editor-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface-contrast) 74%, transparent);
+  font: 500 12px/1.3 var(--font-ui);
+  pointer-events: none;
+}
+
+.artifact-loading-spinner,
+.topbar-btn-spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid color-mix(in srgb, currentColor 28%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: artifact-loading-spin 0.7s linear infinite;
+}
+
+.topbar-btn-spinner {
+  display: none;
+  width: 12px;
+  height: 12px;
+  color: currentColor;
+}
+
+.topbar-generate-btn.is-loading .topbar-btn-spinner {
+  display: inline-block;
+}
+
+.topbar-generate-btn.is-loading .topbar-btn-icon {
+  display: none;
+}
+
+@keyframes artifact-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .artifact-editor-line-numbers {

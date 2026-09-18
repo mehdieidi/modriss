@@ -95,6 +95,8 @@ export const state = {
     name: "",
     files: [],
     activeFile: null,
+    openingFile: false,
+    downloading: false,
     dirty: false,
     treeCollapsed: false,
   },

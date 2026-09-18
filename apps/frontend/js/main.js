@@ -291,7 +291,7 @@ function bindCriticalActions() {
   // Generation
   el.generateContextBtn?.addEventListener("click", async () => {
     if (isArtifactLevel(state.activeType)) {
-      downloadCurrentProject();
+      await downloadCurrentProject();
       return;
     }
     await generateForCurrentContext();
