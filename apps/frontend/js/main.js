@@ -67,11 +67,13 @@ import {
   isModelingLevel,
   isArtifactLevel,
   loadModelingConfig,
+  modelingArtifactKey,
   modelingLevelConfig,
   modelingLevelKeys,
   modelingLevelListLabel,
 } from "./modeling-config-data.js";
 import { hasUnsavedModelChanges, updateModelSaveUi } from "./model-save-ui.js";
+import { escapeHtml } from "./utils.js";
 import { initViewWorkbench, renderViewWorkbench } from "./view-explorer.js";
 import { installG6LargeGraphDevHelper } from "./graph-editor/g6-devtools.js";
 import {
@@ -648,43 +650,36 @@ function renderConfiguredModelTabs() {
   artifactButton.textContent = "Artifacts";
   fragment.appendChild(artifactButton);
   el.modelTabs.appendChild(fragment);
-  renderMobileModelLevelSwitcher();
+  renderMobileModelLevelTabs();
 }
 
-function renderMobileModelLevelSwitcher() {
-  const switcher = el.mobileModelLevelSwitcher;
-  const menu = el.mobileModelLevelMenu;
-  if (!switcher || !menu) {
+function renderMobileModelLevelTabs() {
+  const tabs = el.mobileModelLevelTabs;
+  if (!tabs) {
     return;
   }
-  let activeLevel = null;
+  const entries = modelingLevelKeys().map((typeKey) => ({
+    typeKey,
+    label: modelingLevelConfig(typeKey).displayName || typeKey.toUpperCase(),
+  }));
+  let artifactKey = "artifact";
   try {
-    activeLevel = isModelingLevel(state.activeType) ? modelingLevelConfig(state.activeType) : null;
+    artifactKey = modelingArtifactKey();
   } catch {
-    activeLevel = null;
+    // The artifact tab is still useful with the fallback key during startup.
   }
-  if (el.mobileModelLevelLabel) {
-    el.mobileModelLevelLabel.textContent =
-      activeLevel?.displayName || (isArtifactLevel(state.activeType) ? "Artifacts" : "Model level");
-  }
-  menu.innerHTML = modelingLevelKeys()
-    .map((typeKey) => {
-      const level = modelingLevelConfig(typeKey);
+  entries.push({ typeKey: artifactKey, label: "Artifacts" });
+  tabs.innerHTML = entries
+    .map(({ typeKey, label }) => {
       const active = typeKey === state.activeType;
-      return `<button class="mobile-model-level-option${active ? " is-active" : ""}"
+      return `<button class="mobile-model-level-tab${active ? " is-active" : ""}"
                       type="button"
-                      role="option"
+                      role="tab"
                       aria-selected="${active ? "true" : "false"}"
-                      data-mobile-model-type="${typeKey}">
-                <span>${level.displayName || typeKey.toUpperCase()}</span>
-              </button>`;
+                      data-mobile-model-type="${escapeHtml(typeKey)}"
+                      title="${escapeHtml(label)}">${escapeHtml(label)}</button>`;
     })
     .join("");
-}
-
-function closeMobileModelLevelMenu() {
-  el.mobileModelLevelSwitcher?.classList.remove("is-open");
-  el.mobileModelLevelToggle?.setAttribute("aria-expanded", "false");
 }
 
 // ── Bind all DOM event handlers ───────────────────────────────────────────────
@@ -705,39 +700,19 @@ function bindEvents() {
     switchTab(btn.dataset.type);
   });
 
-  el.mobileModelLevelToggle?.addEventListener("click", (event) => {
-    event.stopPropagation();
-    const open = el.mobileModelLevelSwitcher?.classList.contains("is-open");
-    if (open) {
-      closeMobileModelLevelMenu();
-      return;
-    }
-    renderMobileModelLevelSwitcher();
-    el.mobileModelLevelSwitcher?.classList.add("is-open");
-    el.mobileModelLevelToggle?.setAttribute("aria-expanded", "true");
-  });
-
-  el.mobileModelLevelMenu?.addEventListener("click", (event) => {
+  el.mobileModelLevelTabs?.addEventListener("click", (event) => {
     const target = getElementTarget(event);
-    const option = target?.closest("[data-mobile-model-type]");
-    if (!option) {
+    const tab = target?.closest("[data-mobile-model-type]");
+    if (!tab) {
       return;
     }
-    const type = option.dataset.mobileModelType;
-    closeMobileModelLevelMenu();
+    const type = tab.dataset.mobileModelType;
     closeMobilePanels();
     closeTopbarMenu();
-    void switchTab(type).finally(renderMobileModelLevelSwitcher);
+    void switchTab(type).finally(renderMobileModelLevelTabs);
   });
 
-  document.addEventListener("click", (event) => {
-    const target = getElementTarget(event);
-    if (!target?.closest("#mobileModelLevelSwitcher")) {
-      closeMobileModelLevelMenu();
-    }
-  });
-
-  window.addEventListener("modriss-active-modeling-level-change", renderMobileModelLevelSwitcher);
+  window.addEventListener("modriss-active-modeling-level-change", renderMobileModelLevelTabs);
 
   // Theme
   if (el.paletteRailToggleBtn) {

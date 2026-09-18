@@ -16,6 +16,8 @@ import { isPhoneViewport } from "../responsive.js";
 
 let currentCanvasCursorMode = "";
 const DEFERRED_NODE_DRAG_EDGE_THRESHOLD = 350;
+const PHONE_EDGE_HOLD_MS = 430;
+const PHONE_EDGE_HOLD_MOVE_TOLERANCE = 9;
 const PINCH_MIN_SCALE = 0.01;
 const PINCH_MAX_SCALE = 2.5;
 
@@ -453,6 +455,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
   let nodeDragFrame = 0;
   let pendingNodeDragMove = null;
   let finishLinkDragWindow = null;
+  let pendingPhoneEdgeHold = null;
   let escapeKeyDown = null;
   let visibilityChange = null;
   let openControlPress = null;
@@ -775,28 +778,6 @@ export function bindG6Interactions(editor, callbacks = {}) {
       originalEvent(event)?.stopPropagation?.();
       return;
     }
-    if (isTouchPointer(event) && isPhoneViewport()) {
-      const sourceNode = state.nodesById.get(id);
-      linkDrag = {
-        sourceId: id,
-        pointerId: originalEvent(event)?.pointerId,
-        clientX: point.x,
-        clientY: point.y,
-      };
-      setCanvasPointerCaptureActive(true);
-      updateConnectionPreview(graph, sourceNode, point.x, point.y);
-      callbacks.onConnectionDragStart?.(id);
-      if (linkDrag.pointerId != null) {
-        try {
-          el.g6EditorHost?.setPointerCapture?.(linkDrag.pointerId);
-        } catch {
-          // Link dragging can continue inside the canvas without capture.
-        }
-      }
-      originalEvent(event)?.preventDefault?.();
-      originalEvent(event)?.stopPropagation?.();
-      return;
-    }
     if (isLinkHandleHit(graph, id, point.x, point.y, editor)) {
       const sourceNode = state.nodesById.get(id);
       linkDrag = {
@@ -838,6 +819,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
           lastX: topLeft.x,
           lastY: topLeft.y,
           deferred: state.diagram.connections.length >= DEFERRED_NODE_DRAG_EDGE_THRESHOLD,
+          phoneEdgeHold: isTouchPointer(event) && isPhoneViewport(),
         };
         if (nodeDrag.deferred) {
           createNodeDragPreview(nodeDrag, state.nodesById.get(id), point.x, point.y);
@@ -852,6 +834,48 @@ export function bindG6Interactions(editor, callbacks = {}) {
           } catch {
             // Drag still works without capture inside the canvas.
           }
+        }
+        if (nodeDrag.phoneEdgeHold) {
+          pendingPhoneEdgeHold = {
+            nodeId: id,
+            pointerId: nodeDrag.pointerId,
+            clientX: point.x,
+            clientY: point.y,
+            timer: window.setTimeout(() => {
+              const hold = pendingPhoneEdgeHold;
+              if (
+                !hold ||
+                hold.nodeId !== id ||
+                nodeDrag?.nodeId !== id ||
+                (hold.pointerId != null && nodeDrag.pointerId !== hold.pointerId)
+              ) {
+                return;
+              }
+              pendingPhoneEdgeHold = null;
+              // The hold wins only while the node is still in its initial touch
+              // state. Cancel the regular node drag before starting the edge
+              // gesture so the node never moves under the user's finger.
+              cancelNodeDrag();
+              ignoreTouchGestureClickUntil = performance.now() + 350;
+              const sourceNode = state.nodesById.get(id);
+              linkDrag = {
+                sourceId: id,
+                pointerId: hold.pointerId,
+                clientX: hold.clientX,
+                clientY: hold.clientY,
+              };
+              setCanvasPointerCaptureActive(true);
+              updateConnectionPreview(graph, sourceNode, hold.clientX, hold.clientY);
+              callbacks.onConnectionDragStart?.(id);
+              if (linkDrag.pointerId != null) {
+                try {
+                  el.g6EditorHost?.setPointerCapture?.(linkDrag.pointerId);
+                } catch {
+                  // Link dragging can continue inside the canvas without capture.
+                }
+              }
+            }, PHONE_EDGE_HOLD_MS),
+          };
         }
         originalEvent(event)?.preventDefault?.();
         originalEvent(event)?.stopPropagation?.();
@@ -903,6 +927,14 @@ export function bindG6Interactions(editor, callbacks = {}) {
     }
   };
 
+  const cancelPhoneEdgeHold = () => {
+    if (!pendingPhoneEdgeHold) {
+      return;
+    }
+    window.clearTimeout(pendingPhoneEdgeHold.timer);
+    pendingPhoneEdgeHold = null;
+  };
+
   const eventMatchesNodeDrag = (event) => {
     if (!nodeDrag) {
       return false;
@@ -915,6 +947,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     if (!nodeDrag || !eventMatchesNodeDrag(event)) {
       return;
     }
+    cancelPhoneEdgeHold();
     flushNodeDragMove();
     const dragState = nodeDrag;
     const nodeId = dragState.nodeId;
@@ -976,6 +1009,19 @@ export function bindG6Interactions(editor, callbacks = {}) {
       const point = graphCanvasPoint(graph, event.clientX, event.clientY);
       const nextX = Math.round(nodeDrag.nodeX + point.x - nodeDrag.startX);
       const nextY = Math.round(nodeDrag.nodeY + point.y - nodeDrag.startY);
+      const phoneHoldDistance = pendingPhoneEdgeHold
+        ? Math.hypot(
+            event.clientX - pendingPhoneEdgeHold.clientX,
+            event.clientY - pendingPhoneEdgeHold.clientY,
+          )
+        : Infinity;
+      if (pendingPhoneEdgeHold && phoneHoldDistance <= PHONE_EDGE_HOLD_MOVE_TOLERANCE) {
+        event.preventDefault();
+        return;
+      }
+      if (pendingPhoneEdgeHold) {
+        cancelPhoneEdgeHold();
+      }
       const moved = Math.abs(nextX - nodeDrag.nodeX) > 1 || Math.abs(nextY - nodeDrag.nodeY) > 1;
       if (moved) {
         dragged = true;
@@ -1092,6 +1138,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
       window.cancelAnimationFrame(nodeDragFrame);
       nodeDragFrame = 0;
     }
+    cancelPhoneEdgeHold();
     removeNodeDragPreview(nodeDrag);
     setCanvasPointerCaptureActive(false);
     pinchGesture = null;
