@@ -992,20 +992,6 @@ function renderDurableRun(turn, typeKey) {
     evidence.className = "chat-proposal-meta";
     evidence.textContent = `Evidence linked to ${provenance.length} model element${provenance.length === 1 ? "" : "s"}.`;
     bubble.appendChild(evidence);
-    const evidenceList = document.createElement("div");
-    evidenceList.className = "chat-proposal-actions";
-    for (const item of provenance) {
-      const elementId = String(item.elementId || "").trim();
-      if (!elementId) continue;
-      const element = document.createElement("button");
-      element.type = "button";
-      element.className = "chat-proposal-btn";
-      element.textContent = item.requirementId || item.sourceUnitId || "View evidence";
-      element.title = `Focus model element ${elementId}`;
-      element.addEventListener("click", () => scrollToNodeAndHighlight(elementId));
-      evidenceList.appendChild(element);
-    }
-    if (evidenceList.childElementCount) bubble.appendChild(evidenceList);
   }
   if (turn.state === "SUCCEEDED" || turn.state === "PARTIAL") {
     const feedback = document.createElement("div");

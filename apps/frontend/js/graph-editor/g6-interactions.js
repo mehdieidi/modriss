@@ -12,6 +12,7 @@ import {
 } from "./icon-node-metrics.js";
 import { clearConnectionPreview, updateConnectionPreview } from "./g6-overlays.js";
 import { fingerprintElement, scheduleGraphDraw } from "./g6-performance.js";
+import { isPhoneViewport } from "../responsive.js";
 
 let currentCanvasCursorMode = "";
 const DEFERRED_NODE_DRAG_EDGE_THRESHOLD = 350;
@@ -770,6 +771,28 @@ export function bindG6Interactions(editor, callbacks = {}) {
         clientY: point.y,
       };
       editor?.setOpenControlHover?.(id);
+      originalEvent(event)?.preventDefault?.();
+      originalEvent(event)?.stopPropagation?.();
+      return;
+    }
+    if (isTouchPointer(event) && isPhoneViewport()) {
+      const sourceNode = state.nodesById.get(id);
+      linkDrag = {
+        sourceId: id,
+        pointerId: originalEvent(event)?.pointerId,
+        clientX: point.x,
+        clientY: point.y,
+      };
+      setCanvasPointerCaptureActive(true);
+      updateConnectionPreview(graph, sourceNode, point.x, point.y);
+      callbacks.onConnectionDragStart?.(id);
+      if (linkDrag.pointerId != null) {
+        try {
+          el.g6EditorHost?.setPointerCapture?.(linkDrag.pointerId);
+        } catch {
+          // Link dragging can continue inside the canvas without capture.
+        }
+      }
       originalEvent(event)?.preventDefault?.();
       originalEvent(event)?.stopPropagation?.();
       return;

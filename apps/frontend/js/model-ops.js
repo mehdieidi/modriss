@@ -1652,6 +1652,7 @@ export async function switchTab(type) {
   }
 
   state.activeType = type;
+  window.dispatchEvent(new Event("modriss-active-modeling-level-change"));
   if (!isArtifactLevel(type)) {
     saveLastModelingType(state.project?.id, type);
   }

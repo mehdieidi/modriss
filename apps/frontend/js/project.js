@@ -718,6 +718,7 @@ export async function loadProject(project) {
           : typeKeys.find((type) => state.tabs[type]?.modelId) || defaultLevel;
     saveLastModelingType(projectId, initialLevel);
     state.activeType = initialLevel;
+    window.dispatchEvent(new Event("modriss-active-modeling-level-change"));
     state.modelId = state.tabs[initialLevel]?.modelId || null;
     state.modelRevision = state.tabs[initialLevel]?.modelRevision || 0;
     state.baseModel = state.tabs[initialLevel]?.baseModel || null;
@@ -824,6 +825,7 @@ export async function deleteCurrentProject() {
     }
     const defaultLevel = defaultModelingLevel();
     state.activeType = defaultLevel;
+    window.dispatchEvent(new Event("modriss-active-modeling-level-change"));
     state.diagram = state.tabs[defaultLevel]?.diagram || emptyDiagram(defaultLevel);
     state.selectedNodeId = null;
     state.selectedConnectionId = null;

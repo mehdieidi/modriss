@@ -648,6 +648,43 @@ function renderConfiguredModelTabs() {
   artifactButton.textContent = "Artifacts";
   fragment.appendChild(artifactButton);
   el.modelTabs.appendChild(fragment);
+  renderMobileModelLevelSwitcher();
+}
+
+function renderMobileModelLevelSwitcher() {
+  const switcher = el.mobileModelLevelSwitcher;
+  const menu = el.mobileModelLevelMenu;
+  if (!switcher || !menu) {
+    return;
+  }
+  let activeLevel = null;
+  try {
+    activeLevel = isModelingLevel(state.activeType) ? modelingLevelConfig(state.activeType) : null;
+  } catch {
+    activeLevel = null;
+  }
+  if (el.mobileModelLevelLabel) {
+    el.mobileModelLevelLabel.textContent =
+      activeLevel?.displayName || (isArtifactLevel(state.activeType) ? "Artifacts" : "Model level");
+  }
+  menu.innerHTML = modelingLevelKeys()
+    .map((typeKey) => {
+      const level = modelingLevelConfig(typeKey);
+      const active = typeKey === state.activeType;
+      return `<button class="mobile-model-level-option${active ? " is-active" : ""}"
+                      type="button"
+                      role="option"
+                      aria-selected="${active ? "true" : "false"}"
+                      data-mobile-model-type="${typeKey}">
+                <span>${level.displayName || typeKey.toUpperCase()}</span>
+              </button>`;
+    })
+    .join("");
+}
+
+function closeMobileModelLevelMenu() {
+  el.mobileModelLevelSwitcher?.classList.remove("is-open");
+  el.mobileModelLevelToggle?.setAttribute("aria-expanded", "false");
 }
 
 // ── Bind all DOM event handlers ───────────────────────────────────────────────
@@ -667,6 +704,40 @@ function bindEvents() {
     closeTopbarMenu();
     switchTab(btn.dataset.type);
   });
+
+  el.mobileModelLevelToggle?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const open = el.mobileModelLevelSwitcher?.classList.contains("is-open");
+    if (open) {
+      closeMobileModelLevelMenu();
+      return;
+    }
+    renderMobileModelLevelSwitcher();
+    el.mobileModelLevelSwitcher?.classList.add("is-open");
+    el.mobileModelLevelToggle?.setAttribute("aria-expanded", "true");
+  });
+
+  el.mobileModelLevelMenu?.addEventListener("click", (event) => {
+    const target = getElementTarget(event);
+    const option = target?.closest("[data-mobile-model-type]");
+    if (!option) {
+      return;
+    }
+    const type = option.dataset.mobileModelType;
+    closeMobileModelLevelMenu();
+    closeMobilePanels();
+    closeTopbarMenu();
+    void switchTab(type).finally(renderMobileModelLevelSwitcher);
+  });
+
+  document.addEventListener("click", (event) => {
+    const target = getElementTarget(event);
+    if (!target?.closest("#mobileModelLevelSwitcher")) {
+      closeMobileModelLevelMenu();
+    }
+  });
+
+  window.addEventListener("modriss-active-modeling-level-change", renderMobileModelLevelSwitcher);
 
   // Theme
   if (el.paletteRailToggleBtn) {
