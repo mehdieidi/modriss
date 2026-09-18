@@ -79,4 +79,13 @@ check_url "https://editor.modriss.site"
 check_url "https://admin.modriss.site"
 check_url "https://api.modriss.site/actuator/health/readiness"
 
+echo "Checking editor cache policy..."
+editor_headers=$(curl --fail --silent --show-error --location --max-time 15 \
+  --dump-header - --output /dev/null "https://editor.modriss.site/")
+if ! printf '%s\n' "$editor_headers" | grep -Eiq '^Cache-Control:.*no-store'; then
+  echo "Editor cache policy check failed: Cache-Control does not include no-store." >&2
+  exit 1
+fi
+echo "OK  editor cache policy (no-store)"
+
 echo "Production deployment completed successfully."

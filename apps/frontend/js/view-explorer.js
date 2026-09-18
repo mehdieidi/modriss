@@ -625,7 +625,10 @@ export function renderViewWorkbench() {
                 : ""
             }" id="relationshipTreeToggleBtn" type="button">Relationships</button>
           </div>
-          ${mobileViewport ? "" : `<div class="workbench-view-select-wrap workbench-inspect-menu-wrap${inspectMenuOpen ? " is-open" : ""}">
+          ${
+            mobileViewport
+              ? ""
+              : `<div class="workbench-view-select-wrap workbench-inspect-menu-wrap${inspectMenuOpen ? " is-open" : ""}">
             <button class="sidebar-select workbench-view-select workbench-inspect-select"
                     id="inspectMenuToggle"
                     type="button"
@@ -658,7 +661,8 @@ export function renderViewWorkbench() {
                 <span class="workbench-view-option-label">Relationships</span>
               </button>
             </div>
-          </div>`}
+          </div>`
+          }
         </div>
         <div class="workbench-tool-cluster workbench-arrange-cluster" aria-label="Arrange active view">
           <span class="workbench-control-label">Arrange</span>

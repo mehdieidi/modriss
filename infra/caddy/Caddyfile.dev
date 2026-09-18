@@ -58,6 +58,12 @@ http://editor.localhost:8088 {
 	import security_headers
 	import access_logs
 	import backend_routes
+	header {
+		# Keep local mobile testing aligned with production cache behavior.
+		Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0"
+		Pragma "no-cache"
+		Expires "0"
+	}
 
 	reverse_proxy frontend:8082
 }
