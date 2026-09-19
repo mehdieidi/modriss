@@ -30,7 +30,7 @@ only restricts the legal workflow based on model state and safety facts.
    them to exact creatable candidate EClasses.
 2. `conceptual_type_selection` chooses exact EClasses. The backend verifies mandatory coverage and
    the actual combined required closure. There are four bounded selection attempts.
-3. `conceptual_blueprint` plans up to 18 stable object IDs/types, legal ownership, references,
+3. `conceptual_blueprint` plans up to 96 stable object IDs/types, legal ownership, references,
    obligation/source allocations, and slices.
 4. `conceptual_instance_slice` generates private object payloads. Large blueprints start at two
    objects per slice and fall back to one after a length truncation.
@@ -79,7 +79,7 @@ Assistant generation, review, repair, apply, and commit call only
 
 ## Current limitation
 
-The single conceptual checkpoint is bounded by an 18-object schema, required closure, and the
+The single conceptual checkpoint is bounded by a 96-object schema, required closure, and the
 provider-call budget. A coherent multi-increment design is still required for larger models. The
 latest existing-PIM evolution succeeded atomically, but repeated live campaigns and browser-level
 UX verification are still required for production-readiness claims.

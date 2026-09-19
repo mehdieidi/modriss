@@ -253,7 +253,7 @@ two calls are reserved for adaptive routing. The conceptual budget accommodates 
 interpretation, semantic type selection, a blueprint, private slices, optional independent
 obligation review, and bounded selection, slice, review, and compiler corrections. Effective
 object capacity is derived from the remaining call budget and
-slice size and is capped by the 64-object schema. Stage-specific completion limits keep every
+slice size and is capped by the 96-object schema. Stage-specific completion limits keep every
 response bounded below the provider's broad global maximum.
 
 LLM review is configurable with `MODRISS_AI_LLM_REVIEW_ENABLED`. When disabled, no reviewer or judge

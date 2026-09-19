@@ -59,7 +59,7 @@ For an existing non-destructive model, the LLM may select either conceptual evol
 inspect/contract loop. Selected-element, resumed, and destructive work remains inspect-only, and
 destructive mutations additionally require confirmation.
 
-The blueprint schema is capped at 18 objects/types and effective capacity is lower when required
+The blueprint schema is capped at 96 objects/types and effective capacity is lower when required
 closure or provider-call reserves consume budget. Conceptual objects remain private until all
 mandatory obligations are proven, deterministic compilation succeeds, and structural validation
 passes.
