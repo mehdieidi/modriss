@@ -119,6 +119,7 @@
         "outputWorkProductRefs": ["e2e-artifact.product-charter"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.product-charter",
             "direction": "out",
             "optional": false
@@ -150,16 +151,19 @@
         "outputWorkProductRefs": ["e2e-artifact.product-charter", "e2e-artifact.increment-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.product-charter",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.product-charter",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "out",
             "optional": false
@@ -193,16 +197,19 @@
         "outputWorkProductRefs": ["e2e-artifact.method-profile"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.product-charter",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "out",
             "optional": false
@@ -229,16 +236,34 @@
         "name": "Define the tailored Definition of Ready and Done",
         "purpose": "Define the tailored Definition of Ready and Done",
         "performerRoleRefs": ["role.process-reviewer"],
-        "inputWorkProductRefs": ["e2e-artifact.method-profile"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.method-profile",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.increment-record"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.method-profile"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.increment-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "out",
             "optional": false
@@ -265,16 +290,24 @@
         "name": "Define team ownership and interfaces",
         "purpose": "Define team ownership and interfaces",
         "performerRoleRefs": ["role.delivery-lead"],
-        "inputWorkProductRefs": ["e2e-artifact.method-profile"],
+        "inputWorkProductRefs": ["e2e-artifact.method-profile", "e2e-artifact.product-charter"],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.team-topology"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.team-topology",
             "direction": "out",
             "optional": false
@@ -301,21 +334,40 @@
         "name": "Set coordination cadence and escalation paths",
         "purpose": "Set coordination cadence and escalation paths",
         "performerRoleRefs": ["role.delivery-lead"],
-        "inputWorkProductRefs": ["e2e-artifact.team-topology"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.team-topology",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.product-charter"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.team-topology", "e2e-artifact.method-profile"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.team-topology",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.team-topology",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "out",
             "optional": false
@@ -342,21 +394,34 @@
         "name": "Define quality and security control objectives",
         "purpose": "Define quality and security control objectives",
         "performerRoleRefs": ["role.security-engineer"],
-        "inputWorkProductRefs": ["e2e-artifact.team-topology", "e2e-artifact.method-profile"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.team-topology",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.product-charter"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.method-profile"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.team-topology",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "out",
             "optional": false
@@ -383,21 +448,40 @@
         "name": "Define operational and release strategy",
         "purpose": "Define operational and release strategy",
         "performerRoleRefs": ["role.service-owner"],
-        "inputWorkProductRefs": ["e2e-artifact.method-profile"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.method-profile",
+          "e2e-artifact.team-topology",
+          "e2e-artifact.product-charter"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.product-charter", "e2e-artifact.method-profile"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.team-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.product-charter",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "out",
             "optional": false
@@ -424,21 +508,34 @@
         "name": "Plan the vertical increment",
         "purpose": "Plan the vertical increment",
         "performerRoleRefs": ["role.product-owner"],
-        "inputWorkProductRefs": ["e2e-artifact.product-charter", "e2e-artifact.method-profile"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.product-charter",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.team-topology"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.product-charter",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.team-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "out",
             "optional": false
@@ -467,16 +564,41 @@
         "name": "Run the CIM increment",
         "purpose": "Run the CIM increment",
         "performerRoleRefs": ["role.business-modeler"],
-        "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.increment-record",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.team-topology"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.team-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "out",
             "optional": false
@@ -504,16 +626,34 @@
         "name": "Execute and inspect CIM-to-PIM transformation",
         "purpose": "Execute and inspect CIM-to-PIM transformation",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.increment-record",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.product-charter"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "out",
             "optional": false
@@ -541,16 +681,34 @@
         "name": "Run the PIM increment",
         "purpose": "Run the PIM increment",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.increment-record",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.method-profile"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "out",
             "optional": false
@@ -578,16 +736,34 @@
         "name": "Execute and inspect PIM-to-PSM transformation",
         "purpose": "Execute and inspect PIM-to-PSM transformation",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.increment-record",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.product-charter"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "out",
             "optional": false
@@ -615,16 +791,34 @@
         "name": "Run the PSM increment",
         "purpose": "Run the PSM increment",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.increment-record",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.product-charter"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "out",
             "optional": false
@@ -652,16 +846,34 @@
         "name": "Generate and fingerprint the artifact baseline",
         "purpose": "Generate and fingerprint the artifact baseline",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.increment-record",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.team-topology"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.team-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "out",
             "optional": false
@@ -689,16 +901,34 @@
         "name": "Run artifact readiness and accept the increment",
         "purpose": "Run artifact readiness and accept the increment",
         "performerRoleRefs": ["role.process-reviewer"],
-        "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.increment-record",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.product-charter"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "out",
             "optional": false
@@ -728,16 +958,41 @@
         "name": "Assemble the release candidate",
         "purpose": "Assemble the release candidate",
         "performerRoleRefs": ["role.release-engineer"],
-        "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.increment-record",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.team-topology"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.release-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.team-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.release-record",
             "direction": "out",
             "optional": false
@@ -764,16 +1019,41 @@
         "name": "Review release evidence and go/no-go criteria",
         "purpose": "Review release evidence and go/no-go criteria",
         "performerRoleRefs": ["role.process-reviewer"],
-        "inputWorkProductRefs": ["e2e-artifact.release-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.release-record",
+          "e2e-artifact.increment-record",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.method-profile"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.release-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.release-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.increment-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.release-record",
             "direction": "out",
             "optional": false
@@ -798,16 +1078,41 @@
         "name": "Deploy and validate progressively",
         "purpose": "Deploy and validate progressively",
         "performerRoleRefs": ["role.release-engineer"],
-        "inputWorkProductRefs": ["e2e-artifact.release-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.release-record",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.team-topology"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.release-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.release-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.team-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.release-record",
             "direction": "out",
             "optional": false
@@ -834,21 +1139,47 @@
         "name": "Complete handover and rollback rehearsal",
         "purpose": "Complete handover and rollback rehearsal",
         "performerRoleRefs": ["role.service-owner"],
-        "inputWorkProductRefs": ["e2e-artifact.release-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.release-record",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.team-topology"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.release-record", "e2e-artifact.operations-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.release-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.team-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.release-record",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "out",
             "optional": false
@@ -875,26 +1206,54 @@
         "name": "Review release outcome and update roadmap",
         "purpose": "Review release outcome and update roadmap",
         "performerRoleRefs": ["role.product-owner"],
-        "inputWorkProductRefs": ["e2e-artifact.release-record", "e2e-artifact.operations-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.release-record",
+          "e2e-artifact.operations-record",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.increment-record",
+          "e2e-artifact.method-profile"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.release-record", "e2e-artifact.product-charter"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.release-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.increment-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.release-record",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.product-charter",
             "direction": "out",
             "optional": false
@@ -921,21 +1280,41 @@
         "name": "Review SLOs, telemetry, and product outcomes",
         "purpose": "Review SLOs, telemetry, and product outcomes",
         "performerRoleRefs": ["role.service-owner"],
-        "inputWorkProductRefs": ["e2e-artifact.release-record", "e2e-artifact.product-charter"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.release-record",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.operations-record",
+          "e2e-artifact.method-profile"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.operations-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.release-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.product-charter",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operations-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "out",
             "optional": false
@@ -962,16 +1341,34 @@
         "name": "Manage incidents and recovery",
         "purpose": "Manage incidents and recovery",
         "performerRoleRefs": ["role.service-owner"],
-        "inputWorkProductRefs": ["e2e-artifact.operations-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.operations-record",
+          "e2e-artifact.release-record",
+          "e2e-artifact.method-profile"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.operations-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.release-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "out",
             "optional": false
@@ -996,21 +1393,47 @@
         "name": "Perform problem and risk learning",
         "purpose": "Perform problem and risk learning",
         "performerRoleRefs": ["role.quality-engineer"],
-        "inputWorkProductRefs": ["e2e-artifact.operations-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.operations-record",
+          "e2e-artifact.increment-record",
+          "e2e-artifact.release-record",
+          "e2e-artifact.method-profile"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.increment-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.release-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "out",
             "optional": false
@@ -1037,7 +1460,13 @@
         "name": "Assess and propagate a change",
         "purpose": "Assess and propagate a change",
         "performerRoleRefs": ["role.delivery-lead"],
-        "inputWorkProductRefs": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.operations-record",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.increment-record",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.release-record"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": [
           "e2e-artifact.increment-record",
@@ -1045,21 +1474,43 @@
         ],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.increment-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.release-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "out",
             "optional": false
@@ -1086,26 +1537,54 @@
         "name": "Inspect flow, quality, and coordination metrics",
         "purpose": "Inspect flow, quality, and coordination metrics",
         "performerRoleRefs": ["role.process-reviewer"],
-        "inputWorkProductRefs": ["e2e-artifact.increment-record", "e2e-artifact.operations-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.increment-record",
+          "e2e-artifact.operations-record",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.release-record"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.release-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "out",
             "optional": false
@@ -1132,21 +1611,41 @@
         "name": "Approve retirement scope and plan",
         "purpose": "Approve retirement scope and plan",
         "performerRoleRefs": ["role.product-owner"],
-        "inputWorkProductRefs": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.operations-record",
+          "e2e-artifact.release-record",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.method-profile"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.retirement-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.release-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.retirement-record",
             "direction": "out",
             "optional": false
@@ -1173,16 +1672,41 @@
         "name": "Execute migration and data disposition",
         "purpose": "Execute migration and data disposition",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["e2e-artifact.retirement-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.retirement-record",
+          "e2e-artifact.operations-record",
+          "e2e-artifact.release-record",
+          "e2e-artifact.method-profile"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.retirement-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.retirement-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operations-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.release-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.retirement-record",
             "direction": "out",
             "optional": false
@@ -1207,16 +1731,41 @@
         "name": "Decommission service and access",
         "purpose": "Decommission service and access",
         "performerRoleRefs": ["role.service-owner"],
-        "inputWorkProductRefs": ["e2e-artifact.retirement-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.retirement-record",
+          "e2e-artifact.operations-record",
+          "e2e-artifact.release-record",
+          "e2e-artifact.team-topology"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.retirement-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.retirement-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operations-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.release-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.team-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.retirement-record",
             "direction": "out",
             "optional": false
@@ -1243,21 +1792,61 @@
         "name": "Complete closure review",
         "purpose": "Complete closure review",
         "performerRoleRefs": ["role.process-reviewer"],
-        "inputWorkProductRefs": ["e2e-artifact.retirement-record"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.retirement-record",
+          "e2e-artifact.operations-record",
+          "e2e-artifact.product-charter",
+          "e2e-artifact.increment-record",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.release-record"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.retirement-record", "e2e-artifact.method-profile"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.retirement-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operations-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.product-charter",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.increment-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.release-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.retirement-record",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "out",
             "optional": false
@@ -1632,6 +2221,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph0.st2.t2.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph0.st2",
+      "taskUseRef": "e2e.ph0.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph0.st2.t2.input.e2e-artifact.increment-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph0.st2",
+      "taskUseRef": "e2e.ph0.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.increment-record",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph0.st2.t2.output.e2e-artifact.method-profile",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph0.st2",
@@ -1648,6 +2253,14 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph0.st3.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph0.st3",
+      "taskUseRef": "e2e.ph0.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph0.st3.t1.output.e2e-artifact.team-topology",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph0.st3",
@@ -1661,6 +2274,22 @@
       "activityRef": "e2e.ph0.st3",
       "taskUseRef": "e2e.ph0.st3.t2",
       "workProductDefinitionRef": "e2e-artifact.team-topology",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph0.st3.t2.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph0.st3",
+      "taskUseRef": "e2e.ph0.st3.t2",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph0.st3.t2.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph0.st3",
+      "taskUseRef": "e2e.ph0.st3.t2",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
       "usage": "input"
     },
     {
@@ -1696,6 +2325,14 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph0.st4.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph0.st4",
+      "taskUseRef": "e2e.ph0.st4.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph0.st4.t1.output.e2e-artifact.method-profile",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph0.st4",
@@ -1709,6 +2346,22 @@
       "activityRef": "e2e.ph0.st4",
       "taskUseRef": "e2e.ph0.st4.t2",
       "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph0.st4.t2.input.e2e-artifact.team-topology",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph0.st4",
+      "taskUseRef": "e2e.ph0.st4.t2",
+      "workProductDefinitionRef": "e2e-artifact.team-topology",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph0.st4.t2.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph0.st4",
+      "taskUseRef": "e2e.ph0.st4.t2",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
       "usage": "input"
     },
     {
@@ -1744,6 +2397,14 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.p0.increment-planning.t1.input.e2e-artifact.team-topology",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p0.increment-planning",
+      "taskUseRef": "e2e.p0.increment-planning.t1",
+      "workProductDefinitionRef": "e2e-artifact.team-topology",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.p0.increment-planning.t1.output.e2e-artifact.increment-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.p0.increment-planning",
@@ -1757,6 +2418,30 @@
       "activityRef": "e2e.p1.cim-modeling",
       "taskUseRef": "e2e.p1.cim-modeling.t1",
       "workProductDefinitionRef": "e2e-artifact.increment-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p1.cim-modeling",
+      "taskUseRef": "e2e.p1.cim-modeling.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p1.cim-modeling",
+      "taskUseRef": "e2e.p1.cim-modeling.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.team-topology",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p1.cim-modeling",
+      "taskUseRef": "e2e.p1.cim-modeling.t1",
+      "workProductDefinitionRef": "e2e-artifact.team-topology",
       "usage": "input"
     },
     {
@@ -1776,6 +2461,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.p2.cim-to-pim.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p2.cim-to-pim",
+      "taskUseRef": "e2e.p2.cim-to-pim.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.p2.cim-to-pim.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p2.cim-to-pim",
+      "taskUseRef": "e2e.p2.cim-to-pim.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.p2.cim-to-pim.t1.output.e2e-artifact.increment-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.p2.cim-to-pim",
@@ -1789,6 +2490,22 @@
       "activityRef": "e2e.p3.pim-refinement",
       "taskUseRef": "e2e.p3.pim-refinement.t1",
       "workProductDefinitionRef": "e2e-artifact.increment-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.p3.pim-refinement.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p3.pim-refinement",
+      "taskUseRef": "e2e.p3.pim-refinement.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.p3.pim-refinement.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p3.pim-refinement",
+      "taskUseRef": "e2e.p3.pim-refinement.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
       "usage": "input"
     },
     {
@@ -1808,6 +2525,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p4.pim-to-psm",
+      "taskUseRef": "e2e.p4.pim-to-psm.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p4.pim-to-psm",
+      "taskUseRef": "e2e.p4.pim-to-psm.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.p4.pim-to-psm.t1.output.e2e-artifact.increment-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.p4.pim-to-psm",
@@ -1821,6 +2554,22 @@
       "activityRef": "e2e.p5.psm-refinement",
       "taskUseRef": "e2e.p5.psm-refinement.t1",
       "workProductDefinitionRef": "e2e-artifact.increment-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.p5.psm-refinement.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p5.psm-refinement",
+      "taskUseRef": "e2e.p5.psm-refinement.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.p5.psm-refinement.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p5.psm-refinement",
+      "taskUseRef": "e2e.p5.psm-refinement.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
       "usage": "input"
     },
     {
@@ -1840,6 +2589,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.p6.m2t-generation.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p6.m2t-generation",
+      "taskUseRef": "e2e.p6.m2t-generation.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.p6.m2t-generation.t1.input.e2e-artifact.team-topology",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p6.m2t-generation",
+      "taskUseRef": "e2e.p6.m2t-generation.t1",
+      "workProductDefinitionRef": "e2e-artifact.team-topology",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.p6.m2t-generation.t1.output.e2e-artifact.increment-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.p6.m2t-generation",
@@ -1853,6 +2618,22 @@
       "activityRef": "e2e.p7.artifact-completion",
       "taskUseRef": "e2e.p7.artifact-completion.t1",
       "workProductDefinitionRef": "e2e-artifact.increment-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.p7.artifact-completion.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p7.artifact-completion",
+      "taskUseRef": "e2e.p7.artifact-completion.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.p7.artifact-completion.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.p7.artifact-completion",
+      "taskUseRef": "e2e.p7.artifact-completion.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
       "usage": "input"
     },
     {
@@ -1872,6 +2653,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph2.st1.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st1",
+      "taskUseRef": "e2e.ph2.st1.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph2.st1.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st1",
+      "taskUseRef": "e2e.ph2.st1.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph2.st1.t1.input.e2e-artifact.team-topology",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st1",
+      "taskUseRef": "e2e.ph2.st1.t1",
+      "workProductDefinitionRef": "e2e-artifact.team-topology",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph2.st1.t1.output.e2e-artifact.release-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph2.st1",
@@ -1885,6 +2690,30 @@
       "activityRef": "e2e.ph2.st1",
       "taskUseRef": "e2e.ph2.st1.t2",
       "workProductDefinitionRef": "e2e-artifact.release-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph2.st1.t2.input.e2e-artifact.increment-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st1",
+      "taskUseRef": "e2e.ph2.st1.t2",
+      "workProductDefinitionRef": "e2e-artifact.increment-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph2.st1.t2.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st1",
+      "taskUseRef": "e2e.ph2.st1.t2",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph2.st1.t2.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st1",
+      "taskUseRef": "e2e.ph2.st1.t2",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
       "usage": "input"
     },
     {
@@ -1904,6 +2733,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph2.st2.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st2",
+      "taskUseRef": "e2e.ph2.st2.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph2.st2.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st2",
+      "taskUseRef": "e2e.ph2.st2.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph2.st2.t1.input.e2e-artifact.team-topology",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st2",
+      "taskUseRef": "e2e.ph2.st2.t1",
+      "workProductDefinitionRef": "e2e-artifact.team-topology",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph2.st2.t1.output.e2e-artifact.release-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph2.st2",
@@ -1917,6 +2770,30 @@
       "activityRef": "e2e.ph2.st2",
       "taskUseRef": "e2e.ph2.st2.t2",
       "workProductDefinitionRef": "e2e-artifact.release-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph2.st2.t2.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st2",
+      "taskUseRef": "e2e.ph2.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph2.st2.t2.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st2",
+      "taskUseRef": "e2e.ph2.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph2.st2.t2.input.e2e-artifact.team-topology",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st2",
+      "taskUseRef": "e2e.ph2.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.team-topology",
       "usage": "input"
     },
     {
@@ -1952,6 +2829,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph2.st3.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st3",
+      "taskUseRef": "e2e.ph2.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph2.st3.t1.input.e2e-artifact.increment-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st3",
+      "taskUseRef": "e2e.ph2.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.increment-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph2.st3.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph2.st3",
+      "taskUseRef": "e2e.ph2.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph2.st3.t1.output.e2e-artifact.release-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph2.st3",
@@ -1984,6 +2885,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph3.st1.t1.input.e2e-artifact.operations-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st1",
+      "taskUseRef": "e2e.ph3.st1.t1",
+      "workProductDefinitionRef": "e2e-artifact.operations-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st1.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st1",
+      "taskUseRef": "e2e.ph3.st1.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph3.st1.t1.output.e2e-artifact.operations-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph3.st1",
@@ -2000,6 +2917,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph3.st2.t1.input.e2e-artifact.release-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2",
+      "taskUseRef": "e2e.ph3.st2.t1",
+      "workProductDefinitionRef": "e2e-artifact.release-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2",
+      "taskUseRef": "e2e.ph3.st2.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph3.st2.t1.output.e2e-artifact.operations-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph3.st2",
@@ -2013,6 +2946,30 @@
       "activityRef": "e2e.ph3.st2",
       "taskUseRef": "e2e.ph3.st2.t2",
       "workProductDefinitionRef": "e2e-artifact.operations-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2.t2.input.e2e-artifact.increment-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2",
+      "taskUseRef": "e2e.ph3.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.increment-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2.t2.input.e2e-artifact.release-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2",
+      "taskUseRef": "e2e.ph3.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.release-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2.t2.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2",
+      "taskUseRef": "e2e.ph3.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
       "usage": "input"
     },
     {
@@ -2048,6 +3005,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.increment-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st3",
+      "taskUseRef": "e2e.ph3.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.increment-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st3",
+      "taskUseRef": "e2e.ph3.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.release-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st3",
+      "taskUseRef": "e2e.ph3.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.release-record",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph3.st3.t1.output.e2e-artifact.increment-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph3.st3",
@@ -2080,6 +3061,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st4",
+      "taskUseRef": "e2e.ph3.st4.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st4",
+      "taskUseRef": "e2e.ph3.st4.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.release-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st4",
+      "taskUseRef": "e2e.ph3.st4.t1",
+      "workProductDefinitionRef": "e2e-artifact.release-record",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph3.st4.t1.output.e2e-artifact.operations-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph3.st4",
@@ -2101,6 +3106,22 @@
       "activityRef": "e2e.ph4.st1",
       "taskUseRef": "e2e.ph4.st1.t1",
       "workProductDefinitionRef": "e2e-artifact.operations-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph4.st1.t1.input.e2e-artifact.release-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st1",
+      "taskUseRef": "e2e.ph4.st1.t1",
+      "workProductDefinitionRef": "e2e-artifact.release-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph4.st1.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st1",
+      "taskUseRef": "e2e.ph4.st1.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
       "usage": "input"
     },
     {
@@ -2128,6 +3149,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph4.st2.t1.input.e2e-artifact.operations-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st2",
+      "taskUseRef": "e2e.ph4.st2.t1",
+      "workProductDefinitionRef": "e2e-artifact.operations-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph4.st2.t1.input.e2e-artifact.release-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st2",
+      "taskUseRef": "e2e.ph4.st2.t1",
+      "workProductDefinitionRef": "e2e-artifact.release-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph4.st2.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st2",
+      "taskUseRef": "e2e.ph4.st2.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph4.st2.t1.output.e2e-artifact.retirement-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph4.st2",
@@ -2144,6 +3189,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph4.st2.t2.input.e2e-artifact.operations-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st2",
+      "taskUseRef": "e2e.ph4.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.operations-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph4.st2.t2.input.e2e-artifact.release-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st2",
+      "taskUseRef": "e2e.ph4.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.release-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph4.st2.t2.input.e2e-artifact.team-topology",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st2",
+      "taskUseRef": "e2e.ph4.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.team-topology",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph4.st2.t2.output.e2e-artifact.retirement-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph4.st2",
@@ -2157,6 +3226,46 @@
       "activityRef": "e2e.ph4.st3",
       "taskUseRef": "e2e.ph4.st3.t1",
       "workProductDefinitionRef": "e2e-artifact.retirement-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph4.st3.t1.input.e2e-artifact.operations-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st3",
+      "taskUseRef": "e2e.ph4.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.operations-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph4.st3.t1.input.e2e-artifact.product-charter",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st3",
+      "taskUseRef": "e2e.ph4.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.product-charter",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph4.st3.t1.input.e2e-artifact.increment-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st3",
+      "taskUseRef": "e2e.ph4.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.increment-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph4.st3.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st3",
+      "taskUseRef": "e2e.ph4.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph4.st3.t1.input.e2e-artifact.release-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph4.st3",
+      "taskUseRef": "e2e.ph4.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.release-record",
       "usage": "input"
     },
     {
@@ -2488,20 +3597,76 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph0.st1.t1",
               "performerRoleUseRefs": ["ru.e2e.ph0.st1.product-owner"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph0.st1.t1.ru.e2e.ph0.st1.product-owner",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph0.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph0.st1.product-owner"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [],
-              "outputWorkProductUseRefs": ["wpu.e2e.ph0.st1.t1.output.e2e-artifact.product-charter"]
+              "outputWorkProductUseRefs": [
+                "wpu.e2e.ph0.st1.t1.output.e2e-artifact.product-charter"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph0.st1.t1.out.wpu.e2e.ph0.st1.t1.output.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st1.t1.output.e2e-artifact.product-charter"
+                }
+              ]
             },
             {
               "id": "e2e.ph0.st1.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph0.st1.t2",
               "performerRoleUseRefs": ["ru.e2e.ph0.st1.requirements-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph0.st1.t2.ru.e2e.ph0.st1.requirements-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph0.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph0.st1.requirements-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": ["wpu.e2e.ph0.st1.t2.input.e2e-artifact.product-charter"],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph0.st1.t2.output.e2e-artifact.product-charter",
                 "wpu.e2e.ph0.st1.t2.output.e2e-artifact.increment-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph0.st1.t2.in.wpu.e2e.ph0.st1.t2.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st1.t2.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph0.st1.t2.out.wpu.e2e.ph0.st1.t2.output.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st1.t2.output.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph0.st1.t2.out.wpu.e2e.ph0.st1.t2.output.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st1.t2.output.e2e-artifact.increment-record"
+                }
               ]
             }
           ]
@@ -2521,21 +3686,103 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph0.st2.t1",
               "performerRoleUseRefs": ["ru.e2e.ph0.st2.method-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph0.st2.t1.ru.e2e.ph0.st2.method-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph0.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph0.st2.method-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.ph0.st2.t1.input.e2e-artifact.product-charter",
                 "wpu.e2e.ph0.st2.t1.input.e2e-artifact.increment-record"
               ],
-              "outputWorkProductUseRefs": ["wpu.e2e.ph0.st2.t1.output.e2e-artifact.method-profile"]
+              "outputWorkProductUseRefs": ["wpu.e2e.ph0.st2.t1.output.e2e-artifact.method-profile"],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph0.st2.t1.in.wpu.e2e.ph0.st2.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st2.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph0.st2.t1.in.wpu.e2e.ph0.st2.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st2.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.ph0.st2.t1.out.wpu.e2e.ph0.st2.t1.output.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st2.t1.output.e2e-artifact.method-profile"
+                }
+              ]
             },
             {
               "id": "e2e.ph0.st2.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph0.st2.t2",
               "performerRoleUseRefs": ["ru.e2e.ph0.st2.process-reviewer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph0.st2.t2.ru.e2e.ph0.st2.process-reviewer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph0.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph0.st2.process-reviewer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
-              "inputWorkProductUseRefs": ["wpu.e2e.ph0.st2.t2.input.e2e-artifact.method-profile"],
-              "outputWorkProductUseRefs": ["wpu.e2e.ph0.st2.t2.output.e2e-artifact.method-profile"]
+              "inputWorkProductUseRefs": [
+                "wpu.e2e.ph0.st2.t2.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph0.st2.t2.input.e2e-artifact.product-charter",
+                "wpu.e2e.ph0.st2.t2.input.e2e-artifact.increment-record"
+              ],
+              "outputWorkProductUseRefs": ["wpu.e2e.ph0.st2.t2.output.e2e-artifact.method-profile"],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph0.st2.t2.in.wpu.e2e.ph0.st2.t2.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st2.t2.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph0.st2.t2.in.wpu.e2e.ph0.st2.t2.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st2.t2.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph0.st2.t2.in.wpu.e2e.ph0.st2.t2.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st2.t2.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.ph0.st2.t2.out.wpu.e2e.ph0.st2.t2.output.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st2.t2.output.e2e-artifact.method-profile"
+                }
+              ]
             }
           ]
         },
@@ -2554,20 +3801,113 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph0.st3.t1",
               "performerRoleUseRefs": ["ru.e2e.ph0.st3.delivery-lead"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph0.st3.t1.ru.e2e.ph0.st3.delivery-lead",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph0.st3.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph0.st3.delivery-lead"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
-              "inputWorkProductUseRefs": ["wpu.e2e.ph0.st3.t1.input.e2e-artifact.method-profile"],
-              "outputWorkProductUseRefs": ["wpu.e2e.ph0.st3.t1.output.e2e-artifact.team-topology"]
+              "inputWorkProductUseRefs": [
+                "wpu.e2e.ph0.st3.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph0.st3.t1.input.e2e-artifact.product-charter"
+              ],
+              "outputWorkProductUseRefs": ["wpu.e2e.ph0.st3.t1.output.e2e-artifact.team-topology"],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph0.st3.t1.in.wpu.e2e.ph0.st3.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st3.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph0.st3.t1.in.wpu.e2e.ph0.st3.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st3.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph0.st3.t1.out.wpu.e2e.ph0.st3.t1.output.e2e-artifact.team-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st3.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st3.t1.output.e2e-artifact.team-topology"
+                }
+              ]
             },
             {
               "id": "e2e.ph0.st3.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph0.st3.t2",
               "performerRoleUseRefs": ["ru.e2e.ph0.st3.delivery-lead"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph0.st3.t2.ru.e2e.ph0.st3.delivery-lead",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph0.st3.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph0.st3.delivery-lead"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
-              "inputWorkProductUseRefs": ["wpu.e2e.ph0.st3.t2.input.e2e-artifact.team-topology"],
+              "inputWorkProductUseRefs": [
+                "wpu.e2e.ph0.st3.t2.input.e2e-artifact.team-topology",
+                "wpu.e2e.ph0.st3.t2.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph0.st3.t2.input.e2e-artifact.product-charter"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph0.st3.t2.output.e2e-artifact.team-topology",
                 "wpu.e2e.ph0.st3.t2.output.e2e-artifact.method-profile"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph0.st3.t2.in.wpu.e2e.ph0.st3.t2.input.e2e-artifact.team-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st3.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st3.t2.input.e2e-artifact.team-topology"
+                },
+                {
+                  "id": "pp.e2e.ph0.st3.t2.in.wpu.e2e.ph0.st3.t2.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st3.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st3.t2.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph0.st3.t2.in.wpu.e2e.ph0.st3.t2.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st3.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st3.t2.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph0.st3.t2.out.wpu.e2e.ph0.st3.t2.output.e2e-artifact.team-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st3.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st3.t2.output.e2e-artifact.team-topology"
+                },
+                {
+                  "id": "pp.e2e.ph0.st3.t2.out.wpu.e2e.ph0.st3.t2.output.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st3.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st3.t2.output.e2e-artifact.method-profile"
+                }
               ]
             }
           ]
@@ -2591,23 +3931,122 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph0.st4.t1",
               "performerRoleUseRefs": ["ru.e2e.ph0.st4.security-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph0.st4.t1.ru.e2e.ph0.st4.security-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph0.st4.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph0.st4.security-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.ph0.st4.t1.input.e2e-artifact.team-topology",
-                "wpu.e2e.ph0.st4.t1.input.e2e-artifact.method-profile"
+                "wpu.e2e.ph0.st4.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph0.st4.t1.input.e2e-artifact.product-charter"
               ],
-              "outputWorkProductUseRefs": ["wpu.e2e.ph0.st4.t1.output.e2e-artifact.method-profile"]
+              "outputWorkProductUseRefs": ["wpu.e2e.ph0.st4.t1.output.e2e-artifact.method-profile"],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph0.st4.t1.in.wpu.e2e.ph0.st4.t1.input.e2e-artifact.team-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st4.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st4.t1.input.e2e-artifact.team-topology"
+                },
+                {
+                  "id": "pp.e2e.ph0.st4.t1.in.wpu.e2e.ph0.st4.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st4.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st4.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph0.st4.t1.in.wpu.e2e.ph0.st4.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st4.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st4.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph0.st4.t1.out.wpu.e2e.ph0.st4.t1.output.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st4.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st4.t1.output.e2e-artifact.method-profile"
+                }
+              ]
             },
             {
               "id": "e2e.ph0.st4.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph0.st4.t2",
               "performerRoleUseRefs": ["ru.e2e.ph0.st4.service-owner"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph0.st4.t2.ru.e2e.ph0.st4.service-owner",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph0.st4.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph0.st4.service-owner"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
-              "inputWorkProductUseRefs": ["wpu.e2e.ph0.st4.t2.input.e2e-artifact.method-profile"],
+              "inputWorkProductUseRefs": [
+                "wpu.e2e.ph0.st4.t2.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph0.st4.t2.input.e2e-artifact.team-topology",
+                "wpu.e2e.ph0.st4.t2.input.e2e-artifact.product-charter"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph0.st4.t2.output.e2e-artifact.product-charter",
                 "wpu.e2e.ph0.st4.t2.output.e2e-artifact.method-profile"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph0.st4.t2.in.wpu.e2e.ph0.st4.t2.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st4.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st4.t2.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph0.st4.t2.in.wpu.e2e.ph0.st4.t2.input.e2e-artifact.team-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st4.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st4.t2.input.e2e-artifact.team-topology"
+                },
+                {
+                  "id": "pp.e2e.ph0.st4.t2.in.wpu.e2e.ph0.st4.t2.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st4.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st4.t2.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph0.st4.t2.out.wpu.e2e.ph0.st4.t2.output.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st4.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st4.t2.output.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph0.st4.t2.out.wpu.e2e.ph0.st4.t2.output.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st4.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st4.t2.output.e2e-artifact.method-profile"
+                }
               ]
             }
           ]
@@ -2648,13 +4087,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.p0.increment-planning.t1",
               "performerRoleUseRefs": ["ru.e2e.p0.increment-planning.product-owner"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.p0.increment-planning.t1.ru.e2e.p0.increment-planning.product-owner",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.p0.increment-planning.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.p0.increment-planning.product-owner"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.p0.increment-planning.t1.input.e2e-artifact.product-charter",
-                "wpu.e2e.p0.increment-planning.t1.input.e2e-artifact.method-profile"
+                "wpu.e2e.p0.increment-planning.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.p0.increment-planning.t1.input.e2e-artifact.team-topology"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.p0.increment-planning.t1.output.e2e-artifact.increment-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.p0.increment-planning.t1.in.wpu.e2e.p0.increment-planning.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p0.increment-planning.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p0.increment-planning.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.p0.increment-planning.t1.in.wpu.e2e.p0.increment-planning.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p0.increment-planning.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p0.increment-planning.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.p0.increment-planning.t1.in.wpu.e2e.p0.increment-planning.t1.input.e2e-artifact.team-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p0.increment-planning.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p0.increment-planning.t1.input.e2e-artifact.team-topology"
+                },
+                {
+                  "id": "pp.e2e.p0.increment-planning.t1.out.wpu.e2e.p0.increment-planning.t1.output.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p0.increment-planning.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p0.increment-planning.t1.output.e2e-artifact.increment-record"
+                }
               ]
             }
           ]
@@ -2684,12 +4167,66 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.p1.cim-modeling.t1",
               "performerRoleUseRefs": ["ru.e2e.p1.cim-modeling.business-modeler"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.p1.cim-modeling.t1.ru.e2e.p1.cim-modeling.business-modeler",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.p1.cim-modeling.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.p1.cim-modeling.business-modeler"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.increment-record"
+                "wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.increment-record",
+                "wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.product-charter",
+                "wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.team-topology"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.p1.cim-modeling.t1.output.e2e-artifact.increment-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.p1.cim-modeling.t1.in.wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p1.cim-modeling.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.p1.cim-modeling.t1.in.wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p1.cim-modeling.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.p1.cim-modeling.t1.in.wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p1.cim-modeling.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.p1.cim-modeling.t1.in.wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.team-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p1.cim-modeling.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p1.cim-modeling.t1.input.e2e-artifact.team-topology"
+                },
+                {
+                  "id": "pp.e2e.p1.cim-modeling.t1.out.wpu.e2e.p1.cim-modeling.t1.output.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p1.cim-modeling.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p1.cim-modeling.t1.output.e2e-artifact.increment-record"
+                }
               ],
               "childProcessId": "modriss.cim.modeling"
             }
@@ -2710,12 +4247,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.p2.cim-to-pim.t1",
               "performerRoleUseRefs": ["ru.e2e.p2.cim-to-pim.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.p2.cim-to-pim.t1.ru.e2e.p2.cim-to-pim.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.p2.cim-to-pim.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.p2.cim-to-pim.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.e2e.p2.cim-to-pim.t1.input.e2e-artifact.increment-record"
+                "wpu.e2e.p2.cim-to-pim.t1.input.e2e-artifact.increment-record",
+                "wpu.e2e.p2.cim-to-pim.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.p2.cim-to-pim.t1.input.e2e-artifact.product-charter"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.p2.cim-to-pim.t1.output.e2e-artifact.increment-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.p2.cim-to-pim.t1.in.wpu.e2e.p2.cim-to-pim.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p2.cim-to-pim.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p2.cim-to-pim.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.p2.cim-to-pim.t1.in.wpu.e2e.p2.cim-to-pim.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p2.cim-to-pim.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p2.cim-to-pim.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.p2.cim-to-pim.t1.in.wpu.e2e.p2.cim-to-pim.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p2.cim-to-pim.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p2.cim-to-pim.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.p2.cim-to-pim.t1.out.wpu.e2e.p2.cim-to-pim.t1.output.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p2.cim-to-pim.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p2.cim-to-pim.t1.output.e2e-artifact.increment-record"
+                }
               ],
               "transform": "cim-to-pim"
             }
@@ -2755,12 +4337,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.p3.pim-refinement.t1",
               "performerRoleUseRefs": ["ru.e2e.p3.pim-refinement.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.p3.pim-refinement.t1.ru.e2e.p3.pim-refinement.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.p3.pim-refinement.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.p3.pim-refinement.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.e2e.p3.pim-refinement.t1.input.e2e-artifact.increment-record"
+                "wpu.e2e.p3.pim-refinement.t1.input.e2e-artifact.increment-record",
+                "wpu.e2e.p3.pim-refinement.t1.input.e2e-artifact.product-charter",
+                "wpu.e2e.p3.pim-refinement.t1.input.e2e-artifact.method-profile"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.p3.pim-refinement.t1.output.e2e-artifact.increment-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.p3.pim-refinement.t1.in.wpu.e2e.p3.pim-refinement.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p3.pim-refinement.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p3.pim-refinement.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.p3.pim-refinement.t1.in.wpu.e2e.p3.pim-refinement.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p3.pim-refinement.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p3.pim-refinement.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.p3.pim-refinement.t1.in.wpu.e2e.p3.pim-refinement.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p3.pim-refinement.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p3.pim-refinement.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.p3.pim-refinement.t1.out.wpu.e2e.p3.pim-refinement.t1.output.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p3.pim-refinement.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p3.pim-refinement.t1.output.e2e-artifact.increment-record"
+                }
               ],
               "childProcessId": "modriss.pim.modeling"
             }
@@ -2781,12 +4408,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.p4.pim-to-psm.t1",
               "performerRoleUseRefs": ["ru.e2e.p4.pim-to-psm.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.p4.pim-to-psm.t1.ru.e2e.p4.pim-to-psm.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.p4.pim-to-psm.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.p4.pim-to-psm.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.increment-record"
+                "wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.increment-record",
+                "wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.product-charter"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.p4.pim-to-psm.t1.output.e2e-artifact.increment-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.p4.pim-to-psm.t1.in.wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p4.pim-to-psm.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.p4.pim-to-psm.t1.in.wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p4.pim-to-psm.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.p4.pim-to-psm.t1.in.wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p4.pim-to-psm.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.p4.pim-to-psm.t1.out.wpu.e2e.p4.pim-to-psm.t1.output.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p4.pim-to-psm.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p4.pim-to-psm.t1.output.e2e-artifact.increment-record"
+                }
               ],
               "transform": "pim-to-awspsm"
             }
@@ -2826,12 +4498,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.p5.psm-refinement.t1",
               "performerRoleUseRefs": ["ru.e2e.p5.psm-refinement.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.p5.psm-refinement.t1.ru.e2e.p5.psm-refinement.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.p5.psm-refinement.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.p5.psm-refinement.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.e2e.p5.psm-refinement.t1.input.e2e-artifact.increment-record"
+                "wpu.e2e.p5.psm-refinement.t1.input.e2e-artifact.increment-record",
+                "wpu.e2e.p5.psm-refinement.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.p5.psm-refinement.t1.input.e2e-artifact.product-charter"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.p5.psm-refinement.t1.output.e2e-artifact.increment-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.p5.psm-refinement.t1.in.wpu.e2e.p5.psm-refinement.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p5.psm-refinement.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p5.psm-refinement.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.p5.psm-refinement.t1.in.wpu.e2e.p5.psm-refinement.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p5.psm-refinement.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p5.psm-refinement.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.p5.psm-refinement.t1.in.wpu.e2e.p5.psm-refinement.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p5.psm-refinement.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p5.psm-refinement.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.p5.psm-refinement.t1.out.wpu.e2e.p5.psm-refinement.t1.output.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p5.psm-refinement.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p5.psm-refinement.t1.output.e2e-artifact.increment-record"
+                }
               ],
               "childProcessId": "modriss.psm.modeling"
             }
@@ -2852,12 +4569,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.p6.m2t-generation.t1",
               "performerRoleUseRefs": ["ru.e2e.p6.m2t-generation.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.p6.m2t-generation.t1.ru.e2e.p6.m2t-generation.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.p6.m2t-generation.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.p6.m2t-generation.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.e2e.p6.m2t-generation.t1.input.e2e-artifact.increment-record"
+                "wpu.e2e.p6.m2t-generation.t1.input.e2e-artifact.increment-record",
+                "wpu.e2e.p6.m2t-generation.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.p6.m2t-generation.t1.input.e2e-artifact.team-topology"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.p6.m2t-generation.t1.output.e2e-artifact.increment-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.p6.m2t-generation.t1.in.wpu.e2e.p6.m2t-generation.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p6.m2t-generation.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p6.m2t-generation.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.p6.m2t-generation.t1.in.wpu.e2e.p6.m2t-generation.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p6.m2t-generation.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p6.m2t-generation.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.p6.m2t-generation.t1.in.wpu.e2e.p6.m2t-generation.t1.input.e2e-artifact.team-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p6.m2t-generation.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p6.m2t-generation.t1.input.e2e-artifact.team-topology"
+                },
+                {
+                  "id": "pp.e2e.p6.m2t-generation.t1.out.wpu.e2e.p6.m2t-generation.t1.output.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p6.m2t-generation.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p6.m2t-generation.t1.output.e2e-artifact.increment-record"
+                }
               ],
               "transform": "awspsm-to-artifacts"
             }
@@ -2888,12 +4650,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.p7.artifact-completion.t1",
               "performerRoleUseRefs": ["ru.e2e.p7.artifact-completion.process-reviewer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.p7.artifact-completion.t1.ru.e2e.p7.artifact-completion.process-reviewer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.p7.artifact-completion.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.p7.artifact-completion.process-reviewer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.e2e.p7.artifact-completion.t1.input.e2e-artifact.increment-record"
+                "wpu.e2e.p7.artifact-completion.t1.input.e2e-artifact.increment-record",
+                "wpu.e2e.p7.artifact-completion.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.p7.artifact-completion.t1.input.e2e-artifact.product-charter"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.p7.artifact-completion.t1.output.e2e-artifact.increment-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.p7.artifact-completion.t1.in.wpu.e2e.p7.artifact-completion.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p7.artifact-completion.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p7.artifact-completion.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.p7.artifact-completion.t1.in.wpu.e2e.p7.artifact-completion.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p7.artifact-completion.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p7.artifact-completion.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.p7.artifact-completion.t1.in.wpu.e2e.p7.artifact-completion.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p7.artifact-completion.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p7.artifact-completion.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.p7.artifact-completion.t1.out.wpu.e2e.p7.artifact-completion.t1.output.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.p7.artifact-completion.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.p7.artifact-completion.t1.output.e2e-artifact.increment-record"
+                }
               ],
               "childProcessId": "modriss.artifact.deployment-readiness"
             }
@@ -2935,18 +4742,130 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph2.st1.t1",
               "performerRoleUseRefs": ["ru.e2e.ph2.st1.release-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph2.st1.t1.ru.e2e.ph2.st1.release-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph2.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph2.st1.release-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
-              "inputWorkProductUseRefs": ["wpu.e2e.ph2.st1.t1.input.e2e-artifact.increment-record"],
-              "outputWorkProductUseRefs": ["wpu.e2e.ph2.st1.t1.output.e2e-artifact.release-record"]
+              "inputWorkProductUseRefs": [
+                "wpu.e2e.ph2.st1.t1.input.e2e-artifact.increment-record",
+                "wpu.e2e.ph2.st1.t1.input.e2e-artifact.product-charter",
+                "wpu.e2e.ph2.st1.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph2.st1.t1.input.e2e-artifact.team-topology"
+              ],
+              "outputWorkProductUseRefs": ["wpu.e2e.ph2.st1.t1.output.e2e-artifact.release-record"],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph2.st1.t1.in.wpu.e2e.ph2.st1.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st1.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.ph2.st1.t1.in.wpu.e2e.ph2.st1.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st1.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph2.st1.t1.in.wpu.e2e.ph2.st1.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st1.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph2.st1.t1.in.wpu.e2e.ph2.st1.t1.input.e2e-artifact.team-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st1.t1.input.e2e-artifact.team-topology"
+                },
+                {
+                  "id": "pp.e2e.ph2.st1.t1.out.wpu.e2e.ph2.st1.t1.output.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st1.t1.output.e2e-artifact.release-record"
+                }
+              ]
             },
             {
               "id": "e2e.ph2.st1.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph2.st1.t2",
               "performerRoleUseRefs": ["ru.e2e.ph2.st1.process-reviewer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph2.st1.t2.ru.e2e.ph2.st1.process-reviewer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph2.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph2.st1.process-reviewer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
-              "inputWorkProductUseRefs": ["wpu.e2e.ph2.st1.t2.input.e2e-artifact.release-record"],
-              "outputWorkProductUseRefs": ["wpu.e2e.ph2.st1.t2.output.e2e-artifact.release-record"]
+              "inputWorkProductUseRefs": [
+                "wpu.e2e.ph2.st1.t2.input.e2e-artifact.release-record",
+                "wpu.e2e.ph2.st1.t2.input.e2e-artifact.increment-record",
+                "wpu.e2e.ph2.st1.t2.input.e2e-artifact.product-charter",
+                "wpu.e2e.ph2.st1.t2.input.e2e-artifact.method-profile"
+              ],
+              "outputWorkProductUseRefs": ["wpu.e2e.ph2.st1.t2.output.e2e-artifact.release-record"],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph2.st1.t2.in.wpu.e2e.ph2.st1.t2.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st1.t2.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph2.st1.t2.in.wpu.e2e.ph2.st1.t2.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st1.t2.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.ph2.st1.t2.in.wpu.e2e.ph2.st1.t2.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st1.t2.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph2.st1.t2.in.wpu.e2e.ph2.st1.t2.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st1.t2.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph2.st1.t2.out.wpu.e2e.ph2.st1.t2.output.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st1.t2.output.e2e-artifact.release-record"
+                }
+              ]
             }
           ]
         },
@@ -2965,20 +4884,140 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph2.st2.t1",
               "performerRoleUseRefs": ["ru.e2e.ph2.st2.release-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph2.st2.t1.ru.e2e.ph2.st2.release-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph2.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph2.st2.release-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
-              "inputWorkProductUseRefs": ["wpu.e2e.ph2.st2.t1.input.e2e-artifact.release-record"],
-              "outputWorkProductUseRefs": ["wpu.e2e.ph2.st2.t1.output.e2e-artifact.release-record"]
+              "inputWorkProductUseRefs": [
+                "wpu.e2e.ph2.st2.t1.input.e2e-artifact.release-record",
+                "wpu.e2e.ph2.st2.t1.input.e2e-artifact.product-charter",
+                "wpu.e2e.ph2.st2.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph2.st2.t1.input.e2e-artifact.team-topology"
+              ],
+              "outputWorkProductUseRefs": ["wpu.e2e.ph2.st2.t1.output.e2e-artifact.release-record"],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph2.st2.t1.in.wpu.e2e.ph2.st2.t1.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st2.t1.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph2.st2.t1.in.wpu.e2e.ph2.st2.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st2.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph2.st2.t1.in.wpu.e2e.ph2.st2.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st2.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph2.st2.t1.in.wpu.e2e.ph2.st2.t1.input.e2e-artifact.team-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st2.t1.input.e2e-artifact.team-topology"
+                },
+                {
+                  "id": "pp.e2e.ph2.st2.t1.out.wpu.e2e.ph2.st2.t1.output.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st2.t1.output.e2e-artifact.release-record"
+                }
+              ]
             },
             {
               "id": "e2e.ph2.st2.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph2.st2.t2",
               "performerRoleUseRefs": ["ru.e2e.ph2.st2.service-owner"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph2.st2.t2.ru.e2e.ph2.st2.service-owner",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph2.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph2.st2.service-owner"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
-              "inputWorkProductUseRefs": ["wpu.e2e.ph2.st2.t2.input.e2e-artifact.release-record"],
+              "inputWorkProductUseRefs": [
+                "wpu.e2e.ph2.st2.t2.input.e2e-artifact.release-record",
+                "wpu.e2e.ph2.st2.t2.input.e2e-artifact.product-charter",
+                "wpu.e2e.ph2.st2.t2.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph2.st2.t2.input.e2e-artifact.team-topology"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph2.st2.t2.output.e2e-artifact.release-record",
                 "wpu.e2e.ph2.st2.t2.output.e2e-artifact.operations-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph2.st2.t2.in.wpu.e2e.ph2.st2.t2.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st2.t2.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph2.st2.t2.in.wpu.e2e.ph2.st2.t2.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st2.t2.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph2.st2.t2.in.wpu.e2e.ph2.st2.t2.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st2.t2.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph2.st2.t2.in.wpu.e2e.ph2.st2.t2.input.e2e-artifact.team-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st2.t2.input.e2e-artifact.team-topology"
+                },
+                {
+                  "id": "pp.e2e.ph2.st2.t2.out.wpu.e2e.ph2.st2.t2.output.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st2.t2.output.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph2.st2.t2.out.wpu.e2e.ph2.st2.t2.output.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st2.t2.output.e2e-artifact.operations-record"
+                }
               ]
             }
           ]
@@ -2998,14 +5037,84 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph2.st3.t1",
               "performerRoleUseRefs": ["ru.e2e.ph2.st3.product-owner"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph2.st3.t1.ru.e2e.ph2.st3.product-owner",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph2.st3.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph2.st3.product-owner"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.ph2.st3.t1.input.e2e-artifact.release-record",
-                "wpu.e2e.ph2.st3.t1.input.e2e-artifact.operations-record"
+                "wpu.e2e.ph2.st3.t1.input.e2e-artifact.operations-record",
+                "wpu.e2e.ph2.st3.t1.input.e2e-artifact.product-charter",
+                "wpu.e2e.ph2.st3.t1.input.e2e-artifact.increment-record",
+                "wpu.e2e.ph2.st3.t1.input.e2e-artifact.method-profile"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph2.st3.t1.output.e2e-artifact.release-record",
                 "wpu.e2e.ph2.st3.t1.output.e2e-artifact.product-charter"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph2.st3.t1.in.wpu.e2e.ph2.st3.t1.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st3.t1.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph2.st3.t1.in.wpu.e2e.ph2.st3.t1.input.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st3.t1.input.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph2.st3.t1.in.wpu.e2e.ph2.st3.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st3.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph2.st3.t1.in.wpu.e2e.ph2.st3.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st3.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.ph2.st3.t1.in.wpu.e2e.ph2.st3.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st3.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph2.st3.t1.out.wpu.e2e.ph2.st3.t1.output.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st3.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st3.t1.output.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph2.st3.t1.out.wpu.e2e.ph2.st3.t1.output.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph2.st3.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph2.st3.t1.output.e2e-artifact.product-charter"
+                }
               ]
             }
           ]
@@ -3045,13 +5154,66 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph3.st1.t1",
               "performerRoleUseRefs": ["ru.e2e.ph3.st1.service-owner"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph3.st1.t1.ru.e2e.ph3.st1.service-owner",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph3.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph3.st1.service-owner"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.ph3.st1.t1.input.e2e-artifact.release-record",
-                "wpu.e2e.ph3.st1.t1.input.e2e-artifact.product-charter"
+                "wpu.e2e.ph3.st1.t1.input.e2e-artifact.product-charter",
+                "wpu.e2e.ph3.st1.t1.input.e2e-artifact.operations-record",
+                "wpu.e2e.ph3.st1.t1.input.e2e-artifact.method-profile"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph3.st1.t1.output.e2e-artifact.operations-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph3.st1.t1.in.wpu.e2e.ph3.st1.t1.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st1.t1.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st1.t1.in.wpu.e2e.ph3.st1.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st1.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph3.st1.t1.in.wpu.e2e.ph3.st1.t1.input.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st1.t1.input.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st1.t1.in.wpu.e2e.ph3.st1.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st1.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph3.st1.t1.out.wpu.e2e.ph3.st1.t1.output.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st1.t1.output.e2e-artifact.operations-record"
+                }
               ]
             }
           ]
@@ -3071,12 +5233,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph3.st2.t1",
               "performerRoleUseRefs": ["ru.e2e.ph3.st2.service-owner"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph3.st2.t1.ru.e2e.ph3.st2.service-owner",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph3.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph3.st2.service-owner"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.e2e.ph3.st2.t1.input.e2e-artifact.operations-record"
+                "wpu.e2e.ph3.st2.t1.input.e2e-artifact.operations-record",
+                "wpu.e2e.ph3.st2.t1.input.e2e-artifact.release-record",
+                "wpu.e2e.ph3.st2.t1.input.e2e-artifact.method-profile"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph3.st2.t1.output.e2e-artifact.operations-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph3.st2.t1.in.wpu.e2e.ph3.st2.t1.input.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t1.input.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2.t1.in.wpu.e2e.ph3.st2.t1.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t1.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2.t1.in.wpu.e2e.ph3.st2.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2.t1.out.wpu.e2e.ph3.st2.t1.output.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t1.output.e2e-artifact.operations-record"
+                }
               ]
             },
             {
@@ -3084,13 +5291,75 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph3.st2.t2",
               "performerRoleUseRefs": ["ru.e2e.ph3.st2.quality-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph3.st2.t2.ru.e2e.ph3.st2.quality-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph3.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph3.st2.quality-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.e2e.ph3.st2.t2.input.e2e-artifact.operations-record"
+                "wpu.e2e.ph3.st2.t2.input.e2e-artifact.operations-record",
+                "wpu.e2e.ph3.st2.t2.input.e2e-artifact.increment-record",
+                "wpu.e2e.ph3.st2.t2.input.e2e-artifact.release-record",
+                "wpu.e2e.ph3.st2.t2.input.e2e-artifact.method-profile"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph3.st2.t2.output.e2e-artifact.operations-record",
                 "wpu.e2e.ph3.st2.t2.output.e2e-artifact.method-profile"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph3.st2.t2.in.wpu.e2e.ph3.st2.t2.input.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t2.input.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2.t2.in.wpu.e2e.ph3.st2.t2.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t2.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2.t2.in.wpu.e2e.ph3.st2.t2.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t2.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2.t2.in.wpu.e2e.ph3.st2.t2.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t2.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2.t2.out.wpu.e2e.ph3.st2.t2.output.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t2.output.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2.t2.out.wpu.e2e.ph3.st2.t2.output.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t2.output.e2e-artifact.method-profile"
+                }
               ]
             }
           ]
@@ -3110,14 +5379,84 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph3.st3.t1",
               "performerRoleUseRefs": ["ru.e2e.ph3.st3.delivery-lead"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph3.st3.t1.ru.e2e.ph3.st3.delivery-lead",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph3.st3.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph3.st3.delivery-lead"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.ph3.st3.t1.input.e2e-artifact.operations-record",
-                "wpu.e2e.ph3.st3.t1.input.e2e-artifact.method-profile"
+                "wpu.e2e.ph3.st3.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph3.st3.t1.input.e2e-artifact.increment-record",
+                "wpu.e2e.ph3.st3.t1.input.e2e-artifact.product-charter",
+                "wpu.e2e.ph3.st3.t1.input.e2e-artifact.release-record"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph3.st3.t1.output.e2e-artifact.increment-record",
                 "wpu.e2e.ph3.st3.t1.output.e2e-artifact.operations-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph3.st3.t1.in.wpu.e2e.ph3.st3.t1.input.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st3.t1.in.wpu.e2e.ph3.st3.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph3.st3.t1.in.wpu.e2e.ph3.st3.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st3.t1.in.wpu.e2e.ph3.st3.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph3.st3.t1.in.wpu.e2e.ph3.st3.t1.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st3.t1.out.wpu.e2e.ph3.st3.t1.output.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st3.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st3.t1.output.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st3.t1.out.wpu.e2e.ph3.st3.t1.output.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st3.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st3.t1.output.e2e-artifact.operations-record"
+                }
               ]
             }
           ]
@@ -3137,14 +5476,84 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph3.st4.t1",
               "performerRoleUseRefs": ["ru.e2e.ph3.st4.process-reviewer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph3.st4.t1.ru.e2e.ph3.st4.process-reviewer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph3.st4.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph3.st4.process-reviewer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.ph3.st4.t1.input.e2e-artifact.increment-record",
-                "wpu.e2e.ph3.st4.t1.input.e2e-artifact.operations-record"
+                "wpu.e2e.ph3.st4.t1.input.e2e-artifact.operations-record",
+                "wpu.e2e.ph3.st4.t1.input.e2e-artifact.product-charter",
+                "wpu.e2e.ph3.st4.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph3.st4.t1.input.e2e-artifact.release-record"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph3.st4.t1.output.e2e-artifact.operations-record",
                 "wpu.e2e.ph3.st4.t1.output.e2e-artifact.method-profile"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph3.st4.t1.in.wpu.e2e.ph3.st4.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st4.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st4.t1.in.wpu.e2e.ph3.st4.t1.input.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st4.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st4.t1.in.wpu.e2e.ph3.st4.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st4.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph3.st4.t1.in.wpu.e2e.ph3.st4.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st4.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph3.st4.t1.in.wpu.e2e.ph3.st4.t1.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st4.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st4.t1.out.wpu.e2e.ph3.st4.t1.output.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st4.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st4.t1.output.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st4.t1.out.wpu.e2e.ph3.st4.t1.output.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st4.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st4.t1.output.e2e-artifact.method-profile"
+                }
               ]
             }
           ]
@@ -3184,13 +5593,66 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph4.st1.t1",
               "performerRoleUseRefs": ["ru.e2e.ph4.st1.product-owner"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph4.st1.t1.ru.e2e.ph4.st1.product-owner",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph4.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph4.st1.product-owner"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.ph4.st1.t1.input.e2e-artifact.operations-record",
+                "wpu.e2e.ph4.st1.t1.input.e2e-artifact.release-record",
+                "wpu.e2e.ph4.st1.t1.input.e2e-artifact.product-charter",
                 "wpu.e2e.ph4.st1.t1.input.e2e-artifact.method-profile"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph4.st1.t1.output.e2e-artifact.retirement-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph4.st1.t1.in.wpu.e2e.ph4.st1.t1.input.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st1.t1.input.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st1.t1.in.wpu.e2e.ph4.st1.t1.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st1.t1.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st1.t1.in.wpu.e2e.ph4.st1.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st1.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph4.st1.t1.in.wpu.e2e.ph4.st1.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st1.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph4.st1.t1.out.wpu.e2e.ph4.st1.t1.output.e2e-artifact.retirement-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st1.t1.output.e2e-artifact.retirement-record"
+                }
               ]
             }
           ]
@@ -3210,12 +5672,66 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph4.st2.t1",
               "performerRoleUseRefs": ["ru.e2e.ph4.st2.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph4.st2.t1.ru.e2e.ph4.st2.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph4.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph4.st2.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.e2e.ph4.st2.t1.input.e2e-artifact.retirement-record"
+                "wpu.e2e.ph4.st2.t1.input.e2e-artifact.retirement-record",
+                "wpu.e2e.ph4.st2.t1.input.e2e-artifact.operations-record",
+                "wpu.e2e.ph4.st2.t1.input.e2e-artifact.release-record",
+                "wpu.e2e.ph4.st2.t1.input.e2e-artifact.method-profile"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph4.st2.t1.output.e2e-artifact.retirement-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph4.st2.t1.in.wpu.e2e.ph4.st2.t1.input.e2e-artifact.retirement-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st2.t1.input.e2e-artifact.retirement-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st2.t1.in.wpu.e2e.ph4.st2.t1.input.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st2.t1.input.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st2.t1.in.wpu.e2e.ph4.st2.t1.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st2.t1.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st2.t1.in.wpu.e2e.ph4.st2.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st2.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph4.st2.t1.out.wpu.e2e.ph4.st2.t1.output.e2e-artifact.retirement-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st2.t1.output.e2e-artifact.retirement-record"
+                }
               ]
             },
             {
@@ -3223,12 +5739,66 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph4.st2.t2",
               "performerRoleUseRefs": ["ru.e2e.ph4.st2.service-owner"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph4.st2.t2.ru.e2e.ph4.st2.service-owner",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph4.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph4.st2.service-owner"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.e2e.ph4.st2.t2.input.e2e-artifact.retirement-record"
+                "wpu.e2e.ph4.st2.t2.input.e2e-artifact.retirement-record",
+                "wpu.e2e.ph4.st2.t2.input.e2e-artifact.operations-record",
+                "wpu.e2e.ph4.st2.t2.input.e2e-artifact.release-record",
+                "wpu.e2e.ph4.st2.t2.input.e2e-artifact.team-topology"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph4.st2.t2.output.e2e-artifact.retirement-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph4.st2.t2.in.wpu.e2e.ph4.st2.t2.input.e2e-artifact.retirement-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st2.t2.input.e2e-artifact.retirement-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st2.t2.in.wpu.e2e.ph4.st2.t2.input.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st2.t2.input.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st2.t2.in.wpu.e2e.ph4.st2.t2.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st2.t2.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st2.t2.in.wpu.e2e.ph4.st2.t2.input.e2e-artifact.team-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st2.t2.input.e2e-artifact.team-topology"
+                },
+                {
+                  "id": "pp.e2e.ph4.st2.t2.out.wpu.e2e.ph4.st2.t2.output.e2e-artifact.retirement-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st2.t2.output.e2e-artifact.retirement-record"
+                }
               ]
             }
           ]
@@ -3248,13 +5818,93 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.e2e.ph4.st3.t1",
               "performerRoleUseRefs": ["ru.e2e.ph4.st3.process-reviewer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph4.st3.t1.ru.e2e.ph4.st3.process-reviewer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph4.st3.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph4.st3.process-reviewer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.e2e.ph4.st3.t1.input.e2e-artifact.retirement-record"
+                "wpu.e2e.ph4.st3.t1.input.e2e-artifact.retirement-record",
+                "wpu.e2e.ph4.st3.t1.input.e2e-artifact.operations-record",
+                "wpu.e2e.ph4.st3.t1.input.e2e-artifact.product-charter",
+                "wpu.e2e.ph4.st3.t1.input.e2e-artifact.increment-record",
+                "wpu.e2e.ph4.st3.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph4.st3.t1.input.e2e-artifact.release-record"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph4.st3.t1.output.e2e-artifact.retirement-record",
                 "wpu.e2e.ph4.st3.t1.output.e2e-artifact.method-profile"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph4.st3.t1.in.wpu.e2e.ph4.st3.t1.input.e2e-artifact.retirement-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st3.t1.input.e2e-artifact.retirement-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st3.t1.in.wpu.e2e.ph4.st3.t1.input.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st3.t1.input.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st3.t1.in.wpu.e2e.ph4.st3.t1.input.e2e-artifact.product-charter",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st3.t1.input.e2e-artifact.product-charter"
+                },
+                {
+                  "id": "pp.e2e.ph4.st3.t1.in.wpu.e2e.ph4.st3.t1.input.e2e-artifact.increment-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st3.t1.input.e2e-artifact.increment-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st3.t1.in.wpu.e2e.ph4.st3.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st3.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph4.st3.t1.in.wpu.e2e.ph4.st3.t1.input.e2e-artifact.release-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st3.t1.input.e2e-artifact.release-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st3.t1.out.wpu.e2e.ph4.st3.t1.output.e2e-artifact.retirement-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st3.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st3.t1.output.e2e-artifact.retirement-record"
+                },
+                {
+                  "id": "pp.e2e.ph4.st3.t1.out.wpu.e2e.ph4.st3.t1.output.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph4.st3.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph4.st3.t1.output.e2e-artifact.method-profile"
+                }
               ]
             }
           ]

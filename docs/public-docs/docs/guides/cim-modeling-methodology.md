@@ -230,7 +230,7 @@ Capture measurable business intent for the selected slice using GQM before domai
 
 **Viewpoint:** requirements
 **Duration:** 30m
-**Inputs:** Strategic Intent Package
+**Inputs:** Strategic Intent Package, CIM Increment Plan
 **Work products:** Strategic Intent Package
 **Palette focus:** `Stakeholder`
 
@@ -274,7 +274,7 @@ Model human/system actors, roles, and boundary external systems.
 
 **Viewpoint:** actor
 **Duration:** 45m
-**Inputs:** Strategic Intent Package
+**Inputs:** Strategic Intent Package, CIM Increment Plan
 **Work products:** Participation Model
 **Palette focus:** `Actor`, `Role`
 
@@ -295,7 +295,7 @@ Model human/system actors, roles, and boundary external systems.
 
 **Viewpoint:** actor
 **Duration:** 20m
-**Inputs:** Participation Model
+**Inputs:** Participation Model, Strategic Intent Package
 **Work products:** Participation Model
 **Palette focus:** `ExternalSystem`
 
@@ -323,7 +323,7 @@ Map business capabilities to goals and record dependencies.
 
 **Viewpoint:** capability
 **Duration:** 1h
-**Inputs:** Participation Model
+**Inputs:** Participation Model, Strategic Intent Package
 **Work products:** Capability
 **Palette focus:** `BusinessCapability`
 
@@ -344,7 +344,7 @@ Map business capabilities to goals and record dependencies.
 
 **Viewpoint:** capability
 **Duration:** 30m
-**Inputs:** Capability
+**Inputs:** Capability, Strategic Intent Package
 **Work products:** Capability
 **Palette focus:** `CapabilityDependency`
 
@@ -372,7 +372,7 @@ Build shared glossary before structural modeling (DDD).
 
 **Viewpoint:** capability
 **Duration:** 45m
-**Inputs:** Capability
+**Inputs:** Capability, Strategic Intent Package
 **Work products:** Ubiquitous Language Glossary
 **Palette focus:** `UbiquitousLanguageTerm`
 
@@ -422,7 +422,7 @@ Define confidentiality and handling classifications.
 
 **Viewpoint:** domain
 **Duration:** 30m
-**Inputs:** Ubiquitous Language Glossary
+**Inputs:** Ubiquitous Language Glossary, Strategic Intent Package
 **Work products:** Information Taxonomy
 **Palette focus:** `DataClassification`
 
@@ -450,7 +450,7 @@ Name and type the facts the domain cares about.
 
 **Viewpoint:** domain
 **Duration:** 1h
-**Inputs:** Information Taxonomy
+**Inputs:** Information Taxonomy, Ubiquitous Language Glossary
 **Work products:** Information Taxonomy
 **Palette focus:** `InformationItem`
 
@@ -487,7 +487,7 @@ Model stateful domain entities with identity from information items.
 
 **Viewpoint:** domain
 **Duration:** 1-2h
-**Inputs:** Information Taxonomy
+**Inputs:** Information Taxonomy, Ubiquitous Language Glossary, Capability
 **Work products:** Domain Structure Model
 **Palette focus:** `DomainEntity`, `LifecycleStateDefinition`, `BusinessInvariant`
 
@@ -520,7 +520,7 @@ Model descriptive types and associations between domain concepts.
 
 **Viewpoint:** domain
 **Duration:** 1h
-**Inputs:** Domain Structure Model
+**Inputs:** Domain Structure Model, Information Taxonomy
 **Work products:** Domain Structure Model
 **Palette focus:** `ValueObject`, `DomainRelationship`, `DomainConcept`
 
@@ -557,7 +557,7 @@ Model state-changing operations with outcomes and preconditions.
 
 **Viewpoint:** eventstorming
 **Duration:** 1h
-**Inputs:** Domain Structure Model
+**Inputs:** Domain Structure Model, Participation Model, Capability
 **Work products:** CQRS Behavior Surface
 **Palette focus:** `Command`, `CommandOutcome`
 
@@ -586,7 +586,7 @@ Model read operations with freshness needs.
 
 **Viewpoint:** eventstorming
 **Duration:** 45m
-**Inputs:** CQRS Behavior Surface
+**Inputs:** CQRS Behavior Surface, Information Taxonomy, Participation Model
 **Work products:** CQRS Behavior Surface
 **Palette focus:** `Query`
 
@@ -615,7 +615,7 @@ Model domain events, business errors, and guard conditions.
 
 **Viewpoint:** eventstorming
 **Duration:** 1h
-**Inputs:** CQRS Behavior Surface
+**Inputs:** CQRS Behavior Surface, Domain Structure Model, Participation Model
 **Work products:** CQRS Behavior Surface
 **Palette focus:** `BusinessEvent`, `BusinessError`, `Condition`
 
@@ -660,7 +660,7 @@ Group entities into consistency boundaries with command/event ownership.
 
 **Viewpoint:** aggregate
 **Duration:** 1h
-**Inputs:** CQRS Behavior Surface
+**Inputs:** CQRS Behavior Surface, Domain Structure Model, Capability
 **Work products:** Aggregate Boundary Model
 **Palette focus:** `AggregateCandidate`
 
@@ -735,7 +735,7 @@ Encode business rules and decision tables.
 
 **Viewpoint:** decision
 **Duration:** 1h
-**Inputs:** Business Process Model
+**Inputs:** Business Process Model, CQRS Behavior Surface, Domain Structure Model
 **Work products:** Decision & Policy Model
 **Palette focus:** `Policy`, `DecisionTable`, `DecisionRule`
 
@@ -764,9 +764,15 @@ Assign capabilities, domain, behavior, and policies into cohesive contexts.
 
 **Viewpoint:** capability
 **Duration:** 1h
-**Inputs:** Decision & Policy Model
-**Work products:** Bounded Context Map
-**Palette focus:** `BoundedContextCandidate`
+**Inputs:**
+
+- Capability
+- Domain Structure Model
+- CQRS Behavior Surface
+- Business Process Model
+- Decision & Policy Model
+  **Work products:** Bounded Context Map
+  **Palette focus:** `BoundedContextCandidate`
 
 **Steps:**
 
@@ -811,9 +817,15 @@ Twin Peaks backfill, formalize requirements traced to modeled elements.
 
 **Viewpoint:** governance
 **Duration:** 1-2h
-**Inputs:** Bounded Context Map
-**Work products:** Requirements Package
-**Palette focus:**
+**Inputs:**
+
+- Strategic Intent Package
+- Domain Structure Model
+- CQRS Behavior Surface
+- Bounded Context Map
+- Decision & Policy Model
+  **Work products:** Requirements Package
+  **Palette focus:**
 
 - `Requirement`
 - `RequirementRelationship`
@@ -838,9 +850,15 @@ Twin Peaks backfill, formalize requirements traced to modeled elements.
 
 **Viewpoint:** governance
 **Duration:** 1h
-**Inputs:** Requirements Package
-**Work products:** Governance Constraint Package
-**Palette focus:** `SecurityConstraint`, `PrivacyConstraint`, `ComplianceConstraint`
+**Inputs:**
+
+- Requirements Package
+- Strategic Intent Package
+- Participation Model
+- Information Taxonomy
+- Domain Structure Model
+  **Work products:** Governance Constraint Package
+  **Palette focus:** `SecurityConstraint`, `PrivacyConstraint`, `ComplianceConstraint`
 
 **Steps:**
 
@@ -866,9 +884,15 @@ Document risks, assumptions, and CIM→PIM transformation profile.
 
 **Viewpoint:** traceability
 **Duration:** 45m
-**Inputs:** Governance Constraint Package
-**Work products:** Transformation Contract
-**Palette focus:** `Risk`, `Assumption`, `Hotspot`, `TransformationProfile`
+**Inputs:**
+
+- Governance Constraint Package
+- Requirements Package
+- Bounded Context Map
+- Domain Structure Model
+- Decision & Policy Model
+  **Work products:** Transformation Contract
+  **Palette focus:** `Risk`, `Assumption`, `Hotspot`, `TransformationProfile`
 
 **Steps:**
 
@@ -895,9 +919,19 @@ Close trace links and production readiness before CIM→PIM.
 
 **Viewpoint:** traceability
 **Duration:** 1-2h
-**Inputs:** Transformation Contract
-**Work products:** Trace & Readiness Record
-**Palette focus:**
+**Inputs:**
+
+- Transformation Contract
+- Strategic Intent Package
+- Requirements Package
+- Domain Structure Model
+- CQRS Behavior Surface
+- Bounded Context Map
+- Governance Constraint Package
+- Business Process Model
+- Decision & Policy Model
+  **Work products:** Trace & Readiness Record
+  **Palette focus:**
 
 - `TraceModel`
 - `TraceLink`
@@ -936,8 +970,14 @@ Review the CIM slice with stakeholders, accept the increment, and adapt the next
 
 **Viewpoint:** traceability
 **Duration:** 45m
-**Inputs:** Trace & Readiness Record
-**Work products:** CIM Increment Review Record
+**Inputs:**
+
+- Trace & Readiness Record
+- Strategic Intent Package
+- CIM Increment Plan
+- Requirements Package
+- Governance Constraint Package
+  **Work products:** CIM Increment Review Record
 
 **Steps:**
 

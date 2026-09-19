@@ -102,6 +102,7 @@
         "outputWorkProductRefs": ["psm-artifact.increment-plan"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.increment-plan",
             "direction": "out",
             "optional": false
@@ -134,11 +135,13 @@
         "outputWorkProductRefs": ["psm-artifact.deployment-strategy"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.increment-plan",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.deployment-strategy",
             "direction": "out",
             "optional": false
@@ -174,16 +177,24 @@
         "purpose": "Define stage and naming policies",
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.deployment-strategy"],
+        "inputWorkProductRefs": ["psm-artifact.deployment-strategy", "psm-artifact.increment-plan"],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.deployment-strategy"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.deployment-strategy",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.deployment-strategy",
             "direction": "out",
             "optional": false
@@ -229,16 +240,24 @@
         "purpose": "Establish shared model contract and evidence conventions",
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.method-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.deployment-strategy"],
+        "inputWorkProductRefs": ["psm-artifact.deployment-strategy", "psm-artifact.increment-plan"],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.deployment-strategy"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.deployment-strategy",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.deployment-strategy",
             "direction": "out",
             "optional": false
@@ -605,16 +624,24 @@
         "purpose": "Create SAM stack and globals",
         "viewpoint": "stack",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.deployment-strategy"],
+        "inputWorkProductRefs": ["psm-artifact.deployment-strategy", "psm-artifact.increment-plan"],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.stack-scaffold"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.deployment-strategy",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.stack-scaffold",
             "direction": "out",
             "optional": false
@@ -650,16 +677,24 @@
         "purpose": "Define CFN parameters and outputs",
         "viewpoint": "stack",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.stack-scaffold"],
+        "inputWorkProductRefs": ["psm-artifact.stack-scaffold", "psm-artifact.deployment-strategy"],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.stack-scaffold"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.stack-scaffold",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.stack-scaffold",
             "direction": "out",
             "optional": false
@@ -715,16 +750,24 @@
         "purpose": "Configure IAM roles and policies",
         "viewpoint": "security",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.stack-scaffold"],
+        "inputWorkProductRefs": ["psm-artifact.stack-scaffold", "psm-artifact.deployment-strategy"],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.security-baseline"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.stack-scaffold",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.security-baseline",
             "direction": "out",
             "optional": false
@@ -805,16 +848,34 @@
         "purpose": "Provision KMS, secrets, and SSM",
         "viewpoint": "security",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.security-baseline"],
+        "inputWorkProductRefs": [
+          "psm-artifact.security-baseline",
+          "psm-artifact.stack-scaffold",
+          "psm-artifact.deployment-strategy"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.security-baseline"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.security-baseline",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.security-baseline",
             "direction": "out",
             "optional": false
@@ -902,16 +963,41 @@
         "purpose": "Configure VPC and subnets",
         "viewpoint": "networking",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.security-baseline"],
+        "inputWorkProductRefs": [
+          "psm-artifact.security-baseline",
+          "psm-artifact.deployment-strategy",
+          "psm-artifact.stack-scaffold",
+          "psm-artifact.increment-plan"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.network-identity"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.security-baseline",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.network-identity",
             "direction": "out",
             "optional": false
@@ -952,16 +1038,34 @@
         "purpose": "Define endpoints and security groups",
         "viewpoint": "networking",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.network-identity"],
+        "inputWorkProductRefs": [
+          "psm-artifact.network-identity",
+          "psm-artifact.security-baseline",
+          "psm-artifact.deployment-strategy"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.network-identity"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.network-identity",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.network-identity",
             "direction": "out",
             "optional": false
@@ -1012,16 +1116,34 @@
         "purpose": "Configure Cognito user pools",
         "viewpoint": "identity",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.network-identity"],
+        "inputWorkProductRefs": [
+          "psm-artifact.network-identity",
+          "psm-artifact.security-baseline",
+          "psm-artifact.deployment-strategy"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.network-identity"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.network-identity",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.network-identity",
             "direction": "out",
             "optional": false
@@ -1090,16 +1212,34 @@
         "purpose": "Configure clients, groups, and identity pools",
         "viewpoint": "identity",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.network-identity"],
+        "inputWorkProductRefs": [
+          "psm-artifact.network-identity",
+          "psm-artifact.security-baseline",
+          "psm-artifact.deployment-strategy"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.network-identity"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.network-identity",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.network-identity",
             "direction": "out",
             "optional": false
@@ -1156,16 +1296,41 @@
         "purpose": "Provision DynamoDB tables",
         "viewpoint": "storage",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.network-identity"],
+        "inputWorkProductRefs": [
+          "psm-artifact.network-identity",
+          "psm-artifact.stack-scaffold",
+          "psm-artifact.security-baseline",
+          "psm-artifact.deployment-strategy"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.storage-layer"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.network-identity",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.storage-layer",
             "direction": "out",
             "optional": false
@@ -1269,16 +1434,48 @@
         "purpose": "Configure S3 buckets and policies",
         "viewpoint": "storage",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.storage-layer"],
+        "inputWorkProductRefs": [
+          "psm-artifact.storage-layer",
+          "psm-artifact.network-identity",
+          "psm-artifact.security-baseline",
+          "psm-artifact.deployment-strategy",
+          "psm-artifact.stack-scaffold"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.storage-layer"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.storage-layer",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.storage-layer",
             "direction": "out",
             "optional": false
@@ -1402,16 +1599,41 @@
         "purpose": "Create SQS queues",
         "viewpoint": "messaging",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.storage-layer"],
+        "inputWorkProductRefs": [
+          "psm-artifact.storage-layer",
+          "psm-artifact.network-identity",
+          "psm-artifact.security-baseline",
+          "psm-artifact.deployment-strategy"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.messaging-layer"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.storage-layer",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.messaging-layer",
             "direction": "out",
             "optional": false
@@ -1457,16 +1679,48 @@
         "purpose": "Configure SNS topics and subscriptions",
         "viewpoint": "messaging",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.messaging-layer"],
+        "inputWorkProductRefs": [
+          "psm-artifact.messaging-layer",
+          "psm-artifact.storage-layer",
+          "psm-artifact.network-identity",
+          "psm-artifact.security-baseline",
+          "psm-artifact.deployment-strategy"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.messaging-layer"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.messaging-layer",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.storage-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.messaging-layer",
             "direction": "out",
             "optional": false
@@ -1512,16 +1766,41 @@
         "purpose": "Configure EventBridge buses and rules",
         "viewpoint": "events",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.messaging-layer"],
+        "inputWorkProductRefs": [
+          "psm-artifact.messaging-layer",
+          "psm-artifact.network-identity",
+          "psm-artifact.security-baseline",
+          "psm-artifact.deployment-strategy"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.event-fabric"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.messaging-layer",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.event-fabric",
             "direction": "out",
             "optional": false
@@ -1625,16 +1904,48 @@
         "purpose": "Configure schedules, pipes, and connections",
         "viewpoint": "events",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.event-fabric"],
+        "inputWorkProductRefs": [
+          "psm-artifact.event-fabric",
+          "psm-artifact.messaging-layer",
+          "psm-artifact.network-identity",
+          "psm-artifact.security-baseline",
+          "psm-artifact.deployment-strategy"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.event-fabric"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.event-fabric",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.messaging-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.event-fabric",
             "direction": "out",
             "optional": false
@@ -1721,16 +2032,48 @@
         "purpose": "Deploy Lambda functions",
         "viewpoint": "compute",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.event-fabric"],
+        "inputWorkProductRefs": [
+          "psm-artifact.event-fabric",
+          "psm-artifact.stack-scaffold",
+          "psm-artifact.security-baseline",
+          "psm-artifact.network-identity",
+          "psm-artifact.deployment-strategy"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.compute-layer"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.event-fabric",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.compute-layer",
             "direction": "out",
             "optional": false
@@ -1864,16 +2207,41 @@
         "purpose": "Configure event sources and permissions",
         "viewpoint": "compute",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.compute-layer"],
+        "inputWorkProductRefs": [
+          "psm-artifact.compute-layer",
+          "psm-artifact.event-fabric",
+          "psm-artifact.security-baseline",
+          "psm-artifact.network-identity"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.compute-layer"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.compute-layer",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.event-fabric",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.compute-layer",
             "direction": "out",
             "optional": false
@@ -2002,16 +2370,41 @@
         "purpose": "Configure APIs and routes",
         "viewpoint": "api",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.compute-layer"],
+        "inputWorkProductRefs": [
+          "psm-artifact.compute-layer",
+          "psm-artifact.network-identity",
+          "psm-artifact.security-baseline",
+          "psm-artifact.deployment-strategy"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.api-layer"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.compute-layer",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.api-layer",
             "direction": "out",
             "optional": false
@@ -2113,16 +2506,48 @@
         "purpose": "Configure integrations and authorizers",
         "viewpoint": "api",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.api-layer"],
+        "inputWorkProductRefs": [
+          "psm-artifact.api-layer",
+          "psm-artifact.compute-layer",
+          "psm-artifact.event-fabric",
+          "psm-artifact.network-identity",
+          "psm-artifact.security-baseline"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.api-layer"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.api-layer",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.compute-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.event-fabric",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.api-layer",
             "direction": "out",
             "optional": false
@@ -2291,16 +2716,48 @@
         "purpose": "Deploy state machines",
         "viewpoint": "workflow",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.api-layer"],
+        "inputWorkProductRefs": [
+          "psm-artifact.api-layer",
+          "psm-artifact.compute-layer",
+          "psm-artifact.event-fabric",
+          "psm-artifact.network-identity",
+          "psm-artifact.security-baseline"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.workflow-observability"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.api-layer",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.compute-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.event-fabric",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.workflow-observability",
             "direction": "out",
             "optional": false
@@ -2435,16 +2892,48 @@
         "purpose": "Configure CloudWatch logs and metrics",
         "viewpoint": "workflow",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.workflow-observability"],
+        "inputWorkProductRefs": [
+          "psm-artifact.workflow-observability",
+          "psm-artifact.compute-layer",
+          "psm-artifact.api-layer",
+          "psm-artifact.event-fabric",
+          "psm-artifact.security-baseline"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.workflow-observability"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.workflow-observability",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.compute-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.api-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.event-fabric",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.workflow-observability",
             "direction": "out",
             "optional": false
@@ -2501,16 +2990,48 @@
         "purpose": "Configure alarms and dashboards",
         "viewpoint": "workflow",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.workflow-observability"],
+        "inputWorkProductRefs": [
+          "psm-artifact.workflow-observability",
+          "psm-artifact.compute-layer",
+          "psm-artifact.api-layer",
+          "psm-artifact.event-fabric",
+          "psm-artifact.network-identity"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.workflow-observability"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.workflow-observability",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.compute-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.api-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.event-fabric",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.workflow-observability",
             "direction": "out",
             "optional": false
@@ -2567,16 +3088,69 @@
         "purpose": "Create integration relationship views",
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["psm-artifact.workflow-observability"],
+        "inputWorkProductRefs": [
+          "psm-artifact.workflow-observability",
+          "psm-artifact.deployment-strategy",
+          "psm-artifact.network-identity",
+          "psm-artifact.storage-layer",
+          "psm-artifact.messaging-layer",
+          "psm-artifact.event-fabric",
+          "psm-artifact.compute-layer",
+          "psm-artifact.api-layer"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.integration-views"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.workflow-observability",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.storage-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.messaging-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.event-fabric",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.compute-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.api-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.integration-views",
             "direction": "out",
             "optional": false
@@ -2676,16 +3250,97 @@
         "purpose": "Complete trace and readiness",
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
-        "inputWorkProductRefs": ["psm-artifact.integration-views"],
+        "inputWorkProductRefs": [
+          "psm-artifact.integration-views",
+          "psm-artifact.increment-plan",
+          "psm-artifact.deployment-strategy",
+          "psm-artifact.stack-scaffold",
+          "psm-artifact.security-baseline",
+          "psm-artifact.network-identity",
+          "psm-artifact.storage-layer",
+          "psm-artifact.messaging-layer",
+          "psm-artifact.event-fabric",
+          "psm-artifact.compute-layer",
+          "psm-artifact.api-layer",
+          "psm-artifact.workflow-observability"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.deployment-readiness"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.integration-views",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.network-identity",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.storage-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.messaging-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.event-fabric",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.compute-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.api-layer",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.workflow-observability",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.deployment-readiness",
             "direction": "out",
             "optional": false
@@ -2746,16 +3401,55 @@
         "purpose": "Review and adapt PSM increment",
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
-        "inputWorkProductRefs": ["psm-artifact.deployment-readiness"],
+        "inputWorkProductRefs": [
+          "psm-artifact.deployment-readiness",
+          "psm-artifact.increment-plan",
+          "psm-artifact.deployment-strategy",
+          "psm-artifact.integration-views",
+          "psm-artifact.security-baseline",
+          "psm-artifact.workflow-observability"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.increment-review"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.deployment-readiness",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.integration-views",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.security-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "psm-artifact.workflow-observability",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "psm-artifact.increment-review",
             "direction": "out",
             "optional": false
@@ -3095,6 +3789,14 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph1.st1.t2.input.psm-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph1.st1",
+      "taskUseRef": "psm.ph1.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.increment-plan",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph1.st1.t2.output.psm-artifact.deployment-strategy",
       "type": "WorkProductUse",
       "activityRef": "psm.ph1.st1",
@@ -3108,6 +3810,14 @@
       "activityRef": "psm.ph1.st1",
       "taskUseRef": "psm.ph1.st1.t3",
       "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph1.st1.t3.input.psm-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph1.st1",
+      "taskUseRef": "psm.ph1.st1.t3",
+      "workProductDefinitionRef": "psm-artifact.increment-plan",
       "usage": "input"
     },
     {
@@ -3127,6 +3837,14 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph1.st2.t1.input.psm-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph1.st2",
+      "taskUseRef": "psm.ph1.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.increment-plan",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph1.st2.t1.output.psm-artifact.stack-scaffold",
       "type": "WorkProductUse",
       "activityRef": "psm.ph1.st2",
@@ -3140,6 +3858,14 @@
       "activityRef": "psm.ph1.st2",
       "taskUseRef": "psm.ph1.st2.t2",
       "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph1.st2.t2.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph1.st2",
+      "taskUseRef": "psm.ph1.st2.t2",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
       "usage": "input"
     },
     {
@@ -3159,6 +3885,14 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph1.st3.t1.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph1.st3",
+      "taskUseRef": "psm.ph1.st3.t1",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph1.st3.t1.output.psm-artifact.security-baseline",
       "type": "WorkProductUse",
       "activityRef": "psm.ph1.st3",
@@ -3172,6 +3906,22 @@
       "activityRef": "psm.ph1.st3",
       "taskUseRef": "psm.ph1.st3.t2",
       "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph1.st3.t2.input.psm-artifact.stack-scaffold",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph1.st3",
+      "taskUseRef": "psm.ph1.st3.t2",
+      "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph1.st3.t2.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph1.st3",
+      "taskUseRef": "psm.ph1.st3.t2",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
       "usage": "input"
     },
     {
@@ -3191,6 +3941,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph2.st1.t1.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph2.st1",
+      "taskUseRef": "psm.ph2.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph2.st1.t1.input.psm-artifact.stack-scaffold",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph2.st1",
+      "taskUseRef": "psm.ph2.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph2.st1.t1.input.psm-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph2.st1",
+      "taskUseRef": "psm.ph2.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.increment-plan",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph2.st1.t1.output.psm-artifact.network-identity",
       "type": "WorkProductUse",
       "activityRef": "psm.ph2.st1",
@@ -3204,6 +3978,22 @@
       "activityRef": "psm.ph2.st1",
       "taskUseRef": "psm.ph2.st1.t2",
       "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph2.st1.t2.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph2.st1",
+      "taskUseRef": "psm.ph2.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph2.st1.t2.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph2.st1",
+      "taskUseRef": "psm.ph2.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
       "usage": "input"
     },
     {
@@ -3223,6 +4013,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph2.st2.t1.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph2.st2",
+      "taskUseRef": "psm.ph2.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph2.st2.t1.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph2.st2",
+      "taskUseRef": "psm.ph2.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph2.st2.t1.output.psm-artifact.network-identity",
       "type": "WorkProductUse",
       "activityRef": "psm.ph2.st2",
@@ -3236,6 +4042,22 @@
       "activityRef": "psm.ph2.st2",
       "taskUseRef": "psm.ph2.st2.t2",
       "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph2.st2.t2.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph2.st2",
+      "taskUseRef": "psm.ph2.st2.t2",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph2.st2.t2.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph2.st2",
+      "taskUseRef": "psm.ph2.st2.t2",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
       "usage": "input"
     },
     {
@@ -3255,6 +4077,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph3.st1.t1.input.psm-artifact.stack-scaffold",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st1",
+      "taskUseRef": "psm.ph3.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph3.st1.t1.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st1",
+      "taskUseRef": "psm.ph3.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph3.st1.t1.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st1",
+      "taskUseRef": "psm.ph3.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph3.st1.t1.output.psm-artifact.storage-layer",
       "type": "WorkProductUse",
       "activityRef": "psm.ph3.st1",
@@ -3268,6 +4114,38 @@
       "activityRef": "psm.ph3.st1",
       "taskUseRef": "psm.ph3.st1.t2",
       "workProductDefinitionRef": "psm-artifact.storage-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph3.st1.t2.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st1",
+      "taskUseRef": "psm.ph3.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph3.st1.t2.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st1",
+      "taskUseRef": "psm.ph3.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph3.st1.t2.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st1",
+      "taskUseRef": "psm.ph3.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph3.st1.t2.input.psm-artifact.stack-scaffold",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st1",
+      "taskUseRef": "psm.ph3.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.stack-scaffold",
       "usage": "input"
     },
     {
@@ -3287,6 +4165,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph3.st2.t1.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st2",
+      "taskUseRef": "psm.ph3.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph3.st2.t1.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st2",
+      "taskUseRef": "psm.ph3.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph3.st2.t1.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st2",
+      "taskUseRef": "psm.ph3.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph3.st2.t1.output.psm-artifact.messaging-layer",
       "type": "WorkProductUse",
       "activityRef": "psm.ph3.st2",
@@ -3300,6 +4202,38 @@
       "activityRef": "psm.ph3.st2",
       "taskUseRef": "psm.ph3.st2.t2",
       "workProductDefinitionRef": "psm-artifact.messaging-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph3.st2.t2.input.psm-artifact.storage-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st2",
+      "taskUseRef": "psm.ph3.st2.t2",
+      "workProductDefinitionRef": "psm-artifact.storage-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph3.st2.t2.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st2",
+      "taskUseRef": "psm.ph3.st2.t2",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph3.st2.t2.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st2",
+      "taskUseRef": "psm.ph3.st2.t2",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph3.st2.t2.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph3.st2",
+      "taskUseRef": "psm.ph3.st2.t2",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
       "usage": "input"
     },
     {
@@ -3319,6 +4253,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph4.st1.t1.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st1",
+      "taskUseRef": "psm.ph4.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph4.st1.t1.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st1",
+      "taskUseRef": "psm.ph4.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph4.st1.t1.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st1",
+      "taskUseRef": "psm.ph4.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph4.st1.t1.output.psm-artifact.event-fabric",
       "type": "WorkProductUse",
       "activityRef": "psm.ph4.st1",
@@ -3332,6 +4290,38 @@
       "activityRef": "psm.ph4.st1",
       "taskUseRef": "psm.ph4.st1.t2",
       "workProductDefinitionRef": "psm-artifact.event-fabric",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph4.st1.t2.input.psm-artifact.messaging-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st1",
+      "taskUseRef": "psm.ph4.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.messaging-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph4.st1.t2.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st1",
+      "taskUseRef": "psm.ph4.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph4.st1.t2.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st1",
+      "taskUseRef": "psm.ph4.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph4.st1.t2.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st1",
+      "taskUseRef": "psm.ph4.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
       "usage": "input"
     },
     {
@@ -3351,6 +4341,38 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph4.st2.t1.input.psm-artifact.stack-scaffold",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st2",
+      "taskUseRef": "psm.ph4.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph4.st2.t1.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st2",
+      "taskUseRef": "psm.ph4.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph4.st2.t1.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st2",
+      "taskUseRef": "psm.ph4.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph4.st2.t1.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st2",
+      "taskUseRef": "psm.ph4.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph4.st2.t1.output.psm-artifact.compute-layer",
       "type": "WorkProductUse",
       "activityRef": "psm.ph4.st2",
@@ -3364,6 +4386,30 @@
       "activityRef": "psm.ph4.st2",
       "taskUseRef": "psm.ph4.st2.t2",
       "workProductDefinitionRef": "psm-artifact.compute-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph4.st2.t2.input.psm-artifact.event-fabric",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st2",
+      "taskUseRef": "psm.ph4.st2.t2",
+      "workProductDefinitionRef": "psm-artifact.event-fabric",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph4.st2.t2.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st2",
+      "taskUseRef": "psm.ph4.st2.t2",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph4.st2.t2.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph4.st2",
+      "taskUseRef": "psm.ph4.st2.t2",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
       "usage": "input"
     },
     {
@@ -3383,6 +4429,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph5.st1.t1.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st1",
+      "taskUseRef": "psm.ph5.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st1.t1.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st1",
+      "taskUseRef": "psm.ph5.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st1.t1.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st1",
+      "taskUseRef": "psm.ph5.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph5.st1.t1.output.psm-artifact.api-layer",
       "type": "WorkProductUse",
       "activityRef": "psm.ph5.st1",
@@ -3396,6 +4466,38 @@
       "activityRef": "psm.ph5.st1",
       "taskUseRef": "psm.ph5.st1.t2",
       "workProductDefinitionRef": "psm-artifact.api-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st1.t2.input.psm-artifact.compute-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st1",
+      "taskUseRef": "psm.ph5.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.compute-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st1.t2.input.psm-artifact.event-fabric",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st1",
+      "taskUseRef": "psm.ph5.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.event-fabric",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st1.t2.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st1",
+      "taskUseRef": "psm.ph5.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st1.t2.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st1",
+      "taskUseRef": "psm.ph5.st1.t2",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
       "usage": "input"
     },
     {
@@ -3415,6 +4517,38 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.compute-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st2.ss1",
+      "taskUseRef": "psm.ph5.st2.ss1.t1",
+      "workProductDefinitionRef": "psm-artifact.compute-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.event-fabric",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st2.ss1",
+      "taskUseRef": "psm.ph5.st2.ss1.t1",
+      "workProductDefinitionRef": "psm-artifact.event-fabric",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st2.ss1",
+      "taskUseRef": "psm.ph5.st2.ss1.t1",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st2.ss1",
+      "taskUseRef": "psm.ph5.st2.ss1.t1",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph5.st2.ss1.t1.output.psm-artifact.workflow-observability",
       "type": "WorkProductUse",
       "activityRef": "psm.ph5.st2.ss1",
@@ -3428,6 +4562,38 @@
       "activityRef": "psm.ph5.st2.ss2",
       "taskUseRef": "psm.ph5.st2.ss2.t1",
       "workProductDefinitionRef": "psm-artifact.workflow-observability",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.compute-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st2.ss2",
+      "taskUseRef": "psm.ph5.st2.ss2.t1",
+      "workProductDefinitionRef": "psm-artifact.compute-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.api-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st2.ss2",
+      "taskUseRef": "psm.ph5.st2.ss2.t1",
+      "workProductDefinitionRef": "psm-artifact.api-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.event-fabric",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st2.ss2",
+      "taskUseRef": "psm.ph5.st2.ss2.t1",
+      "workProductDefinitionRef": "psm-artifact.event-fabric",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st2.ss2",
+      "taskUseRef": "psm.ph5.st2.ss2.t1",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
       "usage": "input"
     },
     {
@@ -3447,6 +4613,38 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.compute-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st2.ss2",
+      "taskUseRef": "psm.ph5.st2.ss2.t2",
+      "workProductDefinitionRef": "psm-artifact.compute-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.api-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st2.ss2",
+      "taskUseRef": "psm.ph5.st2.ss2.t2",
+      "workProductDefinitionRef": "psm-artifact.api-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.event-fabric",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st2.ss2",
+      "taskUseRef": "psm.ph5.st2.ss2.t2",
+      "workProductDefinitionRef": "psm-artifact.event-fabric",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph5.st2.ss2",
+      "taskUseRef": "psm.ph5.st2.ss2.t2",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph5.st2.ss2.t2.output.psm-artifact.workflow-observability",
       "type": "WorkProductUse",
       "activityRef": "psm.ph5.st2.ss2",
@@ -3460,6 +4658,62 @@
       "activityRef": "psm.ph6.st1",
       "taskUseRef": "psm.ph6.st1.t1",
       "workProductDefinitionRef": "psm-artifact.workflow-observability",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st1.t1.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st1",
+      "taskUseRef": "psm.ph6.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st1.t1.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st1",
+      "taskUseRef": "psm.ph6.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st1.t1.input.psm-artifact.storage-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st1",
+      "taskUseRef": "psm.ph6.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.storage-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st1.t1.input.psm-artifact.messaging-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st1",
+      "taskUseRef": "psm.ph6.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.messaging-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st1.t1.input.psm-artifact.event-fabric",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st1",
+      "taskUseRef": "psm.ph6.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.event-fabric",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st1.t1.input.psm-artifact.compute-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st1",
+      "taskUseRef": "psm.ph6.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.compute-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st1.t1.input.psm-artifact.api-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st1",
+      "taskUseRef": "psm.ph6.st1.t1",
+      "workProductDefinitionRef": "psm-artifact.api-layer",
       "usage": "input"
     },
     {
@@ -3479,6 +4733,94 @@
       "usage": "input"
     },
     {
+      "id": "wpu.psm.ph6.st2.t1.input.psm-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st2",
+      "taskUseRef": "psm.ph6.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.increment-plan",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st2.t1.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st2",
+      "taskUseRef": "psm.ph6.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st2.t1.input.psm-artifact.stack-scaffold",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st2",
+      "taskUseRef": "psm.ph6.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st2.t1.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st2",
+      "taskUseRef": "psm.ph6.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st2.t1.input.psm-artifact.network-identity",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st2",
+      "taskUseRef": "psm.ph6.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.network-identity",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st2.t1.input.psm-artifact.storage-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st2",
+      "taskUseRef": "psm.ph6.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.storage-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st2.t1.input.psm-artifact.messaging-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st2",
+      "taskUseRef": "psm.ph6.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.messaging-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st2.t1.input.psm-artifact.event-fabric",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st2",
+      "taskUseRef": "psm.ph6.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.event-fabric",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st2.t1.input.psm-artifact.compute-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st2",
+      "taskUseRef": "psm.ph6.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.compute-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st2.t1.input.psm-artifact.api-layer",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st2",
+      "taskUseRef": "psm.ph6.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.api-layer",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st2.t1.input.psm-artifact.workflow-observability",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st2",
+      "taskUseRef": "psm.ph6.st2.t1",
+      "workProductDefinitionRef": "psm-artifact.workflow-observability",
+      "usage": "input"
+    },
+    {
       "id": "wpu.psm.ph6.st2.t1.output.psm-artifact.deployment-readiness",
       "type": "WorkProductUse",
       "activityRef": "psm.ph6.st2",
@@ -3492,6 +4834,46 @@
       "activityRef": "psm.ph6.st3",
       "taskUseRef": "psm.ph6.st3.t1",
       "workProductDefinitionRef": "psm-artifact.deployment-readiness",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st3.t1.input.psm-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st3",
+      "taskUseRef": "psm.ph6.st3.t1",
+      "workProductDefinitionRef": "psm-artifact.increment-plan",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st3.t1.input.psm-artifact.deployment-strategy",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st3",
+      "taskUseRef": "psm.ph6.st3.t1",
+      "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st3.t1.input.psm-artifact.integration-views",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st3",
+      "taskUseRef": "psm.ph6.st3.t1",
+      "workProductDefinitionRef": "psm-artifact.integration-views",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st3.t1.input.psm-artifact.security-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st3",
+      "taskUseRef": "psm.ph6.st3.t1",
+      "workProductDefinitionRef": "psm-artifact.security-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.psm.ph6.st3.t1.input.psm-artifact.workflow-observability",
+      "type": "WorkProductUse",
+      "activityRef": "psm.ph6.st3",
+      "taskUseRef": "psm.ph6.st3.t1",
+      "workProductDefinitionRef": "psm-artifact.workflow-observability",
       "usage": "input"
     },
     {
@@ -3821,9 +5203,28 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph1.st0.t1",
               "performerRoleUseRefs": ["ru.psm.ph1.st0.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph1.st0.t1.ru.psm.ph1.st0.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph1.st0.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph1.st0.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [],
-              "outputWorkProductUseRefs": ["wpu.psm.ph1.st0.t1.output.psm-artifact.increment-plan"]
+              "outputWorkProductUseRefs": ["wpu.psm.ph1.st0.t1.output.psm-artifact.increment-plan"],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph1.st0.t1.out.wpu.psm.ph1.st0.t1.output.psm-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st0.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st0.t1.output.psm-artifact.increment-plan"
+                }
+              ]
             }
           ]
         },
@@ -3846,10 +5247,37 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph1.st1.t1",
               "performerRoleUseRefs": ["ru.psm.ph1.st1.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph1.st1.t1.ru.psm.ph1.st1.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph1.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph1.st1.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": ["wpu.psm.ph1.st1.t1.input.psm-artifact.increment-plan"],
               "outputWorkProductUseRefs": [
                 "wpu.psm.ph1.st1.t1.output.psm-artifact.deployment-strategy"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph1.st1.t1.in.wpu.psm.ph1.st1.t1.input.psm-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st1.t1.input.psm-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.psm.ph1.st1.t1.out.wpu.psm.ph1.st1.t1.output.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st1.t1.output.psm-artifact.deployment-strategy"
+                }
               ]
             },
             {
@@ -3857,12 +5285,48 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph1.st1.t2",
               "performerRoleUseRefs": ["ru.psm.ph1.st1.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph1.st1.t2.ru.psm.ph1.st1.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph1.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph1.st1.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": [
-                "wpu.psm.ph1.st1.t2.input.psm-artifact.deployment-strategy"
+                "wpu.psm.ph1.st1.t2.input.psm-artifact.deployment-strategy",
+                "wpu.psm.ph1.st1.t2.input.psm-artifact.increment-plan"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.psm.ph1.st1.t2.output.psm-artifact.deployment-strategy"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph1.st1.t2.in.wpu.psm.ph1.st1.t2.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st1.t2.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph1.st1.t2.in.wpu.psm.ph1.st1.t2.input.psm-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st1.t2.input.psm-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.psm.ph1.st1.t2.out.wpu.psm.ph1.st1.t2.output.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st1.t2.output.psm-artifact.deployment-strategy"
+                }
               ]
             },
             {
@@ -3870,12 +5334,48 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph1.st1.t3",
               "performerRoleUseRefs": ["ru.psm.ph1.st1.method-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph1.st1.t3.ru.psm.ph1.st1.method-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph1.st1.t3",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph1.st1.method-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.psm.ph1.st1.t3.input.psm-artifact.deployment-strategy"
+                "wpu.psm.ph1.st1.t3.input.psm-artifact.deployment-strategy",
+                "wpu.psm.ph1.st1.t3.input.psm-artifact.increment-plan"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.psm.ph1.st1.t3.output.psm-artifact.deployment-strategy"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph1.st1.t3.in.wpu.psm.ph1.st1.t3.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st1.t3",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st1.t3.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph1.st1.t3.in.wpu.psm.ph1.st1.t3.input.psm-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st1.t3",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st1.t3.input.psm-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.psm.ph1.st1.t3.out.wpu.psm.ph1.st1.t3.output.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st1.t3",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st1.t3.output.psm-artifact.deployment-strategy"
+                }
               ]
             }
           ]
@@ -3896,20 +5396,94 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph1.st2.t1",
               "performerRoleUseRefs": ["ru.psm.ph1.st2.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph1.st2.t1.ru.psm.ph1.st2.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph1.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph1.st2.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": [
-                "wpu.psm.ph1.st2.t1.input.psm-artifact.deployment-strategy"
+                "wpu.psm.ph1.st2.t1.input.psm-artifact.deployment-strategy",
+                "wpu.psm.ph1.st2.t1.input.psm-artifact.increment-plan"
               ],
-              "outputWorkProductUseRefs": ["wpu.psm.ph1.st2.t1.output.psm-artifact.stack-scaffold"]
+              "outputWorkProductUseRefs": ["wpu.psm.ph1.st2.t1.output.psm-artifact.stack-scaffold"],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph1.st2.t1.in.wpu.psm.ph1.st2.t1.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st2.t1.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph1.st2.t1.in.wpu.psm.ph1.st2.t1.input.psm-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st2.t1.input.psm-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.psm.ph1.st2.t1.out.wpu.psm.ph1.st2.t1.output.psm-artifact.stack-scaffold",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st2.t1.output.psm-artifact.stack-scaffold"
+                }
+              ]
             },
             {
               "id": "psm.ph1.st2.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph1.st2.t2",
               "performerRoleUseRefs": ["ru.psm.ph1.st2.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph1.st2.t2.ru.psm.ph1.st2.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph1.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph1.st2.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph1.st2.t2.input.psm-artifact.stack-scaffold"],
-              "outputWorkProductUseRefs": ["wpu.psm.ph1.st2.t2.output.psm-artifact.stack-scaffold"]
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph1.st2.t2.input.psm-artifact.stack-scaffold",
+                "wpu.psm.ph1.st2.t2.input.psm-artifact.deployment-strategy"
+              ],
+              "outputWorkProductUseRefs": ["wpu.psm.ph1.st2.t2.output.psm-artifact.stack-scaffold"],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph1.st2.t2.in.wpu.psm.ph1.st2.t2.input.psm-artifact.stack-scaffold",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st2.t2.input.psm-artifact.stack-scaffold"
+                },
+                {
+                  "id": "pp.psm.ph1.st2.t2.in.wpu.psm.ph1.st2.t2.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st2.t2.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph1.st2.t2.out.wpu.psm.ph1.st2.t2.output.psm-artifact.stack-scaffold",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st2.t2.output.psm-artifact.stack-scaffold"
+                }
+              ]
             }
           ]
         },
@@ -3939,10 +5513,48 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph1.st3.t1",
               "performerRoleUseRefs": ["ru.psm.ph1.st3.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph1.st3.t1.ru.psm.ph1.st3.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph1.st3.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph1.st3.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph1.st3.t1.input.psm-artifact.stack-scaffold"],
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph1.st3.t1.input.psm-artifact.stack-scaffold",
+                "wpu.psm.ph1.st3.t1.input.psm-artifact.deployment-strategy"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.psm.ph1.st3.t1.output.psm-artifact.security-baseline"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph1.st3.t1.in.wpu.psm.ph1.st3.t1.input.psm-artifact.stack-scaffold",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st3.t1.input.psm-artifact.stack-scaffold"
+                },
+                {
+                  "id": "pp.psm.ph1.st3.t1.in.wpu.psm.ph1.st3.t1.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st3.t1.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph1.st3.t1.out.wpu.psm.ph1.st3.t1.output.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st3.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st3.t1.output.psm-artifact.security-baseline"
+                }
               ]
             },
             {
@@ -3950,12 +5562,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph1.st3.t2",
               "performerRoleUseRefs": ["ru.psm.ph1.st3.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph1.st3.t2.ru.psm.ph1.st3.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph1.st3.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph1.st3.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.psm.ph1.st3.t2.input.psm-artifact.security-baseline"
+                "wpu.psm.ph1.st3.t2.input.psm-artifact.security-baseline",
+                "wpu.psm.ph1.st3.t2.input.psm-artifact.stack-scaffold",
+                "wpu.psm.ph1.st3.t2.input.psm-artifact.deployment-strategy"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.psm.ph1.st3.t2.output.psm-artifact.security-baseline"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph1.st3.t2.in.wpu.psm.ph1.st3.t2.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st3.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st3.t2.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph1.st3.t2.in.wpu.psm.ph1.st3.t2.input.psm-artifact.stack-scaffold",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st3.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st3.t2.input.psm-artifact.stack-scaffold"
+                },
+                {
+                  "id": "pp.psm.ph1.st3.t2.in.wpu.psm.ph1.st3.t2.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st3.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st3.t2.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph1.st3.t2.out.wpu.psm.ph1.st3.t2.output.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph1.st3.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph1.st3.t2.output.psm-artifact.security-baseline"
+                }
               ]
             }
           ]
@@ -4003,12 +5660,66 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph2.st1.t1",
               "performerRoleUseRefs": ["ru.psm.ph2.st1.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph2.st1.t1.ru.psm.ph2.st1.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph2.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph2.st1.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": [
-                "wpu.psm.ph2.st1.t1.input.psm-artifact.security-baseline"
+                "wpu.psm.ph2.st1.t1.input.psm-artifact.security-baseline",
+                "wpu.psm.ph2.st1.t1.input.psm-artifact.deployment-strategy",
+                "wpu.psm.ph2.st1.t1.input.psm-artifact.stack-scaffold",
+                "wpu.psm.ph2.st1.t1.input.psm-artifact.increment-plan"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.psm.ph2.st1.t1.output.psm-artifact.network-identity"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph2.st1.t1.in.wpu.psm.ph2.st1.t1.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st1.t1.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph2.st1.t1.in.wpu.psm.ph2.st1.t1.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st1.t1.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph2.st1.t1.in.wpu.psm.ph2.st1.t1.input.psm-artifact.stack-scaffold",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st1.t1.input.psm-artifact.stack-scaffold"
+                },
+                {
+                  "id": "pp.psm.ph2.st1.t1.in.wpu.psm.ph2.st1.t1.input.psm-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st1.t1.input.psm-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.psm.ph2.st1.t1.out.wpu.psm.ph2.st1.t1.output.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st1.t1.output.psm-artifact.network-identity"
+                }
               ]
             },
             {
@@ -4016,10 +5727,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph2.st1.t2",
               "performerRoleUseRefs": ["ru.psm.ph2.st1.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph2.st1.t2.ru.psm.ph2.st1.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph2.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph2.st1.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph2.st1.t2.input.psm-artifact.network-identity"],
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph2.st1.t2.input.psm-artifact.network-identity",
+                "wpu.psm.ph2.st1.t2.input.psm-artifact.security-baseline",
+                "wpu.psm.ph2.st1.t2.input.psm-artifact.deployment-strategy"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.psm.ph2.st1.t2.output.psm-artifact.network-identity"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph2.st1.t2.in.wpu.psm.ph2.st1.t2.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st1.t2.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph2.st1.t2.in.wpu.psm.ph2.st1.t2.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st1.t2.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph2.st1.t2.in.wpu.psm.ph2.st1.t2.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st1.t2.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph2.st1.t2.out.wpu.psm.ph2.st1.t2.output.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st1.t2.output.psm-artifact.network-identity"
+                }
               ]
             }
           ]
@@ -4040,10 +5798,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph2.st2.t1",
               "performerRoleUseRefs": ["ru.psm.ph2.st2.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph2.st2.t1.ru.psm.ph2.st2.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph2.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph2.st2.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph2.st2.t1.input.psm-artifact.network-identity"],
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph2.st2.t1.input.psm-artifact.network-identity",
+                "wpu.psm.ph2.st2.t1.input.psm-artifact.security-baseline",
+                "wpu.psm.ph2.st2.t1.input.psm-artifact.deployment-strategy"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.psm.ph2.st2.t1.output.psm-artifact.network-identity"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph2.st2.t1.in.wpu.psm.ph2.st2.t1.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st2.t1.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph2.st2.t1.in.wpu.psm.ph2.st2.t1.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st2.t1.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph2.st2.t1.in.wpu.psm.ph2.st2.t1.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st2.t1.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph2.st2.t1.out.wpu.psm.ph2.st2.t1.output.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st2.t1.output.psm-artifact.network-identity"
+                }
               ]
             },
             {
@@ -4051,10 +5856,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph2.st2.t2",
               "performerRoleUseRefs": ["ru.psm.ph2.st2.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph2.st2.t2.ru.psm.ph2.st2.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph2.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph2.st2.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph2.st2.t2.input.psm-artifact.network-identity"],
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph2.st2.t2.input.psm-artifact.network-identity",
+                "wpu.psm.ph2.st2.t2.input.psm-artifact.security-baseline",
+                "wpu.psm.ph2.st2.t2.input.psm-artifact.deployment-strategy"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.psm.ph2.st2.t2.output.psm-artifact.network-identity"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph2.st2.t2.in.wpu.psm.ph2.st2.t2.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st2.t2.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph2.st2.t2.in.wpu.psm.ph2.st2.t2.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st2.t2.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph2.st2.t2.in.wpu.psm.ph2.st2.t2.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st2.t2.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph2.st2.t2.out.wpu.psm.ph2.st2.t2.output.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph2.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph2.st2.t2.output.psm-artifact.network-identity"
+                }
               ]
             }
           ]
@@ -4111,18 +5963,139 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph3.st1.t1",
               "performerRoleUseRefs": ["ru.psm.ph3.st1.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph3.st1.t1.ru.psm.ph3.st1.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph3.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph3.st1.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph3.st1.t1.input.psm-artifact.network-identity"],
-              "outputWorkProductUseRefs": ["wpu.psm.ph3.st1.t1.output.psm-artifact.storage-layer"]
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph3.st1.t1.input.psm-artifact.network-identity",
+                "wpu.psm.ph3.st1.t1.input.psm-artifact.stack-scaffold",
+                "wpu.psm.ph3.st1.t1.input.psm-artifact.security-baseline",
+                "wpu.psm.ph3.st1.t1.input.psm-artifact.deployment-strategy"
+              ],
+              "outputWorkProductUseRefs": ["wpu.psm.ph3.st1.t1.output.psm-artifact.storage-layer"],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph3.st1.t1.in.wpu.psm.ph3.st1.t1.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st1.t1.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph3.st1.t1.in.wpu.psm.ph3.st1.t1.input.psm-artifact.stack-scaffold",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st1.t1.input.psm-artifact.stack-scaffold"
+                },
+                {
+                  "id": "pp.psm.ph3.st1.t1.in.wpu.psm.ph3.st1.t1.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st1.t1.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph3.st1.t1.in.wpu.psm.ph3.st1.t1.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st1.t1.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph3.st1.t1.out.wpu.psm.ph3.st1.t1.output.psm-artifact.storage-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st1.t1.output.psm-artifact.storage-layer"
+                }
+              ]
             },
             {
               "id": "psm.ph3.st1.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph3.st1.t2",
               "performerRoleUseRefs": ["ru.psm.ph3.st1.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph3.st1.t2.ru.psm.ph3.st1.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph3.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph3.st1.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph3.st1.t2.input.psm-artifact.storage-layer"],
-              "outputWorkProductUseRefs": ["wpu.psm.ph3.st1.t2.output.psm-artifact.storage-layer"]
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph3.st1.t2.input.psm-artifact.storage-layer",
+                "wpu.psm.ph3.st1.t2.input.psm-artifact.network-identity",
+                "wpu.psm.ph3.st1.t2.input.psm-artifact.security-baseline",
+                "wpu.psm.ph3.st1.t2.input.psm-artifact.deployment-strategy",
+                "wpu.psm.ph3.st1.t2.input.psm-artifact.stack-scaffold"
+              ],
+              "outputWorkProductUseRefs": ["wpu.psm.ph3.st1.t2.output.psm-artifact.storage-layer"],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph3.st1.t2.in.wpu.psm.ph3.st1.t2.input.psm-artifact.storage-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st1.t2.input.psm-artifact.storage-layer"
+                },
+                {
+                  "id": "pp.psm.ph3.st1.t2.in.wpu.psm.ph3.st1.t2.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st1.t2.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph3.st1.t2.in.wpu.psm.ph3.st1.t2.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st1.t2.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph3.st1.t2.in.wpu.psm.ph3.st1.t2.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st1.t2.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph3.st1.t2.in.wpu.psm.ph3.st1.t2.input.psm-artifact.stack-scaffold",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st1.t2.input.psm-artifact.stack-scaffold"
+                },
+                {
+                  "id": "pp.psm.ph3.st1.t2.out.wpu.psm.ph3.st1.t2.output.psm-artifact.storage-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st1.t2.output.psm-artifact.storage-layer"
+                }
+              ]
             }
           ]
         },
@@ -4142,18 +6115,143 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph3.st2.t1",
               "performerRoleUseRefs": ["ru.psm.ph3.st2.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph3.st2.t1.ru.psm.ph3.st2.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph3.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph3.st2.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph3.st2.t1.input.psm-artifact.storage-layer"],
-              "outputWorkProductUseRefs": ["wpu.psm.ph3.st2.t1.output.psm-artifact.messaging-layer"]
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph3.st2.t1.input.psm-artifact.storage-layer",
+                "wpu.psm.ph3.st2.t1.input.psm-artifact.network-identity",
+                "wpu.psm.ph3.st2.t1.input.psm-artifact.security-baseline",
+                "wpu.psm.ph3.st2.t1.input.psm-artifact.deployment-strategy"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.psm.ph3.st2.t1.output.psm-artifact.messaging-layer"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph3.st2.t1.in.wpu.psm.ph3.st2.t1.input.psm-artifact.storage-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st2.t1.input.psm-artifact.storage-layer"
+                },
+                {
+                  "id": "pp.psm.ph3.st2.t1.in.wpu.psm.ph3.st2.t1.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st2.t1.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph3.st2.t1.in.wpu.psm.ph3.st2.t1.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st2.t1.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph3.st2.t1.in.wpu.psm.ph3.st2.t1.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st2.t1.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph3.st2.t1.out.wpu.psm.ph3.st2.t1.output.psm-artifact.messaging-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st2.t1.output.psm-artifact.messaging-layer"
+                }
+              ]
             },
             {
               "id": "psm.ph3.st2.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph3.st2.t2",
               "performerRoleUseRefs": ["ru.psm.ph3.st2.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph3.st2.t2.ru.psm.ph3.st2.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph3.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph3.st2.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph3.st2.t2.input.psm-artifact.messaging-layer"],
-              "outputWorkProductUseRefs": ["wpu.psm.ph3.st2.t2.output.psm-artifact.messaging-layer"]
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph3.st2.t2.input.psm-artifact.messaging-layer",
+                "wpu.psm.ph3.st2.t2.input.psm-artifact.storage-layer",
+                "wpu.psm.ph3.st2.t2.input.psm-artifact.network-identity",
+                "wpu.psm.ph3.st2.t2.input.psm-artifact.security-baseline",
+                "wpu.psm.ph3.st2.t2.input.psm-artifact.deployment-strategy"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.psm.ph3.st2.t2.output.psm-artifact.messaging-layer"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph3.st2.t2.in.wpu.psm.ph3.st2.t2.input.psm-artifact.messaging-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st2.t2.input.psm-artifact.messaging-layer"
+                },
+                {
+                  "id": "pp.psm.ph3.st2.t2.in.wpu.psm.ph3.st2.t2.input.psm-artifact.storage-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st2.t2.input.psm-artifact.storage-layer"
+                },
+                {
+                  "id": "pp.psm.ph3.st2.t2.in.wpu.psm.ph3.st2.t2.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st2.t2.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph3.st2.t2.in.wpu.psm.ph3.st2.t2.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st2.t2.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph3.st2.t2.in.wpu.psm.ph3.st2.t2.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st2.t2.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph3.st2.t2.out.wpu.psm.ph3.st2.t2.output.psm-artifact.messaging-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph3.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph3.st2.t2.output.psm-artifact.messaging-layer"
+                }
+              ]
             }
           ]
         }
@@ -4197,18 +6295,139 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph4.st1.t1",
               "performerRoleUseRefs": ["ru.psm.ph4.st1.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph4.st1.t1.ru.psm.ph4.st1.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph4.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph4.st1.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph4.st1.t1.input.psm-artifact.messaging-layer"],
-              "outputWorkProductUseRefs": ["wpu.psm.ph4.st1.t1.output.psm-artifact.event-fabric"]
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph4.st1.t1.input.psm-artifact.messaging-layer",
+                "wpu.psm.ph4.st1.t1.input.psm-artifact.network-identity",
+                "wpu.psm.ph4.st1.t1.input.psm-artifact.security-baseline",
+                "wpu.psm.ph4.st1.t1.input.psm-artifact.deployment-strategy"
+              ],
+              "outputWorkProductUseRefs": ["wpu.psm.ph4.st1.t1.output.psm-artifact.event-fabric"],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph4.st1.t1.in.wpu.psm.ph4.st1.t1.input.psm-artifact.messaging-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st1.t1.input.psm-artifact.messaging-layer"
+                },
+                {
+                  "id": "pp.psm.ph4.st1.t1.in.wpu.psm.ph4.st1.t1.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st1.t1.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph4.st1.t1.in.wpu.psm.ph4.st1.t1.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st1.t1.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph4.st1.t1.in.wpu.psm.ph4.st1.t1.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st1.t1.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph4.st1.t1.out.wpu.psm.ph4.st1.t1.output.psm-artifact.event-fabric",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st1.t1.output.psm-artifact.event-fabric"
+                }
+              ]
             },
             {
               "id": "psm.ph4.st1.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph4.st1.t2",
               "performerRoleUseRefs": ["ru.psm.ph4.st1.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph4.st1.t2.ru.psm.ph4.st1.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph4.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph4.st1.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph4.st1.t2.input.psm-artifact.event-fabric"],
-              "outputWorkProductUseRefs": ["wpu.psm.ph4.st1.t2.output.psm-artifact.event-fabric"]
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph4.st1.t2.input.psm-artifact.event-fabric",
+                "wpu.psm.ph4.st1.t2.input.psm-artifact.messaging-layer",
+                "wpu.psm.ph4.st1.t2.input.psm-artifact.network-identity",
+                "wpu.psm.ph4.st1.t2.input.psm-artifact.security-baseline",
+                "wpu.psm.ph4.st1.t2.input.psm-artifact.deployment-strategy"
+              ],
+              "outputWorkProductUseRefs": ["wpu.psm.ph4.st1.t2.output.psm-artifact.event-fabric"],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph4.st1.t2.in.wpu.psm.ph4.st1.t2.input.psm-artifact.event-fabric",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st1.t2.input.psm-artifact.event-fabric"
+                },
+                {
+                  "id": "pp.psm.ph4.st1.t2.in.wpu.psm.ph4.st1.t2.input.psm-artifact.messaging-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st1.t2.input.psm-artifact.messaging-layer"
+                },
+                {
+                  "id": "pp.psm.ph4.st1.t2.in.wpu.psm.ph4.st1.t2.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st1.t2.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph4.st1.t2.in.wpu.psm.ph4.st1.t2.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st1.t2.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph4.st1.t2.in.wpu.psm.ph4.st1.t2.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st1.t2.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph4.st1.t2.out.wpu.psm.ph4.st1.t2.output.psm-artifact.event-fabric",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st1.t2.output.psm-artifact.event-fabric"
+                }
+              ]
             }
           ]
         },
@@ -4265,18 +6484,139 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph4.st2.t1",
               "performerRoleUseRefs": ["ru.psm.ph4.st2.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph4.st2.t1.ru.psm.ph4.st2.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph4.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph4.st2.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph4.st2.t1.input.psm-artifact.event-fabric"],
-              "outputWorkProductUseRefs": ["wpu.psm.ph4.st2.t1.output.psm-artifact.compute-layer"]
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph4.st2.t1.input.psm-artifact.event-fabric",
+                "wpu.psm.ph4.st2.t1.input.psm-artifact.stack-scaffold",
+                "wpu.psm.ph4.st2.t1.input.psm-artifact.security-baseline",
+                "wpu.psm.ph4.st2.t1.input.psm-artifact.network-identity",
+                "wpu.psm.ph4.st2.t1.input.psm-artifact.deployment-strategy"
+              ],
+              "outputWorkProductUseRefs": ["wpu.psm.ph4.st2.t1.output.psm-artifact.compute-layer"],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph4.st2.t1.in.wpu.psm.ph4.st2.t1.input.psm-artifact.event-fabric",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st2.t1.input.psm-artifact.event-fabric"
+                },
+                {
+                  "id": "pp.psm.ph4.st2.t1.in.wpu.psm.ph4.st2.t1.input.psm-artifact.stack-scaffold",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st2.t1.input.psm-artifact.stack-scaffold"
+                },
+                {
+                  "id": "pp.psm.ph4.st2.t1.in.wpu.psm.ph4.st2.t1.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st2.t1.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph4.st2.t1.in.wpu.psm.ph4.st2.t1.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st2.t1.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph4.st2.t1.in.wpu.psm.ph4.st2.t1.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st2.t1.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph4.st2.t1.out.wpu.psm.ph4.st2.t1.output.psm-artifact.compute-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st2.t1.output.psm-artifact.compute-layer"
+                }
+              ]
             },
             {
               "id": "psm.ph4.st2.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph4.st2.t2",
               "performerRoleUseRefs": ["ru.psm.ph4.st2.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph4.st2.t2.ru.psm.ph4.st2.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph4.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph4.st2.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph4.st2.t2.input.psm-artifact.compute-layer"],
-              "outputWorkProductUseRefs": ["wpu.psm.ph4.st2.t2.output.psm-artifact.compute-layer"]
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph4.st2.t2.input.psm-artifact.compute-layer",
+                "wpu.psm.ph4.st2.t2.input.psm-artifact.event-fabric",
+                "wpu.psm.ph4.st2.t2.input.psm-artifact.security-baseline",
+                "wpu.psm.ph4.st2.t2.input.psm-artifact.network-identity"
+              ],
+              "outputWorkProductUseRefs": ["wpu.psm.ph4.st2.t2.output.psm-artifact.compute-layer"],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph4.st2.t2.in.wpu.psm.ph4.st2.t2.input.psm-artifact.compute-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st2.t2.input.psm-artifact.compute-layer"
+                },
+                {
+                  "id": "pp.psm.ph4.st2.t2.in.wpu.psm.ph4.st2.t2.input.psm-artifact.event-fabric",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st2.t2.input.psm-artifact.event-fabric"
+                },
+                {
+                  "id": "pp.psm.ph4.st2.t2.in.wpu.psm.ph4.st2.t2.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st2.t2.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph4.st2.t2.in.wpu.psm.ph4.st2.t2.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st2.t2.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph4.st2.t2.out.wpu.psm.ph4.st2.t2.output.psm-artifact.compute-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph4.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph4.st2.t2.output.psm-artifact.compute-layer"
+                }
+              ]
             }
           ]
         }
@@ -4320,18 +6660,139 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph5.st1.t1",
               "performerRoleUseRefs": ["ru.psm.ph5.st1.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph5.st1.t1.ru.psm.ph5.st1.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph5.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph5.st1.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph5.st1.t1.input.psm-artifact.compute-layer"],
-              "outputWorkProductUseRefs": ["wpu.psm.ph5.st1.t1.output.psm-artifact.api-layer"]
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph5.st1.t1.input.psm-artifact.compute-layer",
+                "wpu.psm.ph5.st1.t1.input.psm-artifact.network-identity",
+                "wpu.psm.ph5.st1.t1.input.psm-artifact.security-baseline",
+                "wpu.psm.ph5.st1.t1.input.psm-artifact.deployment-strategy"
+              ],
+              "outputWorkProductUseRefs": ["wpu.psm.ph5.st1.t1.output.psm-artifact.api-layer"],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph5.st1.t1.in.wpu.psm.ph5.st1.t1.input.psm-artifact.compute-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph5.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph5.st1.t1.input.psm-artifact.compute-layer"
+                },
+                {
+                  "id": "pp.psm.ph5.st1.t1.in.wpu.psm.ph5.st1.t1.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph5.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph5.st1.t1.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph5.st1.t1.in.wpu.psm.ph5.st1.t1.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph5.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph5.st1.t1.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph5.st1.t1.in.wpu.psm.ph5.st1.t1.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph5.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph5.st1.t1.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph5.st1.t1.out.wpu.psm.ph5.st1.t1.output.psm-artifact.api-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph5.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph5.st1.t1.output.psm-artifact.api-layer"
+                }
+              ]
             },
             {
               "id": "psm.ph5.st1.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph5.st1.t2",
               "performerRoleUseRefs": ["ru.psm.ph5.st1.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph5.st1.t2.ru.psm.ph5.st1.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph5.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph5.st1.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.psm.ph5.st1.t2.input.psm-artifact.api-layer"],
-              "outputWorkProductUseRefs": ["wpu.psm.ph5.st1.t2.output.psm-artifact.api-layer"]
+              "inputWorkProductUseRefs": [
+                "wpu.psm.ph5.st1.t2.input.psm-artifact.api-layer",
+                "wpu.psm.ph5.st1.t2.input.psm-artifact.compute-layer",
+                "wpu.psm.ph5.st1.t2.input.psm-artifact.event-fabric",
+                "wpu.psm.ph5.st1.t2.input.psm-artifact.network-identity",
+                "wpu.psm.ph5.st1.t2.input.psm-artifact.security-baseline"
+              ],
+              "outputWorkProductUseRefs": ["wpu.psm.ph5.st1.t2.output.psm-artifact.api-layer"],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph5.st1.t2.in.wpu.psm.ph5.st1.t2.input.psm-artifact.api-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph5.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph5.st1.t2.input.psm-artifact.api-layer"
+                },
+                {
+                  "id": "pp.psm.ph5.st1.t2.in.wpu.psm.ph5.st1.t2.input.psm-artifact.compute-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph5.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph5.st1.t2.input.psm-artifact.compute-layer"
+                },
+                {
+                  "id": "pp.psm.ph5.st1.t2.in.wpu.psm.ph5.st1.t2.input.psm-artifact.event-fabric",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph5.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph5.st1.t2.input.psm-artifact.event-fabric"
+                },
+                {
+                  "id": "pp.psm.ph5.st1.t2.in.wpu.psm.ph5.st1.t2.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph5.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph5.st1.t2.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph5.st1.t2.in.wpu.psm.ph5.st1.t2.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph5.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph5.st1.t2.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph5.st1.t2.out.wpu.psm.ph5.st1.t2.output.psm-artifact.api-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph5.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph5.st1.t2.output.psm-artifact.api-layer"
+                }
+              ]
             }
           ]
         },
@@ -4372,12 +6833,75 @@
                   "type": "TaskUse",
                   "taskDefinitionRef": "task.psm.ph5.st2.ss1.t1",
                   "performerRoleUseRefs": ["ru.psm.ph5.st2.ss1.cloud-platform-engineer"],
+                  "processPerformers": [
+                    {
+                      "id": "ppf.psm.ph5.st2.ss1.t1.ru.psm.ph5.st2.ss1.cloud-platform-engineer",
+                      "type": "ProcessPerformer",
+                      "taskUseRef": "psm.ph5.st2.ss1.t1",
+                      "kind": "primary",
+                      "roleUseRef": "ru.psm.ph5.st2.ss1.cloud-platform-engineer"
+                    }
+                  ],
                   "selectedStepIndices": [0, 1, 2],
                   "inputWorkProductUseRefs": [
-                    "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.api-layer"
+                    "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.api-layer",
+                    "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.compute-layer",
+                    "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.event-fabric",
+                    "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.network-identity",
+                    "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.security-baseline"
                   ],
                   "outputWorkProductUseRefs": [
                     "wpu.psm.ph5.st2.ss1.t1.output.psm-artifact.workflow-observability"
+                  ],
+                  "processParameters": [
+                    {
+                      "id": "pp.psm.ph5.st2.ss1.t1.in.wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.api-layer",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss1.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.api-layer"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss1.t1.in.wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.compute-layer",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss1.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.compute-layer"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss1.t1.in.wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.event-fabric",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss1.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.event-fabric"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss1.t1.in.wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.network-identity",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss1.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.network-identity"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss1.t1.in.wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.security-baseline",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss1.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss1.t1.input.psm-artifact.security-baseline"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss1.t1.out.wpu.psm.ph5.st2.ss1.t1.output.psm-artifact.workflow-observability",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss1.t1",
+                      "direction": "out",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss1.t1.output.psm-artifact.workflow-observability"
+                    }
                   ]
                 }
               ]
@@ -4398,12 +6922,75 @@
                   "type": "TaskUse",
                   "taskDefinitionRef": "task.psm.ph5.st2.ss2.t1",
                   "performerRoleUseRefs": ["ru.psm.ph5.st2.ss2.cloud-platform-engineer"],
+                  "processPerformers": [
+                    {
+                      "id": "ppf.psm.ph5.st2.ss2.t1.ru.psm.ph5.st2.ss2.cloud-platform-engineer",
+                      "type": "ProcessPerformer",
+                      "taskUseRef": "psm.ph5.st2.ss2.t1",
+                      "kind": "primary",
+                      "roleUseRef": "ru.psm.ph5.st2.ss2.cloud-platform-engineer"
+                    }
+                  ],
                   "selectedStepIndices": [0, 1],
                   "inputWorkProductUseRefs": [
-                    "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.workflow-observability"
+                    "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.workflow-observability",
+                    "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.compute-layer",
+                    "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.api-layer",
+                    "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.event-fabric",
+                    "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.security-baseline"
                   ],
                   "outputWorkProductUseRefs": [
                     "wpu.psm.ph5.st2.ss2.t1.output.psm-artifact.workflow-observability"
+                  ],
+                  "processParameters": [
+                    {
+                      "id": "pp.psm.ph5.st2.ss2.t1.in.wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.workflow-observability",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss2.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.workflow-observability"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss2.t1.in.wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.compute-layer",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss2.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.compute-layer"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss2.t1.in.wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.api-layer",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss2.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.api-layer"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss2.t1.in.wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.event-fabric",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss2.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.event-fabric"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss2.t1.in.wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.security-baseline",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss2.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss2.t1.input.psm-artifact.security-baseline"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss2.t1.out.wpu.psm.ph5.st2.ss2.t1.output.psm-artifact.workflow-observability",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss2.t1",
+                      "direction": "out",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss2.t1.output.psm-artifact.workflow-observability"
+                    }
                   ]
                 },
                 {
@@ -4411,12 +6998,75 @@
                   "type": "TaskUse",
                   "taskDefinitionRef": "task.psm.ph5.st2.ss2.t2",
                   "performerRoleUseRefs": ["ru.psm.ph5.st2.ss2.cloud-platform-engineer"],
+                  "processPerformers": [
+                    {
+                      "id": "ppf.psm.ph5.st2.ss2.t2.ru.psm.ph5.st2.ss2.cloud-platform-engineer",
+                      "type": "ProcessPerformer",
+                      "taskUseRef": "psm.ph5.st2.ss2.t2",
+                      "kind": "primary",
+                      "roleUseRef": "ru.psm.ph5.st2.ss2.cloud-platform-engineer"
+                    }
+                  ],
                   "selectedStepIndices": [0, 1],
                   "inputWorkProductUseRefs": [
-                    "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.workflow-observability"
+                    "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.workflow-observability",
+                    "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.compute-layer",
+                    "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.api-layer",
+                    "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.event-fabric",
+                    "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.network-identity"
                   ],
                   "outputWorkProductUseRefs": [
                     "wpu.psm.ph5.st2.ss2.t2.output.psm-artifact.workflow-observability"
+                  ],
+                  "processParameters": [
+                    {
+                      "id": "pp.psm.ph5.st2.ss2.t2.in.wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.workflow-observability",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss2.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.workflow-observability"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss2.t2.in.wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.compute-layer",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss2.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.compute-layer"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss2.t2.in.wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.api-layer",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss2.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.api-layer"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss2.t2.in.wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.event-fabric",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss2.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.event-fabric"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss2.t2.in.wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.network-identity",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss2.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss2.t2.input.psm-artifact.network-identity"
+                    },
+                    {
+                      "id": "pp.psm.ph5.st2.ss2.t2.out.wpu.psm.ph5.st2.ss2.t2.output.psm-artifact.workflow-observability",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "psm.ph5.st2.ss2.t2",
+                      "direction": "out",
+                      "optional": false,
+                      "workProductUseRef": "wpu.psm.ph5.st2.ss2.t2.output.psm-artifact.workflow-observability"
+                    }
                   ]
                 }
               ]
@@ -4458,12 +7108,102 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph6.st1.t1",
               "performerRoleUseRefs": ["ru.psm.ph6.st1.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph6.st1.t1.ru.psm.ph6.st1.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph6.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph6.st1.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.psm.ph6.st1.t1.input.psm-artifact.workflow-observability"
+                "wpu.psm.ph6.st1.t1.input.psm-artifact.workflow-observability",
+                "wpu.psm.ph6.st1.t1.input.psm-artifact.deployment-strategy",
+                "wpu.psm.ph6.st1.t1.input.psm-artifact.network-identity",
+                "wpu.psm.ph6.st1.t1.input.psm-artifact.storage-layer",
+                "wpu.psm.ph6.st1.t1.input.psm-artifact.messaging-layer",
+                "wpu.psm.ph6.st1.t1.input.psm-artifact.event-fabric",
+                "wpu.psm.ph6.st1.t1.input.psm-artifact.compute-layer",
+                "wpu.psm.ph6.st1.t1.input.psm-artifact.api-layer"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.psm.ph6.st1.t1.output.psm-artifact.integration-views"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph6.st1.t1.in.wpu.psm.ph6.st1.t1.input.psm-artifact.workflow-observability",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st1.t1.input.psm-artifact.workflow-observability"
+                },
+                {
+                  "id": "pp.psm.ph6.st1.t1.in.wpu.psm.ph6.st1.t1.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st1.t1.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph6.st1.t1.in.wpu.psm.ph6.st1.t1.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st1.t1.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph6.st1.t1.in.wpu.psm.ph6.st1.t1.input.psm-artifact.storage-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st1.t1.input.psm-artifact.storage-layer"
+                },
+                {
+                  "id": "pp.psm.ph6.st1.t1.in.wpu.psm.ph6.st1.t1.input.psm-artifact.messaging-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st1.t1.input.psm-artifact.messaging-layer"
+                },
+                {
+                  "id": "pp.psm.ph6.st1.t1.in.wpu.psm.ph6.st1.t1.input.psm-artifact.event-fabric",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st1.t1.input.psm-artifact.event-fabric"
+                },
+                {
+                  "id": "pp.psm.ph6.st1.t1.in.wpu.psm.ph6.st1.t1.input.psm-artifact.compute-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st1.t1.input.psm-artifact.compute-layer"
+                },
+                {
+                  "id": "pp.psm.ph6.st1.t1.in.wpu.psm.ph6.st1.t1.input.psm-artifact.api-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st1.t1.input.psm-artifact.api-layer"
+                },
+                {
+                  "id": "pp.psm.ph6.st1.t1.out.wpu.psm.ph6.st1.t1.output.psm-artifact.integration-views",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st1.t1.output.psm-artifact.integration-views"
+                }
               ]
             }
           ]
@@ -4494,12 +7234,138 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph6.st2.t1",
               "performerRoleUseRefs": ["ru.psm.ph6.st2.process-reviewer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph6.st2.t1.ru.psm.ph6.st2.process-reviewer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph6.st2.process-reviewer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": [
-                "wpu.psm.ph6.st2.t1.input.psm-artifact.integration-views"
+                "wpu.psm.ph6.st2.t1.input.psm-artifact.integration-views",
+                "wpu.psm.ph6.st2.t1.input.psm-artifact.increment-plan",
+                "wpu.psm.ph6.st2.t1.input.psm-artifact.deployment-strategy",
+                "wpu.psm.ph6.st2.t1.input.psm-artifact.stack-scaffold",
+                "wpu.psm.ph6.st2.t1.input.psm-artifact.security-baseline",
+                "wpu.psm.ph6.st2.t1.input.psm-artifact.network-identity",
+                "wpu.psm.ph6.st2.t1.input.psm-artifact.storage-layer",
+                "wpu.psm.ph6.st2.t1.input.psm-artifact.messaging-layer",
+                "wpu.psm.ph6.st2.t1.input.psm-artifact.event-fabric",
+                "wpu.psm.ph6.st2.t1.input.psm-artifact.compute-layer",
+                "wpu.psm.ph6.st2.t1.input.psm-artifact.api-layer",
+                "wpu.psm.ph6.st2.t1.input.psm-artifact.workflow-observability"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.psm.ph6.st2.t1.output.psm-artifact.deployment-readiness"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph6.st2.t1.in.wpu.psm.ph6.st2.t1.input.psm-artifact.integration-views",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.input.psm-artifact.integration-views"
+                },
+                {
+                  "id": "pp.psm.ph6.st2.t1.in.wpu.psm.ph6.st2.t1.input.psm-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.input.psm-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.psm.ph6.st2.t1.in.wpu.psm.ph6.st2.t1.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph6.st2.t1.in.wpu.psm.ph6.st2.t1.input.psm-artifact.stack-scaffold",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.input.psm-artifact.stack-scaffold"
+                },
+                {
+                  "id": "pp.psm.ph6.st2.t1.in.wpu.psm.ph6.st2.t1.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph6.st2.t1.in.wpu.psm.ph6.st2.t1.input.psm-artifact.network-identity",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.input.psm-artifact.network-identity"
+                },
+                {
+                  "id": "pp.psm.ph6.st2.t1.in.wpu.psm.ph6.st2.t1.input.psm-artifact.storage-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.input.psm-artifact.storage-layer"
+                },
+                {
+                  "id": "pp.psm.ph6.st2.t1.in.wpu.psm.ph6.st2.t1.input.psm-artifact.messaging-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.input.psm-artifact.messaging-layer"
+                },
+                {
+                  "id": "pp.psm.ph6.st2.t1.in.wpu.psm.ph6.st2.t1.input.psm-artifact.event-fabric",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.input.psm-artifact.event-fabric"
+                },
+                {
+                  "id": "pp.psm.ph6.st2.t1.in.wpu.psm.ph6.st2.t1.input.psm-artifact.compute-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.input.psm-artifact.compute-layer"
+                },
+                {
+                  "id": "pp.psm.ph6.st2.t1.in.wpu.psm.ph6.st2.t1.input.psm-artifact.api-layer",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.input.psm-artifact.api-layer"
+                },
+                {
+                  "id": "pp.psm.ph6.st2.t1.in.wpu.psm.ph6.st2.t1.input.psm-artifact.workflow-observability",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.input.psm-artifact.workflow-observability"
+                },
+                {
+                  "id": "pp.psm.ph6.st2.t1.out.wpu.psm.ph6.st2.t1.output.psm-artifact.deployment-readiness",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st2.t1.output.psm-artifact.deployment-readiness"
+                }
               ]
             }
           ]
@@ -4520,12 +7386,84 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.psm.ph6.st3.t1",
               "performerRoleUseRefs": ["ru.psm.ph6.st3.process-reviewer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.psm.ph6.st3.t1.ru.psm.ph6.st3.process-reviewer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "psm.ph6.st3.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.psm.ph6.st3.process-reviewer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.psm.ph6.st3.t1.input.psm-artifact.deployment-readiness"
+                "wpu.psm.ph6.st3.t1.input.psm-artifact.deployment-readiness",
+                "wpu.psm.ph6.st3.t1.input.psm-artifact.increment-plan",
+                "wpu.psm.ph6.st3.t1.input.psm-artifact.deployment-strategy",
+                "wpu.psm.ph6.st3.t1.input.psm-artifact.integration-views",
+                "wpu.psm.ph6.st3.t1.input.psm-artifact.security-baseline",
+                "wpu.psm.ph6.st3.t1.input.psm-artifact.workflow-observability"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.psm.ph6.st3.t1.output.psm-artifact.increment-review"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.psm.ph6.st3.t1.in.wpu.psm.ph6.st3.t1.input.psm-artifact.deployment-readiness",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st3.t1.input.psm-artifact.deployment-readiness"
+                },
+                {
+                  "id": "pp.psm.ph6.st3.t1.in.wpu.psm.ph6.st3.t1.input.psm-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st3.t1.input.psm-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.psm.ph6.st3.t1.in.wpu.psm.ph6.st3.t1.input.psm-artifact.deployment-strategy",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st3.t1.input.psm-artifact.deployment-strategy"
+                },
+                {
+                  "id": "pp.psm.ph6.st3.t1.in.wpu.psm.ph6.st3.t1.input.psm-artifact.integration-views",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st3.t1.input.psm-artifact.integration-views"
+                },
+                {
+                  "id": "pp.psm.ph6.st3.t1.in.wpu.psm.ph6.st3.t1.input.psm-artifact.security-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st3.t1.input.psm-artifact.security-baseline"
+                },
+                {
+                  "id": "pp.psm.ph6.st3.t1.in.wpu.psm.ph6.st3.t1.input.psm-artifact.workflow-observability",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st3.t1.input.psm-artifact.workflow-observability"
+                },
+                {
+                  "id": "pp.psm.ph6.st3.t1.out.wpu.psm.ph6.st3.t1.output.psm-artifact.increment-review",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "psm.ph6.st3.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.psm.ph6.st3.t1.output.psm-artifact.increment-review"
+                }
               ]
             }
           ]

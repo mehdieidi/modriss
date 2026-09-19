@@ -12,7 +12,7 @@ AWS PSM, generated-artifact deployment readiness, and the end-to-end pipeline. E
 is a MODRISS JSON representation mapped to SPEM 2.0: reusable method content contains
 RoleDefinitions, TaskDefinitions, WorkProductDefinitions, and Guidance; process Activities
 contain RoleUses, WorkProductUses, TaskUses, explicit WorkSequences, and TaskUse input/output
-bindings. MODRISS-specific
+bindings plus explicit SPEM-mapped ProcessParameters and ProcessPerformers. MODRISS-specific
 process-engine, progress, governance, and change-management extensions are labeled as such.
 
 ## Layout

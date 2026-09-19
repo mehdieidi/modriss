@@ -129,7 +129,7 @@ Create or refresh the PIMModel root with architecture style and implementation p
 
 **Viewpoint:** dashboard
 **Duration:** 30m
-**Inputs:** Architecture Posture
+**Inputs:** Architecture Posture, PIM Increment Plan
 **Work products:** Architecture Posture
 **Palette focus:** `ImplementationProfile`
 
@@ -150,7 +150,7 @@ Create or refresh the PIMModel root with architecture style and implementation p
 
 **Viewpoint:** dashboard
 **Duration:** 30m
-**Inputs:** Architecture Posture
+**Inputs:** Architecture Posture, PIM Increment Plan
 **Work products:** Architecture Posture
 **Palette focus:**
 
@@ -193,7 +193,7 @@ Define serverless services and element memberships aligned to bounded contexts.
 
 **Viewpoint:** services
 **Duration:** 1h
-**Inputs:** Architecture Posture
+**Inputs:** Architecture Posture, PIM Increment Plan
 **Work products:** Service Boundary Map
 **Palette focus:** `ServerlessService`
 
@@ -214,7 +214,7 @@ Define serverless services and element memberships aligned to bounded contexts.
 
 **Viewpoint:** services
 **Duration:** 45m
-**Inputs:** Service Boundary Map
+**Inputs:** Service Boundary Map, Architecture Posture
 **Work products:** Service Boundary Map
 **Palette focus:** `ServiceElementMembership`
 
@@ -260,7 +260,7 @@ Model schemas, validation constraints, and event envelopes aligned to CIM behavi
 
 **Viewpoint:** contracts
 **Duration:** 1-2h
-**Inputs:** Service Boundary Map
+**Inputs:** Service Boundary Map, Architecture Posture, PIM Increment Plan
 **Work products:** Contract Catalog
 **Palette focus:** `Schema`, `SchemaField`, `SchemaEnumLiteral`
 
@@ -281,7 +281,7 @@ Model schemas, validation constraints, and event envelopes aligned to CIM behavi
 
 **Viewpoint:** contracts
 **Duration:** 1h
-**Inputs:** Contract Catalog
+**Inputs:** Contract Catalog, Service Boundary Map
 **Work products:** Contract Catalog
 **Palette focus:** `EventType`, `EventEnvelope`, `SchemaValidationConstraint`, `SchemaConstraint`
 
@@ -310,7 +310,7 @@ Model data stores, access patterns, and change streams for domain persistence.
 
 **Viewpoint:** data
 **Duration:** 1-2h
-**Inputs:** Contract Catalog
+**Inputs:** Contract Catalog, Service Boundary Map, Architecture Posture
 **Work products:** Data Architecture
 **Palette focus:** `DataStore`, `ObjectStore`, `DataModel`, `DataField`
 
@@ -331,7 +331,7 @@ Model data stores, access patterns, and change streams for domain persistence.
 
 **Viewpoint:** data
 **Duration:** 1h
-**Inputs:** Data Architecture
+**Inputs:** Data Architecture, Contract Catalog, Service Boundary Map
 **Work products:** Data Architecture
 **Palette focus:** `AccessPattern`, `IndexCandidate`, `DataAccess`
 
@@ -352,7 +352,7 @@ Model data stores, access patterns, and change streams for domain persistence.
 
 **Viewpoint:** data
 **Duration:** 45m
-**Inputs:** Data Architecture
+**Inputs:** Data Architecture, Contract Catalog, Service Boundary Map
 **Work products:** Data Architecture
 **Palette focus:** `DataChangeStream`, `ObjectNotificationRule`
 
@@ -398,7 +398,7 @@ Define functions with contracts and triggers mapped to CIM commands and events.
 
 **Viewpoint:** compute
 **Duration:** 1-2h
-**Inputs:** Data Architecture
+**Inputs:** Data Architecture, Service Boundary Map, Contract Catalog
 **Work products:** Compute Catalog
 **Palette focus:** `Function`, `FunctionContract`
 
@@ -419,7 +419,7 @@ Define functions with contracts and triggers mapped to CIM commands and events.
 
 **Viewpoint:** compute
 **Duration:** 1h
-**Inputs:** Compute Catalog
+**Inputs:** Compute Catalog, Contract Catalog
 **Work products:** Compute Catalog
 **Palette focus:** `Trigger`
 
@@ -448,7 +448,7 @@ Expose functions through APIs with routes, contracts, and error mappings.
 
 **Viewpoint:** api
 **Duration:** 1h
-**Inputs:** Compute Catalog
+**Inputs:** Compute Catalog, Contract Catalog, Service Boundary Map
 **Work products:** API Catalog
 **Palette focus:** `Api`, `ApiRoute`
 
@@ -469,7 +469,7 @@ Expose functions through APIs with routes, contracts, and error mappings.
 
 **Viewpoint:** api
 **Duration:** 45m
-**Inputs:** API Catalog
+**Inputs:** API Catalog, Contract Catalog, Compute Catalog
 **Work products:** API Catalog
 **Palette focus:** `ApiContract`, `ErrorMapping`
 
@@ -515,7 +515,7 @@ Model event channels, flows, and routing rules connecting services.
 
 **Viewpoint:** integration
 **Duration:** 1h
-**Inputs:** API Catalog
+**Inputs:** API Catalog, Contract Catalog, Compute Catalog, Service Boundary Map
 **Work products:** Integration Topology
 **Palette focus:** `EventChannel`, `Queue`, `Topic`, `EventBus`
 
@@ -536,7 +536,7 @@ Model event channels, flows, and routing rules connecting services.
 
 **Viewpoint:** integration
 **Duration:** 1-2h
-**Inputs:** Integration Topology
+**Inputs:** Integration Topology, API Catalog, Contract Catalog, Compute Catalog
 **Work products:** Integration Topology
 **Palette focus:**
 
@@ -577,7 +577,7 @@ Model workflows from CIM business processes with human tasks and compensation.
 
 **Viewpoint:** workflow
 **Duration:** 1-2h
-**Inputs:** Integration Topology
+**Inputs:** Integration Topology, Service Boundary Map, API Catalog, Contract Catalog
 **Work products:** Workflow Model
 **Palette focus:**
 
@@ -611,7 +611,7 @@ Model workflows from CIM business processes with human tasks and compensation.
 
 **Viewpoint:** workflow
 **Duration:** 1h
-**Inputs:** Workflow Model
+**Inputs:** Workflow Model, Integration Topology, Service Boundary Map, API Catalog, Contract Catalog
 **Work products:** Workflow Model
 **Palette focus:**
 
@@ -688,9 +688,16 @@ Configure identity providers, principals, and authorization for APIs and functio
 
 **Viewpoint:** security
 **Duration:** 1h
-**Inputs:** Security Model
-**Work products:** Security Model
-**Palette focus:** `Permission`, `SecurityPolicy`, `AuthPolicy`, `AuthorizationPolicy`
+**Inputs:**
+
+- Security Model
+- Architecture Posture
+- Service Boundary Map
+- API Catalog
+- Compute Catalog
+- Contract Catalog
+  **Work products:** Security Model
+  **Palette focus:** `Permission`, `SecurityPolicy`, `AuthPolicy`, `AuthorizationPolicy`
 
 **Steps:**
 
@@ -721,7 +728,7 @@ Configure retry, timeout, concurrency, and throughput policies.
 
 **Viewpoint:** policies
 **Duration:** 1h
-**Inputs:** Security Model
+**Inputs:** Security Model, Compute Catalog, Integration Topology, Service Boundary Map
 **Work products:** Architecture Policy Catalog
 **Palette focus:** `ResiliencePolicy`, `RetryPolicy`, `DeadLetterPolicy`, `TimeoutPolicy`, `IdempotencyPolicy`
 
@@ -743,7 +750,7 @@ Configure retry, timeout, concurrency, and throughput policies.
 
 **Viewpoint:** policies
 **Duration:** 45m
-**Inputs:** Architecture Policy Catalog
+**Inputs:** Architecture Policy Catalog, Data Architecture, API Catalog, Compute Catalog, Integration Topology
 **Work products:** Architecture Policy Catalog
 **Palette focus:**
 
@@ -782,9 +789,16 @@ Configure logging, metrics, tracing, alerts, and service level objectives.
 
 **Viewpoint:** policies
 **Duration:** 45m
-**Inputs:** Architecture Policy Catalog
-**Work products:** Architecture Policy Catalog
-**Palette focus:** `ObservabilityConfig`, `LoggingPolicy`, `MetricPolicy`, `MetricDimension`, `TracingPolicy`
+**Inputs:**
+
+- Architecture Policy Catalog
+- Compute Catalog
+- API Catalog
+- Integration Topology
+- Workflow Model
+- Service Boundary Map
+  **Work products:** Architecture Policy Catalog
+  **Palette focus:** `ObservabilityConfig`, `LoggingPolicy`, `MetricPolicy`, `MetricDimension`, `TracingPolicy`
 
 **Steps:**
 
@@ -803,7 +817,7 @@ Configure logging, metrics, tracing, alerts, and service level objectives.
 
 **Viewpoint:** policies
 **Duration:** 30m
-**Inputs:** Architecture Policy Catalog
+**Inputs:** Architecture Policy Catalog, API Catalog, Workflow Model, Service Boundary Map
 **Work products:** Architecture Policy Catalog
 **Palette focus:** `AlertPolicy`, `Slo`, `CorsPolicy`
 
@@ -832,7 +846,7 @@ Apply data protection, compliance, and business rule policies.
 
 **Viewpoint:** policies
 **Duration:** 45m
-**Inputs:** Architecture Policy Catalog
+**Inputs:** Architecture Policy Catalog, Security Model, Data Architecture
 **Work products:** Architecture Policy Catalog
 **Palette focus:**
 
@@ -859,7 +873,7 @@ Apply data protection, compliance, and business rule policies.
 
 **Viewpoint:** policies
 **Duration:** 45m
-**Inputs:** Architecture Policy Catalog
+**Inputs:** Architecture Policy Catalog, Workflow Model, API Catalog, Service Boundary Map
 **Work products:** Architecture Policy Catalog
 **Palette focus:** `BusinessRule`, `DecisionModel`, `DecisionRule`
 
@@ -888,9 +902,16 @@ Model external integrations, environments, secrets, and deployment units.
 
 **Viewpoint:** config
 **Duration:** 45m
-**Inputs:** Architecture Policy Catalog
-**Work products:** Configuration Package
-**Palette focus:** `ExternalEndpoint`, `ExternalAdapter`
+**Inputs:**
+
+- Architecture Policy Catalog
+- API Catalog
+- Integration Topology
+- Contract Catalog
+- Service Boundary Map
+- Architecture Posture
+  **Work products:** Configuration Package
+  **Palette focus:** `ExternalEndpoint`, `ExternalAdapter`
 
 **Steps:**
 
@@ -909,9 +930,16 @@ Model external integrations, environments, secrets, and deployment units.
 
 **Viewpoint:** config
 **Duration:** 1h
-**Inputs:** Configuration Package
-**Work products:** Configuration Package
-**Palette focus:**
+**Inputs:**
+
+- Configuration Package
+- Architecture Posture
+- Security Model
+- Compute Catalog
+- API Catalog
+- Integration Topology
+  **Work products:** Configuration Package
+  **Palette focus:**
 
 - `Environment`
 - `DeploymentUnit`
@@ -965,9 +993,19 @@ Evaluate platform capability coverage and mapping readiness.
 
 **Viewpoint:** readiness
 **Duration:** 1h
-**Inputs:** Configuration Package
-**Work products:** Platform Readiness Record
-**Palette focus:** `PlatformCapability`, `PlatformMappingAssessment`
+**Inputs:**
+
+- Configuration Package
+- Architecture Posture
+- Service Boundary Map
+- Data Architecture
+- Compute Catalog
+- API Catalog
+- Integration Topology
+- Security Model
+- Architecture Policy Catalog
+  **Work products:** Platform Readiness Record
+  **Palette focus:** `PlatformCapability`, `PlatformMappingAssessment`
 
 **Steps:**
 
@@ -994,9 +1032,23 @@ Close trace links and production readiness before PIM→PSM transform.
 
 **Viewpoint:** readiness
 **Duration:** 1-2h
-**Inputs:** Platform Readiness Record
-**Work products:** Platform Readiness Record
-**Palette focus:**
+**Inputs:**
+
+- Platform Readiness Record
+- PIM Increment Plan
+- Architecture Posture
+- Service Boundary Map
+- Contract Catalog
+- Data Architecture
+- Compute Catalog
+- API Catalog
+- Integration Topology
+- Workflow Model
+- Security Model
+- Architecture Policy Catalog
+- Configuration Package
+  **Work products:** Platform Readiness Record
+  **Palette focus:**
 
 - `TraceModel`
 - `TraceLink`
@@ -1035,8 +1087,15 @@ Review the service slice architecture, accept the increment, and adapt the next 
 
 **Viewpoint:** readiness
 **Duration:** 45m
-**Inputs:** Platform Readiness Record
-**Work products:** PIM Increment Review Record
+**Inputs:**
+
+- Platform Readiness Record
+- PIM Increment Plan
+- Architecture Posture
+- Security Model
+- Architecture Policy Catalog
+- Configuration Package
+  **Work products:** PIM Increment Review Record
 
 **Steps:**
 

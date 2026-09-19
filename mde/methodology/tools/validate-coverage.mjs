@@ -111,6 +111,16 @@ function validateProcess(process, fileName, metamodelClassifiers = null) {
   }
   registerUnique([...activities.values()], "process.activities", canonicalProcessIds);
   registerUnique(taskUses, "process.taskUses", canonicalProcessIds);
+  registerUnique(
+    taskUses.flatMap((taskUse) => taskUse.processParameters || []),
+    "process.processParameters",
+    canonicalProcessIds,
+  );
+  registerUnique(
+    taskUses.flatMap((taskUse) => taskUse.processPerformers || []),
+    "process.processPerformers",
+    canonicalProcessIds,
+  );
 
   for (const taskDefinition of methodContent.taskDefinitions || []) {
     if (taskDefinition.inputSource !== "declared") {
@@ -122,6 +132,9 @@ function validateProcess(process, fileName, metamodelClassifiers = null) {
     const parameters = taskDefinition.workProductParameters || [];
     const parameterKeys = new Set();
     for (const parameter of parameters) {
+      if (parameter.type !== "Default_TaskDefinitionParameter") {
+        errors.push(`task definition ${taskDefinition.id} parameter is not a Default_TaskDefinitionParameter`);
+      }
       if (!workProductIds.has(parameter.workProductDefinitionRef)) {
         errors.push(
           `task definition ${taskDefinition.id} parameter references unknown work product ${parameter.workProductDefinitionRef}`,
@@ -208,6 +221,12 @@ function validateProcess(process, fileName, metamodelClassifiers = null) {
       if (!taskDefinition) {
         errors.push(`task use ${taskUse.id} references unknown task definition ${taskUse.taskDefinitionRef}`);
       } else {
+        if (!Array.isArray(taskUse.processParameters)) {
+          errors.push(`task use ${taskUse.id} is missing explicit processParameters`);
+        }
+        if (!Array.isArray(taskUse.processPerformers)) {
+          errors.push(`task use ${taskUse.id} is missing explicit processPerformers`);
+        }
         for (const stepIndex of taskUse.selectedStepIndices || []) {
           if (!Number.isInteger(stepIndex) || stepIndex < 0 || stepIndex >= (taskDefinition.steps || []).length) {
             errors.push(
@@ -227,6 +246,61 @@ function validateProcess(process, fileName, metamodelClassifiers = null) {
             workProductUses.get(workProductUseId)?.workProductDefinitionRef === workProductId,
           )) {
             errors.push(`task use ${taskUse.id} does not bind output work product ${workProductId}`);
+          }
+        }
+        const expectedProcessParameterRefs = new Set();
+        for (const parameter of taskUse.processParameters || []) {
+          if (parameter.type !== "ProcessParameter") {
+            errors.push(`process parameter ${parameter.id} is not a ProcessParameter`);
+          }
+          if (parameter.taskUseRef !== taskUse.id) {
+            errors.push(`process parameter ${parameter.id} references ${parameter.taskUseRef}, expected ${taskUse.id}`);
+          }
+          if (!["in", "out", "inout"].includes(parameter.direction)) {
+            errors.push(`process parameter ${parameter.id} has invalid direction ${parameter.direction}`);
+          }
+          const workProductUse = workProductUses.get(parameter.workProductUseRef);
+          if (!workProductUse) {
+            errors.push(`process parameter ${parameter.id} references unknown work product use ${parameter.workProductUseRef}`);
+          } else {
+            const expectedUsage = parameter.direction === "in" ? "input" : "output";
+            if (parameter.direction !== "inout" && workProductUse.usage !== expectedUsage) {
+              errors.push(
+                `process parameter ${parameter.id} has direction ${parameter.direction} but work product use ${parameter.workProductUseRef} has usage ${workProductUse.usage}`,
+              );
+            }
+            if (workProductUse.taskUseRef !== taskUse.id) {
+              errors.push(`process parameter ${parameter.id} crosses task-use scope`);
+            }
+          }
+          expectedProcessParameterRefs.add(parameter.workProductUseRef);
+        }
+        for (const workProductUseRef of [
+          ...(taskUse.inputWorkProductUseRefs || []),
+          ...(taskUse.outputWorkProductUseRefs || []),
+        ]) {
+          if (!expectedProcessParameterRefs.has(workProductUseRef)) {
+            errors.push(`task use ${taskUse.id} does not expose ${workProductUseRef} through a ProcessParameter`);
+          }
+        }
+        const performerRoleUseRefs = new Set(taskUse.performerRoleUseRefs || []);
+        for (const performer of taskUse.processPerformers || []) {
+          if (performer.type !== "ProcessPerformer") {
+            errors.push(`process performer ${performer.id} is not a ProcessPerformer`);
+          }
+          if (performer.taskUseRef !== taskUse.id) {
+            errors.push(`process performer ${performer.id} references ${performer.taskUseRef}, expected ${taskUse.id}`);
+          }
+          if (performer.kind !== "primary") {
+            errors.push(`process performer ${performer.id} has invalid kind ${performer.kind}`);
+          }
+          if (!performerRoleUseRefs.has(performer.roleUseRef)) {
+            errors.push(`process performer ${performer.id} is not represented in performerRoleUseRefs`);
+          }
+        }
+        for (const roleUseRef of performerRoleUseRefs) {
+          if (!(taskUse.processPerformers || []).some((performer) => performer.roleUseRef === roleUseRef)) {
+            errors.push(`task use ${taskUse.id} does not expose performer ${roleUseRef} through a ProcessPerformer`);
           }
         }
       }

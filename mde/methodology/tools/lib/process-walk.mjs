@@ -59,8 +59,10 @@ export function resolveTaskUse(process, taskUse) {
     id: taskUse.id,
     taskDefinitionRef: taskUse.taskDefinitionRef,
     performerRoleUseRefs: taskUse.performerRoleUseRefs || [],
+    processPerformers: taskUse.processPerformers || [],
     inputWorkProductUseRefs: inputRefs,
     outputWorkProductUseRefs: outputRefs,
+    processParameters: taskUse.processParameters || [],
     inputArtifacts: inputUses
       .map((item) => workProducts.get(item.workProductDefinitionRef))
       .filter(Boolean)

@@ -88,6 +88,7 @@
         "outputWorkProductRefs": ["pim-artifact.increment-plan"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.increment-plan",
             "direction": "out",
             "optional": false
@@ -120,11 +121,13 @@
         "outputWorkProductRefs": ["pim-artifact.architecture-posture"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.increment-plan",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.architecture-posture",
             "direction": "out",
             "optional": false
@@ -155,16 +158,27 @@
         "purpose": "Set architecture posture",
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.architecture-posture"],
+        "inputWorkProductRefs": [
+          "pim-artifact.architecture-posture",
+          "pim-artifact.increment-plan"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.architecture-posture"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.architecture-posture",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.architecture-posture",
             "direction": "out",
             "optional": false
@@ -200,16 +214,27 @@
         "purpose": "Establish shared model contract and evidence conventions",
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.method-engineer"],
-        "inputWorkProductRefs": ["pim-artifact.architecture-posture"],
+        "inputWorkProductRefs": [
+          "pim-artifact.architecture-posture",
+          "pim-artifact.increment-plan"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.architecture-posture"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.architecture-posture",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.architecture-posture",
             "direction": "out",
             "optional": false
@@ -446,16 +471,27 @@
         "purpose": "Define serverless services",
         "viewpoint": "services",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.architecture-posture"],
+        "inputWorkProductRefs": [
+          "pim-artifact.architecture-posture",
+          "pim-artifact.increment-plan"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.service-map"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.architecture-posture",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.service-map",
             "direction": "out",
             "optional": false
@@ -491,16 +527,24 @@
         "purpose": "Assign element memberships",
         "viewpoint": "services",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.service-map"],
+        "inputWorkProductRefs": ["pim-artifact.service-map", "pim-artifact.architecture-posture"],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.service-map"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.service-map",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.service-map",
             "direction": "out",
             "optional": false
@@ -536,16 +580,34 @@
         "purpose": "Define schemas and fields",
         "viewpoint": "contracts",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.service-map"],
+        "inputWorkProductRefs": [
+          "pim-artifact.service-map",
+          "pim-artifact.architecture-posture",
+          "pim-artifact.increment-plan"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.contract-catalog"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.service-map",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.contract-catalog",
             "direction": "out",
             "optional": false
@@ -596,16 +658,24 @@
         "purpose": "Model event types and envelopes",
         "viewpoint": "contracts",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.contract-catalog"],
+        "inputWorkProductRefs": ["pim-artifact.contract-catalog", "pim-artifact.service-map"],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.contract-catalog"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.contract-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.contract-catalog",
             "direction": "out",
             "optional": false
@@ -661,16 +731,34 @@
         "purpose": "Model data stores and models",
         "viewpoint": "data",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.contract-catalog"],
+        "inputWorkProductRefs": [
+          "pim-artifact.contract-catalog",
+          "pim-artifact.service-map",
+          "pim-artifact.architecture-posture"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.data-architecture"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.contract-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.data-architecture",
             "direction": "out",
             "optional": false
@@ -726,16 +814,34 @@
         "purpose": "Define access patterns and indexes",
         "viewpoint": "data",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.data-architecture"],
+        "inputWorkProductRefs": [
+          "pim-artifact.data-architecture",
+          "pim-artifact.contract-catalog",
+          "pim-artifact.service-map"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.data-architecture"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.data-architecture",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.data-architecture",
             "direction": "out",
             "optional": false
@@ -786,16 +892,34 @@
         "purpose": "Configure change streams and notifications",
         "viewpoint": "data",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.data-architecture"],
+        "inputWorkProductRefs": [
+          "pim-artifact.data-architecture",
+          "pim-artifact.contract-catalog",
+          "pim-artifact.service-map"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.data-architecture"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.data-architecture",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.data-architecture",
             "direction": "out",
             "optional": false
@@ -831,16 +955,34 @@
         "purpose": "Define functions and contracts",
         "viewpoint": "compute",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.data-architecture"],
+        "inputWorkProductRefs": [
+          "pim-artifact.data-architecture",
+          "pim-artifact.service-map",
+          "pim-artifact.contract-catalog"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.compute-catalog"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.data-architecture",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.compute-catalog",
             "direction": "out",
             "optional": false
@@ -891,16 +1033,24 @@
         "purpose": "Configure triggers and runtime",
         "viewpoint": "compute",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.compute-catalog"],
+        "inputWorkProductRefs": ["pim-artifact.compute-catalog", "pim-artifact.contract-catalog"],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.compute-catalog"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.compute-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.compute-catalog",
             "direction": "out",
             "optional": false
@@ -941,16 +1091,34 @@
         "purpose": "Define APIs and routes",
         "viewpoint": "api",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.compute-catalog"],
+        "inputWorkProductRefs": [
+          "pim-artifact.compute-catalog",
+          "pim-artifact.contract-catalog",
+          "pim-artifact.service-map"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.api-catalog"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.compute-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.api-catalog",
             "direction": "out",
             "optional": false
@@ -1001,16 +1169,34 @@
         "purpose": "Map API contracts and errors",
         "viewpoint": "api",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.api-catalog"],
+        "inputWorkProductRefs": [
+          "pim-artifact.api-catalog",
+          "pim-artifact.contract-catalog",
+          "pim-artifact.compute-catalog"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.api-catalog"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.api-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.api-catalog",
             "direction": "out",
             "optional": false
@@ -1046,16 +1232,41 @@
         "purpose": "Model event channels and buses",
         "viewpoint": "integration",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.api-catalog"],
+        "inputWorkProductRefs": [
+          "pim-artifact.api-catalog",
+          "pim-artifact.contract-catalog",
+          "pim-artifact.compute-catalog",
+          "pim-artifact.service-map"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.integration-topology"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.api-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.integration-topology",
             "direction": "out",
             "optional": false
@@ -1116,16 +1327,41 @@
         "purpose": "Define flows and routing rules",
         "viewpoint": "integration",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.integration-topology"],
+        "inputWorkProductRefs": [
+          "pim-artifact.integration-topology",
+          "pim-artifact.api-catalog",
+          "pim-artifact.contract-catalog",
+          "pim-artifact.compute-catalog"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.integration-topology"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.integration-topology",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.integration-topology",
             "direction": "out",
             "optional": false
@@ -1213,16 +1449,41 @@
         "purpose": "Model workflows and states",
         "viewpoint": "workflow",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.integration-topology"],
+        "inputWorkProductRefs": [
+          "pim-artifact.integration-topology",
+          "pim-artifact.service-map",
+          "pim-artifact.api-catalog",
+          "pim-artifact.contract-catalog"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.workflow-model"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.integration-topology",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.workflow-model",
             "direction": "out",
             "optional": false
@@ -1326,16 +1587,48 @@
         "purpose": "Configure human tasks and error handling",
         "viewpoint": "workflow",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.workflow-model"],
+        "inputWorkProductRefs": [
+          "pim-artifact.workflow-model",
+          "pim-artifact.integration-topology",
+          "pim-artifact.service-map",
+          "pim-artifact.api-catalog",
+          "pim-artifact.contract-catalog"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.workflow-model"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.workflow-model",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.integration-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.workflow-model",
             "direction": "out",
             "optional": false
@@ -1419,21 +1712,25 @@
         "outputWorkProductRefs": ["pim-artifact.security-model"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.architecture-posture",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.service-map",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.contract-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.security-model",
             "direction": "out",
             "optional": false
@@ -1479,16 +1776,55 @@
         "purpose": "Define permissions and security policies",
         "viewpoint": "security",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.security-model"],
+        "inputWorkProductRefs": [
+          "pim-artifact.security-model",
+          "pim-artifact.architecture-posture",
+          "pim-artifact.service-map",
+          "pim-artifact.api-catalog",
+          "pim-artifact.compute-catalog",
+          "pim-artifact.contract-catalog"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.security-model"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.security-model",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.security-model",
             "direction": "out",
             "optional": false
@@ -1549,16 +1885,41 @@
         "purpose": "Apply resilience policies",
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.security-model"],
+        "inputWorkProductRefs": [
+          "pim-artifact.security-model",
+          "pim-artifact.compute-catalog",
+          "pim-artifact.integration-topology",
+          "pim-artifact.service-map"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.security-model",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.integration-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.policy-catalog",
             "direction": "out",
             "optional": false
@@ -1616,16 +1977,48 @@
         "purpose": "Configure throughput and ordering policies",
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "inputWorkProductRefs": [
+          "pim-artifact.policy-catalog",
+          "pim-artifact.data-architecture",
+          "pim-artifact.api-catalog",
+          "pim-artifact.compute-catalog",
+          "pim-artifact.integration-topology"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.policy-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.data-architecture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.integration-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.policy-catalog",
             "direction": "out",
             "optional": false
@@ -1701,16 +2094,55 @@
         "purpose": "Configure observability policies",
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "inputWorkProductRefs": [
+          "pim-artifact.policy-catalog",
+          "pim-artifact.compute-catalog",
+          "pim-artifact.api-catalog",
+          "pim-artifact.integration-topology",
+          "pim-artifact.workflow-model",
+          "pim-artifact.service-map"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.policy-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.integration-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.workflow-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.policy-catalog",
             "direction": "out",
             "optional": false
@@ -1767,16 +2199,41 @@
         "purpose": "Define alerts, SLOs, and CORS",
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "inputWorkProductRefs": [
+          "pim-artifact.policy-catalog",
+          "pim-artifact.api-catalog",
+          "pim-artifact.workflow-model",
+          "pim-artifact.service-map"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.policy-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.workflow-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.policy-catalog",
             "direction": "out",
             "optional": false
@@ -1817,16 +2274,34 @@
         "purpose": "Apply governance and compliance policies",
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "inputWorkProductRefs": [
+          "pim-artifact.policy-catalog",
+          "pim-artifact.security-model",
+          "pim-artifact.data-architecture"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.policy-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.security-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.data-architecture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.policy-catalog",
             "direction": "out",
             "optional": false
@@ -1883,16 +2358,41 @@
         "purpose": "Map business rules and decision models",
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "inputWorkProductRefs": [
+          "pim-artifact.policy-catalog",
+          "pim-artifact.workflow-model",
+          "pim-artifact.api-catalog",
+          "pim-artifact.service-map"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.policy-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.workflow-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.policy-catalog",
             "direction": "out",
             "optional": false
@@ -1933,16 +2433,55 @@
         "purpose": "Model external endpoints and adapters",
         "viewpoint": "config",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "inputWorkProductRefs": [
+          "pim-artifact.policy-catalog",
+          "pim-artifact.api-catalog",
+          "pim-artifact.integration-topology",
+          "pim-artifact.contract-catalog",
+          "pim-artifact.service-map",
+          "pim-artifact.architecture-posture"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.config-package"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.policy-catalog",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.integration-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.config-package",
             "direction": "out",
             "optional": false
@@ -1983,16 +2522,55 @@
         "purpose": "Configure environments and deployment units",
         "viewpoint": "config",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.config-package"],
+        "inputWorkProductRefs": [
+          "pim-artifact.config-package",
+          "pim-artifact.architecture-posture",
+          "pim-artifact.security-model",
+          "pim-artifact.compute-catalog",
+          "pim-artifact.api-catalog",
+          "pim-artifact.integration-topology"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.config-package"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.config-package",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.security-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.integration-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.config-package",
             "direction": "out",
             "optional": false
@@ -2082,16 +2660,76 @@
         "purpose": "Assess platform capabilities",
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
-        "inputWorkProductRefs": ["pim-artifact.config-package"],
+        "inputWorkProductRefs": [
+          "pim-artifact.config-package",
+          "pim-artifact.architecture-posture",
+          "pim-artifact.service-map",
+          "pim-artifact.data-architecture",
+          "pim-artifact.compute-catalog",
+          "pim-artifact.api-catalog",
+          "pim-artifact.integration-topology",
+          "pim-artifact.security-model",
+          "pim-artifact.policy-catalog"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.platform-readiness"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.config-package",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.data-architecture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.integration-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.security-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.platform-readiness",
             "direction": "out",
             "optional": false
@@ -2127,16 +2765,104 @@
         "purpose": "Complete trace and readiness",
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
-        "inputWorkProductRefs": ["pim-artifact.platform-readiness"],
+        "inputWorkProductRefs": [
+          "pim-artifact.platform-readiness",
+          "pim-artifact.increment-plan",
+          "pim-artifact.architecture-posture",
+          "pim-artifact.service-map",
+          "pim-artifact.contract-catalog",
+          "pim-artifact.data-architecture",
+          "pim-artifact.compute-catalog",
+          "pim-artifact.api-catalog",
+          "pim-artifact.integration-topology",
+          "pim-artifact.workflow-model",
+          "pim-artifact.security-model",
+          "pim-artifact.policy-catalog",
+          "pim-artifact.config-package"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.platform-readiness"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.platform-readiness",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.data-architecture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.integration-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.workflow-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.security-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.config-package",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.platform-readiness",
             "direction": "out",
             "optional": false
@@ -2197,16 +2923,55 @@
         "purpose": "Review and adapt PIM increment",
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
-        "inputWorkProductRefs": ["pim-artifact.platform-readiness"],
+        "inputWorkProductRefs": [
+          "pim-artifact.platform-readiness",
+          "pim-artifact.increment-plan",
+          "pim-artifact.architecture-posture",
+          "pim-artifact.security-model",
+          "pim-artifact.policy-catalog",
+          "pim-artifact.config-package"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.increment-review"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.platform-readiness",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.security-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "pim-artifact.config-package",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "pim-artifact.increment-review",
             "direction": "out",
             "optional": false
@@ -2559,6 +3324,14 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph1.st1.t2.input.pim-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st1",
+      "taskUseRef": "pim.ph1.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.increment-plan",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph1.st1.t2.output.pim-artifact.architecture-posture",
       "type": "WorkProductUse",
       "activityRef": "pim.ph1.st1",
@@ -2572,6 +3345,14 @@
       "activityRef": "pim.ph1.st1",
       "taskUseRef": "pim.ph1.st1.t3",
       "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph1.st1.t3.input.pim-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st1",
+      "taskUseRef": "pim.ph1.st1.t3",
+      "workProductDefinitionRef": "pim-artifact.increment-plan",
       "usage": "input"
     },
     {
@@ -2591,6 +3372,14 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph1.st2.t1.input.pim-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st2",
+      "taskUseRef": "pim.ph1.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.increment-plan",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph1.st2.t1.output.pim-artifact.service-map",
       "type": "WorkProductUse",
       "activityRef": "pim.ph1.st2",
@@ -2604,6 +3393,14 @@
       "activityRef": "pim.ph1.st2",
       "taskUseRef": "pim.ph1.st2.t2",
       "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph1.st2.t2.input.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st2",
+      "taskUseRef": "pim.ph1.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
       "usage": "input"
     },
     {
@@ -2623,6 +3420,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph2.st1.t1.input.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st1",
+      "taskUseRef": "pim.ph2.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph2.st1.t1.input.pim-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st1",
+      "taskUseRef": "pim.ph2.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.increment-plan",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph2.st1.t1.output.pim-artifact.contract-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph2.st1",
@@ -2636,6 +3449,14 @@
       "activityRef": "pim.ph2.st1",
       "taskUseRef": "pim.ph2.st1.t2",
       "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph2.st1.t2.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st1",
+      "taskUseRef": "pim.ph2.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.service-map",
       "usage": "input"
     },
     {
@@ -2655,6 +3476,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph2.st2.t1.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st2",
+      "taskUseRef": "pim.ph2.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph2.st2.t1.input.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st2",
+      "taskUseRef": "pim.ph2.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph2.st2.t1.output.pim-artifact.data-architecture",
       "type": "WorkProductUse",
       "activityRef": "pim.ph2.st2",
@@ -2668,6 +3505,22 @@
       "activityRef": "pim.ph2.st2",
       "taskUseRef": "pim.ph2.st2.t2",
       "workProductDefinitionRef": "pim-artifact.data-architecture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph2.st2.t2.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st2",
+      "taskUseRef": "pim.ph2.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph2.st2.t2.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st2",
+      "taskUseRef": "pim.ph2.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.service-map",
       "usage": "input"
     },
     {
@@ -2687,6 +3540,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph2.st2.t3.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st2",
+      "taskUseRef": "pim.ph2.st2.t3",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph2.st2.t3.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st2",
+      "taskUseRef": "pim.ph2.st2.t3",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph2.st2.t3.output.pim-artifact.data-architecture",
       "type": "WorkProductUse",
       "activityRef": "pim.ph2.st2",
@@ -2700,6 +3569,22 @@
       "activityRef": "pim.ph3.st1",
       "taskUseRef": "pim.ph3.st1.t1",
       "workProductDefinitionRef": "pim-artifact.data-architecture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph3.st1.t1.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st1",
+      "taskUseRef": "pim.ph3.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph3.st1.t1.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st1",
+      "taskUseRef": "pim.ph3.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
       "usage": "input"
     },
     {
@@ -2719,6 +3604,14 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph3.st1.t2.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st1",
+      "taskUseRef": "pim.ph3.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph3.st1.t2.output.pim-artifact.compute-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph3.st1",
@@ -2732,6 +3625,22 @@
       "activityRef": "pim.ph3.st2",
       "taskUseRef": "pim.ph3.st2.t1",
       "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph3.st2.t1.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st2",
+      "taskUseRef": "pim.ph3.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph3.st2.t1.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st2",
+      "taskUseRef": "pim.ph3.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
       "usage": "input"
     },
     {
@@ -2751,6 +3660,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph3.st2.t2.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st2",
+      "taskUseRef": "pim.ph3.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph3.st2.t2.input.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st2",
+      "taskUseRef": "pim.ph3.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph3.st2.t2.output.pim-artifact.api-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph3.st2",
@@ -2764,6 +3689,30 @@
       "activityRef": "pim.ph4.st1",
       "taskUseRef": "pim.ph4.st1.t1",
       "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st1.t1.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st1",
+      "taskUseRef": "pim.ph4.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st1.t1.input.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st1",
+      "taskUseRef": "pim.ph4.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st1.t1.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st1",
+      "taskUseRef": "pim.ph4.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
       "usage": "input"
     },
     {
@@ -2783,6 +3732,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph4.st1.t2.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st1",
+      "taskUseRef": "pim.ph4.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st1.t2.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st1",
+      "taskUseRef": "pim.ph4.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st1.t2.input.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st1",
+      "taskUseRef": "pim.ph4.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph4.st1.t2.output.pim-artifact.integration-topology",
       "type": "WorkProductUse",
       "activityRef": "pim.ph4.st1",
@@ -2799,6 +3772,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph4.st2.t1.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st2",
+      "taskUseRef": "pim.ph4.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st2.t1.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st2",
+      "taskUseRef": "pim.ph4.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st2.t1.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st2",
+      "taskUseRef": "pim.ph4.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph4.st2.t1.output.pim-artifact.workflow-model",
       "type": "WorkProductUse",
       "activityRef": "pim.ph4.st2",
@@ -2812,6 +3809,38 @@
       "activityRef": "pim.ph4.st2",
       "taskUseRef": "pim.ph4.st2.t2",
       "workProductDefinitionRef": "pim-artifact.workflow-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st2.t2.input.pim-artifact.integration-topology",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st2",
+      "taskUseRef": "pim.ph4.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.integration-topology",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st2.t2.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st2",
+      "taskUseRef": "pim.ph4.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st2.t2.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st2",
+      "taskUseRef": "pim.ph4.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st2.t2.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st2",
+      "taskUseRef": "pim.ph4.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
       "usage": "input"
     },
     {
@@ -2863,6 +3892,46 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph5.st1.t2.input.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st1",
+      "taskUseRef": "pim.ph5.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st1.t2.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st1",
+      "taskUseRef": "pim.ph5.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st1.t2.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st1",
+      "taskUseRef": "pim.ph5.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st1.t2.input.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st1",
+      "taskUseRef": "pim.ph5.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st1.t2.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st1",
+      "taskUseRef": "pim.ph5.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph5.st1.t2.output.pim-artifact.security-model",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st1",
@@ -2876,6 +3945,30 @@
       "activityRef": "pim.ph5.st2.ss1",
       "taskUseRef": "pim.ph5.st2.ss1.t1",
       "workProductDefinitionRef": "pim-artifact.security-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss1",
+      "taskUseRef": "pim.ph5.st2.ss1.t1",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.integration-topology",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss1",
+      "taskUseRef": "pim.ph5.st2.ss1.t1",
+      "workProductDefinitionRef": "pim-artifact.integration-topology",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss1",
+      "taskUseRef": "pim.ph5.st2.ss1.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
       "usage": "input"
     },
     {
@@ -2895,6 +3988,38 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.data-architecture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss1",
+      "taskUseRef": "pim.ph5.st2.ss1.t2",
+      "workProductDefinitionRef": "pim-artifact.data-architecture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss1",
+      "taskUseRef": "pim.ph5.st2.ss1.t2",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss1",
+      "taskUseRef": "pim.ph5.st2.ss1.t2",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.integration-topology",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss1",
+      "taskUseRef": "pim.ph5.st2.ss1.t2",
+      "workProductDefinitionRef": "pim-artifact.integration-topology",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph5.st2.ss1.t2.output.pim-artifact.policy-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st2.ss1",
@@ -2908,6 +4033,46 @@
       "activityRef": "pim.ph5.st2.ss2",
       "taskUseRef": "pim.ph5.st2.ss2.t1",
       "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "taskUseRef": "pim.ph5.st2.ss2.t1",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "taskUseRef": "pim.ph5.st2.ss2.t1",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.integration-topology",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "taskUseRef": "pim.ph5.st2.ss2.t1",
+      "workProductDefinitionRef": "pim-artifact.integration-topology",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.workflow-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "taskUseRef": "pim.ph5.st2.ss2.t1",
+      "workProductDefinitionRef": "pim-artifact.workflow-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "taskUseRef": "pim.ph5.st2.ss2.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
       "usage": "input"
     },
     {
@@ -2927,6 +4092,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "taskUseRef": "pim.ph5.st2.ss2.t2",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.workflow-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "taskUseRef": "pim.ph5.st2.ss2.t2",
+      "workProductDefinitionRef": "pim-artifact.workflow-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "taskUseRef": "pim.ph5.st2.ss2.t2",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph5.st2.ss2.t2.output.pim-artifact.policy-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st2.ss2",
@@ -2940,6 +4129,22 @@
       "activityRef": "pim.ph5.st2.ss3",
       "taskUseRef": "pim.ph5.st2.ss3.t1",
       "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.security-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss3",
+      "taskUseRef": "pim.ph5.st2.ss3.t1",
+      "workProductDefinitionRef": "pim-artifact.security-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.data-architecture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss3",
+      "taskUseRef": "pim.ph5.st2.ss3.t1",
+      "workProductDefinitionRef": "pim-artifact.data-architecture",
       "usage": "input"
     },
     {
@@ -2959,6 +4164,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.workflow-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss3",
+      "taskUseRef": "pim.ph5.st2.ss3.t2",
+      "workProductDefinitionRef": "pim-artifact.workflow-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss3",
+      "taskUseRef": "pim.ph5.st2.ss3.t2",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss3",
+      "taskUseRef": "pim.ph5.st2.ss3.t2",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph5.st2.ss3.t2.output.pim-artifact.policy-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st2.ss3",
@@ -2972,6 +4201,46 @@
       "activityRef": "pim.ph5.st3",
       "taskUseRef": "pim.ph5.st3.t1",
       "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t1.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t1.input.pim-artifact.integration-topology",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.integration-topology",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t1.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t1.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t1.input.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
       "usage": "input"
     },
     {
@@ -2991,6 +4260,46 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph5.st3.t2.input.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t2",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t2.input.pim-artifact.security-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t2",
+      "workProductDefinitionRef": "pim-artifact.security-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t2.input.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t2",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t2.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t2",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t2.input.pim-artifact.integration-topology",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t2",
+      "workProductDefinitionRef": "pim-artifact.integration-topology",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph5.st3.t2.output.pim-artifact.config-package",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st3",
@@ -3004,6 +4313,70 @@
       "activityRef": "pim.ph6.st1",
       "taskUseRef": "pim.ph6.st1.t1",
       "workProductDefinitionRef": "pim-artifact.config-package",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st1.t1.input.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st1",
+      "taskUseRef": "pim.ph6.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st1.t1.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st1",
+      "taskUseRef": "pim.ph6.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st1.t1.input.pim-artifact.data-architecture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st1",
+      "taskUseRef": "pim.ph6.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.data-architecture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st1.t1.input.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st1",
+      "taskUseRef": "pim.ph6.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st1.t1.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st1",
+      "taskUseRef": "pim.ph6.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st1.t1.input.pim-artifact.integration-topology",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st1",
+      "taskUseRef": "pim.ph6.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.integration-topology",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st1.t1.input.pim-artifact.security-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st1",
+      "taskUseRef": "pim.ph6.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.security-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st1.t1.input.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st1",
+      "taskUseRef": "pim.ph6.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
       "usage": "input"
     },
     {
@@ -3023,6 +4396,102 @@
       "usage": "input"
     },
     {
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.increment-plan",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.data-architecture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.data-architecture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.integration-topology",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.integration-topology",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.workflow-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.workflow-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.security-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.security-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.config-package",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.config-package",
+      "usage": "input"
+    },
+    {
       "id": "wpu.pim.ph6.st2.t1.output.pim-artifact.platform-readiness",
       "type": "WorkProductUse",
       "activityRef": "pim.ph6.st2",
@@ -3036,6 +4505,46 @@
       "activityRef": "pim.ph6.st3",
       "taskUseRef": "pim.ph6.st3.t1",
       "workProductDefinitionRef": "pim-artifact.platform-readiness",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st3.t1.input.pim-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st3",
+      "taskUseRef": "pim.ph6.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.increment-plan",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st3.t1.input.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st3",
+      "taskUseRef": "pim.ph6.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st3.t1.input.pim-artifact.security-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st3",
+      "taskUseRef": "pim.ph6.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.security-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st3.t1.input.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st3",
+      "taskUseRef": "pim.ph6.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st3.t1.input.pim-artifact.config-package",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st3",
+      "taskUseRef": "pim.ph6.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.config-package",
       "usage": "input"
     },
     {
@@ -3364,9 +4873,28 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph1.st0.t1",
               "performerRoleUseRefs": ["ru.pim.ph1.st0.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph1.st0.t1.ru.pim.ph1.st0.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph1.st0.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph1.st0.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [],
-              "outputWorkProductUseRefs": ["wpu.pim.ph1.st0.t1.output.pim-artifact.increment-plan"]
+              "outputWorkProductUseRefs": ["wpu.pim.ph1.st0.t1.output.pim-artifact.increment-plan"],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph1.st0.t1.out.wpu.pim.ph1.st0.t1.output.pim-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st0.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st0.t1.output.pim-artifact.increment-plan"
+                }
+              ]
             }
           ]
         },
@@ -3386,10 +4914,37 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph1.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph1.st1.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph1.st1.t1.ru.pim.ph1.st1.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph1.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph1.st1.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": ["wpu.pim.ph1.st1.t1.input.pim-artifact.increment-plan"],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph1.st1.t1.output.pim-artifact.architecture-posture"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph1.st1.t1.in.wpu.pim.ph1.st1.t1.input.pim-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st1.t1.input.pim-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.pim.ph1.st1.t1.out.wpu.pim.ph1.st1.t1.output.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st1.t1.output.pim-artifact.architecture-posture"
+                }
               ]
             },
             {
@@ -3397,12 +4952,48 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph1.st1.t2",
               "performerRoleUseRefs": ["ru.pim.ph1.st1.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph1.st1.t2.ru.pim.ph1.st1.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph1.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph1.st1.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": [
-                "wpu.pim.ph1.st1.t2.input.pim-artifact.architecture-posture"
+                "wpu.pim.ph1.st1.t2.input.pim-artifact.architecture-posture",
+                "wpu.pim.ph1.st1.t2.input.pim-artifact.increment-plan"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph1.st1.t2.output.pim-artifact.architecture-posture"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph1.st1.t2.in.wpu.pim.ph1.st1.t2.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st1.t2.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph1.st1.t2.in.wpu.pim.ph1.st1.t2.input.pim-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st1.t2.input.pim-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.pim.ph1.st1.t2.out.wpu.pim.ph1.st1.t2.output.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st1.t2.output.pim-artifact.architecture-posture"
+                }
               ]
             },
             {
@@ -3410,12 +5001,48 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph1.st1.t3",
               "performerRoleUseRefs": ["ru.pim.ph1.st1.method-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph1.st1.t3.ru.pim.ph1.st1.method-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph1.st1.t3",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph1.st1.method-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.pim.ph1.st1.t3.input.pim-artifact.architecture-posture"
+                "wpu.pim.ph1.st1.t3.input.pim-artifact.architecture-posture",
+                "wpu.pim.ph1.st1.t3.input.pim-artifact.increment-plan"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph1.st1.t3.output.pim-artifact.architecture-posture"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph1.st1.t3.in.wpu.pim.ph1.st1.t3.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st1.t3",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st1.t3.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph1.st1.t3.in.wpu.pim.ph1.st1.t3.input.pim-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st1.t3",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st1.t3.input.pim-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.pim.ph1.st1.t3.out.wpu.pim.ph1.st1.t3.output.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st1.t3",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st1.t3.output.pim-artifact.architecture-posture"
+                }
               ]
             }
           ]
@@ -3436,20 +5063,94 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph1.st2.t1",
               "performerRoleUseRefs": ["ru.pim.ph1.st2.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph1.st2.t1.ru.pim.ph1.st2.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph1.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph1.st2.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": [
-                "wpu.pim.ph1.st2.t1.input.pim-artifact.architecture-posture"
+                "wpu.pim.ph1.st2.t1.input.pim-artifact.architecture-posture",
+                "wpu.pim.ph1.st2.t1.input.pim-artifact.increment-plan"
               ],
-              "outputWorkProductUseRefs": ["wpu.pim.ph1.st2.t1.output.pim-artifact.service-map"]
+              "outputWorkProductUseRefs": ["wpu.pim.ph1.st2.t1.output.pim-artifact.service-map"],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph1.st2.t1.in.wpu.pim.ph1.st2.t1.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st2.t1.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph1.st2.t1.in.wpu.pim.ph1.st2.t1.input.pim-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st2.t1.input.pim-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.pim.ph1.st2.t1.out.wpu.pim.ph1.st2.t1.output.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st2.t1.output.pim-artifact.service-map"
+                }
+              ]
             },
             {
               "id": "pim.ph1.st2.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph1.st2.t2",
               "performerRoleUseRefs": ["ru.pim.ph1.st2.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph1.st2.t2.ru.pim.ph1.st2.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph1.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph1.st2.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph1.st2.t2.input.pim-artifact.service-map"],
-              "outputWorkProductUseRefs": ["wpu.pim.ph1.st2.t2.output.pim-artifact.service-map"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph1.st2.t2.input.pim-artifact.service-map",
+                "wpu.pim.ph1.st2.t2.input.pim-artifact.architecture-posture"
+              ],
+              "outputWorkProductUseRefs": ["wpu.pim.ph1.st2.t2.output.pim-artifact.service-map"],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph1.st2.t2.in.wpu.pim.ph1.st2.t2.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st2.t2.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph1.st2.t2.in.wpu.pim.ph1.st2.t2.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st2.t2.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph1.st2.t2.out.wpu.pim.ph1.st2.t2.output.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph1.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph1.st2.t2.output.pim-artifact.service-map"
+                }
+              ]
             }
           ]
         }
@@ -3505,10 +5206,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph2.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph2.st1.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph2.st1.t1.ru.pim.ph2.st1.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph2.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph2.st1.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph2.st1.t1.input.pim-artifact.service-map"],
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph2.st1.t1.input.pim-artifact.service-map",
+                "wpu.pim.ph2.st1.t1.input.pim-artifact.architecture-posture",
+                "wpu.pim.ph2.st1.t1.input.pim-artifact.increment-plan"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph2.st1.t1.output.pim-artifact.contract-catalog"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph2.st1.t1.in.wpu.pim.ph2.st1.t1.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st1.t1.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph2.st1.t1.in.wpu.pim.ph2.st1.t1.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st1.t1.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph2.st1.t1.in.wpu.pim.ph2.st1.t1.input.pim-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st1.t1.input.pim-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.pim.ph2.st1.t1.out.wpu.pim.ph2.st1.t1.output.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st1.t1.output.pim-artifact.contract-catalog"
+                }
               ]
             },
             {
@@ -3516,10 +5264,48 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph2.st1.t2",
               "performerRoleUseRefs": ["ru.pim.ph2.st1.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph2.st1.t2.ru.pim.ph2.st1.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph2.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph2.st1.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph2.st1.t2.input.pim-artifact.contract-catalog"],
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph2.st1.t2.input.pim-artifact.contract-catalog",
+                "wpu.pim.ph2.st1.t2.input.pim-artifact.service-map"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph2.st1.t2.output.pim-artifact.contract-catalog"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph2.st1.t2.in.wpu.pim.ph2.st1.t2.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st1.t2.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph2.st1.t2.in.wpu.pim.ph2.st1.t2.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st1.t2.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph2.st1.t2.out.wpu.pim.ph2.st1.t2.output.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st1.t2.output.pim-artifact.contract-catalog"
+                }
               ]
             }
           ]
@@ -3550,10 +5336,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph2.st2.t1",
               "performerRoleUseRefs": ["ru.pim.ph2.st2.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph2.st2.t1.ru.pim.ph2.st2.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph2.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph2.st2.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph2.st2.t1.input.pim-artifact.contract-catalog"],
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph2.st2.t1.input.pim-artifact.contract-catalog",
+                "wpu.pim.ph2.st2.t1.input.pim-artifact.service-map",
+                "wpu.pim.ph2.st2.t1.input.pim-artifact.architecture-posture"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph2.st2.t1.output.pim-artifact.data-architecture"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph2.st2.t1.in.wpu.pim.ph2.st2.t1.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st2.t1.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph2.st2.t1.in.wpu.pim.ph2.st2.t1.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st2.t1.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph2.st2.t1.in.wpu.pim.ph2.st2.t1.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st2.t1.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph2.st2.t1.out.wpu.pim.ph2.st2.t1.output.pim-artifact.data-architecture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st2.t1.output.pim-artifact.data-architecture"
+                }
               ]
             },
             {
@@ -3561,12 +5394,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph2.st2.t2",
               "performerRoleUseRefs": ["ru.pim.ph2.st2.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph2.st2.t2.ru.pim.ph2.st2.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph2.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph2.st2.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": [
-                "wpu.pim.ph2.st2.t2.input.pim-artifact.data-architecture"
+                "wpu.pim.ph2.st2.t2.input.pim-artifact.data-architecture",
+                "wpu.pim.ph2.st2.t2.input.pim-artifact.contract-catalog",
+                "wpu.pim.ph2.st2.t2.input.pim-artifact.service-map"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph2.st2.t2.output.pim-artifact.data-architecture"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph2.st2.t2.in.wpu.pim.ph2.st2.t2.input.pim-artifact.data-architecture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st2.t2.input.pim-artifact.data-architecture"
+                },
+                {
+                  "id": "pp.pim.ph2.st2.t2.in.wpu.pim.ph2.st2.t2.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st2.t2.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph2.st2.t2.in.wpu.pim.ph2.st2.t2.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st2.t2.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph2.st2.t2.out.wpu.pim.ph2.st2.t2.output.pim-artifact.data-architecture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st2.t2.output.pim-artifact.data-architecture"
+                }
               ]
             },
             {
@@ -3574,12 +5452,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph2.st2.t3",
               "performerRoleUseRefs": ["ru.pim.ph2.st2.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph2.st2.t3.ru.pim.ph2.st2.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph2.st2.t3",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph2.st2.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": [
-                "wpu.pim.ph2.st2.t3.input.pim-artifact.data-architecture"
+                "wpu.pim.ph2.st2.t3.input.pim-artifact.data-architecture",
+                "wpu.pim.ph2.st2.t3.input.pim-artifact.contract-catalog",
+                "wpu.pim.ph2.st2.t3.input.pim-artifact.service-map"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph2.st2.t3.output.pim-artifact.data-architecture"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph2.st2.t3.in.wpu.pim.ph2.st2.t3.input.pim-artifact.data-architecture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st2.t3",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st2.t3.input.pim-artifact.data-architecture"
+                },
+                {
+                  "id": "pp.pim.ph2.st2.t3.in.wpu.pim.ph2.st2.t3.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st2.t3",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st2.t3.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph2.st2.t3.in.wpu.pim.ph2.st2.t3.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st2.t3",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st2.t3.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph2.st2.t3.out.wpu.pim.ph2.st2.t3.output.pim-artifact.data-architecture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph2.st2.t3",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph2.st2.t3.output.pim-artifact.data-architecture"
+                }
               ]
             }
           ]
@@ -3642,20 +5565,107 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph3.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph3.st1.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph3.st1.t1.ru.pim.ph3.st1.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph3.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph3.st1.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": [
-                "wpu.pim.ph3.st1.t1.input.pim-artifact.data-architecture"
+                "wpu.pim.ph3.st1.t1.input.pim-artifact.data-architecture",
+                "wpu.pim.ph3.st1.t1.input.pim-artifact.service-map",
+                "wpu.pim.ph3.st1.t1.input.pim-artifact.contract-catalog"
               ],
-              "outputWorkProductUseRefs": ["wpu.pim.ph3.st1.t1.output.pim-artifact.compute-catalog"]
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph3.st1.t1.output.pim-artifact.compute-catalog"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph3.st1.t1.in.wpu.pim.ph3.st1.t1.input.pim-artifact.data-architecture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st1.t1.input.pim-artifact.data-architecture"
+                },
+                {
+                  "id": "pp.pim.ph3.st1.t1.in.wpu.pim.ph3.st1.t1.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st1.t1.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph3.st1.t1.in.wpu.pim.ph3.st1.t1.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st1.t1.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph3.st1.t1.out.wpu.pim.ph3.st1.t1.output.pim-artifact.compute-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st1.t1.output.pim-artifact.compute-catalog"
+                }
+              ]
             },
             {
               "id": "pim.ph3.st1.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph3.st1.t2",
               "performerRoleUseRefs": ["ru.pim.ph3.st1.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph3.st1.t2.ru.pim.ph3.st1.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph3.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph3.st1.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph3.st1.t2.input.pim-artifact.compute-catalog"],
-              "outputWorkProductUseRefs": ["wpu.pim.ph3.st1.t2.output.pim-artifact.compute-catalog"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph3.st1.t2.input.pim-artifact.compute-catalog",
+                "wpu.pim.ph3.st1.t2.input.pim-artifact.contract-catalog"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph3.st1.t2.output.pim-artifact.compute-catalog"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph3.st1.t2.in.wpu.pim.ph3.st1.t2.input.pim-artifact.compute-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st1.t2.input.pim-artifact.compute-catalog"
+                },
+                {
+                  "id": "pp.pim.ph3.st1.t2.in.wpu.pim.ph3.st1.t2.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st1.t2.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph3.st1.t2.out.wpu.pim.ph3.st1.t2.output.pim-artifact.compute-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st1.t2.output.pim-artifact.compute-catalog"
+                }
+              ]
             }
           ]
         },
@@ -3694,18 +5704,112 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph3.st2.t1",
               "performerRoleUseRefs": ["ru.pim.ph3.st2.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph3.st2.t1.ru.pim.ph3.st2.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph3.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph3.st2.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph3.st2.t1.input.pim-artifact.compute-catalog"],
-              "outputWorkProductUseRefs": ["wpu.pim.ph3.st2.t1.output.pim-artifact.api-catalog"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph3.st2.t1.input.pim-artifact.compute-catalog",
+                "wpu.pim.ph3.st2.t1.input.pim-artifact.contract-catalog",
+                "wpu.pim.ph3.st2.t1.input.pim-artifact.service-map"
+              ],
+              "outputWorkProductUseRefs": ["wpu.pim.ph3.st2.t1.output.pim-artifact.api-catalog"],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph3.st2.t1.in.wpu.pim.ph3.st2.t1.input.pim-artifact.compute-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st2.t1.input.pim-artifact.compute-catalog"
+                },
+                {
+                  "id": "pp.pim.ph3.st2.t1.in.wpu.pim.ph3.st2.t1.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st2.t1.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph3.st2.t1.in.wpu.pim.ph3.st2.t1.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st2.t1.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph3.st2.t1.out.wpu.pim.ph3.st2.t1.output.pim-artifact.api-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st2.t1.output.pim-artifact.api-catalog"
+                }
+              ]
             },
             {
               "id": "pim.ph3.st2.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph3.st2.t2",
               "performerRoleUseRefs": ["ru.pim.ph3.st2.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph3.st2.t2.ru.pim.ph3.st2.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph3.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph3.st2.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph3.st2.t2.input.pim-artifact.api-catalog"],
-              "outputWorkProductUseRefs": ["wpu.pim.ph3.st2.t2.output.pim-artifact.api-catalog"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph3.st2.t2.input.pim-artifact.api-catalog",
+                "wpu.pim.ph3.st2.t2.input.pim-artifact.contract-catalog",
+                "wpu.pim.ph3.st2.t2.input.pim-artifact.compute-catalog"
+              ],
+              "outputWorkProductUseRefs": ["wpu.pim.ph3.st2.t2.output.pim-artifact.api-catalog"],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph3.st2.t2.in.wpu.pim.ph3.st2.t2.input.pim-artifact.api-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st2.t2.input.pim-artifact.api-catalog"
+                },
+                {
+                  "id": "pp.pim.ph3.st2.t2.in.wpu.pim.ph3.st2.t2.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st2.t2.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph3.st2.t2.in.wpu.pim.ph3.st2.t2.input.pim-artifact.compute-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st2.t2.input.pim-artifact.compute-catalog"
+                },
+                {
+                  "id": "pp.pim.ph3.st2.t2.out.wpu.pim.ph3.st2.t2.output.pim-artifact.api-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph3.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph3.st2.t2.output.pim-artifact.api-catalog"
+                }
+              ]
             }
           ]
         }
@@ -3761,10 +5865,66 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph4.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph4.st1.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph4.st1.t1.ru.pim.ph4.st1.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph4.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph4.st1.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph4.st1.t1.input.pim-artifact.api-catalog"],
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph4.st1.t1.input.pim-artifact.api-catalog",
+                "wpu.pim.ph4.st1.t1.input.pim-artifact.contract-catalog",
+                "wpu.pim.ph4.st1.t1.input.pim-artifact.compute-catalog",
+                "wpu.pim.ph4.st1.t1.input.pim-artifact.service-map"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph4.st1.t1.output.pim-artifact.integration-topology"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph4.st1.t1.in.wpu.pim.ph4.st1.t1.input.pim-artifact.api-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st1.t1.input.pim-artifact.api-catalog"
+                },
+                {
+                  "id": "pp.pim.ph4.st1.t1.in.wpu.pim.ph4.st1.t1.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st1.t1.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph4.st1.t1.in.wpu.pim.ph4.st1.t1.input.pim-artifact.compute-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st1.t1.input.pim-artifact.compute-catalog"
+                },
+                {
+                  "id": "pp.pim.ph4.st1.t1.in.wpu.pim.ph4.st1.t1.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st1.t1.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph4.st1.t1.out.wpu.pim.ph4.st1.t1.output.pim-artifact.integration-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st1.t1.output.pim-artifact.integration-topology"
+                }
               ]
             },
             {
@@ -3772,12 +5932,66 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph4.st1.t2",
               "performerRoleUseRefs": ["ru.pim.ph4.st1.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph4.st1.t2.ru.pim.ph4.st1.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph4.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph4.st1.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.pim.ph4.st1.t2.input.pim-artifact.integration-topology"
+                "wpu.pim.ph4.st1.t2.input.pim-artifact.integration-topology",
+                "wpu.pim.ph4.st1.t2.input.pim-artifact.api-catalog",
+                "wpu.pim.ph4.st1.t2.input.pim-artifact.contract-catalog",
+                "wpu.pim.ph4.st1.t2.input.pim-artifact.compute-catalog"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph4.st1.t2.output.pim-artifact.integration-topology"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph4.st1.t2.in.wpu.pim.ph4.st1.t2.input.pim-artifact.integration-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st1.t2.input.pim-artifact.integration-topology"
+                },
+                {
+                  "id": "pp.pim.ph4.st1.t2.in.wpu.pim.ph4.st1.t2.input.pim-artifact.api-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st1.t2.input.pim-artifact.api-catalog"
+                },
+                {
+                  "id": "pp.pim.ph4.st1.t2.in.wpu.pim.ph4.st1.t2.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st1.t2.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph4.st1.t2.in.wpu.pim.ph4.st1.t2.input.pim-artifact.compute-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st1.t2.input.pim-artifact.compute-catalog"
+                },
+                {
+                  "id": "pp.pim.ph4.st1.t2.out.wpu.pim.ph4.st1.t2.output.pim-artifact.integration-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st1.t2.output.pim-artifact.integration-topology"
+                }
               ]
             }
           ]
@@ -3798,20 +6012,139 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph4.st2.t1",
               "performerRoleUseRefs": ["ru.pim.ph4.st2.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph4.st2.t1.ru.pim.ph4.st2.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph4.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph4.st2.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": [
-                "wpu.pim.ph4.st2.t1.input.pim-artifact.integration-topology"
+                "wpu.pim.ph4.st2.t1.input.pim-artifact.integration-topology",
+                "wpu.pim.ph4.st2.t1.input.pim-artifact.service-map",
+                "wpu.pim.ph4.st2.t1.input.pim-artifact.api-catalog",
+                "wpu.pim.ph4.st2.t1.input.pim-artifact.contract-catalog"
               ],
-              "outputWorkProductUseRefs": ["wpu.pim.ph4.st2.t1.output.pim-artifact.workflow-model"]
+              "outputWorkProductUseRefs": ["wpu.pim.ph4.st2.t1.output.pim-artifact.workflow-model"],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph4.st2.t1.in.wpu.pim.ph4.st2.t1.input.pim-artifact.integration-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st2.t1.input.pim-artifact.integration-topology"
+                },
+                {
+                  "id": "pp.pim.ph4.st2.t1.in.wpu.pim.ph4.st2.t1.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st2.t1.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph4.st2.t1.in.wpu.pim.ph4.st2.t1.input.pim-artifact.api-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st2.t1.input.pim-artifact.api-catalog"
+                },
+                {
+                  "id": "pp.pim.ph4.st2.t1.in.wpu.pim.ph4.st2.t1.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st2.t1.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph4.st2.t1.out.wpu.pim.ph4.st2.t1.output.pim-artifact.workflow-model",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st2.t1.output.pim-artifact.workflow-model"
+                }
+              ]
             },
             {
               "id": "pim.ph4.st2.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph4.st2.t2",
               "performerRoleUseRefs": ["ru.pim.ph4.st2.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph4.st2.t2.ru.pim.ph4.st2.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph4.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph4.st2.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph4.st2.t2.input.pim-artifact.workflow-model"],
-              "outputWorkProductUseRefs": ["wpu.pim.ph4.st2.t2.output.pim-artifact.workflow-model"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph4.st2.t2.input.pim-artifact.workflow-model",
+                "wpu.pim.ph4.st2.t2.input.pim-artifact.integration-topology",
+                "wpu.pim.ph4.st2.t2.input.pim-artifact.service-map",
+                "wpu.pim.ph4.st2.t2.input.pim-artifact.api-catalog",
+                "wpu.pim.ph4.st2.t2.input.pim-artifact.contract-catalog"
+              ],
+              "outputWorkProductUseRefs": ["wpu.pim.ph4.st2.t2.output.pim-artifact.workflow-model"],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph4.st2.t2.in.wpu.pim.ph4.st2.t2.input.pim-artifact.workflow-model",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st2.t2.input.pim-artifact.workflow-model"
+                },
+                {
+                  "id": "pp.pim.ph4.st2.t2.in.wpu.pim.ph4.st2.t2.input.pim-artifact.integration-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st2.t2.input.pim-artifact.integration-topology"
+                },
+                {
+                  "id": "pp.pim.ph4.st2.t2.in.wpu.pim.ph4.st2.t2.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st2.t2.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph4.st2.t2.in.wpu.pim.ph4.st2.t2.input.pim-artifact.api-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st2.t2.input.pim-artifact.api-catalog"
+                },
+                {
+                  "id": "pp.pim.ph4.st2.t2.in.wpu.pim.ph4.st2.t2.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st2.t2.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph4.st2.t2.out.wpu.pim.ph4.st2.t2.output.pim-artifact.workflow-model",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph4.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph4.st2.t2.output.pim-artifact.workflow-model"
+                }
+              ]
             }
           ]
         }
@@ -3868,22 +6201,139 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph5.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph5.st1.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph5.st1.t1.ru.pim.ph5.st1.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph5.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph5.st1.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": [
                 "wpu.pim.ph5.st1.t1.input.pim-artifact.architecture-posture",
                 "wpu.pim.ph5.st1.t1.input.pim-artifact.service-map",
                 "wpu.pim.ph5.st1.t1.input.pim-artifact.contract-catalog"
               ],
-              "outputWorkProductUseRefs": ["wpu.pim.ph5.st1.t1.output.pim-artifact.security-model"]
+              "outputWorkProductUseRefs": ["wpu.pim.ph5.st1.t1.output.pim-artifact.security-model"],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph5.st1.t1.in.wpu.pim.ph5.st1.t1.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st1.t1.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph5.st1.t1.in.wpu.pim.ph5.st1.t1.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st1.t1.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph5.st1.t1.in.wpu.pim.ph5.st1.t1.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st1.t1.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph5.st1.t1.out.wpu.pim.ph5.st1.t1.output.pim-artifact.security-model",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st1.t1.output.pim-artifact.security-model"
+                }
+              ]
             },
             {
               "id": "pim.ph5.st1.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph5.st1.t2",
               "performerRoleUseRefs": ["ru.pim.ph5.st1.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph5.st1.t2.ru.pim.ph5.st1.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph5.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph5.st1.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph5.st1.t2.input.pim-artifact.security-model"],
-              "outputWorkProductUseRefs": ["wpu.pim.ph5.st1.t2.output.pim-artifact.security-model"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph5.st1.t2.input.pim-artifact.security-model",
+                "wpu.pim.ph5.st1.t2.input.pim-artifact.architecture-posture",
+                "wpu.pim.ph5.st1.t2.input.pim-artifact.service-map",
+                "wpu.pim.ph5.st1.t2.input.pim-artifact.api-catalog",
+                "wpu.pim.ph5.st1.t2.input.pim-artifact.compute-catalog",
+                "wpu.pim.ph5.st1.t2.input.pim-artifact.contract-catalog"
+              ],
+              "outputWorkProductUseRefs": ["wpu.pim.ph5.st1.t2.output.pim-artifact.security-model"],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph5.st1.t2.in.wpu.pim.ph5.st1.t2.input.pim-artifact.security-model",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st1.t2.input.pim-artifact.security-model"
+                },
+                {
+                  "id": "pp.pim.ph5.st1.t2.in.wpu.pim.ph5.st1.t2.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st1.t2.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph5.st1.t2.in.wpu.pim.ph5.st1.t2.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st1.t2.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph5.st1.t2.in.wpu.pim.ph5.st1.t2.input.pim-artifact.api-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st1.t2.input.pim-artifact.api-catalog"
+                },
+                {
+                  "id": "pp.pim.ph5.st1.t2.in.wpu.pim.ph5.st1.t2.input.pim-artifact.compute-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st1.t2.input.pim-artifact.compute-catalog"
+                },
+                {
+                  "id": "pp.pim.ph5.st1.t2.in.wpu.pim.ph5.st1.t2.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st1.t2.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph5.st1.t2.out.wpu.pim.ph5.st1.t2.output.pim-artifact.security-model",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st1.t2.output.pim-artifact.security-model"
+                }
+              ]
             }
           ]
         },
@@ -3924,12 +6374,66 @@
                   "type": "TaskUse",
                   "taskDefinitionRef": "task.pim.ph5.st2.ss1.t1",
                   "performerRoleUseRefs": ["ru.pim.ph5.st2.ss1.solution-architect"],
+                  "processPerformers": [
+                    {
+                      "id": "ppf.pim.ph5.st2.ss1.t1.ru.pim.ph5.st2.ss1.solution-architect",
+                      "type": "ProcessPerformer",
+                      "taskUseRef": "pim.ph5.st2.ss1.t1",
+                      "kind": "primary",
+                      "roleUseRef": "ru.pim.ph5.st2.ss1.solution-architect"
+                    }
+                  ],
                   "selectedStepIndices": [0, 1, 2],
                   "inputWorkProductUseRefs": [
-                    "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.security-model"
+                    "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.security-model",
+                    "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.compute-catalog",
+                    "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.integration-topology",
+                    "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.service-map"
                   ],
                   "outputWorkProductUseRefs": [
                     "wpu.pim.ph5.st2.ss1.t1.output.pim-artifact.policy-catalog"
+                  ],
+                  "processParameters": [
+                    {
+                      "id": "pp.pim.ph5.st2.ss1.t1.in.wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.security-model",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss1.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.security-model"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss1.t1.in.wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.compute-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss1.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.compute-catalog"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss1.t1.in.wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.integration-topology",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss1.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.integration-topology"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss1.t1.in.wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.service-map",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss1.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.service-map"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss1.t1.out.wpu.pim.ph5.st2.ss1.t1.output.pim-artifact.policy-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss1.t1",
+                      "direction": "out",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss1.t1.output.pim-artifact.policy-catalog"
+                    }
                   ]
                 },
                 {
@@ -3937,12 +6441,75 @@
                   "type": "TaskUse",
                   "taskDefinitionRef": "task.pim.ph5.st2.ss1.t2",
                   "performerRoleUseRefs": ["ru.pim.ph5.st2.ss1.solution-architect"],
+                  "processPerformers": [
+                    {
+                      "id": "ppf.pim.ph5.st2.ss1.t2.ru.pim.ph5.st2.ss1.solution-architect",
+                      "type": "ProcessPerformer",
+                      "taskUseRef": "pim.ph5.st2.ss1.t2",
+                      "kind": "primary",
+                      "roleUseRef": "ru.pim.ph5.st2.ss1.solution-architect"
+                    }
+                  ],
                   "selectedStepIndices": [0, 1, 2],
                   "inputWorkProductUseRefs": [
-                    "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.policy-catalog"
+                    "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.policy-catalog",
+                    "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.data-architecture",
+                    "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.api-catalog",
+                    "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.compute-catalog",
+                    "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.integration-topology"
                   ],
                   "outputWorkProductUseRefs": [
                     "wpu.pim.ph5.st2.ss1.t2.output.pim-artifact.policy-catalog"
+                  ],
+                  "processParameters": [
+                    {
+                      "id": "pp.pim.ph5.st2.ss1.t2.in.wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.policy-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss1.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.policy-catalog"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss1.t2.in.wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.data-architecture",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss1.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.data-architecture"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss1.t2.in.wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.api-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss1.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.api-catalog"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss1.t2.in.wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.compute-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss1.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.compute-catalog"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss1.t2.in.wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.integration-topology",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss1.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.integration-topology"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss1.t2.out.wpu.pim.ph5.st2.ss1.t2.output.pim-artifact.policy-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss1.t2",
+                      "direction": "out",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss1.t2.output.pim-artifact.policy-catalog"
+                    }
                   ]
                 }
               ]
@@ -3963,12 +6530,84 @@
                   "type": "TaskUse",
                   "taskDefinitionRef": "task.pim.ph5.st2.ss2.t1",
                   "performerRoleUseRefs": ["ru.pim.ph5.st2.ss2.solution-architect"],
+                  "processPerformers": [
+                    {
+                      "id": "ppf.pim.ph5.st2.ss2.t1.ru.pim.ph5.st2.ss2.solution-architect",
+                      "type": "ProcessPerformer",
+                      "taskUseRef": "pim.ph5.st2.ss2.t1",
+                      "kind": "primary",
+                      "roleUseRef": "ru.pim.ph5.st2.ss2.solution-architect"
+                    }
+                  ],
                   "selectedStepIndices": [0, 1],
                   "inputWorkProductUseRefs": [
-                    "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.policy-catalog"
+                    "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.policy-catalog",
+                    "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.compute-catalog",
+                    "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.api-catalog",
+                    "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.integration-topology",
+                    "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.workflow-model",
+                    "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.service-map"
                   ],
                   "outputWorkProductUseRefs": [
                     "wpu.pim.ph5.st2.ss2.t1.output.pim-artifact.policy-catalog"
+                  ],
+                  "processParameters": [
+                    {
+                      "id": "pp.pim.ph5.st2.ss2.t1.in.wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.policy-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss2.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.policy-catalog"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss2.t1.in.wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.compute-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss2.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.compute-catalog"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss2.t1.in.wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.api-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss2.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.api-catalog"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss2.t1.in.wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.integration-topology",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss2.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.integration-topology"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss2.t1.in.wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.workflow-model",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss2.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.workflow-model"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss2.t1.in.wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.service-map",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss2.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.service-map"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss2.t1.out.wpu.pim.ph5.st2.ss2.t1.output.pim-artifact.policy-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss2.t1",
+                      "direction": "out",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss2.t1.output.pim-artifact.policy-catalog"
+                    }
                   ]
                 },
                 {
@@ -3976,12 +6615,66 @@
                   "type": "TaskUse",
                   "taskDefinitionRef": "task.pim.ph5.st2.ss2.t2",
                   "performerRoleUseRefs": ["ru.pim.ph5.st2.ss2.solution-architect"],
+                  "processPerformers": [
+                    {
+                      "id": "ppf.pim.ph5.st2.ss2.t2.ru.pim.ph5.st2.ss2.solution-architect",
+                      "type": "ProcessPerformer",
+                      "taskUseRef": "pim.ph5.st2.ss2.t2",
+                      "kind": "primary",
+                      "roleUseRef": "ru.pim.ph5.st2.ss2.solution-architect"
+                    }
+                  ],
                   "selectedStepIndices": [0, 1],
                   "inputWorkProductUseRefs": [
-                    "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.policy-catalog"
+                    "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.policy-catalog",
+                    "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.api-catalog",
+                    "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.workflow-model",
+                    "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.service-map"
                   ],
                   "outputWorkProductUseRefs": [
                     "wpu.pim.ph5.st2.ss2.t2.output.pim-artifact.policy-catalog"
+                  ],
+                  "processParameters": [
+                    {
+                      "id": "pp.pim.ph5.st2.ss2.t2.in.wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.policy-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss2.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.policy-catalog"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss2.t2.in.wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.api-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss2.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.api-catalog"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss2.t2.in.wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.workflow-model",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss2.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.workflow-model"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss2.t2.in.wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.service-map",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss2.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.service-map"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss2.t2.out.wpu.pim.ph5.st2.ss2.t2.output.pim-artifact.policy-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss2.t2",
+                      "direction": "out",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss2.t2.output.pim-artifact.policy-catalog"
+                    }
                   ]
                 }
               ]
@@ -4002,12 +6695,57 @@
                   "type": "TaskUse",
                   "taskDefinitionRef": "task.pim.ph5.st2.ss3.t1",
                   "performerRoleUseRefs": ["ru.pim.ph5.st2.ss3.solution-architect"],
+                  "processPerformers": [
+                    {
+                      "id": "ppf.pim.ph5.st2.ss3.t1.ru.pim.ph5.st2.ss3.solution-architect",
+                      "type": "ProcessPerformer",
+                      "taskUseRef": "pim.ph5.st2.ss3.t1",
+                      "kind": "primary",
+                      "roleUseRef": "ru.pim.ph5.st2.ss3.solution-architect"
+                    }
+                  ],
                   "selectedStepIndices": [0, 1],
                   "inputWorkProductUseRefs": [
-                    "wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.policy-catalog"
+                    "wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.policy-catalog",
+                    "wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.security-model",
+                    "wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.data-architecture"
                   ],
                   "outputWorkProductUseRefs": [
                     "wpu.pim.ph5.st2.ss3.t1.output.pim-artifact.policy-catalog"
+                  ],
+                  "processParameters": [
+                    {
+                      "id": "pp.pim.ph5.st2.ss3.t1.in.wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.policy-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss3.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.policy-catalog"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss3.t1.in.wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.security-model",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss3.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.security-model"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss3.t1.in.wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.data-architecture",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss3.t1",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.data-architecture"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss3.t1.out.wpu.pim.ph5.st2.ss3.t1.output.pim-artifact.policy-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss3.t1",
+                      "direction": "out",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss3.t1.output.pim-artifact.policy-catalog"
+                    }
                   ]
                 },
                 {
@@ -4015,12 +6753,66 @@
                   "type": "TaskUse",
                   "taskDefinitionRef": "task.pim.ph5.st2.ss3.t2",
                   "performerRoleUseRefs": ["ru.pim.ph5.st2.ss3.solution-architect"],
+                  "processPerformers": [
+                    {
+                      "id": "ppf.pim.ph5.st2.ss3.t2.ru.pim.ph5.st2.ss3.solution-architect",
+                      "type": "ProcessPerformer",
+                      "taskUseRef": "pim.ph5.st2.ss3.t2",
+                      "kind": "primary",
+                      "roleUseRef": "ru.pim.ph5.st2.ss3.solution-architect"
+                    }
+                  ],
                   "selectedStepIndices": [0, 1],
                   "inputWorkProductUseRefs": [
-                    "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.policy-catalog"
+                    "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.policy-catalog",
+                    "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.workflow-model",
+                    "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.api-catalog",
+                    "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.service-map"
                   ],
                   "outputWorkProductUseRefs": [
                     "wpu.pim.ph5.st2.ss3.t2.output.pim-artifact.policy-catalog"
+                  ],
+                  "processParameters": [
+                    {
+                      "id": "pp.pim.ph5.st2.ss3.t2.in.wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.policy-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss3.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.policy-catalog"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss3.t2.in.wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.workflow-model",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss3.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.workflow-model"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss3.t2.in.wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.api-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss3.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.api-catalog"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss3.t2.in.wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.service-map",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss3.t2",
+                      "direction": "in",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.service-map"
+                    },
+                    {
+                      "id": "pp.pim.ph5.st2.ss3.t2.out.wpu.pim.ph5.st2.ss3.t2.output.pim-artifact.policy-catalog",
+                      "type": "ProcessParameter",
+                      "taskUseRef": "pim.ph5.st2.ss3.t2",
+                      "direction": "out",
+                      "optional": false,
+                      "workProductUseRef": "wpu.pim.ph5.st2.ss3.t2.output.pim-artifact.policy-catalog"
+                    }
                   ]
                 }
               ]
@@ -4044,18 +6836,166 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph5.st3.t1",
               "performerRoleUseRefs": ["ru.pim.ph5.st3.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph5.st3.t1.ru.pim.ph5.st3.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph5.st3.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph5.st3.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph5.st3.t1.input.pim-artifact.policy-catalog"],
-              "outputWorkProductUseRefs": ["wpu.pim.ph5.st3.t1.output.pim-artifact.config-package"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph5.st3.t1.input.pim-artifact.policy-catalog",
+                "wpu.pim.ph5.st3.t1.input.pim-artifact.api-catalog",
+                "wpu.pim.ph5.st3.t1.input.pim-artifact.integration-topology",
+                "wpu.pim.ph5.st3.t1.input.pim-artifact.contract-catalog",
+                "wpu.pim.ph5.st3.t1.input.pim-artifact.service-map",
+                "wpu.pim.ph5.st3.t1.input.pim-artifact.architecture-posture"
+              ],
+              "outputWorkProductUseRefs": ["wpu.pim.ph5.st3.t1.output.pim-artifact.config-package"],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph5.st3.t1.in.wpu.pim.ph5.st3.t1.input.pim-artifact.policy-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t1.input.pim-artifact.policy-catalog"
+                },
+                {
+                  "id": "pp.pim.ph5.st3.t1.in.wpu.pim.ph5.st3.t1.input.pim-artifact.api-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t1.input.pim-artifact.api-catalog"
+                },
+                {
+                  "id": "pp.pim.ph5.st3.t1.in.wpu.pim.ph5.st3.t1.input.pim-artifact.integration-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t1.input.pim-artifact.integration-topology"
+                },
+                {
+                  "id": "pp.pim.ph5.st3.t1.in.wpu.pim.ph5.st3.t1.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t1.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph5.st3.t1.in.wpu.pim.ph5.st3.t1.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t1.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph5.st3.t1.in.wpu.pim.ph5.st3.t1.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t1.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph5.st3.t1.out.wpu.pim.ph5.st3.t1.output.pim-artifact.config-package",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t1.output.pim-artifact.config-package"
+                }
+              ]
             },
             {
               "id": "pim.ph5.st3.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph5.st3.t2",
               "performerRoleUseRefs": ["ru.pim.ph5.st3.solution-architect"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph5.st3.t2.ru.pim.ph5.st3.solution-architect",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph5.st3.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph5.st3.solution-architect"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
-              "inputWorkProductUseRefs": ["wpu.pim.ph5.st3.t2.input.pim-artifact.config-package"],
-              "outputWorkProductUseRefs": ["wpu.pim.ph5.st3.t2.output.pim-artifact.config-package"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph5.st3.t2.input.pim-artifact.config-package",
+                "wpu.pim.ph5.st3.t2.input.pim-artifact.architecture-posture",
+                "wpu.pim.ph5.st3.t2.input.pim-artifact.security-model",
+                "wpu.pim.ph5.st3.t2.input.pim-artifact.compute-catalog",
+                "wpu.pim.ph5.st3.t2.input.pim-artifact.api-catalog",
+                "wpu.pim.ph5.st3.t2.input.pim-artifact.integration-topology"
+              ],
+              "outputWorkProductUseRefs": ["wpu.pim.ph5.st3.t2.output.pim-artifact.config-package"],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph5.st3.t2.in.wpu.pim.ph5.st3.t2.input.pim-artifact.config-package",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t2.input.pim-artifact.config-package"
+                },
+                {
+                  "id": "pp.pim.ph5.st3.t2.in.wpu.pim.ph5.st3.t2.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t2.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph5.st3.t2.in.wpu.pim.ph5.st3.t2.input.pim-artifact.security-model",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t2.input.pim-artifact.security-model"
+                },
+                {
+                  "id": "pp.pim.ph5.st3.t2.in.wpu.pim.ph5.st3.t2.input.pim-artifact.compute-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t2.input.pim-artifact.compute-catalog"
+                },
+                {
+                  "id": "pp.pim.ph5.st3.t2.in.wpu.pim.ph5.st3.t2.input.pim-artifact.api-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t2.input.pim-artifact.api-catalog"
+                },
+                {
+                  "id": "pp.pim.ph5.st3.t2.in.wpu.pim.ph5.st3.t2.input.pim-artifact.integration-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t2.input.pim-artifact.integration-topology"
+                },
+                {
+                  "id": "pp.pim.ph5.st3.t2.out.wpu.pim.ph5.st3.t2.output.pim-artifact.config-package",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph5.st3.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph5.st3.t2.output.pim-artifact.config-package"
+                }
+              ]
             }
           ]
         }
@@ -4093,10 +7033,111 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph6.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph6.st1.process-reviewer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph6.st1.t1.ru.pim.ph6.st1.process-reviewer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph6.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph6.st1.process-reviewer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph6.st1.t1.input.pim-artifact.config-package"],
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph6.st1.t1.input.pim-artifact.config-package",
+                "wpu.pim.ph6.st1.t1.input.pim-artifact.architecture-posture",
+                "wpu.pim.ph6.st1.t1.input.pim-artifact.service-map",
+                "wpu.pim.ph6.st1.t1.input.pim-artifact.data-architecture",
+                "wpu.pim.ph6.st1.t1.input.pim-artifact.compute-catalog",
+                "wpu.pim.ph6.st1.t1.input.pim-artifact.api-catalog",
+                "wpu.pim.ph6.st1.t1.input.pim-artifact.integration-topology",
+                "wpu.pim.ph6.st1.t1.input.pim-artifact.security-model",
+                "wpu.pim.ph6.st1.t1.input.pim-artifact.policy-catalog"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph6.st1.t1.output.pim-artifact.platform-readiness"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph6.st1.t1.in.wpu.pim.ph6.st1.t1.input.pim-artifact.config-package",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st1.t1.input.pim-artifact.config-package"
+                },
+                {
+                  "id": "pp.pim.ph6.st1.t1.in.wpu.pim.ph6.st1.t1.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st1.t1.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph6.st1.t1.in.wpu.pim.ph6.st1.t1.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st1.t1.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph6.st1.t1.in.wpu.pim.ph6.st1.t1.input.pim-artifact.data-architecture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st1.t1.input.pim-artifact.data-architecture"
+                },
+                {
+                  "id": "pp.pim.ph6.st1.t1.in.wpu.pim.ph6.st1.t1.input.pim-artifact.compute-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st1.t1.input.pim-artifact.compute-catalog"
+                },
+                {
+                  "id": "pp.pim.ph6.st1.t1.in.wpu.pim.ph6.st1.t1.input.pim-artifact.api-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st1.t1.input.pim-artifact.api-catalog"
+                },
+                {
+                  "id": "pp.pim.ph6.st1.t1.in.wpu.pim.ph6.st1.t1.input.pim-artifact.integration-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st1.t1.input.pim-artifact.integration-topology"
+                },
+                {
+                  "id": "pp.pim.ph6.st1.t1.in.wpu.pim.ph6.st1.t1.input.pim-artifact.security-model",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st1.t1.input.pim-artifact.security-model"
+                },
+                {
+                  "id": "pp.pim.ph6.st1.t1.in.wpu.pim.ph6.st1.t1.input.pim-artifact.policy-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st1.t1.input.pim-artifact.policy-catalog"
+                },
+                {
+                  "id": "pp.pim.ph6.st1.t1.out.wpu.pim.ph6.st1.t1.output.pim-artifact.platform-readiness",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st1.t1.output.pim-artifact.platform-readiness"
+                }
               ]
             }
           ]
@@ -4127,12 +7168,147 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph6.st2.t1",
               "performerRoleUseRefs": ["ru.pim.ph6.st2.process-reviewer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph6.st2.t1.ru.pim.ph6.st2.process-reviewer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph6.st2.process-reviewer"
+                }
+              ],
               "selectedStepIndices": [0, 1],
               "inputWorkProductUseRefs": [
-                "wpu.pim.ph6.st2.t1.input.pim-artifact.platform-readiness"
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.platform-readiness",
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.increment-plan",
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.architecture-posture",
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.service-map",
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.contract-catalog",
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.data-architecture",
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.compute-catalog",
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.api-catalog",
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.integration-topology",
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.workflow-model",
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.security-model",
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.policy-catalog",
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.config-package"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph6.st2.t1.output.pim-artifact.platform-readiness"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.platform-readiness",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.platform-readiness"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.service-map",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.service-map"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.contract-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.contract-catalog"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.data-architecture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.data-architecture"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.compute-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.compute-catalog"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.api-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.api-catalog"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.integration-topology",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.integration-topology"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.workflow-model",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.workflow-model"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.security-model",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.security-model"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.policy-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.policy-catalog"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.in.wpu.pim.ph6.st2.t1.input.pim-artifact.config-package",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.input.pim-artifact.config-package"
+                },
+                {
+                  "id": "pp.pim.ph6.st2.t1.out.wpu.pim.ph6.st2.t1.output.pim-artifact.platform-readiness",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st2.t1.output.pim-artifact.platform-readiness"
+                }
               ]
             }
           ]
@@ -4153,12 +7329,84 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.pim.ph6.st3.t1",
               "performerRoleUseRefs": ["ru.pim.ph6.st3.process-reviewer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.pim.ph6.st3.t1.ru.pim.ph6.st3.process-reviewer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "pim.ph6.st3.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.pim.ph6.st3.process-reviewer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.pim.ph6.st3.t1.input.pim-artifact.platform-readiness"
+                "wpu.pim.ph6.st3.t1.input.pim-artifact.platform-readiness",
+                "wpu.pim.ph6.st3.t1.input.pim-artifact.increment-plan",
+                "wpu.pim.ph6.st3.t1.input.pim-artifact.architecture-posture",
+                "wpu.pim.ph6.st3.t1.input.pim-artifact.security-model",
+                "wpu.pim.ph6.st3.t1.input.pim-artifact.policy-catalog",
+                "wpu.pim.ph6.st3.t1.input.pim-artifact.config-package"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.pim.ph6.st3.t1.output.pim-artifact.increment-review"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.pim.ph6.st3.t1.in.wpu.pim.ph6.st3.t1.input.pim-artifact.platform-readiness",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st3.t1.input.pim-artifact.platform-readiness"
+                },
+                {
+                  "id": "pp.pim.ph6.st3.t1.in.wpu.pim.ph6.st3.t1.input.pim-artifact.increment-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st3.t1.input.pim-artifact.increment-plan"
+                },
+                {
+                  "id": "pp.pim.ph6.st3.t1.in.wpu.pim.ph6.st3.t1.input.pim-artifact.architecture-posture",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st3.t1.input.pim-artifact.architecture-posture"
+                },
+                {
+                  "id": "pp.pim.ph6.st3.t1.in.wpu.pim.ph6.st3.t1.input.pim-artifact.security-model",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st3.t1.input.pim-artifact.security-model"
+                },
+                {
+                  "id": "pp.pim.ph6.st3.t1.in.wpu.pim.ph6.st3.t1.input.pim-artifact.policy-catalog",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st3.t1.input.pim-artifact.policy-catalog"
+                },
+                {
+                  "id": "pp.pim.ph6.st3.t1.in.wpu.pim.ph6.st3.t1.input.pim-artifact.config-package",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st3.t1.input.pim-artifact.config-package"
+                },
+                {
+                  "id": "pp.pim.ph6.st3.t1.out.wpu.pim.ph6.st3.t1.output.pim-artifact.increment-review",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "pim.ph6.st3.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.pim.ph6.st3.t1.output.pim-artifact.increment-review"
+                }
               ]
             }
           ]

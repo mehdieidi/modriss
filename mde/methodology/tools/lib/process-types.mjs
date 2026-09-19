@@ -26,7 +26,7 @@
  * @property {string[]} inputWorkProductRefs
  * @property {string} inputSource - declared; compiler never infers task inputs from sequence position
  * @property {string[]} outputWorkProductRefs
- * @property {{workProductDefinitionRef: string, direction: string, optional: boolean}[]} workProductParameters
+ * @property {{type: string, workProductDefinitionRef: string, direction: string, optional: boolean}[]} workProductParameters
  * @property {MetamodelBinding[]} metamodelBindings
  * @property {string[]} steps
  * @property {string[]} entryCriteria
@@ -39,9 +39,11 @@
  * @property {string} id
  * @property {string} taskDefinitionRef
  * @property {string[]} performerRoleUseRefs
+ * @property {{id: string, type: string, taskUseRef: string, kind: string, roleUseRef: string}[]} processPerformers
  * @property {number[]} selectedStepIndices
  * @property {string[]} inputWorkProductUseRefs
  * @property {string[]} outputWorkProductUseRefs
+ * @property {{id: string, type: string, taskUseRef: string, direction: string, optional: boolean, workProductUseRef: string}[]} processParameters
  */
 
 /**

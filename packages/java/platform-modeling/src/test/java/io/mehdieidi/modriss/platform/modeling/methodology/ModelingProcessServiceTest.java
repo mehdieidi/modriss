@@ -57,7 +57,12 @@ class ModelingProcessServiceTest {
     assertFalse(stages.isEmpty());
     @SuppressWarnings("unchecked")
     Map<String, Object> firstStage = (Map<String, Object>) stages.get(0);
-    assertFalse(list(firstStage.get("taskUses")).isEmpty());
+    List<Object> taskUses = list(firstStage.get("taskUses"));
+    assertFalse(taskUses.isEmpty());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> firstTaskUse = (Map<String, Object>) taskUses.get(0);
+    assertFalse(list(firstTaskUse.get("processParameters")).isEmpty());
+    assertFalse(list(firstTaskUse.get("processPerformers")).isEmpty());
   }
 
   @Test

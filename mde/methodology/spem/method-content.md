@@ -135,6 +135,47 @@ TaskDefinition; it never infers inputs from task order or from the preceding
 task's outputs. This keeps the method semantics stable when activities are
 reordered, grouped, split, or tailored.
 
+## Explicit process parameters and performers
+
+SPEM represents the process-time relationship between a TaskUse and its
+WorkProductUses with owned `ProcessParameter` objects, and represents the
+performing role through a `ProcessPerformer` relationship. The generated DSL
+now emits those objects explicitly:
+
+```json
+{
+  "id": "pim.ph5.st1.t1",
+  "type": "TaskUse",
+  "processParameters": [
+    {
+      "id": "pp.pim.ph5.st1.t1.in.wpu.pim.ph5.st1.t1.input.pim-artifact.service-map",
+      "type": "ProcessParameter",
+      "direction": "in",
+      "workProductUseRef": "wpu.pim.ph5.st1.t1.input.pim-artifact.service-map"
+    }
+  ],
+  "processPerformers": [
+    {
+      "id": "ppf.pim.ph5.st1.t1.ru.pim.ph5.st1.solution-architect",
+      "type": "ProcessPerformer",
+      "kind": "primary",
+      "roleUseRef": "ru.pim.ph5.st1.solution-architect"
+    }
+  ]
+}
+```
+
+The legacy `inputWorkProductUseRefs`, `outputWorkProductUseRefs`, and
+`performerRoleUseRefs` arrays remain as indexed convenience projections for
+the UI and existing clients; they are validated against the explicit
+relationship objects. The TaskDefinition's `DefaultTaskDefinitionParameter`
+objects describe reusable default direction and optionality, while each
+TaskUse's `ProcessParameter` binds that process occurrence to concrete
+WorkProductUses. The generated `type` is the SPEM name
+`Default_TaskDefinitionParameter` for reusable task parameters. This is a JSON projection mapped to the SPEM 2.0 semantics
+described by the [OMG SPEM 2.0 specification](https://www.omg.org/spec/SPEM/2.0/PDF/),
+not a claim that the JSON is native SPEM XMI.
+
 ## Activities, phases, stages, and iterations
 
 SPEM 2.0 provides `Activity` and a general Kind mechanism. `Phase` and

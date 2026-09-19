@@ -69,11 +69,13 @@ function workProductParameters(inputWorkProductRefs, outputWorkProductRefs, opti
   const optionalInputs = new Set(optionalInputRefs);
   return [
     ...inputWorkProductRefs.map((workProductDefinitionRef) => ({
+      type: "Default_TaskDefinitionParameter",
       workProductDefinitionRef,
       direction: "in",
       optional: optionalInputs.has(workProductDefinitionRef),
     })),
     ...outputWorkProductRefs.map((workProductDefinitionRef) => ({
+      type: "Default_TaskDefinitionParameter",
       workProductDefinitionRef,
       direction: "out",
       optional: false,
@@ -140,6 +142,14 @@ function workProductUseId(taskUseId, workProductId, usage) {
   return `wpu.${taskUseId}.${usage}.${workProductId}`;
 }
 
+function processParameterId(taskUseId, workProductUseRef, direction) {
+  return `pp.${taskUseId}.${direction}.${workProductUseRef}`;
+}
+
+function processPerformerId(taskUseId, roleUseRef) {
+  return `ppf.${taskUseId}.${roleUseRef}`;
+}
+
 function roleUseId(activityId, roleId) {
   return `ru.${activityId}.${roleId}`;
 }
@@ -177,17 +187,47 @@ function compileTaskUse(task, activity, workProductUses, inputWorkProductIdsByTa
     });
     return id;
   });
+  const performerRoleUseRefs = task.primaryRole
+    ? [roleUseId(activity.id, task.primaryRole)]
+    : [];
+  const processParameters = [
+    ...inputUseRefs.map((workProductUseRef) => ({
+      id: processParameterId(task.id, workProductUseRef, "in"),
+      type: "ProcessParameter",
+      taskUseRef: task.id,
+      direction: "in",
+      optional: (task.optionalInputArtifactIds || []).includes(
+        workProductUses.find((use) => use.id === workProductUseRef)?.workProductDefinitionRef,
+      ),
+      workProductUseRef,
+    })),
+    ...outputRefs.map((workProductUseRef) => ({
+      id: processParameterId(task.id, workProductUseRef, "out"),
+      type: "ProcessParameter",
+      taskUseRef: task.id,
+      direction: "out",
+      optional: false,
+      workProductUseRef,
+    })),
+  ];
+  const processPerformers = performerRoleUseRefs.map((roleUseRef) => ({
+    id: processPerformerId(task.id, roleUseRef),
+    type: "ProcessPerformer",
+    taskUseRef: task.id,
+    kind: "primary",
+    roleUseRef,
+  }));
 
   return {
     id: task.id,
     type: "TaskUse",
     taskDefinitionRef: taskDefinitionId(task.id),
-    performerRoleUseRefs: task.primaryRole
-      ? [roleUseId(activity.id, task.primaryRole)]
-      : [],
+    performerRoleUseRefs,
+    processPerformers,
     selectedStepIndices: (task.steps || []).map((_, index) => index),
     inputWorkProductUseRefs: inputUseRefs,
     outputWorkProductUseRefs: outputRefs,
+    processParameters,
     childProcessId: task.childProcessId,
     transform: task.transform,
   };

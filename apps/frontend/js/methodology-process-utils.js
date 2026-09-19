@@ -35,8 +35,10 @@ export function tasksForStage(process, stage) {
           id: taskUse.id,
           taskDefinitionRef: taskUse.taskDefinitionRef,
           performerRoleUseRefs: taskUse.performerRoleUseRefs || [],
+          processPerformers: taskUse.processPerformers || [],
           inputWorkProductUseRefs: taskUse.inputWorkProductUseRefs || [],
           outputWorkProductUseRefs: taskUse.outputWorkProductUseRefs || [],
+          processParameters: taskUse.processParameters || [],
           inputArtifacts,
           artifacts,
           paletteFocus:

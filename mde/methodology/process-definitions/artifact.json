@@ -75,6 +75,7 @@
         "outputWorkProductRefs": ["artifact.generated-baseline"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.generated-baseline",
             "direction": "out",
             "optional": false
@@ -106,11 +107,13 @@
         "outputWorkProductRefs": ["artifact.generated-baseline"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.generated-baseline",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.generated-baseline",
             "direction": "out",
             "optional": false
@@ -140,11 +143,13 @@
         "outputWorkProductRefs": ["artifact.generated-baseline"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.generated-baseline",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.generated-baseline",
             "direction": "out",
             "optional": false
@@ -174,11 +179,13 @@
         "outputWorkProductRefs": ["artifact.generated-baseline"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.generated-baseline",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.generated-baseline",
             "direction": "out",
             "optional": false
@@ -208,11 +215,13 @@
         "outputWorkProductRefs": ["artifact.environment-contract"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.generated-baseline",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.environment-contract",
             "direction": "out",
             "optional": false
@@ -237,21 +246,30 @@
         "name": "Configure secret references and encryption",
         "purpose": "Configure secret references and encryption",
         "performerRoleRefs": ["role.security-engineer"],
-        "inputWorkProductRefs": ["artifact.environment-contract"],
+        "inputWorkProductRefs": ["artifact.generated-baseline", "artifact.environment-contract"],
         "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.environment-contract", "artifact.security-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.environment-contract",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.environment-contract",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.security-record",
             "direction": "out",
             "optional": false
@@ -276,21 +294,34 @@
         "name": "Review IAM and deployment permissions",
         "purpose": "Review IAM and deployment permissions",
         "performerRoleRefs": ["role.security-engineer"],
-        "inputWorkProductRefs": ["artifact.environment-contract", "artifact.security-record"],
+        "inputWorkProductRefs": [
+          "artifact.environment-contract",
+          "artifact.security-record",
+          "artifact.generated-baseline"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.security-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.environment-contract",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.security-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.security-record",
             "direction": "out",
             "optional": false
@@ -315,16 +346,34 @@
         "name": "Implement repeatable build and deployment pipeline",
         "purpose": "Implement repeatable build and deployment pipeline",
         "performerRoleRefs": ["role.release-engineer"],
-        "inputWorkProductRefs": ["artifact.security-record"],
+        "inputWorkProductRefs": [
+          "artifact.security-record",
+          "artifact.environment-contract",
+          "artifact.generated-baseline"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.environment-contract"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.security-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.environment-contract",
             "direction": "out",
             "optional": false
@@ -349,16 +398,34 @@
         "name": "Run reproducible build and infrastructure validation",
         "purpose": "Run reproducible build and infrastructure validation",
         "performerRoleRefs": ["role.quality-engineer"],
-        "inputWorkProductRefs": ["artifact.environment-contract"],
+        "inputWorkProductRefs": [
+          "artifact.environment-contract",
+          "artifact.security-record",
+          "artifact.generated-baseline"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.verification-evidence"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.environment-contract",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.verification-evidence",
             "direction": "out",
             "optional": false
@@ -383,21 +450,47 @@
         "name": "Assess dependencies and security findings",
         "purpose": "Assess dependencies and security findings",
         "performerRoleRefs": ["role.security-engineer"],
-        "inputWorkProductRefs": ["artifact.verification-evidence"],
+        "inputWorkProductRefs": [
+          "artifact.verification-evidence",
+          "artifact.security-record",
+          "artifact.environment-contract",
+          "artifact.generated-baseline"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.security-record", "artifact.verification-evidence"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.verification-evidence",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.security-record",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.verification-evidence",
             "direction": "out",
             "optional": false
@@ -424,21 +517,41 @@
         "name": "Deploy to staging and execute acceptance tests",
         "purpose": "Deploy to staging and execute acceptance tests",
         "performerRoleRefs": ["role.quality-engineer"],
-        "inputWorkProductRefs": ["artifact.security-record", "artifact.verification-evidence"],
+        "inputWorkProductRefs": [
+          "artifact.security-record",
+          "artifact.verification-evidence",
+          "artifact.environment-contract",
+          "artifact.generated-baseline"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.verification-evidence"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.security-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.verification-evidence",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.verification-evidence",
             "direction": "out",
             "optional": false
@@ -463,21 +576,40 @@
         "name": "Verify observability and operational signals",
         "purpose": "Verify observability and operational signals",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
-        "inputWorkProductRefs": ["artifact.verification-evidence"],
+        "inputWorkProductRefs": [
+          "artifact.verification-evidence",
+          "artifact.environment-contract",
+          "artifact.security-record"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.verification-evidence", "artifact.operations-pack"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.verification-evidence",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.verification-evidence",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.operations-pack",
             "direction": "out",
             "optional": false
@@ -502,21 +634,41 @@
         "name": "Create release, rollback, and communication plan",
         "purpose": "Create release, rollback, and communication plan",
         "performerRoleRefs": ["role.release-engineer"],
-        "inputWorkProductRefs": ["artifact.verification-evidence", "artifact.operations-pack"],
+        "inputWorkProductRefs": [
+          "artifact.verification-evidence",
+          "artifact.operations-pack",
+          "artifact.security-record",
+          "artifact.environment-contract"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.release-plan"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.verification-evidence",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.operations-pack",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.release-plan",
             "direction": "out",
             "optional": false
@@ -541,21 +693,47 @@
         "name": "Obtain production readiness approval",
         "purpose": "Obtain production readiness approval",
         "performerRoleRefs": ["role.service-owner"],
-        "inputWorkProductRefs": ["artifact.release-plan"],
+        "inputWorkProductRefs": [
+          "artifact.release-plan",
+          "artifact.verification-evidence",
+          "artifact.security-record",
+          "artifact.operations-pack"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.release-plan", "artifact.security-record"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.release-plan",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.verification-evidence",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.operations-pack",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.release-plan",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.security-record",
             "direction": "out",
             "optional": false
@@ -580,21 +758,48 @@
         "name": "Complete operations handover",
         "purpose": "Complete operations handover",
         "performerRoleRefs": ["role.service-owner"],
-        "inputWorkProductRefs": ["artifact.release-plan", "artifact.security-record"],
+        "inputWorkProductRefs": [
+          "artifact.release-plan",
+          "artifact.security-record",
+          "artifact.verification-evidence",
+          "artifact.environment-contract",
+          "artifact.generated-baseline"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.operations-pack"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.release-plan",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.security-record",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.verification-evidence",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.operations-pack",
             "direction": "out",
             "optional": false
@@ -619,21 +824,54 @@
         "name": "Execute production validation and close release",
         "purpose": "Execute production validation and close release",
         "performerRoleRefs": ["role.release-engineer"],
-        "inputWorkProductRefs": ["artifact.operations-pack"],
+        "inputWorkProductRefs": [
+          "artifact.operations-pack",
+          "artifact.release-plan",
+          "artifact.verification-evidence",
+          "artifact.security-record",
+          "artifact.environment-contract"
+        ],
         "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.verification-evidence", "artifact.operations-pack"],
         "workProductParameters": [
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.operations-pack",
             "direction": "in",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.release-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.verification-evidence",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.verification-evidence",
             "direction": "out",
             "optional": false
           },
           {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "artifact.operations-pack",
             "direction": "out",
             "optional": false
@@ -931,6 +1169,14 @@
       "usage": "output"
     },
     {
+      "id": "wpu.artifact.ph2.st1.t2.input.artifact.generated-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph2.st1",
+      "taskUseRef": "artifact.ph2.st1.t2",
+      "workProductDefinitionRef": "artifact.generated-baseline",
+      "usage": "input"
+    },
+    {
       "id": "wpu.artifact.ph2.st1.t2.input.artifact.environment-contract",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph2.st1",
@@ -971,6 +1217,14 @@
       "usage": "input"
     },
     {
+      "id": "wpu.artifact.ph2.st2.t1.input.artifact.generated-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph2.st2",
+      "taskUseRef": "artifact.ph2.st2.t1",
+      "workProductDefinitionRef": "artifact.generated-baseline",
+      "usage": "input"
+    },
+    {
       "id": "wpu.artifact.ph2.st2.t1.output.artifact.security-record",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph2.st2",
@@ -984,6 +1238,22 @@
       "activityRef": "artifact.ph2.st2",
       "taskUseRef": "artifact.ph2.st2.t2",
       "workProductDefinitionRef": "artifact.security-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph2.st2.t2.input.artifact.environment-contract",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph2.st2",
+      "taskUseRef": "artifact.ph2.st2.t2",
+      "workProductDefinitionRef": "artifact.environment-contract",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph2.st2.t2.input.artifact.generated-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph2.st2",
+      "taskUseRef": "artifact.ph2.st2.t2",
+      "workProductDefinitionRef": "artifact.generated-baseline",
       "usage": "input"
     },
     {
@@ -1003,6 +1273,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.artifact.ph3.st1.t1.input.artifact.security-record",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st1",
+      "taskUseRef": "artifact.ph3.st1.t1",
+      "workProductDefinitionRef": "artifact.security-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph3.st1.t1.input.artifact.generated-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st1",
+      "taskUseRef": "artifact.ph3.st1.t1",
+      "workProductDefinitionRef": "artifact.generated-baseline",
+      "usage": "input"
+    },
+    {
       "id": "wpu.artifact.ph3.st1.t1.output.artifact.verification-evidence",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph3.st1",
@@ -1016,6 +1302,30 @@
       "activityRef": "artifact.ph3.st1",
       "taskUseRef": "artifact.ph3.st1.t2",
       "workProductDefinitionRef": "artifact.verification-evidence",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph3.st1.t2.input.artifact.security-record",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st1",
+      "taskUseRef": "artifact.ph3.st1.t2",
+      "workProductDefinitionRef": "artifact.security-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph3.st1.t2.input.artifact.environment-contract",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st1",
+      "taskUseRef": "artifact.ph3.st1.t2",
+      "workProductDefinitionRef": "artifact.environment-contract",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph3.st1.t2.input.artifact.generated-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st1",
+      "taskUseRef": "artifact.ph3.st1.t2",
+      "workProductDefinitionRef": "artifact.generated-baseline",
       "usage": "input"
     },
     {
@@ -1051,6 +1361,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.artifact.ph3.st2.t1.input.artifact.environment-contract",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st2",
+      "taskUseRef": "artifact.ph3.st2.t1",
+      "workProductDefinitionRef": "artifact.environment-contract",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph3.st2.t1.input.artifact.generated-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st2",
+      "taskUseRef": "artifact.ph3.st2.t1",
+      "workProductDefinitionRef": "artifact.generated-baseline",
+      "usage": "input"
+    },
+    {
       "id": "wpu.artifact.ph3.st2.t1.output.artifact.verification-evidence",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph3.st2",
@@ -1064,6 +1390,22 @@
       "activityRef": "artifact.ph3.st2",
       "taskUseRef": "artifact.ph3.st2.t2",
       "workProductDefinitionRef": "artifact.verification-evidence",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph3.st2.t2.input.artifact.environment-contract",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st2",
+      "taskUseRef": "artifact.ph3.st2.t2",
+      "workProductDefinitionRef": "artifact.environment-contract",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph3.st2.t2.input.artifact.security-record",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st2",
+      "taskUseRef": "artifact.ph3.st2.t2",
+      "workProductDefinitionRef": "artifact.security-record",
       "usage": "input"
     },
     {
@@ -1099,6 +1441,22 @@
       "usage": "input"
     },
     {
+      "id": "wpu.artifact.ph4.st1.t1.input.artifact.security-record",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st1",
+      "taskUseRef": "artifact.ph4.st1.t1",
+      "workProductDefinitionRef": "artifact.security-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st1.t1.input.artifact.environment-contract",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st1",
+      "taskUseRef": "artifact.ph4.st1.t1",
+      "workProductDefinitionRef": "artifact.environment-contract",
+      "usage": "input"
+    },
+    {
       "id": "wpu.artifact.ph4.st1.t1.output.artifact.release-plan",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph4.st1",
@@ -1112,6 +1470,30 @@
       "activityRef": "artifact.ph4.st1",
       "taskUseRef": "artifact.ph4.st1.t2",
       "workProductDefinitionRef": "artifact.release-plan",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st1.t2.input.artifact.verification-evidence",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st1",
+      "taskUseRef": "artifact.ph4.st1.t2",
+      "workProductDefinitionRef": "artifact.verification-evidence",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st1.t2.input.artifact.security-record",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st1",
+      "taskUseRef": "artifact.ph4.st1.t2",
+      "workProductDefinitionRef": "artifact.security-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st1.t2.input.artifact.operations-pack",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st1",
+      "taskUseRef": "artifact.ph4.st1.t2",
+      "workProductDefinitionRef": "artifact.operations-pack",
       "usage": "input"
     },
     {
@@ -1147,6 +1529,30 @@
       "usage": "input"
     },
     {
+      "id": "wpu.artifact.ph4.st2.t1.input.artifact.verification-evidence",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st2",
+      "taskUseRef": "artifact.ph4.st2.t1",
+      "workProductDefinitionRef": "artifact.verification-evidence",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st2.t1.input.artifact.environment-contract",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st2",
+      "taskUseRef": "artifact.ph4.st2.t1",
+      "workProductDefinitionRef": "artifact.environment-contract",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st2.t1.input.artifact.generated-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st2",
+      "taskUseRef": "artifact.ph4.st2.t1",
+      "workProductDefinitionRef": "artifact.generated-baseline",
+      "usage": "input"
+    },
+    {
       "id": "wpu.artifact.ph4.st2.t1.output.artifact.operations-pack",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph4.st2",
@@ -1160,6 +1566,38 @@
       "activityRef": "artifact.ph4.st2",
       "taskUseRef": "artifact.ph4.st2.t2",
       "workProductDefinitionRef": "artifact.operations-pack",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st2.t2.input.artifact.release-plan",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st2",
+      "taskUseRef": "artifact.ph4.st2.t2",
+      "workProductDefinitionRef": "artifact.release-plan",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st2.t2.input.artifact.verification-evidence",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st2",
+      "taskUseRef": "artifact.ph4.st2.t2",
+      "workProductDefinitionRef": "artifact.verification-evidence",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st2.t2.input.artifact.security-record",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st2",
+      "taskUseRef": "artifact.ph4.st2.t2",
+      "workProductDefinitionRef": "artifact.security-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st2.t2.input.artifact.environment-contract",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st2",
+      "taskUseRef": "artifact.ph4.st2.t2",
+      "workProductDefinitionRef": "artifact.environment-contract",
       "usage": "input"
     },
     {
@@ -1375,10 +1813,29 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph1.st1.t1",
               "performerRoleUseRefs": ["ru.artifact.ph1.st1.application-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph1.st1.t1.ru.artifact.ph1.st1.application-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph1.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph1.st1.application-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph1.st1.t1.output.artifact.generated-baseline"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph1.st1.t1.out.wpu.artifact.ph1.st1.t1.output.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph1.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph1.st1.t1.output.artifact.generated-baseline"
+                }
               ]
             },
             {
@@ -1386,12 +1843,39 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph1.st1.t2",
               "performerRoleUseRefs": ["ru.artifact.ph1.st1.release-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph1.st1.t2.ru.artifact.ph1.st1.release-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph1.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph1.st1.release-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.artifact.ph1.st1.t2.input.artifact.generated-baseline"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph1.st1.t2.output.artifact.generated-baseline"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph1.st1.t2.in.wpu.artifact.ph1.st1.t2.input.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph1.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph1.st1.t2.input.artifact.generated-baseline"
+                },
+                {
+                  "id": "pp.artifact.ph1.st1.t2.out.wpu.artifact.ph1.st1.t2.output.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph1.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph1.st1.t2.output.artifact.generated-baseline"
+                }
               ]
             }
           ]
@@ -1414,12 +1898,39 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph1.st2.t1",
               "performerRoleUseRefs": ["ru.artifact.ph1.st2.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph1.st2.t1.ru.artifact.ph1.st2.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph1.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph1.st2.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.artifact.ph1.st2.t1.input.artifact.generated-baseline"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph1.st2.t1.output.artifact.generated-baseline"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph1.st2.t1.in.wpu.artifact.ph1.st2.t1.input.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph1.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph1.st2.t1.input.artifact.generated-baseline"
+                },
+                {
+                  "id": "pp.artifact.ph1.st2.t1.out.wpu.artifact.ph1.st2.t1.output.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph1.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph1.st2.t1.output.artifact.generated-baseline"
+                }
               ]
             },
             {
@@ -1427,12 +1938,39 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph1.st2.t2",
               "performerRoleUseRefs": ["ru.artifact.ph1.st2.application-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph1.st2.t2.ru.artifact.ph1.st2.application-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph1.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph1.st2.application-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.artifact.ph1.st2.t2.input.artifact.generated-baseline"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph1.st2.t2.output.artifact.generated-baseline"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph1.st2.t2.in.wpu.artifact.ph1.st2.t2.input.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph1.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph1.st2.t2.input.artifact.generated-baseline"
+                },
+                {
+                  "id": "pp.artifact.ph1.st2.t2.out.wpu.artifact.ph1.st2.t2.output.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph1.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph1.st2.t2.output.artifact.generated-baseline"
+                }
               ]
             }
           ]
@@ -1474,12 +2012,39 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph2.st1.t1",
               "performerRoleUseRefs": ["ru.artifact.ph2.st1.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph2.st1.t1.ru.artifact.ph2.st1.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph2.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph2.st1.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.artifact.ph2.st1.t1.input.artifact.generated-baseline"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph2.st1.t1.output.artifact.environment-contract"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph2.st1.t1.in.wpu.artifact.ph2.st1.t1.input.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st1.t1.input.artifact.generated-baseline"
+                },
+                {
+                  "id": "pp.artifact.ph2.st1.t1.out.wpu.artifact.ph2.st1.t1.output.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st1.t1.output.artifact.environment-contract"
+                }
               ]
             },
             {
@@ -1487,13 +2052,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph2.st1.t2",
               "performerRoleUseRefs": ["ru.artifact.ph2.st1.security-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph2.st1.t2.ru.artifact.ph2.st1.security-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph2.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph2.st1.security-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
+                "wpu.artifact.ph2.st1.t2.input.artifact.generated-baseline",
                 "wpu.artifact.ph2.st1.t2.input.artifact.environment-contract"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph2.st1.t2.output.artifact.environment-contract",
                 "wpu.artifact.ph2.st1.t2.output.artifact.security-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph2.st1.t2.in.wpu.artifact.ph2.st1.t2.input.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st1.t2.input.artifact.generated-baseline"
+                },
+                {
+                  "id": "pp.artifact.ph2.st1.t2.in.wpu.artifact.ph2.st1.t2.input.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st1.t2.input.artifact.environment-contract"
+                },
+                {
+                  "id": "pp.artifact.ph2.st1.t2.out.wpu.artifact.ph2.st1.t2.output.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st1.t2.output.artifact.environment-contract"
+                },
+                {
+                  "id": "pp.artifact.ph2.st1.t2.out.wpu.artifact.ph2.st1.t2.output.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st1.t2.output.artifact.security-record"
+                }
               ]
             }
           ]
@@ -1516,13 +2125,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph2.st2.t1",
               "performerRoleUseRefs": ["ru.artifact.ph2.st2.security-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph2.st2.t1.ru.artifact.ph2.st2.security-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph2.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph2.st2.security-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.artifact.ph2.st2.t1.input.artifact.environment-contract",
-                "wpu.artifact.ph2.st2.t1.input.artifact.security-record"
+                "wpu.artifact.ph2.st2.t1.input.artifact.security-record",
+                "wpu.artifact.ph2.st2.t1.input.artifact.generated-baseline"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph2.st2.t1.output.artifact.security-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph2.st2.t1.in.wpu.artifact.ph2.st2.t1.input.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st2.t1.input.artifact.environment-contract"
+                },
+                {
+                  "id": "pp.artifact.ph2.st2.t1.in.wpu.artifact.ph2.st2.t1.input.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st2.t1.input.artifact.security-record"
+                },
+                {
+                  "id": "pp.artifact.ph2.st2.t1.in.wpu.artifact.ph2.st2.t1.input.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st2.t1.input.artifact.generated-baseline"
+                },
+                {
+                  "id": "pp.artifact.ph2.st2.t1.out.wpu.artifact.ph2.st2.t1.output.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st2.t1.output.artifact.security-record"
+                }
               ]
             },
             {
@@ -1530,10 +2183,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph2.st2.t2",
               "performerRoleUseRefs": ["ru.artifact.ph2.st2.release-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph2.st2.t2.ru.artifact.ph2.st2.release-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph2.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph2.st2.release-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
-              "inputWorkProductUseRefs": ["wpu.artifact.ph2.st2.t2.input.artifact.security-record"],
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph2.st2.t2.input.artifact.security-record",
+                "wpu.artifact.ph2.st2.t2.input.artifact.environment-contract",
+                "wpu.artifact.ph2.st2.t2.input.artifact.generated-baseline"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph2.st2.t2.output.artifact.environment-contract"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph2.st2.t2.in.wpu.artifact.ph2.st2.t2.input.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st2.t2.input.artifact.security-record"
+                },
+                {
+                  "id": "pp.artifact.ph2.st2.t2.in.wpu.artifact.ph2.st2.t2.input.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st2.t2.input.artifact.environment-contract"
+                },
+                {
+                  "id": "pp.artifact.ph2.st2.t2.in.wpu.artifact.ph2.st2.t2.input.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st2.t2.input.artifact.generated-baseline"
+                },
+                {
+                  "id": "pp.artifact.ph2.st2.t2.out.wpu.artifact.ph2.st2.t2.output.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph2.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph2.st2.t2.output.artifact.environment-contract"
+                }
               ]
             }
           ]
@@ -1576,12 +2276,57 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph3.st1.t1",
               "performerRoleUseRefs": ["ru.artifact.ph3.st1.quality-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph3.st1.t1.ru.artifact.ph3.st1.quality-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph3.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph3.st1.quality-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.artifact.ph3.st1.t1.input.artifact.environment-contract"
+                "wpu.artifact.ph3.st1.t1.input.artifact.environment-contract",
+                "wpu.artifact.ph3.st1.t1.input.artifact.security-record",
+                "wpu.artifact.ph3.st1.t1.input.artifact.generated-baseline"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph3.st1.t1.output.artifact.verification-evidence"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph3.st1.t1.in.wpu.artifact.ph3.st1.t1.input.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st1.t1.input.artifact.environment-contract"
+                },
+                {
+                  "id": "pp.artifact.ph3.st1.t1.in.wpu.artifact.ph3.st1.t1.input.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st1.t1.input.artifact.security-record"
+                },
+                {
+                  "id": "pp.artifact.ph3.st1.t1.in.wpu.artifact.ph3.st1.t1.input.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st1.t1.input.artifact.generated-baseline"
+                },
+                {
+                  "id": "pp.artifact.ph3.st1.t1.out.wpu.artifact.ph3.st1.t1.output.artifact.verification-evidence",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st1.t1.output.artifact.verification-evidence"
+                }
               ]
             },
             {
@@ -1589,13 +2334,75 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph3.st1.t2",
               "performerRoleUseRefs": ["ru.artifact.ph3.st1.security-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph3.st1.t2.ru.artifact.ph3.st1.security-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph3.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph3.st1.security-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.artifact.ph3.st1.t2.input.artifact.verification-evidence"
+                "wpu.artifact.ph3.st1.t2.input.artifact.verification-evidence",
+                "wpu.artifact.ph3.st1.t2.input.artifact.security-record",
+                "wpu.artifact.ph3.st1.t2.input.artifact.environment-contract",
+                "wpu.artifact.ph3.st1.t2.input.artifact.generated-baseline"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph3.st1.t2.output.artifact.security-record",
                 "wpu.artifact.ph3.st1.t2.output.artifact.verification-evidence"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph3.st1.t2.in.wpu.artifact.ph3.st1.t2.input.artifact.verification-evidence",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st1.t2.input.artifact.verification-evidence"
+                },
+                {
+                  "id": "pp.artifact.ph3.st1.t2.in.wpu.artifact.ph3.st1.t2.input.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st1.t2.input.artifact.security-record"
+                },
+                {
+                  "id": "pp.artifact.ph3.st1.t2.in.wpu.artifact.ph3.st1.t2.input.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st1.t2.input.artifact.environment-contract"
+                },
+                {
+                  "id": "pp.artifact.ph3.st1.t2.in.wpu.artifact.ph3.st1.t2.input.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st1.t2.input.artifact.generated-baseline"
+                },
+                {
+                  "id": "pp.artifact.ph3.st1.t2.out.wpu.artifact.ph3.st1.t2.output.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st1.t2.output.artifact.security-record"
+                },
+                {
+                  "id": "pp.artifact.ph3.st1.t2.out.wpu.artifact.ph3.st1.t2.output.artifact.verification-evidence",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st1.t2.output.artifact.verification-evidence"
+                }
               ]
             }
           ]
@@ -1618,13 +2425,66 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph3.st2.t1",
               "performerRoleUseRefs": ["ru.artifact.ph3.st2.quality-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph3.st2.t1.ru.artifact.ph3.st2.quality-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph3.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph3.st2.quality-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.artifact.ph3.st2.t1.input.artifact.security-record",
-                "wpu.artifact.ph3.st2.t1.input.artifact.verification-evidence"
+                "wpu.artifact.ph3.st2.t1.input.artifact.verification-evidence",
+                "wpu.artifact.ph3.st2.t1.input.artifact.environment-contract",
+                "wpu.artifact.ph3.st2.t1.input.artifact.generated-baseline"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph3.st2.t1.output.artifact.verification-evidence"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph3.st2.t1.in.wpu.artifact.ph3.st2.t1.input.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st2.t1.input.artifact.security-record"
+                },
+                {
+                  "id": "pp.artifact.ph3.st2.t1.in.wpu.artifact.ph3.st2.t1.input.artifact.verification-evidence",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st2.t1.input.artifact.verification-evidence"
+                },
+                {
+                  "id": "pp.artifact.ph3.st2.t1.in.wpu.artifact.ph3.st2.t1.input.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st2.t1.input.artifact.environment-contract"
+                },
+                {
+                  "id": "pp.artifact.ph3.st2.t1.in.wpu.artifact.ph3.st2.t1.input.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st2.t1.input.artifact.generated-baseline"
+                },
+                {
+                  "id": "pp.artifact.ph3.st2.t1.out.wpu.artifact.ph3.st2.t1.output.artifact.verification-evidence",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st2.t1.output.artifact.verification-evidence"
+                }
               ]
             },
             {
@@ -1632,13 +2492,66 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph3.st2.t2",
               "performerRoleUseRefs": ["ru.artifact.ph3.st2.cloud-platform-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph3.st2.t2.ru.artifact.ph3.st2.cloud-platform-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph3.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph3.st2.cloud-platform-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
-                "wpu.artifact.ph3.st2.t2.input.artifact.verification-evidence"
+                "wpu.artifact.ph3.st2.t2.input.artifact.verification-evidence",
+                "wpu.artifact.ph3.st2.t2.input.artifact.environment-contract",
+                "wpu.artifact.ph3.st2.t2.input.artifact.security-record"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph3.st2.t2.output.artifact.verification-evidence",
                 "wpu.artifact.ph3.st2.t2.output.artifact.operations-pack"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph3.st2.t2.in.wpu.artifact.ph3.st2.t2.input.artifact.verification-evidence",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st2.t2.input.artifact.verification-evidence"
+                },
+                {
+                  "id": "pp.artifact.ph3.st2.t2.in.wpu.artifact.ph3.st2.t2.input.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st2.t2.input.artifact.environment-contract"
+                },
+                {
+                  "id": "pp.artifact.ph3.st2.t2.in.wpu.artifact.ph3.st2.t2.input.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st2.t2.input.artifact.security-record"
+                },
+                {
+                  "id": "pp.artifact.ph3.st2.t2.out.wpu.artifact.ph3.st2.t2.output.artifact.verification-evidence",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st2.t2.output.artifact.verification-evidence"
+                },
+                {
+                  "id": "pp.artifact.ph3.st2.t2.out.wpu.artifact.ph3.st2.t2.output.artifact.operations-pack",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph3.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph3.st2.t2.output.artifact.operations-pack"
+                }
               ]
             }
           ]
@@ -1678,23 +2591,140 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph4.st1.t1",
               "performerRoleUseRefs": ["ru.artifact.ph4.st1.release-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph4.st1.t1.ru.artifact.ph4.st1.release-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph4.st1.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph4.st1.release-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.artifact.ph4.st1.t1.input.artifact.verification-evidence",
-                "wpu.artifact.ph4.st1.t1.input.artifact.operations-pack"
+                "wpu.artifact.ph4.st1.t1.input.artifact.operations-pack",
+                "wpu.artifact.ph4.st1.t1.input.artifact.security-record",
+                "wpu.artifact.ph4.st1.t1.input.artifact.environment-contract"
               ],
-              "outputWorkProductUseRefs": ["wpu.artifact.ph4.st1.t1.output.artifact.release-plan"]
+              "outputWorkProductUseRefs": ["wpu.artifact.ph4.st1.t1.output.artifact.release-plan"],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph4.st1.t1.in.wpu.artifact.ph4.st1.t1.input.artifact.verification-evidence",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st1.t1.input.artifact.verification-evidence"
+                },
+                {
+                  "id": "pp.artifact.ph4.st1.t1.in.wpu.artifact.ph4.st1.t1.input.artifact.operations-pack",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st1.t1.input.artifact.operations-pack"
+                },
+                {
+                  "id": "pp.artifact.ph4.st1.t1.in.wpu.artifact.ph4.st1.t1.input.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st1.t1.input.artifact.security-record"
+                },
+                {
+                  "id": "pp.artifact.ph4.st1.t1.in.wpu.artifact.ph4.st1.t1.input.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st1.t1.input.artifact.environment-contract"
+                },
+                {
+                  "id": "pp.artifact.ph4.st1.t1.out.wpu.artifact.ph4.st1.t1.output.artifact.release-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st1.t1.output.artifact.release-plan"
+                }
+              ]
             },
             {
               "id": "artifact.ph4.st1.t2",
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph4.st1.t2",
               "performerRoleUseRefs": ["ru.artifact.ph4.st1.service-owner"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph4.st1.t2.ru.artifact.ph4.st1.service-owner",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph4.st1.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph4.st1.service-owner"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
-              "inputWorkProductUseRefs": ["wpu.artifact.ph4.st1.t2.input.artifact.release-plan"],
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph4.st1.t2.input.artifact.release-plan",
+                "wpu.artifact.ph4.st1.t2.input.artifact.verification-evidence",
+                "wpu.artifact.ph4.st1.t2.input.artifact.security-record",
+                "wpu.artifact.ph4.st1.t2.input.artifact.operations-pack"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph4.st1.t2.output.artifact.release-plan",
                 "wpu.artifact.ph4.st1.t2.output.artifact.security-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph4.st1.t2.in.wpu.artifact.ph4.st1.t2.input.artifact.release-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st1.t2.input.artifact.release-plan"
+                },
+                {
+                  "id": "pp.artifact.ph4.st1.t2.in.wpu.artifact.ph4.st1.t2.input.artifact.verification-evidence",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st1.t2.input.artifact.verification-evidence"
+                },
+                {
+                  "id": "pp.artifact.ph4.st1.t2.in.wpu.artifact.ph4.st1.t2.input.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st1.t2.input.artifact.security-record"
+                },
+                {
+                  "id": "pp.artifact.ph4.st1.t2.in.wpu.artifact.ph4.st1.t2.input.artifact.operations-pack",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st1.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st1.t2.input.artifact.operations-pack"
+                },
+                {
+                  "id": "pp.artifact.ph4.st1.t2.out.wpu.artifact.ph4.st1.t2.output.artifact.release-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st1.t2.output.artifact.release-plan"
+                },
+                {
+                  "id": "pp.artifact.ph4.st1.t2.out.wpu.artifact.ph4.st1.t2.output.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st1.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st1.t2.output.artifact.security-record"
+                }
               ]
             }
           ]
@@ -1717,13 +2747,75 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph4.st2.t1",
               "performerRoleUseRefs": ["ru.artifact.ph4.st2.service-owner"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph4.st2.t1.ru.artifact.ph4.st2.service-owner",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph4.st2.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph4.st2.service-owner"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
                 "wpu.artifact.ph4.st2.t1.input.artifact.release-plan",
-                "wpu.artifact.ph4.st2.t1.input.artifact.security-record"
+                "wpu.artifact.ph4.st2.t1.input.artifact.security-record",
+                "wpu.artifact.ph4.st2.t1.input.artifact.verification-evidence",
+                "wpu.artifact.ph4.st2.t1.input.artifact.environment-contract",
+                "wpu.artifact.ph4.st2.t1.input.artifact.generated-baseline"
               ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph4.st2.t1.output.artifact.operations-pack"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph4.st2.t1.in.wpu.artifact.ph4.st2.t1.input.artifact.release-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t1.input.artifact.release-plan"
+                },
+                {
+                  "id": "pp.artifact.ph4.st2.t1.in.wpu.artifact.ph4.st2.t1.input.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t1.input.artifact.security-record"
+                },
+                {
+                  "id": "pp.artifact.ph4.st2.t1.in.wpu.artifact.ph4.st2.t1.input.artifact.verification-evidence",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t1.input.artifact.verification-evidence"
+                },
+                {
+                  "id": "pp.artifact.ph4.st2.t1.in.wpu.artifact.ph4.st2.t1.input.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t1.input.artifact.environment-contract"
+                },
+                {
+                  "id": "pp.artifact.ph4.st2.t1.in.wpu.artifact.ph4.st2.t1.input.artifact.generated-baseline",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t1.input.artifact.generated-baseline"
+                },
+                {
+                  "id": "pp.artifact.ph4.st2.t1.out.wpu.artifact.ph4.st2.t1.output.artifact.operations-pack",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t1.output.artifact.operations-pack"
+                }
               ]
             },
             {
@@ -1731,11 +2823,84 @@
               "type": "TaskUse",
               "taskDefinitionRef": "task.artifact.ph4.st2.t2",
               "performerRoleUseRefs": ["ru.artifact.ph4.st2.release-engineer"],
+              "processPerformers": [
+                {
+                  "id": "ppf.artifact.ph4.st2.t2.ru.artifact.ph4.st2.release-engineer",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "artifact.ph4.st2.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.artifact.ph4.st2.release-engineer"
+                }
+              ],
               "selectedStepIndices": [0, 1, 2],
-              "inputWorkProductUseRefs": ["wpu.artifact.ph4.st2.t2.input.artifact.operations-pack"],
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph4.st2.t2.input.artifact.operations-pack",
+                "wpu.artifact.ph4.st2.t2.input.artifact.release-plan",
+                "wpu.artifact.ph4.st2.t2.input.artifact.verification-evidence",
+                "wpu.artifact.ph4.st2.t2.input.artifact.security-record",
+                "wpu.artifact.ph4.st2.t2.input.artifact.environment-contract"
+              ],
               "outputWorkProductUseRefs": [
                 "wpu.artifact.ph4.st2.t2.output.artifact.verification-evidence",
                 "wpu.artifact.ph4.st2.t2.output.artifact.operations-pack"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.artifact.ph4.st2.t2.in.wpu.artifact.ph4.st2.t2.input.artifact.operations-pack",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t2.input.artifact.operations-pack"
+                },
+                {
+                  "id": "pp.artifact.ph4.st2.t2.in.wpu.artifact.ph4.st2.t2.input.artifact.release-plan",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t2.input.artifact.release-plan"
+                },
+                {
+                  "id": "pp.artifact.ph4.st2.t2.in.wpu.artifact.ph4.st2.t2.input.artifact.verification-evidence",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t2.input.artifact.verification-evidence"
+                },
+                {
+                  "id": "pp.artifact.ph4.st2.t2.in.wpu.artifact.ph4.st2.t2.input.artifact.security-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t2.input.artifact.security-record"
+                },
+                {
+                  "id": "pp.artifact.ph4.st2.t2.in.wpu.artifact.ph4.st2.t2.input.artifact.environment-contract",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t2.input.artifact.environment-contract"
+                },
+                {
+                  "id": "pp.artifact.ph4.st2.t2.out.wpu.artifact.ph4.st2.t2.output.artifact.verification-evidence",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t2.output.artifact.verification-evidence"
+                },
+                {
+                  "id": "pp.artifact.ph4.st2.t2.out.wpu.artifact.ph4.st2.t2.output.artifact.operations-pack",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "artifact.ph4.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.artifact.ph4.st2.t2.output.artifact.operations-pack"
+                }
               ]
             }
           ]
