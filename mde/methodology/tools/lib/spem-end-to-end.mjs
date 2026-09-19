@@ -1,3 +1,5 @@
+import { applyDeclaredTaskInputs } from "./process-inputs.mjs";
+
 /**
  * Full-lifecycle situational method that coordinates the three modeling
  * processes and the generated-artifact readiness process.
@@ -57,7 +59,7 @@ export const END_TO_END_ROLES = [
   { id: "method-engineer", name: "Method Engineer", responsibilities: ["Tailors and evolves the situational method and its process assets"] },
 ];
 
-export const END_TO_END_PHASES = [
+const END_TO_END_PHASES_SOURCE = [
   {
     id: "e2e.ph0",
     name: "Initiate, Tailor & Organize",
@@ -196,3 +198,43 @@ export const END_TO_END_PHASES = [
   },
 ];
 
+// Inputs are method-authoring decisions.  Empty arrays are intentional and
+// mean that the task has no required WorkProductDefinition input.
+const END_TO_END_INPUT_ARTIFACT_IDS = {
+  "e2e.ph0.st1.t1": [],
+  "e2e.ph0.st1.t2": ["e2e-artifact.product-charter"],
+  "e2e.ph0.st2.t1": ["e2e-artifact.product-charter", "e2e-artifact.increment-record"],
+  "e2e.ph0.st2.t2": ["e2e-artifact.method-profile"],
+  "e2e.ph0.st3.t1": ["e2e-artifact.method-profile"],
+  "e2e.ph0.st3.t2": ["e2e-artifact.team-topology"],
+  "e2e.ph0.st4.t1": ["e2e-artifact.team-topology", "e2e-artifact.method-profile"],
+  "e2e.ph0.st4.t2": ["e2e-artifact.method-profile"],
+  "e2e.p0.increment-planning.t1": ["e2e-artifact.product-charter", "e2e-artifact.method-profile"],
+  "e2e.p1.cim-modeling.t1": ["e2e-artifact.increment-record"],
+  "e2e.p2.cim-to-pim.t1": ["e2e-artifact.increment-record"],
+  "e2e.p3.pim-refinement.t1": ["e2e-artifact.increment-record"],
+  "e2e.p4.pim-to-psm.t1": ["e2e-artifact.increment-record"],
+  "e2e.p5.psm-refinement.t1": ["e2e-artifact.increment-record"],
+  "e2e.p6.m2t-generation.t1": ["e2e-artifact.increment-record"],
+  "e2e.p7.artifact-completion.t1": ["e2e-artifact.increment-record"],
+  "e2e.ph2.st1.t1": ["e2e-artifact.increment-record"],
+  "e2e.ph2.st1.t2": ["e2e-artifact.release-record"],
+  "e2e.ph2.st2.t1": ["e2e-artifact.release-record"],
+  "e2e.ph2.st2.t2": ["e2e-artifact.release-record"],
+  "e2e.ph2.st3.t1": ["e2e-artifact.release-record", "e2e-artifact.operations-record"],
+  "e2e.ph3.st1.t1": ["e2e-artifact.release-record", "e2e-artifact.product-charter"],
+  "e2e.ph3.st2.t1": ["e2e-artifact.operations-record"],
+  "e2e.ph3.st2.t2": ["e2e-artifact.operations-record"],
+  "e2e.ph3.st3.t1": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
+  "e2e.ph3.st4.t1": ["e2e-artifact.increment-record", "e2e-artifact.operations-record"],
+  "e2e.ph4.st1.t1": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
+  "e2e.ph4.st2.t1": ["e2e-artifact.retirement-record"],
+  "e2e.ph4.st2.t2": ["e2e-artifact.retirement-record"],
+  "e2e.ph4.st3.t1": ["e2e-artifact.retirement-record"],
+};
+
+export const END_TO_END_PHASES = applyDeclaredTaskInputs(
+  END_TO_END_PHASES_SOURCE,
+  END_TO_END_INPUT_ARTIFACT_IDS,
+  "end-to-end",
+);

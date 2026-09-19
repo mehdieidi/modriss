@@ -98,6 +98,7 @@
         "viewpoint": "stack",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": [],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.increment-plan"],
         "workProductParameters": [
           {
@@ -129,6 +130,7 @@
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.increment-plan"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.deployment-strategy"],
         "workProductParameters": [
           {
@@ -173,6 +175,7 @@
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.deployment-strategy"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.deployment-strategy"],
         "workProductParameters": [
           {
@@ -227,6 +230,7 @@
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.method-engineer"],
         "inputWorkProductRefs": ["psm-artifact.deployment-strategy"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.deployment-strategy"],
         "workProductParameters": [
           {
@@ -602,6 +606,7 @@
         "viewpoint": "stack",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.deployment-strategy"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.stack-scaffold"],
         "workProductParameters": [
           {
@@ -646,6 +651,7 @@
         "viewpoint": "stack",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.stack-scaffold"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.stack-scaffold"],
         "workProductParameters": [
           {
@@ -710,6 +716,7 @@
         "viewpoint": "security",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.stack-scaffold"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.security-baseline"],
         "workProductParameters": [
           {
@@ -799,6 +806,7 @@
         "viewpoint": "security",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.security-baseline"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.security-baseline"],
         "workProductParameters": [
           {
@@ -895,6 +903,7 @@
         "viewpoint": "networking",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.security-baseline"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.network-identity"],
         "workProductParameters": [
           {
@@ -944,6 +953,7 @@
         "viewpoint": "networking",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.network-identity"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.network-identity"],
         "workProductParameters": [
           {
@@ -1003,6 +1013,7 @@
         "viewpoint": "identity",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.network-identity"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.network-identity"],
         "workProductParameters": [
           {
@@ -1080,6 +1091,7 @@
         "viewpoint": "identity",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.network-identity"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.network-identity"],
         "workProductParameters": [
           {
@@ -1145,6 +1157,7 @@
         "viewpoint": "storage",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.network-identity"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.storage-layer"],
         "workProductParameters": [
           {
@@ -1257,6 +1270,7 @@
         "viewpoint": "storage",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.storage-layer"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.storage-layer"],
         "workProductParameters": [
           {
@@ -1389,6 +1403,7 @@
         "viewpoint": "messaging",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.storage-layer"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.messaging-layer"],
         "workProductParameters": [
           {
@@ -1443,6 +1458,7 @@
         "viewpoint": "messaging",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.messaging-layer"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.messaging-layer"],
         "workProductParameters": [
           {
@@ -1497,6 +1513,7 @@
         "viewpoint": "events",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.messaging-layer"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.event-fabric"],
         "workProductParameters": [
           {
@@ -1609,6 +1626,7 @@
         "viewpoint": "events",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.event-fabric"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.event-fabric"],
         "workProductParameters": [
           {
@@ -1704,6 +1722,7 @@
         "viewpoint": "compute",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.event-fabric"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.compute-layer"],
         "workProductParameters": [
           {
@@ -1846,6 +1865,7 @@
         "viewpoint": "compute",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.compute-layer"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.compute-layer"],
         "workProductParameters": [
           {
@@ -1983,6 +2003,7 @@
         "viewpoint": "api",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.compute-layer"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.api-layer"],
         "workProductParameters": [
           {
@@ -2093,6 +2114,7 @@
         "viewpoint": "api",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.api-layer"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.api-layer"],
         "workProductParameters": [
           {
@@ -2270,6 +2292,7 @@
         "viewpoint": "workflow",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.api-layer"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.workflow-observability"],
         "workProductParameters": [
           {
@@ -2413,6 +2436,7 @@
         "viewpoint": "workflow",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.workflow-observability"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.workflow-observability"],
         "workProductParameters": [
           {
@@ -2478,6 +2502,7 @@
         "viewpoint": "workflow",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.workflow-observability"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.workflow-observability"],
         "workProductParameters": [
           {
@@ -2543,6 +2568,7 @@
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["psm-artifact.workflow-observability"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.integration-views"],
         "workProductParameters": [
           {
@@ -2651,6 +2677,7 @@
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": ["psm-artifact.integration-views"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.deployment-readiness"],
         "workProductParameters": [
           {
@@ -2720,6 +2747,7 @@
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": ["psm-artifact.deployment-readiness"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["psm-artifact.increment-review"],
         "workProductParameters": [
           {

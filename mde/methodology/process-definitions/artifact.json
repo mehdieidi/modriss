@@ -71,6 +71,7 @@
         "purpose": "Review project structure and generated templates",
         "performerRoleRefs": ["role.application-engineer"],
         "inputWorkProductRefs": [],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.generated-baseline"],
         "workProductParameters": [
           {
@@ -101,6 +102,7 @@
         "purpose": "Establish source-control and release baseline",
         "performerRoleRefs": ["role.release-engineer"],
         "inputWorkProductRefs": ["artifact.generated-baseline"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.generated-baseline"],
         "workProductParameters": [
           {
@@ -134,6 +136,7 @@
         "purpose": "Route structural gaps back to the PSM",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["artifact.generated-baseline"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.generated-baseline"],
         "workProductParameters": [
           {
@@ -167,6 +170,7 @@
         "purpose": "Complete repository hygiene",
         "performerRoleRefs": ["role.application-engineer"],
         "inputWorkProductRefs": ["artifact.generated-baseline"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.generated-baseline"],
         "workProductParameters": [
           {
@@ -200,6 +204,7 @@
         "purpose": "Define parameter and environment contract",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["artifact.generated-baseline"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.environment-contract"],
         "workProductParameters": [
           {
@@ -233,6 +238,7 @@
         "purpose": "Configure secret references and encryption",
         "performerRoleRefs": ["role.security-engineer"],
         "inputWorkProductRefs": ["artifact.environment-contract"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.environment-contract", "artifact.security-record"],
         "workProductParameters": [
           {
@@ -271,6 +277,7 @@
         "purpose": "Review IAM and deployment permissions",
         "performerRoleRefs": ["role.security-engineer"],
         "inputWorkProductRefs": ["artifact.environment-contract", "artifact.security-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.security-record"],
         "workProductParameters": [
           {
@@ -309,6 +316,7 @@
         "purpose": "Implement repeatable build and deployment pipeline",
         "performerRoleRefs": ["role.release-engineer"],
         "inputWorkProductRefs": ["artifact.security-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.environment-contract"],
         "workProductParameters": [
           {
@@ -342,6 +350,7 @@
         "purpose": "Run reproducible build and infrastructure validation",
         "performerRoleRefs": ["role.quality-engineer"],
         "inputWorkProductRefs": ["artifact.environment-contract"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.verification-evidence"],
         "workProductParameters": [
           {
@@ -375,6 +384,7 @@
         "purpose": "Assess dependencies and security findings",
         "performerRoleRefs": ["role.security-engineer"],
         "inputWorkProductRefs": ["artifact.verification-evidence"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.security-record", "artifact.verification-evidence"],
         "workProductParameters": [
           {
@@ -415,6 +425,7 @@
         "purpose": "Deploy to staging and execute acceptance tests",
         "performerRoleRefs": ["role.quality-engineer"],
         "inputWorkProductRefs": ["artifact.security-record", "artifact.verification-evidence"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.verification-evidence"],
         "workProductParameters": [
           {
@@ -453,6 +464,7 @@
         "purpose": "Verify observability and operational signals",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["artifact.verification-evidence"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.verification-evidence", "artifact.operations-pack"],
         "workProductParameters": [
           {
@@ -491,6 +503,7 @@
         "purpose": "Create release, rollback, and communication plan",
         "performerRoleRefs": ["role.release-engineer"],
         "inputWorkProductRefs": ["artifact.verification-evidence", "artifact.operations-pack"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.release-plan"],
         "workProductParameters": [
           {
@@ -529,6 +542,7 @@
         "purpose": "Obtain production readiness approval",
         "performerRoleRefs": ["role.service-owner"],
         "inputWorkProductRefs": ["artifact.release-plan"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.release-plan", "artifact.security-record"],
         "workProductParameters": [
           {
@@ -567,6 +581,7 @@
         "purpose": "Complete operations handover",
         "performerRoleRefs": ["role.service-owner"],
         "inputWorkProductRefs": ["artifact.release-plan", "artifact.security-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.operations-pack"],
         "workProductParameters": [
           {
@@ -605,6 +620,7 @@
         "purpose": "Execute production validation and close release",
         "performerRoleRefs": ["role.release-engineer"],
         "inputWorkProductRefs": ["artifact.operations-pack"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["artifact.verification-evidence", "artifact.operations-pack"],
         "workProductParameters": [
           {

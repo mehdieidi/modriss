@@ -1,3 +1,5 @@
+import { applyDeclaredTaskInputs } from "./process-inputs.mjs";
+
 /**
  * Compact artifact-readiness process authoring input.
  *
@@ -5,7 +7,7 @@
  * content and process uses, just like CIM, PIM, PSM, and end-to-end sources.
  */
 
-export const ARTIFACT_PROCESS_SPEC = {
+const ARTIFACT_PROCESS_SPEC_SOURCE = {
   "processId": "modriss.artifact.deployment-readiness",
   "displayName": "Generated Artifacts & Deployment Readiness",
   "level": "artifact",
@@ -853,4 +855,34 @@ export const ARTIFACT_PROCESS_SPEC = {
       "phaseId": "artifact.ph4"
     }
   ]
+};
+
+// Inputs are method-authoring decisions.  Empty arrays are intentional and
+// mean that the task has no required WorkProductDefinition input.
+const ARTIFACT_INPUT_ARTIFACT_IDS = {
+  "artifact.ph1.st1.t1": [],
+  "artifact.ph1.st1.t2": ["artifact.generated-baseline"],
+  "artifact.ph1.st2.t1": ["artifact.generated-baseline"],
+  "artifact.ph1.st2.t2": ["artifact.generated-baseline"],
+  "artifact.ph2.st1.t1": ["artifact.generated-baseline"],
+  "artifact.ph2.st1.t2": ["artifact.environment-contract"],
+  "artifact.ph2.st2.t1": ["artifact.environment-contract", "artifact.security-record"],
+  "artifact.ph2.st2.t2": ["artifact.security-record"],
+  "artifact.ph3.st1.t1": ["artifact.environment-contract"],
+  "artifact.ph3.st1.t2": ["artifact.verification-evidence"],
+  "artifact.ph3.st2.t1": ["artifact.security-record", "artifact.verification-evidence"],
+  "artifact.ph3.st2.t2": ["artifact.verification-evidence"],
+  "artifact.ph4.st1.t1": ["artifact.verification-evidence", "artifact.operations-pack"],
+  "artifact.ph4.st1.t2": ["artifact.release-plan"],
+  "artifact.ph4.st2.t1": ["artifact.release-plan", "artifact.security-record"],
+  "artifact.ph4.st2.t2": ["artifact.operations-pack"],
+};
+
+export const ARTIFACT_PROCESS_SPEC = {
+  ...ARTIFACT_PROCESS_SPEC_SOURCE,
+  phases: applyDeclaredTaskInputs(
+    ARTIFACT_PROCESS_SPEC_SOURCE.phases,
+    ARTIFACT_INPUT_ARTIFACT_IDS,
+    "artifact",
+  ),
 };

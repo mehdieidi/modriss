@@ -1,3 +1,5 @@
+import { applyDeclaredTaskInputs } from "./process-inputs.mjs";
+
 /**
  * Compact PSM process authoring input. The methodology compiler separates its
  * TaskSpecs into SPEM TaskDefinitions and process-scoped TaskUses.
@@ -5,7 +7,7 @@
  */
 
 /** @type {import('./process-types.mjs').ProcessPhaseSpec[]} */
-export const PSM_PROCESS_PHASES = [
+const PSM_PROCESS_PHASES_SOURCE = [
   {
     id: "psm.ph1",
     name: "Deployment & Slice Framing",
@@ -930,3 +932,42 @@ export const PSM_PROCESS_PHASES = [
     ],
   },
 ];
+
+// Inputs are method-authoring decisions.  Empty arrays are intentional and
+// mean that the task has no required WorkProductDefinition input.
+const PSM_INPUT_ARTIFACT_IDS = {
+  "psm.ph1.st0.t1": [],
+  "psm.ph1.st1.t1": ["psm-artifact.increment-plan"],
+  "psm.ph1.st1.t2": ["psm-artifact.deployment-strategy"],
+  "psm.ph1.st1.t3": ["psm-artifact.deployment-strategy"],
+  "psm.ph1.st2.t1": ["psm-artifact.deployment-strategy"],
+  "psm.ph1.st2.t2": ["psm-artifact.stack-scaffold"],
+  "psm.ph1.st3.t1": ["psm-artifact.stack-scaffold"],
+  "psm.ph1.st3.t2": ["psm-artifact.security-baseline"],
+  "psm.ph2.st1.t1": ["psm-artifact.security-baseline"],
+  "psm.ph2.st1.t2": ["psm-artifact.network-identity"],
+  "psm.ph2.st2.t1": ["psm-artifact.network-identity"],
+  "psm.ph2.st2.t2": ["psm-artifact.network-identity"],
+  "psm.ph3.st1.t1": ["psm-artifact.network-identity"],
+  "psm.ph3.st1.t2": ["psm-artifact.storage-layer"],
+  "psm.ph3.st2.t1": ["psm-artifact.storage-layer"],
+  "psm.ph3.st2.t2": ["psm-artifact.messaging-layer"],
+  "psm.ph4.st1.t1": ["psm-artifact.messaging-layer"],
+  "psm.ph4.st1.t2": ["psm-artifact.event-fabric"],
+  "psm.ph4.st2.t1": ["psm-artifact.event-fabric"],
+  "psm.ph4.st2.t2": ["psm-artifact.compute-layer"],
+  "psm.ph5.st1.t1": ["psm-artifact.compute-layer"],
+  "psm.ph5.st1.t2": ["psm-artifact.api-layer"],
+  "psm.ph5.st2.ss1.t1": ["psm-artifact.api-layer"],
+  "psm.ph5.st2.ss2.t1": ["psm-artifact.workflow-observability"],
+  "psm.ph5.st2.ss2.t2": ["psm-artifact.workflow-observability"],
+  "psm.ph6.st1.t1": ["psm-artifact.workflow-observability"],
+  "psm.ph6.st2.t1": ["psm-artifact.integration-views"],
+  "psm.ph6.st3.t1": ["psm-artifact.deployment-readiness"],
+};
+
+export const PSM_PROCESS_PHASES = applyDeclaredTaskInputs(
+  PSM_PROCESS_PHASES_SOURCE,
+  PSM_INPUT_ARTIFACT_IDS,
+  "PSM",
+);

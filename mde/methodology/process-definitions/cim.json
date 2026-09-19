@@ -78,6 +78,7 @@
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": [],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.model-root"],
         "workProductParameters": [
           {
@@ -113,6 +114,7 @@
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.method-engineer"],
         "inputWorkProductRefs": ["cim-artifact.model-root"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.model-root"],
         "workProductParameters": [
           {
@@ -333,6 +335,7 @@
         "viewpoint": "capability",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.model-root"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.increment-plan"],
         "workProductParameters": [
           {
@@ -373,6 +376,7 @@
         "viewpoint": "requirements",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.increment-plan"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.strategic-intent"],
         "workProductParameters": [
           {
@@ -422,6 +426,7 @@
         "viewpoint": "requirements",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.strategic-intent"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.strategic-intent"],
         "workProductParameters": [
           {
@@ -458,6 +463,7 @@
         "viewpoint": "actor",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.strategic-intent"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.participation-model"],
         "workProductParameters": [
           {
@@ -512,6 +518,7 @@
         "viewpoint": "actor",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.participation-model"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.participation-model"],
         "workProductParameters": [
           {
@@ -548,6 +555,7 @@
         "viewpoint": "capability",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.participation-model"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.capability-map"],
         "workProductParameters": [
           {
@@ -592,6 +600,7 @@
         "viewpoint": "capability",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.capability-map"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.capability-map"],
         "workProductParameters": [
           {
@@ -628,6 +637,7 @@
         "viewpoint": "capability",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.capability-map"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.glossary"],
         "workProductParameters": [
           {
@@ -668,6 +678,7 @@
         "viewpoint": "domain",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.glossary"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.information-taxonomy"],
         "workProductParameters": [
           {
@@ -719,6 +730,7 @@
         "viewpoint": "domain",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.information-taxonomy"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.information-taxonomy"],
         "workProductParameters": [
           {
@@ -773,6 +785,7 @@
         "viewpoint": "domain",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.information-taxonomy"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.domain-structure"],
         "workProductParameters": [
           {
@@ -822,6 +835,7 @@
         "viewpoint": "domain",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.domain-structure"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.domain-structure"],
         "workProductParameters": [
           {
@@ -876,6 +890,7 @@
         "viewpoint": "eventstorming",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.domain-structure"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.behavior-surface"],
         "workProductParameters": [
           {
@@ -925,6 +940,7 @@
         "viewpoint": "eventstorming",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.behavior-surface"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.behavior-surface"],
         "workProductParameters": [
           {
@@ -974,6 +990,7 @@
         "viewpoint": "eventstorming",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.behavior-surface"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.behavior-surface"],
         "workProductParameters": [
           {
@@ -1028,6 +1045,7 @@
         "viewpoint": "aggregate",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.behavior-surface"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.aggregate-model"],
         "workProductParameters": [
           {
@@ -1076,9 +1094,30 @@
         "purpose": "Model business processes",
         "viewpoint": "process",
         "performerRoleRefs": ["role.business-modeler"],
-        "inputWorkProductRefs": ["cim-artifact.aggregate-model"],
+        "inputWorkProductRefs": [
+          "cim-artifact.behavior-surface",
+          "cim-artifact.domain-structure",
+          "cim-artifact.strategic-intent",
+          "cim-artifact.aggregate-model"
+        ],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.process-model"],
         "workProductParameters": [
+          {
+            "workProductDefinitionRef": "cim-artifact.behavior-surface",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "cim-artifact.domain-structure",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "cim-artifact.strategic-intent",
+            "direction": "in",
+            "optional": false
+          },
           {
             "workProductDefinitionRef": "cim-artifact.aggregate-model",
             "direction": "in",
@@ -1209,6 +1248,7 @@
         "viewpoint": "decision",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.process-model"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.decision-model"],
         "workProductParameters": [
           {
@@ -1263,6 +1303,7 @@
         "viewpoint": "capability",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.decision-model"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.context-map"],
         "workProductParameters": [
           {
@@ -1302,6 +1343,7 @@
         "viewpoint": "governance",
         "performerRoleRefs": ["role.requirements-engineer"],
         "inputWorkProductRefs": ["cim-artifact.context-map"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.requirements-package"],
         "workProductParameters": [
           {
@@ -1387,6 +1429,7 @@
         "viewpoint": "governance",
         "performerRoleRefs": ["role.requirements-engineer"],
         "inputWorkProductRefs": ["cim-artifact.requirements-package"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.governance-package"],
         "workProductParameters": [
           {
@@ -1435,6 +1478,7 @@
         "viewpoint": "traceability",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["cim-artifact.governance-package"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.transformation-contract"],
         "workProductParameters": [
           {
@@ -1489,6 +1533,7 @@
         "viewpoint": "traceability",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": ["cim-artifact.transformation-contract"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.trace-readiness"],
         "workProductParameters": [
           {
@@ -1558,6 +1603,7 @@
         "viewpoint": "traceability",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": ["cim-artifact.trace-readiness"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["cim-artifact.increment-review"],
         "workProductParameters": [
           {
@@ -2235,6 +2281,30 @@
       "taskUseRef": "cim.ph4.st1.t1",
       "workProductDefinitionRef": "cim-artifact.aggregate-model",
       "usage": "output"
+    },
+    {
+      "id": "wpu.cim.ph4.st2.ss1.t1.input.cim-artifact.behavior-surface",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph4.st2.ss1",
+      "taskUseRef": "cim.ph4.st2.ss1.t1",
+      "workProductDefinitionRef": "cim-artifact.behavior-surface",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.cim.ph4.st2.ss1.t1.input.cim-artifact.domain-structure",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph4.st2.ss1",
+      "taskUseRef": "cim.ph4.st2.ss1.t1",
+      "workProductDefinitionRef": "cim-artifact.domain-structure",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.cim.ph4.st2.ss1.t1.input.cim-artifact.strategic-intent",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph4.st2.ss1",
+      "taskUseRef": "cim.ph4.st2.ss1.t1",
+      "workProductDefinitionRef": "cim-artifact.strategic-intent",
+      "usage": "input"
     },
     {
       "id": "wpu.cim.ph4.st2.ss1.t1.input.cim-artifact.aggregate-model",
@@ -3255,6 +3325,9 @@
                   "performerRoleUseRefs": ["ru.cim.ph4.st2.ss1.business-modeler"],
                   "selectedStepIndices": [0, 1],
                   "inputWorkProductUseRefs": [
+                    "wpu.cim.ph4.st2.ss1.t1.input.cim-artifact.behavior-surface",
+                    "wpu.cim.ph4.st2.ss1.t1.input.cim-artifact.domain-structure",
+                    "wpu.cim.ph4.st2.ss1.t1.input.cim-artifact.strategic-intent",
                     "wpu.cim.ph4.st2.ss1.t1.input.cim-artifact.aggregate-model"
                   ],
                   "outputWorkProductUseRefs": [

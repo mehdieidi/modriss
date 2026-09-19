@@ -667,7 +667,7 @@ Configure identity providers, principals, and authorization for APIs and functio
 
 **Viewpoint:** security
 **Duration:** 45m
-**Inputs:** Workflow Model
+**Inputs:** Architecture Posture, Service Boundary Map, Contract Catalog
 **Work products:** Security Model
 **Palette focus:** `IdentityProvider`, `Principal`
 

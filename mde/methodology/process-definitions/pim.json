@@ -84,6 +84,7 @@
         "viewpoint": "services",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": [],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.increment-plan"],
         "workProductParameters": [
           {
@@ -115,6 +116,7 @@
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.increment-plan"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.architecture-posture"],
         "workProductParameters": [
           {
@@ -154,6 +156,7 @@
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.architecture-posture"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.architecture-posture"],
         "workProductParameters": [
           {
@@ -198,6 +201,7 @@
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.method-engineer"],
         "inputWorkProductRefs": ["pim-artifact.architecture-posture"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.architecture-posture"],
         "workProductParameters": [
           {
@@ -443,6 +447,7 @@
         "viewpoint": "services",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.architecture-posture"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.service-map"],
         "workProductParameters": [
           {
@@ -487,6 +492,7 @@
         "viewpoint": "services",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.service-map"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.service-map"],
         "workProductParameters": [
           {
@@ -531,6 +537,7 @@
         "viewpoint": "contracts",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.service-map"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.contract-catalog"],
         "workProductParameters": [
           {
@@ -590,6 +597,7 @@
         "viewpoint": "contracts",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.contract-catalog"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.contract-catalog"],
         "workProductParameters": [
           {
@@ -654,6 +662,7 @@
         "viewpoint": "data",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.contract-catalog"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.data-architecture"],
         "workProductParameters": [
           {
@@ -718,6 +727,7 @@
         "viewpoint": "data",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.data-architecture"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.data-architecture"],
         "workProductParameters": [
           {
@@ -777,6 +787,7 @@
         "viewpoint": "data",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.data-architecture"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.data-architecture"],
         "workProductParameters": [
           {
@@ -821,6 +832,7 @@
         "viewpoint": "compute",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.data-architecture"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.compute-catalog"],
         "workProductParameters": [
           {
@@ -880,6 +892,7 @@
         "viewpoint": "compute",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.compute-catalog"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.compute-catalog"],
         "workProductParameters": [
           {
@@ -929,6 +942,7 @@
         "viewpoint": "api",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.compute-catalog"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.api-catalog"],
         "workProductParameters": [
           {
@@ -988,6 +1002,7 @@
         "viewpoint": "api",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.api-catalog"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.api-catalog"],
         "workProductParameters": [
           {
@@ -1032,6 +1047,7 @@
         "viewpoint": "integration",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.api-catalog"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.integration-topology"],
         "workProductParameters": [
           {
@@ -1101,6 +1117,7 @@
         "viewpoint": "integration",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.integration-topology"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.integration-topology"],
         "workProductParameters": [
           {
@@ -1197,6 +1214,7 @@
         "viewpoint": "workflow",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.integration-topology"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.workflow-model"],
         "workProductParameters": [
           {
@@ -1309,6 +1327,7 @@
         "viewpoint": "workflow",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.workflow-model"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.workflow-model"],
         "workProductParameters": [
           {
@@ -1391,11 +1410,26 @@
         "purpose": "Configure identity providers and principals",
         "viewpoint": "security",
         "performerRoleRefs": ["role.solution-architect"],
-        "inputWorkProductRefs": ["pim-artifact.workflow-model"],
+        "inputWorkProductRefs": [
+          "pim-artifact.architecture-posture",
+          "pim-artifact.service-map",
+          "pim-artifact.contract-catalog"
+        ],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.security-model"],
         "workProductParameters": [
           {
-            "workProductDefinitionRef": "pim-artifact.workflow-model",
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
             "direction": "in",
             "optional": false
           },
@@ -1446,6 +1480,7 @@
         "viewpoint": "security",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.security-model"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.security-model"],
         "workProductParameters": [
           {
@@ -1515,6 +1550,7 @@
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.security-model"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "workProductParameters": [
           {
@@ -1581,6 +1617,7 @@
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "workProductParameters": [
           {
@@ -1665,6 +1702,7 @@
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "workProductParameters": [
           {
@@ -1730,6 +1768,7 @@
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "workProductParameters": [
           {
@@ -1779,6 +1818,7 @@
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "workProductParameters": [
           {
@@ -1844,6 +1884,7 @@
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "workProductParameters": [
           {
@@ -1893,6 +1934,7 @@
         "viewpoint": "config",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.config-package"],
         "workProductParameters": [
           {
@@ -1942,6 +1984,7 @@
         "viewpoint": "config",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["pim-artifact.config-package"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.config-package"],
         "workProductParameters": [
           {
@@ -2040,6 +2083,7 @@
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": ["pim-artifact.config-package"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.platform-readiness"],
         "workProductParameters": [
           {
@@ -2084,6 +2128,7 @@
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": ["pim-artifact.platform-readiness"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.platform-readiness"],
         "workProductParameters": [
           {
@@ -2153,6 +2198,7 @@
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": ["pim-artifact.platform-readiness"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["pim-artifact.increment-review"],
         "workProductParameters": [
           {
@@ -2777,11 +2823,27 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph5.st1.t1.input.pim-artifact.workflow-model",
+      "id": "wpu.pim.ph5.st1.t1.input.pim-artifact.architecture-posture",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st1",
       "taskUseRef": "pim.ph5.st1.t1",
-      "workProductDefinitionRef": "pim-artifact.workflow-model",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st1.t1.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st1",
+      "taskUseRef": "pim.ph5.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st1.t1.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st1",
+      "taskUseRef": "pim.ph5.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
       "usage": "input"
     },
     {
@@ -3807,7 +3869,11 @@
               "taskDefinitionRef": "task.pim.ph5.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph5.st1.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "inputWorkProductUseRefs": ["wpu.pim.ph5.st1.t1.input.pim-artifact.workflow-model"],
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph5.st1.t1.input.pim-artifact.architecture-posture",
+                "wpu.pim.ph5.st1.t1.input.pim-artifact.service-map",
+                "wpu.pim.ph5.st1.t1.input.pim-artifact.contract-catalog"
+              ],
               "outputWorkProductUseRefs": ["wpu.pim.ph5.st1.t1.output.pim-artifact.security-model"]
             },
             {

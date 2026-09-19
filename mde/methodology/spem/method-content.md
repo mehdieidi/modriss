@@ -127,10 +127,13 @@ WorkProductUses for each TaskUse:
 }
 ```
 
-The compact authoring sources may declare `inputArtifactIds`; when they do not,
-the compiler derives the conservative process-flow input from the preceding
-task's produced work products. This keeps the process executable while leaving
-the explicit source override available for situational tailoring.
+Every published process authoring source explicitly declares `inputArtifactIds`
+for every task. An empty array is an intentional declaration that the task has
+no required input WorkProductDefinition. The compiler rejects a missing
+declaration and records `inputSource: "declared"` on the resulting
+TaskDefinition; it never infers inputs from task order or from the preceding
+task's outputs. This keeps the method semantics stable when activities are
+reordered, grouped, split, or tailored.
 
 ## Activities, phases, stages, and iterations
 

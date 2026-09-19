@@ -115,6 +115,7 @@
         "purpose": "Define product outcomes and success measures",
         "performerRoleRefs": ["role.product-owner"],
         "inputWorkProductRefs": [],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.product-charter"],
         "workProductParameters": [
           {
@@ -145,6 +146,7 @@
         "purpose": "Establish the initial release and increment hypothesis",
         "performerRoleRefs": ["role.requirements-engineer"],
         "inputWorkProductRefs": ["e2e-artifact.product-charter"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.product-charter", "e2e-artifact.increment-record"],
         "workProductParameters": [
           {
@@ -187,6 +189,7 @@
         "purpose": "Assess context and method risks",
         "performerRoleRefs": ["role.method-engineer"],
         "inputWorkProductRefs": ["e2e-artifact.product-charter", "e2e-artifact.increment-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.method-profile"],
         "workProductParameters": [
           {
@@ -227,6 +230,7 @@
         "purpose": "Define the tailored Definition of Ready and Done",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": ["e2e-artifact.method-profile"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.method-profile"],
         "workProductParameters": [
           {
@@ -262,6 +266,7 @@
         "purpose": "Define team ownership and interfaces",
         "performerRoleRefs": ["role.delivery-lead"],
         "inputWorkProductRefs": ["e2e-artifact.method-profile"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.team-topology"],
         "workProductParameters": [
           {
@@ -297,6 +302,7 @@
         "purpose": "Set coordination cadence and escalation paths",
         "performerRoleRefs": ["role.delivery-lead"],
         "inputWorkProductRefs": ["e2e-artifact.team-topology"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.team-topology", "e2e-artifact.method-profile"],
         "workProductParameters": [
           {
@@ -337,6 +343,7 @@
         "purpose": "Define quality and security control objectives",
         "performerRoleRefs": ["role.security-engineer"],
         "inputWorkProductRefs": ["e2e-artifact.team-topology", "e2e-artifact.method-profile"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.method-profile"],
         "workProductParameters": [
           {
@@ -377,6 +384,7 @@
         "purpose": "Define operational and release strategy",
         "performerRoleRefs": ["role.service-owner"],
         "inputWorkProductRefs": ["e2e-artifact.method-profile"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.product-charter", "e2e-artifact.method-profile"],
         "workProductParameters": [
           {
@@ -417,6 +425,7 @@
         "purpose": "Plan the vertical increment",
         "performerRoleRefs": ["role.product-owner"],
         "inputWorkProductRefs": ["e2e-artifact.product-charter", "e2e-artifact.method-profile"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
@@ -459,6 +468,7 @@
         "purpose": "Run the CIM increment",
         "performerRoleRefs": ["role.business-modeler"],
         "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
@@ -495,6 +505,7 @@
         "purpose": "Execute and inspect CIM-to-PIM transformation",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
@@ -531,6 +542,7 @@
         "purpose": "Run the PIM increment",
         "performerRoleRefs": ["role.solution-architect"],
         "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
@@ -567,6 +579,7 @@
         "purpose": "Execute and inspect PIM-to-PSM transformation",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
@@ -603,6 +616,7 @@
         "purpose": "Run the PSM increment",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
@@ -639,6 +653,7 @@
         "purpose": "Generate and fingerprint the artifact baseline",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
@@ -675,6 +690,7 @@
         "purpose": "Run artifact readiness and accept the increment",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.increment-record"],
         "workProductParameters": [
           {
@@ -713,6 +729,7 @@
         "purpose": "Assemble the release candidate",
         "performerRoleRefs": ["role.release-engineer"],
         "inputWorkProductRefs": ["e2e-artifact.increment-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.release-record"],
         "workProductParameters": [
           {
@@ -748,6 +765,7 @@
         "purpose": "Review release evidence and go/no-go criteria",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": ["e2e-artifact.release-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.release-record"],
         "workProductParameters": [
           {
@@ -781,6 +799,7 @@
         "purpose": "Deploy and validate progressively",
         "performerRoleRefs": ["role.release-engineer"],
         "inputWorkProductRefs": ["e2e-artifact.release-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.release-record"],
         "workProductParameters": [
           {
@@ -816,6 +835,7 @@
         "purpose": "Complete handover and rollback rehearsal",
         "performerRoleRefs": ["role.service-owner"],
         "inputWorkProductRefs": ["e2e-artifact.release-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.release-record", "e2e-artifact.operations-record"],
         "workProductParameters": [
           {
@@ -856,6 +876,7 @@
         "purpose": "Review release outcome and update roadmap",
         "performerRoleRefs": ["role.product-owner"],
         "inputWorkProductRefs": ["e2e-artifact.release-record", "e2e-artifact.operations-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.release-record", "e2e-artifact.product-charter"],
         "workProductParameters": [
           {
@@ -901,6 +922,7 @@
         "purpose": "Review SLOs, telemetry, and product outcomes",
         "performerRoleRefs": ["role.service-owner"],
         "inputWorkProductRefs": ["e2e-artifact.release-record", "e2e-artifact.product-charter"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.operations-record"],
         "workProductParameters": [
           {
@@ -941,6 +963,7 @@
         "purpose": "Manage incidents and recovery",
         "performerRoleRefs": ["role.service-owner"],
         "inputWorkProductRefs": ["e2e-artifact.operations-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.operations-record"],
         "workProductParameters": [
           {
@@ -974,6 +997,7 @@
         "purpose": "Perform problem and risk learning",
         "performerRoleRefs": ["role.quality-engineer"],
         "inputWorkProductRefs": ["e2e-artifact.operations-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
         "workProductParameters": [
           {
@@ -1014,6 +1038,7 @@
         "purpose": "Assess and propagate a change",
         "performerRoleRefs": ["role.delivery-lead"],
         "inputWorkProductRefs": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
+        "inputSource": "declared",
         "outputWorkProductRefs": [
           "e2e-artifact.increment-record",
           "e2e-artifact.operations-record"
@@ -1062,6 +1087,7 @@
         "purpose": "Inspect flow, quality, and coordination metrics",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": ["e2e-artifact.increment-record", "e2e-artifact.operations-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
         "workProductParameters": [
           {
@@ -1107,6 +1133,7 @@
         "purpose": "Approve retirement scope and plan",
         "performerRoleRefs": ["role.product-owner"],
         "inputWorkProductRefs": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.retirement-record"],
         "workProductParameters": [
           {
@@ -1147,6 +1174,7 @@
         "purpose": "Execute migration and data disposition",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "inputWorkProductRefs": ["e2e-artifact.retirement-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.retirement-record"],
         "workProductParameters": [
           {
@@ -1180,6 +1208,7 @@
         "purpose": "Decommission service and access",
         "performerRoleRefs": ["role.service-owner"],
         "inputWorkProductRefs": ["e2e-artifact.retirement-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.retirement-record"],
         "workProductParameters": [
           {
@@ -1215,6 +1244,7 @@
         "purpose": "Complete closure review",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": ["e2e-artifact.retirement-record"],
+        "inputSource": "declared",
         "outputWorkProductRefs": ["e2e-artifact.retirement-record", "e2e-artifact.method-profile"],
         "workProductParameters": [
           {

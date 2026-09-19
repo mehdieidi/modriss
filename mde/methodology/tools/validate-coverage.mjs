@@ -113,6 +113,12 @@ function validateProcess(process, fileName, metamodelClassifiers = null) {
   registerUnique(taskUses, "process.taskUses", canonicalProcessIds);
 
   for (const taskDefinition of methodContent.taskDefinitions || []) {
+    if (taskDefinition.inputSource !== "declared") {
+      errors.push(`task definition ${taskDefinition.id} does not identify declared input bindings`);
+    }
+    if (!Array.isArray(taskDefinition.inputWorkProductRefs)) {
+      errors.push(`task definition ${taskDefinition.id} is missing inputWorkProductRefs`);
+    }
     const parameters = taskDefinition.workProductParameters || [];
     const parameterKeys = new Set();
     for (const parameter of parameters) {

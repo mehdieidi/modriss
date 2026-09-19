@@ -1,3 +1,5 @@
+import { applyDeclaredTaskInputs } from "./process-inputs.mjs";
+
 /**
  * Compact CIM process authoring input. The methodology compiler separates its
  * TaskSpecs into SPEM TaskDefinitions and process-scoped TaskUses.
@@ -5,7 +7,7 @@
  */
 
 /** @type {import('./process-types.mjs').ProcessPhaseSpec[]} */
-export const CIM_PROCESS_PHASES = [
+const CIM_PROCESS_PHASES_SOURCE = [
   {
     id: "cim.ph1",
     name: "Increment Framing",
@@ -759,3 +761,45 @@ export const CIM_PROCESS_PHASES = [
     ],
   },
 ];
+
+// Inputs are method-authoring decisions.  Empty arrays are intentional and
+// mean that the task has no required WorkProductDefinition input.
+const CIM_INPUT_ARTIFACT_IDS = {
+  "cim.ph1.st1.t1": [],
+  "cim.ph1.st1.t2": ["cim-artifact.model-root"],
+  "cim.ph1.st2.t1": ["cim-artifact.model-root"],
+  "cim.ph1.st3.t1": ["cim-artifact.increment-plan"],
+  "cim.ph1.st3.t2": ["cim-artifact.strategic-intent"],
+  "cim.ph2.st1.t1": ["cim-artifact.strategic-intent"],
+  "cim.ph2.st1.t2": ["cim-artifact.participation-model"],
+  "cim.ph2.st2.t1": ["cim-artifact.participation-model"],
+  "cim.ph2.st2.t2": ["cim-artifact.capability-map"],
+  "cim.ph2.st3.t1": ["cim-artifact.capability-map"],
+  "cim.ph3.st1.ss1.t1": ["cim-artifact.glossary"],
+  "cim.ph3.st1.ss2.t1": ["cim-artifact.information-taxonomy"],
+  "cim.ph3.st2.ss1.t1": ["cim-artifact.information-taxonomy"],
+  "cim.ph3.st2.ss2.t1": ["cim-artifact.domain-structure"],
+  "cim.ph3.st3.ss1.t1": ["cim-artifact.domain-structure"],
+  "cim.ph3.st3.ss2.t1": ["cim-artifact.behavior-surface"],
+  "cim.ph3.st3.ss3.t1": ["cim-artifact.behavior-surface"],
+  "cim.ph4.st1.t1": ["cim-artifact.behavior-surface"],
+  "cim.ph4.st2.ss1.t1": [
+    "cim-artifact.behavior-surface",
+    "cim-artifact.domain-structure",
+    "cim-artifact.strategic-intent",
+    "cim-artifact.aggregate-model",
+  ],
+  "cim.ph4.st2.ss2.t1": ["cim-artifact.process-model"],
+  "cim.ph4.st3.t1": ["cim-artifact.decision-model"],
+  "cim.ph5.st1.t1": ["cim-artifact.context-map"],
+  "cim.ph5.st1.t2": ["cim-artifact.requirements-package"],
+  "cim.ph5.st2.t1": ["cim-artifact.governance-package"],
+  "cim.ph5.st3.t1": ["cim-artifact.transformation-contract"],
+  "cim.ph5.st4.t1": ["cim-artifact.trace-readiness"],
+};
+
+export const CIM_PROCESS_PHASES = applyDeclaredTaskInputs(
+  CIM_PROCESS_PHASES_SOURCE,
+  CIM_INPUT_ARTIFACT_IDS,
+  "CIM",
+);

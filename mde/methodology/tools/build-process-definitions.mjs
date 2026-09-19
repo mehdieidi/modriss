@@ -100,6 +100,7 @@ function enrichTaskDefinition(
     viewpoint: task.viewpoint,
     performerRoleRefs: [roleDefinitionRef(task.primaryRole)].filter(Boolean),
     inputWorkProductRefs,
+    inputSource: "declared",
     outputWorkProductRefs,
     workProductParameters: workProductParameters(
       inputWorkProductRefs,
@@ -265,13 +266,15 @@ function collectTaskDefinitions(
   concepts,
   output,
   inputWorkProductIdsByTaskId,
-  state = { previousOutputs: [] },
 ) {
   for (const stage of stages || []) {
     for (const task of stage.tasks || []) {
-      const inputWorkProductRefs = Array.isArray(task.inputArtifactIds)
-        ? [...new Set(task.inputArtifactIds)]
-        : [...state.previousOutputs];
+      if (!Array.isArray(task.inputArtifactIds)) {
+        throw new Error(
+          `${task.id}: inputArtifactIds must be explicitly declared in the process authoring source; use [] when no input WorkProductDefinition is required`,
+        );
+      }
+      const inputWorkProductRefs = [...new Set(task.inputArtifactIds)];
       inputWorkProductIdsByTaskId.set(task.id, inputWorkProductRefs);
       output.push(
         enrichTaskDefinition(
@@ -283,7 +286,6 @@ function collectTaskDefinitions(
           inputWorkProductRefs,
         ),
       );
-      state.previousOutputs = [...new Set(task.artifactIds || [])];
     }
     collectTaskDefinitions(
       stage.subStages,
@@ -293,7 +295,6 @@ function collectTaskDefinitions(
       concepts,
       output,
       inputWorkProductIdsByTaskId,
-      state,
     );
   }
 }

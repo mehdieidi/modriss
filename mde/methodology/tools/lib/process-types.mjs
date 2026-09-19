@@ -24,6 +24,7 @@
  * @property {string} purpose
  * @property {string[]} performerRoleRefs
  * @property {string[]} inputWorkProductRefs
+ * @property {string} inputSource - declared; compiler never infers task inputs from sequence position
  * @property {string[]} outputWorkProductRefs
  * @property {{workProductDefinitionRef: string, direction: string, optional: boolean}[]} workProductParameters
  * @property {MetamodelBinding[]} metamodelBindings

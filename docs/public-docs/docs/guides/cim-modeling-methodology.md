@@ -693,7 +693,7 @@ Orchestrate commands, events, and human steps into end-to-end flows.
 
 **Viewpoint:** process
 **Duration:** 2h
-**Inputs:** Aggregate Boundary Model
+**Inputs:** CQRS Behavior Surface, Domain Structure Model, Strategic Intent Package, Aggregate Boundary Model
 **Work products:** Business Process Model
 **Palette focus:**
 

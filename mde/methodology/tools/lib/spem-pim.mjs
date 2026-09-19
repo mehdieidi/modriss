@@ -1,3 +1,5 @@
+import { applyDeclaredTaskInputs } from "./process-inputs.mjs";
+
 /**
  * Compact PIM process authoring input. The methodology compiler separates its
  * TaskSpecs into SPEM TaskDefinitions and process-scoped TaskUses.
@@ -5,7 +7,7 @@
  */
 
 /** @type {import('./process-types.mjs').ProcessPhaseSpec[]} */
-export const PIM_PROCESS_PHASES = [
+const PIM_PROCESS_PHASES_SOURCE = [
   {
     id: "pim.ph1",
     name: "Architecture & Slice Framing",
@@ -901,3 +903,50 @@ export const PIM_PROCESS_PHASES = [
     ],
   },
 ];
+
+// Inputs are method-authoring decisions.  Empty arrays are intentional and
+// mean that the task has no required WorkProductDefinition input.
+const PIM_INPUT_ARTIFACT_IDS = {
+  "pim.ph1.st0.t1": [],
+  "pim.ph1.st1.t1": ["pim-artifact.increment-plan"],
+  "pim.ph1.st1.t2": ["pim-artifact.architecture-posture"],
+  "pim.ph1.st1.t3": ["pim-artifact.architecture-posture"],
+  "pim.ph1.st2.t1": ["pim-artifact.architecture-posture"],
+  "pim.ph1.st2.t2": ["pim-artifact.service-map"],
+  "pim.ph2.st1.t1": ["pim-artifact.service-map"],
+  "pim.ph2.st1.t2": ["pim-artifact.contract-catalog"],
+  "pim.ph2.st2.t1": ["pim-artifact.contract-catalog"],
+  "pim.ph2.st2.t2": ["pim-artifact.data-architecture"],
+  "pim.ph2.st2.t3": ["pim-artifact.data-architecture"],
+  "pim.ph3.st1.t1": ["pim-artifact.data-architecture"],
+  "pim.ph3.st1.t2": ["pim-artifact.compute-catalog"],
+  "pim.ph3.st2.t1": ["pim-artifact.compute-catalog"],
+  "pim.ph3.st2.t2": ["pim-artifact.api-catalog"],
+  "pim.ph4.st1.t1": ["pim-artifact.api-catalog"],
+  "pim.ph4.st1.t2": ["pim-artifact.integration-topology"],
+  "pim.ph4.st2.t1": ["pim-artifact.integration-topology"],
+  "pim.ph4.st2.t2": ["pim-artifact.workflow-model"],
+  "pim.ph5.st1.t1": [
+    "pim-artifact.architecture-posture",
+    "pim-artifact.service-map",
+    "pim-artifact.contract-catalog",
+  ],
+  "pim.ph5.st1.t2": ["pim-artifact.security-model"],
+  "pim.ph5.st2.ss1.t1": ["pim-artifact.security-model"],
+  "pim.ph5.st2.ss1.t2": ["pim-artifact.policy-catalog"],
+  "pim.ph5.st2.ss2.t1": ["pim-artifact.policy-catalog"],
+  "pim.ph5.st2.ss2.t2": ["pim-artifact.policy-catalog"],
+  "pim.ph5.st2.ss3.t1": ["pim-artifact.policy-catalog"],
+  "pim.ph5.st2.ss3.t2": ["pim-artifact.policy-catalog"],
+  "pim.ph5.st3.t1": ["pim-artifact.policy-catalog"],
+  "pim.ph5.st3.t2": ["pim-artifact.config-package"],
+  "pim.ph6.st1.t1": ["pim-artifact.config-package"],
+  "pim.ph6.st2.t1": ["pim-artifact.platform-readiness"],
+  "pim.ph6.st3.t1": ["pim-artifact.platform-readiness"],
+};
+
+export const PIM_PROCESS_PHASES = applyDeclaredTaskInputs(
+  PIM_PROCESS_PHASES_SOURCE,
+  PIM_INPUT_ARTIFACT_IDS,
+  "PIM",
+);

@@ -40,6 +40,10 @@ class ModelingProcessServiceTest {
         list(methodContent.get("taskDefinitions")).stream()
             .map(value -> (Map<String, Object>) value)
             .anyMatch(task -> !list(task.get("inputWorkProductRefs")).isEmpty()));
+    assertTrue(
+        list(methodContent.get("taskDefinitions")).stream()
+            .map(value -> (Map<String, Object>) value)
+            .allMatch(task -> "declared".equals(task.get("inputSource"))));
     assertFalse(list(methodContent.get("guidance")).isEmpty());
     assertFalse(list(process.get("roleUses")).isEmpty());
     assertFalse(list(process.get("workSequences")).isEmpty());
@@ -94,6 +98,10 @@ class ModelingProcessServiceTest {
         list(methodContent.get("taskDefinitions")).stream()
             .map(value -> (Map<String, Object>) value)
             .anyMatch(task -> !list(task.get("inputWorkProductRefs")).isEmpty()));
+    assertTrue(
+        list(methodContent.get("taskDefinitions")).stream()
+            .map(value -> (Map<String, Object>) value)
+            .allMatch(task -> "declared".equals(task.get("inputSource"))));
     assertFalse(list(process.get("roleUses")).isEmpty());
     assertFalse(list(process.get("workSequences")).isEmpty());
     assertNotNull(process.get("processEngine"));

@@ -30,6 +30,8 @@ process-engine, progress, governance, and change-management extensions are label
 When metamodels change:
 
 1. Update the process specifications in `tools/lib/spem-*.mjs` and concept assignment in `concept-assignment.mjs`.
+   Every task must have an explicit `inputArtifactIds` declaration (including
+   `[]` for no required inputs); task order is never used to infer inputs.
 2. Regenerate artifacts:
 
    ```bash
