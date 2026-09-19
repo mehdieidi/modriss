@@ -9,7 +9,13 @@ state this explicitly with:
 {
   "representation": "MODRISS JSON DSL mapped to SPEM 2.0",
   "conformance": "mapped",
-  "compliancePoint": "SPEM Process with Behavior and Content + SPEM Method Content"
+  "mappingScope": [
+    "Core",
+    "ManagedContent",
+    "MethodContent",
+    "ProcessStructure",
+    "ProcessWithMethods"
+  ]
 }
 ```
 
@@ -17,6 +23,8 @@ The normative source is the [OMG SPEM 2.0 specification](https://www.omg.org/spe
 The repository uses the SPEM concepts needed for reusable method content and
 process structure, while retaining MODRISS extensions for model-driven
 coverage, transformations, governance, progress, and UI navigation.
+`mappingScope` names the selected SPEM package concepts; it is an explicit
+mapping scope, not a claim of one of OMG's official compliance points.
 
 ## Separation of method content and process use
 
@@ -36,6 +44,10 @@ process
 ├── workSequences
 └── MODRISS extensions (engine, governance, progress, change management)
 ```
+
+The `methodContent` object is a `MethodContentPackage`; the root object is a
+MODRISS `Process` projection that references that package through the explicit
+use objects below.
 
 The distinction is normative for this DSL:
 
@@ -85,7 +97,40 @@ The compiled representation keeps them separate:
 
 An EClass or EEnum is therefore never silently presented as a SPEM
 WorkProductDefinition. Coverage matrices use `metamodelBindings`; process
-guides and gates use actual work-product definitions and uses.
+guides and gates use actual work-product definitions and uses. Each
+WorkProductDefinition is typed as `WorkProductDefinition` and carries a
+`workProductKind` such as `Artifact` rather than treating `ArtifactDefinition`
+as a separate primary metaclass.
+
+## Task work-product parameters
+
+TaskDefinitions expose both incoming and outgoing work products. The compiler
+represents the SPEM parameter direction explicitly and creates corresponding
+WorkProductUses for each TaskUse:
+
+```json
+{
+  "inputWorkProductRefs": ["cim-artifact.domain-structure"],
+  "outputWorkProductRefs": ["cim-artifact.requirements-package"],
+  "workProductParameters": [
+    {
+      "workProductDefinitionRef": "cim-artifact.domain-structure",
+      "direction": "in",
+      "optional": false
+    },
+    {
+      "workProductDefinitionRef": "cim-artifact.requirements-package",
+      "direction": "out",
+      "optional": false
+    }
+  ]
+}
+```
+
+The compact authoring sources may declare `inputArtifactIds`; when they do not,
+the compiler derives the conservative process-flow input from the preceding
+task's produced work products. This keeps the process executable while leaving
+the explicit source override available for situational tailoring.
 
 ## Activities, phases, stages, and iterations
 

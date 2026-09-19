@@ -21,6 +21,7 @@ import { ITERATION_LOOPS, END_TO_END_LOOPS } from "./lib/iteration-loops.mjs";
 import { CHANGE_MANAGEMENT, CROSS_LEVEL_CHANGE_WORKFLOW } from "./lib/change-management.mjs";
 import { PROCESS_GOVERNANCE } from "./lib/process-governance.mjs";
 import { collectProcessTasks } from "./lib/process-walk.mjs";
+import { ARTIFACT_PROCESS_SPEC } from "./lib/spem-artifact.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
 const METAMODEL_ROOT = join(ROOT, "..", "metamodels");
@@ -48,7 +49,8 @@ function roleDefinitions(roles) {
 function workProductDefinitions(artifacts) {
   return (artifacts || []).map((artifact) => ({
     id: artifact.id,
-    type: artifact.spemType || "ArtifactDefinition",
+    type: "WorkProductDefinition",
+    workProductKind: artifact.workProductKind || artifact.spemKind || "Artifact",
     name: artifact.name,
     description: artifact.description,
   }));
@@ -63,8 +65,32 @@ function resolveTaskTypes(task, conceptAssignment, concepts) {
   return [...new Set([...(task.types || []), ...assigned])];
 }
 
-function enrichTaskDefinition(task, level, parsed, conceptAssignment, concepts) {
+function workProductParameters(inputWorkProductRefs, outputWorkProductRefs, optionalInputRefs = []) {
+  const optionalInputs = new Set(optionalInputRefs);
+  return [
+    ...inputWorkProductRefs.map((workProductDefinitionRef) => ({
+      workProductDefinitionRef,
+      direction: "in",
+      optional: optionalInputs.has(workProductDefinitionRef),
+    })),
+    ...outputWorkProductRefs.map((workProductDefinitionRef) => ({
+      workProductDefinitionRef,
+      direction: "out",
+      optional: false,
+    })),
+  ];
+}
+
+function enrichTaskDefinition(
+  task,
+  level,
+  parsed,
+  conceptAssignment,
+  concepts,
+  inputWorkProductRefs = [],
+) {
   const types = resolveTaskTypes(task, conceptAssignment, concepts);
+  const outputWorkProductRefs = task.artifactIds || [];
 
   return {
     id: taskDefinitionId(task.id),
@@ -73,7 +99,13 @@ function enrichTaskDefinition(task, level, parsed, conceptAssignment, concepts) 
     purpose: task.purpose || task.name,
     viewpoint: task.viewpoint,
     performerRoleRefs: [roleDefinitionRef(task.primaryRole)].filter(Boolean),
-    outputWorkProductRefs: task.artifactIds || [],
+    inputWorkProductRefs,
+    outputWorkProductRefs,
+    workProductParameters: workProductParameters(
+      inputWorkProductRefs,
+      outputWorkProductRefs,
+      task.optionalInputArtifactIds || [],
+    ),
     coverageGroups: task.coverageGroups || [],
     steps: task.steps,
     entryCriteria: task.entryCriteria,
@@ -103,8 +135,8 @@ function enrichTaskDefinition(task, level, parsed, conceptAssignment, concepts) 
   };
 }
 
-function workProductUseId(taskUseId, workProductId) {
-  return `wpu.${taskUseId}.${workProductId}`;
+function workProductUseId(taskUseId, workProductId, usage) {
+  return `wpu.${taskUseId}.${usage}.${workProductId}`;
 }
 
 function roleUseId(activityId, roleId) {
@@ -118,9 +150,22 @@ function activityRoleUseRefs(activity, taskSpecs = []) {
   return [...roleIds].map((roleId) => roleUseId(activity.id, roleId));
 }
 
-function compileTaskUse(task, activity, workProductUses) {
+function compileTaskUse(task, activity, workProductUses, inputWorkProductIdsByTaskId) {
+  const inputRefs = inputWorkProductIdsByTaskId.get(task.id) || [];
+  const inputUseRefs = inputRefs.map((workProductId) => {
+    const id = workProductUseId(task.id, workProductId, "input");
+    workProductUses.push({
+      id,
+      type: "WorkProductUse",
+      activityRef: activity.id,
+      taskUseRef: task.id,
+      workProductDefinitionRef: workProductId,
+      usage: "input",
+    });
+    return id;
+  });
   const outputRefs = (task.artifactIds || []).map((workProductId) => {
-    const id = workProductUseId(task.id, workProductId);
+    const id = workProductUseId(task.id, workProductId, "output");
     workProductUses.push({
       id,
       type: "WorkProductUse",
@@ -140,13 +185,24 @@ function compileTaskUse(task, activity, workProductUses) {
       ? [roleUseId(activity.id, task.primaryRole)]
       : [],
     selectedStepIndices: (task.steps || []).map((_, index) => index),
+    inputWorkProductUseRefs: inputUseRefs,
     outputWorkProductUseRefs: outputRefs,
     childProcessId: task.childProcessId,
     transform: task.transform,
   };
 }
 
-function enrichStages(stages, level, parsed, conceptAssignment, concepts, loops, workProductUses, roleUses) {
+function enrichStages(
+  stages,
+  level,
+  parsed,
+  conceptAssignment,
+  concepts,
+  loops,
+  workProductUses,
+  roleUses,
+  inputWorkProductIdsByTaskId,
+) {
   return (stages || []).map((stage) => {
     const taskSpecs = stage.tasks || [];
     for (const roleId of new Set([stage.primaryRole, ...taskSpecs.map((task) => task.primaryRole)].filter(Boolean))) {
@@ -191,19 +247,54 @@ function enrichStages(stages, level, parsed, conceptAssignment, concepts, loops,
             loops,
             workProductUses,
             roleUses,
+            inputWorkProductIdsByTaskId,
           )
         : undefined,
-      taskUses: taskSpecs.map((task) => compileTaskUse(task, stage, workProductUses)),
+      taskUses: taskSpecs.map((task) =>
+        compileTaskUse(task, stage, workProductUses, inputWorkProductIdsByTaskId),
+      ),
     };
   });
 }
 
-function collectTaskDefinitions(stages, level, parsed, conceptAssignment, concepts, output) {
+function collectTaskDefinitions(
+  stages,
+  level,
+  parsed,
+  conceptAssignment,
+  concepts,
+  output,
+  inputWorkProductIdsByTaskId,
+  state = { previousOutputs: [] },
+) {
   for (const stage of stages || []) {
     for (const task of stage.tasks || []) {
-      output.push(enrichTaskDefinition(task, level, parsed, conceptAssignment, concepts));
+      const inputWorkProductRefs = Array.isArray(task.inputArtifactIds)
+        ? [...new Set(task.inputArtifactIds)]
+        : [...state.previousOutputs];
+      inputWorkProductIdsByTaskId.set(task.id, inputWorkProductRefs);
+      output.push(
+        enrichTaskDefinition(
+          task,
+          level,
+          parsed,
+          conceptAssignment,
+          concepts,
+          inputWorkProductRefs,
+        ),
+      );
+      state.previousOutputs = [...new Set(task.artifactIds || [])];
     }
-    collectTaskDefinitions(stage.subStages, level, parsed, conceptAssignment, concepts, output);
+    collectTaskDefinitions(
+      stage.subStages,
+      level,
+      parsed,
+      conceptAssignment,
+      concepts,
+      output,
+      inputWorkProductIdsByTaskId,
+      state,
+    );
   }
 }
 
@@ -231,11 +322,21 @@ function normalizeEngine(engine, processId) {
   };
 }
 
+function addWorkSequence(workSequences, sequence) {
+  const exists = workSequences.some(
+    (item) =>
+      item.predecessorRef === sequence.predecessorRef &&
+      item.successorRef === sequence.successorRef &&
+      item.linkKind === sequence.linkKind,
+  );
+  if (!exists) workSequences.push(sequence);
+}
+
 function addAdjacentSequences(items, kind, workSequences) {
   for (let index = 1; index < items.length; index += 1) {
     const predecessor = items[index - 1];
     const successor = items[index];
-    workSequences.push({
+    addWorkSequence(workSequences, {
       id: `ws.${predecessor.id}.${successor.id}`,
       type: "WorkSequence",
       predecessorRef: predecessor.id,
@@ -273,7 +374,7 @@ function buildWorkSequences(phases, engine, loops) {
         (item) => item.predecessorRef === predecessor && item.successorRef === successor,
       );
       if (!exists) {
-        workSequences.push({
+        addWorkSequence(workSequences, {
           id: `ws.engine.${predecessor}.${successor}`,
           type: "WorkSequence",
           predecessorRef: predecessor,
@@ -288,7 +389,7 @@ function buildWorkSequences(phases, engine, loops) {
     const predecessor = engineActivity(cycle.find((step) => step.id === engine.loop.fromStepId));
     const successor = engineActivity(cycle.find((step) => step.id === engine.loop.toStepId));
     if (predecessor && successor) {
-      workSequences.push({
+      addWorkSequence(workSequences, {
         id: `ws.engine-loop.${predecessor}.${successor}`,
         type: "WorkSequence",
         predecessorRef: predecessor,
@@ -301,7 +402,7 @@ function buildWorkSequences(phases, engine, loops) {
     }
   }
   for (const loop of loops || []) {
-    workSequences.push({
+    addWorkSequence(workSequences, {
       id: `ws.rework.${loop.id}`,
       type: "WorkSequence",
       predecessorRef: loop.fromStageId,
@@ -318,11 +419,14 @@ function buildWorkSequences(phases, engine, loops) {
 function compileMethodContent({ packageId, roles, artifacts, guidelines, taskDefinitions }) {
   return {
     packageId,
-    type: "MethodPackage",
+    type: "MethodContentPackage",
     roleDefinitions: roleDefinitions(roles),
     taskDefinitions,
     workProductDefinitions: workProductDefinitions(artifacts),
-    guidance: guidelines || [],
+    guidance: (guidelines || []).map((guideline) => ({
+      type: "Guidance",
+      ...guideline,
+    })),
   };
 }
 
@@ -331,7 +435,13 @@ function spemMetadata() {
     spemVersion: "2.0",
     representation: "MODRISS JSON DSL mapped to SPEM 2.0",
     conformance: "mapped",
-    compliancePoint: "SPEM Process with Behavior and Content + SPEM Method Content",
+    mappingScope: [
+      "Core",
+      "ManagedContent",
+      "MethodContent",
+      "ProcessStructure",
+      "ProcessWithMethods",
+    ],
     normativeReference: SPEM_REFERENCE,
   };
 }
@@ -353,7 +463,16 @@ function buildProcessDefinition(level) {
   const roleUses = [];
   const workProductUses = [];
   const taskDefinitions = [];
-  collectTaskDefinitions(phaseSpecs.flatMap((phase) => phase.stages), level, parsed, conceptAssignment, concepts, taskDefinitions);
+  const inputWorkProductIdsByTaskId = new Map();
+  collectTaskDefinitions(
+    phaseSpecs.flatMap((phase) => phase.stages),
+    level,
+    parsed,
+    conceptAssignment,
+    concepts,
+    taskDefinitions,
+    inputWorkProductIdsByTaskId,
+  );
 
   const phases = phaseSpecs.map((phase) => ({
     id: phase.id,
@@ -375,6 +494,7 @@ function buildProcessDefinition(level) {
       loops,
       workProductUses,
       roleUses,
+      inputWorkProductIdsByTaskId,
     ),
   }));
 
@@ -417,6 +537,7 @@ function buildProcessDefinition(level) {
     milestones: [
       {
         id: `${level}.m1.evl-gate`,
+        type: "Milestone",
         name: `${level.toUpperCase()} EVL validation gate`,
         phaseId: lastPhase?.id,
       },
@@ -429,7 +550,16 @@ function buildEndToEnd() {
   const roleUses = [];
   const workProductUses = [];
   const taskDefinitions = [];
-  collectTaskDefinitions(END_TO_END_PHASES.flatMap((phase) => phase.stages), "end-to-end", null, new Map(), [], taskDefinitions);
+  const inputWorkProductIdsByTaskId = new Map();
+  collectTaskDefinitions(
+    END_TO_END_PHASES.flatMap((phase) => phase.stages),
+    "end-to-end",
+    null,
+    new Map(),
+    [],
+    taskDefinitions,
+    inputWorkProductIdsByTaskId,
+  );
   const phases = END_TO_END_PHASES.map((phase) => ({
     ...phase,
     primaryRole: undefined,
@@ -445,6 +575,7 @@ function buildEndToEnd() {
       END_TO_END_LOOPS,
       workProductUses,
       roleUses,
+      inputWorkProductIdsByTaskId,
     ),
   }));
   for (const phase of END_TO_END_PHASES) {
@@ -493,12 +624,87 @@ function buildEndToEnd() {
       ],
     },
     milestones: [
-      { id: "e2e.m0.method-tailored", name: "Method and team topology approved", phaseId: "e2e.ph0", stageId: "e2e.ph0.st3" },
-      { id: "e2e.m1.increment-accepted", name: "Vertical increment accepted", phaseId: "e2e.ph1", stageId: "e2e.p7.artifact-completion" },
-      { id: "e2e.m2.release-promoted", name: "Release promoted and handed over", phaseId: "e2e.ph2", stageId: "e2e.ph2.st2" },
-      { id: "e2e.m3.operational-learning", name: "Operational learning reviewed", phaseId: "e2e.ph3", stageId: "e2e.ph3.st4" },
-      { id: "e2e.m4.retired", name: "Lifecycle retired and closed", phaseId: "e2e.ph4", stageId: "e2e.ph4.st3" },
+      { type: "Milestone", id: "e2e.m0.method-tailored", name: "Method and team topology approved", phaseId: "e2e.ph0", stageId: "e2e.ph0.st3" },
+      { type: "Milestone", id: "e2e.m1.increment-accepted", name: "Vertical increment accepted", phaseId: "e2e.ph1", stageId: "e2e.p7.artifact-completion" },
+      { type: "Milestone", id: "e2e.m2.release-promoted", name: "Release promoted and handed over", phaseId: "e2e.ph2", stageId: "e2e.ph2.st2" },
+      { type: "Milestone", id: "e2e.m3.operational-learning", name: "Operational learning reviewed", phaseId: "e2e.ph3", stageId: "e2e.ph3.st4" },
+      { type: "Milestone", id: "e2e.m4.retired", name: "Lifecycle retired and closed", phaseId: "e2e.ph4", stageId: "e2e.ph4.st3" },
     ],
+  };
+}
+
+function buildArtifactProcess() {
+  const source = ARTIFACT_PROCESS_SPEC;
+  const roleUses = [];
+  const workProductUses = [];
+  const taskDefinitions = [];
+  const inputWorkProductIdsByTaskId = new Map();
+  collectTaskDefinitions(
+    source.phases.flatMap((phase) => phase.stages),
+    source.level,
+    null,
+    new Map(),
+    [],
+    taskDefinitions,
+    inputWorkProductIdsByTaskId,
+  );
+  const phases = source.phases.map((phase) => ({
+    id: phase.id,
+    type: "Activity",
+    activityKind: "Phase",
+    name: phase.name,
+    order: phase.order,
+    objective: phase.objective,
+    roleUseRefs: [roleUseId(phase.id, phase.primaryRole)],
+    entryCriteria: phase.entryCriteria,
+    exitCriteria: phase.exitCriteria,
+    inEngine: phase.inEngine === true,
+    stages: enrichStages(
+      phase.stages,
+      source.level,
+      null,
+      new Map(),
+      [],
+      [],
+      workProductUses,
+      roleUses,
+      inputWorkProductIdsByTaskId,
+    ),
+  }));
+  for (const phase of source.phases) {
+    roleUses.push({
+      id: roleUseId(phase.id, phase.primaryRole),
+      type: "RoleUse",
+      activityRef: phase.id,
+      roleDefinitionRef: roleDefinitionRef(phase.primaryRole),
+    });
+  }
+  const processEngine = normalizeEngine(source.processEngine, source.processId);
+  return {
+    processId: source.processId,
+    type: "Process",
+    ...spemMetadata(),
+    level: source.level,
+    displayName: source.displayName,
+    methodContent: compileMethodContent({
+      packageId: "modriss.method-content.artifact",
+      roles: source.roles,
+      artifacts: source.artifacts,
+      guidelines: source.guidelines,
+      taskDefinitions,
+    }),
+    roleUses,
+    workProductUses,
+    progressModel: source.progressModel,
+    governance: source.governance,
+    processEngine,
+    phases,
+    workSequences: buildWorkSequences(phases, processEngine, []),
+    changeManagement: source.changeManagement,
+    milestones: source.milestones.map((milestone) => ({
+      type: "Milestone",
+      ...milestone,
+    })),
   };
 }
 
@@ -516,3 +722,7 @@ for (const level of ["cim", "pim", "psm"]) {
 const endToEnd = buildEndToEnd();
 writeFileSync(join(OUT_DIR, "end-to-end.json"), `${JSON.stringify(endToEnd, null, 2)}\n`);
 console.log(`Wrote end-to-end.json (${collectProcessTasks(endToEnd).length} tasks)`);
+
+const artifact = buildArtifactProcess();
+writeFileSync(join(OUT_DIR, "artifact.json"), `${JSON.stringify(artifact, null, 2)}\n`);
+console.log(`Wrote artifact.json (${collectProcessTasks(artifact).length} tasks)`);

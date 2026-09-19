@@ -7,6 +7,7 @@
  * @property {string} id
  * @property {string} name
  * @property {string} description
+ * @property {string} [workProductKind] - Artifact | Deliverable | other MODRISS kind
  */
 
 /**
@@ -22,7 +23,9 @@
  * @property {string} name
  * @property {string} purpose
  * @property {string[]} performerRoleRefs
+ * @property {string[]} inputWorkProductRefs
  * @property {string[]} outputWorkProductRefs
+ * @property {{workProductDefinitionRef: string, direction: string, optional: boolean}[]} workProductParameters
  * @property {MetamodelBinding[]} metamodelBindings
  * @property {string[]} steps
  * @property {string[]} entryCriteria
@@ -36,6 +39,7 @@
  * @property {string} taskDefinitionRef
  * @property {string[]} performerRoleUseRefs
  * @property {number[]} selectedStepIndices
+ * @property {string[]} inputWorkProductUseRefs
  * @property {string[]} outputWorkProductUseRefs
  */
 
@@ -54,6 +58,8 @@
  * @property {string} primaryRole - compact authoring alias compiled to RoleUse
  * @property {string} [viewpoint]
  * @property {string[]} [artifactIds]
+ * @property {string[]} [inputArtifactIds] - explicit input WorkProductDefinition IDs
+ * @property {string[]} [optionalInputArtifactIds]
  * @property {string[]} [types] - metamodel EClass/EEnum names
  * @property {string[]} [coverageGroups] - shared metamodel groups owned by this task
  * @property {boolean} [readinessTypes]

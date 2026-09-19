@@ -108,6 +108,7 @@ Create or refresh AwsPsmModel root with partition, region, naming, and tagging p
 
 **Viewpoint:** dashboard
 **Duration:** 20m
+**Inputs:** PSM Increment Plan
 **Work products:** Deployment Strategy
 **Palette focus:** `AwsPsmModel`
 
@@ -128,6 +129,7 @@ Create or refresh AwsPsmModel root with partition, region, naming, and tagging p
 
 **Viewpoint:** dashboard
 **Duration:** 30m
+**Inputs:** Deployment Strategy
 **Work products:** Deployment Strategy
 **Palette focus:** `AwsStage`, `AwsNamingPolicy`, `AwsTaggingPolicy`
 
@@ -148,6 +150,7 @@ Create or refresh AwsPsmModel root with partition, region, naming, and tagging p
 
 **Viewpoint:** dashboard
 **Duration:** 30m
+**Inputs:** Deployment Strategy
 **Work products:** Deployment Strategy
 **Palette focus:**
 
@@ -190,6 +193,7 @@ Create SAM stack with globals and CloudFormation parameters.
 
 **Viewpoint:** stack
 **Duration:** 45m
+**Inputs:** Deployment Strategy
 **Work products:** SAM Stack Scaffold
 **Palette focus:** `SamStack`, `SamGlobals`
 
@@ -210,6 +214,7 @@ Create SAM stack with globals and CloudFormation parameters.
 
 **Viewpoint:** stack
 **Duration:** 30m
+**Inputs:** SAM Stack Scaffold
 **Work products:** SAM Stack Scaffold
 **Palette focus:** `CfnParameter`, `CfnMapping`, `CfnCondition`, `CfnOutput`
 
@@ -238,6 +243,7 @@ Establish IAM roles, KMS keys, secrets, and SSM parameters.
 
 **Viewpoint:** security
 **Duration:** 1-2h
+**Inputs:** SAM Stack Scaffold
 **Work products:** Security Baseline
 **Palette focus:**
 
@@ -268,6 +274,7 @@ Establish IAM roles, KMS keys, secrets, and SSM parameters.
 
 **Viewpoint:** security
 **Duration:** 1h
+**Inputs:** Security Baseline
 **Work products:** Security Baseline
 **Palette focus:**
 
@@ -325,6 +332,7 @@ Configure VPC, subnets, endpoints, and security groups for workloads.
 
 **Viewpoint:** networking
 **Duration:** 1h
+**Inputs:** Security Baseline
 **Work products:** Network & Identity
 **Palette focus:** `Vpc`, `Subnet`, `VpcAttachmentConfig`
 
@@ -345,6 +353,7 @@ Configure VPC, subnets, endpoints, and security groups for workloads.
 
 **Viewpoint:** networking
 **Duration:** 45m
+**Inputs:** Network & Identity
 **Work products:** Network & Identity
 **Palette focus:** `VpcEndpoint`, `VpcEndpointReference`, `SecurityGroup`, `SecurityGroupRule`
 
@@ -373,6 +382,7 @@ Configure Cognito user pools, clients, and identity pools.
 
 **Viewpoint:** identity
 **Duration:** 1h
+**Inputs:** Network & Identity
 **Work products:** Network & Identity
 **Palette focus:**
 
@@ -401,6 +411,7 @@ Configure Cognito user pools, clients, and identity pools.
 
 **Viewpoint:** identity
 **Duration:** 45m
+**Inputs:** Network & Identity
 **Work products:** Network & Identity
 **Palette focus:**
 
@@ -452,6 +463,7 @@ Provision DynamoDB tables and S3 buckets aligned to PIM data architecture.
 
 **Viewpoint:** storage
 **Duration:** 1-2h
+**Inputs:** Network & Identity
 **Work products:** Durable Storage Layer
 **Palette focus:**
 
@@ -485,6 +497,7 @@ Provision DynamoDB tables and S3 buckets aligned to PIM data architecture.
 
 **Viewpoint:** storage
 **Duration:** 1-2h
+**Inputs:** Durable Storage Layer
 **Work products:** Durable Storage Layer
 **Palette focus:**
 
@@ -526,6 +539,7 @@ Create SQS queues and SNS topics aligned to PIM event channels.
 
 **Viewpoint:** messaging
 **Duration:** 45m
+**Inputs:** Durable Storage Layer
 **Work products:** Messaging Layer
 **Palette focus:** `SqsQueue`, `SqsRedrivePolicy`, `SqsRedriveAllowPolicy`, `SqsQueuePolicy`
 
@@ -546,6 +560,7 @@ Create SQS queues and SNS topics aligned to PIM event channels.
 
 **Viewpoint:** messaging
 **Duration:** 45m
+**Inputs:** Messaging Layer
 **Work products:** Messaging Layer
 **Palette focus:** `SnsTopic`, `SnsSubscription`, `SnsFilterRule`, `SnsTopicPolicy`
 
@@ -591,6 +606,7 @@ Configure EventBridge buses, rules, schedules, pipes, and API destinations.
 
 **Viewpoint:** events
 **Duration:** 1-2h
+**Inputs:** Messaging Layer
 **Work products:** Event Fabric
 **Palette focus:**
 
@@ -624,6 +640,7 @@ Configure EventBridge buses, rules, schedules, pipes, and API destinations.
 
 **Viewpoint:** events
 **Duration:** 1h
+**Inputs:** Event Fabric
 **Work products:** Event Fabric
 **Palette focus:**
 
@@ -663,6 +680,7 @@ Deploy Lambda functions with event source mappings and permissions.
 
 **Viewpoint:** compute
 **Duration:** 2-3h
+**Inputs:** Event Fabric
 **Work products:** Lambda Compute Layer
 **Palette focus:**
 
@@ -696,6 +714,7 @@ Deploy Lambda functions with event source mappings and permissions.
 
 **Viewpoint:** compute
 **Duration:** 1-2h
+**Inputs:** Lambda Compute Layer
 **Work products:** Lambda Compute Layer
 **Palette focus:**
 
@@ -754,6 +773,7 @@ Configure HTTP/REST/WebSocket APIs with routes, integrations, and authorizers.
 
 **Viewpoint:** api
 **Duration:** 1-2h
+**Inputs:** Lambda Compute Layer
 **Work products:** API Gateway Layer
 **Palette focus:**
 
@@ -785,6 +805,7 @@ Configure HTTP/REST/WebSocket APIs with routes, integrations, and authorizers.
 
 **Viewpoint:** api
 **Duration:** 1-2h
+**Inputs:** API Gateway Layer
 **Work products:** API Gateway Layer
 **Palette focus:**
 
@@ -830,6 +851,7 @@ Deploy state machines with ASL from PIM workflows.
 
 **Viewpoint:** workflow
 **Duration:** 1-2h
+**Inputs:** API Gateway Layer
 **Work products:** Workflow & Observability
 **Palette focus:**
 
@@ -872,6 +894,7 @@ Configure logs, metrics, alarms, and dashboards.
 
 **Viewpoint:** workflow
 **Duration:** 45m
+**Inputs:** Workflow & Observability
 **Work products:** Workflow & Observability
 **Palette focus:**
 
@@ -898,6 +921,7 @@ Configure logs, metrics, alarms, and dashboards.
 
 **Viewpoint:** workflow
 **Duration:** 45m
+**Inputs:** Workflow & Observability
 **Work products:** Workflow & Observability
 **Palette focus:**
 
@@ -950,6 +974,7 @@ Create cross-resource relationship views for deployment wiring validation.
 
 **Viewpoint:** readiness
 **Duration:** 1h
+**Inputs:** Workflow & Observability
 **Work products:** Integration View Catalog
 **Palette focus:**
 
@@ -992,6 +1017,7 @@ Close trace links and production readiness before M2T generation.
 
 **Viewpoint:** readiness
 **Duration:** 1-2h
+**Inputs:** Integration View Catalog
 **Work products:** Deployment Readiness Record
 **Palette focus:**
 
@@ -1032,6 +1058,7 @@ Review the AWS deployment slice, accept the increment, and adapt the next cycle.
 
 **Viewpoint:** readiness
 **Duration:** 45m
+**Inputs:** Deployment Readiness Record
 **Work products:** PSM Increment Review Record
 
 **Steps:**

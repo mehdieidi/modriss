@@ -11,18 +11,19 @@ Canonical, machine-readable **iterative-incremental** process definitions for CI
 AWS PSM, generated-artifact deployment readiness, and the end-to-end pipeline. Each process
 is a MODRISS JSON representation mapped to SPEM 2.0: reusable method content contains
 RoleDefinitions, TaskDefinitions, WorkProductDefinitions, and Guidance; process Activities
-contain RoleUses, WorkProductUses, TaskUses, and explicit WorkSequences. MODRISS-specific
+contain RoleUses, WorkProductUses, TaskUses, explicit WorkSequences, and TaskUse input/output
+bindings. MODRISS-specific
 process-engine, progress, governance, and change-management extensions are labeled as such.
 
 ## Layout
 
-| Path                   | Purpose                                                                                                               |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `spem/`                | SPEM 2.0 method content and UML activity diagrams                                                                     |
-| `process-definitions/` | JSON DSL: method content, Activities, TaskUses, WorkSequences, progress/governance contracts, and `processEngine`     |
-| `coverage-matrix/`     | Generated concept → task mappings (CI-validated)                                                                      |
-| `tools/lib/`           | SPEM specs, full-lifecycle orchestration, process engine, iteration loops, governance, artifact kinds, and guidelines |
-| `tools/`               | Build, coverage, validation, and UI metadata augmentation scripts                                                     |
+| Path                   | Purpose                                                                                                                 |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `spem/`                | SPEM 2.0 method content and UML activity diagrams                                                                       |
+| `process-definitions/` | JSON DSL: method content, Activities, TaskUses, WorkSequences, progress/governance contracts, and `processEngine`       |
+| `coverage-matrix/`     | Generated concept → task mappings (CI-validated)                                                                        |
+| `tools/lib/`           | SPEM specs, full-lifecycle orchestration, process engine, iteration loops, governance, artifact process, and guidelines |
+| `tools/`               | Build, coverage, validation, and UI metadata augmentation scripts                                                       |
 
 ## Maintenance
 
@@ -47,4 +48,7 @@ When metamodels change:
 - `GET /api/modeling/process/{cim|pim|psm}/coverage`: coverage matrix
 
 The process endpoint returns the compiled method-content/process-use contract;
-`metamodelBindings` are coverage bindings, not SPEM work products.
+`metamodelBindings` are coverage bindings, not SPEM work products. The builder
+generates CIM, PIM, PSM, end-to-end, and artifact-readiness definitions from
+the compact sources, including `spem-artifact.mjs`; `artifact.json` is not a
+hand-maintained exception.

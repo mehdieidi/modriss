@@ -518,6 +518,13 @@ function renderTaskCard(task, progress) {
   const title = document.createElement("h4");
   title.textContent = task.name;
   card.appendChild(title);
+  if (task.inputArtifacts?.length) {
+    const inputs = document.createElement("p");
+    inputs.style.fontSize = "0.68rem";
+    inputs.style.color = "var(--muted)";
+    inputs.textContent = `Inputs: ${task.inputArtifacts.map((a) => a.name).join(", ")}`;
+    card.appendChild(inputs);
+  }
   if (task.artifacts?.length) {
     const arts = document.createElement("p");
     arts.style.fontSize = "0.68rem";

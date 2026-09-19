@@ -4,13 +4,19 @@
   "spemVersion": "2.0",
   "representation": "MODRISS JSON DSL mapped to SPEM 2.0",
   "conformance": "mapped",
-  "compliancePoint": "SPEM Process with Behavior and Content + SPEM Method Content",
+  "mappingScope": [
+    "Core",
+    "ManagedContent",
+    "MethodContent",
+    "ProcessStructure",
+    "ProcessWithMethods"
+  ],
   "normativeReference": "https://www.omg.org/spec/SPEM/2.0/PDF/",
   "level": "artifact",
   "displayName": "Generated Artifacts & Deployment Readiness",
   "methodContent": {
     "packageId": "modriss.method-content.artifact",
-    "type": "MethodPackage",
+    "type": "MethodContentPackage",
     "roleDefinitions": [
       {
         "id": "role.release-engineer",
@@ -64,8 +70,16 @@
         "name": "Review project structure and generated templates",
         "purpose": "Review project structure and generated templates",
         "performerRoleRefs": ["role.application-engineer"],
+        "inputWorkProductRefs": [],
         "outputWorkProductRefs": ["artifact.generated-baseline"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Inspect template, source, configuration, documentation, and pipeline files in the artifact explorer.",
           "Identify entry points, Lambda handlers, infrastructure resources, parameters, outputs, and generated deployment instructions.",
@@ -76,7 +90,9 @@
         "validationRules": [
           "Every deployable resource has an identifiable template or source owner"
         ],
-        "durationEstimate": "30–60 min"
+        "durationEstimate": "30–60 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph1.st1.t2",
@@ -84,8 +100,21 @@
         "name": "Establish source-control and release baseline",
         "purpose": "Establish source-control and release baseline",
         "performerRoleRefs": ["role.release-engineer"],
+        "inputWorkProductRefs": ["artifact.generated-baseline"],
         "outputWorkProductRefs": ["artifact.generated-baseline"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Create a dedicated branch or repository according to team policy.",
           "Commit the unmodified generated baseline with generator, PSM revision, and generation timestamp recorded.",
@@ -94,7 +123,9 @@
         "entryCriteria": ["Generated output has been reviewed"],
         "exitCriteria": ["Baseline is versioned and reproducible"],
         "validationRules": ["No unreviewed local-only changes remain"],
-        "durationEstimate": "15–30 min"
+        "durationEstimate": "15–30 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph1.st2.t1",
@@ -102,8 +133,21 @@
         "name": "Route structural gaps back to the PSM",
         "purpose": "Route structural gaps back to the PSM",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
+        "inputWorkProductRefs": ["artifact.generated-baseline"],
         "outputWorkProductRefs": ["artifact.generated-baseline"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Classify each gap as a PSM modeling defect, generator limitation, or legitimate implementation refinement.",
           "For missing resources, permissions, integrations, or policies, update and validate the PSM before regenerating artifacts.",
@@ -112,7 +156,9 @@
         "entryCriteria": ["Inventory differences are known"],
         "exitCriteria": ["PSM feedback and local refinements have named owners"],
         "validationRules": ["Architecture decisions are not hidden only in generated files"],
-        "durationEstimate": "30–90 min"
+        "durationEstimate": "30–90 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph1.st2.t2",
@@ -120,8 +166,21 @@
         "name": "Complete repository hygiene",
         "purpose": "Complete repository hygiene",
         "performerRoleRefs": ["role.application-engineer"],
+        "inputWorkProductRefs": ["artifact.generated-baseline"],
         "outputWorkProductRefs": ["artifact.generated-baseline"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Add repository documentation, ownership, license, ignore rules, and contribution instructions required by the organization.",
           "Confirm generated documentation names the service, supported environments, and deployment prerequisites.",
@@ -130,7 +189,9 @@
         "entryCriteria": ["Baseline branch exists"],
         "exitCriteria": ["Repository can be safely shared and reviewed"],
         "validationRules": ["Repository contains no generated build output or credential material"],
-        "durationEstimate": "30 min"
+        "durationEstimate": "30 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph2.st1.t1",
@@ -138,8 +199,21 @@
         "name": "Define parameter and environment contract",
         "purpose": "Define parameter and environment contract",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
+        "inputWorkProductRefs": ["artifact.generated-baseline"],
         "outputWorkProductRefs": ["artifact.environment-contract"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.generated-baseline",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "List required parameters, outputs, domains, regions, account IDs, tags, feature flags, and external endpoints.",
           "Provide validated values or references for development, test, staging, and production.",
@@ -148,7 +222,9 @@
         "entryCriteria": ["Deployment templates and runtime configuration are known"],
         "exitCriteria": ["All environment values have a documented source and owner"],
         "validationRules": ["Production values are not copied into non-production configuration"],
-        "durationEstimate": "45–90 min"
+        "durationEstimate": "45–90 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph2.st1.t2",
@@ -156,8 +232,26 @@
         "name": "Configure secret references and encryption",
         "purpose": "Configure secret references and encryption",
         "performerRoleRefs": ["role.security-engineer"],
+        "inputWorkProductRefs": ["artifact.environment-contract"],
         "outputWorkProductRefs": ["artifact.environment-contract", "artifact.security-record"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "out",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Replace inline credentials, tokens, and sensitive defaults with approved secret-manager or parameter-store references.",
           "Verify encryption keys, rotation expectations, and access paths for each secret or protected data store.",
@@ -166,7 +260,9 @@
         "entryCriteria": ["Parameter contract is drafted"],
         "exitCriteria": ["Secrets are externalized and bootstrap steps are reproducible"],
         "validationRules": ["No secret value is committed to source control or template defaults"],
-        "durationEstimate": "30–60 min"
+        "durationEstimate": "30–60 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph2.st2.t1",
@@ -174,8 +270,26 @@
         "name": "Review IAM and deployment permissions",
         "purpose": "Review IAM and deployment permissions",
         "performerRoleRefs": ["role.security-engineer"],
+        "inputWorkProductRefs": ["artifact.environment-contract", "artifact.security-record"],
         "outputWorkProductRefs": ["artifact.security-record"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Review execution roles, resource policies, and CI/CD identities against least-privilege requirements.",
           "Separate deployment permissions from application runtime permissions.",
@@ -184,7 +298,9 @@
         "entryCriteria": ["Infrastructure and delivery identities are defined"],
         "exitCriteria": ["Required permissions are approved and bounded"],
         "validationRules": ["No wildcard permission remains without documented justification"],
-        "durationEstimate": "45–90 min"
+        "durationEstimate": "45–90 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph2.st2.t2",
@@ -192,8 +308,21 @@
         "name": "Implement repeatable build and deployment pipeline",
         "purpose": "Implement repeatable build and deployment pipeline",
         "performerRoleRefs": ["role.release-engineer"],
+        "inputWorkProductRefs": ["artifact.security-record"],
         "outputWorkProductRefs": ["artifact.environment-contract"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Configure the approved CI/CD workflow to restore dependencies, build, package, validate, and deploy the artifact.",
           "Pin or record runtime, build-image, and dependency-resolution versions.",
@@ -202,7 +331,9 @@
         "entryCriteria": ["Environment contract and deployment identities are available"],
         "exitCriteria": ["A pipeline can produce a uniquely identifiable release candidate"],
         "validationRules": ["Build and deploy steps do not depend on a developer workstation"],
-        "durationEstimate": "60–120 min"
+        "durationEstimate": "60–120 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph3.st1.t1",
@@ -210,8 +341,21 @@
         "name": "Run reproducible build and infrastructure validation",
         "purpose": "Run reproducible build and infrastructure validation",
         "performerRoleRefs": ["role.quality-engineer"],
+        "inputWorkProductRefs": ["artifact.environment-contract"],
         "outputWorkProductRefs": ["artifact.verification-evidence"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.environment-contract",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.verification-evidence",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Build and package the project using the delivery pipeline.",
           "Run the project's infrastructure/template validation and capture the results.",
@@ -220,7 +364,9 @@
         "entryCriteria": ["Versioned release candidate is available"],
         "exitCriteria": ["Build and template validation evidence is retained"],
         "validationRules": ["Build succeeds from a clean environment"],
-        "durationEstimate": "30–60 min"
+        "durationEstimate": "30–60 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph3.st1.t2",
@@ -228,8 +374,26 @@
         "name": "Assess dependencies and security findings",
         "purpose": "Assess dependencies and security findings",
         "performerRoleRefs": ["role.security-engineer"],
+        "inputWorkProductRefs": ["artifact.verification-evidence"],
         "outputWorkProductRefs": ["artifact.security-record", "artifact.verification-evidence"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.verification-evidence",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "out",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.verification-evidence",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Run approved dependency, secret, and infrastructure security scans.",
           "Triage findings by severity and exploitability; fix blockers or obtain time-bound risk acceptance.",
@@ -240,7 +404,9 @@
         "validationRules": [
           "No unresolved critical finding proceeds without explicit risk acceptance"
         ],
-        "durationEstimate": "45–90 min"
+        "durationEstimate": "45–90 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph3.st2.t1",
@@ -248,8 +414,26 @@
         "name": "Deploy to staging and execute acceptance tests",
         "purpose": "Deploy to staging and execute acceptance tests",
         "performerRoleRefs": ["role.quality-engineer"],
+        "inputWorkProductRefs": ["artifact.security-record", "artifact.verification-evidence"],
         "outputWorkProductRefs": ["artifact.verification-evidence"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.verification-evidence",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.verification-evidence",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Deploy the exact candidate through the pipeline to a controlled non-production environment.",
           "Execute smoke, integration, contract, and business acceptance tests for the deployable slice.",
@@ -258,7 +442,9 @@
         "entryCriteria": ["Build and security checks pass"],
         "exitCriteria": ["Acceptance evidence covers critical user and integration paths"],
         "validationRules": ["Tests target the deployed candidate as well as local code"],
-        "durationEstimate": "60–180 min"
+        "durationEstimate": "60–180 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph3.st2.t2",
@@ -266,8 +452,26 @@
         "name": "Verify observability and operational signals",
         "purpose": "Verify observability and operational signals",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
+        "inputWorkProductRefs": ["artifact.verification-evidence"],
         "outputWorkProductRefs": ["artifact.verification-evidence", "artifact.operations-pack"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.verification-evidence",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.verification-evidence",
+            "direction": "out",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.operations-pack",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Confirm logs, metrics, traces, dashboards, and alarms are emitted for critical paths.",
           "Trigger representative failure and recovery scenarios to verify alert routing and diagnostic context.",
@@ -276,7 +480,9 @@
         "entryCriteria": ["Candidate is deployed to staging"],
         "exitCriteria": ["Critical operational signals and alert ownership are verified"],
         "validationRules": ["An operator can detect and diagnose a failed critical path"],
-        "durationEstimate": "45–90 min"
+        "durationEstimate": "45–90 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph4.st1.t1",
@@ -284,8 +490,26 @@
         "name": "Create release, rollback, and communication plan",
         "purpose": "Create release, rollback, and communication plan",
         "performerRoleRefs": ["role.release-engineer"],
+        "inputWorkProductRefs": ["artifact.verification-evidence", "artifact.operations-pack"],
         "outputWorkProductRefs": ["artifact.release-plan"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.verification-evidence",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.operations-pack",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.release-plan",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Define release scope, version, deployment sequence, approvals, maintenance window, and stakeholder communications.",
           "Document rollback triggers, steps, data considerations, decision owner, and expected recovery time.",
@@ -294,7 +518,9 @@
         "entryCriteria": ["Staging evidence is accepted"],
         "exitCriteria": ["Release and rollback plan are approved by accountable owners"],
         "validationRules": ["Rollback does not rely on undocumented manual knowledge"],
-        "durationEstimate": "45–90 min"
+        "durationEstimate": "45–90 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph4.st1.t2",
@@ -302,8 +528,26 @@
         "name": "Obtain production readiness approval",
         "purpose": "Obtain production readiness approval",
         "performerRoleRefs": ["role.service-owner"],
+        "inputWorkProductRefs": ["artifact.release-plan"],
         "outputWorkProductRefs": ["artifact.release-plan", "artifact.security-record"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.release-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.release-plan",
+            "direction": "out",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Review release scope, risk, verification evidence, security findings, operational readiness, and rollback posture.",
           "Capture go/no-go decision, approvers, constraints, and follow-up actions.",
@@ -312,7 +556,9 @@
         "entryCriteria": ["Release plan and evidence are available"],
         "exitCriteria": ["Go/no-go decision is recorded"],
         "validationRules": ["Production deployment has an accountable approver"],
-        "durationEstimate": "30 min"
+        "durationEstimate": "30 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph4.st2.t1",
@@ -320,8 +566,26 @@
         "name": "Complete operations handover",
         "purpose": "Complete operations handover",
         "performerRoleRefs": ["role.service-owner"],
+        "inputWorkProductRefs": ["artifact.release-plan", "artifact.security-record"],
         "outputWorkProductRefs": ["artifact.operations-pack"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.release-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.security-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.operations-pack",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Publish runbooks for deployment, rollback, common incidents, access requests, and escalation.",
           "Assign service ownership, on-call coverage, dashboards, alerts, service objectives, and support contacts.",
@@ -330,7 +594,9 @@
         "entryCriteria": ["Release approval exists"],
         "exitCriteria": ["Operations team can support the deployed service"],
         "validationRules": ["Runbooks identify owners and escalation paths"],
-        "durationEstimate": "45–90 min"
+        "durationEstimate": "45–90 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       },
       {
         "id": "task.artifact.ph4.st2.t2",
@@ -338,8 +604,26 @@
         "name": "Execute production validation and close release",
         "purpose": "Execute production validation and close release",
         "performerRoleRefs": ["role.release-engineer"],
+        "inputWorkProductRefs": ["artifact.operations-pack"],
         "outputWorkProductRefs": ["artifact.verification-evidence", "artifact.operations-pack"],
-        "metamodelBindings": [],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "artifact.operations-pack",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.verification-evidence",
+            "direction": "out",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "artifact.operations-pack",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
         "steps": [
           "Deploy the approved release candidate using the documented pipeline and plan.",
           "Perform post-deployment smoke checks, monitor health signals, and confirm business and technical success criteria.",
@@ -348,73 +632,86 @@
         "entryCriteria": ["Approved release window is open"],
         "exitCriteria": ["Production outcome and follow-up actions are recorded"],
         "validationRules": ["Production health is checked before the release is closed"],
-        "durationEstimate": "30–90 min"
+        "durationEstimate": "30–90 min",
+        "paletteFocus": [],
+        "metamodelBindings": []
       }
     ],
     "workProductDefinitions": [
       {
         "id": "artifact.generated-baseline",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Generated Project Baseline",
         "description": "Reviewed, version-controlled output generated from the approved PSM"
       },
       {
         "id": "artifact.environment-contract",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Environment Configuration Contract",
         "description": "Per-environment parameters, secrets references, account/region bindings, and ownership"
       },
       {
         "id": "artifact.security-record",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Security Review Record",
         "description": "Least-privilege, secret handling, dependency, and data-protection evidence"
       },
       {
         "id": "artifact.verification-evidence",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Verification Evidence",
         "description": "Build, validation, test, and quality-gate results"
       },
       {
         "id": "artifact.release-plan",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Release & Rollback Plan",
         "description": "Version, deployment sequence, approvals, rollback steps, and communications"
       },
       {
         "id": "artifact.operations-pack",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Operations Handover Pack",
         "description": "Runbooks, dashboards, alarms, support ownership, and post-release checks"
       }
     ],
     "guidance": [
       {
+        "type": "Guidance",
         "id": "artifact.guid.generated-baseline",
         "name": "Generated output is a controlled baseline",
         "appliesTo": "process",
         "text": "Treat generated files as a PSM-derived baseline: review every generated change, commit it to source control, and feed structural defects back to the PSM instead of repeatedly patching generated output."
       },
       {
+        "type": "Guidance",
         "id": "artifact.guid.environment-parity",
         "name": "Environment parity with explicit differences",
         "appliesTo": "artifact.ph2",
         "text": "Keep development, test, staging, and production configuration structurally equivalent. Record intentional differences as parameters or approved environment exceptions."
       },
       {
+        "type": "Guidance",
         "id": "artifact.guid.no-secrets",
         "name": "No secrets in artifacts",
         "appliesTo": "artifact.ph2",
         "text": "Store secret values only in the approved secret manager or CI/CD secret store; generated templates and repositories contain references, never secret material."
       },
       {
+        "type": "Guidance",
         "id": "artifact.guid.evidence",
         "name": "Evidence before promotion",
         "appliesTo": "artifact.ph3",
         "text": "Promotion requires reproducible build, validation, test, and security evidence for the exact release candidate."
       },
       {
+        "type": "Guidance",
         "id": "artifact.guid.rollback",
         "name": "Rehearse recovery",
         "appliesTo": "artifact.ph4",
@@ -423,12 +720,6 @@
     ]
   },
   "roleUses": [
-    {
-      "id": "ru.artifact.ph1.application-engineer",
-      "type": "RoleUse",
-      "activityRef": "artifact.ph1",
-      "roleDefinitionRef": "role.application-engineer"
-    },
     {
       "id": "ru.artifact.ph1.st1.application-engineer",
       "type": "RoleUse",
@@ -452,12 +743,6 @@
       "type": "RoleUse",
       "activityRef": "artifact.ph1.st2",
       "roleDefinitionRef": "role.application-engineer"
-    },
-    {
-      "id": "ru.artifact.ph2.cloud-platform-engineer",
-      "type": "RoleUse",
-      "activityRef": "artifact.ph2",
-      "roleDefinitionRef": "role.cloud-platform-engineer"
     },
     {
       "id": "ru.artifact.ph2.st1.cloud-platform-engineer",
@@ -484,12 +769,6 @@
       "roleDefinitionRef": "role.security-engineer"
     },
     {
-      "id": "ru.artifact.ph3.quality-engineer",
-      "type": "RoleUse",
-      "activityRef": "artifact.ph3",
-      "roleDefinitionRef": "role.quality-engineer"
-    },
-    {
       "id": "ru.artifact.ph3.st1.quality-engineer",
       "type": "RoleUse",
       "activityRef": "artifact.ph3.st1",
@@ -514,12 +793,6 @@
       "roleDefinitionRef": "role.cloud-platform-engineer"
     },
     {
-      "id": "ru.artifact.ph4.release-engineer",
-      "type": "RoleUse",
-      "activityRef": "artifact.ph4",
-      "roleDefinitionRef": "role.release-engineer"
-    },
-    {
       "id": "ru.artifact.ph4.st1.release-engineer",
       "type": "RoleUse",
       "activityRef": "artifact.ph4.st1",
@@ -542,11 +815,35 @@
       "type": "RoleUse",
       "activityRef": "artifact.ph4.st2",
       "roleDefinitionRef": "role.release-engineer"
+    },
+    {
+      "id": "ru.artifact.ph1.application-engineer",
+      "type": "RoleUse",
+      "activityRef": "artifact.ph1",
+      "roleDefinitionRef": "role.application-engineer"
+    },
+    {
+      "id": "ru.artifact.ph2.cloud-platform-engineer",
+      "type": "RoleUse",
+      "activityRef": "artifact.ph2",
+      "roleDefinitionRef": "role.cloud-platform-engineer"
+    },
+    {
+      "id": "ru.artifact.ph3.quality-engineer",
+      "type": "RoleUse",
+      "activityRef": "artifact.ph3",
+      "roleDefinitionRef": "role.quality-engineer"
+    },
+    {
+      "id": "ru.artifact.ph4.release-engineer",
+      "type": "RoleUse",
+      "activityRef": "artifact.ph4",
+      "roleDefinitionRef": "role.release-engineer"
     }
   ],
   "workProductUses": [
     {
-      "id": "wpu.artifact.ph1.st1.t1.artifact.generated-baseline",
+      "id": "wpu.artifact.ph1.st1.t1.output.artifact.generated-baseline",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph1.st1",
       "taskUseRef": "artifact.ph1.st1.t1",
@@ -554,7 +851,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph1.st1.t2.artifact.generated-baseline",
+      "id": "wpu.artifact.ph1.st1.t2.input.artifact.generated-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph1.st1",
+      "taskUseRef": "artifact.ph1.st1.t2",
+      "workProductDefinitionRef": "artifact.generated-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph1.st1.t2.output.artifact.generated-baseline",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph1.st1",
       "taskUseRef": "artifact.ph1.st1.t2",
@@ -562,7 +867,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph1.st2.t1.artifact.generated-baseline",
+      "id": "wpu.artifact.ph1.st2.t1.input.artifact.generated-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph1.st2",
+      "taskUseRef": "artifact.ph1.st2.t1",
+      "workProductDefinitionRef": "artifact.generated-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph1.st2.t1.output.artifact.generated-baseline",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph1.st2",
       "taskUseRef": "artifact.ph1.st2.t1",
@@ -570,7 +883,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph1.st2.t2.artifact.generated-baseline",
+      "id": "wpu.artifact.ph1.st2.t2.input.artifact.generated-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph1.st2",
+      "taskUseRef": "artifact.ph1.st2.t2",
+      "workProductDefinitionRef": "artifact.generated-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph1.st2.t2.output.artifact.generated-baseline",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph1.st2",
       "taskUseRef": "artifact.ph1.st2.t2",
@@ -578,7 +899,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph2.st1.t1.artifact.environment-contract",
+      "id": "wpu.artifact.ph2.st1.t1.input.artifact.generated-baseline",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph2.st1",
+      "taskUseRef": "artifact.ph2.st1.t1",
+      "workProductDefinitionRef": "artifact.generated-baseline",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph2.st1.t1.output.artifact.environment-contract",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph2.st1",
       "taskUseRef": "artifact.ph2.st1.t1",
@@ -586,7 +915,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph2.st1.t2.artifact.environment-contract",
+      "id": "wpu.artifact.ph2.st1.t2.input.artifact.environment-contract",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph2.st1",
+      "taskUseRef": "artifact.ph2.st1.t2",
+      "workProductDefinitionRef": "artifact.environment-contract",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph2.st1.t2.output.artifact.environment-contract",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph2.st1",
       "taskUseRef": "artifact.ph2.st1.t2",
@@ -594,7 +931,7 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph2.st1.t2.artifact.security-record",
+      "id": "wpu.artifact.ph2.st1.t2.output.artifact.security-record",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph2.st1",
       "taskUseRef": "artifact.ph2.st1.t2",
@@ -602,7 +939,23 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph2.st2.t1.artifact.security-record",
+      "id": "wpu.artifact.ph2.st2.t1.input.artifact.environment-contract",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph2.st2",
+      "taskUseRef": "artifact.ph2.st2.t1",
+      "workProductDefinitionRef": "artifact.environment-contract",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph2.st2.t1.input.artifact.security-record",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph2.st2",
+      "taskUseRef": "artifact.ph2.st2.t1",
+      "workProductDefinitionRef": "artifact.security-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph2.st2.t1.output.artifact.security-record",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph2.st2",
       "taskUseRef": "artifact.ph2.st2.t1",
@@ -610,7 +963,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph2.st2.t2.artifact.environment-contract",
+      "id": "wpu.artifact.ph2.st2.t2.input.artifact.security-record",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph2.st2",
+      "taskUseRef": "artifact.ph2.st2.t2",
+      "workProductDefinitionRef": "artifact.security-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph2.st2.t2.output.artifact.environment-contract",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph2.st2",
       "taskUseRef": "artifact.ph2.st2.t2",
@@ -618,7 +979,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph3.st1.t1.artifact.verification-evidence",
+      "id": "wpu.artifact.ph3.st1.t1.input.artifact.environment-contract",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st1",
+      "taskUseRef": "artifact.ph3.st1.t1",
+      "workProductDefinitionRef": "artifact.environment-contract",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph3.st1.t1.output.artifact.verification-evidence",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph3.st1",
       "taskUseRef": "artifact.ph3.st1.t1",
@@ -626,7 +995,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph3.st1.t2.artifact.security-record",
+      "id": "wpu.artifact.ph3.st1.t2.input.artifact.verification-evidence",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st1",
+      "taskUseRef": "artifact.ph3.st1.t2",
+      "workProductDefinitionRef": "artifact.verification-evidence",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph3.st1.t2.output.artifact.security-record",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph3.st1",
       "taskUseRef": "artifact.ph3.st1.t2",
@@ -634,7 +1011,7 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph3.st1.t2.artifact.verification-evidence",
+      "id": "wpu.artifact.ph3.st1.t2.output.artifact.verification-evidence",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph3.st1",
       "taskUseRef": "artifact.ph3.st1.t2",
@@ -642,7 +1019,23 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph3.st2.t1.artifact.verification-evidence",
+      "id": "wpu.artifact.ph3.st2.t1.input.artifact.security-record",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st2",
+      "taskUseRef": "artifact.ph3.st2.t1",
+      "workProductDefinitionRef": "artifact.security-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph3.st2.t1.input.artifact.verification-evidence",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st2",
+      "taskUseRef": "artifact.ph3.st2.t1",
+      "workProductDefinitionRef": "artifact.verification-evidence",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph3.st2.t1.output.artifact.verification-evidence",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph3.st2",
       "taskUseRef": "artifact.ph3.st2.t1",
@@ -650,7 +1043,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph3.st2.t2.artifact.verification-evidence",
+      "id": "wpu.artifact.ph3.st2.t2.input.artifact.verification-evidence",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph3.st2",
+      "taskUseRef": "artifact.ph3.st2.t2",
+      "workProductDefinitionRef": "artifact.verification-evidence",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph3.st2.t2.output.artifact.verification-evidence",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph3.st2",
       "taskUseRef": "artifact.ph3.st2.t2",
@@ -658,7 +1059,7 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph3.st2.t2.artifact.operations-pack",
+      "id": "wpu.artifact.ph3.st2.t2.output.artifact.operations-pack",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph3.st2",
       "taskUseRef": "artifact.ph3.st2.t2",
@@ -666,7 +1067,23 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph4.st1.t1.artifact.release-plan",
+      "id": "wpu.artifact.ph4.st1.t1.input.artifact.verification-evidence",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st1",
+      "taskUseRef": "artifact.ph4.st1.t1",
+      "workProductDefinitionRef": "artifact.verification-evidence",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st1.t1.input.artifact.operations-pack",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st1",
+      "taskUseRef": "artifact.ph4.st1.t1",
+      "workProductDefinitionRef": "artifact.operations-pack",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st1.t1.output.artifact.release-plan",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph4.st1",
       "taskUseRef": "artifact.ph4.st1.t1",
@@ -674,7 +1091,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph4.st1.t2.artifact.release-plan",
+      "id": "wpu.artifact.ph4.st1.t2.input.artifact.release-plan",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st1",
+      "taskUseRef": "artifact.ph4.st1.t2",
+      "workProductDefinitionRef": "artifact.release-plan",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st1.t2.output.artifact.release-plan",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph4.st1",
       "taskUseRef": "artifact.ph4.st1.t2",
@@ -682,7 +1107,7 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph4.st1.t2.artifact.security-record",
+      "id": "wpu.artifact.ph4.st1.t2.output.artifact.security-record",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph4.st1",
       "taskUseRef": "artifact.ph4.st1.t2",
@@ -690,7 +1115,23 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph4.st2.t1.artifact.operations-pack",
+      "id": "wpu.artifact.ph4.st2.t1.input.artifact.release-plan",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st2",
+      "taskUseRef": "artifact.ph4.st2.t1",
+      "workProductDefinitionRef": "artifact.release-plan",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st2.t1.input.artifact.security-record",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st2",
+      "taskUseRef": "artifact.ph4.st2.t1",
+      "workProductDefinitionRef": "artifact.security-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st2.t1.output.artifact.operations-pack",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph4.st2",
       "taskUseRef": "artifact.ph4.st2.t1",
@@ -698,7 +1139,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph4.st2.t2.artifact.verification-evidence",
+      "id": "wpu.artifact.ph4.st2.t2.input.artifact.operations-pack",
+      "type": "WorkProductUse",
+      "activityRef": "artifact.ph4.st2",
+      "taskUseRef": "artifact.ph4.st2.t2",
+      "workProductDefinitionRef": "artifact.operations-pack",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.artifact.ph4.st2.t2.output.artifact.verification-evidence",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph4.st2",
       "taskUseRef": "artifact.ph4.st2.t2",
@@ -706,7 +1155,7 @@
       "usage": "output"
     },
     {
-      "id": "wpu.artifact.ph4.st2.t2.artifact.operations-pack",
+      "id": "wpu.artifact.ph4.st2.t2.output.artifact.operations-pack",
       "type": "WorkProductUse",
       "activityRef": "artifact.ph4.st2",
       "taskUseRef": "artifact.ph4.st2.t2",
@@ -911,7 +1360,10 @@
               "taskDefinitionRef": "task.artifact.ph1.st1.t1",
               "performerRoleUseRefs": ["ru.artifact.ph1.st1.application-engineer"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.artifact.ph1.st1.t1.artifact.generated-baseline"]
+              "inputWorkProductUseRefs": [],
+              "outputWorkProductUseRefs": [
+                "wpu.artifact.ph1.st1.t1.output.artifact.generated-baseline"
+              ]
             },
             {
               "id": "artifact.ph1.st1.t2",
@@ -919,7 +1371,12 @@
               "taskDefinitionRef": "task.artifact.ph1.st1.t2",
               "performerRoleUseRefs": ["ru.artifact.ph1.st1.release-engineer"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.artifact.ph1.st1.t2.artifact.generated-baseline"]
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph1.st1.t2.input.artifact.generated-baseline"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.artifact.ph1.st1.t2.output.artifact.generated-baseline"
+              ]
             }
           ]
         },
@@ -942,7 +1399,12 @@
               "taskDefinitionRef": "task.artifact.ph1.st2.t1",
               "performerRoleUseRefs": ["ru.artifact.ph1.st2.cloud-platform-engineer"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.artifact.ph1.st2.t1.artifact.generated-baseline"]
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph1.st2.t1.input.artifact.generated-baseline"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.artifact.ph1.st2.t1.output.artifact.generated-baseline"
+              ]
             },
             {
               "id": "artifact.ph1.st2.t2",
@@ -950,7 +1412,12 @@
               "taskDefinitionRef": "task.artifact.ph1.st2.t2",
               "performerRoleUseRefs": ["ru.artifact.ph1.st2.application-engineer"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.artifact.ph1.st2.t2.artifact.generated-baseline"]
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph1.st2.t2.input.artifact.generated-baseline"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.artifact.ph1.st2.t2.output.artifact.generated-baseline"
+              ]
             }
           ]
         }
@@ -992,7 +1459,12 @@
               "taskDefinitionRef": "task.artifact.ph2.st1.t1",
               "performerRoleUseRefs": ["ru.artifact.ph2.st1.cloud-platform-engineer"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.artifact.ph2.st1.t1.artifact.environment-contract"]
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph2.st1.t1.input.artifact.generated-baseline"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.artifact.ph2.st1.t1.output.artifact.environment-contract"
+              ]
             },
             {
               "id": "artifact.ph2.st1.t2",
@@ -1000,9 +1472,12 @@
               "taskDefinitionRef": "task.artifact.ph2.st1.t2",
               "performerRoleUseRefs": ["ru.artifact.ph2.st1.security-engineer"],
               "selectedStepIndices": [0, 1, 2],
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph2.st1.t2.input.artifact.environment-contract"
+              ],
               "outputWorkProductUseRefs": [
-                "wpu.artifact.ph2.st1.t2.artifact.environment-contract",
-                "wpu.artifact.ph2.st1.t2.artifact.security-record"
+                "wpu.artifact.ph2.st1.t2.output.artifact.environment-contract",
+                "wpu.artifact.ph2.st1.t2.output.artifact.security-record"
               ]
             }
           ]
@@ -1026,7 +1501,13 @@
               "taskDefinitionRef": "task.artifact.ph2.st2.t1",
               "performerRoleUseRefs": ["ru.artifact.ph2.st2.security-engineer"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.artifact.ph2.st2.t1.artifact.security-record"]
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph2.st2.t1.input.artifact.environment-contract",
+                "wpu.artifact.ph2.st2.t1.input.artifact.security-record"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.artifact.ph2.st2.t1.output.artifact.security-record"
+              ]
             },
             {
               "id": "artifact.ph2.st2.t2",
@@ -1034,7 +1515,10 @@
               "taskDefinitionRef": "task.artifact.ph2.st2.t2",
               "performerRoleUseRefs": ["ru.artifact.ph2.st2.release-engineer"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.artifact.ph2.st2.t2.artifact.environment-contract"]
+              "inputWorkProductUseRefs": ["wpu.artifact.ph2.st2.t2.input.artifact.security-record"],
+              "outputWorkProductUseRefs": [
+                "wpu.artifact.ph2.st2.t2.output.artifact.environment-contract"
+              ]
             }
           ]
         }
@@ -1077,7 +1561,12 @@
               "taskDefinitionRef": "task.artifact.ph3.st1.t1",
               "performerRoleUseRefs": ["ru.artifact.ph3.st1.quality-engineer"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.artifact.ph3.st1.t1.artifact.verification-evidence"]
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph3.st1.t1.input.artifact.environment-contract"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.artifact.ph3.st1.t1.output.artifact.verification-evidence"
+              ]
             },
             {
               "id": "artifact.ph3.st1.t2",
@@ -1085,9 +1574,12 @@
               "taskDefinitionRef": "task.artifact.ph3.st1.t2",
               "performerRoleUseRefs": ["ru.artifact.ph3.st1.security-engineer"],
               "selectedStepIndices": [0, 1, 2],
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph3.st1.t2.input.artifact.verification-evidence"
+              ],
               "outputWorkProductUseRefs": [
-                "wpu.artifact.ph3.st1.t2.artifact.security-record",
-                "wpu.artifact.ph3.st1.t2.artifact.verification-evidence"
+                "wpu.artifact.ph3.st1.t2.output.artifact.security-record",
+                "wpu.artifact.ph3.st1.t2.output.artifact.verification-evidence"
               ]
             }
           ]
@@ -1111,7 +1603,13 @@
               "taskDefinitionRef": "task.artifact.ph3.st2.t1",
               "performerRoleUseRefs": ["ru.artifact.ph3.st2.quality-engineer"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.artifact.ph3.st2.t1.artifact.verification-evidence"]
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph3.st2.t1.input.artifact.security-record",
+                "wpu.artifact.ph3.st2.t1.input.artifact.verification-evidence"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.artifact.ph3.st2.t1.output.artifact.verification-evidence"
+              ]
             },
             {
               "id": "artifact.ph3.st2.t2",
@@ -1119,9 +1617,12 @@
               "taskDefinitionRef": "task.artifact.ph3.st2.t2",
               "performerRoleUseRefs": ["ru.artifact.ph3.st2.cloud-platform-engineer"],
               "selectedStepIndices": [0, 1, 2],
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph3.st2.t2.input.artifact.verification-evidence"
+              ],
               "outputWorkProductUseRefs": [
-                "wpu.artifact.ph3.st2.t2.artifact.verification-evidence",
-                "wpu.artifact.ph3.st2.t2.artifact.operations-pack"
+                "wpu.artifact.ph3.st2.t2.output.artifact.verification-evidence",
+                "wpu.artifact.ph3.st2.t2.output.artifact.operations-pack"
               ]
             }
           ]
@@ -1162,7 +1663,11 @@
               "taskDefinitionRef": "task.artifact.ph4.st1.t1",
               "performerRoleUseRefs": ["ru.artifact.ph4.st1.release-engineer"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.artifact.ph4.st1.t1.artifact.release-plan"]
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph4.st1.t1.input.artifact.verification-evidence",
+                "wpu.artifact.ph4.st1.t1.input.artifact.operations-pack"
+              ],
+              "outputWorkProductUseRefs": ["wpu.artifact.ph4.st1.t1.output.artifact.release-plan"]
             },
             {
               "id": "artifact.ph4.st1.t2",
@@ -1170,9 +1675,10 @@
               "taskDefinitionRef": "task.artifact.ph4.st1.t2",
               "performerRoleUseRefs": ["ru.artifact.ph4.st1.service-owner"],
               "selectedStepIndices": [0, 1, 2],
+              "inputWorkProductUseRefs": ["wpu.artifact.ph4.st1.t2.input.artifact.release-plan"],
               "outputWorkProductUseRefs": [
-                "wpu.artifact.ph4.st1.t2.artifact.release-plan",
-                "wpu.artifact.ph4.st1.t2.artifact.security-record"
+                "wpu.artifact.ph4.st1.t2.output.artifact.release-plan",
+                "wpu.artifact.ph4.st1.t2.output.artifact.security-record"
               ]
             }
           ]
@@ -1196,7 +1702,13 @@
               "taskDefinitionRef": "task.artifact.ph4.st2.t1",
               "performerRoleUseRefs": ["ru.artifact.ph4.st2.service-owner"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.artifact.ph4.st2.t1.artifact.operations-pack"]
+              "inputWorkProductUseRefs": [
+                "wpu.artifact.ph4.st2.t1.input.artifact.release-plan",
+                "wpu.artifact.ph4.st2.t1.input.artifact.security-record"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.artifact.ph4.st2.t1.output.artifact.operations-pack"
+              ]
             },
             {
               "id": "artifact.ph4.st2.t2",
@@ -1204,9 +1716,10 @@
               "taskDefinitionRef": "task.artifact.ph4.st2.t2",
               "performerRoleUseRefs": ["ru.artifact.ph4.st2.release-engineer"],
               "selectedStepIndices": [0, 1, 2],
+              "inputWorkProductUseRefs": ["wpu.artifact.ph4.st2.t2.input.artifact.operations-pack"],
               "outputWorkProductUseRefs": [
-                "wpu.artifact.ph4.st2.t2.artifact.verification-evidence",
-                "wpu.artifact.ph4.st2.t2.artifact.operations-pack"
+                "wpu.artifact.ph4.st2.t2.output.artifact.verification-evidence",
+                "wpu.artifact.ph4.st2.t2.output.artifact.operations-pack"
               ]
             }
           ]
@@ -1336,30 +1849,6 @@
       "relation": "task-order"
     },
     {
-      "id": "ws.engine.artifact.ph1.artifact.ph2",
-      "type": "WorkSequence",
-      "predecessorRef": "artifact.ph1",
-      "successorRef": "artifact.ph2",
-      "linkKind": "finishToStart",
-      "relation": "engine-cycle"
-    },
-    {
-      "id": "ws.engine.artifact.ph2.artifact.ph3",
-      "type": "WorkSequence",
-      "predecessorRef": "artifact.ph2",
-      "successorRef": "artifact.ph3",
-      "linkKind": "finishToStart",
-      "relation": "engine-cycle"
-    },
-    {
-      "id": "ws.engine.artifact.ph3.artifact.ph4",
-      "type": "WorkSequence",
-      "predecessorRef": "artifact.ph3",
-      "successorRef": "artifact.ph4",
-      "linkKind": "finishToStart",
-      "relation": "engine-cycle"
-    },
-    {
       "id": "ws.engine-loop.artifact.ph4.artifact.ph1",
       "type": "WorkSequence",
       "predecessorRef": "artifact.ph4",
@@ -1404,21 +1893,25 @@
   },
   "milestones": [
     {
+      "type": "Milestone",
       "id": "artifact.m1.baseline",
       "name": "Generated baseline accepted",
       "phaseId": "artifact.ph1"
     },
     {
+      "type": "Milestone",
       "id": "artifact.m2.hardened",
       "name": "Environment and delivery controls approved",
       "phaseId": "artifact.ph2"
     },
     {
+      "type": "Milestone",
       "id": "artifact.m3.verified",
       "name": "Release candidate verified",
       "phaseId": "artifact.ph3"
     },
     {
+      "type": "Milestone",
       "id": "artifact.m4.ready",
       "name": "Deployment-ready package handed over",
       "phaseId": "artifact.ph4"

@@ -47,7 +47,9 @@ export function resolveTaskUse(process, taskUse) {
   const workProducts = new Map(
     (process.methodContent?.workProductDefinitions || []).map((item) => [item.id, item]),
   );
+  const inputRefs = taskUse.inputWorkProductUseRefs || [];
   const outputRefs = taskUse.outputWorkProductUseRefs || [];
+  const inputUses = (process.workProductUses || []).filter((item) => inputRefs.includes(item.id));
   const outputUses = (process.workProductUses || []).filter((item) =>
     outputRefs.includes(item.id),
   );
@@ -57,7 +59,12 @@ export function resolveTaskUse(process, taskUse) {
     id: taskUse.id,
     taskDefinitionRef: taskUse.taskDefinitionRef,
     performerRoleUseRefs: taskUse.performerRoleUseRefs || [],
+    inputWorkProductUseRefs: inputRefs,
     outputWorkProductUseRefs: outputRefs,
+    inputArtifacts: inputUses
+      .map((item) => workProducts.get(item.workProductDefinitionRef))
+      .filter(Boolean)
+      .map(({ id, name, description }) => ({ id, name, description })),
     artifacts: outputUses
       .map((item) => workProducts.get(item.workProductDefinitionRef))
       .filter(Boolean)

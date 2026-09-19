@@ -22,12 +22,26 @@ function collectStages(phases) {
   return stages;
 }
 
-function validateProcess(process, fileName) {
+function validateProcess(process, fileName, metamodelClassifiers = null) {
   const methodContent = process.methodContent || {};
   const errors = [];
   if (process.type !== "Process") errors.push("root is not typed as Process");
-  if (methodContent.type !== "MethodPackage") errors.push("methodContent is not typed as MethodPackage");
+  if (methodContent.type !== "MethodContentPackage") {
+    errors.push("methodContent is not typed as MethodContentPackage");
+  }
   if (process.conformance !== "mapped") errors.push("process must declare mapped SPEM conformance");
+  const requiredMappingScope = new Set([
+    "Core",
+    "ManagedContent",
+    "MethodContent",
+    "ProcessStructure",
+    "ProcessWithMethods",
+  ]);
+  for (const scope of requiredMappingScope) {
+    if (!(process.mappingScope || []).includes(scope)) {
+      errors.push(`process mappingScope is missing ${scope}`);
+    }
+  }
   const roleIds = new Set((methodContent.roleDefinitions || process.roles || []).map((role) => role.id));
   const taskDefinitions = new Map(
     (methodContent.taskDefinitions || []).map((task) => [task.id, task]),
@@ -45,8 +59,87 @@ function validateProcess(process, fileName) {
   const stages = collectStages(process.phases);
   const taskIds = new Set();
   const nodeIds = new Set([...phaseIds, ...stages.keys()]);
+  const activities = new Map();
+  const taskUseContexts = new Map();
+  const referencedTaskDefinitions = new Set();
+  const referencedWorkProductUses = new Set();
+  const canonicalMethodIds = new Map();
+  const canonicalProcessIds = new Map();
+  const registerUnique = (values, context, registry) => {
+    const local = new Set();
+    for (const value of values || []) {
+      if (!value?.id) continue;
+      if (local.has(value.id)) {
+        errors.push(`duplicate id ${value.id} within ${context}`);
+      }
+      if (registry.has(value.id)) {
+        errors.push(`duplicate id ${value.id} (${registry.get(value.id)} and ${context})`);
+      }
+      local.add(value.id);
+      registry.set(value.id, context);
+    }
+  };
+  registerUnique(methodContent.roleDefinitions, "methodContent.roleDefinitions", canonicalMethodIds);
+  registerUnique(methodContent.taskDefinitions, "methodContent.taskDefinitions", canonicalMethodIds);
+  registerUnique(methodContent.workProductDefinitions, "methodContent.workProductDefinitions", canonicalMethodIds);
+  registerUnique(methodContent.guidance, "methodContent.guidance", canonicalMethodIds);
+  registerUnique(process.roleUses, "process.roleUses", canonicalProcessIds);
+  registerUnique(process.workProductUses, "process.workProductUses", canonicalProcessIds);
+  registerUnique(process.workSequences, "process.workSequences", canonicalProcessIds);
+  registerUnique(process.changeManagement?.workflows, "process.changeManagement.workflows", canonicalProcessIds);
+  registerUnique(process.milestones, "process.milestones", canonicalProcessIds);
+  registerUnique(process.processEngine?.cycle, "process.processEngine.cycle", new Map());
+  registerUnique(process.processEngine?.reworkLoops, "process.processEngine.reworkLoops", new Map());
+
+  const registerActivity = (activity) => {
+    activities.set(activity.id, activity);
+  };
+  const taskUses = [];
+  for (const phase of process.phases || []) {
+    registerActivity(phase);
+    for (const stage of phase.stages || []) {
+      const visitActivity = (activity) => {
+        registerActivity(activity);
+        for (const taskUse of activity.taskUses || []) {
+          taskUses.push(taskUse);
+          taskUseContexts.set(taskUse.id, activity.id);
+        }
+        for (const child of activity.subStages || []) visitActivity(child);
+      };
+      visitActivity(stage);
+    }
+  }
+  registerUnique([...activities.values()], "process.activities", canonicalProcessIds);
+  registerUnique(taskUses, "process.taskUses", canonicalProcessIds);
 
   for (const taskDefinition of methodContent.taskDefinitions || []) {
+    const parameters = taskDefinition.workProductParameters || [];
+    const parameterKeys = new Set();
+    for (const parameter of parameters) {
+      if (!workProductIds.has(parameter.workProductDefinitionRef)) {
+        errors.push(
+          `task definition ${taskDefinition.id} parameter references unknown work product ${parameter.workProductDefinitionRef}`,
+        );
+      }
+      if (!["in", "out", "inout"].includes(parameter.direction)) {
+        errors.push(`task definition ${taskDefinition.id} has invalid parameter direction ${parameter.direction}`);
+      }
+      const key = `${parameter.direction}:${parameter.workProductDefinitionRef}`;
+      if (parameterKeys.has(key)) {
+        errors.push(`task definition ${taskDefinition.id} repeats parameter ${key}`);
+      }
+      parameterKeys.add(key);
+    }
+    for (const workProductId of taskDefinition.inputWorkProductRefs || []) {
+      if (!parameters.some((parameter) => parameter.direction !== "out" && parameter.workProductDefinitionRef === workProductId)) {
+        errors.push(`task definition ${taskDefinition.id} input ${workProductId} is missing an input parameter`);
+      }
+    }
+    for (const workProductId of taskDefinition.outputWorkProductRefs || []) {
+      if (!parameters.some((parameter) => parameter.direction !== "in" && parameter.workProductDefinitionRef === workProductId)) {
+        errors.push(`task definition ${taskDefinition.id} output ${workProductId} is missing an output parameter`);
+      }
+    }
     for (const roleId of taskDefinition.performerRoleRefs || []) {
       if (!roleIds.has(roleId)) {
         errors.push(`task definition ${taskDefinition.id} uses unknown role ${roleId}`);
@@ -61,10 +154,24 @@ function validateProcess(process, fileName) {
       if (!binding.metamodel || !binding.classifier || !binding.kind) {
         errors.push(`task definition ${taskDefinition.id} has an incomplete metamodel binding`);
       }
+      if (metamodelClassifiers && binding.metamodel === process.level && !metamodelClassifiers.has(binding.classifier)) {
+        errors.push(
+          `task definition ${taskDefinition.id} binds unknown ${binding.metamodel} classifier ${binding.classifier}`,
+        );
+      }
     }
   }
 
-  const checkRoleUses = (ownerId, refs) => {
+  for (const workProductDefinition of methodContent.workProductDefinitions || []) {
+    if (workProductDefinition.type !== "WorkProductDefinition") {
+      errors.push(`work product ${workProductDefinition.id} is not a WorkProductDefinition`);
+    }
+    if (!workProductDefinition.workProductKind) {
+      errors.push(`work product ${workProductDefinition.id} is missing workProductKind`);
+    }
+  }
+
+  const checkRoleUses = (ownerId, refs, expectedActivityId = null) => {
     for (const roleUseId of refs || []) {
       const roleUse = roleUses.get(roleUseId);
       if (!roleUse) {
@@ -74,6 +181,11 @@ function validateProcess(process, fileName) {
       if (!roleIds.has(roleUse.roleDefinitionRef)) {
         errors.push(`role use ${roleUseId} references unknown role ${roleUse.roleDefinitionRef}`);
       }
+      if (expectedActivityId && roleUse.activityRef !== expectedActivityId) {
+        errors.push(
+          `${ownerId} uses role use ${roleUseId} scoped to ${roleUse.activityRef}, expected ${expectedActivityId}`,
+        );
+      }
     }
   };
 
@@ -81,7 +193,7 @@ function validateProcess(process, fileName) {
     if (stage.primaryRole && !roleIds.has(stage.primaryRole)) {
       errors.push(`stage ${stage.id} uses unknown role ${stage.primaryRole}`);
     }
-    checkRoleUses(`stage ${stage.id}`, stage.roleUseRefs);
+    checkRoleUses(`stage ${stage.id}`, stage.roleUseRefs, stage.id);
     nodeIds.add(stage.id);
     for (const taskUse of stage.taskUses || []) {
       taskIds.add(taskUse.id);
@@ -89,13 +201,56 @@ function validateProcess(process, fileName) {
       const taskDefinition = taskDefinitions.get(taskUse.taskDefinitionRef);
       if (!taskDefinition) {
         errors.push(`task use ${taskUse.id} references unknown task definition ${taskUse.taskDefinitionRef}`);
+      } else {
+        for (const stepIndex of taskUse.selectedStepIndices || []) {
+          if (!Number.isInteger(stepIndex) || stepIndex < 0 || stepIndex >= (taskDefinition.steps || []).length) {
+            errors.push(
+              `task use ${taskUse.id} selects invalid step ${stepIndex} from ${taskDefinition.id}`,
+            );
+          }
+        }
+        for (const workProductId of taskDefinition.inputWorkProductRefs || []) {
+          if (!(taskUse.inputWorkProductUseRefs || []).some((workProductUseId) =>
+            workProductUses.get(workProductUseId)?.workProductDefinitionRef === workProductId,
+          )) {
+            errors.push(`task use ${taskUse.id} does not bind input work product ${workProductId}`);
+          }
+        }
+        for (const workProductId of taskDefinition.outputWorkProductRefs || []) {
+          if (!(taskUse.outputWorkProductUseRefs || []).some((workProductUseId) =>
+            workProductUses.get(workProductUseId)?.workProductDefinitionRef === workProductId,
+          )) {
+            errors.push(`task use ${taskUse.id} does not bind output work product ${workProductId}`);
+          }
+        }
       }
-      checkRoleUses(`task use ${taskUse.id}`, taskUse.performerRoleUseRefs);
-      for (const workProductUseId of taskUse.outputWorkProductUseRefs || []) {
+      checkRoleUses(`task use ${taskUse.id}`, taskUse.performerRoleUseRefs, stage.id);
+      referencedTaskDefinitions.add(taskUse.taskDefinitionRef);
+      for (const workProductUseId of [
+        ...(taskUse.inputWorkProductUseRefs || []),
+        ...(taskUse.outputWorkProductUseRefs || []),
+      ]) {
         const workProductUse = workProductUses.get(workProductUseId);
         if (!workProductUse) {
           errors.push(`task use ${taskUse.id} uses unknown work product use ${workProductUseId}`);
           continue;
+        }
+        referencedWorkProductUses.add(workProductUseId);
+        const expectedUsage = (taskUse.inputWorkProductUseRefs || []).includes(workProductUseId)
+          ? "input"
+          : "output";
+        if (workProductUse.usage !== expectedUsage) {
+          errors.push(`work product use ${workProductUseId} has usage ${workProductUse.usage}, expected ${expectedUsage}`);
+        }
+        if (workProductUse.activityRef !== stage.id) {
+          errors.push(
+            `work product use ${workProductUseId} is scoped to ${workProductUse.activityRef}, expected ${stage.id}`,
+          );
+        }
+        if (workProductUse.taskUseRef !== taskUse.id) {
+          errors.push(
+            `work product use ${workProductUseId} references task use ${workProductUse.taskUseRef}, expected ${taskUse.id}`,
+          );
         }
         if (!workProductIds.has(workProductUse.workProductDefinitionRef)) {
           errors.push(
@@ -122,10 +277,39 @@ function validateProcess(process, fileName) {
     if (phase.primaryRole && !roleIds.has(phase.primaryRole)) {
       errors.push(`phase ${phase.id} uses unknown role ${phase.primaryRole}`);
     }
-    checkRoleUses(`phase ${phase.id}`, phase.roleUseRefs);
+    checkRoleUses(`phase ${phase.id}`, phase.roleUseRefs, phase.id);
     for (const stage of phase.stages || []) visitStage(stage);
   }
 
+  for (const roleUse of process.roleUses || []) {
+    const activity = activities.get(roleUse.activityRef);
+    if (!activity) {
+      errors.push(`role use ${roleUse.id} references unknown activity ${roleUse.activityRef}`);
+    } else if (!(activity.roleUseRefs || []).includes(roleUse.id)) {
+      errors.push(`role use ${roleUse.id} is not referenced by activity ${roleUse.activityRef}`);
+    }
+  }
+
+  for (const taskDefinition of taskDefinitions.values()) {
+    if (!referencedTaskDefinitions.has(taskDefinition.id)) {
+      errors.push(`task definition ${taskDefinition.id} is not used by any TaskUse`);
+    }
+  }
+  for (const workProductUse of workProductUses.values()) {
+    if (!referencedWorkProductUses.has(workProductUse.id)) {
+      errors.push(`work product use ${workProductUse.id} is not referenced by any TaskUse`);
+    }
+    const taskActivityId = taskUseContexts.get(workProductUse.taskUseRef);
+    if (!taskActivityId) {
+      errors.push(`work product use ${workProductUse.id} references unknown task use ${workProductUse.taskUseRef}`);
+    } else if (workProductUse.activityRef !== taskActivityId) {
+      errors.push(
+        `work product use ${workProductUse.id} activity ${workProductUse.activityRef} disagrees with task use activity ${taskActivityId}`,
+      );
+    }
+  }
+
+  const sequenceKeys = new Set();
   for (const sequence of process.workSequences || []) {
     if (!nodeIds.has(sequence.predecessorRef) || !nodeIds.has(sequence.successorRef)) {
       errors.push(
@@ -135,6 +319,11 @@ function validateProcess(process, fileName) {
     if (!["finishToStart", "finishToFinish", "startToStart", "startToFinish"].includes(sequence.linkKind)) {
       errors.push(`work sequence ${sequence.id} has invalid link kind ${sequence.linkKind}`);
     }
+    const sequenceKey = `${sequence.predecessorRef}|${sequence.successorRef}|${sequence.linkKind}`;
+    if (sequenceKeys.has(sequenceKey)) {
+      errors.push(`work sequence ${sequence.id} duplicates semantic edge ${sequenceKey}`);
+    }
+    sequenceKeys.add(sequenceKey);
   }
 
   const engine = process.processEngine;
@@ -210,7 +399,7 @@ for (const level of ["cim", "pim", "psm"]) {
   const procPath = join(PROC_DIR, `${level}.json`);
   try {
     const process = JSON.parse(readFileSync(procPath, "utf8"));
-    validateProcess(process, `${level}.json`);
+    validateProcess(process, `${level}.json`, new Set(concepts));
   } catch {
     console.error(`Missing process definition: ${procPath}`);
     failed = true;

@@ -108,6 +108,7 @@ Create or refresh the PIMModel root with architecture style and implementation p
 
 **Viewpoint:** dashboard
 **Duration:** 20m
+**Inputs:** PIM Increment Plan
 **Work products:** Architecture Posture
 **Palette focus:** `PIMModel`
 
@@ -128,6 +129,7 @@ Create or refresh the PIMModel root with architecture style and implementation p
 
 **Viewpoint:** dashboard
 **Duration:** 30m
+**Inputs:** Architecture Posture
 **Work products:** Architecture Posture
 **Palette focus:** `ImplementationProfile`
 
@@ -148,6 +150,7 @@ Create or refresh the PIMModel root with architecture style and implementation p
 
 **Viewpoint:** dashboard
 **Duration:** 30m
+**Inputs:** Architecture Posture
 **Work products:** Architecture Posture
 **Palette focus:**
 
@@ -190,6 +193,7 @@ Define serverless services and element memberships aligned to bounded contexts.
 
 **Viewpoint:** services
 **Duration:** 1h
+**Inputs:** Architecture Posture
 **Work products:** Service Boundary Map
 **Palette focus:** `ServerlessService`
 
@@ -210,6 +214,7 @@ Define serverless services and element memberships aligned to bounded contexts.
 
 **Viewpoint:** services
 **Duration:** 45m
+**Inputs:** Service Boundary Map
 **Work products:** Service Boundary Map
 **Palette focus:** `ServiceElementMembership`
 
@@ -255,6 +260,7 @@ Model schemas, validation constraints, and event envelopes aligned to CIM behavi
 
 **Viewpoint:** contracts
 **Duration:** 1-2h
+**Inputs:** Service Boundary Map
 **Work products:** Contract Catalog
 **Palette focus:** `Schema`, `SchemaField`, `SchemaEnumLiteral`
 
@@ -275,6 +281,7 @@ Model schemas, validation constraints, and event envelopes aligned to CIM behavi
 
 **Viewpoint:** contracts
 **Duration:** 1h
+**Inputs:** Contract Catalog
 **Work products:** Contract Catalog
 **Palette focus:** `EventType`, `EventEnvelope`, `SchemaValidationConstraint`, `SchemaConstraint`
 
@@ -303,6 +310,7 @@ Model data stores, access patterns, and change streams for domain persistence.
 
 **Viewpoint:** data
 **Duration:** 1-2h
+**Inputs:** Contract Catalog
 **Work products:** Data Architecture
 **Palette focus:** `DataStore`, `ObjectStore`, `DataModel`, `DataField`
 
@@ -323,6 +331,7 @@ Model data stores, access patterns, and change streams for domain persistence.
 
 **Viewpoint:** data
 **Duration:** 1h
+**Inputs:** Data Architecture
 **Work products:** Data Architecture
 **Palette focus:** `AccessPattern`, `IndexCandidate`, `DataAccess`
 
@@ -343,6 +352,7 @@ Model data stores, access patterns, and change streams for domain persistence.
 
 **Viewpoint:** data
 **Duration:** 45m
+**Inputs:** Data Architecture
 **Work products:** Data Architecture
 **Palette focus:** `DataChangeStream`, `ObjectNotificationRule`
 
@@ -388,6 +398,7 @@ Define functions with contracts and triggers mapped to CIM commands and events.
 
 **Viewpoint:** compute
 **Duration:** 1-2h
+**Inputs:** Data Architecture
 **Work products:** Compute Catalog
 **Palette focus:** `Function`, `FunctionContract`
 
@@ -408,6 +419,7 @@ Define functions with contracts and triggers mapped to CIM commands and events.
 
 **Viewpoint:** compute
 **Duration:** 1h
+**Inputs:** Compute Catalog
 **Work products:** Compute Catalog
 **Palette focus:** `Trigger`
 
@@ -436,6 +448,7 @@ Expose functions through APIs with routes, contracts, and error mappings.
 
 **Viewpoint:** api
 **Duration:** 1h
+**Inputs:** Compute Catalog
 **Work products:** API Catalog
 **Palette focus:** `Api`, `ApiRoute`
 
@@ -456,6 +469,7 @@ Expose functions through APIs with routes, contracts, and error mappings.
 
 **Viewpoint:** api
 **Duration:** 45m
+**Inputs:** API Catalog
 **Work products:** API Catalog
 **Palette focus:** `ApiContract`, `ErrorMapping`
 
@@ -501,6 +515,7 @@ Model event channels, flows, and routing rules connecting services.
 
 **Viewpoint:** integration
 **Duration:** 1h
+**Inputs:** API Catalog
 **Work products:** Integration Topology
 **Palette focus:** `EventChannel`, `Queue`, `Topic`, `EventBus`
 
@@ -521,6 +536,7 @@ Model event channels, flows, and routing rules connecting services.
 
 **Viewpoint:** integration
 **Duration:** 1-2h
+**Inputs:** Integration Topology
 **Work products:** Integration Topology
 **Palette focus:**
 
@@ -561,6 +577,7 @@ Model workflows from CIM business processes with human tasks and compensation.
 
 **Viewpoint:** workflow
 **Duration:** 1-2h
+**Inputs:** Integration Topology
 **Work products:** Workflow Model
 **Palette focus:**
 
@@ -594,6 +611,7 @@ Model workflows from CIM business processes with human tasks and compensation.
 
 **Viewpoint:** workflow
 **Duration:** 1h
+**Inputs:** Workflow Model
 **Work products:** Workflow Model
 **Palette focus:**
 
@@ -649,6 +667,7 @@ Configure identity providers, principals, and authorization for APIs and functio
 
 **Viewpoint:** security
 **Duration:** 45m
+**Inputs:** Workflow Model
 **Work products:** Security Model
 **Palette focus:** `IdentityProvider`, `Principal`
 
@@ -669,6 +688,7 @@ Configure identity providers, principals, and authorization for APIs and functio
 
 **Viewpoint:** security
 **Duration:** 1h
+**Inputs:** Security Model
 **Work products:** Security Model
 **Palette focus:** `Permission`, `SecurityPolicy`, `AuthPolicy`, `AuthorizationPolicy`
 
@@ -701,6 +721,7 @@ Configure retry, timeout, concurrency, and throughput policies.
 
 **Viewpoint:** policies
 **Duration:** 1h
+**Inputs:** Security Model
 **Work products:** Architecture Policy Catalog
 **Palette focus:** `ResiliencePolicy`, `RetryPolicy`, `DeadLetterPolicy`, `TimeoutPolicy`, `IdempotencyPolicy`
 
@@ -722,6 +743,7 @@ Configure retry, timeout, concurrency, and throughput policies.
 
 **Viewpoint:** policies
 **Duration:** 45m
+**Inputs:** Architecture Policy Catalog
 **Work products:** Architecture Policy Catalog
 **Palette focus:**
 
@@ -760,6 +782,7 @@ Configure logging, metrics, tracing, alerts, and service level objectives.
 
 **Viewpoint:** policies
 **Duration:** 45m
+**Inputs:** Architecture Policy Catalog
 **Work products:** Architecture Policy Catalog
 **Palette focus:** `ObservabilityConfig`, `LoggingPolicy`, `MetricPolicy`, `MetricDimension`, `TracingPolicy`
 
@@ -780,6 +803,7 @@ Configure logging, metrics, tracing, alerts, and service level objectives.
 
 **Viewpoint:** policies
 **Duration:** 30m
+**Inputs:** Architecture Policy Catalog
 **Work products:** Architecture Policy Catalog
 **Palette focus:** `AlertPolicy`, `Slo`, `CorsPolicy`
 
@@ -808,6 +832,7 @@ Apply data protection, compliance, and business rule policies.
 
 **Viewpoint:** policies
 **Duration:** 45m
+**Inputs:** Architecture Policy Catalog
 **Work products:** Architecture Policy Catalog
 **Palette focus:**
 
@@ -834,6 +859,7 @@ Apply data protection, compliance, and business rule policies.
 
 **Viewpoint:** policies
 **Duration:** 45m
+**Inputs:** Architecture Policy Catalog
 **Work products:** Architecture Policy Catalog
 **Palette focus:** `BusinessRule`, `DecisionModel`, `DecisionRule`
 
@@ -862,6 +888,7 @@ Model external integrations, environments, secrets, and deployment units.
 
 **Viewpoint:** config
 **Duration:** 45m
+**Inputs:** Architecture Policy Catalog
 **Work products:** Configuration Package
 **Palette focus:** `ExternalEndpoint`, `ExternalAdapter`
 
@@ -882,6 +909,7 @@ Model external integrations, environments, secrets, and deployment units.
 
 **Viewpoint:** config
 **Duration:** 1h
+**Inputs:** Configuration Package
 **Work products:** Configuration Package
 **Palette focus:**
 
@@ -937,6 +965,7 @@ Evaluate platform capability coverage and mapping readiness.
 
 **Viewpoint:** readiness
 **Duration:** 1h
+**Inputs:** Configuration Package
 **Work products:** Platform Readiness Record
 **Palette focus:** `PlatformCapability`, `PlatformMappingAssessment`
 
@@ -965,6 +994,7 @@ Close trace links and production readiness before PIM→PSM transform.
 
 **Viewpoint:** readiness
 **Duration:** 1-2h
+**Inputs:** Platform Readiness Record
 **Work products:** Platform Readiness Record
 **Palette focus:**
 
@@ -1005,6 +1035,7 @@ Review the service slice architecture, accept the increment, and adapt the next 
 
 **Viewpoint:** readiness
 **Duration:** 45m
+**Inputs:** Platform Readiness Record
 **Work products:** PIM Increment Review Record
 
 **Steps:**

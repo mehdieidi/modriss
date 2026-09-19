@@ -18,15 +18,28 @@ class ModelingProcessServiceTest {
   void loadsCimProcessWithSpemMethodContentAndUses() {
     Map<String, Object> process = service.processDefinition("cim");
     assertEquals("modriss.cim.modeling", process.get("processId"));
+    assertEquals("Process", process.get("type"));
     assertEquals("2.0", process.get("spemVersion"));
+    assertEquals("mapped", process.get("conformance"));
+    assertTrue(list(process.get("mappingScope")).contains("ProcessWithMethods"));
     List<?> phases = list(process.get("phases"));
     assertEquals(5, phases.size());
     @SuppressWarnings("unchecked")
     Map<String, Object> methodContent = (Map<String, Object>) process.get("methodContent");
     assertNotNull(methodContent);
+    assertEquals("MethodContentPackage", methodContent.get("type"));
     assertFalse(list(methodContent.get("roleDefinitions")).isEmpty());
-    assertFalse(list(methodContent.get("workProductDefinitions")).isEmpty());
+    List<Object> workProductDefinitions = list(methodContent.get("workProductDefinitions"));
+    assertFalse(workProductDefinitions.isEmpty());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> firstWorkProduct = (Map<String, Object>) workProductDefinitions.get(0);
+    assertEquals("WorkProductDefinition", firstWorkProduct.get("type"));
+    assertEquals("Artifact", firstWorkProduct.get("workProductKind"));
     assertFalse(list(methodContent.get("taskDefinitions")).isEmpty());
+    assertTrue(
+        list(methodContent.get("taskDefinitions")).stream()
+            .map(value -> (Map<String, Object>) value)
+            .anyMatch(task -> !list(task.get("inputWorkProductRefs")).isEmpty()));
     assertFalse(list(methodContent.get("guidance")).isEmpty());
     assertFalse(list(process.get("roleUses")).isEmpty());
     assertFalse(list(process.get("workSequences")).isEmpty());
@@ -73,9 +86,14 @@ class ModelingProcessServiceTest {
     @SuppressWarnings("unchecked")
     Map<String, Object> methodContent = (Map<String, Object>) process.get("methodContent");
     assertNotNull(methodContent);
+    assertEquals("MethodContentPackage", methodContent.get("type"));
     assertFalse(list(methodContent.get("roleDefinitions")).isEmpty());
     assertFalse(list(methodContent.get("workProductDefinitions")).isEmpty());
     assertFalse(list(methodContent.get("taskDefinitions")).isEmpty());
+    assertTrue(
+        list(methodContent.get("taskDefinitions")).stream()
+            .map(value -> (Map<String, Object>) value)
+            .anyMatch(task -> !list(task.get("inputWorkProductRefs")).isEmpty()));
     assertFalse(list(process.get("roleUses")).isEmpty());
     assertFalse(list(process.get("workSequences")).isEmpty());
     assertNotNull(process.get("processEngine"));

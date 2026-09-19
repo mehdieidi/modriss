@@ -38,6 +38,15 @@ function renderTask(task) {
   if (task.durationEstimate) {
     lines.push(`**Duration:** ${task.durationEstimate}`);
   }
+  if (task.inputArtifacts?.length) {
+    const inputLine = `**Inputs:** ${task.inputArtifacts.map((a) => a.name).join(", ")}`;
+    if (inputLine.length > 110) {
+      lines.push("**Inputs:**", "");
+      task.inputArtifacts.forEach((a) => lines.push(`- ${a.name}`));
+    } else {
+      lines.push(inputLine);
+    }
+  }
   if (task.artifacts?.length) {
     const artifactLine = `**Work products:** ${task.artifacts.map((a) => a.name).join(", ")}`;
     if (artifactLine.length > 110) {

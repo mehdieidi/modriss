@@ -4,13 +4,19 @@
   "spemVersion": "2.0",
   "representation": "MODRISS JSON DSL mapped to SPEM 2.0",
   "conformance": "mapped",
-  "compliancePoint": "SPEM Process with Behavior and Content + SPEM Method Content",
+  "mappingScope": [
+    "Core",
+    "ManagedContent",
+    "MethodContent",
+    "ProcessStructure",
+    "ProcessWithMethods"
+  ],
   "normativeReference": "https://www.omg.org/spec/SPEM/2.0/PDF/",
   "level": "pim",
   "displayName": "PIM",
   "methodContent": {
     "packageId": "modriss.method-content.pim",
-    "type": "MethodPackage",
+    "type": "MethodContentPackage",
     "roleDefinitions": [
       {
         "id": "role.product-owner",
@@ -77,7 +83,15 @@
         "purpose": "Plan service slice",
         "viewpoint": "services",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": [],
         "outputWorkProductRefs": ["pim-artifact.increment-plan"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.increment-plan",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Select one service slice traced to CIM goals, bounded contexts, and behavior.",
@@ -100,7 +114,20 @@
         "purpose": "Create PIM model root",
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.increment-plan"],
         "outputWorkProductRefs": ["pim-artifact.architecture-posture"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.increment-plan",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create or verify PIMModel with domain linkage to CIM source.",
@@ -126,7 +153,20 @@
         "purpose": "Set architecture posture",
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.architecture-posture"],
         "outputWorkProductRefs": ["pim-artifact.architecture-posture"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Configure ImplementationProfile with serverless posture and platform assumptions.",
@@ -157,7 +197,20 @@
         "purpose": "Establish shared model contract and evidence conventions",
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.method-engineer"],
+        "inputWorkProductRefs": ["pim-artifact.architecture-posture"],
         "outputWorkProductRefs": ["pim-artifact.architecture-posture"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": ["shared-kernel", "shared-enums"],
         "steps": [
           "Apply shared identity, annotation, traceability, expression, and lifecycle conventions across PIM elements.",
@@ -389,7 +442,20 @@
         "purpose": "Define serverless services",
         "viewpoint": "services",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.architecture-posture"],
         "outputWorkProductRefs": ["pim-artifact.service-map"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.architecture-posture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create ServerlessService elements aligned to CIM bounded contexts.",
@@ -420,7 +486,20 @@
         "purpose": "Assign element memberships",
         "viewpoint": "services",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.service-map"],
         "outputWorkProductRefs": ["pim-artifact.service-map"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create ServiceElementMembership links from services to planned elements.",
@@ -451,7 +530,20 @@
         "purpose": "Define schemas and fields",
         "viewpoint": "contracts",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.service-map"],
         "outputWorkProductRefs": ["pim-artifact.contract-catalog"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.service-map",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create Schema elements with fields and enum literals.",
@@ -497,7 +589,20 @@
         "purpose": "Model event types and envelopes",
         "viewpoint": "contracts",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.contract-catalog"],
         "outputWorkProductRefs": ["pim-artifact.contract-catalog"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Define EventType and EventEnvelope elements from CIM events.",
@@ -548,7 +653,20 @@
         "purpose": "Model data stores and models",
         "viewpoint": "data",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.contract-catalog"],
         "outputWorkProductRefs": ["pim-artifact.data-architecture"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.contract-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.data-architecture",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create DataStore and ObjectStore elements per service.",
@@ -599,7 +717,20 @@
         "purpose": "Define access patterns and indexes",
         "viewpoint": "data",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.data-architecture"],
         "outputWorkProductRefs": ["pim-artifact.data-architecture"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.data-architecture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.data-architecture",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Model AccessPattern elements from CIM queries and commands.",
@@ -645,7 +776,20 @@
         "purpose": "Configure change streams and notifications",
         "viewpoint": "data",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.data-architecture"],
         "outputWorkProductRefs": ["pim-artifact.data-architecture"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.data-architecture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.data-architecture",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Define DataChangeStream elements for event-sourced projections.",
@@ -676,7 +820,20 @@
         "purpose": "Define functions and contracts",
         "viewpoint": "compute",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.data-architecture"],
         "outputWorkProductRefs": ["pim-artifact.compute-catalog"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.data-architecture",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create Function elements with FunctionContract bindings.",
@@ -722,7 +879,20 @@
         "purpose": "Configure triggers and runtime",
         "viewpoint": "compute",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.compute-catalog"],
         "outputWorkProductRefs": ["pim-artifact.compute-catalog"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Define Trigger elements linking functions to events and schedules.",
@@ -758,7 +928,20 @@
         "purpose": "Define APIs and routes",
         "viewpoint": "api",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.compute-catalog"],
         "outputWorkProductRefs": ["pim-artifact.api-catalog"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.compute-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create Api elements with routes and HTTP methods.",
@@ -804,7 +987,20 @@
         "purpose": "Map API contracts and errors",
         "viewpoint": "api",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.api-catalog"],
         "outputWorkProductRefs": ["pim-artifact.api-catalog"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Bind ApiContract elements to schema definitions.",
@@ -835,7 +1031,20 @@
         "purpose": "Model event channels and buses",
         "viewpoint": "integration",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.api-catalog"],
         "outputWorkProductRefs": ["pim-artifact.integration-topology"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.api-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.integration-topology",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create EventChannel, Queue, Topic, and EventBus elements.",
@@ -891,7 +1100,20 @@
         "purpose": "Define flows and routing rules",
         "viewpoint": "integration",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.integration-topology"],
         "outputWorkProductRefs": ["pim-artifact.integration-topology"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.integration-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.integration-topology",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Model Flow variants connecting producers and consumers.",
@@ -974,7 +1196,20 @@
         "purpose": "Model workflows and states",
         "viewpoint": "workflow",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.integration-topology"],
         "outputWorkProductRefs": ["pim-artifact.workflow-model"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.integration-topology",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.workflow-model",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create Workflow elements from CIM business processes.",
@@ -1073,7 +1308,20 @@
         "purpose": "Configure human tasks and error handling",
         "viewpoint": "workflow",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.workflow-model"],
         "outputWorkProductRefs": ["pim-artifact.workflow-model"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.workflow-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.workflow-model",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Add HumanTask and ApprovalTask elements with escalation policies.",
@@ -1143,7 +1391,20 @@
         "purpose": "Configure identity providers and principals",
         "viewpoint": "security",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.workflow-model"],
         "outputWorkProductRefs": ["pim-artifact.security-model"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.workflow-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.security-model",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Define IdentityProvider elements aligned to CIM actors.",
@@ -1184,7 +1445,20 @@
         "purpose": "Define permissions and security policies",
         "viewpoint": "security",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.security-model"],
         "outputWorkProductRefs": ["pim-artifact.security-model"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.security-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.security-model",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create Permission elements with effect and action kind.",
@@ -1240,7 +1514,20 @@
         "purpose": "Apply resilience policies",
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.security-model"],
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.security-model",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Define ResiliencePolicy on functions and integration flows.",
@@ -1293,7 +1580,20 @@
         "purpose": "Configure throughput and ordering policies",
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Set ConcurrencyPolicy and RateLimitPolicy on APIs and functions.",
@@ -1364,7 +1664,20 @@
         "purpose": "Configure observability policies",
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Define ObservabilityConfig per service.",
@@ -1416,7 +1729,20 @@
         "purpose": "Define alerts, SLOs, and CORS",
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create AlertPolicy and Slo elements for critical endpoints.",
@@ -1452,7 +1778,20 @@
         "purpose": "Apply governance and compliance policies",
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Define ArchitecturePolicy and PolicySetting elements.",
@@ -1504,7 +1843,20 @@
         "purpose": "Map business rules and decision models",
         "viewpoint": "policies",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create BusinessRule elements from CIM policies.",
@@ -1540,7 +1892,20 @@
         "purpose": "Model external endpoints and adapters",
         "viewpoint": "config",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.policy-catalog"],
         "outputWorkProductRefs": ["pim-artifact.config-package"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.policy-catalog",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.config-package",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Create ExternalEndpoint elements from CIM external systems.",
@@ -1576,7 +1941,20 @@
         "purpose": "Configure environments and deployment units",
         "viewpoint": "config",
         "performerRoleRefs": ["role.solution-architect"],
+        "inputWorkProductRefs": ["pim-artifact.config-package"],
         "outputWorkProductRefs": ["pim-artifact.config-package"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.config-package",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.config-package",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Define Environment and DeploymentUnit elements per stage.",
@@ -1661,7 +2039,20 @@
         "purpose": "Assess platform capabilities",
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
+        "inputWorkProductRefs": ["pim-artifact.config-package"],
         "outputWorkProductRefs": ["pim-artifact.platform-readiness"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.config-package",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.platform-readiness",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Review PlatformCapability coverage against modeled elements.",
@@ -1692,7 +2083,20 @@
         "purpose": "Complete trace and readiness",
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
+        "inputWorkProductRefs": ["pim-artifact.platform-readiness"],
         "outputWorkProductRefs": ["pim-artifact.platform-readiness"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.platform-readiness",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.platform-readiness",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Build TraceModel links across CIM and PIM elements.",
@@ -1748,7 +2152,20 @@
         "purpose": "Review and adapt PIM increment",
         "viewpoint": "readiness",
         "performerRoleRefs": ["role.process-reviewer"],
+        "inputWorkProductRefs": ["pim-artifact.platform-readiness"],
         "outputWorkProductRefs": ["pim-artifact.increment-review"],
+        "workProductParameters": [
+          {
+            "workProductDefinitionRef": "pim-artifact.platform-readiness",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "workProductDefinitionRef": "pim-artifact.increment-review",
+            "direction": "out",
+            "optional": false
+          }
+        ],
         "coverageGroups": [],
         "steps": [
           "Review architecture outcomes against CIM trace links and PIM definition of done.",
@@ -1768,121 +2185,141 @@
     "workProductDefinitions": [
       {
         "id": "pim-artifact.increment-plan",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "PIM Increment Plan",
         "description": "Selected service slice, trace baseline, and architecture definition of done"
       },
       {
         "id": "pim-artifact.architecture-posture",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Architecture Posture",
         "description": "PIMModel root and implementation profile"
       },
       {
         "id": "pim-artifact.service-map",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Service Boundary Map",
         "description": "Serverless services and memberships"
       },
       {
         "id": "pim-artifact.contract-catalog",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Contract Catalog",
         "description": "Schemas, event types, envelopes"
       },
       {
         "id": "pim-artifact.data-architecture",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Data Architecture",
         "description": "Stores, models, access patterns"
       },
       {
         "id": "pim-artifact.compute-catalog",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Compute Catalog",
         "description": "Functions, contracts, triggers"
       },
       {
         "id": "pim-artifact.api-catalog",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "API Catalog",
         "description": "APIs, routes, error mappings"
       },
       {
         "id": "pim-artifact.integration-topology",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Integration Topology",
         "description": "Channels, flows, schedules"
       },
       {
         "id": "pim-artifact.workflow-model",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Workflow Model",
         "description": "Workflows, human tasks, escalation"
       },
       {
         "id": "pim-artifact.security-model",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Security Model",
         "description": "Identity, principals, permissions"
       },
       {
         "id": "pim-artifact.policy-catalog",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Architecture Policy Catalog",
         "description": "Operational and compliance policies"
       },
       {
         "id": "pim-artifact.config-package",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Configuration Package",
         "description": "Environments, secrets, external adapters"
       },
       {
         "id": "pim-artifact.platform-readiness",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "Platform Readiness Record",
         "description": "Mapping assessment, trace, readiness"
       },
       {
         "id": "pim-artifact.increment-review",
-        "type": "ArtifactDefinition",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
         "name": "PIM Increment Review Record",
         "description": "Architecture review outcomes, accepted service slice, and improvement actions"
       }
     ],
     "guidance": [
       {
+        "type": "Guidance",
         "id": "pim.guid.serverless-boundary",
         "name": "Service as deployable boundary",
         "appliesTo": "process",
         "text": "Align ServerlessService boundaries to CIM bounded contexts. One increment typically maps to one service slice."
       },
       {
+        "type": "Guidance",
         "id": "pim.guid.generated-is-draft",
         "name": "Generated PIM is a draft",
         "appliesTo": "pim.ph1",
         "text": "Treat CIM→PIM output as architectural scaffolding. Every generated service slice must pass through framing, refinement, readiness, and review before PIM→PSM."
       },
       {
+        "type": "Guidance",
         "id": "pim.guid.contracts-first",
         "name": "Contracts decouple producers",
         "appliesTo": "pim.ph2",
         "text": "Define schemas and event types before wiring functions and routes. Contracts are the integration currency."
       },
       {
+        "type": "Guidance",
         "id": "pim.guid.data-access",
         "name": "Access patterns drive stores",
         "appliesTo": "pim.ph2",
         "text": "Model read/write access patterns from CIM queries/commands before choosing store topology."
       },
       {
+        "type": "Guidance",
         "id": "pim.guid.policy-as-code",
         "name": "Policy attachment discipline",
         "appliesTo": "pim.ph5",
         "text": "Attach resilience, observability, and compliance policies to concrete PolicyTarget elements, not free-floating rules."
       },
       {
+        "type": "Guidance",
         "id": "pim.guid.readiness-in-cycle",
         "name": "Readiness is part of delivery",
         "appliesTo": "pim.ph6",
@@ -2044,7 +2481,7 @@
   ],
   "workProductUses": [
     {
-      "id": "wpu.pim.ph1.st0.t1.pim-artifact.increment-plan",
+      "id": "wpu.pim.ph1.st0.t1.output.pim-artifact.increment-plan",
       "type": "WorkProductUse",
       "activityRef": "pim.ph1.st0",
       "taskUseRef": "pim.ph1.st0.t1",
@@ -2052,7 +2489,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph1.st1.t1.pim-artifact.architecture-posture",
+      "id": "wpu.pim.ph1.st1.t1.input.pim-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st1",
+      "taskUseRef": "pim.ph1.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.increment-plan",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph1.st1.t1.output.pim-artifact.architecture-posture",
       "type": "WorkProductUse",
       "activityRef": "pim.ph1.st1",
       "taskUseRef": "pim.ph1.st1.t1",
@@ -2060,7 +2505,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph1.st1.t2.pim-artifact.architecture-posture",
+      "id": "wpu.pim.ph1.st1.t2.input.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st1",
+      "taskUseRef": "pim.ph1.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph1.st1.t2.output.pim-artifact.architecture-posture",
       "type": "WorkProductUse",
       "activityRef": "pim.ph1.st1",
       "taskUseRef": "pim.ph1.st1.t2",
@@ -2068,7 +2521,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph1.st1.t3.pim-artifact.architecture-posture",
+      "id": "wpu.pim.ph1.st1.t3.input.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st1",
+      "taskUseRef": "pim.ph1.st1.t3",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph1.st1.t3.output.pim-artifact.architecture-posture",
       "type": "WorkProductUse",
       "activityRef": "pim.ph1.st1",
       "taskUseRef": "pim.ph1.st1.t3",
@@ -2076,7 +2537,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph1.st2.t1.pim-artifact.service-map",
+      "id": "wpu.pim.ph1.st2.t1.input.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st2",
+      "taskUseRef": "pim.ph1.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph1.st2.t1.output.pim-artifact.service-map",
       "type": "WorkProductUse",
       "activityRef": "pim.ph1.st2",
       "taskUseRef": "pim.ph1.st2.t1",
@@ -2084,7 +2553,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph1.st2.t2.pim-artifact.service-map",
+      "id": "wpu.pim.ph1.st2.t2.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st2",
+      "taskUseRef": "pim.ph1.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph1.st2.t2.output.pim-artifact.service-map",
       "type": "WorkProductUse",
       "activityRef": "pim.ph1.st2",
       "taskUseRef": "pim.ph1.st2.t2",
@@ -2092,7 +2569,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph2.st1.t1.pim-artifact.contract-catalog",
+      "id": "wpu.pim.ph2.st1.t1.input.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st1",
+      "taskUseRef": "pim.ph2.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph2.st1.t1.output.pim-artifact.contract-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph2.st1",
       "taskUseRef": "pim.ph2.st1.t1",
@@ -2100,7 +2585,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph2.st1.t2.pim-artifact.contract-catalog",
+      "id": "wpu.pim.ph2.st1.t2.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st1",
+      "taskUseRef": "pim.ph2.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph2.st1.t2.output.pim-artifact.contract-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph2.st1",
       "taskUseRef": "pim.ph2.st1.t2",
@@ -2108,7 +2601,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph2.st2.t1.pim-artifact.data-architecture",
+      "id": "wpu.pim.ph2.st2.t1.input.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st2",
+      "taskUseRef": "pim.ph2.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph2.st2.t1.output.pim-artifact.data-architecture",
       "type": "WorkProductUse",
       "activityRef": "pim.ph2.st2",
       "taskUseRef": "pim.ph2.st2.t1",
@@ -2116,7 +2617,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph2.st2.t2.pim-artifact.data-architecture",
+      "id": "wpu.pim.ph2.st2.t2.input.pim-artifact.data-architecture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st2",
+      "taskUseRef": "pim.ph2.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.data-architecture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph2.st2.t2.output.pim-artifact.data-architecture",
       "type": "WorkProductUse",
       "activityRef": "pim.ph2.st2",
       "taskUseRef": "pim.ph2.st2.t2",
@@ -2124,7 +2633,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph2.st2.t3.pim-artifact.data-architecture",
+      "id": "wpu.pim.ph2.st2.t3.input.pim-artifact.data-architecture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st2",
+      "taskUseRef": "pim.ph2.st2.t3",
+      "workProductDefinitionRef": "pim-artifact.data-architecture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph2.st2.t3.output.pim-artifact.data-architecture",
       "type": "WorkProductUse",
       "activityRef": "pim.ph2.st2",
       "taskUseRef": "pim.ph2.st2.t3",
@@ -2132,7 +2649,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph3.st1.t1.pim-artifact.compute-catalog",
+      "id": "wpu.pim.ph3.st1.t1.input.pim-artifact.data-architecture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st1",
+      "taskUseRef": "pim.ph3.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.data-architecture",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph3.st1.t1.output.pim-artifact.compute-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph3.st1",
       "taskUseRef": "pim.ph3.st1.t1",
@@ -2140,7 +2665,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph3.st1.t2.pim-artifact.compute-catalog",
+      "id": "wpu.pim.ph3.st1.t2.input.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st1",
+      "taskUseRef": "pim.ph3.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph3.st1.t2.output.pim-artifact.compute-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph3.st1",
       "taskUseRef": "pim.ph3.st1.t2",
@@ -2148,7 +2681,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph3.st2.t1.pim-artifact.api-catalog",
+      "id": "wpu.pim.ph3.st2.t1.input.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st2",
+      "taskUseRef": "pim.ph3.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph3.st2.t1.output.pim-artifact.api-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph3.st2",
       "taskUseRef": "pim.ph3.st2.t1",
@@ -2156,7 +2697,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph3.st2.t2.pim-artifact.api-catalog",
+      "id": "wpu.pim.ph3.st2.t2.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st2",
+      "taskUseRef": "pim.ph3.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph3.st2.t2.output.pim-artifact.api-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph3.st2",
       "taskUseRef": "pim.ph3.st2.t2",
@@ -2164,7 +2713,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph4.st1.t1.pim-artifact.integration-topology",
+      "id": "wpu.pim.ph4.st1.t1.input.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st1",
+      "taskUseRef": "pim.ph4.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st1.t1.output.pim-artifact.integration-topology",
       "type": "WorkProductUse",
       "activityRef": "pim.ph4.st1",
       "taskUseRef": "pim.ph4.st1.t1",
@@ -2172,7 +2729,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph4.st1.t2.pim-artifact.integration-topology",
+      "id": "wpu.pim.ph4.st1.t2.input.pim-artifact.integration-topology",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st1",
+      "taskUseRef": "pim.ph4.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.integration-topology",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st1.t2.output.pim-artifact.integration-topology",
       "type": "WorkProductUse",
       "activityRef": "pim.ph4.st1",
       "taskUseRef": "pim.ph4.st1.t2",
@@ -2180,7 +2745,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph4.st2.t1.pim-artifact.workflow-model",
+      "id": "wpu.pim.ph4.st2.t1.input.pim-artifact.integration-topology",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st2",
+      "taskUseRef": "pim.ph4.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.integration-topology",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st2.t1.output.pim-artifact.workflow-model",
       "type": "WorkProductUse",
       "activityRef": "pim.ph4.st2",
       "taskUseRef": "pim.ph4.st2.t1",
@@ -2188,7 +2761,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph4.st2.t2.pim-artifact.workflow-model",
+      "id": "wpu.pim.ph4.st2.t2.input.pim-artifact.workflow-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st2",
+      "taskUseRef": "pim.ph4.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.workflow-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph4.st2.t2.output.pim-artifact.workflow-model",
       "type": "WorkProductUse",
       "activityRef": "pim.ph4.st2",
       "taskUseRef": "pim.ph4.st2.t2",
@@ -2196,7 +2777,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph5.st1.t1.pim-artifact.security-model",
+      "id": "wpu.pim.ph5.st1.t1.input.pim-artifact.workflow-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st1",
+      "taskUseRef": "pim.ph5.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.workflow-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st1.t1.output.pim-artifact.security-model",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st1",
       "taskUseRef": "pim.ph5.st1.t1",
@@ -2204,7 +2793,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph5.st1.t2.pim-artifact.security-model",
+      "id": "wpu.pim.ph5.st1.t2.input.pim-artifact.security-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st1",
+      "taskUseRef": "pim.ph5.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.security-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st1.t2.output.pim-artifact.security-model",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st1",
       "taskUseRef": "pim.ph5.st1.t2",
@@ -2212,7 +2809,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph5.st2.ss1.t1.pim-artifact.policy-catalog",
+      "id": "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.security-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss1",
+      "taskUseRef": "pim.ph5.st2.ss1.t1",
+      "workProductDefinitionRef": "pim-artifact.security-model",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss1.t1.output.pim-artifact.policy-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st2.ss1",
       "taskUseRef": "pim.ph5.st2.ss1.t1",
@@ -2220,7 +2825,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph5.st2.ss1.t2.pim-artifact.policy-catalog",
+      "id": "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss1",
+      "taskUseRef": "pim.ph5.st2.ss1.t2",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss1.t2.output.pim-artifact.policy-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st2.ss1",
       "taskUseRef": "pim.ph5.st2.ss1.t2",
@@ -2228,7 +2841,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph5.st2.ss2.t1.pim-artifact.policy-catalog",
+      "id": "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "taskUseRef": "pim.ph5.st2.ss2.t1",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss2.t1.output.pim-artifact.policy-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st2.ss2",
       "taskUseRef": "pim.ph5.st2.ss2.t1",
@@ -2236,7 +2857,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph5.st2.ss2.t2.pim-artifact.policy-catalog",
+      "id": "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "taskUseRef": "pim.ph5.st2.ss2.t2",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss2.t2.output.pim-artifact.policy-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st2.ss2",
       "taskUseRef": "pim.ph5.st2.ss2.t2",
@@ -2244,7 +2873,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph5.st2.ss3.t1.pim-artifact.policy-catalog",
+      "id": "wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss3",
+      "taskUseRef": "pim.ph5.st2.ss3.t1",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss3.t1.output.pim-artifact.policy-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st2.ss3",
       "taskUseRef": "pim.ph5.st2.ss3.t1",
@@ -2252,7 +2889,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph5.st2.ss3.t2.pim-artifact.policy-catalog",
+      "id": "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss3",
+      "taskUseRef": "pim.ph5.st2.ss3.t2",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss3.t2.output.pim-artifact.policy-catalog",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st2.ss3",
       "taskUseRef": "pim.ph5.st2.ss3.t2",
@@ -2260,7 +2905,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph5.st3.t1.pim-artifact.config-package",
+      "id": "wpu.pim.ph5.st3.t1.input.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t1.output.pim-artifact.config-package",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st3",
       "taskUseRef": "pim.ph5.st3.t1",
@@ -2268,7 +2921,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph5.st3.t2.pim-artifact.config-package",
+      "id": "wpu.pim.ph5.st3.t2.input.pim-artifact.config-package",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t2",
+      "workProductDefinitionRef": "pim-artifact.config-package",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t2.output.pim-artifact.config-package",
       "type": "WorkProductUse",
       "activityRef": "pim.ph5.st3",
       "taskUseRef": "pim.ph5.st3.t2",
@@ -2276,7 +2937,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph6.st1.t1.pim-artifact.platform-readiness",
+      "id": "wpu.pim.ph6.st1.t1.input.pim-artifact.config-package",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st1",
+      "taskUseRef": "pim.ph6.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.config-package",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st1.t1.output.pim-artifact.platform-readiness",
       "type": "WorkProductUse",
       "activityRef": "pim.ph6.st1",
       "taskUseRef": "pim.ph6.st1.t1",
@@ -2284,7 +2953,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph6.st2.t1.pim-artifact.platform-readiness",
+      "id": "wpu.pim.ph6.st2.t1.input.pim-artifact.platform-readiness",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.platform-readiness",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.output.pim-artifact.platform-readiness",
       "type": "WorkProductUse",
       "activityRef": "pim.ph6.st2",
       "taskUseRef": "pim.ph6.st2.t1",
@@ -2292,7 +2969,15 @@
       "usage": "output"
     },
     {
-      "id": "wpu.pim.ph6.st3.t1.pim-artifact.increment-review",
+      "id": "wpu.pim.ph6.st3.t1.input.pim-artifact.platform-readiness",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st3",
+      "taskUseRef": "pim.ph6.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.platform-readiness",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.pim.ph6.st3.t1.output.pim-artifact.increment-review",
       "type": "WorkProductUse",
       "activityRef": "pim.ph6.st3",
       "taskUseRef": "pim.ph6.st3.t1",
@@ -2618,7 +3303,8 @@
               "taskDefinitionRef": "task.pim.ph1.st0.t1",
               "performerRoleUseRefs": ["ru.pim.ph1.st0.solution-architect"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.pim.ph1.st0.t1.pim-artifact.increment-plan"]
+              "inputWorkProductUseRefs": [],
+              "outputWorkProductUseRefs": ["wpu.pim.ph1.st0.t1.output.pim-artifact.increment-plan"]
             }
           ]
         },
@@ -2639,7 +3325,10 @@
               "taskDefinitionRef": "task.pim.ph1.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph1.st1.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph1.st1.t1.pim-artifact.architecture-posture"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph1.st1.t1.input.pim-artifact.increment-plan"],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph1.st1.t1.output.pim-artifact.architecture-posture"
+              ]
             },
             {
               "id": "pim.ph1.st1.t2",
@@ -2647,7 +3336,12 @@
               "taskDefinitionRef": "task.pim.ph1.st1.t2",
               "performerRoleUseRefs": ["ru.pim.ph1.st1.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph1.st1.t2.pim-artifact.architecture-posture"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph1.st1.t2.input.pim-artifact.architecture-posture"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph1.st1.t2.output.pim-artifact.architecture-posture"
+              ]
             },
             {
               "id": "pim.ph1.st1.t3",
@@ -2655,7 +3349,12 @@
               "taskDefinitionRef": "task.pim.ph1.st1.t3",
               "performerRoleUseRefs": ["ru.pim.ph1.st1.method-engineer"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.pim.ph1.st1.t3.pim-artifact.architecture-posture"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph1.st1.t3.input.pim-artifact.architecture-posture"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph1.st1.t3.output.pim-artifact.architecture-posture"
+              ]
             }
           ]
         },
@@ -2676,7 +3375,10 @@
               "taskDefinitionRef": "task.pim.ph1.st2.t1",
               "performerRoleUseRefs": ["ru.pim.ph1.st2.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph1.st2.t1.pim-artifact.service-map"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph1.st2.t1.input.pim-artifact.architecture-posture"
+              ],
+              "outputWorkProductUseRefs": ["wpu.pim.ph1.st2.t1.output.pim-artifact.service-map"]
             },
             {
               "id": "pim.ph1.st2.t2",
@@ -2684,7 +3386,8 @@
               "taskDefinitionRef": "task.pim.ph1.st2.t2",
               "performerRoleUseRefs": ["ru.pim.ph1.st2.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph1.st2.t2.pim-artifact.service-map"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph1.st2.t2.input.pim-artifact.service-map"],
+              "outputWorkProductUseRefs": ["wpu.pim.ph1.st2.t2.output.pim-artifact.service-map"]
             }
           ]
         }
@@ -2741,7 +3444,10 @@
               "taskDefinitionRef": "task.pim.ph2.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph2.st1.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph2.st1.t1.pim-artifact.contract-catalog"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph2.st1.t1.input.pim-artifact.service-map"],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph2.st1.t1.output.pim-artifact.contract-catalog"
+              ]
             },
             {
               "id": "pim.ph2.st1.t2",
@@ -2749,7 +3455,10 @@
               "taskDefinitionRef": "task.pim.ph2.st1.t2",
               "performerRoleUseRefs": ["ru.pim.ph2.st1.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph2.st1.t2.pim-artifact.contract-catalog"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph2.st1.t2.input.pim-artifact.contract-catalog"],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph2.st1.t2.output.pim-artifact.contract-catalog"
+              ]
             }
           ]
         },
@@ -2780,7 +3489,10 @@
               "taskDefinitionRef": "task.pim.ph2.st2.t1",
               "performerRoleUseRefs": ["ru.pim.ph2.st2.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph2.st2.t1.pim-artifact.data-architecture"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph2.st2.t1.input.pim-artifact.contract-catalog"],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph2.st2.t1.output.pim-artifact.data-architecture"
+              ]
             },
             {
               "id": "pim.ph2.st2.t2",
@@ -2788,7 +3500,12 @@
               "taskDefinitionRef": "task.pim.ph2.st2.t2",
               "performerRoleUseRefs": ["ru.pim.ph2.st2.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph2.st2.t2.pim-artifact.data-architecture"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph2.st2.t2.input.pim-artifact.data-architecture"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph2.st2.t2.output.pim-artifact.data-architecture"
+              ]
             },
             {
               "id": "pim.ph2.st2.t3",
@@ -2796,7 +3513,12 @@
               "taskDefinitionRef": "task.pim.ph2.st2.t3",
               "performerRoleUseRefs": ["ru.pim.ph2.st2.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph2.st2.t3.pim-artifact.data-architecture"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph2.st2.t3.input.pim-artifact.data-architecture"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph2.st2.t3.output.pim-artifact.data-architecture"
+              ]
             }
           ]
         }
@@ -2859,7 +3581,10 @@
               "taskDefinitionRef": "task.pim.ph3.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph3.st1.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph3.st1.t1.pim-artifact.compute-catalog"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph3.st1.t1.input.pim-artifact.data-architecture"
+              ],
+              "outputWorkProductUseRefs": ["wpu.pim.ph3.st1.t1.output.pim-artifact.compute-catalog"]
             },
             {
               "id": "pim.ph3.st1.t2",
@@ -2867,7 +3592,8 @@
               "taskDefinitionRef": "task.pim.ph3.st1.t2",
               "performerRoleUseRefs": ["ru.pim.ph3.st1.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph3.st1.t2.pim-artifact.compute-catalog"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph3.st1.t2.input.pim-artifact.compute-catalog"],
+              "outputWorkProductUseRefs": ["wpu.pim.ph3.st1.t2.output.pim-artifact.compute-catalog"]
             }
           ]
         },
@@ -2907,7 +3633,8 @@
               "taskDefinitionRef": "task.pim.ph3.st2.t1",
               "performerRoleUseRefs": ["ru.pim.ph3.st2.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph3.st2.t1.pim-artifact.api-catalog"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph3.st2.t1.input.pim-artifact.compute-catalog"],
+              "outputWorkProductUseRefs": ["wpu.pim.ph3.st2.t1.output.pim-artifact.api-catalog"]
             },
             {
               "id": "pim.ph3.st2.t2",
@@ -2915,7 +3642,8 @@
               "taskDefinitionRef": "task.pim.ph3.st2.t2",
               "performerRoleUseRefs": ["ru.pim.ph3.st2.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph3.st2.t2.pim-artifact.api-catalog"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph3.st2.t2.input.pim-artifact.api-catalog"],
+              "outputWorkProductUseRefs": ["wpu.pim.ph3.st2.t2.output.pim-artifact.api-catalog"]
             }
           ]
         }
@@ -2972,7 +3700,10 @@
               "taskDefinitionRef": "task.pim.ph4.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph4.st1.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph4.st1.t1.pim-artifact.integration-topology"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph4.st1.t1.input.pim-artifact.api-catalog"],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph4.st1.t1.output.pim-artifact.integration-topology"
+              ]
             },
             {
               "id": "pim.ph4.st1.t2",
@@ -2980,7 +3711,12 @@
               "taskDefinitionRef": "task.pim.ph4.st1.t2",
               "performerRoleUseRefs": ["ru.pim.ph4.st1.solution-architect"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.pim.ph4.st1.t2.pim-artifact.integration-topology"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph4.st1.t2.input.pim-artifact.integration-topology"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph4.st1.t2.output.pim-artifact.integration-topology"
+              ]
             }
           ]
         },
@@ -3001,7 +3737,10 @@
               "taskDefinitionRef": "task.pim.ph4.st2.t1",
               "performerRoleUseRefs": ["ru.pim.ph4.st2.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph4.st2.t1.pim-artifact.workflow-model"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph4.st2.t1.input.pim-artifact.integration-topology"
+              ],
+              "outputWorkProductUseRefs": ["wpu.pim.ph4.st2.t1.output.pim-artifact.workflow-model"]
             },
             {
               "id": "pim.ph4.st2.t2",
@@ -3009,7 +3748,8 @@
               "taskDefinitionRef": "task.pim.ph4.st2.t2",
               "performerRoleUseRefs": ["ru.pim.ph4.st2.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph4.st2.t2.pim-artifact.workflow-model"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph4.st2.t2.input.pim-artifact.workflow-model"],
+              "outputWorkProductUseRefs": ["wpu.pim.ph4.st2.t2.output.pim-artifact.workflow-model"]
             }
           ]
         }
@@ -3067,7 +3807,8 @@
               "taskDefinitionRef": "task.pim.ph5.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph5.st1.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph5.st1.t1.pim-artifact.security-model"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph5.st1.t1.input.pim-artifact.workflow-model"],
+              "outputWorkProductUseRefs": ["wpu.pim.ph5.st1.t1.output.pim-artifact.security-model"]
             },
             {
               "id": "pim.ph5.st1.t2",
@@ -3075,7 +3816,8 @@
               "taskDefinitionRef": "task.pim.ph5.st1.t2",
               "performerRoleUseRefs": ["ru.pim.ph5.st1.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph5.st1.t2.pim-artifact.security-model"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph5.st1.t2.input.pim-artifact.security-model"],
+              "outputWorkProductUseRefs": ["wpu.pim.ph5.st1.t2.output.pim-artifact.security-model"]
             }
           ]
         },
@@ -3117,7 +3859,12 @@
                   "taskDefinitionRef": "task.pim.ph5.st2.ss1.t1",
                   "performerRoleUseRefs": ["ru.pim.ph5.st2.ss1.solution-architect"],
                   "selectedStepIndices": [0, 1, 2],
-                  "outputWorkProductUseRefs": ["wpu.pim.ph5.st2.ss1.t1.pim-artifact.policy-catalog"]
+                  "inputWorkProductUseRefs": [
+                    "wpu.pim.ph5.st2.ss1.t1.input.pim-artifact.security-model"
+                  ],
+                  "outputWorkProductUseRefs": [
+                    "wpu.pim.ph5.st2.ss1.t1.output.pim-artifact.policy-catalog"
+                  ]
                 },
                 {
                   "id": "pim.ph5.st2.ss1.t2",
@@ -3125,7 +3872,12 @@
                   "taskDefinitionRef": "task.pim.ph5.st2.ss1.t2",
                   "performerRoleUseRefs": ["ru.pim.ph5.st2.ss1.solution-architect"],
                   "selectedStepIndices": [0, 1, 2],
-                  "outputWorkProductUseRefs": ["wpu.pim.ph5.st2.ss1.t2.pim-artifact.policy-catalog"]
+                  "inputWorkProductUseRefs": [
+                    "wpu.pim.ph5.st2.ss1.t2.input.pim-artifact.policy-catalog"
+                  ],
+                  "outputWorkProductUseRefs": [
+                    "wpu.pim.ph5.st2.ss1.t2.output.pim-artifact.policy-catalog"
+                  ]
                 }
               ]
             },
@@ -3146,7 +3898,12 @@
                   "taskDefinitionRef": "task.pim.ph5.st2.ss2.t1",
                   "performerRoleUseRefs": ["ru.pim.ph5.st2.ss2.solution-architect"],
                   "selectedStepIndices": [0, 1],
-                  "outputWorkProductUseRefs": ["wpu.pim.ph5.st2.ss2.t1.pim-artifact.policy-catalog"]
+                  "inputWorkProductUseRefs": [
+                    "wpu.pim.ph5.st2.ss2.t1.input.pim-artifact.policy-catalog"
+                  ],
+                  "outputWorkProductUseRefs": [
+                    "wpu.pim.ph5.st2.ss2.t1.output.pim-artifact.policy-catalog"
+                  ]
                 },
                 {
                   "id": "pim.ph5.st2.ss2.t2",
@@ -3154,7 +3911,12 @@
                   "taskDefinitionRef": "task.pim.ph5.st2.ss2.t2",
                   "performerRoleUseRefs": ["ru.pim.ph5.st2.ss2.solution-architect"],
                   "selectedStepIndices": [0, 1],
-                  "outputWorkProductUseRefs": ["wpu.pim.ph5.st2.ss2.t2.pim-artifact.policy-catalog"]
+                  "inputWorkProductUseRefs": [
+                    "wpu.pim.ph5.st2.ss2.t2.input.pim-artifact.policy-catalog"
+                  ],
+                  "outputWorkProductUseRefs": [
+                    "wpu.pim.ph5.st2.ss2.t2.output.pim-artifact.policy-catalog"
+                  ]
                 }
               ]
             },
@@ -3175,7 +3937,12 @@
                   "taskDefinitionRef": "task.pim.ph5.st2.ss3.t1",
                   "performerRoleUseRefs": ["ru.pim.ph5.st2.ss3.solution-architect"],
                   "selectedStepIndices": [0, 1],
-                  "outputWorkProductUseRefs": ["wpu.pim.ph5.st2.ss3.t1.pim-artifact.policy-catalog"]
+                  "inputWorkProductUseRefs": [
+                    "wpu.pim.ph5.st2.ss3.t1.input.pim-artifact.policy-catalog"
+                  ],
+                  "outputWorkProductUseRefs": [
+                    "wpu.pim.ph5.st2.ss3.t1.output.pim-artifact.policy-catalog"
+                  ]
                 },
                 {
                   "id": "pim.ph5.st2.ss3.t2",
@@ -3183,7 +3950,12 @@
                   "taskDefinitionRef": "task.pim.ph5.st2.ss3.t2",
                   "performerRoleUseRefs": ["ru.pim.ph5.st2.ss3.solution-architect"],
                   "selectedStepIndices": [0, 1],
-                  "outputWorkProductUseRefs": ["wpu.pim.ph5.st2.ss3.t2.pim-artifact.policy-catalog"]
+                  "inputWorkProductUseRefs": [
+                    "wpu.pim.ph5.st2.ss3.t2.input.pim-artifact.policy-catalog"
+                  ],
+                  "outputWorkProductUseRefs": [
+                    "wpu.pim.ph5.st2.ss3.t2.output.pim-artifact.policy-catalog"
+                  ]
                 }
               ]
             }
@@ -3207,7 +3979,8 @@
               "taskDefinitionRef": "task.pim.ph5.st3.t1",
               "performerRoleUseRefs": ["ru.pim.ph5.st3.solution-architect"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph5.st3.t1.pim-artifact.config-package"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph5.st3.t1.input.pim-artifact.policy-catalog"],
+              "outputWorkProductUseRefs": ["wpu.pim.ph5.st3.t1.output.pim-artifact.config-package"]
             },
             {
               "id": "pim.ph5.st3.t2",
@@ -3215,7 +3988,8 @@
               "taskDefinitionRef": "task.pim.ph5.st3.t2",
               "performerRoleUseRefs": ["ru.pim.ph5.st3.solution-architect"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.pim.ph5.st3.t2.pim-artifact.config-package"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph5.st3.t2.input.pim-artifact.config-package"],
+              "outputWorkProductUseRefs": ["wpu.pim.ph5.st3.t2.output.pim-artifact.config-package"]
             }
           ]
         }
@@ -3254,7 +4028,10 @@
               "taskDefinitionRef": "task.pim.ph6.st1.t1",
               "performerRoleUseRefs": ["ru.pim.ph6.st1.process-reviewer"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph6.st1.t1.pim-artifact.platform-readiness"]
+              "inputWorkProductUseRefs": ["wpu.pim.ph6.st1.t1.input.pim-artifact.config-package"],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph6.st1.t1.output.pim-artifact.platform-readiness"
+              ]
             }
           ]
         },
@@ -3285,7 +4062,12 @@
               "taskDefinitionRef": "task.pim.ph6.st2.t1",
               "performerRoleUseRefs": ["ru.pim.ph6.st2.process-reviewer"],
               "selectedStepIndices": [0, 1],
-              "outputWorkProductUseRefs": ["wpu.pim.ph6.st2.t1.pim-artifact.platform-readiness"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph6.st2.t1.input.pim-artifact.platform-readiness"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph6.st2.t1.output.pim-artifact.platform-readiness"
+              ]
             }
           ]
         },
@@ -3306,7 +4088,12 @@
               "taskDefinitionRef": "task.pim.ph6.st3.t1",
               "performerRoleUseRefs": ["ru.pim.ph6.st3.process-reviewer"],
               "selectedStepIndices": [0, 1, 2],
-              "outputWorkProductUseRefs": ["wpu.pim.ph6.st3.t1.pim-artifact.increment-review"]
+              "inputWorkProductUseRefs": [
+                "wpu.pim.ph6.st3.t1.input.pim-artifact.platform-readiness"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.pim.ph6.st3.t1.output.pim-artifact.increment-review"
+              ]
             }
           ]
         }
@@ -3716,6 +4503,7 @@
   "milestones": [
     {
       "id": "pim.m1.evl-gate",
+      "type": "Milestone",
       "name": "PIM EVL validation gate",
       "phaseId": "pim.ph6"
     }

@@ -552,6 +552,7 @@ function renderDetail(host, node, process, level) {
     parts.push(`<h3>${escapeHtml(task.name)}</h3>`);
     parts.push(`<p>${escapeHtml(stage?.objective || phase?.objective || "")}</p>`);
     if (role) parts.push(renderRole(role));
+    if (task.inputArtifacts?.length) parts.push(renderArtifacts(task.inputArtifacts, "Inputs"));
     if (artifacts.length) parts.push(renderArtifacts(artifacts));
     if (task.steps?.length) {
       parts.push(renderSectionTitle("Steps"));
@@ -682,14 +683,14 @@ function renderRole(role) {
   </div>`;
 }
 
-function renderArtifacts(artifacts) {
+function renderArtifacts(artifacts, title = "Artifacts and deliverables") {
   const items = artifacts
     .map((artifact) => {
       const desc = artifact.description ? `: ${artifact.description}` : "";
       return `<li><strong>${escapeHtml(artifact.name)}</strong>${escapeHtml(desc)}</li>`;
     })
     .join("");
-  return `${renderSectionTitle("Artifacts and deliverables")}<ul>${items}</ul>`;
+  return `${renderSectionTitle(title)}<ul>${items}</ul>`;
 }
 
 function renderGuidelines(guidelines) {

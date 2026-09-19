@@ -20,7 +20,12 @@ export function tasksForStage(process, stage) {
       .map((taskUse) => {
         const definition = definitions.get(taskUse.taskDefinitionRef);
         if (!definition) return null;
+        const inputUses = new Set(taskUse.inputWorkProductUseRefs || []);
         const outputUses = new Set(taskUse.outputWorkProductUseRefs || []);
+        const inputArtifacts = (process?.workProductUses || [])
+          .filter((use) => inputUses.has(use.id))
+          .map((use) => workProducts.get(use.workProductDefinitionRef))
+          .filter(Boolean);
         const artifacts = (process?.workProductUses || [])
           .filter((use) => outputUses.has(use.id))
           .map((use) => workProducts.get(use.workProductDefinitionRef))
@@ -30,7 +35,9 @@ export function tasksForStage(process, stage) {
           id: taskUse.id,
           taskDefinitionRef: taskUse.taskDefinitionRef,
           performerRoleUseRefs: taskUse.performerRoleUseRefs || [],
+          inputWorkProductUseRefs: taskUse.inputWorkProductUseRefs || [],
           outputWorkProductUseRefs: taskUse.outputWorkProductUseRefs || [],
+          inputArtifacts,
           artifacts,
           paletteFocus:
             definition.paletteFocus ||
