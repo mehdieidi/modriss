@@ -45,6 +45,23 @@ export const CIM_PROCESS_PHASES = [
             validationRules: [],
             durationEstimate: "20m",
           },
+          {
+            id: "cim.ph1.st1.t2",
+            name: "Establish shared model contract and evidence conventions",
+            primaryRole: "method-engineer",
+            viewpoint: "dashboard",
+            artifactIds: ["cim-artifact.model-root"],
+            coverageGroups: ["shared-kernel", "shared-enums"],
+            steps: [
+              "Apply the shared identity, annotation, traceability, expression, and lifecycle conventions used by every CIM element.",
+              "Set the evidence convention for source references, review status, and model-level provenance.",
+              "Confirm that shared support concepts are handled by inspectors and readiness records rather than mistaken for business concepts.",
+            ],
+            entryCriteria: ["CIM model root exists"],
+            exitCriteria: ["Shared model contract and evidence convention are recorded"],
+            validationRules: [],
+            durationEstimate: "30m",
+          },
         ],
       },
       {

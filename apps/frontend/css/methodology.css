@@ -77,6 +77,58 @@
   line-height: 1.4;
 }
 
+.methodology-progress-contract {
+  margin: 0 2px 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--panel) 86%, var(--accent));
+}
+
+.methodology-progress-contract-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-strong);
+  font-size: 0.71rem;
+  font-weight: 650;
+}
+
+.methodology-progress-contract-heading small {
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 500;
+}
+
+.methodology-progress-contract p {
+  margin: 5px 0 6px;
+  color: var(--muted);
+  font-size: 0.65rem;
+  line-height: 1.4;
+}
+
+.methodology-progress-contract ul {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.methodology-progress-contract li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.62rem;
+}
+
+.methodology-progress-contract li span {
+  color: var(--muted);
+  text-align: right;
+}
+
 .methodology-hero-hint {
   margin: 8px 0 0;
   font-size: 0.7rem;

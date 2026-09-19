@@ -88,6 +88,23 @@ export const PSM_PROCESS_PHASES = [
             validationRules: [],
             durationEstimate: "30m",
           },
+          {
+            id: "psm.ph1.st1.t3",
+            name: "Establish shared model contract and evidence conventions",
+            primaryRole: "method-engineer",
+            viewpoint: "dashboard",
+            artifactIds: ["psm-artifact.deployment-strategy"],
+            coverageGroups: ["shared-kernel", "shared-enums", "psm-enums"],
+            steps: [
+              "Apply shared identity, annotation, traceability, expression, lifecycle, and release-provenance conventions across AWS resources.",
+              "Record the source PIM revision, provider mapping revision, and review-state convention for the deployable slice.",
+              "Keep support and generated relationship concepts in detail views and evidence records rather than treating them as independent resources.",
+            ],
+            entryCriteria: ["AWS PSM root exists"],
+            exitCriteria: ["Shared model contract and evidence convention are recorded"],
+            validationRules: [],
+            durationEstimate: "30m",
+          },
         ],
       },
       {

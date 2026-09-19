@@ -88,6 +88,23 @@ export const PIM_PROCESS_PHASES = [
             validationRules: [],
             durationEstimate: "30m",
           },
+          {
+            id: "pim.ph1.st1.t3",
+            name: "Establish shared model contract and evidence conventions",
+            primaryRole: "method-engineer",
+            viewpoint: "dashboard",
+            artifactIds: ["pim-artifact.architecture-posture"],
+            coverageGroups: ["shared-kernel", "shared-enums"],
+            steps: [
+              "Apply shared identity, annotation, traceability, expression, and lifecycle conventions across PIM elements.",
+              "Record the revision, transformation provenance, and review-state convention for the service slice.",
+              "Keep support concepts in inspectors and readiness evidence instead of exposing them as false deployable architecture nodes.",
+            ],
+            entryCriteria: ["PIM model root exists"],
+            exitCriteria: ["Shared model contract and evidence convention are recorded"],
+            validationRules: [],
+            durationEstimate: "30m",
+          },
         ],
       },
       {

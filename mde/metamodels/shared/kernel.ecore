@@ -99,6 +99,13 @@
     <eLiterals name="RUNTIME" value="2"/>
     <eLiterals name="GENERATION_TIME" value="3"/>
   </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="ManualDecisionState">
+    <eLiterals name="OPEN"/>
+    <eLiterals name="ACCEPTED" value="1"/>
+    <eLiterals name="REJECTED" value="2"/>
+    <eLiterals name="WAIVED" value="3"/>
+    <eLiterals name="DEFERRED" value="4"/>
+  </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="DeployableElement" interface="true"/>
   <eClassifiers xsi:type="ecore:EClass" name="InvocationSource" interface="true"/>
   <eClassifiers xsi:type="ecore:EClass" name="InvocationTarget" interface="true"/>
@@ -191,6 +198,15 @@
         eType="#//ModelElement"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="TraceModel" eSuperTypes="#//TraceableElement">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="sourceModelId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="sourceRevision" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="targetModelId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="targetRevision" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="transformationId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="transformationVersion"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="generatedAt" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="generatedBy" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="links" upperBound="-1"
         eType="#//TraceLink" containment="true" eOpposite="#//TraceLink/traceModel"/>
   </eClassifiers>
@@ -228,6 +244,10 @@
   <eClassifiers xsi:type="ecore:EClass" name="ProductionReadinessAssessment" eSuperTypes="#//TraceableElement">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="assessedAt" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="assessedBy" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="gateId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="assessedRevision" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="evidenceUri" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="openBlockingCount" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EIntegerObject"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="transformationReady" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="deploymentReady" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="productionReady" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
@@ -271,7 +291,10 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="question" lowerBound="1"
         eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="decision" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="state" eType="#//ManualDecisionState"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="decisionOwner" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="decisionRecordedAt" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="expiryDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="dueDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="blocking" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="severity" eType="#//Severity"/>

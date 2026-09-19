@@ -107,6 +107,109 @@
       "text": "A release is not ready until rollback, data protection, alerting, and ownership are demonstrably usable by the on-call team."
     }
   ],
+  "progressModel": {
+    "level": "artifact",
+    "trackingUnit": "versioned-process-run",
+    "sourceOfTruth": [
+      "The project work tracker stores one process-run record per release candidate.",
+      "The release record stores the exact artifact, configuration, test, and deployment revisions."
+    ],
+    "requiredRunFields": [
+      "runId",
+      "productGoalId",
+      "incrementId",
+      "scopeItemIds",
+      "methodProfileId",
+      "teamIds",
+      "currentPhaseId",
+      "currentStageId",
+      "state",
+      "ownerRole",
+      "startedAt",
+      "lastInspectedAt",
+      "evidenceLinks",
+      "openBlockers",
+      "acceptedAt"
+    ],
+    "states": [
+      "not-started",
+      "in-progress",
+      "blocked",
+      "ready-for-review",
+      "accepted",
+      "rework",
+      "deferred"
+    ],
+    "events": [
+      "increment-started",
+      "task-evidence-recorded",
+      "finding-raised",
+      "finding-resolved",
+      "decision-recorded",
+      "gate-reviewed",
+      "increment-accepted",
+      "increment-reopened",
+      "release-promoted"
+    ],
+    "aggregation": {
+      "rule": "Aggregate by release candidate, team, release, and product; never average away a blocking finding.",
+      "teamCoordination": "Publish a shared dependency board with owner, dependency type, due date, and escalation path.",
+      "reviewCadence": "Daily delivery coordination, candidate review, and post-release service review."
+    },
+    "metrics": [
+      {
+        "id": "task-completion",
+        "name": "Eligible task completion",
+        "unit": "ratio",
+        "formula": "completed eligible tasks / eligible tasks",
+        "source": "versioned process-run record",
+        "cadence": "each workday and at gate review",
+        "ownerRole": "release-engineer",
+        "interpretation": "Visibility only; never substitute for a usable release candidate."
+      },
+      {
+        "id": "release-evidence-completeness",
+        "name": "Release evidence completeness",
+        "unit": "ratio",
+        "formula": "required release evidence items present for the exact candidate / required evidence items",
+        "source": "release candidate record",
+        "cadence": "release readiness review",
+        "ownerRole": "release-engineer",
+        "interpretation": "No promotion with missing evidence; exceptions are explicit and time-bound."
+      },
+      {
+        "id": "blocking-findings",
+        "name": "Open blocking findings",
+        "unit": "count",
+        "formula": "count(open findings where blocking = true)",
+        "source": "readiness assessment and verification report",
+        "cadence": "continuous; mandatory at gates",
+        "ownerRole": "quality-engineer",
+        "interpretation": "Must be zero or covered by an explicit, time-bound risk acceptance."
+      },
+      {
+        "id": "escaped-defect-rate",
+        "name": "Escaped-defect rate",
+        "unit": "count-per-release",
+        "formula": "defects first detected after release acceptance, categorized by source stage",
+        "source": "incident and defect records",
+        "cadence": "per release and service review",
+        "ownerRole": "quality-engineer",
+        "interpretation": "Feed recurring causes back to the earliest correct source of change."
+      }
+    ]
+  },
+  "governance": {
+    "entryEvidence": ["approved PSM revision", "generation manifest", "artifact baseline"],
+    "exitEvidence": [
+      "verification evidence",
+      "security review",
+      "rollback plan",
+      "operations handover",
+      "post-deployment validation"
+    ],
+    "gate": "A release candidate is promotable only when the exact artifact, configuration, evidence, approval, and rollback identity are recorded."
+  },
   "processEngine": {
     "id": "modriss.artifact.readiness.engine",
     "displayName": "Artifact Deployment-Readiness Engine",

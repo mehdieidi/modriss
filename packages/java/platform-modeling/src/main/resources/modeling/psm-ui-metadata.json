@@ -2187,7 +2187,7 @@
       "creatable": false,
       "supportOnly": true,
       "processPhaseId": "psm.ph1",
-      "processTaskIds": ["psm.ph1.st1.t1"],
+      "processTaskIds": ["psm.ph1.st1.t3"],
       "processStageId": "psm.ph1.st1"
     },
     {
@@ -2259,7 +2259,7 @@
       "containedOnly": true,
       "creatable": false,
       "processPhaseId": "psm.ph1",
-      "processTaskIds": ["psm.ph1.st1.t1"],
+      "processTaskIds": ["psm.ph1.st1.t3"],
       "processStageId": "psm.ph1.st1"
     },
     {
@@ -2277,7 +2277,7 @@
       "containedOnly": true,
       "creatable": false,
       "processPhaseId": "psm.ph1",
-      "processTaskIds": ["psm.ph1.st1.t1"],
+      "processTaskIds": ["psm.ph1.st1.t3"],
       "processStageId": "psm.ph1.st1"
     },
     {
@@ -2330,7 +2330,7 @@
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "processPhaseId": "psm.ph1",
-      "processTaskIds": ["psm.ph1.st1.t1"],
+      "processTaskIds": ["psm.ph1.st1.t3"],
       "processStageId": "psm.ph1.st1"
     },
     {
@@ -5426,7 +5426,7 @@
         "lineFields": ["summary", "description"]
       },
       "processPhaseId": "psm.ph1",
-      "processTaskIds": ["psm.ph1.st1.t1"],
+      "processTaskIds": ["psm.ph1.st1.t3"],
       "processStageId": "psm.ph1.st1"
     },
     {

@@ -1,14 +1,31 @@
 # End-to-End Modeling Methodology
 
-This guide describes the full **incremental-evolutionary** MODRISS modeling lifecycle from business
-intent through deployable AWS artifacts. It connects three level-specific methodologies, [CIM](cim-modeling-methodology.md),
+This guide describes the **technical modeling increment** inside the MODRISS full-lifecycle method,
+from business intent through deployable AWS artifacts. The normative lifecycle method—including
+initiation, situational tailoring, multi-team coordination, release, operations, change propagation,
+and retirement—is [documented here](https://github.com/mehdieidi/modriss/blob/main/mde/methodology/software-development-process.md).
+This guide connects three level-specific methodologies, [CIM](cim-modeling-methodology.md),
 [PIM](pim-modeling-methodology.md), and [PSM](psm-modeling-methodology.md), with transformation
 milestones, EVL gates, iteration loops, and human-in-the-loop refinement.
 
 The machine-readable process definition lives at
-`mde/methodology/process-definitions/end-to-end.json`. Its **`processEngine`** is the top-level agile
-kernel: one full CIM → PIM → PSM → artifacts revolution per capability increment, looping while
-backlog remains.
+`mde/methodology/process-definitions/end-to-end.json`. Its **`processEngine`** is the vertical
+increment kernel: one CIM → PIM → PSM → artifact-readiness revolution per capability increment.
+It is coordinated by the lifecycle phases around it; it is not itself the complete SDLC.
+
+## Full-lifecycle wrapper
+
+The end-to-end process has five phases:
+
+1. **Initiate, Tailor & Organize** — product intent, situational method profile, team topology,
+   quality/security/operations baseline.
+2. **Iterative-Incremental Model-Driven Delivery** — the technical pipeline described below.
+3. **Release & Transition** — release assembly, progressive promotion, rollback, and handover.
+4. **Operate, Evolve & Learn** — SLOs, incidents, controlled change propagation, and retrospectives.
+5. **Retire, Migrate & Close** — data disposition, decommissioning, and lifecycle learning.
+
+The process definition records a progress contract, evidence events, role ownership, dependency
+coordination, and release/operations work products for these phases.
 
 ## Incremental Delivery (Engine Cycle)
 
@@ -21,6 +38,10 @@ The end-to-end engine delivers in **capability slices**:
 
 Cross-level **rework loops** inside the engine (PIM feedback to CIM, etc.) are not failures, they
 are how the engine corrects course within a revolution.
+
+Semantic EVL gates in this guide are explicit user/model validation activities. Assistant
+apply/repair/commit paths are limited to structural Ecore/EMF conformance through
+`ModelService.validateStructural(...)`; they do not invoke full semantic validation.
 
 ## Roles Across the Pipeline
 
@@ -70,14 +91,15 @@ flowchart LR
 
 ## Milestones Overview
 
-| Milestone              | ID                 | Phase                        | Gate / deliverable                                   |
-| ---------------------- | ------------------ | ---------------------------- | ---------------------------------------------------- |
-| CIM readiness approved | `e2e.m1.cim-ready` | CIM Modeling                 | `cim-semantic-validation` passes; `cim.ph5` complete |
-| PIM readiness approved | `e2e.m2.pim-ready` | PIM Refinement               | `pim-semantic-validation` passes; `pim.ph6` complete |
-| PSM readiness approved | `e2e.m3.psm-ready` | PSM Refinement               | `psm-semantic-validation` passes; `psm.ph6` complete |
-| Artifacts delivered    | `e2e.m4.artifacts` | Artifact Review & Completion | Generated project reviewed and accepted              |
+| Milestone                         | ID                            | Phase                            | Gate / deliverable                                      |
+| --------------------------------- | ----------------------------- | -------------------------------- | ------------------------------------------------------- |
+| Method and team topology approved | `e2e.m0.method-tailored`      | Initiate, Tailor & Organize      | Method profile, ownership, and coordination evidence    |
+| Vertical increment accepted       | `e2e.m1.increment-accepted`   | Increment Readiness & Acceptance | Child-level gates and artifact evidence accepted        |
+| Release promoted and handed over  | `e2e.m2.release-promoted`     | Release & Transition             | Progressive deployment and operations handover complete |
+| Operational learning reviewed     | `e2e.m3.operational-learning` | Operate, Evolve & Learn          | Service and method metrics inspected                    |
+| Lifecycle retired and closed      | `e2e.m4.retired`              | Retire, Migrate & Close          | Retirement evidence and retained knowledge complete     |
 
-## Phase Overview
+## Technical Increment Pipeline
 
 | Phase | Name                         | Primary role            | Transform             | Validation gate           | Outputs                                      |
 | ----- | ---------------------------- | ----------------------- | --------------------- | ------------------------- | -------------------------------------------- |
@@ -119,7 +141,7 @@ detail. Follow all five CIM phases (`cim.ph1`–`cim.ph5`) in SPEM order: phases
 - [ ] All CIM phases complete per [CIM guide](cim-modeling-methodology.md) (`cim.ph1`–`cim.ph5`)
 - [ ] `ProductionReadinessAssessment` approved
 - [ ] **`cim-semantic-validation` passes**
-- [ ] Milestone `e2e.m1.cim-ready` achieved
+- [ ] CIM evidence is recorded in the increment record
 
 ---
 
@@ -183,7 +205,7 @@ Refine generated PIM through six SPEM phases (`pim.ph1`–`pim.ph6`): phases →
 - [ ] All 6 PIM phases complete per [PIM guide](pim-modeling-methodology.md)
 - [ ] `PlatformMappingAssessment` complete
 - [ ] **`pim-semantic-validation` passes**
-- [ ] Milestone `e2e.m2.pim-ready` achieved
+- [ ] PIM evidence is recorded in the increment record
 
 ---
 
@@ -247,7 +269,7 @@ Refine generated AWS resources through six SPEM phases (`psm.ph1`–`psm.ph6`).
 - [ ] All 6 PSM phases complete per [PSM guide](psm-modeling-methodology.md)
 - [ ] Integration views document Lambda–API–event wiring
 - [ ] **`psm-semantic-validation` passes**
-- [ ] Milestone `e2e.m3.psm-ready` achieved
+- [ ] PSM evidence is recorded in the increment record
 
 ---
 
@@ -313,7 +335,7 @@ validate infrastructure, security, operations, and traceability documentation.
 - [ ] Generated tests pass
 - [ ] Security and operations documentation reviewed
 - [ ] Manual actions resolved or tracked
-- [ ] Milestone `e2e.m4.artifacts` achieved
+- [ ] Milestone `e2e.m1.increment-accepted` achieved
 
 ---
 

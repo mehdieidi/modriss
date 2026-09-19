@@ -10,7 +10,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = Path(__file__).resolve().parents[3] / "docs" / "metamodel-class-reference.md"
+OUTPUT = (
+    Path(__file__).resolve().parents[3]
+    / "docs"
+    / "internal"
+    / "mde"
+    / "reference"
+    / "metamodel-class-reference.md"
+)
 
 CLASS_RE = re.compile(
     r"^(abstract\s+)?class\s+(\w+)(?:\s+extends\s+(.+?))?\s*\{?\s*$"
@@ -18,7 +25,7 @@ CLASS_RE = re.compile(
 INTERFACE_RE = re.compile(r"^interface\s+(\w+)")
 FEATURE_RE = re.compile(
     r"^(?:readonly\s+transient\s+)?(?:volatile\s+)?(?:derived\s+)?"
-    r"(val|ref)\s+([\w.]+)(\[([?*+])\])?(?:#(\w+))?\s+(\w+)"
+    r"(val|ref)\s+([\w.]+)(\[([?*+]|\d+)\])?(?:#(\w+))?\s+(\w+)"
 )
 ATTR_RE = re.compile(r"^attr\s+")
 

@@ -1,9 +1,9 @@
 {
   "level": "pim",
   "processId": "modriss.pim.modeling",
-  "generatedAt": "2026-07-07T15:28:43.268Z",
-  "totalConcepts": 187,
-  "coveredConcepts": 187,
+  "generatedAt": "2026-09-19T14:22:14.109Z",
+  "totalConcepts": 188,
+  "coveredConcepts": 188,
   "orphanedConcepts": [],
   "entries": [
     {
@@ -15,157 +15,157 @@
     {
       "concept": "DeployableElement",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "InvocationSource",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "InvocationTarget",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "FunctionTarget",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "WorkflowTarget",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "SubscriptionTarget",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "RoutingTarget",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "FlowEndpoint",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "ProtectedResource",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "PolicyTarget",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "DataAccessTarget",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "ExternalCallTarget",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "EnvironmentTarget",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "CredentialRequirementLike",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "RouteEndpoint",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "EventCarrier",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "ConfigurableElement",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "KeyValue",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "Annotation",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "ModelElement",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "NamedModelElement",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "TraceableElement",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "SemanticRelationship",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "Multiplicity",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "Cardinality",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "Expression",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
@@ -189,7 +189,7 @@
     {
       "concept": "StructuredDocument",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
@@ -237,7 +237,7 @@
     {
       "concept": "ComputeElement",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
@@ -339,7 +339,7 @@
     {
       "concept": "StorageElement",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
@@ -453,7 +453,7 @@
     {
       "concept": "IntegrationElement",
       "kind": "EClass",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
@@ -873,61 +873,67 @@
     {
       "concept": "Priority",
       "kind": "EEnum",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "Severity",
       "kind": "EEnum",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "ConstraintStrength",
       "kind": "EEnum",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "LifecycleStatus",
       "kind": "EEnum",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "TraceConfidence",
       "kind": "EEnum",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "TraceLinkType",
       "kind": "EEnum",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "FindingType",
       "kind": "EEnum",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "StructuredFormat",
       "kind": "EEnum",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "ExpressionLanguage",
       "kind": "EEnum",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
       "concept": "ExpressionPhase",
       "kind": "EEnum",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
+      "covered": true
+    },
+    {
+      "concept": "ManualDecisionState",
+      "kind": "EEnum",
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {
@@ -1107,7 +1113,7 @@
     {
       "concept": "Decision",
       "kind": "EEnum",
-      "taskIds": ["pim.ph1.st1.t1"],
+      "taskIds": ["pim.ph1.st1.t3"],
       "covered": true
     },
     {

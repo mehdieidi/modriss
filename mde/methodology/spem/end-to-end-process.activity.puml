@@ -1,31 +1,41 @@
 @startuml end-to-end-process
-title End-to-End Modeling, SPEM Engine (8 Stages per Increment)
+title End-to-End Lifecycle and SPEM Increment Engine
 start
-partition "e2e.ph1, Increment Lifecycle" {
-  :e2e.p0, Increment Planning;
+partition "e2e.ph0, Initiate / Tailor / Organize" {
+  :Product and system intent;
+  :Situational method profile;
+  :Team topology and quality baseline;
+}
+partition "e2e.ph1, Iterative-Incremental Delivery" {
+  :e2e.p0, Frame Increment;
   :e2e.p1, CIM engine\n(modriss.cim.modeling · 5 phases);
-  if (cim-semantic-validation?) then (pass)
+  if (CIM gate evidence accepted?) then (pass)
   else (fail)
     backward :e2e.p1;
   endif
   :e2e.p2, CIM→PIM ETL;
   :e2e.p3, PIM engine\n(modriss.pim.modeling · 6 phases);
-  if (pim-semantic-validation?) then (pass)
+  if (PIM gate evidence accepted?) then (pass)
   else (fail)
     backward :e2e.p3;
   endif
   :e2e.p4, PIM→PSM ETL;
   :e2e.p5, PSM engine\n(modriss.psm.modeling · 6 phases);
-  if (psm-semantic-validation?) then (pass)
+  if (PSM gate evidence accepted?) then (pass)
   else (fail)
     backward :e2e.p5;
   endif
   :e2e.p6, M2T generation;
-  :e2e.p7, Artifact review;
+  :e2e.p7, Artifact readiness and increment acceptance;
 }
-if (More capability slices?) then (yes)
+if (Next increment or release scope?) then (yes)
   backward :e2e.p0;
 else (no)
+  partition "e2e.ph2–ph4, Release / Operate / Retire" {
+    :Release assembly and progressive transition;
+    :Operate, evolve, and learn;
+    :Retire, migrate, and close when authorized;
+  }
   stop
 endif
 @enduml

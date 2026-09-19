@@ -79,7 +79,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modriss.cim.modeling` · 5 phases · 25 atomic tasks · CIM metamodel coverage enforced in CI.
+Process `modriss.cim.modeling` · 5 phases · 26 atomic tasks · CIM metamodel coverage enforced in CI.
 
 ### Increment Framing (`cim.ph1`)
 
@@ -125,6 +125,26 @@ Create the CIMModel root and modeling conventions on the first cycle; refresh th
 **Exit criteria:**
 
 - CIMModel root with domainName exists
+
+#### Establish shared model contract and evidence conventions (`cim.ph1.st1.t2`)
+
+**Viewpoint:** dashboard
+**Duration:** 30m
+**Artifacts:** CIM Model Root
+
+**Steps:**
+
+1. Apply the shared identity, annotation, traceability, expression, and lifecycle conventions used by every CIM element.
+2. Set the evidence convention for source references, review status, and model-level provenance.
+3. Confirm that shared support concepts are handled by inspectors and readiness records rather than mistaken for business concepts.
+
+**Entry criteria:**
+
+- CIM model root exists
+
+**Exit criteria:**
+
+- Shared model contract and evidence convention are recorded
 
 #### Capability Slice Planning (`cim.ph1.st2`)
 

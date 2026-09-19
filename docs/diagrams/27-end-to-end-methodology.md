@@ -1,6 +1,6 @@
 # End-to-End Modeling Methodology
 
-The full MDE lifecycle is `modriss.end-to-end.modeling` (`mde/methodology/process-definitions/end-to-end.json`). One SPEM phase (`e2e.ph1`) contains **eight stages** that orchestrate child process engines, ETL transforms, EVL gates, M2T, and cross-level rework loops.
+The full MDE lifecycle is `modriss.end-to-end.modeling` (`mde/methodology/process-definitions/end-to-end.json`). It has five SPEM phases: initiation/tailoring, iterative-incremental model-driven delivery, release/transition, operations/evolution, and retirement/closure. The delivery phase (`e2e.ph1`) contains **eight engine stages** that orchestrate child process engines, ETL transforms, artifact readiness, and cross-level rework loops.
 
 ## Pipeline Overview
 
@@ -8,20 +8,20 @@ The full MDE lifecycle is `modriss.end-to-end.modeling` (`mde/methodology/proces
 flowchart LR
     p0["e2e.p0.increment-planning"]
     p1["e2e.p1.cim-modeling<br/>modriss.cim.modeling · 5 phases"]
-    evl1["cim-semantic-validation<br/>e2e.m1.cim-ready"]
+    evl1["CIM gate evidence<br/>increment record"]
     p2["e2e.p2.cim-to-pim"]
     p3["e2e.p3.pim-refinement<br/>modriss.pim.modeling · 6 phases"]
-    evl2["pim-semantic-validation<br/>e2e.m2.pim-ready"]
+    evl2["PIM gate evidence<br/>increment record"]
     p4["e2e.p4.pim-to-psm"]
     p5["e2e.p5.psm-refinement<br/>modriss.psm.modeling · 6 phases"]
-    evl3["psm-semantic-validation<br/>e2e.m3.psm-ready"]
+    evl3["PSM gate evidence<br/>increment record"]
     p6["e2e.p6.m2t-generation"]
-    p7["e2e.p7.artifact-completion<br/>e2e.m4.artifacts"]
+    p7["e2e.p7.artifact-completion<br/>e2e.m1.increment-accepted"]
 
     p0 --> p1 --> evl1 --> p2 --> p3 --> evl2 --> p4 --> p5 --> evl3 --> p6 --> p7
 ```
 
-The top-level **process engine** loops: plan → run child engines → transform → review → deliver → retrospect → ↻ while backlog remains.
+The vertical **process engine** loops: frame → run child engines → transform → artifact readiness → accept/rework → ↻ while the next increment or release scope remains. Release, operations, and retirement are lifecycle phases around this engine.
 
 ## Roles Across the Pipeline
 
@@ -63,14 +63,15 @@ flowchart TB
 
 ### Gate semantics
 
-| Milestone          | Stage / phase           | Gate / action             | On failure                    |
-| ------------------ | ----------------------- | ------------------------- | ----------------------------- |
-| `e2e.m1.cim-ready` | `e2e.p1.cim-modeling`   | `cim-semantic-validation` | Rework in CIM (`cim.ph5`)     |
-| :                  | `e2e.p2.cim-to-pim`     | ETL (no EVL)              | Fix CIM or profile; re-run    |
-| `e2e.m2.pim-ready` | `e2e.p3.pim-refinement` | `pim-semantic-validation` | Rework in PIM (`pim.ph6`)     |
-| :                  | `e2e.p4.pim-to-psm`     | ETL (no EVL)              | Fix PIM; re-run               |
-| `e2e.m3.psm-ready` | `e2e.p5.psm-refinement` | `psm-semantic-validation` | Rework in PSM (`psm.ph6`)     |
-| `e2e.m4.artifacts` | `e2e.p7`                | Manual review             | Fix PSM; regenerate artifacts |
+| Milestone                   | Stage / phase           | Gate / action                     | On failure                             |
+| --------------------------- | ----------------------- | --------------------------------- | -------------------------------------- |
+| `e2e.m0.method-tailored`    | lifecycle initiation    | Method profile and ownership      | Re-tailor and re-plan                  |
+| :                           | `e2e.p1.cim-modeling`   | CIM gate evidence                 | Rework in CIM (`cim.ph5`)              |
+| :                           | `e2e.p2.cim-to-pim`     | ETL (no EVL)                      | Fix CIM or profile; re-run             |
+| :                           | `e2e.p3.pim-refinement` | PIM gate evidence                 | Rework in PIM (`pim.ph6`)              |
+| :                           | `e2e.p4.pim-to-psm`     | ETL (no EVL)                      | Fix PIM; re-run                        |
+| :                           | `e2e.p5.psm-refinement` | PSM gate evidence                 | Rework in PSM (`psm.ph6`)              |
+| `e2e.m1.increment-accepted` | `e2e.p7`                | Artifact readiness and acceptance | Fix source model; regenerate artifacts |
 
 ## Sequence: Full Lifecycle
 
@@ -86,19 +87,19 @@ sequenceDiagram
 
     BM->>BM: e2e.p1, cim.ph1..ph5
     PR->>EVL: cim-semantic-validation @ cim.ph5
-    EVL-->>PR: e2e.m1.cim-ready
+    EVL-->>PR: CIM gate evidence
 
     SA->>ETL: e2e.p2, cim-to-pim
     ETL-->>SA: PIM draft
     SA->>SA: e2e.p3, pim.ph1..ph6
     PR->>EVL: pim-semantic-validation
-    EVL-->>PR: e2e.m2.pim-ready
+    EVL-->>PR: PIM gate evidence
 
     CPE->>ETL: e2e.p4, pim-to-awspsm
     ETL-->>CPE: AWS PSM draft
     CPE->>CPE: e2e.p5, psm.ph1..ph6
     PR->>EVL: psm-semantic-validation
-    EVL-->>PR: e2e.m3.psm-ready
+    EVL-->>PR: PSM gate evidence
 
     CPE->>ETL: e2e.p6, awspsm-to-artifacts
     PR->>PR: e2e.p7, artifact review

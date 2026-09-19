@@ -5,6 +5,23 @@
   "displayName": "PIM",
   "roles": [
     {
+      "id": "product-owner",
+      "name": "Product Owner",
+      "responsibilities": ["Product goal, ordered backlog, value decisions, acceptance"]
+    },
+    {
+      "id": "delivery-lead",
+      "name": "Delivery Lead",
+      "responsibilities": [
+        "Team coordination, dependencies, flow metrics, escalation, retrospectives"
+      ]
+    },
+    {
+      "id": "domain-expert",
+      "name": "Domain Expert",
+      "responsibilities": ["Validates that architecture still realizes business scenarios"]
+    },
+    {
       "id": "solution-architect",
       "name": "Solution Architect",
       "responsibilities": ["Service boundaries, contracts, integration, policies, readiness"]
@@ -13,6 +30,21 @@
       "id": "process-reviewer",
       "name": "Process Reviewer",
       "responsibilities": ["EVL gate approval, readiness sign-off"]
+    },
+    {
+      "id": "quality-engineer",
+      "name": "Quality Engineer",
+      "responsibilities": ["Contract, integration, quality-attribute, and evidence strategy"]
+    },
+    {
+      "id": "security-engineer",
+      "name": "Security Engineer",
+      "responsibilities": ["Identity, authorization, data protection, and security review"]
+    },
+    {
+      "id": "cloud-platform-engineer",
+      "name": "Cloud Platform Engineer",
+      "responsibilities": ["Provider constraints, deployability feedback, and platform handoff"]
     },
     {
       "id": "method-engineer",
@@ -130,6 +162,154 @@
       "text": "Platform mapping and EVL validation are not after-the-fact audits. They are the review gate of each service-slice cycle."
     }
   ],
+  "progressModel": {
+    "trackingUnit": "versioned-process-run",
+    "sourceOfTruth": [
+      "The project work tracker stores one process-run record per increment or release candidate.",
+      "The model repository stores the model revision, transformation run, validation evidence, and readiness assessment.",
+      "The release record stores the exact accepted model, generator, artifact, test, and deployment revisions."
+    ],
+    "requiredRunFields": [
+      "runId",
+      "productGoalId",
+      "incrementId",
+      "scopeItemIds",
+      "methodProfileId",
+      "teamIds",
+      "currentPhaseId",
+      "currentStageId",
+      "state",
+      "ownerRole",
+      "startedAt",
+      "lastInspectedAt",
+      "evidenceLinks",
+      "openBlockers",
+      "acceptedAt"
+    ],
+    "states": [
+      "not-started",
+      "in-progress",
+      "blocked",
+      "ready-for-review",
+      "accepted",
+      "rework",
+      "deferred"
+    ],
+    "events": [
+      "increment-started",
+      "task-evidence-recorded",
+      "finding-raised",
+      "finding-resolved",
+      "decision-recorded",
+      "gate-reviewed",
+      "increment-accepted",
+      "increment-reopened",
+      "release-promoted"
+    ],
+    "aggregation": {
+      "rule": "Aggregate by increment, team, release, and product; never average away a blocking finding.",
+      "teamCoordination": "Publish a shared dependency board with ownership, dependency type, due date, and escalation path.",
+      "reviewCadence": "Daily local coordination, per-increment review/retrospective, and per-release readiness review."
+    },
+    "metrics": [
+      {
+        "id": "task-completion",
+        "name": "Eligible task completion",
+        "unit": "ratio",
+        "formula": "completed eligible tasks / eligible tasks",
+        "source": "versioned process-run record",
+        "cadence": "each workday and at gate review",
+        "ownerRole": "delivery-lead",
+        "interpretation": "Visibility only; never substitute for a usable increment."
+      },
+      {
+        "id": "increment-flow-time",
+        "name": "Increment flow time",
+        "unit": "elapsed-time",
+        "formula": "accepted-increment timestamp - increment-start timestamp",
+        "source": "increment and gate timestamps",
+        "cadence": "per accepted increment",
+        "ownerRole": "delivery-lead",
+        "interpretation": "Use trends to tune slice size and expose queues."
+      },
+      {
+        "id": "rework-rate",
+        "name": "Rework rate",
+        "unit": "ratio",
+        "formula": "reopened tasks caused by a finding / completed tasks",
+        "source": "change and finding records",
+        "cadence": "per increment and release",
+        "ownerRole": "process-reviewer",
+        "interpretation": "Inspect causes; do not use as an individual performance score."
+      },
+      {
+        "id": "trace-coverage",
+        "name": "Trace coverage",
+        "unit": "ratio",
+        "formula": "accepted scope items with source-to-evidence trace / accepted scope items",
+        "source": "TraceModel and release evidence",
+        "cadence": "at every level gate and release",
+        "ownerRole": "process-reviewer",
+        "interpretation": "A low value blocks confidence even when task completion is high."
+      },
+      {
+        "id": "blocking-findings",
+        "name": "Open blocking findings",
+        "unit": "count",
+        "formula": "count(open findings where blocking = true)",
+        "source": "readiness assessment and validation report",
+        "cadence": "continuous; mandatory at gates",
+        "ownerRole": "process-reviewer",
+        "interpretation": "Must be zero or covered by an explicit, time-bound risk acceptance."
+      },
+      {
+        "id": "manual-decision-closure",
+        "name": "Manual decision closure",
+        "unit": "ratio",
+        "formula": "accepted/rejected/waived manual decisions / blocking manual decisions",
+        "source": "readiness assessment decision register",
+        "cadence": "at transformation and release gates",
+        "ownerRole": "process-reviewer",
+        "interpretation": "Open decisions remain visible and are not silently treated as done."
+      },
+      {
+        "id": "contract-coverage",
+        "name": "Behavior-to-contract coverage",
+        "unit": "ratio",
+        "formula": "accepted commands, queries, and events with a reviewed PIM contract / selected behavior elements",
+        "source": "CIM/PIM TraceModel and contract catalog",
+        "cadence": "PIM increment review",
+        "ownerRole": "solution-architect",
+        "interpretation": "Prevents architectural task completion from hiding contract gaps."
+      },
+      {
+        "id": "platform-ambiguity",
+        "name": "Unresolved platform ambiguity",
+        "unit": "count",
+        "formula": "open PlatformMappingAssessment or ManualDecision records blocking PSM transformation",
+        "source": "PIM readiness assessment",
+        "cadence": "continuous; mandatory at PIM gate",
+        "ownerRole": "solution-architect",
+        "interpretation": "Must trend down before PIM promotion."
+      }
+    ],
+    "level": "pim"
+  },
+  "governance": {
+    "entryEvidence": [
+      "accepted CIM revision",
+      "transformation report",
+      "trace baseline",
+      "service-slice hypothesis"
+    ],
+    "exitEvidence": [
+      "reviewed PIM revision",
+      "contract/data/behavior coverage",
+      "platform mapping assessment",
+      "readiness and semantic-validation evidence"
+    ],
+    "gate": "PIM-to-PSM promotion requires an explicit user/model semantic-validation review; generated PIM is scaffolding until the solution architect accepts or rejects each material decision."
+  },
   "processEngine": {
     "id": "modriss.pim.engine",
     "displayName": "PIM Modeling Engine",
@@ -292,6 +472,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.increment-plan"],
+              "coverageGroups": [],
               "workProducts": [],
               "steps": [
                 "Select one service slice traced to CIM goals, bounded contexts, and behavior.",
@@ -329,12 +510,73 @@
                 }
               ],
               "artifactIds": ["pim-artifact.architecture-posture"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
                   "eClass": "PIMModel",
                   "cardinality": "1..*"
+                }
+              ],
+              "steps": [
+                "Create or verify PIMModel with domain linkage to CIM source.",
+                "Set modeling date, lifecycle status, and annotation conventions."
+              ],
+              "entryCriteria": ["Service-slice scope agreed"],
+              "exitCriteria": ["PIMModel root exists"],
+              "validationRules": [],
+              "paletteFocus": ["PIMModel"],
+              "durationEstimate": "20m"
+            },
+            {
+              "id": "pim.ph1.st1.t2",
+              "name": "Set architecture posture",
+              "primaryRole": "solution-architect",
+              "viewpoint": "dashboard",
+              "artifacts": [
+                {
+                  "id": "pim-artifact.architecture-posture",
+                  "name": "Architecture Posture"
+                }
+              ],
+              "artifactIds": ["pim-artifact.architecture-posture"],
+              "coverageGroups": [],
+              "workProducts": [
+                {
+                  "metamodel": "pim",
+                  "eClass": "ImplementationProfile",
+                  "cardinality": "1..*"
                 },
+                {
+                  "metamodel": "pim",
+                  "eEnum": "ArchitectureStyle",
+                  "cardinality": "enum-values"
+                }
+              ],
+              "steps": [
+                "Configure ImplementationProfile with serverless posture and platform assumptions.",
+                "Select ArchitectureStyle and document key architectural decisions."
+              ],
+              "entryCriteria": ["PIM model root exists"],
+              "exitCriteria": ["Architecture style and profile configured"],
+              "validationRules": [],
+              "paletteFocus": ["ImplementationProfile"],
+              "durationEstimate": "30m"
+            },
+            {
+              "id": "pim.ph1.st1.t3",
+              "name": "Establish shared model contract and evidence conventions",
+              "primaryRole": "method-engineer",
+              "viewpoint": "dashboard",
+              "artifacts": [
+                {
+                  "id": "pim-artifact.architecture-posture",
+                  "name": "Architecture Posture"
+                }
+              ],
+              "artifactIds": ["pim-artifact.architecture-posture"],
+              "coverageGroups": ["shared-kernel", "shared-enums"],
+              "workProducts": [
                 {
                   "metamodel": "pim",
                   "eClass": "DeployableElement",
@@ -537,52 +779,24 @@
                 },
                 {
                   "metamodel": "pim",
+                  "eEnum": "ManualDecisionState",
+                  "cardinality": "enum-values"
+                },
+                {
+                  "metamodel": "pim",
                   "eEnum": "Decision",
                   "cardinality": "enum-values"
                 }
               ],
               "steps": [
-                "Create or verify PIMModel with domain linkage to CIM source.",
-                "Set modeling date, lifecycle status, and annotation conventions."
-              ],
-              "entryCriteria": ["Service-slice scope agreed"],
-              "exitCriteria": ["PIMModel root exists"],
-              "validationRules": [],
-              "paletteFocus": ["PIMModel"],
-              "durationEstimate": "20m"
-            },
-            {
-              "id": "pim.ph1.st1.t2",
-              "name": "Set architecture posture",
-              "primaryRole": "solution-architect",
-              "viewpoint": "dashboard",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.architecture-posture",
-                  "name": "Architecture Posture"
-                }
-              ],
-              "artifactIds": ["pim-artifact.architecture-posture"],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "ImplementationProfile",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "ArchitectureStyle",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Configure ImplementationProfile with serverless posture and platform assumptions.",
-                "Select ArchitectureStyle and document key architectural decisions."
+                "Apply shared identity, annotation, traceability, expression, and lifecycle conventions across PIM elements.",
+                "Record the revision, transformation provenance, and review-state convention for the service slice.",
+                "Keep support concepts in inspectors and readiness evidence instead of exposing them as false deployable architecture nodes."
               ],
               "entryCriteria": ["PIM model root exists"],
-              "exitCriteria": ["Architecture style and profile configured"],
+              "exitCriteria": ["Shared model contract and evidence convention are recorded"],
               "validationRules": [],
-              "paletteFocus": ["ImplementationProfile"],
+              "paletteFocus": [],
               "durationEstimate": "30m"
             }
           ]
@@ -608,6 +822,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.service-map"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -642,6 +857,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.service-map"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -721,6 +937,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.contract-catalog"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -770,6 +987,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.contract-catalog"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -845,6 +1063,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.data-architecture"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -899,6 +1118,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.data-architecture"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -948,6 +1168,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.data-architecture"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -1033,6 +1254,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.compute-catalog"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -1082,6 +1304,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.compute-catalog"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -1151,6 +1374,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.api-catalog"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -1179,13 +1403,13 @@
                 }
               ],
               "steps": [
-                "Open a ServerlessService focus view and create Api elements with routes and HTTP methods.",
+                "Create Api elements with routes and HTTP methods.",
                 "Connect routes to function handlers."
               ],
               "entryCriteria": ["Compute units defined"],
               "exitCriteria": ["API routes cover public endpoints"],
               "validationRules": [],
-              "paletteFocus": ["ServerlessService"],
+              "paletteFocus": ["Api", "ApiRoute"],
               "durationEstimate": "1h"
             },
             {
@@ -1200,6 +1424,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.api-catalog"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -1279,6 +1504,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.integration-topology"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -1338,6 +1564,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.integration-topology"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -1435,6 +1662,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.workflow-model"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -1453,43 +1681,43 @@
                 },
                 {
                   "metamodel": "pim",
+                  "eClass": "TaskStep",
+                  "cardinality": "1..*"
+                },
+                {
+                  "metamodel": "pim",
+                  "eClass": "ChoiceStep",
+                  "cardinality": "1..*"
+                },
+                {
+                  "metamodel": "pim",
+                  "eClass": "WaitStep",
+                  "cardinality": "1..*"
+                },
+                {
+                  "metamodel": "pim",
                   "eClass": "SuccessEndStep",
                   "cardinality": "1..*"
                 },
                 {
                   "metamodel": "pim",
-                  "eClass": "TaskStep",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ChoiceStep",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "WaitStep",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
                   "eClass": "FailureEndStep",
-                  "cardinality": "0..*"
+                  "cardinality": "1..*"
                 },
                 {
                   "metamodel": "pim",
                   "eClass": "ParallelStep",
-                  "cardinality": "0..*"
+                  "cardinality": "1..*"
                 },
                 {
                   "metamodel": "pim",
                   "eClass": "MapStep",
-                  "cardinality": "0..*"
+                  "cardinality": "1..*"
                 },
                 {
                   "metamodel": "pim",
                   "eClass": "PassStep",
-                  "cardinality": "0..*"
+                  "cardinality": "1..*"
                 },
                 {
                   "metamodel": "pim",
@@ -1504,12 +1732,25 @@
               ],
               "steps": [
                 "Create Workflow elements from CIM business processes.",
-                "Define steps, transitions, and workflow kind."
+                "Define typed workflow steps, transitions, and workflow kind."
               ],
               "entryCriteria": ["Integration topology defined"],
               "exitCriteria": ["Workflows cover long-running CIM processes"],
               "validationRules": [],
-              "paletteFocus": ["Workflow", "StartStep", "TaskStep", "WorkflowTransition"],
+              "paletteFocus": [
+                "Workflow",
+                "WorkflowStep",
+                "StartStep",
+                "TaskStep",
+                "ChoiceStep",
+                "WaitStep",
+                "SuccessEndStep",
+                "FailureEndStep",
+                "ParallelStep",
+                "MapStep",
+                "PassStep",
+                "WorkflowTransition"
+              ],
               "durationEstimate": "1-2h"
             },
             {
@@ -1524,6 +1765,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.workflow-model"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -1643,6 +1885,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.security-model"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -1687,6 +1930,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.security-model"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -1776,6 +2020,7 @@
                     }
                   ],
                   "artifactIds": ["pim-artifact.policy-catalog"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "pim",
@@ -1832,6 +2077,7 @@
                     }
                   ],
                   "artifactIds": ["pim-artifact.policy-catalog"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "pim",
@@ -1917,6 +2163,7 @@
                     }
                   ],
                   "artifactIds": ["pim-artifact.policy-catalog"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "pim",
@@ -1972,6 +2219,7 @@
                     }
                   ],
                   "artifactIds": ["pim-artifact.policy-catalog"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "pim",
@@ -2022,6 +2270,7 @@
                     }
                   ],
                   "artifactIds": ["pim-artifact.policy-catalog"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "pim",
@@ -2077,6 +2326,7 @@
                     }
                   ],
                   "artifactIds": ["pim-artifact.policy-catalog"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "pim",
@@ -2129,6 +2379,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.config-package"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -2168,6 +2419,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.config-package"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -2283,6 +2535,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.platform-readiness"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
@@ -2338,41 +2591,42 @@
                 }
               ],
               "artifactIds": ["pim-artifact.platform-readiness"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "pim",
                   "eClass": "TraceModel",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "pim",
                   "eClass": "TraceLink",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "pim",
                   "eClass": "TransformationAssumption",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "pim",
                   "eClass": "ProductionReadinessAssessment",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "pim",
                   "eClass": "ReadinessFinding",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "pim",
                   "eClass": "ReadinessCheck",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "pim",
                   "eClass": "ManualDecision",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 }
               ],
               "steps": [
@@ -2408,6 +2662,7 @@
                 }
               ],
               "artifactIds": ["pim-artifact.increment-review"],
+              "coverageGroups": [],
               "workProducts": [],
               "steps": [
                 "Review architecture outcomes against CIM trace links and PIM definition of done.",
@@ -2440,10 +2695,17 @@
           "Update platform mapping assessment before PIM→PSM."
         ],
         "impactedStages": [
-          "pim.s1.posture",
-          "pim.s2.capability-core",
-          "pim.s3.integration",
-          "pim.s4.assurance"
+          "pim.ph1.st1",
+          "pim.ph1.st2",
+          "pim.ph2.st1",
+          "pim.ph2.st2",
+          "pim.ph3.st1",
+          "pim.ph3.st2",
+          "pim.ph4.st1",
+          "pim.ph4.st2",
+          "pim.ph5.st1",
+          "pim.ph5.st2",
+          "pim.ph6.st1"
         ]
       },
       {
@@ -2456,7 +2718,13 @@
           "Apply data migration assumptions in TransformationProfile if needed.",
           "Re-validate integration subscriptions and access patterns."
         ],
-        "impactedStages": ["pim.s2.capability-core", "pim.s3.integration"]
+        "impactedStages": [
+          "pim.ph2.st1",
+          "pim.ph2.st2",
+          "pim.ph3.st1",
+          "pim.ph3.st2",
+          "pim.ph4.st1"
+        ]
       },
       {
         "id": "pim.change.policy-attach",
@@ -2467,7 +2735,7 @@
           "Verify PolicyTarget elements exist and are correctly linked.",
           "Run policy EVL suite; replay assurance stage if attachments span services."
         ],
-        "impactedStages": ["pim.s4.assurance"]
+        "impactedStages": ["pim.ph5.st1", "pim.ph5.st2", "pim.ph5.st3", "pim.ph4.st1"]
       },
       {
         "id": "pim.change.post-transform",
@@ -2479,7 +2747,7 @@
           "Re-execute PIM→PSM ETL; review platform mapping deltas.",
           "Regenerate M2T artifacts; run deployment dry-run."
         ],
-        "impactedStages": ["pim.s5.readiness"],
+        "impactedStages": ["pim.ph6.st1", "pim.ph6.st2"],
         "crossLevel": true
       }
     ]

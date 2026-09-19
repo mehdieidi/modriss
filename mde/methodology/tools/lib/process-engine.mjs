@@ -192,18 +192,18 @@ export const PROCESS_ENGINES = {
   "end-to-end": {
     id: "modriss.end-to-end.engine",
     displayName: "End-to-End MDE Engine",
-    description: "One vertical CIM → PIM → PSM → artifacts revolution per capability increment.",
+    description: "One vertical CIM → PIM → PSM → artifact-readiness revolution per capability increment, embedded in release, operations, and retirement governance.",
     incrementUnit: "capability-slice",
     deliverable: {
       name: "Deployable increment",
-      description: "Models at all levels plus generated artifacts for one slice.",
+      description: "Accepted models at all levels, generated artifacts, verification evidence, and an explicit increment decision for one slice.",
     },
     cycle: [
       {
         id: "e2e.p0.increment-planning",
-        name: "Increment Planning",
+        name: "Increment Framing",
         type: "orchestration",
-        primaryRole: "business-modeler",
+        primaryRole: "product-owner",
       },
       {
         id: "e2e.p1.cim-modeling",
@@ -246,16 +246,17 @@ export const PROCESS_ENGINES = {
       },
       {
         id: "e2e.p7.artifact-completion",
-        name: "Increment Closure",
+        name: "Increment Readiness & Acceptance",
         type: "deliverable",
         primaryRole: "process-reviewer",
+        childProcessId: "modriss.artifact.deployment-readiness",
       },
     ],
     loop: {
       fromStepId: "e2e.p7.artifact-completion",
       toStepId: "e2e.p0.increment-planning",
-      condition: "increment-backlog-remaining",
-      guidance: "Revolve end-to-end engine for next capability increment.",
+      condition: "next-increment-or-release-scope-open",
+      guidance: "After increment acceptance, either start the next capability slice or leave the engine for release assembly. Any downstream finding re-enters the smallest affected child process through the recorded change workflow.",
     },
     reworkLoopIds: [
       "e2e.loop.pim-feedback-cim",

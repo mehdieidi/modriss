@@ -1,9 +1,9 @@
 {
   "level": "cim",
   "processId": "modriss.cim.modeling",
-  "generatedAt": "2026-07-07T15:28:43.262Z",
-  "totalConcepts": 122,
-  "coveredConcepts": 122,
+  "generatedAt": "2026-09-19T14:22:14.100Z",
+  "totalConcepts": 123,
+  "coveredConcepts": 123,
   "orphanedConcepts": [],
   "entries": [
     {
@@ -345,157 +345,157 @@
     {
       "concept": "DeployableElement",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "InvocationSource",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "InvocationTarget",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "FunctionTarget",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "WorkflowTarget",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "SubscriptionTarget",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "RoutingTarget",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "FlowEndpoint",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "ProtectedResource",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "PolicyTarget",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "DataAccessTarget",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "ExternalCallTarget",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "EnvironmentTarget",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "CredentialRequirementLike",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "RouteEndpoint",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventCarrier",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "ConfigurableElement",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "KeyValue",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "Annotation",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "ModelElement",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "NamedModelElement",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "TraceableElement",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "SemanticRelationship",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "Multiplicity",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "Cardinality",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "Expression",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
@@ -519,7 +519,7 @@
     {
       "concept": "StructuredDocument",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
@@ -687,55 +687,61 @@
     {
       "concept": "Severity",
       "kind": "EEnum",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "ConstraintStrength",
       "kind": "EEnum",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "LifecycleStatus",
       "kind": "EEnum",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "TraceConfidence",
       "kind": "EEnum",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "TraceLinkType",
       "kind": "EEnum",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "FindingType",
       "kind": "EEnum",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "StructuredFormat",
       "kind": "EEnum",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "ExpressionLanguage",
       "kind": "EEnum",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "ExpressionPhase",
       "kind": "EEnum",
-      "taskIds": ["cim.ph1.st1.t1"],
+      "taskIds": ["cim.ph1.st1.t2"],
+      "covered": true
+    },
+    {
+      "concept": "ManualDecisionState",
+      "kind": "EEnum",
+      "taskIds": ["cim.ph1.st1.t2"],
       "covered": true
     }
   ]

@@ -109,6 +109,14 @@ enum ExpressionPhase {
   GENERATION_TIME;
 }
 
+enum ManualDecisionState {
+  OPEN;
+  ACCEPTED;
+  REJECTED;
+  WAIVED;
+  DEFERRED;
+}
+
 // Marker interfaces
 interface DeployableElement {}
 interface InvocationSource {}
@@ -203,6 +211,14 @@ class Expression extends TraceableElement {
 }
 
 class TraceModel extends TraceableElement {
+  attr String sourceModelId;
+  attr String sourceRevision;
+  attr String targetModelId;
+  attr String targetRevision;
+  attr String transformationId;
+  attr String transformationVersion;
+  attr Date generatedAt;
+  attr String generatedBy;
   val TraceLink[*]#traceModel links;
 }
 
@@ -238,6 +254,10 @@ class StructuredDocument extends TraceableElement {
 class ProductionReadinessAssessment extends TraceableElement {
   attr Date assessedAt;
   attr String assessedBy;
+  attr String gateId;
+  attr String assessedRevision;
+  attr String evidenceUri;
+  attr Integer openBlockingCount;
   attr Boolean transformationReady;
   attr Boolean deploymentReady;
   attr Boolean productionReady;
@@ -276,7 +296,10 @@ class ReadinessCheck extends TraceableElement {
 class ManualDecision extends TraceableElement {
   attr String[1] question;
   attr String decision;
+  attr ManualDecisionState state;
   attr String decisionOwner;
+  attr Date decisionRecordedAt;
+  attr Date expiryDate;
   attr Date dueDate;
   attr Boolean blocking;
   attr Severity severity;

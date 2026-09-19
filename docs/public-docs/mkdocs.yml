@@ -151,6 +151,7 @@ nav:
       - PIM Modeling Methodology: guides/pim-modeling-methodology.md
       - PSM Modeling Methodology: guides/psm-modeling-methodology.md
       - End-to-End Modeling: guides/end-to-end-modeling-methodology.md
+      - Full-Lifecycle Method: guides/full-lifecycle-method.md
       - AI Assistant: guides/ai-assistant.md
       - Generated AWS Projects: guides/generated-artifacts.md
       - Floci AWS Emulator: guides/floci-emulator.md

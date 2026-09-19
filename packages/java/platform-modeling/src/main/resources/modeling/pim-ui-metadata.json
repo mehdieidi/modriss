@@ -2891,7 +2891,7 @@
         "lineFields": ["storeKind"]
       },
       "processPhaseId": "pim.ph1",
-      "processTaskIds": ["pim.ph1.st1.t1"],
+      "processTaskIds": ["pim.ph1.st1.t3"],
       "processStageId": "pim.ph1.st1"
     },
     {
@@ -3035,7 +3035,7 @@
       "containedOnly": true,
       "creatable": false,
       "processPhaseId": "pim.ph1",
-      "processTaskIds": ["pim.ph1.st1.t1"],
+      "processTaskIds": ["pim.ph1.st1.t3"],
       "processStageId": "pim.ph1.st1"
     },
     {
@@ -3259,7 +3259,7 @@
       "containedOnly": true,
       "creatable": false,
       "processPhaseId": "pim.ph1",
-      "processTaskIds": ["pim.ph1.st1.t1"],
+      "processTaskIds": ["pim.ph1.st1.t3"],
       "processStageId": "pim.ph1.st1"
     },
     {

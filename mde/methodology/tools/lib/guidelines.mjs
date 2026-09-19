@@ -123,7 +123,7 @@ export const PROCESS_GUIDELINES = {
       id: "e2e.guid.incremental-vertical",
       name: "Thin vertical increments",
       appliesTo: "process",
-      text: "Deliver one capability slice through CIM → PIM → PSM → artifacts per engine revolution. Avoid big-bang modeling.",
+      text: "Deliver one capability slice through CIM → PIM → PSM → artifact readiness per engine revolution. The engine repeats inside release, operations, and retirement lifecycle governance; avoid big-bang modeling.",
     },
     {
       id: "e2e.guid.human-in-loop",

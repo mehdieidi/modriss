@@ -25,6 +25,8 @@ class ModelingProcessServiceTest {
     assertFalse(list(process.get("artifactKinds")).isEmpty());
     assertFalse(list(process.get("guidelines")).isEmpty());
     assertNotNull(process.get("processEngine"));
+    assertNotNull(process.get("progressModel"));
+    assertNotNull(process.get("governance"));
 
     @SuppressWarnings("unchecked")
     Map<String, Object> firstPhase = (Map<String, Object>) phases.get(0);
@@ -36,16 +38,25 @@ class ModelingProcessServiceTest {
   }
 
   @Test
-  void loadsEndToEndProcessWithTransformMilestones() {
+  void loadsFullLifecycleEndToEndProcessWithTransformMilestones() {
     Map<String, Object> process = service.processDefinition("end-to-end");
     assertEquals("modriss.end-to-end.modeling", process.get("processId"));
     List<?> phases = list(process.get("phases"));
-    assertEquals(1, phases.size());
+    assertEquals(5, phases.size());
     @SuppressWarnings("unchecked")
-    Map<String, Object> phase = (Map<String, Object>) phases.get(0);
-    assertTrue(list(phase.get("stages")).size() >= 8);
+    Map<String, Object> initiation = (Map<String, Object>) phases.get(0);
+    assertEquals("e2e.ph0", initiation.get("id"));
+    @SuppressWarnings("unchecked")
+    Map<String, Object> increment = (Map<String, Object>) phases.get(1);
+    assertEquals("e2e.ph1", increment.get("id"));
+    assertTrue(list(increment.get("stages")).size() >= 8);
+    @SuppressWarnings("unchecked")
+    Map<String, Object> retirement = (Map<String, Object>) phases.get(4);
+    assertEquals("e2e.ph4", retirement.get("id"));
     assertNotNull(process.get("milestones"));
     assertNotNull(process.get("processEngine"));
+    assertNotNull(process.get("progressModel"));
+    assertNotNull(process.get("governance"));
   }
 
   @Test
@@ -56,6 +67,8 @@ class ModelingProcessServiceTest {
     assertFalse(list(process.get("roles")).isEmpty());
     assertFalse(list(process.get("artifactKinds")).isEmpty());
     assertNotNull(process.get("processEngine"));
+    assertNotNull(process.get("progressModel"));
+    assertNotNull(process.get("governance"));
   }
 
   @Test

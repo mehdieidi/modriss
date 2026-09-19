@@ -17,7 +17,7 @@ export const CHANGE_MANAGEMENT = {
           "Continue Explore → Construct → Converge for new elements only; merge into existing model.",
           "Re-run traceability and readiness before CIM→PIM.",
         ],
-        impactedStages: ["cim.s2.discover", "cim.s3.explore", "cim.s4.construct", "cim.s5.converge"],
+        impactedStages: ["cim.ph2.st1", "cim.ph2.st2", "cim.ph2.st3", "cim.ph3.st1", "cim.ph3.st2", "cim.ph3.st3", "cim.ph4.st1", "cim.ph4.st2", "cim.ph4.st3", "cim.ph5.st1", "cim.ph5.st2", "cim.ph5.st3"],
       },
       {
         id: "cim.change.element-add",
@@ -29,7 +29,7 @@ export const CHANGE_MANAGEMENT = {
           "Run Impact Analysis: find trace links, constrains, and bounded-context memberships affected.",
           "Update dependent elements in later phases; mark downstream tasks incomplete if EVL rules break.",
         ],
-        impactedStages: ["cim.s3.explore", "cim.s4.construct", "cim.s5.converge"],
+        impactedStages: ["cim.ph3.st1", "cim.ph3.st2", "cim.ph3.st3", "cim.ph4.st1", "cim.ph4.st2", "cim.ph4.st3", "cim.ph5.st1", "cim.ph5.st3"],
       },
       {
         id: "cim.change.element-modify",
@@ -41,7 +41,7 @@ export const CHANGE_MANAGEMENT = {
           "Apply Twin Peaks loop if requirements and structure diverge.",
           "Re-validate EVL rules for all impacted phases before marking tasks complete.",
         ],
-        impactedStages: ["cim.s3.explore", "cim.s4.construct", "cim.s5.converge"],
+        impactedStages: ["cim.ph3.st1", "cim.ph3.st2", "cim.ph3.st3", "cim.ph4.st1", "cim.ph4.st2", "cim.ph4.st3", "cim.ph5.st1", "cim.ph5.st3"],
       },
       {
         id: "cim.change.element-remove",
@@ -53,7 +53,7 @@ export const CHANGE_MANAGEMENT = {
           "Delete the element; run EVL to confirm zero orphan references.",
           "Update TransformationProfile assumptions if CIM→PIM mapping changes.",
         ],
-        impactedStages: ["cim.s4.construct", "cim.s5.converge"],
+        impactedStages: ["cim.ph4.st1", "cim.ph4.st2", "cim.ph4.st3", "cim.ph5.st3"],
       },
       {
         id: "cim.change.post-transform",
@@ -66,7 +66,7 @@ export const CHANGE_MANAGEMENT = {
           "Re-execute CIM→PIM ETL; reconcile PIM trace links and manual decisions.",
           "Propagate to PSM and artifacts per end-to-end change workflow.",
         ],
-        impactedStages: ["cim.s5.converge"],
+        impactedStages: ["cim.ph5.st3"],
         crossLevel: true,
       },
     ],
@@ -83,7 +83,7 @@ export const CHANGE_MANAGEMENT = {
           "Re-run integration topology and assurance phases for cross-service flows.",
           "Update platform mapping assessment before PIM→PSM.",
         ],
-        impactedStages: ["pim.s1.posture", "pim.s2.capability-core", "pim.s3.integration", "pim.s4.assurance"],
+        impactedStages: ["pim.ph1.st1", "pim.ph1.st2", "pim.ph2.st1", "pim.ph2.st2", "pim.ph3.st1", "pim.ph3.st2", "pim.ph4.st1", "pim.ph4.st2", "pim.ph5.st1", "pim.ph5.st2", "pim.ph6.st1"],
       },
       {
         id: "pim.change.contract-evolve",
@@ -95,7 +95,7 @@ export const CHANGE_MANAGEMENT = {
           "Apply data migration assumptions in TransformationProfile if needed.",
           "Re-validate integration subscriptions and access patterns.",
         ],
-        impactedStages: ["pim.s2.capability-core", "pim.s3.integration"],
+        impactedStages: ["pim.ph2.st1", "pim.ph2.st2", "pim.ph3.st1", "pim.ph3.st2", "pim.ph4.st1"],
       },
       {
         id: "pim.change.policy-attach",
@@ -106,7 +106,7 @@ export const CHANGE_MANAGEMENT = {
           "Verify PolicyTarget elements exist and are correctly linked.",
           "Run policy EVL suite; replay assurance stage if attachments span services.",
         ],
-        impactedStages: ["pim.s4.assurance"],
+        impactedStages: ["pim.ph5.st1", "pim.ph5.st2", "pim.ph5.st3", "pim.ph4.st1"],
       },
       {
         id: "pim.change.post-transform",
@@ -118,7 +118,7 @@ export const CHANGE_MANAGEMENT = {
           "Re-execute PIM→PSM ETL; review platform mapping deltas.",
           "Regenerate M2T artifacts; run deployment dry-run.",
         ],
-        impactedStages: ["pim.s5.readiness"],
+        impactedStages: ["pim.ph6.st1", "pim.ph6.st2"],
         crossLevel: true,
       },
     ],
@@ -135,7 +135,7 @@ export const CHANGE_MANAGEMENT = {
           "Check dependsOn, IAM policies, and integration views for ripple effects.",
           "Update relationship views; re-run PSM EVL before M2T.",
         ],
-        impactedStages: ["psm.s3.data-events", "psm.s4.compute-expose", "psm.s5.orchestrate"],
+        impactedStages: ["psm.ph3.st1", "psm.ph3.st2", "psm.ph4.st1", "psm.ph4.st2", "psm.ph5.st1", "psm.ph5.st2"],
       },
       {
         id: "psm.change.iam-tighten",
@@ -146,7 +146,7 @@ export const CHANGE_MANAGEMENT = {
           "Replay compute and API phases for LambdaPermission and resource policies.",
           "Regenerate integration views; verify no overly permissive statements remain.",
         ],
-        impactedStages: ["psm.s1.foundation", "psm.s4.compute-expose"],
+        impactedStages: ["psm.ph1.st3", "psm.ph2.st1", "psm.ph2.st2", "psm.ph4.st2", "psm.ph5.st1"],
       },
       {
         id: "psm.change.import-adopt",
@@ -157,7 +157,7 @@ export const CHANGE_MANAGEMENT = {
           "Link to PIM trace source; avoid duplicate logical resources.",
           "Refresh integration views to reference imported resource ARNs.",
         ],
-        impactedStages: ["psm.s6.readiness"],
+        impactedStages: ["psm.ph6.st1", "psm.ph6.st2"],
       },
       {
         id: "psm.change.post-m2t",
@@ -169,7 +169,7 @@ export const CHANGE_MANAGEMENT = {
           "Regenerate M2T artifacts; diff against prior generation.",
           "Run CI validation and staged deployment.",
         ],
-        impactedStages: ["psm.s6.readiness"],
+        impactedStages: ["psm.ph6.st2"],
         crossLevel: true,
       },
     ],

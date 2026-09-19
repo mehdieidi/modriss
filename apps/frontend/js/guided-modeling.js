@@ -163,6 +163,29 @@ function phaseProgress(process, progress) {
   return { complete, total: ids.length, ratio: ids.length ? complete / ids.length : 0 };
 }
 
+function renderProgressContract(process) {
+  const contract = process?.progressModel;
+  if (!contract) return null;
+  const metrics = (contract.metrics || [])
+    .slice(0, 4)
+    .map(
+      (metric) => `
+    <li><strong>${escapeHtml(metric.name)}</strong><span>${escapeHtml(metric.unit)} · ${escapeHtml(metric.cadence)}</span></li>
+  `,
+    )
+    .join("");
+  const section = document.createElement("section");
+  section.className = "methodology-progress-contract";
+  section.innerHTML = `
+    <div class="methodology-progress-contract-heading">
+      <span>Progress contract</span>
+      <small>${escapeHtml(contract.trackingUnit || "versioned-process-run")}</small>
+    </div>
+    <p>Checklist progress is local to this model. Team progress is authoritative only when the process-run record links evidence, blockers, decisions, and gate outcomes.</p>
+    <ul>${metrics}</ul>`;
+  return section;
+}
+
 export function guidedPaletteFocusTypes() {
   if (state.leftPaneMode !== "methodology" && !state.guidedModeling?.paletteFocusActive) {
     return new Set();
@@ -982,6 +1005,9 @@ export function renderGuidedModelingPanel() {
     </div>`;
   hero.appendChild(createMethodologyMapOpenButton());
   host.appendChild(hero);
+
+  const progressContract = renderProgressContract(process);
+  if (progressContract) host.appendChild(progressContract);
 
   if (phase) {
     renderPhaseNavigator(host, process, progress);

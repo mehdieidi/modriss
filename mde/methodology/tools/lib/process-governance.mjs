@@ -1,0 +1,299 @@
+/**
+ * Process-governance and progress contracts shared by the MODRISS methods.
+ *
+ * These are deliberately method metadata, not project-management state. A
+ * project run records the current state and evidence in its issue/change
+ * system, while this contract defines the minimum fields and calculations
+ * that make progress comparable and inspectable.
+ */
+
+const COMMON_METRICS = [
+  {
+    id: "task-completion",
+    name: "Eligible task completion",
+    unit: "ratio",
+    formula: "completed eligible tasks / eligible tasks",
+    source: "versioned process-run record",
+    cadence: "each workday and at gate review",
+    ownerRole: "delivery-lead",
+    interpretation: "Visibility only; never substitute for a usable increment.",
+  },
+  {
+    id: "increment-flow-time",
+    name: "Increment flow time",
+    unit: "elapsed-time",
+    formula: "accepted-increment timestamp - increment-start timestamp",
+    source: "increment and gate timestamps",
+    cadence: "per accepted increment",
+    ownerRole: "delivery-lead",
+    interpretation: "Use trends to tune slice size and expose queues.",
+  },
+  {
+    id: "rework-rate",
+    name: "Rework rate",
+    unit: "ratio",
+    formula: "reopened tasks caused by a finding / completed tasks",
+    source: "change and finding records",
+    cadence: "per increment and release",
+    ownerRole: "process-reviewer",
+    interpretation: "Inspect causes; do not use as an individual performance score.",
+  },
+  {
+    id: "trace-coverage",
+    name: "Trace coverage",
+    unit: "ratio",
+    formula: "accepted scope items with source-to-evidence trace / accepted scope items",
+    source: "TraceModel and release evidence",
+    cadence: "at every level gate and release",
+    ownerRole: "process-reviewer",
+    interpretation: "A low value blocks confidence even when task completion is high.",
+  },
+  {
+    id: "blocking-findings",
+    name: "Open blocking findings",
+    unit: "count",
+    formula: "count(open findings where blocking = true)",
+    source: "readiness assessment and validation report",
+    cadence: "continuous; mandatory at gates",
+    ownerRole: "process-reviewer",
+    interpretation: "Must be zero or covered by an explicit, time-bound risk acceptance.",
+  },
+  {
+    id: "manual-decision-closure",
+    name: "Manual decision closure",
+    unit: "ratio",
+    formula: "accepted/rejected/waived manual decisions / blocking manual decisions",
+    source: "readiness assessment decision register",
+    cadence: "at transformation and release gates",
+    ownerRole: "process-reviewer",
+    interpretation: "Open decisions remain visible and are not silently treated as done.",
+  },
+];
+
+const COMMON_STATES = [
+  "not-started",
+  "in-progress",
+  "blocked",
+  "ready-for-review",
+  "accepted",
+  "rework",
+  "deferred",
+];
+
+const COMMON_EVENTS = [
+  "increment-started",
+  "task-evidence-recorded",
+  "finding-raised",
+  "finding-resolved",
+  "decision-recorded",
+  "gate-reviewed",
+  "increment-accepted",
+  "increment-reopened",
+  "release-promoted",
+];
+
+function progressModel(level, extraMetrics = []) {
+  return {
+    trackingUnit: "versioned-process-run",
+    sourceOfTruth: [
+      "The project work tracker stores one process-run record per increment or release candidate.",
+      "The model repository stores the model revision, transformation run, validation evidence, and readiness assessment.",
+      "The release record stores the exact accepted model, generator, artifact, test, and deployment revisions.",
+    ],
+    requiredRunFields: [
+      "runId",
+      "productGoalId",
+      "incrementId",
+      "scopeItemIds",
+      "methodProfileId",
+      "teamIds",
+      "currentPhaseId",
+      "currentStageId",
+      "state",
+      "ownerRole",
+      "startedAt",
+      "lastInspectedAt",
+      "evidenceLinks",
+      "openBlockers",
+      "acceptedAt",
+    ],
+    states: COMMON_STATES,
+    events: COMMON_EVENTS,
+    aggregation: {
+      rule: "Aggregate by increment, team, release, and product; never average away a blocking finding.",
+      teamCoordination: "Publish a shared dependency board with ownership, dependency type, due date, and escalation path.",
+      reviewCadence: "Daily local coordination, per-increment review/retrospective, and per-release readiness review.",
+    },
+    metrics: [...COMMON_METRICS, ...extraMetrics],
+    level,
+  };
+}
+
+export const PROCESS_GOVERNANCE = {
+  cim: {
+    progressModel: progressModel("cim", [
+      {
+        id: "domain-scope-coverage",
+        name: "Accepted domain-scope coverage",
+        unit: "ratio",
+        formula: "accepted slice scenarios with actor, capability, behavior, and acceptance coverage / slice scenarios",
+        source: "CIM increment plan, requirements, and behavior surface",
+        cadence: "CIM increment review",
+        ownerRole: "business-modeler",
+        interpretation: "Shows whether modeling breadth matches the selected business slice.",
+      },
+      {
+        id: "language-churn",
+        name: "Ubiquitous-language churn",
+        unit: "count-per-increment",
+        formula: "renamed or conflicted glossary terms reopened after structural modeling",
+        source: "glossary change history",
+        cadence: "per CIM increment",
+        ownerRole: "domain-expert",
+        interpretation: "Use as a discovery signal, not as a target to minimize prematurely.",
+      },
+    ]),
+    governance: {
+      entryEvidence: ["product goal", "slice hypothesis", "domain participants", "tailored Definition of Ready"],
+      exitEvidence: ["accepted CIM model revision", "requirements and acceptance criteria", "trace/readiness assessment", "open assumptions and hotspots"],
+      gate: "CIM-to-PIM promotion requires structural conformance plus an explicit user/model semantic-validation review; assistant apply/commit uses structural Ecore/EMF conformance only.",
+    },
+  },
+  pim: {
+    progressModel: progressModel("pim", [
+      {
+        id: "contract-coverage",
+        name: "Behavior-to-contract coverage",
+        unit: "ratio",
+        formula: "accepted commands, queries, and events with a reviewed PIM contract / selected behavior elements",
+        source: "CIM/PIM TraceModel and contract catalog",
+        cadence: "PIM increment review",
+        ownerRole: "solution-architect",
+        interpretation: "Prevents architectural task completion from hiding contract gaps.",
+      },
+      {
+        id: "platform-ambiguity",
+        name: "Unresolved platform ambiguity",
+        unit: "count",
+        formula: "open PlatformMappingAssessment or ManualDecision records blocking PSM transformation",
+        source: "PIM readiness assessment",
+        cadence: "continuous; mandatory at PIM gate",
+        ownerRole: "solution-architect",
+        interpretation: "Must trend down before PIM promotion.",
+      },
+    ]),
+    governance: {
+      entryEvidence: ["accepted CIM revision", "transformation report", "trace baseline", "service-slice hypothesis"],
+      exitEvidence: ["reviewed PIM revision", "contract/data/behavior coverage", "platform mapping assessment", "readiness and semantic-validation evidence"],
+      gate: "PIM-to-PSM promotion requires an explicit user/model semantic-validation review; generated PIM is scaffolding until the solution architect accepts or rejects each material decision.",
+    },
+  },
+  psm: {
+    progressModel: progressModel("psm", [
+      {
+        id: "resource-trace-coverage",
+        name: "PIM-to-resource trace coverage",
+        unit: "ratio",
+        formula: "deployable PIM elements with an accepted AWS resource or explicit exception / deployable PIM elements",
+        source: "PSM TraceModel and relationship views",
+        cadence: "PSM increment review",
+        ownerRole: "cloud-platform-engineer",
+        interpretation: "Exposes unimplemented or intentionally unsupported platform mappings.",
+      },
+      {
+        id: "deployment-dry-run-pass",
+        name: "Deployment dry-run pass rate",
+        unit: "ratio",
+        formula: "successful template/package/emulator dry-runs / attempted dry-runs",
+        source: "artifact pipeline and deployment evidence",
+        cadence: "per PSM increment and release candidate",
+        ownerRole: "quality-engineer",
+        interpretation: "A pass is evidence for the exact revision, not a guarantee of production readiness.",
+      },
+      {
+        id: "security-exception-age",
+        name: "Open security-exception age",
+        unit: "elapsed-time",
+        formula: "now - oldest open accepted security exception",
+        source: "security review and readiness register",
+        cadence: "continuous",
+        ownerRole: "security-engineer",
+        interpretation: "Every exception must have an owner, expiry, and compensating control.",
+      },
+    ]),
+    governance: {
+      entryEvidence: ["accepted PIM revision", "PIM-to-PSM transformation report", "AWS account/stage ownership"],
+      exitEvidence: ["accepted AWS PSM revision", "relationship views", "security and operational posture", "template-generation readiness", "explicit semantic-validation evidence"],
+      gate: "M2T promotion requires an explicit user/model semantic-validation review; assistant apply/commit remains structural-only.",
+    },
+  },
+  artifact: {
+    progressModel: progressModel("artifact", [
+      {
+        id: "release-evidence-completeness",
+        name: "Release evidence completeness",
+        unit: "ratio",
+        formula: "required release evidence items present for the exact candidate / required evidence items",
+        source: "release candidate record",
+        cadence: "release readiness review",
+        ownerRole: "release-engineer",
+        interpretation: "No promotion with missing evidence; exceptions are explicit and time-bound.",
+      },
+      {
+        id: "escaped-defect-rate",
+        name: "Escaped-defect rate",
+        unit: "count-per-release",
+        formula: "defects first detected after release acceptance, categorized by source stage",
+        source: "incident and defect records",
+        cadence: "per release and service review",
+        ownerRole: "quality-engineer",
+        interpretation: "Feed recurring causes back to the earliest correct source of change.",
+      },
+    ]),
+    governance: {
+      entryEvidence: ["approved PSM revision", "generation manifest", "artifact baseline"],
+      exitEvidence: ["verification evidence", "security review", "rollback plan", "operations handover", "post-deployment validation"],
+      gate: "A release candidate is promotable only when the exact artifact, configuration, evidence, approval, and rollback identity are recorded.",
+    },
+  },
+  "end-to-end": {
+    progressModel: progressModel("end-to-end", [
+      {
+        id: "vertical-slice-acceptance",
+        name: "Accepted vertical-slice rate",
+        unit: "ratio",
+        formula: "increments accepted end-to-end / increments started",
+        source: "increment ledger and gate records",
+        cadence: "per release train",
+        ownerRole: "delivery-lead",
+        interpretation: "A slice is accepted only when it is usable and all required evidence exists.",
+      },
+      {
+        id: "dependency-aging",
+        name: "Cross-team dependency age",
+        unit: "elapsed-time",
+        formula: "now - openedAt for the oldest unresolved dependency",
+        source: "shared dependency board",
+        cadence: "daily coordination",
+        ownerRole: "delivery-lead",
+        interpretation: "Escalate aging dependencies before they become integration surprises.",
+      },
+      {
+        id: "release-frequency",
+        name: "Release frequency",
+        unit: "releases-per-period",
+        formula: "production releases / reporting period",
+        source: "release ledger",
+        cadence: "per reporting period",
+        ownerRole: "release-engineer",
+        interpretation: "Interpret with change failure rate, recovery time, and product outcomes.",
+      },
+    ]),
+    governance: {
+      entryEvidence: ["product goal", "business case", "tailored method profile", "team topology", "release strategy"],
+      exitEvidence: ["operating service or justified retirement", "release and incident evidence", "product outcome review", "method improvement record"],
+      gate: "The end-to-end method coordinates the child processes; it does not waive any level gate or the artifact/release process.",
+    },
+  },
+};
+

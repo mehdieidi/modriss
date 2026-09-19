@@ -1,0 +1,338 @@
+# MODRISS Full-Lifecycle Software Development Method
+
+## Purpose
+
+MODRISS is a model-driven engineering (MDE) platform for building serverless
+software. Its three DSMLs are not three independent development methods:
+
+- **CIM** expresses product, business, domain, behavior, governance, and
+  transformation intent without platform detail.
+- **PIM** refines that intent into platform-independent services, contracts,
+  data, integration, security, and operational architecture.
+- **PSM** realizes the accepted PIM as AWS-specific resources, relationships,
+  policies, observability, and deployment intent.
+
+The generated artifacts are then reviewed, verified, released, operated,
+changed, and eventually retired. The method therefore has two structures:
+
+1. a **full lifecycle** around the product/system; and
+2. a repeatable **vertical increment engine** inside that lifecycle.
+
+The machine-readable definitions are in
+[`process-definitions/`](process-definitions/). This document is the normative
+English explanation of how those definitions are used. The Persian lifecycle
+document remains available as a translation/reference, but the JSON process
+definitions and this document are the maintained implementation contract.
+
+## Why this structure is justified
+
+This method is a situational composition of established process and method
+engineering ideas, not a claim that one universal sequence fits every project.
+
+| Foundation                           | How MODRISS uses it                                                                                                                                                                                                                                              |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SPEM 2.0**                         | Separates reusable method content (roles, tasks, work products, guidance) from a particular process configuration. The JSON hierarchy uses process → phase → stage → sub-stage → task and keeps role/artifact references explicit.                               |
+| **ISO/IEC/IEEE 12207**               | Supplies the software lifecycle scope: agreement, organizational/project enablement, technical management, technical development, operation, maintenance, and disposal. MODRISS tailors these activities while retaining evidence and decision responsibilities. |
+| **ISO/IEC/IEEE 15288**               | Supplies the system lifecycle perspective and supports concurrent, iterative, recursive, and incremental work. This is why architecture, operations, quality, security, and transition are not postponed until after modeling.                                   |
+| **Situational method engineering**   | Treats the method as assembled and tailored from method fragments according to project context, risk, criticality, novelty, team structure, and delivery constraints. Tailoring decisions are themselves versioned work products.                                |
+| **Agile principles and Scrum**       | Supplies empirical control, small usable increments, inspection, adaptation, a product backlog, explicit ownership, and a definition of done. MODRISS does not equate agility with skipping architecture, assurance, or lifecycle obligations.                   |
+| **MDA/MDE process-pattern research** | Supports the distinction between model refinement, transformation, traceability, human review of generated decisions, and feedback from later representations to earlier models.                                                                                 |
+
+Primary references:
+
+- [OMG SPEM 2.0](https://www.omg.org/spec/SPEM/2.0/About-SPEM)
+- [ISO/IEC/IEEE 12207:2026](https://www.iso.org/standard/90219.html)
+- [ISO/IEC/IEEE 15288:2023](https://www.iso.org/standard/81702.html)
+- [Brinkkemper, “Method engineering”](<https://doi.org/10.1016/S0950-5849(95)01059-9>)
+- [Brinkkemper, Saeki & Harmsen, “Assembly techniques for method engineering”](https://www.sciencedirect.com/science/article/pii/S0306437999000162)
+- [Asadi, Esfahani & Ramsin, “Process patterns for MDA-based software development”](https://mason.gmu.edu/~nesfaha2/Publications/SERA2010.pdf)
+- [Agile Manifesto principles](https://agilemanifesto.org/principles)
+- [The 2020 Scrum Guide](https://scrumguides.org/scrum-guide.html)
+
+These references ground the structure; they do not prove that every selected
+task or metric is universally optimal. Each project must inspect and adapt the
+method profile using evidence.
+
+## Findings addressed in this revision
+
+The repository review found that the earlier methodology was a useful
+technical task catalog but not yet a complete, executable software-development
+method. The main defects were:
+
+- the end-to-end definition stopped at an eight-stage modeling pipeline and had
+  no explicit initiation, tailoring, release, operations, or retirement;
+- several change workflows referenced obsolete stage IDs, so change impact
+  could not be routed reliably;
+- concept coverage was made green by silently assigning unowned concepts to a
+  generic readiness task; coverage is now explicit, including shared kernel,
+  shared enums, shared readiness, and PSM platform-enum ownership;
+- roles and responsibilities were too narrow for product ownership, delivery
+  coordination, quality, security, release, and service operation;
+- progress was represented mainly as a local task checklist, without a
+  versioned run, evidence, state, blocker, decision, dependency, or release
+  contract;
+- trace and readiness objects did not carry enough revision/provenance or
+  manual-decision state to support reliable cross-level change management;
+- the ownership audit treated numeric multiplicities, inherited containment,
+  and valid alternative parents as defects. The audit is now
+  inheritance-aware and reports those cases as review candidates.
+
+The fixes deliberately preserve the existing CIM, PIM, PSM, transformation,
+generation, and semantic-validation behavior unless a process contract required
+an explicit boundary. This keeps method repair separate from unrelated
+transformation changes.
+
+## Method concepts
+
+- A **method** is reusable guidance: roles, tasks, work products, criteria,
+  metrics, and patterns.
+- A **process run** is the configured use of that method for one product,
+  release, increment, or change.
+- A **work product** is something produced or consumed by work, such as a
+  model revision, trace model, readiness assessment, release record, or
+  operations pack.
+- An **artifact** is an external or generated deliverable such as source code,
+  infrastructure templates, tests, runbooks, or deployment configuration.
+- A **gate** is an evidence-based decision. It is not merely the completion of
+  the tasks that precede it.
+- A **method profile** records tailoring: selected activities, combined or
+  omitted activities, roles, evidence, thresholds, and rationale.
+
+## Lifecycle architecture
+
+```text
+Initiate / tailor / organize
+        |
+        v
+Frame increment -> CIM -> CIM/PIM -> PIM -> PIM/PSM -> PSM -> M2T -> readiness
+        ^                                                               |
+        |---------------- inspect, adapt, rework, accept ----------------|
+        |
+        +--> assemble release -> progressive transition -> operate/learn
+                                  ^                         |
+                                  |---- controlled change -|
+        |
+        +--> retire / migrate / close
+```
+
+The model-engine cycle is intentionally narrower than the full lifecycle. It
+can repeat many times before one release, and the product can operate through
+many releases. This prevents the common category error of calling a technical
+modeling pipeline a complete software development process.
+
+## Lifecycle phases and responsibilities
+
+### 0. Initiate, tailor, and organize
+
+The product owner and sponsor define the outcome hypothesis, boundaries,
+constraints, and initial release hypothesis. The method engineer performs a
+situational assessment and publishes a method profile. The delivery lead
+defines team topology, model ownership, integration ownership, dependency
+boards, decision rights, escalation, and review cadence. Quality, security,
+operations, and release owners define control objectives before design detail
+accumulates.
+
+Required outputs include:
+
+- product and system charter;
+- situational method profile;
+- team topology and dependency map;
+- quality/security/operations baseline;
+- first increment goal and evidence plan.
+
+### 1. Iterative-incremental model-driven delivery
+
+Each increment is a thin, valuable, testable vertical slice. The integrated
+engine coordinates the child methods in this order:
+
+1. frame the increment and its acceptance evidence;
+2. run the CIM child process;
+3. transform CIM → PIM and inspect traces, assumptions, and decisions;
+4. run the PIM child process;
+5. transform PIM → AWS PSM and inspect mappings and platform exceptions;
+6. run the PSM child process;
+7. generate a reproducible artifact baseline;
+8. run artifact readiness and accept, defer, or rework the increment.
+
+The steps are a logical flow, not a demand for serialized specialist work.
+Teams may work concurrently on independent slices or on non-conflicting
+stages, provided that revisions, ownership, dependencies, and acceptance
+evidence are explicit. A downstream team must not silently accept an upstream
+assumption simply because a transformation produced an object.
+
+Each accepted increment records:
+
+- product goal, scope items, and acceptance signals;
+- participating teams and dependency decisions;
+- CIM, PIM, PSM, and generated-artifact revisions;
+- transformation profile/version and run report;
+- trace coverage and unresolved assumptions;
+- structural and semantic validation evidence;
+- readiness findings, manual decisions, and risk acceptances;
+- acceptance, deferral, or rework decision;
+- retrospective and next-step changes.
+
+### 2. Release and transition
+
+Accepted increments are assembled into a release candidate. Release assembly
+checks compatibility and dependency closure. The release decision reviews the
+exact model and artifact revisions, verification results, security findings,
+rollback, data recovery, operational readiness, and approvals. Promotion is
+progressive across environments with observable stop/rollback thresholds.
+
+Handover is complete only when the service owner accepts dashboards, alerts,
+runbooks, support ownership, recovery access, and post-deployment validation.
+
+### 3. Operate, evolve, and learn
+
+Operation is part of the lifecycle, not an afterthought. The service owner
+reviews SLOs, telemetry, cost, security signals, product outcomes, incidents,
+and customer impact. Incidents produce recovery evidence and problem/change
+work. A change is classified, impact-analyzed through traces and dependencies,
+and routed to the earliest correct source:
+
+- product/requirements change → CIM;
+- service/contract/architecture change → PIM;
+- provider/resource/security/deployment change → PSM;
+- implementation, pipeline, or environment change → artifact/release process;
+- operational control or support change → operations work product.
+
+The change then re-enters the smallest affected process, propagates forward,
+and receives new evidence. Patching generated output is allowed only for
+implementation-specific refinements; structural changes must return to the
+model or generator source.
+
+### 4. Retire, migrate, and close
+
+Retirement covers the product decision, user communication, replacement or
+migration, data retention/disposition, integration shutdown, access removal,
+infrastructure decommissioning, cost closure, evidence retention, and
+organizational learning. A lifecycle is not complete while data, integrations,
+credentials, support obligations, or legal records remain ownerless.
+
+## Roles and team coordination
+
+Roles are responsibilities, not mandatory job titles. One person may hold
+several roles in a small project; a large project may distribute one role over
+multiple people. Accountability must remain unambiguous.
+
+The integrated method uses at least these responsibility groups:
+
+- product owner and domain experts for value and meaning;
+- requirements and business modelers for intent and acceptance;
+- solution architect for PIM and cross-level architectural decisions;
+- cloud platform engineer for AWS PSM and platform automation;
+- quality and security engineers for evidence and risk controls;
+- release engineer and service owner for promotion and operation;
+- delivery lead for flow, dependencies, coordination, and escalation;
+- process reviewer for gates and evidence;
+- method engineer for tailoring and method evolution.
+
+For multiple teams, every model scope has one accountable owner and a named
+integration path. A shared dependency record contains owner, dependency type,
+affected revision, due date, status, evidence, and escalation path. Shared
+model elements require an explicit ownership convention; teams should prefer
+bounded ownership and published interfaces over unrestricted concurrent edits.
+
+## Progress, state, and metrics
+
+The process definitions now expose a progress contract. It is deliberately
+separate from a UI checklist: a local checklist helps a person navigate, while
+the authoritative process run is stored in a project tracker and linked to
+model, transformation, validation, and release evidence.
+
+Every run records at least:
+
+`runId`, product goal, increment/release ID, scope item IDs, method profile,
+team IDs, current phase/stage, state, owner, timestamps, evidence links, open
+blockers, and acceptance timestamp.
+
+Allowed states are `not-started`, `in-progress`, `blocked`,
+`ready-for-review`, `accepted`, `rework`, and `deferred`. Important events are
+increment start, evidence recorded, finding raised/resolved, decision recorded,
+gate reviewed, increment accepted/reopened, and release promoted.
+
+Core metrics are:
+
+- eligible task completion;
+- increment flow time;
+- rework rate;
+- trace coverage;
+- open blocking findings;
+- manual-decision closure;
+- level-specific coverage (domain scope, contract, resource trace, release
+  evidence);
+- cross-team dependency age;
+- release frequency and escaped-defect rate.
+
+Metrics are for inspection and process improvement, not individual performance
+ranking. Task completion never overrides a blocking finding, missing trace, or
+failed acceptance outcome. Averages must not hide a single critical blocker.
+
+## Definitions of Ready and Done
+
+### Increment ready
+
+The slice has an outcome hypothesis, bounded scope, accountable owners,
+acceptance evidence, dependencies, risks, required controls, and a method
+profile. Open assumptions have owners and due dates.
+
+### Level ready
+
+The level has the required work products, structural conformance, traceability,
+readiness assessment, and explicit semantic review appropriate to the project
+profile. Generated content is not accepted merely because the transformation
+completed.
+
+### Increment done
+
+The exact model and artifact revisions are recorded; required structural and
+semantic evidence exists; trace links and decisions are inspectable; blocking
+findings are resolved or explicitly accepted; the increment is accepted,
+deferred, or reworked; and the retrospective has produced a decision or no-op
+rationale.
+
+### Release done
+
+The exact release candidate has verification, security, rollback, operational
+handover, deployment, and post-deployment evidence, with a named accepting
+owner and an outcome review plan.
+
+## Validation boundary for the AI assistant
+
+Assistant-generated model actions, patches, proposals, checkpoints, and model
+outputs may be applied or committed only after **structural Ecore/EMF
+conformance** through `ModelService.validateStructural(...)`. The assistant
+must not call `ModelService.validate(...)`, stored validation endpoints,
+`validateGeneratedXmi(...)`, `EpsilonEvlValidator`, EVL CLIs, or EVL profiles in
+assistant apply/repair/commit paths.
+
+Semantic EVL validation remains available for an explicit user/model validation
+workflow outside the assistant apply path. The process records both kinds of
+evidence and does not mislabel structural conformance as semantic approval.
+
+## Tailoring rules
+
+Tailoring may combine, delegate, or omit activities when the method profile
+records:
+
+1. the context and risk that justify the choice;
+2. the preserved intent/control objective;
+3. the owner and replacement evidence;
+4. the review point and expiry, when the decision is temporary.
+
+At minimum, retain product/system intent, scope ownership, traceability,
+structural conformance, appropriate semantic review, security/quality
+responsibility, release/rollback evidence, operational ownership, and
+retirement obligations. A smaller team may combine roles; it may not make the
+responsibility disappear.
+
+## Known limits and future work
+
+The current PSM is AWS-specific, so portability claims apply to CIM/PIM intent
+and not automatically to infrastructure behavior. Progress metadata defines a
+contract but does not provide a project tracker by itself. Team coordination
+and release records still require integration with the project’s chosen work
+and source-control systems. Future work should add a first-class persisted
+process-run service, dependency-board UI, release ledger, and empirical studies
+of the method across projects.

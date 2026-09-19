@@ -11572,7 +11572,7 @@ var ne = [
     [
       `01`,
       `Development process`,
-      `An iterative and incremental process is being defined for serverless projects. It connects technical modeling work with phases, roles, tasks, work products, decision gates, iteration, and supporting activities across the software lifecycle.`,
+      `An iterative and incremental process guides teams from project initiation through coordinated CIM–PIM–PSM modeling and on to release, operations, evolution, and retirement.`,
     ],
     [
       `02`,
@@ -11582,12 +11582,12 @@ var ne = [
     [
       `03`,
       `Automated refinement`,
-      `Explicit model-to-model transformations refine CIM models into PIM and AWS PSM models. Model-to-text transformations generate an inspectable serverless project from the provider-specific model.`,
+      `Explicit model-to-model transformations refine CIM models into PIM and PSM models. Model-to-text transformations generate an inspectable serverless project from the provider-specific model.`,
     ],
     [
       `04`,
       `AI-assisted modeling`,
-      `A conversational assistant supports model creation, inspection, explanation, and controlled modification. It works with the live metamodel and keeps generated changes subject to structural conformance and human control.`,
+      `A conversational LLM-based assistant supports model creation, inspection, explanation, and controlled modification. It works with the live metamodel and keeps generated changes subject to structural conformance and human control.`,
     ],
   ],
   T = [
@@ -11601,11 +11601,11 @@ var ne = [
     ],
     [
       `Concrete syntax`,
-      `Browser-based editors provide palettes, diagram notation, relationships, layout, and model views for the formal languages.`,
+      `Browser-based editors provide palettes, diagram notation, relationships, layout, and model views for the languages.`,
     ],
     [
       `Model transformation`,
-      `ETL rules support semi-automated CIM-to-PIM and PIM-to-AWS-PSM refinement while leaving ambiguous decisions for human review.`,
+      `ETL rules support semi-automated CIM-to-PIM and PIM-to-PSM refinement while leaving ambiguous decisions for human review.`,
     ],
     [
       `Code generation`,
@@ -11613,7 +11613,7 @@ var ne = [
     ],
     [
       `Traceability`,
-      `Links and reports preserve correspondences between source concepts, refined architecture elements, and generated artefacts.`,
+      `Links and reports preserve correspondences between source concepts, refined architecture elements, and generated artifacts.`,
     ],
   ];
 function re() {
@@ -11700,8 +11700,8 @@ function re() {
                     className: `button secondary`,
                     href: `#research`,
                     children: [
+                      `Read about the research `,
                       (0, g.jsx)(w, { name: `downArrow`, size: 17 }),
-                      `Read about the research`,
                     ],
                   }),
                 ],
@@ -11792,7 +11792,7 @@ function re() {
                 className: `prose`,
                 children: [
                   (0, g.jsx)(`p`, {
-                    children: `Serverless computing removes much of the direct work of server management, but it creates architectural and development concerns that extend beyond function implementation. Existing model-driven approaches for serverless systems remain limited in their process coverage, modeling support, and treatment of serverless-specific concerns.`,
+                    children: `Serverless computing removes much of the direct work of server management, but it creates architectural and development concerns that extend beyond function implementation. Existing model-driven approaches for serverless development remain limited in their process coverage, modeling support, and treatment of serverless-specific concerns.`,
                   }),
                   (0, g.jsx)(`p`, {
                     children: `This research studies the design of a model-driven software development methodology for the serverless paradigm. The methodology is intended to connect domain understanding, architectural design, cloud-specific configuration, and generated implementation artefacts within one traceable development path.`,
@@ -11823,7 +11823,7 @@ function re() {
                 children: [(0, g.jsx)(`span`, { children: `02` }), ` Proposed contribution`],
               }),
               (0, g.jsx)(`h2`, {
-                children: `The methodology joins process guidance with a formal modeling framework.`,
+                children: `The methodology joins process guidance with a structured modeling framework.`,
               }),
               (0, g.jsx)(`p`, {
                 children: `In this research, a methodology contains two related parts. The process explains how the development work is carried out. The modeling framework provides the languages, rules, transformations, and tools used to perform that work.`,
@@ -11843,7 +11843,7 @@ function re() {
                   (0, g.jsx)(`p`, { children: `Part A` }),
                   (0, g.jsx)(`h3`, { children: `Development process` }),
                   (0, g.jsx)(`span`, {
-                    children: `Lifecycle, phases, roles, tasks, work products, decision points, iteration, risk, and umbrella activities`,
+                    children: `Lifecycle, phases, roles, tasks, work products, decision points, iterations, and umbrella activities`,
                   }),
                 ],
               }),
@@ -11857,7 +11857,7 @@ function re() {
                   (0, g.jsx)(`p`, { children: `Part B` }),
                   (0, g.jsx)(`h3`, { children: `Modeling framework` }),
                   (0, g.jsx)(`span`, {
-                    children: `DSMLs, metamodels, semantics, constraints, transformations, code generation, notation, and tool support`,
+                    children: `DSMLs and metamodels, semantics and constraints, transformations, code generation, notation, and tool support`,
                   }),
                 ],
               }),
@@ -11898,7 +11898,7 @@ function re() {
             children: [
               (0, g.jsx)(`h2`, {
                 id: `pipeline-title`,
-                children: `From domain knowledge to reviewable AWS artefacts`,
+                children: `From domain knowledge to serverless artifacts`,
               }),
               (0, g.jsx)(`p`, {
                 children: `The current framework organizes models at three abstraction levels. Transformations provide a systematic refinement path, while modelers review and complete decisions at every level.`,
@@ -11911,11 +11911,11 @@ function re() {
               (0, g.jsxs)(`article`, {
                 children: [
                   (0, g.jsx)(`span`, { children: `01 · CIM` }),
-                  (0, g.jsx)(`h3`, { children: `Problem and domain` }),
+                  (0, g.jsx)(`h3`, { children: `Problem domain` }),
                   (0, g.jsx)(`p`, {
                     children: `Capabilities, actors, concepts, events, processes, policies, governance, and requirements without a software or cloud commitment.`,
                   }),
-                  (0, g.jsx)(`small`, { children: `Computation-independent model` }),
+                  (0, g.jsx)(`small`, { children: `Computation-Independent Model` }),
                 ],
               }),
               (0, g.jsx)(`i`, { children: (0, g.jsx)(w, { name: `arrow` }) }),
@@ -11926,18 +11926,18 @@ function re() {
                   (0, g.jsx)(`p`, {
                     children: `Services, functions, contracts, data, events, workflows, integrations, security, policies, and deployment concerns.`,
                   }),
-                  (0, g.jsx)(`small`, { children: `Platform-independent model` }),
+                  (0, g.jsx)(`small`, { children: `Platform-Independent Model` }),
                 ],
               }),
               (0, g.jsx)(`i`, { children: (0, g.jsx)(w, { name: `arrow` }) }),
               (0, g.jsxs)(`article`, {
                 children: [
-                  (0, g.jsx)(`span`, { children: `03 · AWS PSM` }),
-                  (0, g.jsx)(`h3`, { children: `Provider design` }),
+                  (0, g.jsx)(`span`, { children: `03 · PSM` }),
+                  (0, g.jsx)(`h3`, { children: `Cloud provider ecosystem` }),
                   (0, g.jsx)(`p`, {
                     children: `AWS resources and their configuration for compute, APIs, storage, messaging, identity, networking, and observability.`,
                   }),
-                  (0, g.jsx)(`small`, { children: `Platform-specific model` }),
+                  (0, g.jsx)(`small`, { children: `Platform-Specific Model` }),
                 ],
               }),
               (0, g.jsx)(`i`, { children: (0, g.jsx)(w, { name: `arrow` }) }),
@@ -11945,7 +11945,7 @@ function re() {
                 className: `artefact`,
                 children: [
                   (0, g.jsx)(`span`, { children: `04 · M2T` }),
-                  (0, g.jsx)(`h3`, { children: `Generated artefacts` }),
+                  (0, g.jsx)(`h3`, { children: `Generated artifacts` }),
                   (0, g.jsx)(`p`, {
                     children: `Infrastructure, Go handlers, contracts, tests, workflows, scripts, documentation, and trace information for review.`,
                   }),
@@ -11975,7 +11975,7 @@ function re() {
                 children: [(0, g.jsx)(`span`, { children: `04` }), ` Modeling framework`],
               }),
               (0, g.jsx)(`h2`, {
-                children: `Formal languages made usable in a web-based workbench`,
+                children: `Domain-specific languages made usable in a web-based workbench`,
               }),
               (0, g.jsx)(`p`, {
                 children: `The browser platform is the concrete research artefact through which the methodology can be enacted and examined. It makes the DSMLs available as visual editors and connects them with validation, transformation, generation, traceability, and project management functions.`,
@@ -12026,12 +12026,12 @@ function re() {
                     children: [(0, g.jsx)(`span`, { children: `05` }), ` Research prototype`],
                   }),
                   (0, g.jsx)(`h2`, {
-                    children: `The methodology is realized as an integrated low-code environment.`,
+                    children: `The methodology is realized as an integrated low-code platform.`,
                   }),
                 ],
               }),
               (0, g.jsx)(`p`, {
-                children: `The prototype provides project workspaces, graphical modeling editors, process guidance, model import and export, impact analysis, transformations, generated-artefact inspection, and a conversational modeling assistant.`,
+                children: `The prototype provides project workspaces, graphical modeling editors, process guidance, model import and export, impact analysis, transformations, generated-artifacts inspection, and a conversational modeling assistant.`,
               }),
             ],
           }),
@@ -12069,35 +12069,25 @@ function re() {
                     children: [(0, g.jsx)(`span`, { children: `06` }), ` LLM-supported modeling`],
                   }),
                   (0, g.jsx)(`h2`, {
-                    children: `A conversational assistant grounded in the modeling languages`,
+                    children: `A conversational LLM-based assistant grounded in the modeling languages`,
                   }),
                 ],
               }),
             ],
           }),
-          (0, g.jsxs)(`div`, {
+          (0, g.jsx)(`div`, {
             className: `assistant-grid`,
-            children: [
-              (0, g.jsxs)(`div`, {
-                className: `prose`,
-                children: [
-                  (0, g.jsx)(`p`, {
-                    children: `The assistant supports modeling activity through natural-language interaction. It can use the current model and uploaded source material to create, inspect, explain, or modify CIM and PIM models. The live Ecore metamodel provides its modeling vocabulary and structural contract.`,
-                  }),
-                  (0, g.jsx)(`p`, {
-                    children: `The assistant is part of the research framework, rather than an independent code generator. Its operations are recorded as durable turns, and changes can use checkpoints, confirmation, cancellation, and undo.`,
-                  }),
-                ],
-              }),
-              (0, g.jsxs)(`aside`, {
-                children: [
-                  (0, g.jsx)(`h3`, { children: `Validation boundary` }),
-                  (0, g.jsx)(`p`, {
-                    children: `Assistant-generated output is gated by structural Ecore/EMF conformance. EVL semantic validation is kept outside assistant apply, repair, and commit paths, and is performed only through explicit model-validation workflows. PSM chatbot sessions are currently outside the implemented scope.`,
-                  }),
-                ],
-              }),
-            ],
+            children: (0, g.jsxs)(`div`, {
+              className: `prose`,
+              children: [
+                (0, g.jsx)(`p`, {
+                  children: `The assistant supports modeling activity through natural-language interaction. It can use the current model and uploaded source material to create, inspect, explain, or modify CIM and PIM models. The live Ecore metamodel provides its modeling vocabulary and structural contract.`,
+                }),
+                (0, g.jsx)(`p`, {
+                  children: `The assistant is part of the research framework, rather than an independent code generator. Its operations are recorded as durable turns, and changes can use checkpoints, confirmation, cancellation, and undo.`,
+                }),
+              ],
+            }),
           }),
         ],
       }),
@@ -12172,52 +12162,6 @@ function re() {
           }),
         ],
       }),
-      (0, g.jsxs)(`section`, {
-        className: `status-section`,
-        children: [
-          (0, g.jsxs)(`div`, {
-            children: [
-              (0, g.jsxs)(`div`, {
-                className: `section-label light`,
-                children: [(0, g.jsx)(`span`, { children: `08` }), ` Current status`],
-              }),
-              (0, g.jsx)(`h2`, {
-                children: `An evolving research methodology and its executable artefact`,
-              }),
-            ],
-          }),
-          (0, g.jsxs)(`div`, {
-            children: [
-              (0, g.jsx)(`p`, {
-                children: `MODRISS is under active research and development. The repository includes the three modeling languages, formal validation rules, transformation profiles, code generation, modeling subprocesses, lifecycle material, and the web platform. Evaluation and refinement of the methodology and assistant continue as part of the thesis work.`,
-              }),
-              (0, g.jsx)(`p`, {
-                children: `Generated projects are research outputs and engineering baselines. They still require human review, completion of recorded manual actions, testing, and deployment-specific decisions.`,
-              }),
-              (0, g.jsxs)(`div`, {
-                className: `status-links`,
-                children: [
-                  (0, g.jsxs)(`a`, {
-                    href: b,
-                    children: [(0, g.jsx)(w, { name: `github`, size: 17 }), ` Source repository`],
-                  }),
-                  (0, g.jsxs)(`a`, {
-                    href: y,
-                    children: [
-                      (0, g.jsx)(w, { name: `book`, size: 17 }),
-                      ` Research documentation`,
-                    ],
-                  }),
-                  (0, g.jsxs)(`a`, {
-                    href: _,
-                    children: [(0, g.jsx)(w, { name: `model`, size: 17 }), ` Modeling prototype`],
-                  }),
-                ],
-              }),
-            ],
-          }),
-        ],
-      }),
       (0, g.jsxs)(`footer`, {
         children: [
           (0, g.jsxs)(`div`, {
@@ -12228,22 +12172,22 @@ function re() {
                 children: [
                   (0, g.jsx)(`b`, { children: `MODRISS` }),
                   (0, g.jsx)(`span`, {
-                    children: `Model-driven methodology for serverless software development`,
+                    children: `Model-Driven Methodology for Serverless Software Development`,
                   }),
                 ],
               }),
             ],
           }),
           (0, g.jsx)(`p`, {
-            children: `An MSc thesis research project at the Methodology Engineering Laboratory, Department of Computer Engineering, Sharif University of Technology.`,
+            children: `A research project at the Methodology Engineering Laboratory, Department of Computer Engineering, Sharif University of Technology.`,
           }),
           (0, g.jsxs)(`div`, {
             className: `footer-links`,
             children: [
               (0, g.jsx)(`a`, { href: x, children: `Laboratory` }),
-              (0, g.jsx)(`a`, { href: ee, children: `University profile` }),
+              (0, g.jsx)(`a`, { href: ee, children: `Lab profile` }),
               (0, g.jsx)(`a`, { href: S, children: `Researcher` }),
-              (0, g.jsx)(`a`, { href: C, children: `Publication` }),
+              (0, g.jsx)(`a`, { href: b, children: `Repository` }),
             ],
           }),
         ],

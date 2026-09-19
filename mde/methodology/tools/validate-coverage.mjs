@@ -10,6 +10,93 @@ const PROC_DIR = join(ROOT, "process-definitions");
 
 let failed = false;
 
+function collectStages(phases) {
+  const stages = new Map();
+  const visit = (stage, phaseId) => {
+    stages.set(stage.id, { ...stage, phaseId });
+    for (const child of stage.subStages || []) visit(child, phaseId);
+  };
+  for (const phase of phases || []) {
+    for (const stage of phase.stages || []) visit(stage, phase.id);
+  }
+  return stages;
+}
+
+function validateProcess(process, fileName) {
+  const roleIds = new Set((process.roles || []).map((role) => role.id));
+  const artifactIds = new Set((process.artifactKinds || []).map((artifact) => artifact.id));
+  const phaseIds = new Set((process.phases || []).map((phase) => phase.id));
+  const stages = collectStages(process.phases);
+  const taskIds = new Set();
+  const errors = [];
+
+  const visitStage = (stage) => {
+    if (stage.primaryRole && !roleIds.has(stage.primaryRole)) {
+      errors.push(`stage ${stage.id} uses unknown role ${stage.primaryRole}`);
+    }
+    for (const task of stage.tasks || []) {
+      taskIds.add(task.id);
+      if (task.primaryRole && !roleIds.has(task.primaryRole)) {
+        errors.push(`task ${task.id} uses unknown role ${task.primaryRole}`);
+      }
+      for (const artifactId of task.artifactIds || []) {
+        if (!artifactIds.has(artifactId)) errors.push(`task ${task.id} uses unknown artifact ${artifactId}`);
+      }
+    }
+    for (const child of stage.subStages || []) visitStage(child);
+  };
+  for (const phase of process.phases || []) {
+    if (!phaseIds.has(phase.id)) errors.push(`phase ${phase.id} is not registered`);
+    if (phase.primaryRole && !roleIds.has(phase.primaryRole)) {
+      errors.push(`phase ${phase.id} uses unknown role ${phase.primaryRole}`);
+    }
+    for (const stage of phase.stages || []) visitStage(stage);
+  }
+
+  const engine = process.processEngine;
+  if (!process.progressModel) errors.push("missing progressModel");
+  if (!process.governance) errors.push("missing governance");
+  if (engine) {
+    const stepIds = new Set((engine.cycle || []).map((step) => step.id));
+    for (const step of engine.cycle || []) {
+      for (const phaseId of step.phaseIds || []) {
+        if (!phaseIds.has(phaseId)) errors.push(`engine step ${step.id} uses unknown phase ${phaseId}`);
+      }
+      for (const stageId of step.stageIds || []) {
+        if (!stages.has(stageId)) errors.push(`engine step ${step.id} uses unknown stage ${stageId}`);
+      }
+    }
+    if (engine.loop && (!stepIds.has(engine.loop.fromStepId) || !stepIds.has(engine.loop.toStepId))) {
+      errors.push(`engine loop uses unknown step ${engine.loop.fromStepId} or ${engine.loop.toStepId}`);
+    }
+    for (const loop of engine.reworkLoops || []) {
+      if (!stages.has(loop.fromStageId) || !stages.has(loop.toStageId)) {
+        errors.push(`engine rework loop ${loop.id} uses unknown stage ${loop.fromStageId} or ${loop.toStageId}`);
+      }
+    }
+  }
+
+  for (const workflow of process.changeManagement?.workflows || []) {
+    // The orchestration process intentionally includes child-level workflows;
+    // their stage IDs belong to the child process, not this process tree.
+    if (process.level === "end-to-end" && workflow.crossLevel) continue;
+    for (const stageId of workflow.impactedStages || []) {
+      if (!stages.has(stageId)) errors.push(`change workflow ${workflow.id} uses unknown stage ${stageId}`);
+    }
+  }
+  for (const milestone of process.milestones || []) {
+    if (milestone.phaseId && !phaseIds.has(milestone.phaseId)) errors.push(`milestone ${milestone.id} uses unknown phase ${milestone.phaseId}`);
+    if (milestone.stageId && !stages.has(milestone.stageId)) errors.push(`milestone ${milestone.id} uses unknown stage ${milestone.stageId}`);
+  }
+
+  if (errors.length) {
+    console.error(`${fileName}: ${errors.join("; ")}`);
+    failed = true;
+  } else {
+    console.log(`${fileName}: process references and governance are valid (${taskIds.size} tasks)`);
+  }
+}
+
 for (const level of ["cim", "pim", "psm"]) {
   const matrixPath = join(COV_DIR, `${level}-coverage.json`);
   let matrix;
@@ -38,7 +125,8 @@ for (const level of ["cim", "pim", "psm"]) {
   // Verify process definition exists
   const procPath = join(PROC_DIR, `${level}.json`);
   try {
-    JSON.parse(readFileSync(procPath, "utf8"));
+    const process = JSON.parse(readFileSync(procPath, "utf8"));
+    validateProcess(process, `${level}.json`);
   } catch {
     console.error(`Missing process definition: ${procPath}`);
     failed = true;
@@ -47,10 +135,18 @@ for (const level of ["cim", "pim", "psm"]) {
 
 // end-to-end
 try {
-  JSON.parse(readFileSync(join(PROC_DIR, "end-to-end.json"), "utf8"));
-  console.log("end-to-end: process definition present");
+  const process = JSON.parse(readFileSync(join(PROC_DIR, "end-to-end.json"), "utf8"));
+  validateProcess(process, "end-to-end.json");
 } catch {
   console.error("Missing process definition: end-to-end.json");
+  failed = true;
+}
+
+try {
+  const process = JSON.parse(readFileSync(join(PROC_DIR, "artifact.json"), "utf8"));
+  validateProcess(process, "artifact.json");
+} catch {
+  console.error("Missing process definition: artifact.json");
   failed = true;
 }
 

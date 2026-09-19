@@ -49,7 +49,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modriss.psm.modeling` · 6 phases · 27 atomic tasks · PSM metamodel coverage enforced in CI.
+Process `modriss.psm.modeling` · 6 phases · 28 atomic tasks · PSM metamodel coverage enforced in CI.
 
 ### Deployment & Slice Framing (`psm.ph1`)
 
@@ -142,6 +142,26 @@ Create or refresh AwsPsmModel root with partition, region, naming, and tagging p
 **Exit criteria:**
 
 - Stage strategy and naming policies configured
+
+#### Establish shared model contract and evidence conventions (`psm.ph1.st1.t3`)
+
+**Viewpoint:** dashboard
+**Duration:** 30m
+**Artifacts:** Deployment Strategy
+
+**Steps:**
+
+1. Apply shared identity, annotation, traceability, expression, lifecycle, and release-provenance conventions across AWS resources.
+2. Record the source PIM revision, provider mapping revision, and review-state convention for the deployable slice.
+3. Keep support and generated relationship concepts in detail views and evidence records rather than treating them as independent resources.
+
+**Entry criteria:**
+
+- AWS PSM root exists
+
+**Exit criteria:**
+
+- Shared model contract and evidence convention are recorded
 
 #### Stack Scaffolding (`psm.ph1.st2`)
 
@@ -814,9 +834,7 @@ Deploy state machines with ASL from PIM workflows.
 **Steps:**
 
 1. Create StepFunctionStateMachine from PIM Workflow definitions.
-2. Select the concrete `AslPassState`, `AslTaskState`, `AslChoiceState`, `AslWaitState`,
-   `AslSucceedState`, `AslFailState`, `AslParallelState`, or `AslMapState` classifier for every
-   state.
+2. Select the concrete AslPassState, AslTaskState, AslChoiceState, AslWaitState, AslSucceedState, AslFailState, AslParallelState, or AslMapState classifier for every state.
 3. Configure ASL transitions, retry/catch rules, branches, map processors, and logging.
 
 **Entry criteria:**

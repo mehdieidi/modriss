@@ -23,14 +23,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `BusinessEvent`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `Actor.observesEvents`, `AggregateCandidate.emittedEvents`, `BoundedContextCandidate.events`, `BusinessCapability.containsEvents`, `BusinessError.emittedEvents`, `BusinessProcess.triggeringEvent`, `Command.expectedEvents`, `Command.rejectionEvents`, `CommandOutcome.emittedEvents`, `DecisionRule.resultingEvents`, `ExceptionScenario.resultingEvents`, `ExternalSystem.consumedEvents`, `ExternalSystem.producedEvents`, `Policy.emitsEvents`, `Policy.triggeredBy`
+- **Incoming `ref`:** `Actor.observesEvents`, `AggregateCandidate.emittedEvents`, `BoundedContextCandidate.events`, `BusinessCapability.containsEvents`, `BusinessError.emittedEvents`, `BusinessProcess.triggeringEvent`, `Command.expectedEvents`, `Command.rejectionEvents`, `CommandOutcome.emittedEvents`, `DecisionRule.resultingEvents`, `EventStep.event`, `ExceptionScenario.resultingEvents`, `ExternalSystem.consumedEvents`, `ExternalSystem.producedEvents`, `Policy.emitsEvents`, `Policy.triggeredBy`
 - **Incoming `val`:** `CIMModel.events`
 - **Inherits:** `kernel.TraceableElement`
 
 #### `Command`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `Actor.issuesCommands`, `AggregateCandidate.handledCommands`, `BoundedContextCandidate.commands`, `BusinessCapability.containsCommands`, `BusinessEvent.expectedByCommands`, `BusinessEvent.rejectedByCommands`, `BusinessProcess.triggeringCommand`, `DecisionRule.resultingCommands`, `Policy.emitsCommands`, `Policy.guards`, `SecurityConstraint.constrainedCommands`
+- **Incoming `ref`:** `Actor.issuesCommands`, `AggregateCandidate.handledCommands`, `BoundedContextCandidate.commands`, `BusinessCapability.containsCommands`, `BusinessEvent.expectedByCommands`, `BusinessEvent.rejectedByCommands`, `BusinessProcess.triggeringCommand`, `CommandOutcome.command`, `CommandStep.command`, `DecisionRule.resultingCommands`, `Policy.emitsCommands`, `Policy.guards`, `SecurityConstraint.constrainedCommands`
 - **Incoming `val`:** `CIMModel.commands`
 - **Inherits:** `kernel.TraceableElement`
 
@@ -51,7 +51,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `Query`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `Actor.issuesQueries`, `BoundedContextCandidate.queries`, `BusinessCapability.containsQueries`, `Policy.constrainsQueries`, `SecurityConstraint.constrainedQueries`
+- **Incoming `ref`:** `Actor.issuesQueries`, `BoundedContextCandidate.queries`, `BusinessCapability.containsQueries`, `Policy.constrainsQueries`, `QueryStep.query`, `SecurityConstraint.constrainedQueries`
 - **Incoming `val`:** `CIMModel.queries`
 - **Inherits:** `kernel.TraceableElement`
 
@@ -81,14 +81,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `DomainConcept`
 
 - **Abstract:** Yes (abstract)
-- **Incoming `ref`:** `BusinessInvariant.constrainedConcepts`, `Condition.referencedConcepts`
+- **Incoming `ref`:** `BusinessInvariant.constrainedConcepts`, `Condition.referencedConcepts`, `DomainRelationship.source`, `DomainRelationship.target`
 - **Incoming `val`:** _none_
 - **Inherits:** `kernel.TraceableElement`
 
 #### `DomainEntity`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `AggregateCandidate.members`, `BoundedContextCandidate.entities`, `BusinessCapability.managesEntities`, `BusinessEvent.affects`, `Query.reads`
+- **Incoming `ref`:** `AggregateCandidate.members`, `AggregateCandidate.root`, `BoundedContextCandidate.entities`, `BusinessCapability.managesEntities`, `BusinessEvent.affects`, `Query.reads`
 - **Incoming `val`:** `CIMModel.entities`
 - **Inherits:** `DomainConcept`
 
@@ -102,7 +102,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `InformationItem`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `BusinessEvent.payload`, `Command.input`, `CommandOutcome.output`, `Condition.referencedInformation`, `DecisionTable.inputs`, `DecisionTable.outputs`, `DomainEntity.attributes`, `DomainEntity.identityAttributes`, `ExternalInteractionStep.exchangedInformation`, `ExternalSystem.exchangedInformation`, `InformationItem.parent`, `PrivacyConstraint.dataItems`, `Query.input`, `Query.output`, `SecurityConstraint.constrainedInformation`, `ValueObject.attributes`, `ValueObject.equalityAttributes`
+- **Incoming `ref`:** `BusinessEvent.payload`, `Command.input`, `CommandOutcome.output`, `Condition.referencedInformation`, `DecisionTable.inputs`, `DecisionTable.outputs`, `DomainEntity.attributes`, `DomainEntity.identityAttributes`, `DomainEntity.primaryIdentityAttribute`, `ExternalInteractionStep.exchangedInformation`, `ExternalSystem.exchangedInformation`, `InformationItem.parent`, `PrivacyConstraint.dataItems`, `Query.input`, `Query.output`, `SecurityConstraint.constrainedInformation`, `ValueObject.attributes`, `ValueObject.equalityAttributes`
 - **Incoming `val`:** `CIMModel.informationItems`, `InformationItem.subItems`
 - **Inherits:** `kernel.TraceableElement`
 
@@ -176,14 +176,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `BoundedContextCandidate`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `AggregateCandidate.context`
+- **Incoming `ref`:** `AggregateCandidate.context`, `UbiquitousLanguageTerm.context`
 - **Incoming `val`:** `CIMModel.boundedContexts`
 - **Inherits:** `kernel.TraceableElement`
 
 #### `BusinessCapability`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `BoundedContextCandidate.capabilities`, `BusinessGoal.refinedBy`, `BusinessProcess.owningCapability`, `Command.targetCapability`, `DomainEntity.owningCapability`, `Query.targetCapability`
+- **Incoming `ref`:** `BoundedContextCandidate.capabilities`, `BusinessGoal.refinedBy`, `BusinessProcess.owningCapability`, `CapabilityDependency.source`, `CapabilityDependency.target`, `Command.targetCapability`, `DomainEntity.owningCapability`, `Query.targetCapability`
 - **Incoming `val`:** `CIMModel.capabilities`
 - **Inherits:** `kernel.TraceableElement`
 
@@ -204,7 +204,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `ExternalSystem`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `BusinessEvent.causedByExternalSystems`, `BusinessEvent.consumedByExternalSystems`
+- **Incoming `ref`:** `BusinessEvent.causedByExternalSystems`, `BusinessEvent.consumedByExternalSystems`, `ExternalInteractionStep.externalSystem`
 - **Incoming `val`:** _none_
 - **Inherits:** `Actor`
 
@@ -218,7 +218,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `Requirement`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `BusinessCapability.realizesRequirements`, `Requirement.conflictsWith`, `Requirement.dependsOn`, `Stakeholder.providesRequirements`
+- **Incoming `ref`:** `BusinessCapability.realizesRequirements`, `Requirement.conflictsWith`, `Requirement.dependsOn`, `RequirementRelationship.source`, `RequirementRelationship.target`, `Stakeholder.providesRequirements`
 - **Incoming `val`:** `CIMModel.requirements`
 - **Inherits:** `kernel.TraceableElement`
 
@@ -325,7 +325,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `Policy`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `BoundedContextCandidate.policies`, `BusinessEvent.causedByPolicies`, `BusinessEvent.consumedByPolicies`
+- **Incoming `ref`:** `BoundedContextCandidate.policies`, `BusinessEvent.causedByPolicies`, `BusinessEvent.consumedByPolicies`, `PolicyStep.policy`
 - **Incoming `val`:** `CIMModel.policies`
 - **Inherits:** `kernel.TraceableElement`
 
@@ -339,7 +339,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `ProcessStep`
 
 - **Abstract:** Yes (abstract)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `ProcessTransition.source`, `ProcessTransition.target`
 - **Incoming `val`:** `BusinessProcess.steps`
 - **Inherits:** `kernel.TraceableElement`
 
@@ -427,14 +427,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `Api`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `ApiRoute.api`
 - **Incoming `val`:** `ServerlessService.apis`
 - **Inherits:** `kernel.TraceableElement`, `kernel.DeployableElement`, `kernel.FlowEndpoint`, `kernel.PolicyTarget`, `kernel.ProtectedResource`, `kernel.ConfigurableElement`
 
 #### `ApiRoute`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `ErrorMapping.apiRoute`, `RequestResponseFlow.apiRoute`
 - **Incoming `val`:** `Api.routes`
 - **Inherits:** `kernel.TraceableElement`, `kernel.InvocationSource`, `kernel.FlowEndpoint`, `kernel.RouteEndpoint`, `kernel.PolicyTarget`, `kernel.ProtectedResource`, `kernel.ConfigurableElement`
 
@@ -457,7 +457,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `Function`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `ApiRoute.functionIntegration`, `ChoiceStep.invokesFunction`, `CompensationPolicy.compensationFunctions`, `ErrorHandler.handlerFunction`, `EventChannel.consumers`, `EventChannel.producers`, `TaskStep.invokesFunction`
+- **Incoming `ref`:** `ApiRoute.functionIntegration`, `ChoiceStep.invokesFunction`, `CompensationPolicy.compensationFunctions`, `ErrorHandler.handlerFunction`, `EventChannel.consumers`, `EventChannel.producers`, `TaskStep.invokesFunction`, `Trigger.function`
 - **Incoming `val`:** `ServerlessService.functions`
 - **Inherits:** `ComputeElement`, `kernel.DeployableElement`, `kernel.InvocationTarget`, `kernel.FunctionTarget`, `kernel.SubscriptionTarget`, `kernel.RoutingTarget`, `kernel.ConfigurableElement`
 
@@ -480,7 +480,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `ConfigurationSet`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `Environment.configurationSets`
+- **Incoming `ref`:** `ConfigParameter.configurationSet`, `Environment.configurationSets`, `EnvironmentVariable.configurationSet`
 - **Incoming `val`:** `PIMModel.configurations`
 - **Inherits:** `kernel.TraceableElement`, `kernel.DeployableElement`, `kernel.PolicyTarget`, `kernel.ConfigurableElement`
 
@@ -524,7 +524,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `EventType`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `CallbackTaskConfig.completionEvents`, `CompensationPolicy.compensationEvents`, `DataChangeStream.emittedEvents`, `EventChannel.eventTypes`, `EventRoutingRule.eventTypes`, `Function.publishes`, `Function.subscribesTo`, `FunctionContract.emittedEvents`, `HumanTask.completionEvents`, `ObjectNotificationRule.emittedEvents`, `ObjectStore.emittedEvents`
+- **Incoming `ref`:** `CallbackTaskConfig.completionEvents`, `CompensationPolicy.compensationEvents`, `DataChangeStream.emittedEvents`, `EventChannel.eventTypes`, `EventFlow.eventType`, `EventRoutingRule.eventTypes`, `Function.publishes`, `Function.subscribesTo`, `FunctionContract.emittedEvents`, `HumanTask.completionEvents`, `ObjectNotificationRule.emittedEvents`, `ObjectStore.emittedEvents`
 - **Incoming `val`:** `PIMModel.eventTypes`
 - **Inherits:** `kernel.TraceableElement`, `kernel.FlowEndpoint`, `kernel.PolicyTarget`
 
@@ -532,13 +532,13 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
-- **Incoming `val`:** _none_
+- **Incoming `val`:** `Function.contract`
 - **Inherits:** `kernel.TraceableElement`
 
 #### `Schema`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `ApiContract.errorSchemas`, `ApiContract.requestSchemas`, `ApiContract.responseSchemas`, `ApiRoute.requestSchema`, `ApiRoute.responseSchema`, `BusinessRule.inputSchemas`, `BusinessRule.outputSchemas`, `DecisionModel.inputs`, `DecisionModel.outputs`, `ErrorMapping.errorSchema`, `FunctionContract.errorSchemas`, `FunctionContract.inputSchema`, `FunctionContract.outputSchema`, `ObjectStore.objectMetadataSchemas`, `SchemaField.objectSchema`
+- **Incoming `ref`:** `ApiContract.errorSchemas`, `ApiContract.requestSchemas`, `ApiContract.responseSchemas`, `ApiRoute.requestSchema`, `ApiRoute.responseSchema`, `BusinessRule.inputSchemas`, `BusinessRule.outputSchemas`, `DataModel.schema`, `DecisionModel.inputs`, `DecisionModel.outputs`, `ErrorMapping.errorSchema`, `EventType.schema`, `FunctionContract.errorSchemas`, `FunctionContract.inputSchema`, `FunctionContract.outputSchema`, `MessageFlow.messageSchema`, `ObjectStore.objectMetadataSchemas`, `SchemaConstraint.ownerSchema`, `SchemaField.objectSchema`, `SchemaField.ownerSchema`
 - **Incoming `val`:** `PIMModel.schemas`
 - **Inherits:** `kernel.TraceableElement`, `kernel.PolicyTarget`
 
@@ -559,7 +559,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `SchemaField`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `SchemaEnumLiteral.field`
 - **Incoming `val`:** `Schema.fields`, `SchemaField.arrayItem`, `SchemaField.mapValue`
 - **Inherits:** `kernel.TraceableElement`
 
@@ -603,14 +603,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `DataModel`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `DataAccess.dataModels`
+- **Incoming `ref`:** `DataAccess.dataModels`, `DataField.dataModel`
 - **Incoming `val`:** `DataStore.ownedDataModels`
 - **Inherits:** `kernel.TraceableElement`, `kernel.FlowEndpoint`, `kernel.PolicyTarget`
 
 #### `DataStore`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `AccessPattern.dataStore`, `DataChangeStream.dataStore`, `DataModel.dataStore`, `IndexCandidate.dataStore`
 - **Incoming `val`:** _none_
 - **Inherits:** `StorageElement`, `kernel.RoutingTarget`, `kernel.SubscriptionTarget`
 
@@ -631,14 +631,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `ObjectStore`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `ObjectNotificationRule.objectStore`
 - **Incoming `val`:** _none_
 - **Inherits:** `StorageElement`, `kernel.InvocationSource`, `kernel.RoutingTarget`, `kernel.SubscriptionTarget`, `kernel.EventCarrier`
 
 #### `StorageElement`
 
 - **Abstract:** Yes (abstract)
-- **Incoming `ref`:** `Function.reads`, `Function.writes`
+- **Incoming `ref`:** `DataAccess.store`, `Function.reads`, `Function.writes`
 - **Incoming `val`:** `ServerlessService.stores`
 - **Inherits:** `kernel.TraceableElement`, `kernel.DeployableElement`, `kernel.FlowEndpoint`, `kernel.PolicyTarget`, `kernel.ProtectedResource`, `kernel.DataAccessTarget`, `kernel.ConfigurableElement`
 
@@ -682,7 +682,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `ServerlessService`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `DeploymentUnit.services`
+- **Incoming `ref`:** `Api.service`, `DeploymentUnit.services`, `EventChannel.service`, `ExternalAdapter.service`, `Function.service`, `Schedule.service`, `ServiceElementMembership.service`, `StorageElement.service`, `Workflow.service`
 - **Incoming `val`:** `PIMModel.services`
 - **Inherits:** `kernel.TraceableElement`, `kernel.PolicyTarget`, `kernel.ConfigurableElement`
 
@@ -698,14 +698,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `ExternalAdapter`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `EventChannel.externalConsumers`, `EventChannel.externalProducers`, `Function.callsAdapters`, `TaskStep.invokesAdapter`
+- **Incoming `ref`:** `EventChannel.externalConsumers`, `EventChannel.externalProducers`, `ExternalIntegrationFlow.adapter`, `Function.callsAdapters`, `TaskStep.invokesAdapter`
 - **Incoming `val`:** `ServerlessService.adapters`
 - **Inherits:** `kernel.TraceableElement`, `kernel.DeployableElement`, `kernel.FlowEndpoint`, `kernel.InvocationTarget`, `kernel.FunctionTarget`, `kernel.SubscriptionTarget`, `kernel.RoutingTarget`, `kernel.ExternalCallTarget`, `kernel.ProtectedResource`, `kernel.PolicyTarget`, `kernel.ConfigurableElement`
 
 #### `ExternalEndpoint`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `ExternalAdapter.endpoint`
 - **Incoming `val`:** `PIMModel.externalEndpoints`
 - **Inherits:** `kernel.TraceableElement`, `kernel.ExternalCallTarget`, `kernel.PolicyTarget`, `kernel.ProtectedResource`
 
@@ -714,14 +714,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `EventBus`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `EventRoutingRule.eventBus`
 - **Incoming `val`:** _none_
 - **Inherits:** `EventChannel`
 
 #### `EventChannel`
 
 - **Abstract:** Yes (abstract)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `EventFlow.channel`, `Subscription.channel`
 - **Incoming `val`:** `ServerlessService.channels`
 - **Inherits:** `IntegrationElement`, `kernel.DeployableElement`, `kernel.InvocationSource`, `kernel.SubscriptionTarget`, `kernel.RoutingTarget`, `kernel.EventCarrier`
 
@@ -737,7 +737,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** `EventBus.routingRules`
-- **Inherits:** `kernel.TraceableElement`, `kernel.InvocationSource`
+- **Inherits:** `kernel.TraceableElement`, `kernel.InvocationSource`, `kernel.PolicyTarget`
 
 #### `ExternalIntegrationFlow`
 
@@ -784,7 +784,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `Queue`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `Queue.deadLetterChannel`
+- **Incoming `ref`:** `MessageFlow.queue`, `Queue.deadLetterChannel`
 - **Incoming `val`:** _none_
 - **Inherits:** `EventChannel`
 
@@ -812,7 +812,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `Topic`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `PubSubFlow.topic`, `Subscription.ownerTopic`
 - **Incoming `val`:** _none_
 - **Inherits:** `EventChannel`
 
@@ -947,14 +947,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `MetricPolicy`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `MetricDimension.metric`
 - **Incoming `val`:** `ObservabilityConfig.metrics`
 - **Inherits:** `PolicySetting`
 
 #### `ObservabilityConfig`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `Api.observability`, `EventChannel.observability`, `ExternalAdapter.observability`, `Flow.observability`, `Function.observability`, `Workflow.observability`
+- **Incoming `ref`:** `AlertPolicy.observability`, `Api.observability`, `EventChannel.observability`, `ExternalAdapter.observability`, `Flow.observability`, `Function.observability`, `MetricPolicy.observability`, `Slo.observability`, `Workflow.observability`
 - **Incoming `val`:** _none_
 - **Inherits:** `ArchitecturePolicy`
 
@@ -1063,7 +1063,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `Principal`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `AuthorizationPolicy.allowedPrincipals`, `EscalationPolicy.escalateTo`, `HumanTask.assignees`, `IdentityProvider.principals`
+- **Incoming `ref`:** `AuthorizationPolicy.allowedPrincipals`, `EscalationPolicy.escalateTo`, `HumanTask.assignees`, `IdentityProvider.principals`, `Permission.principal`
 - **Incoming `val`:** `PIMModel.principals`
 - **Inherits:** `kernel.TraceableElement`, `kernel.PolicyTarget`, `kernel.ProtectedResource`
 
@@ -1150,13 +1150,13 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
-- **Incoming `val`:** `ParallelStep.branches`
+- **Incoming `val`:** `MapStateConfig.itemProcessor`, `ParallelStep.branches`
 - **Inherits:** `kernel.TraceableElement`
 
 #### `ParallelStep`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `ParallelBranch.ownerStep`
 - **Incoming `val`:** _none_
 - **Inherits:** `WorkflowStep`
 
@@ -1198,14 +1198,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `Workflow`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `ApiRoute.workflowIntegration`, `EventChannel.workflowConsumers`, `TaskStep.nestedWorkflow`
+- **Incoming `ref`:** `ApiRoute.workflowIntegration`, `EventChannel.workflowConsumers`, `OrchestrationFlow.workflow`, `TaskStep.nestedWorkflow`, `WorkflowStep.workflow`, `WorkflowTransition.workflow`
 - **Incoming `val`:** `ServerlessService.workflows`
 - **Inherits:** `kernel.TraceableElement`, `kernel.DeployableElement`, `kernel.InvocationTarget`, `kernel.WorkflowTarget`, `kernel.SubscriptionTarget`, `kernel.RoutingTarget`, `kernel.FlowEndpoint`, `kernel.PolicyTarget`, `kernel.ProtectedResource`, `kernel.ConfigurableElement`
 
 #### `WorkflowStep`
 
 - **Abstract:** Yes (abstract)
-- **Incoming `ref`:** `ErrorHandler.nextStep`
+- **Incoming `ref`:** `ErrorHandler.nextStep`, `ErrorHandler.step`, `WorkflowTransition.source`, `WorkflowTransition.target`
 - **Incoming `val`:** `ParallelBranch.steps`, `Workflow.steps`
 - **Inherits:** `kernel.TraceableElement`, `kernel.FlowEndpoint`, `kernel.PolicyTarget`, `kernel.ProtectedResource`
 
@@ -1216,7 +1216,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Incoming `val`:** `ParallelBranch.transitions`, `Workflow.transitions`
 - **Inherits:** `kernel.TraceableElement`
 
-## PSM (Platform-Specific Model: AWS)
+## PSM (Platform-Specific Model, AWS)
 
 **Modules:** `awspsm-api.emf`, `awspsm-compute.emf`, `awspsm-core.emf`, `awspsm-events.emf`, `awspsm-identity.emf`, `awspsm-integrations.emf`, `awspsm-messaging.emf`, `awspsm-networking.emf`, `awspsm-observability.emf`, `awspsm-root.emf`, `awspsm-security.emf`, `awspsm-storage.emf`, `awspsm-workflow.emf`  
 **Classes:** 214
@@ -1233,14 +1233,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `ApiGatewayApi`
 
 - **Abstract:** Yes (abstract)
-- **Incoming `ref`:** `ApiGatewayDomainName.api`
+- **Incoming `ref`:** `ApiGatewayAuthorizer.api`, `ApiGatewayBasePathMapping.api`, `ApiGatewayDomainName.api`, `ApiGatewayRoute.api`, `ApiGatewayStage.api`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
 #### `ApiGatewayApiKey`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `ApiGatewayUsagePlanKey.apiKey`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -1268,14 +1268,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `ApiGatewayDomainName`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `ApiGatewayApi.apiDomainName`
+- **Incoming `ref`:** `ApiGatewayApi.apiDomainName`, `ApiGatewayBasePathMapping.domainName`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
 #### `ApiGatewayIntegration`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `ApiGatewayLambdaIntegrationView.integration`, `ApiGatewayRoute.integration`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -1317,7 +1317,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `ApiGatewayRoute`
 
 - **Abstract:** Yes (abstract)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `ApiGatewayLambdaIntegrationView.route`
 - **Incoming `val`:** `ApiGatewayApi.routes`
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -1345,7 +1345,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `ApiGatewayUsagePlan`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `ApiGatewayUsagePlanKey.usagePlan`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -1401,7 +1401,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `RestApi`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `ApiGatewayDeployment.api`, `ApiGatewayRequestValidator.api`, `RestApiResource.api`
 - **Incoming `val`:** _none_
 - **Inherits:** `ApiGatewayApi`
 
@@ -1415,7 +1415,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `RestApiResource`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `RestApiResource.parentResource`
+- **Incoming `ref`:** `RestApiMethod.resource`, `RestApiResource.parentResource`
 - **Incoming `val`:** `RestApi.resources`
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -1466,7 +1466,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `AwsLambdaFunction`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `ApiGatewayIntegration.lambdaTarget`, `EventBridgePipe.enrichmentFunction`
+- **Incoming `ref`:** `ApiGatewayIntegration.lambdaTarget`, `ApiGatewayLambdaIntegrationView.function`, `EventBridgeLambdaTargetView.function`, `EventBridgePipe.enrichmentFunction`, `LambdaAlias.function`, `LambdaAuthorizer.function`, `LambdaEventInvokeConfig.function`, `LambdaEventSourceMapping.function`, `LambdaFunctionUrl.function`, `LambdaPermission.function`, `LambdaVersion.function`, `S3LambdaNotificationView.function`, `SamFunctionEvent.targetFunction`, `SnsLambdaSubscriptionView.function`, `SqsLambdaEventSourceView.function`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`, `awspsmcore.S3NotificationDestination`
 
@@ -1502,7 +1502,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 
 - **Abstract:** Yes (abstract)
 - **Incoming `ref`:** _none_
-- **Incoming `val`:** _none_
+- **Incoming `val`:** `AwsLambdaFunction.code`
 - **Inherits:** `kernel.TraceableElement`
 
 #### `LambdaDeadLetterConfig`
@@ -1585,7 +1585,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `LambdaLayerVersion`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `AwsLambdaFunction.layers`
+- **Incoming `ref`:** `AwsLambdaFunction.layers`, `LambdaLayerPermission.layerVersion`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -1599,7 +1599,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `LambdaPermission`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `ApiGatewayLambdaIntegrationView.permission`, `EventBridgeLambdaTargetView.permission`, `SnsLambdaSubscriptionView.permission`
+- **Incoming `ref`:** `ApiGatewayLambdaIntegrationView.permission`, `EventBridgeLambdaTargetView.permission`, `S3LambdaNotificationView.permission`, `SnsLambdaSubscriptionView.permission`
 - **Incoming `val`:** `AwsLambdaFunction.permissions`
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -1648,7 +1648,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `SqsLambdaEventSourceMapping`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `SqsLambdaEventSourceView.mapping`
 - **Incoming `val`:** _none_
 - **Inherits:** `LambdaEventSourceMapping`
 
@@ -1671,7 +1671,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `AwsResource`
 
 - **Abstract:** Yes (abstract)
-- **Incoming `ref`:** `ApiGatewayRequestModel.schemaResource`, `ApiGatewayResponseModel.schemaResource`, `AslState.invokedResource`, `AwsPsmModel.allResources`, `AwsResource.dependsOn`, `CfnOutput.resource`, `CloudWatchAlarm.alarmActionResources`, `CloudWatchAlarm.insufficientDataActionResources`, `CloudWatchAlarm.monitoredResource`, `CloudWatchAlarm.okActionResources`, `CloudWatchCompositeAlarm.alarmActionResources`, `CloudWatchCompositeAlarm.okActionResources`, `CloudWatchLogSubscriptionFilter.destinationResource`, `CognitoLambdaConfig.createAuthChallenge`, `CognitoLambdaConfig.customMessage`, `CognitoLambdaConfig.defineAuthChallenge`, `CognitoLambdaConfig.postAuthentication`, `CognitoLambdaConfig.postConfirmation`, `CognitoLambdaConfig.preAuthentication`, `CognitoLambdaConfig.preSignUp`, `CognitoLambdaConfig.preTokenGeneration`, `CognitoLambdaConfig.userMigration`, `CognitoLambdaConfig.verifyAuthChallengeResponse`, `EventBridgePipe.sourceResource`, `EventBridgePipe.targetResource`, `EventBridgeTarget.targetResource`, `GenericLambdaEventSourceMapping.eventSourceResource`, `LambdaDestinationConfig.onFailure`, `LambdaDestinationConfig.onSuccess`, `SecretRotationSchedule.rotationLambda`, `SnsSubscription.endpointResource`, `ValueExpression.resource`
+- **Incoming `ref`:** `ApiGatewayRequestModel.schemaResource`, `ApiGatewayResponseModel.schemaResource`, `AslState.invokedResource`, `AwsPsmModel.allResources`, `AwsRelationshipView.source`, `AwsRelationshipView.target`, `AwsResource.dependsOn`, `CfnOutput.resource`, `CloudWatchAlarm.alarmActionResources`, `CloudWatchAlarm.insufficientDataActionResources`, `CloudWatchAlarm.monitoredResource`, `CloudWatchAlarm.okActionResources`, `CloudWatchCompositeAlarm.alarmActionResources`, `CloudWatchCompositeAlarm.okActionResources`, `CloudWatchLogSubscriptionFilter.destinationResource`, `CognitoLambdaConfig.createAuthChallenge`, `CognitoLambdaConfig.customMessage`, `CognitoLambdaConfig.defineAuthChallenge`, `CognitoLambdaConfig.postAuthentication`, `CognitoLambdaConfig.postConfirmation`, `CognitoLambdaConfig.preAuthentication`, `CognitoLambdaConfig.preSignUp`, `CognitoLambdaConfig.preTokenGeneration`, `CognitoLambdaConfig.userMigration`, `CognitoLambdaConfig.verifyAuthChallengeResponse`, `EventBridgePipe.sourceResource`, `EventBridgePipe.targetResource`, `EventBridgeTarget.targetResource`, `GenericLambdaEventSourceMapping.eventSourceResource`, `LambdaDestinationConfig.onFailure`, `LambdaDestinationConfig.onSuccess`, `SecretRotationSchedule.rotationLambda`, `SnsSubscription.endpointResource`, `ValueExpression.resource`
 - **Incoming `val`:** `SamStack.resources`
 - **Inherits:** `kernel.TraceableElement`
 
@@ -1784,7 +1784,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
-- **Incoming `val`:** `CfnCondition.expressionValue`, `CfnParameter.defaultValue`, `EventBridgeTarget.input`, `SecretsManagerSecret.secretValue`, `SsmParameter.value`, `ValueExpression.items`
+- **Incoming `val`:** `ApiGatewayIntegrationResponseParameter.value`, `CfnCondition.expressionValue`, `CfnOutput.value`, `CfnParameter.defaultValue`, `CloudWatchMetricTransformation.metricValue`, `EventBridgeApiKeyAuthParameters.apiKeyValue`, `EventBridgeBasicAuthParameters.password`, `EventBridgeBasicAuthParameters.username`, `EventBridgeOAuthParameters.clientId`, `EventBridgeOAuthParameters.clientSecret`, `EventBridgeTarget.input`, `LambdaEnvironmentVariable.value`, `MetricDimension.value`, `NamedValueExpression.value`, `NativeProperty.value`, `SecretsManagerSecret.secretValue`, `SsmParameter.value`, `ValueExpression.items`
 - **Inherits:** `kernel.TraceableElement`
 
 ### `awspsm-events.emf`
@@ -1821,7 +1821,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 
 - **Abstract:** Yes (abstract)
 - **Incoming `ref`:** _none_
-- **Incoming `val`:** _none_
+- **Incoming `val`:** `EventBridgeConnection.authParameters`
 - **Inherits:** `kernel.TraceableElement`
 
 #### `EventBridgeBasicAuthParameters`
@@ -1841,7 +1841,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `EventBridgeBus`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `EventBridgeRule.bus`
+- **Incoming `ref`:** `EventBridgeArchive.eventSourceBus`, `EventBridgeBusPolicy.bus`, `EventBridgeRule.bus`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -1855,7 +1855,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `EventBridgeConnection`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `EventBridgeApiDestination.connection`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -1904,7 +1904,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `EventBridgeRule`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `EventBridgeBus.rules`
+- **Incoming `ref`:** `EventBridgeBus.rules`, `EventBridgeLambdaTargetView.rule`, `StepFunctionEventBridgeTargetView.rule`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -1925,8 +1925,8 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `EventBridgeTarget`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
-- **Incoming `val`:** `EventBridgeRule.targets`
+- **Incoming `ref`:** `EventBridgeLambdaTargetView.targetRow`, `StepFunctionEventBridgeTargetView.targetRow`
+- **Incoming `val`:** `EventBridgeRule.targets`, `EventBridgeSchedule.target`
 - **Inherits:** `kernel.TraceableElement`
 
 #### `EventBridgeTargetParameters`
@@ -2011,7 +2011,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `CognitoUserPool`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `CognitoAuthorizer.userPool`, `CognitoUserPoolClient.userPool`, `CognitoUserPoolDomain.userPool`, `CognitoUserPoolGroup.userPool`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -2113,14 +2113,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `SnsSubscription`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `SnsTopic.subscriptions`
+- **Incoming `ref`:** `SnsLambdaSubscriptionView.subscription`, `SnsTopic.subscriptions`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
 #### `SnsTopic`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `LambdaDeadLetterConfig.targetTopic`, `SnsTopicPolicy.topics`
+- **Incoming `ref`:** `LambdaDeadLetterConfig.targetTopic`, `S3TopicNotificationView.topic`, `SnsLambdaSubscriptionView.topic`, `SnsSubscription.topic`, `SnsTopicPolicy.topics`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`, `awspsmcore.S3NotificationDestination`
 
@@ -2134,7 +2134,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `SqsQueue`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `EventBridgeTarget.deadLetterQueue`, `LambdaDeadLetterConfig.targetQueue`, `SnsSubscription.deadLetterQueue`, `SqsQueuePolicy.queues`, `SqsRedriveAllowPolicy.sourceQueues`
+- **Incoming `ref`:** `EventBridgeTarget.deadLetterQueue`, `LambdaDeadLetterConfig.targetQueue`, `S3QueueNotificationView.queue`, `SnsSubscription.deadLetterQueue`, `SqsLambdaEventSourceMapping.queue`, `SqsLambdaEventSourceView.queue`, `SqsQueuePolicy.queues`, `SqsRedriveAllowPolicy.sourceQueues`, `SqsRedrivePolicy.deadLetterQueue`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`, `awspsmcore.S3NotificationDestination`
 
@@ -2236,7 +2236,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `CloudWatchLogGroup`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `ApiGatewayAccessLogSetting.destinationLogGroup`, `ApiGatewayApi.accessLogGroup`, `ApiGatewayStage.accessLogGroup`
+- **Incoming `ref`:** `ApiGatewayAccessLogSetting.destinationLogGroup`, `ApiGatewayApi.accessLogGroup`, `ApiGatewayStage.accessLogGroup`, `AwsLambdaFunction.logGroup`, `CloudWatchLogSubscriptionFilter.logGroup`, `CloudWatchMetricFilter.logGroup`, `StepFunctionLoggingConfig.logGroup`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -2318,7 +2318,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
-- **Incoming `val`:** `ApiGatewayApi.apiPolicy`, `DynamoDbTable.resourcePolicy`, `EventBridgeBusPolicy.policyDocument`, `KmsKey.keyPolicy`, `S3BucketPolicy.policyDocument`, `SecretsManagerResourcePolicy.resourcePolicy`, `SnsTopicPolicy.policyDocument`, `SqsQueuePolicy.policyDocument`
+- **Incoming `val`:** `ApiGatewayApi.apiPolicy`, `DynamoDbTable.resourcePolicy`, `EventBridgeBusPolicy.policyDocument`, `IamInlinePolicy.document`, `IamManagedPolicy.document`, `IamPolicy.document`, `IamRole.assumeRolePolicy`, `KmsKey.keyPolicy`, `S3BucketPolicy.policyDocument`, `SecretsManagerResourcePolicy.resourcePolicy`, `SnsTopicPolicy.policyDocument`, `SqsQueuePolicy.policyDocument`
 - **Inherits:** `kernel.TraceableElement`
 
 #### `IamPrincipal`
@@ -2331,7 +2331,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `IamRole`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `ApiGatewayIntegration.credentialsRole`, `CloudWatchLogSubscriptionFilter.role`, `CognitoUserPoolGroup.role`, `EventBridgeTarget.role`, `IamPolicy.roles`
+- **Incoming `ref`:** `ApiGatewayIntegration.credentialsRole`, `AwsLambdaFunction.role`, `CloudWatchLogSubscriptionFilter.role`, `CognitoUserPoolGroup.role`, `EventBridgePipe.role`, `EventBridgeSchedule.role`, `EventBridgeTarget.role`, `IamPolicy.roles`, `S3ReplicationConfiguration.role`, `StepFunctionStateMachine.role`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -2352,7 +2352,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `KmsKey`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `AwsLambdaFunction.kmsKey`, `CloudWatchLogGroup.kmsKey`, `DynamoDbReplicaSpecification.kmsKey`, `DynamoDbSseSpecification.kmsKey`, `DynamoDbTable.kmsKey`, `S3BucketEncryption.kmsKey`, `S3ReplicationDestination.replicaKmsKey`, `SecretsManagerSecret.kmsKey`, `SnsTopic.kmsKey`, `SqsQueue.kmsKey`, `SsmParameter.kmsKey`
+- **Incoming `ref`:** `AwsLambdaFunction.kmsKey`, `CloudWatchLogGroup.kmsKey`, `DynamoDbReplicaSpecification.kmsKey`, `DynamoDbSseSpecification.kmsKey`, `DynamoDbTable.kmsKey`, `KmsAlias.targetKey`, `S3BucketEncryption.kmsKey`, `S3ReplicationDestination.replicaKmsKey`, `SecretsManagerSecret.kmsKey`, `SnsTopic.kmsKey`, `SqsQueue.kmsKey`, `SsmParameter.kmsKey`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -2387,7 +2387,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `SecretsManagerSecret`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `SecretValueExpression.secretRef`
+- **Incoming `ref`:** `SecretRotationSchedule.secret`, `SecretValueExpression.secretRef`, `SecretsManagerResourcePolicy.secret`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -2453,7 +2453,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
-- **Incoming `val`:** _none_
+- **Incoming `val`:** `DynamoDbGlobalSecondaryIndex.projection`, `DynamoDbLocalSecondaryIndex.projection`
 - **Inherits:** `kernel.TraceableElement`
 
 #### `DynamoDbProvisionedThroughput`
@@ -2487,7 +2487,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `DynamoDbTable`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `DynamoDbStreamLambdaEventSourceMapping.table`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -2501,7 +2501,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `S3Bucket`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `S3BucketPolicy.bucket`, `S3LambdaNotificationView.bucket`, `S3QueueNotificationView.bucket`, `S3TopicNotificationView.bucket`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -2543,14 +2543,14 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `S3NotificationConfiguration`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `S3NotificationRule.configuration`
 - **Incoming `val`:** `S3Bucket.notificationConfiguration`
 - **Inherits:** `kernel.TraceableElement`
 
 #### `S3NotificationRule`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** _none_
+- **Incoming `ref`:** `S3LambdaNotificationView.rule`, `S3QueueNotificationView.rule`, `S3TopicNotificationView.rule`
 - **Incoming `val`:** `S3NotificationConfiguration.rules`
 - **Inherits:** `kernel.TraceableElement`
 
@@ -2692,7 +2692,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `AslState`
 
 - **Abstract:** Yes (abstract)
-- **Incoming `ref`:** `AslState.nextState`
+- **Incoming `ref`:** `AslCatchRule.nextState`, `AslChoiceRule.nextState`, `AslState.nextState`
 - **Incoming `val`:** `AslBranch.states`, `AslDocument.states`
 - **Inherits:** `kernel.TraceableElement`
 
@@ -2734,7 +2734,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `StepFunctionStateMachine`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `ApiGatewayIntegration.stateMachineTarget`
+- **Incoming `ref`:** `ApiGatewayIntegration.stateMachineTarget`, `StepFunctionEventBridgeTargetView.stateMachine`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 

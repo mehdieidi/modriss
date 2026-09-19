@@ -52,15 +52,18 @@ Process
 ├── roles[]              (who performs work)
 ├── artifactKinds[]      (work product types / deliverables)
 ├── guidelines[]         (method guidance bound to phases or process)
-├── processEngine        (iterative revolution through in-engine phases)
+├── progressModel        (states, events, metrics, and evidence fields)
+├── governance            (entry/exit evidence and gate semantics)
+└── processEngine        (iterative revolution through in-engine phases)
 └── phases[]             (sequential lifecycle divisions)
     └── stages[]         (activities within a phase)
         └── subStages[]? (optional decomposition)
             └── tasks[]  (atomic work units → artifacts + metamodel elements)
 ```
 
-- **Phases** run in order; each has entry/exit criteria and is repeated as part of the engine cycle
-  for the current slice.
+- **Phases** run in order; each has entry/exit criteria. Only phases marked `inEngine` are repeated
+  by the local engine; the end-to-end process wraps that engine with initiation, release, operation,
+  and retirement phases.
 - **Stages** group related tasks; sub-stages allow finer decomposition (e.g. Information Architecture
   → taxonomy vs. items).
 - **Tasks** are atomic: they name steps, produce **artifacts**, bind **workProducts** to metamodel
@@ -68,8 +71,9 @@ Process
 - **Roles** are assigned at phase, stage, and task level via `primaryRole`.
 - **Guidelines** cite established practice (GQM, DDD, Twin Peaks, etc.) and apply to the whole process or a phase id.
 
-The **process engine** is not a separate methodology, it is the repeating cycle that revolves
-through `inEngine` phases until a slice is reviewed and accepted.
+The **process engine** is not a separate methodology; it is the repeating cycle that revolves
+through `inEngine` phases until a slice is reviewed and accepted. The full lifecycle adds release,
+operations, change propagation, and retirement around the engine.
 
 ## CIM Process (5 phases)
 
@@ -105,9 +109,18 @@ through `inEngine` phases until a slice is reviewed and accepted.
 
 ## End-to-End Process
 
-Single phase (`e2e.ph1`) whose stages mirror the vertical slice: increment planning → CIM →
-CIM→PIM → PIM → PIM→PSM → PSM → M2T → artifacts. Milestones (`e2e.m0`–`e2e.m4`) mark gate
-outcomes across the slice.
+The end-to-end method is a full-lifecycle orchestration process with five phases:
+
+| Phase     | Name                                        | Purpose                                                                                       |
+| --------- | ------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `e2e.ph0` | Initiate, Tailor & Organize                 | Product/system intent, situational method profile, team topology, and cross-cutting baselines |
+| `e2e.ph1` | Iterative-Incremental Model-Driven Delivery | The eight-stage vertical CIM → PIM → PSM → artifact-readiness engine cycle                    |
+| `e2e.ph2` | Release & Transition                        | Release assembly, progressive promotion, rollback, and handover                               |
+| `e2e.ph3` | Operate, Evolve & Learn                     | SLOs, incidents, change propagation, and product/method learning                              |
+| `e2e.ph4` | Retire, Migrate & Close                     | Retirement, data disposition, decommissioning, and closure                                    |
+
+The engine cycle repeats `e2e.p0`–`e2e.p7` for each capability slice. Release and
+operations are lifecycle phases around the cycle, not hidden tasks after M2T.
 
 ## Team Profiles (Roles)
 
@@ -119,6 +132,10 @@ outcomes across the slice.
 | `cloud-platform-engineer` | Cloud Platform Engineer | PSM            | AWS resources, IAM, networking, observability, deployment       |
 | `process-reviewer`        | Process Reviewer        | All            | EVL gate approval, readiness assessment sign-off                |
 | `method-engineer`         | Method Engineer         | Meta           | Maintains methodology when metamodels change                    |
+
+The full-lifecycle process additionally makes product owner, delivery lead, domain expert,
+quality engineer, security engineer, release engineer, and service owner responsibilities
+explicit for cross-team coordination and release/operations work.
 
 ## Work Product Kinds
 
@@ -138,6 +155,10 @@ outcomes across the slice.
 - **Twin Peaks (Nuseibeh):** Engine rework loops alternate requirements and structure until stable.
 - **Agile increments:** Engine cycle advances thin vertical slices; loop revolves while backlog remains.
 - **MDA layering:** CIM → PIM → PSM with human-in-the-loop EVL gates.
+- **Progress contract:** A versioned process run records state, evidence, blockers, decisions,
+  dependencies, and gate timestamps; task completion alone is not acceptance.
+- **Validation boundary:** Assistant apply/commit paths use structural Ecore/EMF conformance only;
+  semantic EVL validation remains an explicit user/model validation workflow.
 
 ## Change Management
 
@@ -146,20 +167,20 @@ add/modify/remove, and post-transform propagation.
 
 ## Metrics
 
-| Metric            | Definition                                              | Target                  |
-| ----------------- | ------------------------------------------------------- | ----------------------- |
-| Concept coverage  | % EClasses/enums assigned to ≥1 task                    | 100% (CI enforced)      |
-| Engine cycles     | Completed frame→review/adapt revolutions per program    | ≥1 per capability slice |
-| Stage completion  | All in-engine stages complete for current cycle         | Before review gate      |
-| EVL pass rate     | Validation with zero blocking findings                  | Required at each gate   |
-| Readiness closure | ProductionReadinessAssessment without blocking findings | Required before ETL/M2T |
+| Metric                       | Definition                                                 | Target                         |
+| ---------------------------- | ---------------------------------------------------------- | ------------------------------ |
+| Concept coverage             | % EClasses/enums assigned to ≥1 task                       | 100% (CI enforced)             |
+| Engine cycles                | Completed frame→review/adapt revolutions per program       | ≥1 per capability slice        |
+| Stage completion             | All in-engine stages complete for current cycle            | Before review gate             |
+| Semantic validation evidence | Explicit user/model validation with zero blocking findings | Required at each semantic gate |
+| Readiness closure            | ProductionReadinessAssessment without blocking findings    | Required before ETL/M2T        |
 
 ## Task Catalog
 
-- `process-definitions/cim.json`, 5 phases, 25 tasks, 122 concepts
-- `process-definitions/pim.json`, 6 phases, 31 tasks, 179 concepts
-- `process-definitions/psm.json`, 6 phases, 27 tasks, 297 concepts
-- `process-definitions/end-to-end.json`, 1 phase, 8 stages, top-level engine
+- `process-definitions/cim.json`, 5 phases, 26 tasks, 123 concepts
+- `process-definitions/pim.json`, 6 phases, 32 tasks, 188 concepts
+- `process-definitions/psm.json`, 6 phases, 28 tasks, 305 concepts
+- `process-definitions/end-to-end.json`, 5 lifecycle phases, 30 tasks, 8-stage increment engine
 
 Regenerate public guide task catalogs and phase narratives:
 

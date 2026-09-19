@@ -5,6 +5,23 @@
   "displayName": "CIM",
   "roles": [
     {
+      "id": "product-owner",
+      "name": "Product Owner",
+      "responsibilities": ["Product goal, ordered backlog, value decisions, acceptance"]
+    },
+    {
+      "id": "delivery-lead",
+      "name": "Delivery Lead",
+      "responsibilities": [
+        "Team coordination, dependencies, flow metrics, escalation, retrospectives"
+      ]
+    },
+    {
+      "id": "domain-expert",
+      "name": "Domain Expert",
+      "responsibilities": ["Business meaning, rules, examples, language, and scenario validation"]
+    },
+    {
       "id": "business-modeler",
       "name": "Business Modeler",
       "responsibilities": ["Intent, domain, behavior, process, transformation contracts"]
@@ -13,6 +30,11 @@
       "id": "requirements-engineer",
       "name": "Requirements Engineer",
       "responsibilities": ["Requirements, acceptance criteria, governance constraints"]
+    },
+    {
+      "id": "security-engineer",
+      "name": "Security & Privacy Engineer",
+      "responsibilities": ["Threats, privacy, compliance, risk acceptance, and control evidence"]
     },
     {
       "id": "process-reviewer",
@@ -161,6 +183,154 @@
       "text": "Backfill formal requirements after domain structure exists. Use engine rework loops when requirements expose gaps."
     }
   ],
+  "progressModel": {
+    "trackingUnit": "versioned-process-run",
+    "sourceOfTruth": [
+      "The project work tracker stores one process-run record per increment or release candidate.",
+      "The model repository stores the model revision, transformation run, validation evidence, and readiness assessment.",
+      "The release record stores the exact accepted model, generator, artifact, test, and deployment revisions."
+    ],
+    "requiredRunFields": [
+      "runId",
+      "productGoalId",
+      "incrementId",
+      "scopeItemIds",
+      "methodProfileId",
+      "teamIds",
+      "currentPhaseId",
+      "currentStageId",
+      "state",
+      "ownerRole",
+      "startedAt",
+      "lastInspectedAt",
+      "evidenceLinks",
+      "openBlockers",
+      "acceptedAt"
+    ],
+    "states": [
+      "not-started",
+      "in-progress",
+      "blocked",
+      "ready-for-review",
+      "accepted",
+      "rework",
+      "deferred"
+    ],
+    "events": [
+      "increment-started",
+      "task-evidence-recorded",
+      "finding-raised",
+      "finding-resolved",
+      "decision-recorded",
+      "gate-reviewed",
+      "increment-accepted",
+      "increment-reopened",
+      "release-promoted"
+    ],
+    "aggregation": {
+      "rule": "Aggregate by increment, team, release, and product; never average away a blocking finding.",
+      "teamCoordination": "Publish a shared dependency board with ownership, dependency type, due date, and escalation path.",
+      "reviewCadence": "Daily local coordination, per-increment review/retrospective, and per-release readiness review."
+    },
+    "metrics": [
+      {
+        "id": "task-completion",
+        "name": "Eligible task completion",
+        "unit": "ratio",
+        "formula": "completed eligible tasks / eligible tasks",
+        "source": "versioned process-run record",
+        "cadence": "each workday and at gate review",
+        "ownerRole": "delivery-lead",
+        "interpretation": "Visibility only; never substitute for a usable increment."
+      },
+      {
+        "id": "increment-flow-time",
+        "name": "Increment flow time",
+        "unit": "elapsed-time",
+        "formula": "accepted-increment timestamp - increment-start timestamp",
+        "source": "increment and gate timestamps",
+        "cadence": "per accepted increment",
+        "ownerRole": "delivery-lead",
+        "interpretation": "Use trends to tune slice size and expose queues."
+      },
+      {
+        "id": "rework-rate",
+        "name": "Rework rate",
+        "unit": "ratio",
+        "formula": "reopened tasks caused by a finding / completed tasks",
+        "source": "change and finding records",
+        "cadence": "per increment and release",
+        "ownerRole": "process-reviewer",
+        "interpretation": "Inspect causes; do not use as an individual performance score."
+      },
+      {
+        "id": "trace-coverage",
+        "name": "Trace coverage",
+        "unit": "ratio",
+        "formula": "accepted scope items with source-to-evidence trace / accepted scope items",
+        "source": "TraceModel and release evidence",
+        "cadence": "at every level gate and release",
+        "ownerRole": "process-reviewer",
+        "interpretation": "A low value blocks confidence even when task completion is high."
+      },
+      {
+        "id": "blocking-findings",
+        "name": "Open blocking findings",
+        "unit": "count",
+        "formula": "count(open findings where blocking = true)",
+        "source": "readiness assessment and validation report",
+        "cadence": "continuous; mandatory at gates",
+        "ownerRole": "process-reviewer",
+        "interpretation": "Must be zero or covered by an explicit, time-bound risk acceptance."
+      },
+      {
+        "id": "manual-decision-closure",
+        "name": "Manual decision closure",
+        "unit": "ratio",
+        "formula": "accepted/rejected/waived manual decisions / blocking manual decisions",
+        "source": "readiness assessment decision register",
+        "cadence": "at transformation and release gates",
+        "ownerRole": "process-reviewer",
+        "interpretation": "Open decisions remain visible and are not silently treated as done."
+      },
+      {
+        "id": "domain-scope-coverage",
+        "name": "Accepted domain-scope coverage",
+        "unit": "ratio",
+        "formula": "accepted slice scenarios with actor, capability, behavior, and acceptance coverage / slice scenarios",
+        "source": "CIM increment plan, requirements, and behavior surface",
+        "cadence": "CIM increment review",
+        "ownerRole": "business-modeler",
+        "interpretation": "Shows whether modeling breadth matches the selected business slice."
+      },
+      {
+        "id": "language-churn",
+        "name": "Ubiquitous-language churn",
+        "unit": "count-per-increment",
+        "formula": "renamed or conflicted glossary terms reopened after structural modeling",
+        "source": "glossary change history",
+        "cadence": "per CIM increment",
+        "ownerRole": "domain-expert",
+        "interpretation": "Use as a discovery signal, not as a target to minimize prematurely."
+      }
+    ],
+    "level": "cim"
+  },
+  "governance": {
+    "entryEvidence": [
+      "product goal",
+      "slice hypothesis",
+      "domain participants",
+      "tailored Definition of Ready"
+    ],
+    "exitEvidence": [
+      "accepted CIM model revision",
+      "requirements and acceptance criteria",
+      "trace/readiness assessment",
+      "open assumptions and hotspots"
+    ],
+    "gate": "CIM-to-PIM promotion requires structural conformance plus an explicit user/model semantic-validation review; assistant apply/commit uses structural Ecore/EMF conformance only."
+  },
   "processEngine": {
     "id": "modriss.cim.engine",
     "displayName": "CIM Modeling Engine",
@@ -319,12 +489,39 @@
                 }
               ],
               "artifactIds": ["cim-artifact.model-root"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
                   "eClass": "CIMModel",
                   "cardinality": "1..*"
-                },
+                }
+              ],
+              "steps": [
+                "Create or verify CIMModel with domainName and businessScope.",
+                "Set organizationName, modelingDate, and language.",
+                "Apply lifecycle status and annotation conventions on the root."
+              ],
+              "entryCriteria": ["Project created or existing CIM opened for a new increment"],
+              "exitCriteria": ["CIMModel root with domainName exists"],
+              "validationRules": [],
+              "paletteFocus": ["CIMModel"],
+              "durationEstimate": "20m"
+            },
+            {
+              "id": "cim.ph1.st1.t2",
+              "name": "Establish shared model contract and evidence conventions",
+              "primaryRole": "method-engineer",
+              "viewpoint": "dashboard",
+              "artifacts": [
+                {
+                  "id": "cim-artifact.model-root",
+                  "name": "CIM Model Root"
+                }
+              ],
+              "artifactIds": ["cim-artifact.model-root"],
+              "coverageGroups": ["shared-kernel", "shared-enums"],
+              "workProducts": [
                 {
                   "metamodel": "cim",
                   "eClass": "DeployableElement",
@@ -504,18 +701,23 @@
                   "metamodel": "cim",
                   "eEnum": "ExpressionPhase",
                   "cardinality": "enum-values"
+                },
+                {
+                  "metamodel": "cim",
+                  "eEnum": "ManualDecisionState",
+                  "cardinality": "enum-values"
                 }
               ],
               "steps": [
-                "Create or verify CIMModel with domainName and businessScope.",
-                "Set organizationName, modelingDate, and language.",
-                "Apply lifecycle status and annotation conventions on the root."
+                "Apply the shared identity, annotation, traceability, expression, and lifecycle conventions used by every CIM element.",
+                "Set the evidence convention for source references, review status, and model-level provenance.",
+                "Confirm that shared support concepts are handled by inspectors and readiness records rather than mistaken for business concepts."
               ],
-              "entryCriteria": ["Project created or existing CIM opened for a new increment"],
-              "exitCriteria": ["CIMModel root with domainName exists"],
+              "entryCriteria": ["CIM model root exists"],
+              "exitCriteria": ["Shared model contract and evidence convention are recorded"],
               "validationRules": [],
-              "paletteFocus": ["CIMModel"],
-              "durationEstimate": "20m"
+              "paletteFocus": [],
+              "durationEstimate": "30m"
             }
           ]
         },
@@ -540,6 +742,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.increment-plan"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -581,6 +784,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.strategic-intent"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -620,6 +824,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.strategic-intent"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -669,6 +874,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.participation-model"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -713,6 +919,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.participation-model"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -750,6 +957,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.capability-map"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -784,6 +992,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.capability-map"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -831,6 +1040,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.glossary"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -903,6 +1113,7 @@
                     }
                   ],
                   "artifactIds": ["cim-artifact.information-taxonomy"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "cim",
@@ -955,6 +1166,7 @@
                     }
                   ],
                   "artifactIds": ["cim-artifact.information-taxonomy"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "cim",
@@ -1041,6 +1253,7 @@
                     }
                   ],
                   "artifactIds": ["cim-artifact.domain-structure"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "cim",
@@ -1091,6 +1304,7 @@
                     }
                   ],
                   "artifactIds": ["cim-artifact.domain-structure"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "cim",
@@ -1186,6 +1400,7 @@
                     }
                   ],
                   "artifactIds": ["cim-artifact.behavior-surface"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "cim",
@@ -1236,6 +1451,7 @@
                     }
                   ],
                   "artifactIds": ["cim-artifact.behavior-surface"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "cim",
@@ -1286,6 +1502,7 @@
                     }
                   ],
                   "artifactIds": ["cim-artifact.behavior-surface"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "cim",
@@ -1374,6 +1591,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.aggregate-model"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -1443,6 +1661,7 @@
                     }
                   ],
                   "artifactIds": ["cim-artifact.process-model"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "cim",
@@ -1576,6 +1795,7 @@
                     }
                   ],
                   "artifactIds": ["cim-artifact.decision-model"],
+                  "coverageGroups": [],
                   "workProducts": [
                     {
                       "metamodel": "cim",
@@ -1643,6 +1863,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.context-map"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -1718,6 +1939,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.requirements-package"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -1793,6 +2015,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.governance-package"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -1842,6 +2065,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.transformation-contract"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
@@ -1907,41 +2131,42 @@
                 }
               ],
               "artifactIds": ["cim-artifact.trace-readiness"],
+              "coverageGroups": [],
               "workProducts": [
                 {
                   "metamodel": "cim",
                   "eClass": "TraceModel",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "cim",
                   "eClass": "TraceLink",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "cim",
                   "eClass": "TransformationAssumption",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "cim",
                   "eClass": "ProductionReadinessAssessment",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "cim",
                   "eClass": "ReadinessFinding",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "cim",
                   "eClass": "ReadinessCheck",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 },
                 {
                   "metamodel": "cim",
                   "eClass": "ManualDecision",
-                  "cardinality": "1..*"
+                  "cardinality": "0..*"
                 }
               ],
               "steps": [
@@ -1977,6 +2202,7 @@
                 }
               ],
               "artifactIds": ["cim-artifact.increment-review"],
+              "coverageGroups": [],
               "workProducts": [],
               "steps": [
                 "Review slice outcomes against goals, KPIs, and acceptance criteria.",
@@ -2009,10 +2235,18 @@
           "Re-run traceability and readiness before CIM→PIM."
         ],
         "impactedStages": [
-          "cim.s2.discover",
-          "cim.s3.explore",
-          "cim.s4.construct",
-          "cim.s5.converge"
+          "cim.ph2.st1",
+          "cim.ph2.st2",
+          "cim.ph2.st3",
+          "cim.ph3.st1",
+          "cim.ph3.st2",
+          "cim.ph3.st3",
+          "cim.ph4.st1",
+          "cim.ph4.st2",
+          "cim.ph4.st3",
+          "cim.ph5.st1",
+          "cim.ph5.st2",
+          "cim.ph5.st3"
         ]
       },
       {
@@ -2025,7 +2259,16 @@
           "Run Impact Analysis: find trace links, constrains, and bounded-context memberships affected.",
           "Update dependent elements in later phases; mark downstream tasks incomplete if EVL rules break."
         ],
-        "impactedStages": ["cim.s3.explore", "cim.s4.construct", "cim.s5.converge"]
+        "impactedStages": [
+          "cim.ph3.st1",
+          "cim.ph3.st2",
+          "cim.ph3.st3",
+          "cim.ph4.st1",
+          "cim.ph4.st2",
+          "cim.ph4.st3",
+          "cim.ph5.st1",
+          "cim.ph5.st3"
+        ]
       },
       {
         "id": "cim.change.element-modify",
@@ -2037,7 +2280,16 @@
           "Apply Twin Peaks loop if requirements and structure diverge.",
           "Re-validate EVL rules for all impacted phases before marking tasks complete."
         ],
-        "impactedStages": ["cim.s3.explore", "cim.s4.construct", "cim.s5.converge"]
+        "impactedStages": [
+          "cim.ph3.st1",
+          "cim.ph3.st2",
+          "cim.ph3.st3",
+          "cim.ph4.st1",
+          "cim.ph4.st2",
+          "cim.ph4.st3",
+          "cim.ph5.st1",
+          "cim.ph5.st3"
+        ]
       },
       {
         "id": "cim.change.element-remove",
@@ -2049,7 +2301,7 @@
           "Delete the element; run EVL to confirm zero orphan references.",
           "Update TransformationProfile assumptions if CIM→PIM mapping changes."
         ],
-        "impactedStages": ["cim.s4.construct", "cim.s5.converge"]
+        "impactedStages": ["cim.ph4.st1", "cim.ph4.st2", "cim.ph4.st3", "cim.ph5.st3"]
       },
       {
         "id": "cim.change.post-transform",
@@ -2062,7 +2314,7 @@
           "Re-execute CIM→PIM ETL; reconcile PIM trace links and manual decisions.",
           "Propagate to PSM and artifacts per end-to-end change workflow."
         ],
-        "impactedStages": ["cim.s5.converge"],
+        "impactedStages": ["cim.ph5.st3"],
         "crossLevel": true
       }
     ]

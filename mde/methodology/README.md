@@ -1,11 +1,11 @@
 # MODRISS Modeling Methodologies
 
-The complete Persian software-project lifecycle process, including initiation, iterative MDE
-construction, transition, release, operations, maintenance, roles, artifacts, gates, umbrella
-activities, tailoring rules, and Mermaid diagrams. It is defined in
-[`software-development-process-fa.md`](software-development-process-fa.md). The machine-readable
-definitions below are the technical modeling and artifact-readiness subprocesses enacted inside
-that lifecycle.
+The normative English full-lifecycle method is defined in
+[`software-development-process.md`](software-development-process.md). It covers initiation,
+situational tailoring, team coordination, iterative-incremental CIM/PIM/PSM delivery, release,
+transition, operations, change propagation, and retirement. The Persian lifecycle translation is
+available in [`software-development-process-fa.md`](software-development-process-fa.md). The
+machine-readable definitions below are the executable method content enacted inside that lifecycle.
 
 Canonical, machine-readable **iterative-incremental** process definitions for CIM, PIM,
 AWS PSM, generated-artifact deployment readiness, and the end-to-end pipeline. Each process follows **SPEM 2.0**: sequential phases → stages
@@ -14,13 +14,13 @@ AWS PSM, generated-artifact deployment readiness, and the end-to-end pipeline. E
 
 ## Layout
 
-| Path                   | Purpose                                                                                                                             |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `spem/`                | SPEM 2.0 method content and UML activity diagrams                                                                                   |
-| `process-definitions/` | JSON DSL: phases, stages, tasks, roles, artifacts, `processEngine`                                                                  |
-| `coverage-matrix/`     | Generated concept → task mappings (CI-validated)                                                                                    |
-| `tools/lib/`           | `spem-cim.mjs`, `spem-pim.mjs`, `spem-psm.mjs`, `process-engine.mjs`, `iteration-loops.mjs`, `artifact-kinds.mjs`, `guidelines.mjs` |
-| `tools/`               | Build, coverage, validation, and UI metadata augmentation scripts                                                                   |
+| Path                   | Purpose                                                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `spem/`                | SPEM 2.0 method content and UML activity diagrams                                                                     |
+| `process-definitions/` | JSON DSL: phases, stages, tasks, roles, artifacts, progress/governance contracts, and `processEngine`                 |
+| `coverage-matrix/`     | Generated concept → task mappings (CI-validated)                                                                      |
+| `tools/lib/`           | SPEM specs, full-lifecycle orchestration, process engine, iteration loops, governance, artifact kinds, and guidelines |
+| `tools/`               | Build, coverage, validation, and UI metadata augmentation scripts                                                     |
 
 ## Maintenance
 

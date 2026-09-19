@@ -4,6 +4,11 @@ import { join } from "node:path";
 import { parseEcore, allConcepts } from "./lib/ecore-parser.mjs";
 import { PROCESS_PHASES } from "./lib/spem-process-spec.mjs";
 import {
+  END_TO_END_ARTIFACT_KINDS,
+  END_TO_END_PHASES,
+  END_TO_END_ROLES,
+} from "./lib/spem-end-to-end.mjs";
+import {
   ROLES,
   assignConceptsToTasks,
   KERNEL_TYPES,
@@ -14,6 +19,7 @@ import { PROCESS_GUIDELINES } from "./lib/guidelines.mjs";
 import { PROCESS_ENGINES, enrichEngineWithReworkLoops } from "./lib/process-engine.mjs";
 import { ITERATION_LOOPS, END_TO_END_LOOPS } from "./lib/iteration-loops.mjs";
 import { CHANGE_MANAGEMENT, CROSS_LEVEL_CHANGE_WORKFLOW } from "./lib/change-management.mjs";
+import { PROCESS_GOVERNANCE } from "./lib/process-governance.mjs";
 import { countTasks } from "./lib/process-walk.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -28,7 +34,8 @@ function workProductsForTypes(types, level, parsed) {
     return {
       metamodel: level,
       eClass: name,
-      cardinality: KERNEL_TYPES.has(name) ? "0..*" : "1..*",
+      cardinality:
+        KERNEL_TYPES.has(name) || SHARED_READINESS_TYPES.has(name) ? "0..*" : "1..*",
     };
   });
 }
@@ -36,8 +43,7 @@ function workProductsForTypes(types, level, parsed) {
 function resolveTaskTypes(task, conceptAssignment, concepts) {
   if (task.readinessTypes) {
     const readiness = concepts.filter((c) => SHARED_READINESS_TYPES.has(c));
-    const orphans = concepts.filter((c) => conceptAssignment.get(c) === task.id);
-    return [...new Set([...(task.types || []), ...readiness, ...orphans])];
+    return [...new Set([...(task.types || []), ...readiness])];
   }
   const assigned = concepts.filter((c) => conceptAssignment.get(c) === task.id);
   return [...new Set([...(task.types || []), ...assigned])];
@@ -64,11 +70,15 @@ function enrichTask(task, level, parsed, conceptAssignment, concepts) {
     viewpoint: task.viewpoint,
     artifacts,
     artifactIds: task.artifactIds || [],
+    coverageGroups: task.coverageGroups || [],
     workProducts,
     steps: task.steps,
     entryCriteria: task.entryCriteria,
     exitCriteria: task.exitCriteria,
     validationRules: task.validationRules,
+    progressEvidence: task.progressEvidence,
+    childProcessId: task.childProcessId,
+    transform: task.transform,
     paletteFocus: paletteFocus.slice(0, 12),
     durationEstimate: task.durationEstimate,
   };
@@ -124,6 +134,12 @@ function buildProcessDefinition(level) {
   const concepts = allConcepts(parsed);
   const phaseSpecs = PROCESS_PHASES[level];
   const conceptAssignment = assignConceptsToTasks(phaseSpecs, concepts);
+  const unassigned = concepts.filter((concept) => !conceptAssignment.has(concept));
+  if (unassigned.length) {
+    throw new Error(
+      `${level}: every metamodel concept must have an owning task; unassigned: ${unassigned.join(", ")}`,
+    );
+  }
   const loops = ITERATION_LOOPS[level] || [];
 
   const phases = phaseSpecs.map((phase) => ({
@@ -155,6 +171,8 @@ function buildProcessDefinition(level) {
     roles: ROLES[level],
     artifactKinds: ARTIFACT_KINDS[level] || [],
     guidelines: PROCESS_GUIDELINES[level] || [],
+    progressModel: PROCESS_GOVERNANCE[level]?.progressModel,
+    governance: PROCESS_GOVERNANCE[level]?.governance,
     processEngine: enrichEngineWithReworkLoops(level, PROCESS_ENGINES[level], loops),
     phases,
     changeManagement: CHANGE_MANAGEMENT[level] || { workflows: [] },
@@ -173,57 +191,19 @@ function buildEndToEnd() {
     processId: "modriss.end-to-end.modeling",
     spemVersion: "2.0",
     level: "end-to-end",
-    displayName: "CIM → PIM → PSM → Artifacts",
-    roles: [
-      { id: "business-modeler", name: "Business Modeler", responsibilities: ["CIM engine cycles"] },
-      { id: "requirements-engineer", name: "Requirements Engineer", responsibilities: ["CIM convergence governance"] },
-      { id: "solution-architect", name: "Solution Architect", responsibilities: ["PIM engine and CIM→PIM ETL"] },
-      { id: "cloud-platform-engineer", name: "Cloud Platform Engineer", responsibilities: ["PSM engine, ETL, M2T"] },
-      { id: "process-reviewer", name: "Process Reviewer", responsibilities: ["EVL gates and increment closure"] },
-    ],
-    artifactKinds: [],
+    displayName: "Full Software Lifecycle with CIM → PIM → PSM",
+    roles: END_TO_END_ROLES,
+    artifactKinds: END_TO_END_ARTIFACT_KINDS,
     guidelines: PROCESS_GUIDELINES["end-to-end"] || [],
+    progressModel: PROCESS_GOVERNANCE["end-to-end"]?.progressModel,
+    governance: PROCESS_GOVERNANCE["end-to-end"]?.governance,
     processEngine: enrichEngineWithReworkLoops(
       "end-to-end",
       PROCESS_ENGINES["end-to-end"],
       [],
       END_TO_END_LOOPS,
     ),
-    phases: [
-      {
-        id: "e2e.ph1",
-        name: "Increment Lifecycle",
-        order: 1,
-        objective: "Plan, execute child process engines, transform, and close each vertical increment.",
-        primaryRole: "business-modeler",
-        entryCriteria: ["Program chartered"],
-        exitCriteria: ["Increment artifacts validated or backlog empty"],
-        inEngine: true,
-        stages: PROCESS_ENGINES["end-to-end"].cycle.map((step) => ({
-          id: step.id,
-          name: step.name,
-          objective: step.steps?.join(" ") || step.name,
-          primaryRole: step.primaryRole || "business-modeler",
-          tasks: [
-            {
-              id: `${step.id}.t1`,
-              name: step.name,
-              primaryRole: step.primaryRole || "business-modeler",
-              steps: step.steps || [step.name],
-              entryCriteria: [],
-              exitCriteria: [`${step.name} complete`],
-              validationRules: step.validationGate ? [step.validationGate] : [],
-              workProducts: [],
-              artifacts: [],
-              artifactIds: [],
-              paletteFocus: [],
-              childProcessId: step.childProcessId,
-              transform: step.transform,
-            },
-          ],
-        })),
-      },
-    ],
+    phases: END_TO_END_PHASES,
     changeManagement: {
       workflows: [
         CROSS_LEVEL_CHANGE_WORKFLOW,
@@ -233,11 +213,11 @@ function buildEndToEnd() {
       ],
     },
     milestones: [
-      { id: "e2e.m0.increment-planned", name: "Increment scope agreed", phaseId: "e2e.ph1", stageId: "e2e.p0.increment-planning" },
-      { id: "e2e.m1.cim-ready", name: "CIM readiness approved", phaseId: "e2e.ph1", stageId: "e2e.p1.cim-modeling" },
-      { id: "e2e.m2.pim-ready", name: "PIM readiness approved", phaseId: "e2e.ph1", stageId: "e2e.p3.pim-refinement" },
-      { id: "e2e.m3.psm-ready", name: "PSM readiness approved", phaseId: "e2e.ph1", stageId: "e2e.p5.psm-refinement" },
-      { id: "e2e.m4.artifacts", name: "Increment artifacts delivered", phaseId: "e2e.ph1", stageId: "e2e.p7.artifact-completion" },
+      { id: "e2e.m0.method-tailored", name: "Method and team topology approved", phaseId: "e2e.ph0", stageId: "e2e.ph0.st3" },
+      { id: "e2e.m1.increment-accepted", name: "Vertical increment accepted", phaseId: "e2e.ph1", stageId: "e2e.p7.artifact-completion" },
+      { id: "e2e.m2.release-promoted", name: "Release promoted and handed over", phaseId: "e2e.ph2", stageId: "e2e.ph2.st2" },
+      { id: "e2e.m3.operational-learning", name: "Operational learning reviewed", phaseId: "e2e.ph3", stageId: "e2e.ph3.st4" },
+      { id: "e2e.m4.retired", name: "Lifecycle retired and closed", phaseId: "e2e.ph4", stageId: "e2e.ph4.st3" },
     ],
   };
 }

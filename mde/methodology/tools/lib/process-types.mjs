@@ -25,11 +25,13 @@
  * @property {string} [viewpoint]
  * @property {string[]} [artifactIds]
  * @property {string[]} [types] - metamodel EClass/EEnum names
+ * @property {string[]} [coverageGroups] - shared metamodel groups owned by this task
  * @property {boolean} [readinessTypes]
  * @property {string[]} steps
  * @property {string[]} entryCriteria
  * @property {string[]} exitCriteria
  * @property {string[]} validationRules
+ * @property {string} [progressEvidence]
  * @property {string} [durationEstimate]
  */
 
@@ -57,6 +59,7 @@
  * @property {string[]} exitCriteria
  * @property {boolean} [inEngine]
  * @property {StageSpec[]} stages
+ * @property {string} [tailoringNote]
  */
 
 /**
@@ -111,6 +114,8 @@
  * @property {{ fromStepId: string, toStepId: string, condition: string, guidance: string }} loop
  * @property {string[]} [reworkLoopIds]
  * @property {IterationLoop[]} [reworkLoops]
+ * @property {Object} [progressModel]
+ * @property {Object} [governance]
  */
 
 export {};

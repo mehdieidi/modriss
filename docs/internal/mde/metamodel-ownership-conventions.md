@@ -61,8 +61,12 @@ Nested under non-service parents:
 ## Audit workflow
 
 1. Run `python mde/metamodels/tools/audit-ownership.py` after metamodel edits
-2. Review `mde/metamodels/ownership-audit.csv` for flagged issues
-3. Fix unreachable types, duplicate containment paths, and misplaced root entries
+2. Review `mde/metamodels/ownership-audit.csv` for `review:` candidates
+3. Fix genuinely unreachable concrete types or duplicate containment semantics; a
+   `multiple-containment-candidate` is not automatically a defect because one
+   classifier may have alternative valid parents (for example, nested PSM
+   resources or reusable expressions). Confirm the actual instance ownership
+   and, where needed, add an explicit semantic validation rule.
 4. Regenerate combined Ecore via `mde-cli`
 
 ## CVS / view alignment
@@ -70,3 +74,8 @@ Nested under non-service parents:
 - Entry containers (`ServerlessService`, `BoundedContextCandidate`, `SamStack`) use `visualRole: container`
 - View palettes list only top-level creatable types for that view
 - Contained details use drill-down via Ecore-derived `containmentPalettes`
+
+The audit is inheritance-aware and understands numeric multiplicities. It treats
+containment inherited from abstract supertypes as an ownership path and treats
+semantic `owns*` references as ordinary cross-links unless they duplicate the
+same class's actual containment owner.

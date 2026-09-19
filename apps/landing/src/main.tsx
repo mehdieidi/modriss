@@ -60,7 +60,7 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
 }
 
 const contributions = [
-  ['01', 'Development process', 'An iterative and incremental process is being defined for serverless projects. It connects technical modeling work with phases, roles, tasks, work products, decision gates, iteration, and supporting activities across the software lifecycle.'],
+  ['01', 'Development process', 'An iterative and incremental process guides teams from project initiation through coordinated CIM–PIM–PSM modeling and on to release, operations, evolution, and retirement.'],
   ['02', 'Modeling framework', 'A set of domain-specific modeling languages represents the problem domain, platform-independent serverless architecture, and AWS deployment design. Their abstract syntax is specified through Ecore metamodels.'],
   ['03', 'Automated refinement', 'Explicit model-to-model transformations refine CIM models into PIM and PSM models. Model-to-text transformations generate an inspectable serverless project from the provider-specific model.'],
   ['04', 'AI-assisted modeling', 'A conversational LLM-based assistant supports model creation, inspection, explanation, and controlled modification. It works with the live metamodel and keeps generated changes subject to structural conformance and human control.'],

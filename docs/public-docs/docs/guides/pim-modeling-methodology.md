@@ -49,7 +49,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modriss.pim.modeling` · 6 phases · 31 atomic tasks · PIM metamodel coverage enforced in CI.
+Process `modriss.pim.modeling` · 6 phases · 32 atomic tasks · PIM metamodel coverage enforced in CI.
 
 ### Architecture & Slice Framing (`pim.ph1`)
 
@@ -142,6 +142,26 @@ Create or refresh the PIMModel root with architecture style and implementation p
 **Exit criteria:**
 
 - Architecture style and profile configured
+
+#### Establish shared model contract and evidence conventions (`pim.ph1.st1.t3`)
+
+**Viewpoint:** dashboard
+**Duration:** 30m
+**Artifacts:** Architecture Posture
+
+**Steps:**
+
+1. Apply shared identity, annotation, traceability, expression, and lifecycle conventions across PIM elements.
+2. Record the revision, transformation provenance, and review-state convention for the service slice.
+3. Keep support concepts in inspectors and readiness evidence instead of exposing them as false deployable architecture nodes.
+
+**Entry criteria:**
+
+- PIM model root exists
+
+**Exit criteria:**
+
+- Shared model contract and evidence convention are recorded
 
 #### Service Boundaries (`pim.ph1.st2`)
 
@@ -402,11 +422,11 @@ Expose functions through APIs with routes, contracts, and error mappings.
 **Viewpoint:** api
 **Duration:** 1h
 **Artifacts:** API Catalog
-**Palette focus:** `ServerlessService`
+**Palette focus:** `Api`, `ApiRoute`
 
 **Steps:**
 
-1. Open a ServerlessService focus view and create Api elements with routes and HTTP methods.
+1. Create Api elements with routes and HTTP methods.
 2. Connect routes to function handlers.
 
 **Entry criteria:**
@@ -527,12 +547,25 @@ Model workflows from CIM business processes with human tasks and compensation.
 **Viewpoint:** workflow
 **Duration:** 1-2h
 **Artifacts:** Workflow Model
-**Palette focus:** `Workflow`, `StartStep`, `TaskStep`, `WorkflowTransition`
+**Palette focus:**
+
+- `Workflow`
+- `WorkflowStep`
+- `StartStep`
+- `TaskStep`
+- `ChoiceStep`
+- `WaitStep`
+- `SuccessEndStep`
+- `FailureEndStep`
+- `ParallelStep`
+- `MapStep`
+- `PassStep`
+- `WorkflowTransition`
 
 **Steps:**
 
 1. Create Workflow elements from CIM business processes.
-2. Define steps, transitions, and workflow kind.
+2. Define typed workflow steps, transitions, and workflow kind.
 
 **Entry criteria:**
 

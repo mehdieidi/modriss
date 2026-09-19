@@ -2065,7 +2065,7 @@
       },
       "containmentPaletteExtras": ["DecisionRule"],
       "processPhaseId": "cim.ph4",
-      "processTaskIds": ["cim.ph4.st2.ss2.t1", "cim.ph4.st2.ss1.t1"],
+      "processTaskIds": ["cim.ph4.st2.ss2.t1"],
       "processStageId": "cim.ph4.st2.ss2"
     },
     {
@@ -2083,7 +2083,7 @@
       "containedOnly": true,
       "creatable": true,
       "processPhaseId": "cim.ph4",
-      "processTaskIds": ["cim.ph4.st2.ss2.t1", "cim.ph4.st2.ss1.t1"],
+      "processTaskIds": ["cim.ph4.st2.ss2.t1"],
       "processStageId": "cim.ph4.st2.ss2"
     },
     {

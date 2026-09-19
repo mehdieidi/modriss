@@ -2,41 +2,127 @@
   "processId": "modriss.end-to-end.modeling",
   "spemVersion": "2.0",
   "level": "end-to-end",
-  "displayName": "CIM → PIM → PSM → Artifacts",
+  "displayName": "Full Software Lifecycle with CIM → PIM → PSM",
   "roles": [
+    {
+      "id": "product-owner",
+      "name": "Product Owner",
+      "responsibilities": [
+        "Owns product outcomes, priority, release scope, and acceptance decisions"
+      ]
+    },
+    {
+      "id": "delivery-lead",
+      "name": "Delivery Lead",
+      "responsibilities": [
+        "Maintains the integrated process run, dependency board, risks, cadence, and impediment escalation"
+      ]
+    },
     {
       "id": "business-modeler",
       "name": "Business Modeler",
-      "responsibilities": ["CIM engine cycles"]
+      "responsibilities": ["Leads CIM discovery and domain-model increments"]
     },
     {
       "id": "requirements-engineer",
       "name": "Requirements Engineer",
-      "responsibilities": ["CIM convergence governance"]
+      "responsibilities": [
+        "Maintains requirements, acceptance criteria, and change impact evidence"
+      ]
+    },
+    {
+      "id": "domain-expert",
+      "name": "Domain Expert",
+      "responsibilities": ["Validates business language, rules, and operational fit"]
     },
     {
       "id": "solution-architect",
       "name": "Solution Architect",
-      "responsibilities": ["PIM engine and CIM→PIM ETL"]
+      "responsibilities": [
+        "Leads PIM architecture, contracts, integration, and cross-level decisions"
+      ]
     },
     {
       "id": "cloud-platform-engineer",
       "name": "Cloud Platform Engineer",
-      "responsibilities": ["PSM engine, ETL, M2T"]
+      "responsibilities": ["Leads AWS PSM, generation, environments, and platform automation"]
+    },
+    {
+      "id": "quality-engineer",
+      "name": "Quality Engineer",
+      "responsibilities": ["Owns verification strategy, evidence quality, and quality risks"]
+    },
+    {
+      "id": "security-engineer",
+      "name": "Security Engineer",
+      "responsibilities": ["Owns security, privacy, threat, and exception evidence"]
+    },
+    {
+      "id": "release-engineer",
+      "name": "Release Engineer",
+      "responsibilities": ["Owns release candidates, promotion, rollback, and deployment records"]
+    },
+    {
+      "id": "service-owner",
+      "name": "Service Owner",
+      "responsibilities": [
+        "Accepts operational readiness, SLOs, support ownership, and service outcomes"
+      ]
     },
     {
       "id": "process-reviewer",
       "name": "Process Reviewer",
-      "responsibilities": ["EVL gates and increment closure"]
+      "responsibilities": ["Reviews gates, evidence, decisions, and method improvement"]
+    },
+    {
+      "id": "method-engineer",
+      "name": "Method Engineer",
+      "responsibilities": ["Tailors and evolves the situational method and its process assets"]
     }
   ],
-  "artifactKinds": [],
+  "artifactKinds": [
+    {
+      "id": "e2e-artifact.product-charter",
+      "name": "Product and System Charter",
+      "description": "Product goal, outcome hypothesis, scope boundaries, constraints, and success measures."
+    },
+    {
+      "id": "e2e-artifact.method-profile",
+      "name": "Situational Method Profile",
+      "description": "Tailored lifecycle, roles, work products, gates, evidence rules, and metrics for the project context."
+    },
+    {
+      "id": "e2e-artifact.team-topology",
+      "name": "Team Topology and Dependency Map",
+      "description": "Team ownership, interfaces, dependency board, decision rights, and coordination cadence."
+    },
+    {
+      "id": "e2e-artifact.increment-record",
+      "name": "Increment Record",
+      "description": "Slice goal, scope, acceptance evidence, model revisions, transformation runs, and retrospective results."
+    },
+    {
+      "id": "e2e-artifact.release-record",
+      "name": "Release Record",
+      "description": "Release scope, exact model and artifact revisions, approvals, deployment evidence, rollback identity, and outcome."
+    },
+    {
+      "id": "e2e-artifact.operations-record",
+      "name": "Operations and Learning Record",
+      "description": "SLOs, incidents, changes, product outcomes, and method-improvement actions."
+    },
+    {
+      "id": "e2e-artifact.retirement-record",
+      "name": "Retirement and Closure Record",
+      "description": "Retirement decision, migration/data disposition, decommission evidence, and retained knowledge."
+    }
+  ],
   "guidelines": [
     {
       "id": "e2e.guid.incremental-vertical",
       "name": "Thin vertical increments",
       "appliesTo": "process",
-      "text": "Deliver one capability slice through CIM → PIM → PSM → artifacts per engine revolution. Avoid big-bang modeling."
+      "text": "Deliver one capability slice through CIM → PIM → PSM → artifact readiness per engine revolution. The engine repeats inside release, operations, and retirement lifecycle governance; avoid big-bang modeling."
     },
     {
       "id": "e2e.guid.human-in-loop",
@@ -51,21 +137,180 @@
       "text": "Plan a small vertical slice, inspect executable model evidence at each gate, and adapt the backlog after artifact review."
     }
   ],
+  "progressModel": {
+    "trackingUnit": "versioned-process-run",
+    "sourceOfTruth": [
+      "The project work tracker stores one process-run record per increment or release candidate.",
+      "The model repository stores the model revision, transformation run, validation evidence, and readiness assessment.",
+      "The release record stores the exact accepted model, generator, artifact, test, and deployment revisions."
+    ],
+    "requiredRunFields": [
+      "runId",
+      "productGoalId",
+      "incrementId",
+      "scopeItemIds",
+      "methodProfileId",
+      "teamIds",
+      "currentPhaseId",
+      "currentStageId",
+      "state",
+      "ownerRole",
+      "startedAt",
+      "lastInspectedAt",
+      "evidenceLinks",
+      "openBlockers",
+      "acceptedAt"
+    ],
+    "states": [
+      "not-started",
+      "in-progress",
+      "blocked",
+      "ready-for-review",
+      "accepted",
+      "rework",
+      "deferred"
+    ],
+    "events": [
+      "increment-started",
+      "task-evidence-recorded",
+      "finding-raised",
+      "finding-resolved",
+      "decision-recorded",
+      "gate-reviewed",
+      "increment-accepted",
+      "increment-reopened",
+      "release-promoted"
+    ],
+    "aggregation": {
+      "rule": "Aggregate by increment, team, release, and product; never average away a blocking finding.",
+      "teamCoordination": "Publish a shared dependency board with ownership, dependency type, due date, and escalation path.",
+      "reviewCadence": "Daily local coordination, per-increment review/retrospective, and per-release readiness review."
+    },
+    "metrics": [
+      {
+        "id": "task-completion",
+        "name": "Eligible task completion",
+        "unit": "ratio",
+        "formula": "completed eligible tasks / eligible tasks",
+        "source": "versioned process-run record",
+        "cadence": "each workday and at gate review",
+        "ownerRole": "delivery-lead",
+        "interpretation": "Visibility only; never substitute for a usable increment."
+      },
+      {
+        "id": "increment-flow-time",
+        "name": "Increment flow time",
+        "unit": "elapsed-time",
+        "formula": "accepted-increment timestamp - increment-start timestamp",
+        "source": "increment and gate timestamps",
+        "cadence": "per accepted increment",
+        "ownerRole": "delivery-lead",
+        "interpretation": "Use trends to tune slice size and expose queues."
+      },
+      {
+        "id": "rework-rate",
+        "name": "Rework rate",
+        "unit": "ratio",
+        "formula": "reopened tasks caused by a finding / completed tasks",
+        "source": "change and finding records",
+        "cadence": "per increment and release",
+        "ownerRole": "process-reviewer",
+        "interpretation": "Inspect causes; do not use as an individual performance score."
+      },
+      {
+        "id": "trace-coverage",
+        "name": "Trace coverage",
+        "unit": "ratio",
+        "formula": "accepted scope items with source-to-evidence trace / accepted scope items",
+        "source": "TraceModel and release evidence",
+        "cadence": "at every level gate and release",
+        "ownerRole": "process-reviewer",
+        "interpretation": "A low value blocks confidence even when task completion is high."
+      },
+      {
+        "id": "blocking-findings",
+        "name": "Open blocking findings",
+        "unit": "count",
+        "formula": "count(open findings where blocking = true)",
+        "source": "readiness assessment and validation report",
+        "cadence": "continuous; mandatory at gates",
+        "ownerRole": "process-reviewer",
+        "interpretation": "Must be zero or covered by an explicit, time-bound risk acceptance."
+      },
+      {
+        "id": "manual-decision-closure",
+        "name": "Manual decision closure",
+        "unit": "ratio",
+        "formula": "accepted/rejected/waived manual decisions / blocking manual decisions",
+        "source": "readiness assessment decision register",
+        "cadence": "at transformation and release gates",
+        "ownerRole": "process-reviewer",
+        "interpretation": "Open decisions remain visible and are not silently treated as done."
+      },
+      {
+        "id": "vertical-slice-acceptance",
+        "name": "Accepted vertical-slice rate",
+        "unit": "ratio",
+        "formula": "increments accepted end-to-end / increments started",
+        "source": "increment ledger and gate records",
+        "cadence": "per release train",
+        "ownerRole": "delivery-lead",
+        "interpretation": "A slice is accepted only when it is usable and all required evidence exists."
+      },
+      {
+        "id": "dependency-aging",
+        "name": "Cross-team dependency age",
+        "unit": "elapsed-time",
+        "formula": "now - openedAt for the oldest unresolved dependency",
+        "source": "shared dependency board",
+        "cadence": "daily coordination",
+        "ownerRole": "delivery-lead",
+        "interpretation": "Escalate aging dependencies before they become integration surprises."
+      },
+      {
+        "id": "release-frequency",
+        "name": "Release frequency",
+        "unit": "releases-per-period",
+        "formula": "production releases / reporting period",
+        "source": "release ledger",
+        "cadence": "per reporting period",
+        "ownerRole": "release-engineer",
+        "interpretation": "Interpret with change failure rate, recovery time, and product outcomes."
+      }
+    ],
+    "level": "end-to-end"
+  },
+  "governance": {
+    "entryEvidence": [
+      "product goal",
+      "business case",
+      "tailored method profile",
+      "team topology",
+      "release strategy"
+    ],
+    "exitEvidence": [
+      "operating service or justified retirement",
+      "release and incident evidence",
+      "product outcome review",
+      "method improvement record"
+    ],
+    "gate": "The end-to-end method coordinates the child processes; it does not waive any level gate or the artifact/release process."
+  },
   "processEngine": {
     "id": "modriss.end-to-end.engine",
     "displayName": "End-to-End MDE Engine",
-    "description": "One vertical CIM → PIM → PSM → artifacts revolution per capability increment.",
+    "description": "One vertical CIM → PIM → PSM → artifact-readiness revolution per capability increment, embedded in release, operations, and retirement governance.",
     "incrementUnit": "capability-slice",
     "deliverable": {
       "name": "Deployable increment",
-      "description": "Models at all levels plus generated artifacts for one slice."
+      "description": "Accepted models at all levels, generated artifacts, verification evidence, and an explicit increment decision for one slice."
     },
     "cycle": [
       {
         "id": "e2e.p0.increment-planning",
-        "name": "Increment Planning",
+        "name": "Increment Framing",
         "type": "orchestration",
-        "primaryRole": "business-modeler"
+        "primaryRole": "product-owner"
       },
       {
         "id": "e2e.p1.cim-modeling",
@@ -108,16 +353,17 @@
       },
       {
         "id": "e2e.p7.artifact-completion",
-        "name": "Increment Closure",
+        "name": "Increment Readiness & Acceptance",
         "type": "deliverable",
-        "primaryRole": "process-reviewer"
+        "primaryRole": "process-reviewer",
+        "childProcessId": "modriss.artifact.deployment-readiness"
       }
     ],
     "loop": {
       "fromStepId": "e2e.p7.artifact-completion",
       "toStepId": "e2e.p0.increment-planning",
-      "condition": "increment-backlog-remaining",
-      "guidance": "Revolve end-to-end engine for next capability increment."
+      "condition": "next-increment-or-release-scope-open",
+      "guidance": "After increment acceptance, either start the next capability slice or leave the engine for release assembly. Any downstream finding re-enters the smallest affected child process through the recorded change workflow."
     },
     "reworkLoopIds": [
       "e2e.loop.pim-feedback-cim",
@@ -156,186 +402,824 @@
   },
   "phases": [
     {
+      "id": "e2e.ph0",
+      "name": "Initiate, Tailor & Organize",
+      "order": 0,
+      "objective": "Establish the product/system purpose, situational method, team topology, quality baseline, and release strategy before modeling begins.",
+      "primaryRole": "product-owner",
+      "entryCriteria": ["A problem, opportunity, or mandated change has an accountable sponsor"],
+      "exitCriteria": [
+        "The method profile is approved",
+        "Teams, ownership, dependencies, and decision rights are explicit",
+        "The first increment has a testable outcome hypothesis"
+      ],
+      "inEngine": false,
+      "tailoringNote": "Tailor by risk, novelty, regulatory exposure, team distribution, and architecture volatility; retain evidence and gate obligations even when activities are combined.",
+      "stages": [
+        {
+          "id": "e2e.ph0.st1",
+          "name": "Product and System Intent",
+          "objective": "Turn the opportunity into an outcome-oriented product/system charter and release hypothesis.",
+          "primaryRole": "product-owner",
+          "iterative": false,
+          "tasks": [
+            {
+              "id": "e2e.ph0.st1.t1",
+              "name": "Define product outcomes and success measures",
+              "primaryRole": "product-owner",
+              "steps": [
+                "State the user or mission problem and desired outcomes.",
+                "Define measurable product, operational, security, and quality outcomes.",
+                "Record assumptions, constraints, non-goals, and the first release hypothesis."
+              ],
+              "artifactIds": ["e2e-artifact.product-charter"],
+              "entryCriteria": [],
+              "exitCriteria": ["Outcome measures and non-goals are accepted by stakeholders"],
+              "validationRules": [
+                "Every initial scope item is connected to an outcome or mandatory constraint"
+              ],
+              "progressEvidence": "Define product outcomes and success measures decision, evidence links, owner, and status are recorded"
+            },
+            {
+              "id": "e2e.ph0.st1.t2",
+              "name": "Establish the initial release and increment hypothesis",
+              "primaryRole": "requirements-engineer",
+              "steps": [
+                "Identify the smallest useful vertical capability slice.",
+                "Define acceptance signals and the evidence needed to call it usable.",
+                "Record unresolved assumptions as owned decisions rather than hidden risks."
+              ],
+              "artifactIds": ["e2e-artifact.product-charter", "e2e-artifact.increment-record"],
+              "entryCriteria": [],
+              "exitCriteria": [
+                "Establish the initial release and increment hypothesis evidence is recorded"
+              ],
+              "validationRules": [
+                "The first slice crosses the required lifecycle boundary and has observable acceptance evidence"
+              ],
+              "progressEvidence": "Establish the initial release and increment hypothesis decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        },
+        {
+          "id": "e2e.ph0.st2",
+          "name": "Situational Method Tailoring",
+          "objective": "Select and tailor method fragments to the project context without removing essential control objectives.",
+          "primaryRole": "method-engineer",
+          "iterative": false,
+          "tasks": [
+            {
+              "id": "e2e.ph0.st2.t1",
+              "name": "Assess context and method risks",
+              "primaryRole": "method-engineer",
+              "steps": [
+                "Assess criticality, regulatory obligations, novelty, uncertainty, team distribution, system size, and delivery cadence.",
+                "Select the required CIM, PIM, PSM, artifact, and lifecycle activities.",
+                "Record excluded, combined, or delegated activities with rationale and compensating evidence."
+              ],
+              "artifactIds": ["e2e-artifact.method-profile"],
+              "entryCriteria": [],
+              "exitCriteria": ["Assess context and method risks evidence is recorded"],
+              "validationRules": [
+                "Every tailoring decision names its context, consequence, owner, and review point"
+              ],
+              "progressEvidence": "Assess context and method risks decision, evidence links, owner, and status are recorded"
+            },
+            {
+              "id": "e2e.ph0.st2.t2",
+              "name": "Define the tailored Definition of Ready and Done",
+              "primaryRole": "process-reviewer",
+              "steps": [
+                "Define entry and exit evidence for model slices, transformations, release candidates, and operations.",
+                "Define which findings are blocking and how time-bound risk acceptance works.",
+                "Publish the profile version used by the process run."
+              ],
+              "artifactIds": ["e2e-artifact.method-profile"],
+              "entryCriteria": [],
+              "exitCriteria": [
+                "Define the tailored Definition of Ready and Done evidence is recorded"
+              ],
+              "validationRules": [
+                "A task cannot be accepted solely because activity occurred; required evidence and gate criteria are explicit"
+              ],
+              "progressEvidence": "Define the tailored Definition of Ready and Done decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        },
+        {
+          "id": "e2e.ph0.st3",
+          "name": "Team Topology & Coordination",
+          "objective": "Make ownership and coordination explicit for multiple teams working on one integrated model and product.",
+          "primaryRole": "delivery-lead",
+          "iterative": false,
+          "tasks": [
+            {
+              "id": "e2e.ph0.st3.t1",
+              "name": "Define team ownership and interfaces",
+              "primaryRole": "delivery-lead",
+              "steps": [
+                "Partition work by bounded capability, service, platform concern, or lifecycle responsibility.",
+                "Assign model ownership, repository ownership, decision rights, and backup owners.",
+                "Define interface contracts and the shared dependency board."
+              ],
+              "artifactIds": ["e2e-artifact.team-topology"],
+              "entryCriteria": [],
+              "exitCriteria": ["Define team ownership and interfaces evidence is recorded"],
+              "validationRules": [
+                "Every owned model scope has one accountable owner and a named integration path"
+              ],
+              "progressEvidence": "Define team ownership and interfaces decision, evidence links, owner, and status are recorded"
+            },
+            {
+              "id": "e2e.ph0.st3.t2",
+              "name": "Set coordination cadence and escalation paths",
+              "primaryRole": "delivery-lead",
+              "steps": [
+                "Set local team syncs, cross-team integration reviews, increment reviews, release reviews, and retrospectives.",
+                "Define escalation thresholds for aging dependencies, blocking findings, and conflicting model ownership.",
+                "Define how concurrent model edits are merged, reviewed, and reconciled."
+              ],
+              "artifactIds": ["e2e-artifact.team-topology", "e2e-artifact.method-profile"],
+              "entryCriteria": [],
+              "exitCriteria": [
+                "Set coordination cadence and escalation paths evidence is recorded"
+              ],
+              "validationRules": [
+                "Coordination events produce decisions, dependency status, and evidence links"
+              ],
+              "progressEvidence": "Set coordination cadence and escalation paths decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        },
+        {
+          "id": "e2e.ph0.st4",
+          "name": "Quality, Security & Operations Baseline",
+          "objective": "Set cross-cutting quality, security, operational, and release constraints before design detail accumulates.",
+          "primaryRole": "quality-engineer",
+          "iterative": false,
+          "tasks": [
+            {
+              "id": "e2e.ph0.st4.t1",
+              "name": "Define quality and security control objectives",
+              "primaryRole": "security-engineer",
+              "steps": [
+                "Identify privacy, threat, compliance, resilience, performance, accessibility, and audit obligations.",
+                "Map control objectives to model evidence, generated artifact evidence, and explicit human decisions.",
+                "Set severity and blocking policies."
+              ],
+              "artifactIds": ["e2e-artifact.method-profile"],
+              "entryCriteria": [],
+              "exitCriteria": [
+                "Define quality and security control objectives evidence is recorded"
+              ],
+              "validationRules": [
+                "Critical controls have an accountable owner and verification evidence path"
+              ],
+              "progressEvidence": "Define quality and security control objectives decision, evidence links, owner, and status are recorded"
+            },
+            {
+              "id": "e2e.ph0.st4.t2",
+              "name": "Define operational and release strategy",
+              "primaryRole": "service-owner",
+              "steps": [
+                "Define environments, support ownership, SLO hypotheses, observability expectations, rollback posture, and release cadence.",
+                "Identify data migration, compatibility, and progressive-delivery constraints.",
+                "Record the initial release decision policy."
+              ],
+              "artifactIds": ["e2e-artifact.product-charter", "e2e-artifact.method-profile"],
+              "entryCriteria": [],
+              "exitCriteria": ["Define operational and release strategy evidence is recorded"],
+              "validationRules": [
+                "The release strategy names promotion, rollback, and post-deployment validation evidence"
+              ],
+              "progressEvidence": "Define operational and release strategy decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "e2e.ph1",
-      "name": "Increment Lifecycle",
+      "name": "Iterative-Incremental Model-Driven Delivery",
       "order": 1,
-      "objective": "Plan, execute child process engines, transform, and close each vertical increment.",
-      "primaryRole": "business-modeler",
-      "entryCriteria": ["Program chartered"],
-      "exitCriteria": ["Increment artifacts validated or backlog empty"],
+      "objective": "Deliver usable vertical increments by coordinating CIM, PIM, PSM, transformation, generation, and artifact-readiness child processes.",
+      "primaryRole": "delivery-lead",
+      "entryCriteria": [
+        "A tailored method profile and team topology exist",
+        "An increment goal and acceptance hypothesis are ready"
+      ],
+      "exitCriteria": [
+        "The increment is accepted, deferred with explicit rationale, or returned for bounded rework",
+        "The increment record contains model, transformation, artifact, and acceptance evidence"
+      ],
       "inEngine": true,
+      "tailoringNote": "The engine is the repeatable kernel. Teams may work concurrently inside a cycle, but promotion remains evidence-based and downstream work cannot silently accept unresolved upstream decisions.",
       "stages": [
         {
           "id": "e2e.p0.increment-planning",
-          "name": "Increment Planning",
-          "objective": "Increment Planning",
-          "primaryRole": "business-modeler",
+          "name": "Frame Increment",
+          "objective": "Select a thin, valuable, testable capability slice and establish its evidence plan.",
+          "primaryRole": "product-owner",
+          "iterative": false,
           "tasks": [
             {
               "id": "e2e.p0.increment-planning.t1",
-              "name": "Increment Planning",
-              "primaryRole": "business-modeler",
-              "steps": ["Increment Planning"],
+              "name": "Plan the vertical increment",
+              "primaryRole": "product-owner",
+              "steps": [
+                "Select scope from the ordered product backlog.",
+                "Define outcome, acceptance criteria, dependencies, risks, and expected model/artifact evidence.",
+                "Assign scope items to owning teams and establish the increment ledger."
+              ],
+              "artifactIds": ["e2e-artifact.increment-record"],
               "entryCriteria": [],
-              "exitCriteria": ["Increment Planning complete"],
-              "validationRules": [],
-              "workProducts": [],
-              "artifacts": [],
-              "artifactIds": [],
-              "paletteFocus": []
+              "exitCriteria": [
+                "Increment scope, owners, acceptance evidence, and dependencies are agreed"
+              ],
+              "validationRules": [
+                "The slice is small enough to inspect end-to-end and large enough to demonstrate a user or operational outcome"
+              ],
+              "progressEvidence": "Plan the vertical increment decision, evidence links, owner, and status are recorded"
             }
           ]
         },
         {
           "id": "e2e.p1.cim-modeling",
-          "name": "CIM Engine",
-          "objective": "CIM Engine",
+          "name": "CIM Child Process",
+          "objective": "Refine business intent and domain behavior for the selected slice.",
           "primaryRole": "business-modeler",
+          "iterative": false,
           "tasks": [
             {
               "id": "e2e.p1.cim-modeling.t1",
-              "name": "CIM Engine",
+              "name": "Run the CIM increment",
               "primaryRole": "business-modeler",
-              "steps": ["CIM Engine"],
+              "steps": [
+                "Execute the CIM process for the selected capability slice.",
+                "Record semantic decisions, assumptions, trace links, readiness findings, and accepted CIM revision.",
+                "Return unresolved cross-team or product decisions to the integrated decision register."
+              ],
+              "artifactIds": ["e2e-artifact.increment-record"],
               "entryCriteria": [],
-              "exitCriteria": ["CIM Engine complete"],
-              "validationRules": [],
-              "workProducts": [],
-              "artifacts": [],
-              "artifactIds": [],
-              "paletteFocus": [],
+              "exitCriteria": ["CIM gate evidence is accepted or explicitly reworked"],
+              "validationRules": [
+                "Assistant-applied model changes pass structural Ecore/EMF conformance; semantic validation remains an explicit user/model validation workflow"
+              ],
+              "progressEvidence": "Run the CIM increment decision, evidence links, owner, and status are recorded",
               "childProcessId": "modriss.cim.modeling"
             }
           ]
         },
         {
           "id": "e2e.p2.cim-to-pim",
-          "name": "CIM → PIM ETL",
-          "objective": "CIM → PIM ETL",
+          "name": "CIM → PIM Transformation",
+          "objective": "Transform the accepted CIM revision into PIM scaffolding while preserving traceability and surfacing manual decisions.",
           "primaryRole": "solution-architect",
+          "iterative": false,
           "tasks": [
             {
               "id": "e2e.p2.cim-to-pim.t1",
-              "name": "CIM → PIM ETL",
+              "name": "Execute and inspect CIM-to-PIM transformation",
               "primaryRole": "solution-architect",
-              "steps": ["CIM → PIM ETL"],
+              "steps": [
+                "Pin the source CIM revision and transformation profile.",
+                "Run the transformation and inspect report, trace links, assumptions, and manual decisions.",
+                "Accept, reject, or route each material decision and record the target PIM revision."
+              ],
+              "artifactIds": ["e2e-artifact.increment-record"],
               "entryCriteria": [],
-              "exitCriteria": ["CIM → PIM ETL complete"],
-              "validationRules": [],
-              "workProducts": [],
-              "artifacts": [],
-              "artifactIds": [],
-              "paletteFocus": [],
+              "exitCriteria": [
+                "Execute and inspect CIM-to-PIM transformation evidence is recorded"
+              ],
+              "validationRules": [
+                "Every generated target scope item is traceable to a source or explicit transformation decision"
+              ],
+              "progressEvidence": "Execute and inspect CIM-to-PIM transformation decision, evidence links, owner, and status are recorded",
               "transform": "cim-to-pim"
             }
           ]
         },
         {
           "id": "e2e.p3.pim-refinement",
-          "name": "PIM Engine",
-          "objective": "PIM Engine",
-          "primaryRole": "business-modeler",
+          "name": "PIM Child Process",
+          "objective": "Refine service boundaries, contracts, data, behavior, integration, assurance, and platform intent.",
+          "primaryRole": "solution-architect",
+          "iterative": false,
           "tasks": [
             {
               "id": "e2e.p3.pim-refinement.t1",
-              "name": "PIM Engine",
-              "primaryRole": "business-modeler",
-              "steps": ["PIM Engine"],
+              "name": "Run the PIM increment",
+              "primaryRole": "solution-architect",
+              "steps": [
+                "Execute the PIM process for the transformed slice.",
+                "Review contracts, data access, integration, policy, platform mapping, and operational assumptions.",
+                "Record accepted PIM revision and open platform decisions."
+              ],
+              "artifactIds": ["e2e-artifact.increment-record"],
               "entryCriteria": [],
-              "exitCriteria": ["PIM Engine complete"],
-              "validationRules": [],
-              "workProducts": [],
-              "artifacts": [],
-              "artifactIds": [],
-              "paletteFocus": [],
+              "exitCriteria": ["PIM gate evidence is accepted or explicitly reworked"],
+              "validationRules": [
+                "Generated PIM is treated as scaffolding until the solution architect accepts material decisions"
+              ],
+              "progressEvidence": "Run the PIM increment decision, evidence links, owner, and status are recorded",
               "childProcessId": "modriss.pim.modeling"
             }
           ]
         },
         {
           "id": "e2e.p4.pim-to-psm",
-          "name": "PIM → PSM ETL",
-          "objective": "PIM → PSM ETL",
+          "name": "PIM → AWS PSM Transformation",
+          "objective": "Map accepted platform-independent architecture to AWS-specific deployment intent.",
           "primaryRole": "cloud-platform-engineer",
+          "iterative": false,
           "tasks": [
             {
               "id": "e2e.p4.pim-to-psm.t1",
-              "name": "PIM → PSM ETL",
+              "name": "Execute and inspect PIM-to-PSM transformation",
               "primaryRole": "cloud-platform-engineer",
-              "steps": ["PIM → PSM ETL"],
+              "steps": [
+                "Pin the source PIM revision and AWS mapping profile.",
+                "Run the transformation and inspect resource mappings, assumptions, security implications, and trace links.",
+                "Record accepted target PSM revision or route mapping gaps back to PIM."
+              ],
+              "artifactIds": ["e2e-artifact.increment-record"],
               "entryCriteria": [],
-              "exitCriteria": ["PIM → PSM ETL complete"],
-              "validationRules": [],
-              "workProducts": [],
-              "artifacts": [],
-              "artifactIds": [],
-              "paletteFocus": [],
+              "exitCriteria": [
+                "Execute and inspect PIM-to-PSM transformation evidence is recorded"
+              ],
+              "validationRules": [
+                "Every deployable PIM scope item has an accepted AWS mapping or a documented exception"
+              ],
+              "progressEvidence": "Execute and inspect PIM-to-PSM transformation decision, evidence links, owner, and status are recorded",
               "transform": "pim-to-awspsm"
             }
           ]
         },
         {
           "id": "e2e.p5.psm-refinement",
-          "name": "PSM Engine",
-          "objective": "PSM Engine",
-          "primaryRole": "business-modeler",
+          "name": "PSM Child Process",
+          "objective": "Refine AWS resources, relationships, security, observability, and deployment readiness for the slice.",
+          "primaryRole": "cloud-platform-engineer",
+          "iterative": false,
           "tasks": [
             {
               "id": "e2e.p5.psm-refinement.t1",
-              "name": "PSM Engine",
-              "primaryRole": "business-modeler",
-              "steps": ["PSM Engine"],
+              "name": "Run the PSM increment",
+              "primaryRole": "cloud-platform-engineer",
+              "steps": [
+                "Execute the AWS PSM process for the transformed slice.",
+                "Review resource relationships, IAM, networking, data, eventing, APIs, workflows, and operational views.",
+                "Record accepted PSM revision and unresolved deployment risks."
+              ],
+              "artifactIds": ["e2e-artifact.increment-record"],
               "entryCriteria": [],
-              "exitCriteria": ["PSM Engine complete"],
-              "validationRules": [],
-              "workProducts": [],
-              "artifacts": [],
-              "artifactIds": [],
-              "paletteFocus": [],
+              "exitCriteria": ["PSM gate evidence is accepted or explicitly reworked"],
+              "validationRules": [
+                "AWS platform choices are traceable to accepted PIM intent or explicit platform decisions"
+              ],
+              "progressEvidence": "Run the PSM increment decision, evidence links, owner, and status are recorded",
               "childProcessId": "modriss.psm.modeling"
             }
           ]
         },
         {
           "id": "e2e.p6.m2t-generation",
-          "name": "M2T Generation",
-          "objective": "M2T Generation",
+          "name": "Model-to-Text Generation",
+          "objective": "Generate a reproducible artifact baseline from the accepted PSM revision.",
           "primaryRole": "cloud-platform-engineer",
+          "iterative": false,
           "tasks": [
             {
               "id": "e2e.p6.m2t-generation.t1",
-              "name": "M2T Generation",
+              "name": "Generate and fingerprint the artifact baseline",
               "primaryRole": "cloud-platform-engineer",
-              "steps": ["M2T Generation"],
+              "steps": [
+                "Pin PSM revision, generator version, templates, and environment profile.",
+                "Generate application, infrastructure, configuration, tests, and documentation artifacts.",
+                "Record the generation manifest and route structural gaps to PSM or generator ownership."
+              ],
+              "artifactIds": ["e2e-artifact.increment-record"],
               "entryCriteria": [],
-              "exitCriteria": ["M2T Generation complete"],
-              "validationRules": [],
-              "workProducts": [],
-              "artifacts": [],
-              "artifactIds": [],
-              "paletteFocus": [],
+              "exitCriteria": [
+                "Generate and fingerprint the artifact baseline evidence is recorded"
+              ],
+              "validationRules": [
+                "The generated baseline is reproducible from recorded inputs and contains no secret material"
+              ],
+              "progressEvidence": "Generate and fingerprint the artifact baseline decision, evidence links, owner, and status are recorded",
               "transform": "awspsm-to-artifacts"
             }
           ]
         },
         {
           "id": "e2e.p7.artifact-completion",
-          "name": "Increment Closure",
-          "objective": "Increment Closure",
+          "name": "Increment Readiness & Acceptance",
+          "objective": "Verify the exact generated candidate, capture acceptance evidence, and decide whether the increment is usable, reworkable, or deferred.",
           "primaryRole": "process-reviewer",
+          "iterative": false,
           "tasks": [
             {
               "id": "e2e.p7.artifact-completion.t1",
-              "name": "Increment Closure",
+              "name": "Run artifact readiness and accept the increment",
               "primaryRole": "process-reviewer",
-              "steps": ["Increment Closure"],
+              "steps": [
+                "Execute the artifact deployment-readiness process for the generated candidate.",
+                "Review verification, security, rollback, operational, and acceptance evidence.",
+                "Record increment outcome, open findings, deferred scope, and feedback loops for the next cycle."
+              ],
+              "artifactIds": ["e2e-artifact.increment-record"],
               "entryCriteria": [],
-              "exitCriteria": ["Increment Closure complete"],
-              "validationRules": [],
-              "workProducts": [],
-              "artifacts": [],
-              "artifactIds": [],
-              "paletteFocus": []
+              "exitCriteria": [
+                "Increment is accepted, explicitly deferred, or returned through a named rework loop"
+              ],
+              "validationRules": [
+                "No blocking finding is silently closed; risk acceptance is explicit, owned, time-bound, and traceable"
+              ],
+              "progressEvidence": "Run artifact readiness and accept the increment decision, evidence links, owner, and status are recorded",
+              "childProcessId": "modriss.artifact.deployment-readiness"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e2e.ph2",
+      "name": "Release & Transition",
+      "order": 2,
+      "objective": "Assemble accepted increments into a controlled release, promote progressively, validate in the target environment, and hand over operational ownership.",
+      "primaryRole": "release-engineer",
+      "entryCriteria": [
+        "Release scope is composed of accepted increments",
+        "Artifact, security, quality, and operations evidence is available"
+      ],
+      "exitCriteria": [
+        "Release outcome is recorded",
+        "Service ownership and rollback posture are accepted",
+        "Post-deployment validation is complete"
+      ],
+      "inEngine": false,
+      "stages": [
+        {
+          "id": "e2e.ph2.st1",
+          "name": "Release Train Assembly",
+          "objective": "Compose and verify a release from accepted increment records.",
+          "primaryRole": "release-engineer",
+          "iterative": false,
+          "tasks": [
+            {
+              "id": "e2e.ph2.st1.t1",
+              "name": "Assemble the release candidate",
+              "primaryRole": "release-engineer",
+              "steps": [
+                "Select accepted increments and compatible model/artifact revisions.",
+                "Resolve cross-team dependency and compatibility checks.",
+                "Create the release record with exact inputs and promotion sequence."
+              ],
+              "artifactIds": ["e2e-artifact.release-record"],
+              "entryCriteria": [],
+              "exitCriteria": ["Assemble the release candidate evidence is recorded"],
+              "validationRules": [
+                "Every release scope item maps to an accepted increment and exact artifact identity"
+              ],
+              "progressEvidence": "Assemble the release candidate decision, evidence links, owner, and status are recorded"
+            },
+            {
+              "id": "e2e.ph2.st1.t2",
+              "name": "Review release evidence and go/no-go criteria",
+              "primaryRole": "process-reviewer",
+              "steps": [
+                "Inspect readiness assessments, validation results, security exceptions, rollback plan, operational runbooks, and approvals.",
+                "Confirm open blockers are zero or explicitly accepted under the tailored method profile.",
+                "Record the go/no-go decision and decision owners."
+              ],
+              "artifactIds": ["e2e-artifact.release-record"],
+              "entryCriteria": [],
+              "exitCriteria": [
+                "Review release evidence and go/no-go criteria evidence is recorded"
+              ],
+              "validationRules": [
+                "Go/no-go is evidence-based and not inferred from task completion"
+              ],
+              "progressEvidence": "Review release evidence and go/no-go criteria decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        },
+        {
+          "id": "e2e.ph2.st2",
+          "name": "Progressive Promotion",
+          "objective": "Promote the release through environments with controlled observation and rollback readiness.",
+          "primaryRole": "release-engineer",
+          "iterative": false,
+          "tasks": [
+            {
+              "id": "e2e.ph2.st2.t1",
+              "name": "Deploy and validate progressively",
+              "primaryRole": "release-engineer",
+              "steps": [
+                "Deploy the exact candidate to the approved environment sequence.",
+                "Run smoke, functional, security, data, observability, and compatibility checks.",
+                "Compare observed outcomes with release acceptance signals and stop or roll back on threshold breach."
+              ],
+              "artifactIds": ["e2e-artifact.release-record"],
+              "entryCriteria": [],
+              "exitCriteria": ["Deploy and validate progressively evidence is recorded"],
+              "validationRules": [
+                "Promotion evidence identifies candidate, environment, timestamp, operator, and observed result"
+              ],
+              "progressEvidence": "Deploy and validate progressively decision, evidence links, owner, and status are recorded"
+            },
+            {
+              "id": "e2e.ph2.st2.t2",
+              "name": "Complete handover and rollback rehearsal",
+              "primaryRole": "service-owner",
+              "steps": [
+                "Verify dashboards, alerts, runbooks, escalation paths, support ownership, and recovery access.",
+                "Confirm rollback and data-recovery actions are usable for the release.",
+                "Accept operational ownership or return the release to rework."
+              ],
+              "artifactIds": ["e2e-artifact.release-record", "e2e-artifact.operations-record"],
+              "entryCriteria": [],
+              "exitCriteria": ["Complete handover and rollback rehearsal evidence is recorded"],
+              "validationRules": [
+                "Operational acceptance names an accountable service owner and recovery evidence"
+              ],
+              "progressEvidence": "Complete handover and rollback rehearsal decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        },
+        {
+          "id": "e2e.ph2.st3",
+          "name": "Release Review",
+          "objective": "Inspect release outcomes and feed product, process, and architecture learning back into the backlog.",
+          "primaryRole": "product-owner",
+          "iterative": false,
+          "tasks": [
+            {
+              "id": "e2e.ph2.st3.t1",
+              "name": "Review release outcome and update roadmap",
+              "primaryRole": "product-owner",
+              "steps": [
+                "Compare product and operational outcomes with the release hypothesis.",
+                "Accept outcomes, revise priorities, and create follow-up increments for gaps.",
+                "Record decisions and changes to scope, measures, and assumptions."
+              ],
+              "artifactIds": ["e2e-artifact.release-record", "e2e-artifact.product-charter"],
+              "entryCriteria": [],
+              "exitCriteria": ["Review release outcome and update roadmap evidence is recorded"],
+              "validationRules": [
+                "Outcome learning changes a backlog, product decision, or explicitly confirms the hypothesis"
+              ],
+              "progressEvidence": "Review release outcome and update roadmap decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e2e.ph3",
+      "name": "Operate, Evolve & Learn",
+      "order": 3,
+      "objective": "Operate the service, respond to incidents, evolve models and artifacts through controlled change propagation, and continuously improve the method.",
+      "primaryRole": "service-owner",
+      "entryCriteria": [
+        "A service or operational capability has been released or is being maintained"
+      ],
+      "exitCriteria": [
+        "Operational work is recorded",
+        "Changes are traced through the appropriate lifecycle path",
+        "Product and method learning is reviewed at the agreed cadence"
+      ],
+      "inEngine": true,
+      "stages": [
+        {
+          "id": "e2e.ph3.st1",
+          "name": "Operate and Observe",
+          "objective": "Use operational evidence to assess service health, user outcomes, and control effectiveness.",
+          "primaryRole": "service-owner",
+          "iterative": true,
+          "tasks": [
+            {
+              "id": "e2e.ph3.st1.t1",
+              "name": "Review SLOs, telemetry, and product outcomes",
+              "primaryRole": "service-owner",
+              "steps": [
+                "Inspect service levels, errors, cost, security signals, usage, and product outcome measures.",
+                "Compare observations with the service and product hypotheses.",
+                "Create improvement or change items with evidence and owners."
+              ],
+              "artifactIds": ["e2e-artifact.operations-record"],
+              "entryCriteria": [],
+              "exitCriteria": ["Review SLOs, telemetry, and product outcomes evidence is recorded"],
+              "validationRules": [
+                "Operational decisions are based on identified evidence and thresholds"
+              ],
+              "progressEvidence": "Review SLOs, telemetry, and product outcomes decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        },
+        {
+          "id": "e2e.ph3.st2",
+          "name": "Incident, Problem & Risk Response",
+          "objective": "Restore service and address systemic causes while preserving traceability and learning.",
+          "primaryRole": "service-owner",
+          "iterative": true,
+          "tasks": [
+            {
+              "id": "e2e.ph3.st2.t1",
+              "name": "Manage incidents and recovery",
+              "primaryRole": "service-owner",
+              "steps": [
+                "Triage impact, stabilize service, communicate status, and execute approved recovery actions.",
+                "Record incident timeline, affected scope, decisions, and evidence.",
+                "Open problem, security, or change work for systemic causes."
+              ],
+              "artifactIds": ["e2e-artifact.operations-record"],
+              "entryCriteria": [],
+              "exitCriteria": ["Manage incidents and recovery evidence is recorded"],
+              "validationRules": ["Recovery and customer impact are recorded before closure"],
+              "progressEvidence": "Manage incidents and recovery decision, evidence links, owner, and status are recorded"
+            },
+            {
+              "id": "e2e.ph3.st2.t2",
+              "name": "Perform problem and risk learning",
+              "primaryRole": "quality-engineer",
+              "steps": [
+                "Analyze contributing causes across requirements, models, transformation, generation, deployment, and operation.",
+                "Update controls, tests, model patterns, process guidance, or method profile as appropriate.",
+                "Review changes at the next increment or release boundary."
+              ],
+              "artifactIds": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
+              "entryCriteria": [],
+              "exitCriteria": ["Perform problem and risk learning evidence is recorded"],
+              "validationRules": [
+                "The corrective action is routed to the earliest responsible source rather than only patched downstream"
+              ],
+              "progressEvidence": "Perform problem and risk learning decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        },
+        {
+          "id": "e2e.ph3.st3",
+          "name": "Change Propagation",
+          "objective": "Evolve the product through a controlled impact-analysis and re-execution path.",
+          "primaryRole": "delivery-lead",
+          "iterative": true,
+          "tasks": [
+            {
+              "id": "e2e.ph3.st3.t1",
+              "name": "Assess and propagate a change",
+              "primaryRole": "delivery-lead",
+              "steps": [
+                "Classify the change as product, domain, architecture, platform, artifact, operational, or retirement scope.",
+                "Use traces and dependency ownership to identify impacted downstream levels and teams.",
+                "Re-enter the smallest affected process stage, regenerate or redeploy as required, and preserve compatibility evidence."
+              ],
+              "artifactIds": ["e2e-artifact.increment-record", "e2e-artifact.operations-record"],
+              "entryCriteria": [],
+              "exitCriteria": ["Assess and propagate a change evidence is recorded"],
+              "validationRules": [
+                "The change record identifies source revision, impacted levels, downstream evidence, and acceptance decision"
+              ],
+              "progressEvidence": "Assess and propagate a change decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        },
+        {
+          "id": "e2e.ph3.st4",
+          "name": "Method and Product Retrospective",
+          "objective": "Improve the product and the method using evidence from increments, releases, incidents, and dependencies.",
+          "primaryRole": "process-reviewer",
+          "iterative": true,
+          "tasks": [
+            {
+              "id": "e2e.ph3.st4.t1",
+              "name": "Inspect flow, quality, and coordination metrics",
+              "primaryRole": "process-reviewer",
+              "steps": [
+                "Review flow time, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.",
+                "Look for systemic queues, missing work products, invalid gates, and coordination failures.",
+                "Approve bounded method changes and record their expected effect."
+              ],
+              "artifactIds": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
+              "entryCriteria": [],
+              "exitCriteria": [
+                "Inspect flow, quality, and coordination metrics evidence is recorded"
+              ],
+              "validationRules": [
+                "Metrics lead to inspectable improvement experiments rather than individual performance rankings"
+              ],
+              "progressEvidence": "Inspect flow, quality, and coordination metrics decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e2e.ph4",
+      "name": "Retire, Migrate & Close",
+      "order": 4,
+      "objective": "Retire a product or service safely, preserve required knowledge and evidence, and close the lifecycle with explicit learning.",
+      "primaryRole": "service-owner",
+      "entryCriteria": [
+        "A retirement decision is authorized",
+        "Replacement, migration, or end-of-life obligations are known"
+      ],
+      "exitCriteria": [
+        "Users, data, integrations, environments, and operational ownership are safely transitioned or closed",
+        "Required records and lessons are retained"
+      ],
+      "inEngine": false,
+      "stages": [
+        {
+          "id": "e2e.ph4.st1",
+          "name": "Retirement Decision & Plan",
+          "objective": "Define why, when, and how the service will be retired.",
+          "primaryRole": "product-owner",
+          "iterative": false,
+          "tasks": [
+            {
+              "id": "e2e.ph4.st1.t1",
+              "name": "Approve retirement scope and plan",
+              "primaryRole": "product-owner",
+              "steps": [
+                "Confirm business, technical, legal, security, and operational reasons for retirement.",
+                "Define replacement, user communication, compatibility, rollback, and exit criteria.",
+                "Assign owners and schedule decision checkpoints."
+              ],
+              "artifactIds": ["e2e-artifact.retirement-record"],
+              "entryCriteria": [],
+              "exitCriteria": ["Approve retirement scope and plan evidence is recorded"],
+              "validationRules": [
+                "The plan identifies affected stakeholders, dependencies, and irreversible actions"
+              ],
+              "progressEvidence": "Approve retirement scope and plan decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        },
+        {
+          "id": "e2e.ph4.st2",
+          "name": "Migrate and Decommission",
+          "objective": "Move or dispose of data, users, integrations, infrastructure, and operational obligations safely.",
+          "primaryRole": "cloud-platform-engineer",
+          "iterative": false,
+          "tasks": [
+            {
+              "id": "e2e.ph4.st2.t1",
+              "name": "Execute migration and data disposition",
+              "primaryRole": "cloud-platform-engineer",
+              "steps": [
+                "Execute migration, archival, retention, deletion, or export according to approved policy.",
+                "Validate completeness, confidentiality, integrity, and recoverability where required.",
+                "Record final data and integration evidence."
+              ],
+              "artifactIds": ["e2e-artifact.retirement-record"],
+              "entryCriteria": [],
+              "exitCriteria": ["Execute migration and data disposition evidence is recorded"],
+              "validationRules": ["No data or integration is silently abandoned"],
+              "progressEvidence": "Execute migration and data disposition decision, evidence links, owner, and status are recorded"
+            },
+            {
+              "id": "e2e.ph4.st2.t2",
+              "name": "Decommission service and access",
+              "primaryRole": "service-owner",
+              "steps": [
+                "Disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.",
+                "Verify replacement ownership and customer communication.",
+                "Retain required source, model, trace, release, incident, and decision records."
+              ],
+              "artifactIds": ["e2e-artifact.retirement-record"],
+              "entryCriteria": [],
+              "exitCriteria": ["Decommission service and access evidence is recorded"],
+              "validationRules": [
+                "Decommission evidence covers runtime, data, access, cost, and support surfaces"
+              ],
+              "progressEvidence": "Decommission service and access decision, evidence links, owner, and status are recorded"
+            }
+          ]
+        },
+        {
+          "id": "e2e.ph4.st3",
+          "name": "Closure & Organizational Learning",
+          "objective": "Close the lifecycle and feed reusable learning into future method profiles and product planning.",
+          "primaryRole": "process-reviewer",
+          "iterative": false,
+          "tasks": [
+            {
+              "id": "e2e.ph4.st3.t1",
+              "name": "Complete closure review",
+              "primaryRole": "process-reviewer",
+              "steps": [
+                "Confirm retirement exit criteria and records are complete.",
+                "Review product, architecture, operational, and method outcomes.",
+                "Publish reusable patterns, risks, and method changes for future projects."
+              ],
+              "artifactIds": ["e2e-artifact.retirement-record", "e2e-artifact.method-profile"],
+              "entryCriteria": [],
+              "exitCriteria": ["Complete closure review evidence is recorded"],
+              "validationRules": [
+                "Closure identifies retained evidence, unresolved obligations, and accountable custodians"
+              ],
+              "progressEvidence": "Complete closure review decision, evidence links, owner, and status are recorded"
             }
           ]
         }
@@ -368,7 +1252,7 @@
           "Re-execute CIM→PIM ETL; reconcile PIM trace links and manual decisions.",
           "Propagate to PSM and artifacts per end-to-end change workflow."
         ],
-        "impactedStages": ["cim.s5.converge"],
+        "impactedStages": ["cim.ph5.st3"],
         "crossLevel": true
       },
       {
@@ -381,7 +1265,7 @@
           "Re-execute PIM→PSM ETL; review platform mapping deltas.",
           "Regenerate M2T artifacts; run deployment dry-run."
         ],
-        "impactedStages": ["pim.s5.readiness"],
+        "impactedStages": ["pim.ph6.st1", "pim.ph6.st2"],
         "crossLevel": true
       },
       {
@@ -394,41 +1278,41 @@
           "Regenerate M2T artifacts; diff against prior generation.",
           "Run CI validation and staged deployment."
         ],
-        "impactedStages": ["psm.s6.readiness"],
+        "impactedStages": ["psm.ph6.st2"],
         "crossLevel": true
       }
     ]
   },
   "milestones": [
     {
-      "id": "e2e.m0.increment-planned",
-      "name": "Increment scope agreed",
-      "phaseId": "e2e.ph1",
-      "stageId": "e2e.p0.increment-planning"
+      "id": "e2e.m0.method-tailored",
+      "name": "Method and team topology approved",
+      "phaseId": "e2e.ph0",
+      "stageId": "e2e.ph0.st3"
     },
     {
-      "id": "e2e.m1.cim-ready",
-      "name": "CIM readiness approved",
-      "phaseId": "e2e.ph1",
-      "stageId": "e2e.p1.cim-modeling"
-    },
-    {
-      "id": "e2e.m2.pim-ready",
-      "name": "PIM readiness approved",
-      "phaseId": "e2e.ph1",
-      "stageId": "e2e.p3.pim-refinement"
-    },
-    {
-      "id": "e2e.m3.psm-ready",
-      "name": "PSM readiness approved",
-      "phaseId": "e2e.ph1",
-      "stageId": "e2e.p5.psm-refinement"
-    },
-    {
-      "id": "e2e.m4.artifacts",
-      "name": "Increment artifacts delivered",
+      "id": "e2e.m1.increment-accepted",
+      "name": "Vertical increment accepted",
       "phaseId": "e2e.ph1",
       "stageId": "e2e.p7.artifact-completion"
+    },
+    {
+      "id": "e2e.m2.release-promoted",
+      "name": "Release promoted and handed over",
+      "phaseId": "e2e.ph2",
+      "stageId": "e2e.ph2.st2"
+    },
+    {
+      "id": "e2e.m3.operational-learning",
+      "name": "Operational learning reviewed",
+      "phaseId": "e2e.ph3",
+      "stageId": "e2e.ph3.st4"
+    },
+    {
+      "id": "e2e.m4.retired",
+      "name": "Lifecycle retired and closed",
+      "phaseId": "e2e.ph4",
+      "stageId": "e2e.ph4.st3"
     }
   ]
 }
