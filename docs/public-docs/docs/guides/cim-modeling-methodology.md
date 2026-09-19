@@ -2,9 +2,10 @@
 
 The Computation-Independent Model (CIM) captures business intent, domain structure, behavior, and
 governance without platform or implementation detail. This guide is the canonical walkthrough for
-MODRISS CIM modeling: **5 sequential phases**, each containing **stages** (with optional
-sub-stages) and **atomic tasks** that produce SPEM artifacts bound to CIM metamodel elements. Work is
-ordered by metamodel dependencies and EVL gates, not a linear waterfall.
+MODRISS CIM modeling: **5 sequential phases**, each containing **SPEM Activities** exposed as
+stages (with optional sub-stages) and **TaskUses** that select reusable TaskDefinitions. Work
+products are separate from CIM metamodel bindings: a task may produce a method work product while
+its `metamodelBindings` identify the CIM EClasses/EEnums it teaches or covers.
 
 Use the **Guided Modeling** panel (when enabled) or this document to track phase → stage → task
 progress. Each task maps to a modeling viewpoint and palette focus in the editor. When exit criteria
@@ -14,8 +15,9 @@ cycle.
 ## SPEM Structure
 
 ```text
-Process → phases[] → stages[] → (subStages[]) → tasks[] (atomic)
-         roles[], artifactKinds[], guidelines[], processEngine
+methodContent → RoleDefinitions / TaskDefinitions / WorkProductDefinitions / Guidance
+Process → Activities → TaskUses + RoleUses + WorkProductUses + WorkSequences
+         MODRISS extensions: progressModel, governance, processEngine
 ```
 
 ## Process Engine
@@ -79,13 +81,13 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modriss.cim.modeling` · 5 phases · 26 atomic tasks · CIM metamodel coverage enforced in CI.
+Process `modriss.cim.modeling` · 5 phases · 26 TaskUses / TaskDefinitions · CIM metamodel coverage enforced in CI.
 
 ### Increment Framing (`cim.ph1`)
 
 Frame the current capability slice, establish or refresh the CIM program container, and anchor modeling in measurable intent.
 
-**Runs:** in engine cycle · **Role:** business-modeler
+**Runs:** in engine cycle · **Role:** Business Modeler
 
 **Phase entry:**
 
@@ -109,7 +111,7 @@ Create the CIMModel root and modeling conventions on the first cycle; refresh th
 
 **Viewpoint:** dashboard
 **Duration:** 20m
-**Artifacts:** CIM Model Root
+**Work products:** CIM Model Root
 **Palette focus:** `CIMModel`
 
 **Steps:**
@@ -130,7 +132,21 @@ Create the CIMModel root and modeling conventions on the first cycle; refresh th
 
 **Viewpoint:** dashboard
 **Duration:** 30m
-**Artifacts:** CIM Model Root
+**Work products:** CIM Model Root
+**Palette focus:**
+
+- `DeployableElement`
+- `InvocationSource`
+- `InvocationTarget`
+- `FunctionTarget`
+- `WorkflowTarget`
+- `SubscriptionTarget`
+- `RoutingTarget`
+- `FlowEndpoint`
+- `ProtectedResource`
+- `PolicyTarget`
+- `DataAccessTarget`
+- `ExternalCallTarget`
 
 **Steps:**
 
@@ -158,7 +174,7 @@ Select the smallest valuable capability slice and define the cycle-level definit
 
 **Viewpoint:** capability
 **Duration:** 30m
-**Artifacts:** CIM Increment Plan
+**Work products:** CIM Increment Plan
 
 **Steps:**
 
@@ -186,7 +202,7 @@ Capture measurable business intent for the selected slice using GQM before domai
 
 **Viewpoint:** requirements
 **Duration:** 45m
-**Artifacts:** Strategic Intent Package
+**Work products:** Strategic Intent Package
 **Palette focus:** `BusinessGoal`, `KPI`
 
 **Steps:**
@@ -211,7 +227,7 @@ Capture measurable business intent for the selected slice using GQM before domai
 
 **Viewpoint:** requirements
 **Duration:** 30m
-**Artifacts:** Strategic Intent Package
+**Work products:** Strategic Intent Package
 **Palette focus:** `Stakeholder`
 
 **Steps:**
@@ -232,7 +248,7 @@ Capture measurable business intent for the selected slice using GQM before domai
 
 Map who participates in the domain, what the organization can do, and shared vocabulary.
 
-**Runs:** in engine cycle · **Role:** business-modeler
+**Runs:** in engine cycle · **Role:** Business Modeler
 
 **Phase entry:**
 
@@ -254,7 +270,7 @@ Model human/system actors, roles, and boundary external systems.
 
 **Viewpoint:** actor
 **Duration:** 45m
-**Artifacts:** Participation Model
+**Work products:** Participation Model
 **Palette focus:** `Actor`, `Role`
 
 **Steps:**
@@ -274,7 +290,7 @@ Model human/system actors, roles, and boundary external systems.
 
 **Viewpoint:** actor
 **Duration:** 20m
-**Artifacts:** Participation Model
+**Work products:** Participation Model
 **Palette focus:** `ExternalSystem`
 
 **Steps:**
@@ -301,7 +317,7 @@ Map business capabilities to goals and record dependencies.
 
 **Viewpoint:** capability
 **Duration:** 1h
-**Artifacts:** Capability
+**Work products:** Capability
 **Palette focus:** `BusinessCapability`
 
 **Steps:**
@@ -321,7 +337,7 @@ Map business capabilities to goals and record dependencies.
 
 **Viewpoint:** capability
 **Duration:** 30m
-**Artifacts:** Capability
+**Work products:** Capability
 **Palette focus:** `CapabilityDependency`
 
 **Steps:**
@@ -348,7 +364,7 @@ Build shared glossary before structural modeling (DDD).
 
 **Viewpoint:** capability
 **Duration:** 45m
-**Artifacts:** Ubiquitous Language Glossary
+**Work products:** Ubiquitous Language Glossary
 **Palette focus:** `UbiquitousLanguageTerm`
 
 **Steps:**
@@ -371,7 +387,7 @@ Build shared glossary before structural modeling (DDD).
 
 Explore information, structure, and behavior using Twin Peaks, iterate until CQRS surface is coherent.
 
-**Runs:** in engine cycle · **Role:** business-modeler
+**Runs:** in engine cycle · **Role:** Business Modeler
 
 **Phase entry:**
 
@@ -397,7 +413,7 @@ Define confidentiality and handling classifications.
 
 **Viewpoint:** domain
 **Duration:** 30m
-**Artifacts:** Information Taxonomy
+**Work products:** Information Taxonomy
 **Palette focus:** `DataClassification`
 
 **Steps:**
@@ -424,7 +440,7 @@ Name and type the facts the domain cares about.
 
 **Viewpoint:** domain
 **Duration:** 1h
-**Artifacts:** Information Taxonomy
+**Work products:** Information Taxonomy
 **Palette focus:** `InformationItem`
 
 **Steps:**
@@ -460,7 +476,7 @@ Model stateful domain entities with identity from information items.
 
 **Viewpoint:** domain
 **Duration:** 1-2h
-**Artifacts:** Domain Structure Model
+**Work products:** Domain Structure Model
 **Palette focus:** `DomainEntity`, `LifecycleStateDefinition`, `BusinessInvariant`
 
 **Steps:**
@@ -492,8 +508,8 @@ Model descriptive types and associations between domain concepts.
 
 **Viewpoint:** domain
 **Duration:** 1h
-**Artifacts:** Domain Structure Model
-**Palette focus:** `ValueObject`, `DomainRelationship`
+**Work products:** Domain Structure Model
+**Palette focus:** `ValueObject`, `DomainRelationship`, `DomainConcept`
 
 **Steps:**
 
@@ -528,7 +544,7 @@ Model state-changing operations with outcomes and preconditions.
 
 **Viewpoint:** eventstorming
 **Duration:** 1h
-**Artifacts:** CQRS Behavior Surface
+**Work products:** CQRS Behavior Surface
 **Palette focus:** `Command`, `CommandOutcome`
 
 **Steps:**
@@ -556,7 +572,7 @@ Model read operations with freshness needs.
 
 **Viewpoint:** eventstorming
 **Duration:** 45m
-**Artifacts:** CQRS Behavior Surface
+**Work products:** CQRS Behavior Surface
 **Palette focus:** `Query`
 
 **Steps:**
@@ -584,7 +600,7 @@ Model domain events, business errors, and guard conditions.
 
 **Viewpoint:** eventstorming
 **Duration:** 1h
-**Artifacts:** CQRS Behavior Surface
+**Work products:** CQRS Behavior Surface
 **Palette focus:** `BusinessEvent`, `BusinessError`, `Condition`
 
 **Steps:**
@@ -606,7 +622,7 @@ Model domain events, business errors, and guard conditions.
 
 Synthesize transactional boundaries, orchestration, and bounded contexts from explored domain.
 
-**Runs:** in engine cycle · **Role:** business-modeler
+**Runs:** in engine cycle · **Role:** Business Modeler
 
 **Phase entry:**
 
@@ -628,7 +644,7 @@ Group entities into consistency boundaries with command/event ownership.
 
 **Viewpoint:** aggregate
 **Duration:** 1h
-**Artifacts:** Aggregate Boundary Model
+**Work products:** Aggregate Boundary Model
 **Palette focus:** `AggregateCandidate`
 
 **Steps:**
@@ -660,7 +676,7 @@ Orchestrate commands, events, and human steps into end-to-end flows.
 
 **Viewpoint:** process
 **Duration:** 2h
-**Artifacts:** Business Process Model
+**Work products:** Business Process Model
 **Palette focus:**
 
 - `BusinessProcess`
@@ -701,7 +717,7 @@ Encode business rules and decision tables.
 
 **Viewpoint:** decision
 **Duration:** 1h
-**Artifacts:** Decision & Policy Model
+**Work products:** Decision & Policy Model
 **Palette focus:** `Policy`, `DecisionTable`, `DecisionRule`
 
 **Steps:**
@@ -729,7 +745,7 @@ Assign capabilities, domain, behavior, and policies into cohesive contexts.
 
 **Viewpoint:** capability
 **Duration:** 1h
-**Artifacts:** Bounded Context Map
+**Work products:** Bounded Context Map
 **Palette focus:** `BoundedContextCandidate`
 
 **Steps:**
@@ -751,7 +767,7 @@ Assign capabilities, domain, behavior, and policies into cohesive contexts.
 
 Backfill requirements, record transformation contracts, close traceability and EVL gate.
 
-**Runs:** in engine cycle · **Role:** requirements-engineer
+**Runs:** in engine cycle · **Role:** Requirements Engineer
 
 **Phase entry:**
 
@@ -775,7 +791,7 @@ Twin Peaks backfill, formalize requirements traced to modeled elements.
 
 **Viewpoint:** governance
 **Duration:** 1-2h
-**Artifacts:** Requirements Package
+**Work products:** Requirements Package
 **Palette focus:**
 
 - `Requirement`
@@ -801,7 +817,7 @@ Twin Peaks backfill, formalize requirements traced to modeled elements.
 
 **Viewpoint:** governance
 **Duration:** 1h
-**Artifacts:** Governance Constraint Package
+**Work products:** Governance Constraint Package
 **Palette focus:** `SecurityConstraint`, `PrivacyConstraint`, `ComplianceConstraint`
 
 **Steps:**
@@ -828,7 +844,7 @@ Document risks, assumptions, and CIM→PIM transformation profile.
 
 **Viewpoint:** traceability
 **Duration:** 45m
-**Artifacts:** Transformation Contract
+**Work products:** Transformation Contract
 **Palette focus:** `Risk`, `Assumption`, `Hotspot`, `TransformationProfile`
 
 **Steps:**
@@ -856,7 +872,16 @@ Close trace links and production readiness before CIM→PIM.
 
 **Viewpoint:** traceability
 **Duration:** 1-2h
-**Artifacts:** Trace & Readiness Record
+**Work products:** Trace & Readiness Record
+**Palette focus:**
+
+- `TraceModel`
+- `TraceLink`
+- `TransformationAssumption`
+- `ProductionReadinessAssessment`
+- `ReadinessFinding`
+- `ReadinessCheck`
+- `ManualDecision`
 
 **Steps:**
 
@@ -887,7 +912,7 @@ Review the CIM slice with stakeholders, accept the increment, and adapt the next
 
 **Viewpoint:** traceability
 **Duration:** 45m
-**Artifacts:** CIM Increment Review Record
+**Work products:** CIM Increment Review Record
 
 **Steps:**
 

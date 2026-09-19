@@ -1,186 +1,1804 @@
 {
   "processId": "modriss.cim.modeling",
+  "type": "Process",
   "spemVersion": "2.0",
+  "representation": "MODRISS JSON DSL mapped to SPEM 2.0",
+  "conformance": "mapped",
+  "compliancePoint": "SPEM Process with Behavior and Content + SPEM Method Content",
+  "normativeReference": "https://www.omg.org/spec/SPEM/2.0/PDF/",
   "level": "cim",
   "displayName": "CIM",
-  "roles": [
+  "methodContent": {
+    "packageId": "modriss.method-content.cim",
+    "type": "MethodPackage",
+    "roleDefinitions": [
+      {
+        "id": "role.product-owner",
+        "type": "RoleDefinition",
+        "name": "Product Owner",
+        "responsibilities": ["Product goal, ordered backlog, value decisions, acceptance"]
+      },
+      {
+        "id": "role.delivery-lead",
+        "type": "RoleDefinition",
+        "name": "Delivery Lead",
+        "responsibilities": [
+          "Team coordination, dependencies, flow metrics, escalation, retrospectives"
+        ]
+      },
+      {
+        "id": "role.domain-expert",
+        "type": "RoleDefinition",
+        "name": "Domain Expert",
+        "responsibilities": ["Business meaning, rules, examples, language, and scenario validation"]
+      },
+      {
+        "id": "role.business-modeler",
+        "type": "RoleDefinition",
+        "name": "Business Modeler",
+        "responsibilities": ["Intent, domain, behavior, process, transformation contracts"]
+      },
+      {
+        "id": "role.requirements-engineer",
+        "type": "RoleDefinition",
+        "name": "Requirements Engineer",
+        "responsibilities": ["Requirements, acceptance criteria, governance constraints"]
+      },
+      {
+        "id": "role.security-engineer",
+        "type": "RoleDefinition",
+        "name": "Security & Privacy Engineer",
+        "responsibilities": ["Threats, privacy, compliance, risk acceptance, and control evidence"]
+      },
+      {
+        "id": "role.process-reviewer",
+        "type": "RoleDefinition",
+        "name": "Process Reviewer",
+        "responsibilities": ["EVL gate approval, readiness sign-off"]
+      },
+      {
+        "id": "role.method-engineer",
+        "type": "RoleDefinition",
+        "name": "Method Engineer",
+        "responsibilities": ["Maintains methodology when metamodels change"]
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "id": "task.cim.ph1.st1.t1",
+        "type": "TaskDefinition",
+        "name": "Create CIM model root",
+        "purpose": "Create CIM model root",
+        "viewpoint": "dashboard",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.model-root"],
+        "coverageGroups": [],
+        "steps": [
+          "Create or verify CIMModel with domainName and businessScope.",
+          "Set organizationName, modelingDate, and language.",
+          "Apply lifecycle status and annotation conventions on the root."
+        ],
+        "entryCriteria": ["Project created or existing CIM opened for a new increment"],
+        "exitCriteria": ["CIMModel root with domainName exists"],
+        "validationRules": [],
+        "durationEstimate": "20m",
+        "paletteFocus": ["CIMModel"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "CIMModel",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph1.st1.t2",
+        "type": "TaskDefinition",
+        "name": "Establish shared model contract and evidence conventions",
+        "purpose": "Establish shared model contract and evidence conventions",
+        "viewpoint": "dashboard",
+        "performerRoleRefs": ["role.method-engineer"],
+        "outputWorkProductRefs": ["cim-artifact.model-root"],
+        "coverageGroups": ["shared-kernel", "shared-enums"],
+        "steps": [
+          "Apply the shared identity, annotation, traceability, expression, and lifecycle conventions used by every CIM element.",
+          "Set the evidence convention for source references, review status, and model-level provenance.",
+          "Confirm that shared support concepts are handled by inspectors and readiness records rather than mistaken for business concepts."
+        ],
+        "entryCriteria": ["CIM model root exists"],
+        "exitCriteria": ["Shared model contract and evidence convention are recorded"],
+        "validationRules": [],
+        "durationEstimate": "30m",
+        "paletteFocus": [],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "DeployableElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "InvocationSource",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "InvocationTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "FunctionTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "WorkflowTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "SubscriptionTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "RoutingTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "FlowEndpoint",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ProtectedResource",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "PolicyTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "DataAccessTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ExternalCallTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "EnvironmentTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "CredentialRequirementLike",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "RouteEndpoint",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "EventCarrier",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ConfigurableElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "KeyValue",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "Annotation",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ModelElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "NamedModelElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "TraceableElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "SemanticRelationship",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "Multiplicity",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "Cardinality",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "Expression",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "StructuredDocument",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "Severity",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ConstraintStrength",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "LifecycleStatus",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "TraceConfidence",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "TraceLinkType",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "FindingType",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "StructuredFormat",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ExpressionLanguage",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ExpressionPhase",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ManualDecisionState",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph1.st2.t1",
+        "type": "TaskDefinition",
+        "name": "Plan capability slice",
+        "purpose": "Plan capability slice",
+        "viewpoint": "capability",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.increment-plan"],
+        "coverageGroups": [],
+        "steps": [
+          "Select one capability or bounded-context candidate from the modeling backlog.",
+          "Record slice objective, scope boundaries, assumptions, and definition of done.",
+          "Identify the validation gate and review participants for the cycle."
+        ],
+        "entryCriteria": ["CIM model root exists"],
+        "exitCriteria": ["Capability-slice scope and definition of done are agreed"],
+        "validationRules": [],
+        "durationEstimate": "30m",
+        "paletteFocus": [],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "Priority",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph1.st3.t1",
+        "type": "TaskDefinition",
+        "name": "Define business goals and KPIs",
+        "purpose": "Define business goals and KPIs",
+        "viewpoint": "requirements",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.strategic-intent"],
+        "coverageGroups": [],
+        "steps": [
+          "Capture BusinessGoal elements with success criteria.",
+          "Define measurable KPIs linked to each goal."
+        ],
+        "entryCriteria": ["Capability-slice scope agreed"],
+        "exitCriteria": ["At least one goal with linked KPI"],
+        "validationRules": ["CIM-GOAL-001", "CIM-KPI-001"],
+        "durationEstimate": "45m",
+        "paletteFocus": ["BusinessGoal", "KPI"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "BusinessGoal",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "KPI",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "Priority",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph1.st3.t2",
+        "type": "TaskDefinition",
+        "name": "Identify stakeholders",
+        "purpose": "Identify stakeholders",
+        "viewpoint": "requirements",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.strategic-intent"],
+        "coverageGroups": [],
+        "steps": ["Register stakeholders and their concerns linked to goals."],
+        "entryCriteria": ["Goals drafted"],
+        "exitCriteria": ["Stakeholders identified for primary outcomes"],
+        "validationRules": [],
+        "durationEstimate": "30m",
+        "paletteFocus": ["Stakeholder"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "Stakeholder",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph2.st1.t1",
+        "type": "TaskDefinition",
+        "name": "Model actors and roles",
+        "purpose": "Model actors and roles",
+        "viewpoint": "actor",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.participation-model"],
+        "coverageGroups": [],
+        "steps": [
+          "Model human and system Actor elements with trust levels.",
+          "Define Role elements and link to actors."
+        ],
+        "entryCriteria": ["Strategic intent captured"],
+        "exitCriteria": ["Actors exist for primary user journeys"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": ["Actor", "Role"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "Actor",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "Role",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ActorType",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "TrustLevel",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph2.st1.t2",
+        "type": "TaskDefinition",
+        "name": "Register external systems",
+        "purpose": "Register external systems",
+        "viewpoint": "actor",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.participation-model"],
+        "coverageGroups": [],
+        "steps": ["Register ExternalSystem actors at domain boundaries."],
+        "entryCriteria": ["Actors modeled"],
+        "exitCriteria": ["External integrations at boundaries identified"],
+        "validationRules": [],
+        "durationEstimate": "20m",
+        "paletteFocus": ["ExternalSystem"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "ExternalSystem",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph2.st2.t1",
+        "type": "TaskDefinition",
+        "name": "Map business capabilities",
+        "purpose": "Map business capabilities",
+        "viewpoint": "capability",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.capability-map"],
+        "coverageGroups": [],
+        "steps": [
+          "Create BusinessCapability elements linked to goals.",
+          "Set criticality for each capability in the increment slice."
+        ],
+        "entryCriteria": ["Participation model drafted"],
+        "exitCriteria": ["Capabilities cover core value streams for slice"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["BusinessCapability"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "BusinessCapability",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "CapabilityCriticality",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph2.st2.t2",
+        "type": "TaskDefinition",
+        "name": "Record capability dependencies",
+        "purpose": "Record capability dependencies",
+        "viewpoint": "capability",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.capability-map"],
+        "coverageGroups": [],
+        "steps": ["Model CapabilityDependency relationships between capabilities."],
+        "entryCriteria": ["Capability drafted"],
+        "exitCriteria": ["Dependencies documented for slice"],
+        "validationRules": [],
+        "durationEstimate": "30m",
+        "paletteFocus": ["CapabilityDependency"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "CapabilityDependency",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph2.st3.t1",
+        "type": "TaskDefinition",
+        "name": "Define domain glossary",
+        "purpose": "Define domain glossary",
+        "viewpoint": "capability",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.glossary"],
+        "coverageGroups": [],
+        "steps": [
+          "Define UbiquitousLanguageTerm entries with definitions and examples.",
+          "Link terms to capabilities where helpful.",
+          "Resolve naming conflicts before entity modeling."
+        ],
+        "entryCriteria": ["Capability drafted"],
+        "exitCriteria": ["Glossary covers core domain nouns for slice"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": ["UbiquitousLanguageTerm"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "UbiquitousLanguageTerm",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph3.st1.ss1.t1",
+        "type": "TaskDefinition",
+        "name": "Define data classifications",
+        "purpose": "Define data classifications",
+        "viewpoint": "domain",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.information-taxonomy"],
+        "coverageGroups": [],
+        "steps": ["Create DataClassification elements with confidentiality levels."],
+        "entryCriteria": ["Glossary established"],
+        "exitCriteria": ["Classifications cover sensitive categories"],
+        "validationRules": [],
+        "durationEstimate": "30m",
+        "paletteFocus": ["DataClassification"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "DataClassification",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "DataKind",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "QualityType",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "LegalBasis",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph3.st1.ss2.t1",
+        "type": "TaskDefinition",
+        "name": "Create information items",
+        "purpose": "Create information items",
+        "viewpoint": "domain",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.information-taxonomy"],
+        "coverageGroups": [],
+        "steps": [
+          "Create InformationItem elements for each planned entity attribute group.",
+          "Set identifiability and data kind on each item."
+        ],
+        "entryCriteria": ["Classifications defined"],
+        "exitCriteria": ["Information items exist for planned entities"],
+        "validationRules": ["CIM-ENTITY-001"],
+        "durationEstimate": "1h",
+        "paletteFocus": ["InformationItem"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "InformationItem",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "Identifiability",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "PrimitiveBusinessType",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "IdentityStrategy",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph3.st2.ss1.t1",
+        "type": "TaskDefinition",
+        "name": "Model domain entities",
+        "purpose": "Model domain entities",
+        "viewpoint": "domain",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.domain-structure"],
+        "coverageGroups": [],
+        "steps": [
+          "Create DomainEntity elements referencing primary InformationItem identity.",
+          "Define lifecycle states and business invariants per entity."
+        ],
+        "entryCriteria": ["Information taxonomy complete"],
+        "exitCriteria": ["Core entities for slice modeled"],
+        "validationRules": ["CIM-ENTITY-001"],
+        "durationEstimate": "1-2h",
+        "paletteFocus": ["DomainEntity", "LifecycleStateDefinition", "BusinessInvariant"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "DomainEntity",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "LifecycleStateDefinition",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "BusinessInvariant",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph3.st2.ss2.t1",
+        "type": "TaskDefinition",
+        "name": "Model value objects and relationships",
+        "purpose": "Model value objects and relationships",
+        "viewpoint": "domain",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.domain-structure"],
+        "coverageGroups": [],
+        "steps": [
+          "Add ValueObject elements for descriptive data.",
+          "Model DomainRelationship elements between concepts."
+        ],
+        "entryCriteria": ["Entities modeled"],
+        "exitCriteria": ["Relationships and VOs complete for slice"],
+        "validationRules": ["CIM-RELATIONSHIP-001"],
+        "durationEstimate": "1h",
+        "paletteFocus": ["ValueObject", "DomainRelationship"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "ValueObject",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "DomainRelationship",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "DomainRelationshipType",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "DomainConcept",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph3.st3.ss1.t1",
+        "type": "TaskDefinition",
+        "name": "Model commands and outcomes",
+        "purpose": "Model commands and outcomes",
+        "viewpoint": "eventstorming",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.behavior-surface"],
+        "coverageGroups": [],
+        "steps": [
+          "Create Command elements with actors and target capabilities.",
+          "Define CommandOutcome and link expected/rejection events."
+        ],
+        "entryCriteria": ["Domain structure drafted"],
+        "exitCriteria": ["Commands cover primary write use cases"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["Command", "CommandOutcome"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "Command",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "CommandOutcome",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "CommandType",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph3.st3.ss2.t1",
+        "type": "TaskDefinition",
+        "name": "Model queries",
+        "purpose": "Model queries",
+        "viewpoint": "eventstorming",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.behavior-surface"],
+        "coverageGroups": [],
+        "steps": [
+          "Create Query elements linked to actors and information items.",
+          "Set freshness requirements per query."
+        ],
+        "entryCriteria": ["Commands modeled"],
+        "exitCriteria": ["Queries cover primary read use cases"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": ["Query"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "Query",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "QueryType",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "FreshnessNeed",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph3.st3.ss3.t1",
+        "type": "TaskDefinition",
+        "name": "Model events, errors, and conditions",
+        "purpose": "Model events, errors, and conditions",
+        "viewpoint": "eventstorming",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.behavior-surface"],
+        "coverageGroups": [],
+        "steps": [
+          "Create BusinessEvent elements emitted by commands or external systems.",
+          "Define BusinessError and Condition elements guarding behavior."
+        ],
+        "entryCriteria": ["Commands and queries modeled"],
+        "exitCriteria": ["Event vocabulary covers slice workflows"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["BusinessEvent", "BusinessError", "Condition"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "BusinessEvent",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "BusinessError",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "Condition",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "EventTimeSemantics",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph4.st1.t1",
+        "type": "TaskDefinition",
+        "name": "Define aggregate candidates",
+        "purpose": "Define aggregate candidates",
+        "viewpoint": "aggregate",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.aggregate-model"],
+        "coverageGroups": [],
+        "steps": [
+          "Create AggregateCandidate groupings with handled commands and emitted events.",
+          "Document consistency and interaction expectations."
+        ],
+        "entryCriteria": ["Behavior surface modeled"],
+        "exitCriteria": ["Aggregates align with command/event ownership"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["AggregateCandidate"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "AggregateCandidate",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ConsistencyExpectation",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "InteractionExpectation",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph4.st2.ss1.t1",
+        "type": "TaskDefinition",
+        "name": "Model business processes",
+        "purpose": "Model business processes",
+        "viewpoint": "process",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.process-model"],
+        "coverageGroups": [],
+        "steps": [
+          "Create BusinessProcess with step hierarchy and transitions.",
+          "Connect steps to modeled commands, queries, events, and policies."
+        ],
+        "entryCriteria": ["Aggregates defined"],
+        "exitCriteria": ["Key processes orchestrate modeled behavior"],
+        "validationRules": [],
+        "durationEstimate": "2h",
+        "paletteFocus": [
+          "BusinessProcess",
+          "ProcessStep",
+          "StartStep",
+          "EndStep",
+          "CommandStep",
+          "QueryStep",
+          "EventStep",
+          "PolicyStep",
+          "HumanTaskStep",
+          "ExternalInteractionStep",
+          "DecisionStep",
+          "WaitStep"
+        ],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "BusinessProcess",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ProcessStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "StartStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "EndStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "CommandStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "QueryStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "EventStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "PolicyStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "HumanTaskStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ExternalInteractionStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "DecisionStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "WaitStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ProcessTransition",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ProcessKind",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "StepKind",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ExceptionScenario",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "TemporalConstraint",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph4.st2.ss2.t1",
+        "type": "TaskDefinition",
+        "name": "Define policies and decision tables",
+        "purpose": "Define policies and decision tables",
+        "viewpoint": "decision",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.decision-model"],
+        "coverageGroups": [],
+        "steps": [
+          "Create Policy elements guarding commands, events, and processes.",
+          "Model DecisionTable with DecisionRule rows for branching logic."
+        ],
+        "entryCriteria": ["Processes drafted"],
+        "exitCriteria": ["Policies linked to behavior elements"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["Policy", "DecisionTable", "DecisionRule"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "Policy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "DecisionTable",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "DecisionRule",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "PolicyType",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph4.st3.t1",
+        "type": "TaskDefinition",
+        "name": "Synthesize bounded contexts",
+        "purpose": "Synthesize bounded contexts",
+        "viewpoint": "capability",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.context-map"],
+        "coverageGroups": [],
+        "steps": [
+          "Group capabilities, entities, CQRS, events, and policies into contexts.",
+          "Validate memberships reference concrete modeled elements."
+        ],
+        "entryCriteria": ["Process and behavior complete"],
+        "exitCriteria": ["Contexts have non-empty memberships"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["BoundedContextCandidate"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "BoundedContextCandidate",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph5.st1.t1",
+        "type": "TaskDefinition",
+        "name": "Formalize requirements",
+        "purpose": "Formalize requirements",
+        "viewpoint": "governance",
+        "performerRoleRefs": ["role.requirements-engineer"],
+        "outputWorkProductRefs": ["cim-artifact.requirements-package"],
+        "coverageGroups": [],
+        "steps": [
+          "Create Requirement elements with constrains links to domain and behavior.",
+          "Add AcceptanceCriterion per requirement."
+        ],
+        "entryCriteria": ["Bounded contexts synthesized"],
+        "exitCriteria": ["Requirements trace to goals and model elements"],
+        "validationRules": [],
+        "durationEstimate": "1-2h",
+        "paletteFocus": [
+          "Requirement",
+          "RequirementRelationship",
+          "AcceptanceCriterion",
+          "NonFunctionalRequirement",
+          "QualityScenario"
+        ],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "Requirement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "RequirementRelationship",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "AcceptanceCriterion",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "NonFunctionalRequirement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "QualityScenario",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "RequirementType",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "RequirementSourceType",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "RequirementRelationshipKind",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "QualityType",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph5.st1.t2",
+        "type": "TaskDefinition",
+        "name": "Apply governance constraints",
+        "purpose": "Apply governance constraints",
+        "viewpoint": "governance",
+        "performerRoleRefs": ["role.requirements-engineer"],
+        "outputWorkProductRefs": ["cim-artifact.governance-package"],
+        "coverageGroups": [],
+        "steps": [
+          "Record security, privacy, and compliance constraints on actors and information items."
+        ],
+        "entryCriteria": ["Requirements drafted"],
+        "exitCriteria": ["Governance constraints linked to targets"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["SecurityConstraint", "PrivacyConstraint", "ComplianceConstraint"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "SecurityConstraint",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "PrivacyConstraint",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ComplianceConstraint",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph5.st2.t1",
+        "type": "TaskDefinition",
+        "name": "Record transformation metadata",
+        "purpose": "Record transformation metadata",
+        "viewpoint": "traceability",
+        "performerRoleRefs": ["role.business-modeler"],
+        "outputWorkProductRefs": ["cim-artifact.transformation-contract"],
+        "coverageGroups": [],
+        "steps": [
+          "Record Risk, Assumption, and Hotspot elements on model hotspots.",
+          "Define TransformationProfile for CIM→PIM with manual decisions."
+        ],
+        "entryCriteria": ["Governance captured"],
+        "exitCriteria": ["Transformation profile ready for ETL"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": ["Risk", "Assumption", "Hotspot", "TransformationProfile"],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "Risk",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "Assumption",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "Hotspot",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "TransformationProfile",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph5.st3.t1",
+        "type": "TaskDefinition",
+        "name": "Complete trace and readiness",
+        "purpose": "Complete trace and readiness",
+        "viewpoint": "traceability",
+        "performerRoleRefs": ["role.process-reviewer"],
+        "outputWorkProductRefs": ["cim-artifact.trace-readiness"],
+        "coverageGroups": [],
+        "steps": [
+          "Build TraceModel links across goals, requirements, and domain.",
+          "Complete ProductionReadinessAssessment and resolve findings."
+        ],
+        "entryCriteria": ["Transformation contracts recorded"],
+        "exitCriteria": ["CIM EVL passes; readiness approved"],
+        "validationRules": ["cim-semantic-validation"],
+        "durationEstimate": "1-2h",
+        "paletteFocus": [],
+        "metamodelBindings": [
+          {
+            "metamodel": "cim",
+            "classifier": "TraceModel",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "TraceLink",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "TransformationAssumption",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ProductionReadinessAssessment",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ReadinessFinding",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ReadinessCheck",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "cim",
+            "classifier": "ManualDecision",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.cim.ph5.st4.t1",
+        "type": "TaskDefinition",
+        "name": "Review and adapt CIM increment",
+        "purpose": "Review and adapt CIM increment",
+        "viewpoint": "traceability",
+        "performerRoleRefs": ["role.process-reviewer"],
+        "outputWorkProductRefs": ["cim-artifact.increment-review"],
+        "coverageGroups": [],
+        "steps": [
+          "Review slice outcomes against goals, KPIs, and acceptance criteria.",
+          "Record accepted scope, deferred work, and stakeholder feedback.",
+          "Create improvement actions and backlog adjustments for the next engine cycle."
+        ],
+        "entryCriteria": ["CIM EVL passes or all blocking findings are dispositioned"],
+        "exitCriteria": [
+          "Increment accepted or rework loop selected; improvement actions captured"
+        ],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": [],
+        "metamodelBindings": []
+      }
+    ],
+    "workProductDefinitions": [
+      {
+        "id": "cim-artifact.model-root",
+        "type": "ArtifactDefinition",
+        "name": "CIM Model Root",
+        "description": "CIMModel container and program metadata"
+      },
+      {
+        "id": "cim-artifact.increment-plan",
+        "type": "ArtifactDefinition",
+        "name": "CIM Increment Plan",
+        "description": "Selected capability slice, working agreements, and definition of done"
+      },
+      {
+        "id": "cim-artifact.strategic-intent",
+        "type": "ArtifactDefinition",
+        "name": "Strategic Intent Package",
+        "description": "Goals, KPIs, and stakeholder map"
+      },
+      {
+        "id": "cim-artifact.participation-model",
+        "type": "ArtifactDefinition",
+        "name": "Participation Model",
+        "description": "Actors, roles, and external systems"
+      },
+      {
+        "id": "cim-artifact.capability-map",
+        "type": "ArtifactDefinition",
+        "name": "Capability",
+        "description": "Business capabilities and dependencies"
+      },
+      {
+        "id": "cim-artifact.glossary",
+        "type": "ArtifactDefinition",
+        "name": "Ubiquitous Language Glossary",
+        "description": "Domain term definitions"
+      },
+      {
+        "id": "cim-artifact.information-taxonomy",
+        "type": "ArtifactDefinition",
+        "name": "Information Taxonomy",
+        "description": "Data classifications and information items"
+      },
+      {
+        "id": "cim-artifact.domain-structure",
+        "type": "ArtifactDefinition",
+        "name": "Domain Structure Model",
+        "description": "Entities, value objects, relationships, invariants"
+      },
+      {
+        "id": "cim-artifact.behavior-surface",
+        "type": "ArtifactDefinition",
+        "name": "CQRS Behavior Surface",
+        "description": "Commands, queries, events, conditions"
+      },
+      {
+        "id": "cim-artifact.aggregate-model",
+        "type": "ArtifactDefinition",
+        "name": "Aggregate Boundary Model",
+        "description": "Aggregate candidates and consistency rules"
+      },
+      {
+        "id": "cim-artifact.process-model",
+        "type": "ArtifactDefinition",
+        "name": "Business Process Model",
+        "description": "Processes, steps, transitions"
+      },
+      {
+        "id": "cim-artifact.decision-model",
+        "type": "ArtifactDefinition",
+        "name": "Decision & Policy Model",
+        "description": "Policies and decision tables"
+      },
+      {
+        "id": "cim-artifact.context-map",
+        "type": "ArtifactDefinition",
+        "name": "Bounded Context Map",
+        "description": "Context boundary assignments"
+      },
+      {
+        "id": "cim-artifact.requirements-package",
+        "type": "ArtifactDefinition",
+        "name": "Requirements Package",
+        "description": "Functional and non-functional requirements"
+      },
+      {
+        "id": "cim-artifact.governance-package",
+        "type": "ArtifactDefinition",
+        "name": "Governance Constraint Package",
+        "description": "Security, privacy, compliance constraints"
+      },
+      {
+        "id": "cim-artifact.transformation-contract",
+        "type": "ArtifactDefinition",
+        "name": "Transformation Contract",
+        "description": "Risks, assumptions, hotspots, profile"
+      },
+      {
+        "id": "cim-artifact.trace-readiness",
+        "type": "ArtifactDefinition",
+        "name": "Trace & Readiness Record",
+        "description": "TraceModel and production readiness assessment"
+      },
+      {
+        "id": "cim-artifact.increment-review",
+        "type": "ArtifactDefinition",
+        "name": "CIM Increment Review Record",
+        "description": "Review outcomes, accepted slice scope, and improvement actions"
+      }
+    ],
+    "guidance": [
+      {
+        "id": "cim.guid.mda-intent",
+        "name": "Computation-independent intent",
+        "appliesTo": "process",
+        "text": "CIM captures business meaning without platform or implementation choices. Defer technology decisions to PIM/PSM."
+      },
+      {
+        "id": "cim.guid.increment-cycle",
+        "name": "Thin capability slices",
+        "appliesTo": "cim.ph1",
+        "text": "Run CIM as an empirical increment cycle: select one valuable capability slice, model only enough breadth to satisfy the slice definition of done, review, then adapt the backlog."
+      },
+      {
+        "id": "cim.guid.gqm",
+        "name": "Goal-Question-Metric (Basili)",
+        "appliesTo": "cim.ph1",
+        "text": "Anchor every modeling increment with measurable business goals before structural or behavioral elements."
+      },
+      {
+        "id": "cim.guid.ddd-language",
+        "name": "Ubiquitous language first (Evans)",
+        "appliesTo": "cim.ph2",
+        "text": "Agree domain vocabulary before modeling entities. Renaming later is expensive. Use glossary tasks early."
+      },
+      {
+        "id": "cim.guid.information-before-entity",
+        "name": "Information before entity (CIM-ENTITY-001)",
+        "appliesTo": "cim.ph3",
+        "text": "Create InformationItem elements before DomainEntity. Primary identity must reference an information item."
+      },
+      {
+        "id": "cim.guid.event-storming",
+        "name": "Event storming surface (Brandolini)",
+        "appliesTo": "cim.ph3",
+        "text": "Model commands, queries, and events on a behavior surface linked to actors and capabilities before aggregates."
+      },
+      {
+        "id": "cim.guid.twin-peaks",
+        "name": "Twin Peaks requirements (Nuseibeh)",
+        "appliesTo": "cim.ph5",
+        "text": "Backfill formal requirements after domain structure exists. Use engine rework loops when requirements expose gaps."
+      }
+    ]
+  },
+  "roleUses": [
     {
-      "id": "product-owner",
-      "name": "Product Owner",
-      "responsibilities": ["Product goal, ordered backlog, value decisions, acceptance"]
+      "id": "ru.cim.ph1.st1.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph1.st1",
+      "roleDefinitionRef": "role.business-modeler"
     },
     {
-      "id": "delivery-lead",
-      "name": "Delivery Lead",
-      "responsibilities": [
-        "Team coordination, dependencies, flow metrics, escalation, retrospectives"
-      ]
+      "id": "ru.cim.ph1.st1.method-engineer",
+      "type": "RoleUse",
+      "activityRef": "cim.ph1.st1",
+      "roleDefinitionRef": "role.method-engineer"
     },
     {
-      "id": "domain-expert",
-      "name": "Domain Expert",
-      "responsibilities": ["Business meaning, rules, examples, language, and scenario validation"]
+      "id": "ru.cim.ph1.st2.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph1.st2",
+      "roleDefinitionRef": "role.business-modeler"
     },
     {
-      "id": "business-modeler",
-      "name": "Business Modeler",
-      "responsibilities": ["Intent, domain, behavior, process, transformation contracts"]
+      "id": "ru.cim.ph1.st3.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph1.st3",
+      "roleDefinitionRef": "role.business-modeler"
     },
     {
-      "id": "requirements-engineer",
-      "name": "Requirements Engineer",
-      "responsibilities": ["Requirements, acceptance criteria, governance constraints"]
+      "id": "ru.cim.ph2.st1.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph2.st1",
+      "roleDefinitionRef": "role.business-modeler"
     },
     {
-      "id": "security-engineer",
-      "name": "Security & Privacy Engineer",
-      "responsibilities": ["Threats, privacy, compliance, risk acceptance, and control evidence"]
+      "id": "ru.cim.ph2.st2.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph2.st2",
+      "roleDefinitionRef": "role.business-modeler"
     },
     {
-      "id": "process-reviewer",
-      "name": "Process Reviewer",
-      "responsibilities": ["EVL gate approval, readiness sign-off"]
+      "id": "ru.cim.ph2.st3.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph2.st3",
+      "roleDefinitionRef": "role.business-modeler"
     },
     {
-      "id": "method-engineer",
-      "name": "Method Engineer",
-      "responsibilities": ["Maintains methodology when metamodels change"]
+      "id": "ru.cim.ph3.st1.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph3.st1",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph3.st1.ss1.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph3.st1.ss1",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph3.st1.ss2.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph3.st1.ss2",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph3.st2.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph3.st2",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph3.st2.ss1.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph3.st2.ss1",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph3.st2.ss2.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph3.st2.ss2",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph3.st3.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph3.st3",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph3.st3.ss1.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph3.st3.ss1",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph3.st3.ss2.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph3.st3.ss2",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph3.st3.ss3.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph3.st3.ss3",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph4.st1.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph4.st1",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph4.st2.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph4.st2",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph4.st2.ss1.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph4.st2.ss1",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph4.st2.ss2.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph4.st2.ss2",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph4.st3.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph4.st3",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph5.st1.requirements-engineer",
+      "type": "RoleUse",
+      "activityRef": "cim.ph5.st1",
+      "roleDefinitionRef": "role.requirements-engineer"
+    },
+    {
+      "id": "ru.cim.ph5.st2.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph5.st2",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph5.st3.process-reviewer",
+      "type": "RoleUse",
+      "activityRef": "cim.ph5.st3",
+      "roleDefinitionRef": "role.process-reviewer"
+    },
+    {
+      "id": "ru.cim.ph5.st4.process-reviewer",
+      "type": "RoleUse",
+      "activityRef": "cim.ph5.st4",
+      "roleDefinitionRef": "role.process-reviewer"
+    },
+    {
+      "id": "ru.cim.ph1.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph1",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph2.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph2",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph3.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph3",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph4.business-modeler",
+      "type": "RoleUse",
+      "activityRef": "cim.ph4",
+      "roleDefinitionRef": "role.business-modeler"
+    },
+    {
+      "id": "ru.cim.ph5.requirements-engineer",
+      "type": "RoleUse",
+      "activityRef": "cim.ph5",
+      "roleDefinitionRef": "role.requirements-engineer"
     }
   ],
-  "artifactKinds": [
+  "workProductUses": [
     {
-      "id": "cim-artifact.model-root",
-      "name": "CIM Model Root",
-      "description": "CIMModel container and program metadata"
+      "id": "wpu.cim.ph1.st1.t1.cim-artifact.model-root",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph1.st1",
+      "taskUseRef": "cim.ph1.st1.t1",
+      "workProductDefinitionRef": "cim-artifact.model-root",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.increment-plan",
-      "name": "CIM Increment Plan",
-      "description": "Selected capability slice, working agreements, and definition of done"
+      "id": "wpu.cim.ph1.st1.t2.cim-artifact.model-root",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph1.st1",
+      "taskUseRef": "cim.ph1.st1.t2",
+      "workProductDefinitionRef": "cim-artifact.model-root",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.strategic-intent",
-      "name": "Strategic Intent Package",
-      "description": "Goals, KPIs, and stakeholder map"
+      "id": "wpu.cim.ph1.st2.t1.cim-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph1.st2",
+      "taskUseRef": "cim.ph1.st2.t1",
+      "workProductDefinitionRef": "cim-artifact.increment-plan",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.participation-model",
-      "name": "Participation Model",
-      "description": "Actors, roles, and external systems"
+      "id": "wpu.cim.ph1.st3.t1.cim-artifact.strategic-intent",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph1.st3",
+      "taskUseRef": "cim.ph1.st3.t1",
+      "workProductDefinitionRef": "cim-artifact.strategic-intent",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.capability-map",
-      "name": "Capability",
-      "description": "Business capabilities and dependencies"
+      "id": "wpu.cim.ph1.st3.t2.cim-artifact.strategic-intent",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph1.st3",
+      "taskUseRef": "cim.ph1.st3.t2",
+      "workProductDefinitionRef": "cim-artifact.strategic-intent",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.glossary",
-      "name": "Ubiquitous Language Glossary",
-      "description": "Domain term definitions"
+      "id": "wpu.cim.ph2.st1.t1.cim-artifact.participation-model",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph2.st1",
+      "taskUseRef": "cim.ph2.st1.t1",
+      "workProductDefinitionRef": "cim-artifact.participation-model",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.information-taxonomy",
-      "name": "Information Taxonomy",
-      "description": "Data classifications and information items"
+      "id": "wpu.cim.ph2.st1.t2.cim-artifact.participation-model",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph2.st1",
+      "taskUseRef": "cim.ph2.st1.t2",
+      "workProductDefinitionRef": "cim-artifact.participation-model",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.domain-structure",
-      "name": "Domain Structure Model",
-      "description": "Entities, value objects, relationships, invariants"
+      "id": "wpu.cim.ph2.st2.t1.cim-artifact.capability-map",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph2.st2",
+      "taskUseRef": "cim.ph2.st2.t1",
+      "workProductDefinitionRef": "cim-artifact.capability-map",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.behavior-surface",
-      "name": "CQRS Behavior Surface",
-      "description": "Commands, queries, events, conditions"
+      "id": "wpu.cim.ph2.st2.t2.cim-artifact.capability-map",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph2.st2",
+      "taskUseRef": "cim.ph2.st2.t2",
+      "workProductDefinitionRef": "cim-artifact.capability-map",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.aggregate-model",
-      "name": "Aggregate Boundary Model",
-      "description": "Aggregate candidates and consistency rules"
+      "id": "wpu.cim.ph2.st3.t1.cim-artifact.glossary",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph2.st3",
+      "taskUseRef": "cim.ph2.st3.t1",
+      "workProductDefinitionRef": "cim-artifact.glossary",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.process-model",
-      "name": "Business Process Model",
-      "description": "Processes, steps, transitions"
+      "id": "wpu.cim.ph3.st1.ss1.t1.cim-artifact.information-taxonomy",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph3.st1.ss1",
+      "taskUseRef": "cim.ph3.st1.ss1.t1",
+      "workProductDefinitionRef": "cim-artifact.information-taxonomy",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.decision-model",
-      "name": "Decision & Policy Model",
-      "description": "Policies and decision tables"
+      "id": "wpu.cim.ph3.st1.ss2.t1.cim-artifact.information-taxonomy",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph3.st1.ss2",
+      "taskUseRef": "cim.ph3.st1.ss2.t1",
+      "workProductDefinitionRef": "cim-artifact.information-taxonomy",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.context-map",
-      "name": "Bounded Context Map",
-      "description": "Context boundary assignments"
+      "id": "wpu.cim.ph3.st2.ss1.t1.cim-artifact.domain-structure",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph3.st2.ss1",
+      "taskUseRef": "cim.ph3.st2.ss1.t1",
+      "workProductDefinitionRef": "cim-artifact.domain-structure",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.requirements-package",
-      "name": "Requirements Package",
-      "description": "Functional and non-functional requirements"
+      "id": "wpu.cim.ph3.st2.ss2.t1.cim-artifact.domain-structure",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph3.st2.ss2",
+      "taskUseRef": "cim.ph3.st2.ss2.t1",
+      "workProductDefinitionRef": "cim-artifact.domain-structure",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.governance-package",
-      "name": "Governance Constraint Package",
-      "description": "Security, privacy, compliance constraints"
+      "id": "wpu.cim.ph3.st3.ss1.t1.cim-artifact.behavior-surface",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph3.st3.ss1",
+      "taskUseRef": "cim.ph3.st3.ss1.t1",
+      "workProductDefinitionRef": "cim-artifact.behavior-surface",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.transformation-contract",
-      "name": "Transformation Contract",
-      "description": "Risks, assumptions, hotspots, profile"
+      "id": "wpu.cim.ph3.st3.ss2.t1.cim-artifact.behavior-surface",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph3.st3.ss2",
+      "taskUseRef": "cim.ph3.st3.ss2.t1",
+      "workProductDefinitionRef": "cim-artifact.behavior-surface",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.trace-readiness",
-      "name": "Trace & Readiness Record",
-      "description": "TraceModel and production readiness assessment"
+      "id": "wpu.cim.ph3.st3.ss3.t1.cim-artifact.behavior-surface",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph3.st3.ss3",
+      "taskUseRef": "cim.ph3.st3.ss3.t1",
+      "workProductDefinitionRef": "cim-artifact.behavior-surface",
+      "usage": "output"
     },
     {
-      "id": "cim-artifact.increment-review",
-      "name": "CIM Increment Review Record",
-      "description": "Review outcomes, accepted slice scope, and improvement actions"
-    }
-  ],
-  "guidelines": [
-    {
-      "id": "cim.guid.mda-intent",
-      "name": "Computation-independent intent",
-      "appliesTo": "process",
-      "text": "CIM captures business meaning without platform or implementation choices. Defer technology decisions to PIM/PSM."
+      "id": "wpu.cim.ph4.st1.t1.cim-artifact.aggregate-model",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph4.st1",
+      "taskUseRef": "cim.ph4.st1.t1",
+      "workProductDefinitionRef": "cim-artifact.aggregate-model",
+      "usage": "output"
     },
     {
-      "id": "cim.guid.increment-cycle",
-      "name": "Thin capability slices",
-      "appliesTo": "cim.ph1",
-      "text": "Run CIM as an empirical increment cycle: select one valuable capability slice, model only enough breadth to satisfy the slice definition of done, review, then adapt the backlog."
+      "id": "wpu.cim.ph4.st2.ss1.t1.cim-artifact.process-model",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph4.st2.ss1",
+      "taskUseRef": "cim.ph4.st2.ss1.t1",
+      "workProductDefinitionRef": "cim-artifact.process-model",
+      "usage": "output"
     },
     {
-      "id": "cim.guid.gqm",
-      "name": "Goal-Question-Metric (Basili)",
-      "appliesTo": "cim.ph1",
-      "text": "Anchor every modeling increment with measurable business goals before structural or behavioral elements."
+      "id": "wpu.cim.ph4.st2.ss2.t1.cim-artifact.decision-model",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph4.st2.ss2",
+      "taskUseRef": "cim.ph4.st2.ss2.t1",
+      "workProductDefinitionRef": "cim-artifact.decision-model",
+      "usage": "output"
     },
     {
-      "id": "cim.guid.ddd-language",
-      "name": "Ubiquitous language first (Evans)",
-      "appliesTo": "cim.ph2",
-      "text": "Agree domain vocabulary before modeling entities. Renaming later is expensive. Use glossary tasks early."
+      "id": "wpu.cim.ph4.st3.t1.cim-artifact.context-map",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph4.st3",
+      "taskUseRef": "cim.ph4.st3.t1",
+      "workProductDefinitionRef": "cim-artifact.context-map",
+      "usage": "output"
     },
     {
-      "id": "cim.guid.information-before-entity",
-      "name": "Information before entity (CIM-ENTITY-001)",
-      "appliesTo": "cim.ph3",
-      "text": "Create InformationItem elements before DomainEntity. Primary identity must reference an information item."
+      "id": "wpu.cim.ph5.st1.t1.cim-artifact.requirements-package",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph5.st1",
+      "taskUseRef": "cim.ph5.st1.t1",
+      "workProductDefinitionRef": "cim-artifact.requirements-package",
+      "usage": "output"
     },
     {
-      "id": "cim.guid.event-storming",
-      "name": "Event storming surface (Brandolini)",
-      "appliesTo": "cim.ph3",
-      "text": "Model commands, queries, and events on a behavior surface linked to actors and capabilities before aggregates."
+      "id": "wpu.cim.ph5.st1.t2.cim-artifact.governance-package",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph5.st1",
+      "taskUseRef": "cim.ph5.st1.t2",
+      "workProductDefinitionRef": "cim-artifact.governance-package",
+      "usage": "output"
     },
     {
-      "id": "cim.guid.twin-peaks",
-      "name": "Twin Peaks requirements (Nuseibeh)",
-      "appliesTo": "cim.ph5",
-      "text": "Backfill formal requirements after domain structure exists. Use engine rework loops when requirements expose gaps."
+      "id": "wpu.cim.ph5.st2.t1.cim-artifact.transformation-contract",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph5.st2",
+      "taskUseRef": "cim.ph5.st2.t1",
+      "workProductDefinitionRef": "cim-artifact.transformation-contract",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.cim.ph5.st3.t1.cim-artifact.trace-readiness",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph5.st3",
+      "taskUseRef": "cim.ph5.st3.t1",
+      "workProductDefinitionRef": "cim-artifact.trace-readiness",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.cim.ph5.st4.t1.cim-artifact.increment-review",
+      "type": "WorkProductUse",
+      "activityRef": "cim.ph5.st4",
+      "taskUseRef": "cim.ph5.st4.t1",
+      "workProductDefinitionRef": "cim-artifact.increment-review",
+      "usage": "output"
     }
   ],
   "progressModel": {
@@ -345,8 +1963,8 @@
         "id": "cim.engine.frame",
         "name": "Frame Increment",
         "type": "phase",
-        "primaryRole": "business-modeler",
-        "phaseIds": ["cim.ph1"]
+        "phaseIds": ["cim.ph1"],
+        "performerRoleRef": "role.business-modeler"
       },
       {
         "id": "cim.engine.discover",
@@ -451,15 +2069,27 @@
         "guidance": "Resolve at source stage; replay forward to readiness gate.",
         "twinPeaks": false
       }
-    ]
+    ],
+    "extension": "MODRISS::ProcessEngine",
+    "iteration": {
+      "id": "modriss.cim.modeling.iteration",
+      "type": "Activity",
+      "activityKind": "Iteration",
+      "name": "CIM Modeling Engine",
+      "isRepeatable": true,
+      "activityRefs": ["cim.ph1", "cim.ph2", "cim.ph3", "cim.ph4", "cim.ph5"]
+    },
+    "spemMapping": "MODRISS extension realized as an Activity(kind = Iteration) containing process Activities and WorkSequences."
   },
   "phases": [
     {
       "id": "cim.ph1",
+      "type": "Activity",
+      "activityKind": "Phase",
       "name": "Increment Framing",
       "order": 1,
       "objective": "Frame the current capability slice, establish or refresh the CIM program container, and anchor modeling in measurable intent.",
-      "primaryRole": "business-modeler",
+      "roleUseRefs": ["ru.cim.ph1.business-modeler"],
       "entryCriteria": ["MODRISS project created or prior CIM increment selected for evolution"],
       "exitCriteria": [
         "CIMModel root exists",
@@ -470,374 +2100,80 @@
       "stages": [
         {
           "id": "cim.ph1.st1",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Program Charter",
           "objective": "Create the CIMModel root and modeling conventions on the first cycle; refresh them when the program scope changes.",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph1.st1.business-modeler", "ru.cim.ph1.st1.method-engineer"],
           "viewpoint": "dashboard",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "cim.ph1.st1.t1",
-              "name": "Create CIM model root",
-              "primaryRole": "business-modeler",
-              "viewpoint": "dashboard",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.model-root",
-                  "name": "CIM Model Root"
-                }
-              ],
-              "artifactIds": ["cim-artifact.model-root"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "CIMModel",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": [
-                "Create or verify CIMModel with domainName and businessScope.",
-                "Set organizationName, modelingDate, and language.",
-                "Apply lifecycle status and annotation conventions on the root."
-              ],
-              "entryCriteria": ["Project created or existing CIM opened for a new increment"],
-              "exitCriteria": ["CIMModel root with domainName exists"],
-              "validationRules": [],
-              "paletteFocus": ["CIMModel"],
-              "durationEstimate": "20m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph1.st1.t1",
+              "performerRoleUseRefs": ["ru.cim.ph1.st1.business-modeler"],
+              "selectedStepIndices": [0, 1, 2],
+              "outputWorkProductUseRefs": ["wpu.cim.ph1.st1.t1.cim-artifact.model-root"]
             },
             {
               "id": "cim.ph1.st1.t2",
-              "name": "Establish shared model contract and evidence conventions",
-              "primaryRole": "method-engineer",
-              "viewpoint": "dashboard",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.model-root",
-                  "name": "CIM Model Root"
-                }
-              ],
-              "artifactIds": ["cim-artifact.model-root"],
-              "coverageGroups": ["shared-kernel", "shared-enums"],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "DeployableElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "InvocationSource",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "InvocationTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "FunctionTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "WorkflowTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "SubscriptionTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "RoutingTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "FlowEndpoint",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "ProtectedResource",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "PolicyTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "DataAccessTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "ExternalCallTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "EnvironmentTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "CredentialRequirementLike",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "RouteEndpoint",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "EventCarrier",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "ConfigurableElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "KeyValue",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "Annotation",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "ModelElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "NamedModelElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "TraceableElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "SemanticRelationship",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "Multiplicity",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "Cardinality",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "Expression",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "StructuredDocument",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "Severity",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "ConstraintStrength",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "LifecycleStatus",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "TraceConfidence",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "TraceLinkType",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "FindingType",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "StructuredFormat",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "ExpressionLanguage",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "ExpressionPhase",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "ManualDecisionState",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Apply the shared identity, annotation, traceability, expression, and lifecycle conventions used by every CIM element.",
-                "Set the evidence convention for source references, review status, and model-level provenance.",
-                "Confirm that shared support concepts are handled by inspectors and readiness records rather than mistaken for business concepts."
-              ],
-              "entryCriteria": ["CIM model root exists"],
-              "exitCriteria": ["Shared model contract and evidence convention are recorded"],
-              "validationRules": [],
-              "paletteFocus": [],
-              "durationEstimate": "30m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph1.st1.t2",
+              "performerRoleUseRefs": ["ru.cim.ph1.st1.method-engineer"],
+              "selectedStepIndices": [0, 1, 2],
+              "outputWorkProductUseRefs": ["wpu.cim.ph1.st1.t2.cim-artifact.model-root"]
             }
           ]
         },
         {
           "id": "cim.ph1.st2",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Capability Slice Planning",
           "objective": "Select the smallest valuable capability slice and define the cycle-level definition of done.",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph1.st2.business-modeler"],
           "viewpoint": "capability",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "cim.ph1.st2.t1",
-              "name": "Plan capability slice",
-              "primaryRole": "business-modeler",
-              "viewpoint": "capability",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.increment-plan",
-                  "name": "CIM Increment Plan"
-                }
-              ],
-              "artifactIds": ["cim-artifact.increment-plan"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eEnum": "Priority",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Select one capability or bounded-context candidate from the modeling backlog.",
-                "Record slice objective, scope boundaries, assumptions, and definition of done.",
-                "Identify the validation gate and review participants for the cycle."
-              ],
-              "entryCriteria": ["CIM model root exists"],
-              "exitCriteria": ["Capability-slice scope and definition of done are agreed"],
-              "validationRules": [],
-              "paletteFocus": [],
-              "durationEstimate": "30m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph1.st2.t1",
+              "performerRoleUseRefs": ["ru.cim.ph1.st2.business-modeler"],
+              "selectedStepIndices": [0, 1, 2],
+              "outputWorkProductUseRefs": ["wpu.cim.ph1.st2.t1.cim-artifact.increment-plan"]
             }
           ]
         },
         {
           "id": "cim.ph1.st3",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Strategic Framing",
           "objective": "Capture measurable business intent for the selected slice using GQM before domain modeling.",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph1.st3.business-modeler"],
           "viewpoint": "requirements",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "cim.ph1.st3.t1",
-              "name": "Define business goals and KPIs",
-              "primaryRole": "business-modeler",
-              "viewpoint": "requirements",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.strategic-intent",
-                  "name": "Strategic Intent Package"
-                }
-              ],
-              "artifactIds": ["cim-artifact.strategic-intent"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "BusinessGoal",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "KPI",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "Priority",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Capture BusinessGoal elements with success criteria.",
-                "Define measurable KPIs linked to each goal."
-              ],
-              "entryCriteria": ["Capability-slice scope agreed"],
-              "exitCriteria": ["At least one goal with linked KPI"],
-              "validationRules": ["CIM-GOAL-001", "CIM-KPI-001"],
-              "paletteFocus": ["BusinessGoal", "KPI"],
-              "durationEstimate": "45m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph1.st3.t1",
+              "performerRoleUseRefs": ["ru.cim.ph1.st3.business-modeler"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.cim.ph1.st3.t1.cim-artifact.strategic-intent"]
             },
             {
               "id": "cim.ph1.st3.t2",
-              "name": "Identify stakeholders",
-              "primaryRole": "business-modeler",
-              "viewpoint": "requirements",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.strategic-intent",
-                  "name": "Strategic Intent Package"
-                }
-              ],
-              "artifactIds": ["cim-artifact.strategic-intent"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "Stakeholder",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": ["Register stakeholders and their concerns linked to goals."],
-              "entryCriteria": ["Goals drafted"],
-              "exitCriteria": ["Stakeholders identified for primary outcomes"],
-              "validationRules": [],
-              "paletteFocus": ["Stakeholder"],
-              "durationEstimate": "30m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph1.st3.t2",
+              "performerRoleUseRefs": ["ru.cim.ph1.st3.business-modeler"],
+              "selectedStepIndices": [0],
+              "outputWorkProductUseRefs": ["wpu.cim.ph1.st3.t2.cim-artifact.strategic-intent"]
             }
           ]
         }
@@ -845,175 +2181,81 @@
     },
     {
       "id": "cim.ph2",
+      "type": "Activity",
+      "activityKind": "Phase",
       "name": "Context Discovery",
       "order": 2,
       "objective": "Map who participates in the domain, what the organization can do, and shared vocabulary.",
-      "primaryRole": "business-modeler",
+      "roleUseRefs": ["ru.cim.ph2.business-modeler"],
       "entryCriteria": ["Increment Framing complete"],
       "exitCriteria": ["Actors, capabilities, and glossary cover the increment slice"],
       "inEngine": true,
       "stages": [
         {
           "id": "cim.ph2.st1",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Participation Model",
           "objective": "Model human/system actors, roles, and boundary external systems.",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph2.st1.business-modeler"],
           "viewpoint": "actor",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "cim.ph2.st1.t1",
-              "name": "Model actors and roles",
-              "primaryRole": "business-modeler",
-              "viewpoint": "actor",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.participation-model",
-                  "name": "Participation Model"
-                }
-              ],
-              "artifactIds": ["cim-artifact.participation-model"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "Actor",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "Role",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "ActorType",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "TrustLevel",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Model human and system Actor elements with trust levels.",
-                "Define Role elements and link to actors."
-              ],
-              "entryCriteria": ["Strategic intent captured"],
-              "exitCriteria": ["Actors exist for primary user journeys"],
-              "validationRules": [],
-              "paletteFocus": ["Actor", "Role"],
-              "durationEstimate": "45m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph2.st1.t1",
+              "performerRoleUseRefs": ["ru.cim.ph2.st1.business-modeler"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.cim.ph2.st1.t1.cim-artifact.participation-model"]
             },
             {
               "id": "cim.ph2.st1.t2",
-              "name": "Register external systems",
-              "primaryRole": "business-modeler",
-              "viewpoint": "actor",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.participation-model",
-                  "name": "Participation Model"
-                }
-              ],
-              "artifactIds": ["cim-artifact.participation-model"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "ExternalSystem",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": ["Register ExternalSystem actors at domain boundaries."],
-              "entryCriteria": ["Actors modeled"],
-              "exitCriteria": ["External integrations at boundaries identified"],
-              "validationRules": [],
-              "paletteFocus": ["ExternalSystem"],
-              "durationEstimate": "20m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph2.st1.t2",
+              "performerRoleUseRefs": ["ru.cim.ph2.st1.business-modeler"],
+              "selectedStepIndices": [0],
+              "outputWorkProductUseRefs": ["wpu.cim.ph2.st1.t2.cim-artifact.participation-model"]
             }
           ]
         },
         {
           "id": "cim.ph2.st2",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Capability Topology",
           "objective": "Map business capabilities to goals and record dependencies.",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph2.st2.business-modeler"],
           "viewpoint": "capability",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "cim.ph2.st2.t1",
-              "name": "Map business capabilities",
-              "primaryRole": "business-modeler",
-              "viewpoint": "capability",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.capability-map",
-                  "name": "Capability"
-                }
-              ],
-              "artifactIds": ["cim-artifact.capability-map"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "BusinessCapability",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "CapabilityCriticality",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create BusinessCapability elements linked to goals.",
-                "Set criticality for each capability in the increment slice."
-              ],
-              "entryCriteria": ["Participation model drafted"],
-              "exitCriteria": ["Capabilities cover core value streams for slice"],
-              "validationRules": [],
-              "paletteFocus": ["BusinessCapability"],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph2.st2.t1",
+              "performerRoleUseRefs": ["ru.cim.ph2.st2.business-modeler"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.cim.ph2.st2.t1.cim-artifact.capability-map"]
             },
             {
               "id": "cim.ph2.st2.t2",
-              "name": "Record capability dependencies",
-              "primaryRole": "business-modeler",
-              "viewpoint": "capability",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.capability-map",
-                  "name": "Capability"
-                }
-              ],
-              "artifactIds": ["cim-artifact.capability-map"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "CapabilityDependency",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": ["Model CapabilityDependency relationships between capabilities."],
-              "entryCriteria": ["Capability drafted"],
-              "exitCriteria": ["Dependencies documented for slice"],
-              "validationRules": [],
-              "paletteFocus": ["CapabilityDependency"],
-              "durationEstimate": "30m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph2.st2.t2",
+              "performerRoleUseRefs": ["ru.cim.ph2.st2.business-modeler"],
+              "selectedStepIndices": [0],
+              "outputWorkProductUseRefs": ["wpu.cim.ph2.st2.t2.cim-artifact.capability-map"]
             }
           ]
         },
         {
           "id": "cim.ph2.st3",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Ubiquitous Language",
           "objective": "Build shared glossary before structural modeling (DDD).",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph2.st3.business-modeler"],
           "viewpoint": "capability",
           "iterative": false,
           "iterationLoops": [
@@ -1027,37 +2269,14 @@
               "twinPeaks": false
             }
           ],
-          "tasks": [
+          "taskUses": [
             {
               "id": "cim.ph2.st3.t1",
-              "name": "Define domain glossary",
-              "primaryRole": "business-modeler",
-              "viewpoint": "capability",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.glossary",
-                  "name": "Ubiquitous Language Glossary"
-                }
-              ],
-              "artifactIds": ["cim-artifact.glossary"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "UbiquitousLanguageTerm",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": [
-                "Define UbiquitousLanguageTerm entries with definitions and examples.",
-                "Link terms to capabilities where helpful.",
-                "Resolve naming conflicts before entity modeling."
-              ],
-              "entryCriteria": ["Capability drafted"],
-              "exitCriteria": ["Glossary covers core domain nouns for slice"],
-              "validationRules": [],
-              "paletteFocus": ["UbiquitousLanguageTerm"],
-              "durationEstimate": "45m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph2.st3.t1",
+              "performerRoleUseRefs": ["ru.cim.ph2.st3.business-modeler"],
+              "selectedStepIndices": [0, 1, 2],
+              "outputWorkProductUseRefs": ["wpu.cim.ph2.st3.t1.cim-artifact.glossary"]
             }
           ]
         }
@@ -1065,19 +2284,23 @@
     },
     {
       "id": "cim.ph3",
+      "type": "Activity",
+      "activityKind": "Phase",
       "name": "Domain Exploration",
       "order": 3,
       "objective": "Explore information, structure, and behavior using Twin Peaks, iterate until CQRS surface is coherent.",
-      "primaryRole": "business-modeler",
+      "roleUseRefs": ["ru.cim.ph3.business-modeler"],
       "entryCriteria": ["Context Discovery complete for slice"],
       "exitCriteria": ["Commands, queries, and events cover primary use cases"],
       "inEngine": true,
       "stages": [
         {
           "id": "cim.ph3.st1",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Information Architecture",
           "objective": "Classify data and name information items before entities (CIM-ENTITY-001).",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph3.st1.business-modeler"],
           "viewpoint": "domain",
           "iterative": false,
           "iterationLoops": [
@@ -1094,120 +2317,60 @@
           "subStages": [
             {
               "id": "cim.ph3.st1.ss1",
+              "type": "Activity",
+              "activityKind": "MODRISS::Stage",
               "name": "Data Classification",
               "objective": "Define confidentiality and handling classifications.",
-              "primaryRole": "business-modeler",
+              "roleUseRefs": ["ru.cim.ph3.st1.ss1.business-modeler"],
               "viewpoint": "domain",
               "iterative": false,
               "iterationLoops": [],
-              "tasks": [
+              "taskUses": [
                 {
                   "id": "cim.ph3.st1.ss1.t1",
-                  "name": "Define data classifications",
-                  "primaryRole": "business-modeler",
-                  "viewpoint": "domain",
-                  "artifacts": [
-                    {
-                      "id": "cim-artifact.information-taxonomy",
-                      "name": "Information Taxonomy"
-                    }
-                  ],
-                  "artifactIds": ["cim-artifact.information-taxonomy"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "cim",
-                      "eClass": "DataClassification",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "DataKind",
-                      "cardinality": "enum-values"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "QualityType",
-                      "cardinality": "enum-values"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "LegalBasis",
-                      "cardinality": "enum-values"
-                    }
-                  ],
-                  "steps": ["Create DataClassification elements with confidentiality levels."],
-                  "entryCriteria": ["Glossary established"],
-                  "exitCriteria": ["Classifications cover sensitive categories"],
-                  "validationRules": [],
-                  "paletteFocus": ["DataClassification"],
-                  "durationEstimate": "30m"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.cim.ph3.st1.ss1.t1",
+                  "performerRoleUseRefs": ["ru.cim.ph3.st1.ss1.business-modeler"],
+                  "selectedStepIndices": [0],
+                  "outputWorkProductUseRefs": [
+                    "wpu.cim.ph3.st1.ss1.t1.cim-artifact.information-taxonomy"
+                  ]
                 }
               ]
             },
             {
               "id": "cim.ph3.st1.ss2",
+              "type": "Activity",
+              "activityKind": "MODRISS::Stage",
               "name": "Information Items",
               "objective": "Name and type the facts the domain cares about.",
-              "primaryRole": "business-modeler",
+              "roleUseRefs": ["ru.cim.ph3.st1.ss2.business-modeler"],
               "viewpoint": "domain",
               "iterative": false,
               "iterationLoops": [],
-              "tasks": [
+              "taskUses": [
                 {
                   "id": "cim.ph3.st1.ss2.t1",
-                  "name": "Create information items",
-                  "primaryRole": "business-modeler",
-                  "viewpoint": "domain",
-                  "artifacts": [
-                    {
-                      "id": "cim-artifact.information-taxonomy",
-                      "name": "Information Taxonomy"
-                    }
-                  ],
-                  "artifactIds": ["cim-artifact.information-taxonomy"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "cim",
-                      "eClass": "InformationItem",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "Identifiability",
-                      "cardinality": "enum-values"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "PrimitiveBusinessType",
-                      "cardinality": "enum-values"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "IdentityStrategy",
-                      "cardinality": "enum-values"
-                    }
-                  ],
-                  "steps": [
-                    "Create InformationItem elements for each planned entity attribute group.",
-                    "Set identifiability and data kind on each item."
-                  ],
-                  "entryCriteria": ["Classifications defined"],
-                  "exitCriteria": ["Information items exist for planned entities"],
-                  "validationRules": ["CIM-ENTITY-001"],
-                  "paletteFocus": ["InformationItem"],
-                  "durationEstimate": "1h"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.cim.ph3.st1.ss2.t1",
+                  "performerRoleUseRefs": ["ru.cim.ph3.st1.ss2.business-modeler"],
+                  "selectedStepIndices": [0, 1],
+                  "outputWorkProductUseRefs": [
+                    "wpu.cim.ph3.st1.ss2.t1.cim-artifact.information-taxonomy"
+                  ]
                 }
               ]
             }
-          ]
+          ],
+          "taskUses": []
         },
         {
           "id": "cim.ph3.st2",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Structural Domain Model",
           "objective": "Model entities, value objects, relationships, lifecycle, and invariants.",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph3.st2.business-modeler"],
           "viewpoint": "domain",
           "iterative": false,
           "iterationLoops": [
@@ -1224,9 +2387,11 @@
           "subStages": [
             {
               "id": "cim.ph3.st2.ss1",
+              "type": "Activity",
+              "activityKind": "MODRISS::Stage",
               "name": "Entities & Lifecycle",
               "objective": "Model stateful domain entities with identity from information items.",
-              "primaryRole": "business-modeler",
+              "roleUseRefs": ["ru.cim.ph3.st2.ss1.business-modeler"],
               "viewpoint": "domain",
               "iterative": false,
               "iterationLoops": [
@@ -1240,112 +2405,52 @@
                   "twinPeaks": false
                 }
               ],
-              "tasks": [
+              "taskUses": [
                 {
                   "id": "cim.ph3.st2.ss1.t1",
-                  "name": "Model domain entities",
-                  "primaryRole": "business-modeler",
-                  "viewpoint": "domain",
-                  "artifacts": [
-                    {
-                      "id": "cim-artifact.domain-structure",
-                      "name": "Domain Structure Model"
-                    }
-                  ],
-                  "artifactIds": ["cim-artifact.domain-structure"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "cim",
-                      "eClass": "DomainEntity",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "LifecycleStateDefinition",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "BusinessInvariant",
-                      "cardinality": "1..*"
-                    }
-                  ],
-                  "steps": [
-                    "Create DomainEntity elements referencing primary InformationItem identity.",
-                    "Define lifecycle states and business invariants per entity."
-                  ],
-                  "entryCriteria": ["Information taxonomy complete"],
-                  "exitCriteria": ["Core entities for slice modeled"],
-                  "validationRules": ["CIM-ENTITY-001"],
-                  "paletteFocus": ["DomainEntity", "LifecycleStateDefinition", "BusinessInvariant"],
-                  "durationEstimate": "1-2h"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.cim.ph3.st2.ss1.t1",
+                  "performerRoleUseRefs": ["ru.cim.ph3.st2.ss1.business-modeler"],
+                  "selectedStepIndices": [0, 1],
+                  "outputWorkProductUseRefs": [
+                    "wpu.cim.ph3.st2.ss1.t1.cim-artifact.domain-structure"
+                  ]
                 }
               ]
             },
             {
               "id": "cim.ph3.st2.ss2",
+              "type": "Activity",
+              "activityKind": "MODRISS::Stage",
               "name": "Value Objects & Relationships",
               "objective": "Model descriptive types and associations between domain concepts.",
-              "primaryRole": "business-modeler",
+              "roleUseRefs": ["ru.cim.ph3.st2.ss2.business-modeler"],
               "viewpoint": "domain",
               "iterative": false,
               "iterationLoops": [],
-              "tasks": [
+              "taskUses": [
                 {
                   "id": "cim.ph3.st2.ss2.t1",
-                  "name": "Model value objects and relationships",
-                  "primaryRole": "business-modeler",
-                  "viewpoint": "domain",
-                  "artifacts": [
-                    {
-                      "id": "cim-artifact.domain-structure",
-                      "name": "Domain Structure Model"
-                    }
-                  ],
-                  "artifactIds": ["cim-artifact.domain-structure"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "cim",
-                      "eClass": "ValueObject",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "DomainRelationship",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "DomainRelationshipType",
-                      "cardinality": "enum-values"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "DomainConcept",
-                      "cardinality": "0..*"
-                    }
-                  ],
-                  "steps": [
-                    "Add ValueObject elements for descriptive data.",
-                    "Model DomainRelationship elements between concepts."
-                  ],
-                  "entryCriteria": ["Entities modeled"],
-                  "exitCriteria": ["Relationships and VOs complete for slice"],
-                  "validationRules": ["CIM-RELATIONSHIP-001"],
-                  "paletteFocus": ["ValueObject", "DomainRelationship"],
-                  "durationEstimate": "1h"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.cim.ph3.st2.ss2.t1",
+                  "performerRoleUseRefs": ["ru.cim.ph3.st2.ss2.business-modeler"],
+                  "selectedStepIndices": [0, 1],
+                  "outputWorkProductUseRefs": [
+                    "wpu.cim.ph3.st2.ss2.t1.cim-artifact.domain-structure"
+                  ]
                 }
               ]
             }
-          ]
+          ],
+          "taskUses": []
         },
         {
           "id": "cim.ph3.st3",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Behavior Surface",
           "objective": "CQRS and event storming, commands, queries, events linked to actors and capabilities.",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph3.st3.business-modeler"],
           "viewpoint": "eventstorming",
           "iterative": false,
           "iterationLoops": [
@@ -1371,9 +2476,11 @@
           "subStages": [
             {
               "id": "cim.ph3.st3.ss1",
+              "type": "Activity",
+              "activityKind": "MODRISS::Stage",
               "name": "Commands",
               "objective": "Model state-changing operations with outcomes and preconditions.",
-              "primaryRole": "business-modeler",
+              "roleUseRefs": ["ru.cim.ph3.st3.ss1.business-modeler"],
               "viewpoint": "eventstorming",
               "iterative": false,
               "iterationLoops": [
@@ -1387,175 +2494,89 @@
                   "twinPeaks": false
                 }
               ],
-              "tasks": [
+              "taskUses": [
                 {
                   "id": "cim.ph3.st3.ss1.t1",
-                  "name": "Model commands and outcomes",
-                  "primaryRole": "business-modeler",
-                  "viewpoint": "eventstorming",
-                  "artifacts": [
-                    {
-                      "id": "cim-artifact.behavior-surface",
-                      "name": "CQRS Behavior Surface"
-                    }
-                  ],
-                  "artifactIds": ["cim-artifact.behavior-surface"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "cim",
-                      "eClass": "Command",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "CommandOutcome",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "CommandType",
-                      "cardinality": "enum-values"
-                    }
-                  ],
-                  "steps": [
-                    "Create Command elements with actors and target capabilities.",
-                    "Define CommandOutcome and link expected/rejection events."
-                  ],
-                  "entryCriteria": ["Domain structure drafted"],
-                  "exitCriteria": ["Commands cover primary write use cases"],
-                  "validationRules": [],
-                  "paletteFocus": ["Command", "CommandOutcome"],
-                  "durationEstimate": "1h"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.cim.ph3.st3.ss1.t1",
+                  "performerRoleUseRefs": ["ru.cim.ph3.st3.ss1.business-modeler"],
+                  "selectedStepIndices": [0, 1],
+                  "outputWorkProductUseRefs": [
+                    "wpu.cim.ph3.st3.ss1.t1.cim-artifact.behavior-surface"
+                  ]
                 }
               ]
             },
             {
               "id": "cim.ph3.st3.ss2",
+              "type": "Activity",
+              "activityKind": "MODRISS::Stage",
               "name": "Queries",
               "objective": "Model read operations with freshness needs.",
-              "primaryRole": "business-modeler",
+              "roleUseRefs": ["ru.cim.ph3.st3.ss2.business-modeler"],
               "viewpoint": "eventstorming",
               "iterative": false,
               "iterationLoops": [],
-              "tasks": [
+              "taskUses": [
                 {
                   "id": "cim.ph3.st3.ss2.t1",
-                  "name": "Model queries",
-                  "primaryRole": "business-modeler",
-                  "viewpoint": "eventstorming",
-                  "artifacts": [
-                    {
-                      "id": "cim-artifact.behavior-surface",
-                      "name": "CQRS Behavior Surface"
-                    }
-                  ],
-                  "artifactIds": ["cim-artifact.behavior-surface"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "cim",
-                      "eClass": "Query",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "QueryType",
-                      "cardinality": "enum-values"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "FreshnessNeed",
-                      "cardinality": "enum-values"
-                    }
-                  ],
-                  "steps": [
-                    "Create Query elements linked to actors and information items.",
-                    "Set freshness requirements per query."
-                  ],
-                  "entryCriteria": ["Commands modeled"],
-                  "exitCriteria": ["Queries cover primary read use cases"],
-                  "validationRules": [],
-                  "paletteFocus": ["Query"],
-                  "durationEstimate": "45m"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.cim.ph3.st3.ss2.t1",
+                  "performerRoleUseRefs": ["ru.cim.ph3.st3.ss2.business-modeler"],
+                  "selectedStepIndices": [0, 1],
+                  "outputWorkProductUseRefs": [
+                    "wpu.cim.ph3.st3.ss2.t1.cim-artifact.behavior-surface"
+                  ]
                 }
               ]
             },
             {
               "id": "cim.ph3.st3.ss3",
+              "type": "Activity",
+              "activityKind": "MODRISS::Stage",
               "name": "Events & Guards",
               "objective": "Model domain events, business errors, and guard conditions.",
-              "primaryRole": "business-modeler",
+              "roleUseRefs": ["ru.cim.ph3.st3.ss3.business-modeler"],
               "viewpoint": "eventstorming",
               "iterative": false,
               "iterationLoops": [],
-              "tasks": [
+              "taskUses": [
                 {
                   "id": "cim.ph3.st3.ss3.t1",
-                  "name": "Model events, errors, and conditions",
-                  "primaryRole": "business-modeler",
-                  "viewpoint": "eventstorming",
-                  "artifacts": [
-                    {
-                      "id": "cim-artifact.behavior-surface",
-                      "name": "CQRS Behavior Surface"
-                    }
-                  ],
-                  "artifactIds": ["cim-artifact.behavior-surface"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "cim",
-                      "eClass": "BusinessEvent",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "BusinessError",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "Condition",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "EventTimeSemantics",
-                      "cardinality": "enum-values"
-                    }
-                  ],
-                  "steps": [
-                    "Create BusinessEvent elements emitted by commands or external systems.",
-                    "Define BusinessError and Condition elements guarding behavior."
-                  ],
-                  "entryCriteria": ["Commands and queries modeled"],
-                  "exitCriteria": ["Event vocabulary covers slice workflows"],
-                  "validationRules": [],
-                  "paletteFocus": ["BusinessEvent", "BusinessError", "Condition"],
-                  "durationEstimate": "1h"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.cim.ph3.st3.ss3.t1",
+                  "performerRoleUseRefs": ["ru.cim.ph3.st3.ss3.business-modeler"],
+                  "selectedStepIndices": [0, 1],
+                  "outputWorkProductUseRefs": [
+                    "wpu.cim.ph3.st3.ss3.t1.cim-artifact.behavior-surface"
+                  ]
                 }
               ]
             }
-          ]
+          ],
+          "taskUses": []
         }
       ]
     },
     {
       "id": "cim.ph4",
+      "type": "Activity",
+      "activityKind": "Phase",
       "name": "Domain Synthesis",
       "order": 4,
       "objective": "Synthesize transactional boundaries, orchestration, and bounded contexts from explored domain.",
-      "primaryRole": "business-modeler",
+      "roleUseRefs": ["ru.cim.ph4.business-modeler"],
       "entryCriteria": ["Domain Exploration coherent for slice"],
       "exitCriteria": ["Bounded contexts assigned with memberships"],
       "inEngine": true,
       "stages": [
         {
           "id": "cim.ph4.st1",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Aggregate Boundaries",
           "objective": "Group entities into consistency boundaries with command/event ownership.",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph4.st1.business-modeler"],
           "viewpoint": "aggregate",
           "iterative": false,
           "iterationLoops": [
@@ -1578,63 +2599,35 @@
               "twinPeaks": false
             }
           ],
-          "tasks": [
+          "taskUses": [
             {
               "id": "cim.ph4.st1.t1",
-              "name": "Define aggregate candidates",
-              "primaryRole": "business-modeler",
-              "viewpoint": "aggregate",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.aggregate-model",
-                  "name": "Aggregate Boundary Model"
-                }
-              ],
-              "artifactIds": ["cim-artifact.aggregate-model"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "AggregateCandidate",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "ConsistencyExpectation",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "InteractionExpectation",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create AggregateCandidate groupings with handled commands and emitted events.",
-                "Document consistency and interaction expectations."
-              ],
-              "entryCriteria": ["Behavior surface modeled"],
-              "exitCriteria": ["Aggregates align with command/event ownership"],
-              "validationRules": [],
-              "paletteFocus": ["AggregateCandidate"],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph4.st1.t1",
+              "performerRoleUseRefs": ["ru.cim.ph4.st1.business-modeler"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.cim.ph4.st1.t1.cim-artifact.aggregate-model"]
             }
           ]
         },
         {
           "id": "cim.ph4.st2",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Process Orchestration",
           "objective": "Model long-running business flows, policies, and decisions.",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph4.st2.business-modeler"],
           "viewpoint": "process",
           "iterative": false,
           "iterationLoops": [],
           "subStages": [
             {
               "id": "cim.ph4.st2.ss1",
+              "type": "Activity",
+              "activityKind": "MODRISS::Stage",
               "name": "Business Processes",
               "objective": "Orchestrate commands, events, and human steps into end-to-end flows.",
-              "primaryRole": "business-modeler",
+              "roleUseRefs": ["ru.cim.ph4.st2.ss1.business-modeler"],
               "viewpoint": "process",
               "iterative": false,
               "iterationLoops": [
@@ -1648,195 +2641,48 @@
                   "twinPeaks": false
                 }
               ],
-              "tasks": [
+              "taskUses": [
                 {
                   "id": "cim.ph4.st2.ss1.t1",
-                  "name": "Model business processes",
-                  "primaryRole": "business-modeler",
-                  "viewpoint": "process",
-                  "artifacts": [
-                    {
-                      "id": "cim-artifact.process-model",
-                      "name": "Business Process Model"
-                    }
-                  ],
-                  "artifactIds": ["cim-artifact.process-model"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "cim",
-                      "eClass": "BusinessProcess",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "ProcessStep",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "StartStep",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "EndStep",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "CommandStep",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "QueryStep",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "EventStep",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "PolicyStep",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "HumanTaskStep",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "ExternalInteractionStep",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "DecisionStep",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "WaitStep",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "ProcessTransition",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "ProcessKind",
-                      "cardinality": "enum-values"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "StepKind",
-                      "cardinality": "enum-values"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "ExceptionScenario",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "TemporalConstraint",
-                      "cardinality": "1..*"
-                    }
-                  ],
-                  "steps": [
-                    "Create BusinessProcess with step hierarchy and transitions.",
-                    "Connect steps to modeled commands, queries, events, and policies."
-                  ],
-                  "entryCriteria": ["Aggregates defined"],
-                  "exitCriteria": ["Key processes orchestrate modeled behavior"],
-                  "validationRules": [],
-                  "paletteFocus": [
-                    "BusinessProcess",
-                    "ProcessStep",
-                    "StartStep",
-                    "EndStep",
-                    "CommandStep",
-                    "QueryStep",
-                    "EventStep",
-                    "PolicyStep",
-                    "HumanTaskStep",
-                    "ExternalInteractionStep",
-                    "DecisionStep",
-                    "WaitStep"
-                  ],
-                  "durationEstimate": "2h"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.cim.ph4.st2.ss1.t1",
+                  "performerRoleUseRefs": ["ru.cim.ph4.st2.ss1.business-modeler"],
+                  "selectedStepIndices": [0, 1],
+                  "outputWorkProductUseRefs": ["wpu.cim.ph4.st2.ss1.t1.cim-artifact.process-model"]
                 }
               ]
             },
             {
               "id": "cim.ph4.st2.ss2",
+              "type": "Activity",
+              "activityKind": "MODRISS::Stage",
               "name": "Policies & Decisions",
               "objective": "Encode business rules and decision tables.",
-              "primaryRole": "business-modeler",
+              "roleUseRefs": ["ru.cim.ph4.st2.ss2.business-modeler"],
               "viewpoint": "decision",
               "iterative": false,
               "iterationLoops": [],
-              "tasks": [
+              "taskUses": [
                 {
                   "id": "cim.ph4.st2.ss2.t1",
-                  "name": "Define policies and decision tables",
-                  "primaryRole": "business-modeler",
-                  "viewpoint": "decision",
-                  "artifacts": [
-                    {
-                      "id": "cim-artifact.decision-model",
-                      "name": "Decision & Policy Model"
-                    }
-                  ],
-                  "artifactIds": ["cim-artifact.decision-model"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "cim",
-                      "eClass": "Policy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "DecisionTable",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eClass": "DecisionRule",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "cim",
-                      "eEnum": "PolicyType",
-                      "cardinality": "enum-values"
-                    }
-                  ],
-                  "steps": [
-                    "Create Policy elements guarding commands, events, and processes.",
-                    "Model DecisionTable with DecisionRule rows for branching logic."
-                  ],
-                  "entryCriteria": ["Processes drafted"],
-                  "exitCriteria": ["Policies linked to behavior elements"],
-                  "validationRules": [],
-                  "paletteFocus": ["Policy", "DecisionTable", "DecisionRule"],
-                  "durationEstimate": "1h"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.cim.ph4.st2.ss2.t1",
+                  "performerRoleUseRefs": ["ru.cim.ph4.st2.ss2.business-modeler"],
+                  "selectedStepIndices": [0, 1],
+                  "outputWorkProductUseRefs": ["wpu.cim.ph4.st2.ss2.t1.cim-artifact.decision-model"]
                 }
               ]
             }
-          ]
+          ],
+          "taskUses": []
         },
         {
           "id": "cim.ph4.st3",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Bounded Context Synthesis",
           "objective": "Assign capabilities, domain, behavior, and policies into cohesive contexts.",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph4.st3.business-modeler"],
           "viewpoint": "capability",
           "iterative": false,
           "iterationLoops": [
@@ -1850,36 +2696,14 @@
               "twinPeaks": false
             }
           ],
-          "tasks": [
+          "taskUses": [
             {
               "id": "cim.ph4.st3.t1",
-              "name": "Synthesize bounded contexts",
-              "primaryRole": "business-modeler",
-              "viewpoint": "capability",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.context-map",
-                  "name": "Bounded Context Map"
-                }
-              ],
-              "artifactIds": ["cim-artifact.context-map"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "BoundedContextCandidate",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": [
-                "Group capabilities, entities, CQRS, events, and policies into contexts.",
-                "Validate memberships reference concrete modeled elements."
-              ],
-              "entryCriteria": ["Process and behavior complete"],
-              "exitCriteria": ["Contexts have non-empty memberships"],
-              "validationRules": [],
-              "paletteFocus": ["BoundedContextCandidate"],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph4.st3.t1",
+              "performerRoleUseRefs": ["ru.cim.ph4.st3.business-modeler"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.cim.ph4.st3.t1.cim-artifact.context-map"]
             }
           ]
         }
@@ -1887,10 +2711,12 @@
     },
     {
       "id": "cim.ph5",
+      "type": "Activity",
+      "activityKind": "Phase",
       "name": "Convergence & Readiness",
       "order": 5,
       "objective": "Backfill requirements, record transformation contracts, close traceability and EVL gate.",
-      "primaryRole": "requirements-engineer",
+      "roleUseRefs": ["ru.cim.ph5.requirements-engineer"],
       "entryCriteria": ["Domain Synthesis complete for slice"],
       "exitCriteria": [
         "CIM EVL passes",
@@ -1901,9 +2727,11 @@
       "stages": [
         {
           "id": "cim.ph5.st1",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Requirements Engineering",
           "objective": "Twin Peaks backfill, formalize requirements traced to modeled elements.",
-          "primaryRole": "requirements-engineer",
+          "roleUseRefs": ["ru.cim.ph5.st1.requirements-engineer"],
           "viewpoint": "governance",
           "iterative": false,
           "iterationLoops": [
@@ -1926,185 +2754,55 @@
               "twinPeaks": false
             }
           ],
-          "tasks": [
+          "taskUses": [
             {
               "id": "cim.ph5.st1.t1",
-              "name": "Formalize requirements",
-              "primaryRole": "requirements-engineer",
-              "viewpoint": "governance",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.requirements-package",
-                  "name": "Requirements Package"
-                }
-              ],
-              "artifactIds": ["cim-artifact.requirements-package"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "Requirement",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "RequirementRelationship",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "AcceptanceCriterion",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "NonFunctionalRequirement",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "QualityScenario",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "RequirementType",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "RequirementSourceType",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "RequirementRelationshipKind",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "cim",
-                  "eEnum": "QualityType",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create Requirement elements with constrains links to domain and behavior.",
-                "Add AcceptanceCriterion per requirement."
-              ],
-              "entryCriteria": ["Bounded contexts synthesized"],
-              "exitCriteria": ["Requirements trace to goals and model elements"],
-              "validationRules": [],
-              "paletteFocus": [
-                "Requirement",
-                "RequirementRelationship",
-                "AcceptanceCriterion",
-                "NonFunctionalRequirement",
-                "QualityScenario"
-              ],
-              "durationEstimate": "1-2h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph5.st1.t1",
+              "performerRoleUseRefs": ["ru.cim.ph5.st1.requirements-engineer"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.cim.ph5.st1.t1.cim-artifact.requirements-package"]
             },
             {
               "id": "cim.ph5.st1.t2",
-              "name": "Apply governance constraints",
-              "primaryRole": "requirements-engineer",
-              "viewpoint": "governance",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.governance-package",
-                  "name": "Governance Constraint Package"
-                }
-              ],
-              "artifactIds": ["cim-artifact.governance-package"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "SecurityConstraint",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "PrivacyConstraint",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "ComplianceConstraint",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": [
-                "Record security, privacy, and compliance constraints on actors and information items."
-              ],
-              "entryCriteria": ["Requirements drafted"],
-              "exitCriteria": ["Governance constraints linked to targets"],
-              "validationRules": [],
-              "paletteFocus": ["SecurityConstraint", "PrivacyConstraint", "ComplianceConstraint"],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph5.st1.t2",
+              "performerRoleUseRefs": ["ru.cim.ph5.st1.requirements-engineer"],
+              "selectedStepIndices": [0],
+              "outputWorkProductUseRefs": ["wpu.cim.ph5.st1.t2.cim-artifact.governance-package"]
             }
           ]
         },
         {
           "id": "cim.ph5.st2",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Transformation Contracts",
           "objective": "Document risks, assumptions, and CIM→PIM transformation profile.",
-          "primaryRole": "business-modeler",
+          "roleUseRefs": ["ru.cim.ph5.st2.business-modeler"],
           "viewpoint": "traceability",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "cim.ph5.st2.t1",
-              "name": "Record transformation metadata",
-              "primaryRole": "business-modeler",
-              "viewpoint": "traceability",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.transformation-contract",
-                  "name": "Transformation Contract"
-                }
-              ],
-              "artifactIds": ["cim-artifact.transformation-contract"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "Risk",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "Assumption",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "Hotspot",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "TransformationProfile",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": [
-                "Record Risk, Assumption, and Hotspot elements on model hotspots.",
-                "Define TransformationProfile for CIM→PIM with manual decisions."
-              ],
-              "entryCriteria": ["Governance captured"],
-              "exitCriteria": ["Transformation profile ready for ETL"],
-              "validationRules": [],
-              "paletteFocus": ["Risk", "Assumption", "Hotspot", "TransformationProfile"],
-              "durationEstimate": "45m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph5.st2.t1",
+              "performerRoleUseRefs": ["ru.cim.ph5.st2.business-modeler"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": [
+                "wpu.cim.ph5.st2.t1.cim-artifact.transformation-contract"
+              ]
             }
           ]
         },
         {
           "id": "cim.ph5.st3",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Traceability & Readiness Gate",
           "objective": "Close trace links and production readiness before CIM→PIM.",
-          "primaryRole": "process-reviewer",
+          "roleUseRefs": ["ru.cim.ph5.st3.process-reviewer"],
           "viewpoint": "traceability",
           "iterative": false,
           "iterationLoops": [
@@ -2118,108 +2816,321 @@
               "twinPeaks": false
             }
           ],
-          "tasks": [
+          "taskUses": [
             {
               "id": "cim.ph5.st3.t1",
-              "name": "Complete trace and readiness",
-              "primaryRole": "process-reviewer",
-              "viewpoint": "traceability",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.trace-readiness",
-                  "name": "Trace & Readiness Record"
-                }
-              ],
-              "artifactIds": ["cim-artifact.trace-readiness"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "cim",
-                  "eClass": "TraceModel",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "TraceLink",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "TransformationAssumption",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "ProductionReadinessAssessment",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "ReadinessFinding",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "ReadinessCheck",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "cim",
-                  "eClass": "ManualDecision",
-                  "cardinality": "0..*"
-                }
-              ],
-              "steps": [
-                "Build TraceModel links across goals, requirements, and domain.",
-                "Complete ProductionReadinessAssessment and resolve findings."
-              ],
-              "entryCriteria": ["Transformation contracts recorded"],
-              "exitCriteria": ["CIM EVL passes; readiness approved"],
-              "validationRules": ["cim-semantic-validation"],
-              "paletteFocus": [],
-              "durationEstimate": "1-2h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph5.st3.t1",
+              "performerRoleUseRefs": ["ru.cim.ph5.st3.process-reviewer"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.cim.ph5.st3.t1.cim-artifact.trace-readiness"]
             }
           ]
         },
         {
           "id": "cim.ph5.st4",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Increment Review & Adapt",
           "objective": "Review the CIM slice with stakeholders, accept the increment, and adapt the next cycle.",
-          "primaryRole": "process-reviewer",
+          "roleUseRefs": ["ru.cim.ph5.st4.process-reviewer"],
           "viewpoint": "traceability",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "cim.ph5.st4.t1",
-              "name": "Review and adapt CIM increment",
-              "primaryRole": "process-reviewer",
-              "viewpoint": "traceability",
-              "artifacts": [
-                {
-                  "id": "cim-artifact.increment-review",
-                  "name": "CIM Increment Review Record"
-                }
-              ],
-              "artifactIds": ["cim-artifact.increment-review"],
-              "coverageGroups": [],
-              "workProducts": [],
-              "steps": [
-                "Review slice outcomes against goals, KPIs, and acceptance criteria.",
-                "Record accepted scope, deferred work, and stakeholder feedback.",
-                "Create improvement actions and backlog adjustments for the next engine cycle."
-              ],
-              "entryCriteria": ["CIM EVL passes or all blocking findings are dispositioned"],
-              "exitCriteria": [
-                "Increment accepted or rework loop selected; improvement actions captured"
-              ],
-              "validationRules": [],
-              "paletteFocus": [],
-              "durationEstimate": "45m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.cim.ph5.st4.t1",
+              "performerRoleUseRefs": ["ru.cim.ph5.st4.process-reviewer"],
+              "selectedStepIndices": [0, 1, 2],
+              "outputWorkProductUseRefs": ["wpu.cim.ph5.st4.t1.cim-artifact.increment-review"]
             }
           ]
         }
       ]
+    }
+  ],
+  "workSequences": [
+    {
+      "id": "ws.cim.ph1.cim.ph2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph1",
+      "successorRef": "cim.ph2",
+      "linkKind": "finishToStart",
+      "relation": "phase-order"
+    },
+    {
+      "id": "ws.cim.ph2.cim.ph3",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph2",
+      "successorRef": "cim.ph3",
+      "linkKind": "finishToStart",
+      "relation": "phase-order"
+    },
+    {
+      "id": "ws.cim.ph3.cim.ph4",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph3",
+      "successorRef": "cim.ph4",
+      "linkKind": "finishToStart",
+      "relation": "phase-order"
+    },
+    {
+      "id": "ws.cim.ph4.cim.ph5",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph4",
+      "successorRef": "cim.ph5",
+      "linkKind": "finishToStart",
+      "relation": "phase-order"
+    },
+    {
+      "id": "ws.cim.ph1.st1.cim.ph1.st2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph1.st1",
+      "successorRef": "cim.ph1.st2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph1.st2.cim.ph1.st3",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph1.st2",
+      "successorRef": "cim.ph1.st3",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph1.st1.t1.cim.ph1.st1.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph1.st1.t1",
+      "successorRef": "cim.ph1.st1.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.cim.ph1.st3.t1.cim.ph1.st3.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph1.st3.t1",
+      "successorRef": "cim.ph1.st3.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.cim.ph2.st1.cim.ph2.st2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph2.st1",
+      "successorRef": "cim.ph2.st2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph2.st2.cim.ph2.st3",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph2.st2",
+      "successorRef": "cim.ph2.st3",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph2.st1.t1.cim.ph2.st1.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph2.st1.t1",
+      "successorRef": "cim.ph2.st1.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.cim.ph2.st2.t1.cim.ph2.st2.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph2.st2.t1",
+      "successorRef": "cim.ph2.st2.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.cim.ph3.st1.cim.ph3.st2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph3.st1",
+      "successorRef": "cim.ph3.st2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph3.st2.cim.ph3.st3",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph3.st2",
+      "successorRef": "cim.ph3.st3",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph3.st1.ss1.cim.ph3.st1.ss2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph3.st1.ss1",
+      "successorRef": "cim.ph3.st1.ss2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph3.st2.ss1.cim.ph3.st2.ss2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph3.st2.ss1",
+      "successorRef": "cim.ph3.st2.ss2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph3.st3.ss1.cim.ph3.st3.ss2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph3.st3.ss1",
+      "successorRef": "cim.ph3.st3.ss2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph3.st3.ss2.cim.ph3.st3.ss3",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph3.st3.ss2",
+      "successorRef": "cim.ph3.st3.ss3",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph4.st1.cim.ph4.st2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph4.st1",
+      "successorRef": "cim.ph4.st2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph4.st2.cim.ph4.st3",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph4.st2",
+      "successorRef": "cim.ph4.st3",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph4.st2.ss1.cim.ph4.st2.ss2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph4.st2.ss1",
+      "successorRef": "cim.ph4.st2.ss2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph5.st1.cim.ph5.st2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph5.st1",
+      "successorRef": "cim.ph5.st2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph5.st2.cim.ph5.st3",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph5.st2",
+      "successorRef": "cim.ph5.st3",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph5.st3.cim.ph5.st4",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph5.st3",
+      "successorRef": "cim.ph5.st4",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.cim.ph5.st1.t1.cim.ph5.st1.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph5.st1.t1",
+      "successorRef": "cim.ph5.st1.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.engine-loop.cim.ph5.cim.ph1",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph5",
+      "successorRef": "cim.ph1",
+      "linkKind": "finishToStart",
+      "relation": "iteration-loop",
+      "condition": "increment-backlog-remaining",
+      "guidance": "After the phase-embedded review/adapt stage, revolve the CIM engine for the next capability slice."
+    },
+    {
+      "id": "ws.rework.cim.loop.language-refine",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph3.st2.ss1",
+      "successorRef": "cim.ph2.st3",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "Entity naming conflicts during structural modeling.",
+      "guidance": "Update glossary, then replay information taxonomy and domain structure."
+    },
+    {
+      "id": "ws.rework.cim.loop.twin-peaks-explore",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph3.st3",
+      "successorRef": "cim.ph3.st1",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "Behavior modeling reveals missing information items or entities.",
+      "guidance": "Extend taxonomy and structure, then resume behavior surface."
+    },
+    {
+      "id": "ws.rework.cim.loop.aggregate-rework",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph4.st1",
+      "successorRef": "cim.ph3.st3.ss1",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "Aggregate grouping exposes command/event ownership conflicts.",
+      "guidance": "Adjust commands and events, then re-synthesize aggregates."
+    },
+    {
+      "id": "ws.rework.cim.loop.process-gap",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph4.st2.ss1",
+      "successorRef": "cim.ph3.st3",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "Process steps reference behavior not on the CQRS surface.",
+      "guidance": "Add behavior elements, then rebuild process flows."
+    },
+    {
+      "id": "ws.rework.cim.loop.context-resynth",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph4.st3",
+      "successorRef": "cim.ph4.st1",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "Context membership is incoherent across aggregates.",
+      "guidance": "Revisit aggregates, then re-run context synthesis."
+    },
+    {
+      "id": "ws.rework.cim.loop.requirements-backfill",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph5.st1",
+      "successorRef": "cim.ph3.st2",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "Requirements cannot be traced to domain or behavior elements.",
+      "guidance": "Extend domain model, then re-link requirements."
+    },
+    {
+      "id": "ws.rework.cim.loop.readiness-rework",
+      "type": "WorkSequence",
+      "predecessorRef": "cim.ph5.st3",
+      "successorRef": "cim.ph5.st1",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "EVL or readiness findings identify blocking gaps.",
+      "guidance": "Resolve at source stage; replay forward to readiness gate."
     }
   ],
   "changeManagement": {

@@ -1,5 +1,11 @@
 /**
- * Walk SPEM process trees: Phase → Stage → (subStage)* → Task.
+ * Walk the MODRISS process projection: Phase → Stage → (subStage)* → TaskUse.
+ *
+ * Source specifications still use a compact `tasks` authoring form. Generated
+ * process definitions expose the SPEM-aligned `taskUses` form and keep method
+ * content in `methodContent.taskDefinitions`. The helpers below understand
+ * both forms so the coverage and documentation generators can consume either
+ * authoring or compiled definitions.
  */
 
 /** @param {import('./process-types.mjs').StageSpec[]} stages */
@@ -24,6 +30,75 @@ export function collectAllTasks(phases) {
     walkStages(phase.stages || [], phase.id, [], out);
   }
   return out;
+}
+
+/**
+ * Resolve a generated TaskUse to the task definition it references.
+ *
+ * @param {object} process
+ * @param {object} taskUse
+ * @returns {object|null}
+ */
+export function resolveTaskUse(process, taskUse) {
+  const definitions = process?.methodContent?.taskDefinitions || [];
+  const definition = definitions.find((item) => item.id === taskUse?.taskDefinitionRef);
+  if (!definition) return null;
+
+  const workProducts = new Map(
+    (process.methodContent?.workProductDefinitions || []).map((item) => [item.id, item]),
+  );
+  const outputRefs = taskUse.outputWorkProductUseRefs || [];
+  const outputUses = (process.workProductUses || []).filter((item) =>
+    outputRefs.includes(item.id),
+  );
+
+  return {
+    ...definition,
+    id: taskUse.id,
+    taskDefinitionRef: taskUse.taskDefinitionRef,
+    performerRoleUseRefs: taskUse.performerRoleUseRefs || [],
+    outputWorkProductUseRefs: outputRefs,
+    artifacts: outputUses
+      .map((item) => workProducts.get(item.workProductDefinitionRef))
+      .filter(Boolean)
+      .map(({ id, name, description }) => ({ id, name, description })),
+    paletteFocus: (definition.metamodelBindings || [])
+      .filter((binding) => binding.kind === "EClass")
+      .map((binding) => binding.classifier)
+      .slice(0, 12),
+  };
+}
+
+/**
+ * Collect generated TaskUses with their method definitions resolved.
+ *
+ * @param {object} process
+ * @returns {Array<{ task: object, phaseId: string, stageId: string, stagePath: string[] }>}
+ */
+export function collectProcessTasks(process) {
+  const out = [];
+  for (const phase of process?.phases || []) {
+    walkProcessStages(phase.stages || [], phase.id, [], process, out);
+  }
+  return out;
+}
+
+function walkProcessStages(stages, phaseId, ancestors, process, out) {
+  for (const stage of stages || []) {
+    const path = [...ancestors, stage.id];
+    if (stage.subStages?.length) {
+      walkProcessStages(stage.subStages, phaseId, path, process, out);
+    }
+    for (const taskUse of stage.taskUses || []) {
+      const task = resolveTaskUse(process, taskUse);
+      if (task) out.push({ task, phaseId, stageId: stage.id, stagePath: path });
+    }
+    // This fallback keeps the helper useful for source specifications and
+    // hand-authored legacy definitions during the migration period.
+    for (const task of stage.tasks || []) {
+      out.push({ task, phaseId, stageId: stage.id, stagePath: path });
+    }
+  }
 }
 
 /**

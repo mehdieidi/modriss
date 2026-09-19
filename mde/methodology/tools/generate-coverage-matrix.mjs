@@ -2,7 +2,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { parseEcore, allConcepts } from "./lib/ecore-parser.mjs";
-import { collectAllTasks } from "./lib/process-walk.mjs";
+import { collectProcessTasks } from "./lib/process-walk.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
 const METAMODEL_ROOT = join(ROOT, "..", "metamodels");
@@ -15,13 +15,12 @@ function loadProcess(level) {
 
 function collectTaskMappings(processDef) {
   const mappings = {};
-  for (const { task } of collectAllTasks(processDef.phases || [])) {
-    for (const wp of task.workProducts || []) {
-      const key = wp.eClass || wp.eEnum;
-      if (!key) continue;
-      if (!mappings[key]) mappings[key] = [];
-      if (!mappings[key].includes(task.id)) {
-        mappings[key].push(task.id);
+  for (const { task } of collectProcessTasks(processDef)) {
+    for (const binding of task.metamodelBindings || []) {
+      if (!binding.classifier) continue;
+      if (!mappings[binding.classifier]) mappings[binding.classifier] = [];
+      if (!mappings[binding.classifier].includes(task.id)) {
+        mappings[binding.classifier].push(task.id);
       }
     }
   }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { collectAllTasks } from "./lib/process-walk.mjs";
+import { collectProcessTasks } from "./lib/process-walk.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
 const COV_DIR = join(ROOT, "coverage-matrix");
@@ -28,9 +28,9 @@ for (const level of ["cim", "pim", "psm"]) {
   );
   const conceptToPhase = new Map();
   const conceptToStage = new Map();
-  for (const { task, phaseId, stageId } of collectAllTasks(process.phases || [])) {
-    for (const wp of task.workProducts || []) {
-      const key = wp.eClass || wp.eEnum;
+  for (const { task, phaseId, stageId } of collectProcessTasks(process)) {
+    for (const binding of task.metamodelBindings || []) {
+      const key = binding.classifier;
       if (key) {
         conceptToPhase.set(key, phaseId);
         conceptToStage.set(key, stageId);

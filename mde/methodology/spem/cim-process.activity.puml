@@ -1,5 +1,5 @@
 @startuml cim-process
-title CIM Modeling Process, SPEM Engine (5 Phases per Capability Slice)
+title CIM Modeling Process, SPEM-mapped Iteration (5 Phases per Capability Slice)
 start
 partition "Phase 1, Increment Framing (engine)" {
   :Stage, Program Charter;

@@ -2,8 +2,9 @@
 
 The Platform-Specific Model (PSM) binds the PIM to AWS resources, SAM stacks, IAM, Lambda, API Gateway,
 DynamoDB, messaging, EventBridge, Step Functions, and observability. This guide covers **6 sequential
-phases** with nested stages and atomic tasks for greenfield AWS PSM work and post–PIM-to-PSM
-refinement.
+phases** with nested Activities and TaskUses for greenfield AWS PSM work and post–PIM-to-PSM
+refinement. Reusable method content is separate from process occurrences, and AWS classifier
+coverage is recorded as metamodel bindings rather than SPEM work products.
 
 After PIM→PSM ETL, treat generated AWS resources as **draft deployment scaffolding**. Refine them
 through deployable-slice framing, AWS resource modeling, readiness, review, and adapt work.
@@ -49,13 +50,13 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modriss.psm.modeling` · 6 phases · 28 atomic tasks · PSM metamodel coverage enforced in CI.
+Process `modriss.psm.modeling` · 6 phases · 28 TaskUses / TaskDefinitions · PSM metamodel coverage enforced in CI.
 
 ### Deployment & Slice Framing (`psm.ph1`)
 
 Frame the current deployable slice and establish or refresh AWS account, stack, and security foundations.
 
-**Runs:** in engine cycle · **Role:** cloud-platform-engineer
+**Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
 **Phase entry:**
 
@@ -79,7 +80,7 @@ Select the AWS deployable slice and define deployment review expectations.
 
 **Viewpoint:** stack
 **Duration:** 30m
-**Artifacts:** PSM Increment Plan
+**Work products:** PSM Increment Plan
 
 **Steps:**
 
@@ -107,7 +108,7 @@ Create or refresh AwsPsmModel root with partition, region, naming, and tagging p
 
 **Viewpoint:** dashboard
 **Duration:** 20m
-**Artifacts:** Deployment Strategy
+**Work products:** Deployment Strategy
 **Palette focus:** `AwsPsmModel`
 
 **Steps:**
@@ -127,7 +128,7 @@ Create or refresh AwsPsmModel root with partition, region, naming, and tagging p
 
 **Viewpoint:** dashboard
 **Duration:** 30m
-**Artifacts:** Deployment Strategy
+**Work products:** Deployment Strategy
 **Palette focus:** `AwsStage`, `AwsNamingPolicy`, `AwsTaggingPolicy`
 
 **Steps:**
@@ -147,7 +148,21 @@ Create or refresh AwsPsmModel root with partition, region, naming, and tagging p
 
 **Viewpoint:** dashboard
 **Duration:** 30m
-**Artifacts:** Deployment Strategy
+**Work products:** Deployment Strategy
+**Palette focus:**
+
+- `WafAssociableResource`
+- `AwsResource`
+- `ValueExpression`
+- `NamedValueExpression`
+- `AwsNativeResource`
+- `DeployableElement`
+- `InvocationSource`
+- `InvocationTarget`
+- `FunctionTarget`
+- `WorkflowTarget`
+- `SubscriptionTarget`
+- `RoutingTarget`
 
 **Steps:**
 
@@ -175,7 +190,7 @@ Create SAM stack with globals and CloudFormation parameters.
 
 **Viewpoint:** stack
 **Duration:** 45m
-**Artifacts:** SAM Stack Scaffold
+**Work products:** SAM Stack Scaffold
 **Palette focus:** `SamStack`, `SamGlobals`
 
 **Steps:**
@@ -195,7 +210,7 @@ Create SAM stack with globals and CloudFormation parameters.
 
 **Viewpoint:** stack
 **Duration:** 30m
-**Artifacts:** SAM Stack Scaffold
+**Work products:** SAM Stack Scaffold
 **Palette focus:** `CfnParameter`, `CfnMapping`, `CfnCondition`, `CfnOutput`
 
 **Steps:**
@@ -223,7 +238,7 @@ Establish IAM roles, KMS keys, secrets, and SSM parameters.
 
 **Viewpoint:** security
 **Duration:** 1-2h
-**Artifacts:** Security Baseline
+**Work products:** Security Baseline
 **Palette focus:**
 
 - `AwsSecurityBaseline`
@@ -253,7 +268,7 @@ Establish IAM roles, KMS keys, secrets, and SSM parameters.
 
 **Viewpoint:** security
 **Duration:** 1h
-**Artifacts:** Security Baseline
+**Work products:** Security Baseline
 **Palette focus:**
 
 - `KmsKey`
@@ -287,7 +302,7 @@ Establish IAM roles, KMS keys, secrets, and SSM parameters.
 
 Configure VPC networking and Cognito identity resources aligned to PIM auth model.
 
-**Runs:** in engine cycle · **Role:** cloud-platform-engineer
+**Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
 **Phase entry:**
 
@@ -310,7 +325,7 @@ Configure VPC, subnets, endpoints, and security groups for workloads.
 
 **Viewpoint:** networking
 **Duration:** 1h
-**Artifacts:** Network & Identity
+**Work products:** Network & Identity
 **Palette focus:** `Vpc`, `Subnet`, `VpcAttachmentConfig`
 
 **Steps:**
@@ -330,7 +345,7 @@ Configure VPC, subnets, endpoints, and security groups for workloads.
 
 **Viewpoint:** networking
 **Duration:** 45m
-**Artifacts:** Network & Identity
+**Work products:** Network & Identity
 **Palette focus:** `VpcEndpoint`, `VpcEndpointReference`, `SecurityGroup`, `SecurityGroupRule`
 
 **Steps:**
@@ -358,7 +373,7 @@ Configure Cognito user pools, clients, and identity pools.
 
 **Viewpoint:** identity
 **Duration:** 1h
-**Artifacts:** Network & Identity
+**Work products:** Network & Identity
 **Palette focus:**
 
 - `CognitoUserPool`
@@ -386,7 +401,7 @@ Configure Cognito user pools, clients, and identity pools.
 
 **Viewpoint:** identity
 **Duration:** 45m
-**Artifacts:** Network & Identity
+**Work products:** Network & Identity
 **Palette focus:**
 
 - `CognitoUserPoolClient`
@@ -414,7 +429,7 @@ Configure Cognito user pools, clients, and identity pools.
 
 Provision durable storage and messaging resources matching PIM data and event channels.
 
-**Runs:** in engine cycle · **Role:** cloud-platform-engineer
+**Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
 **Phase entry:**
 
@@ -437,7 +452,7 @@ Provision DynamoDB tables and S3 buckets aligned to PIM data architecture.
 
 **Viewpoint:** storage
 **Duration:** 1-2h
-**Artifacts:** Durable Storage Layer
+**Work products:** Durable Storage Layer
 **Palette focus:**
 
 - `DynamoDbTable`
@@ -470,7 +485,7 @@ Provision DynamoDB tables and S3 buckets aligned to PIM data architecture.
 
 **Viewpoint:** storage
 **Duration:** 1-2h
-**Artifacts:** Durable Storage Layer
+**Work products:** Durable Storage Layer
 **Palette focus:**
 
 - `S3Bucket`
@@ -511,7 +526,7 @@ Create SQS queues and SNS topics aligned to PIM event channels.
 
 **Viewpoint:** messaging
 **Duration:** 45m
-**Artifacts:** Messaging Layer
+**Work products:** Messaging Layer
 **Palette focus:** `SqsQueue`, `SqsRedrivePolicy`, `SqsRedriveAllowPolicy`, `SqsQueuePolicy`
 
 **Steps:**
@@ -531,7 +546,7 @@ Create SQS queues and SNS topics aligned to PIM event channels.
 
 **Viewpoint:** messaging
 **Duration:** 45m
-**Artifacts:** Messaging Layer
+**Work products:** Messaging Layer
 **Palette focus:** `SnsTopic`, `SnsSubscription`, `SnsFilterRule`, `SnsTopicPolicy`
 
 **Steps:**
@@ -553,7 +568,7 @@ Create SQS queues and SNS topics aligned to PIM event channels.
 
 Configure EventBridge fabric and deploy Lambda compute matching PIM functions.
 
-**Runs:** in engine cycle · **Role:** cloud-platform-engineer
+**Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
 **Phase entry:**
 
@@ -576,7 +591,7 @@ Configure EventBridge buses, rules, schedules, pipes, and API destinations.
 
 **Viewpoint:** events
 **Duration:** 1-2h
-**Artifacts:** Event Fabric
+**Work products:** Event Fabric
 **Palette focus:**
 
 - `EventBridgeBus`
@@ -609,7 +624,7 @@ Configure EventBridge buses, rules, schedules, pipes, and API destinations.
 
 **Viewpoint:** events
 **Duration:** 1h
-**Artifacts:** Event Fabric
+**Work products:** Event Fabric
 **Palette focus:**
 
 - `EventBridgeSchedule`
@@ -648,7 +663,7 @@ Deploy Lambda functions with event source mappings and permissions.
 
 **Viewpoint:** compute
 **Duration:** 2-3h
-**Artifacts:** Lambda Compute Layer
+**Work products:** Lambda Compute Layer
 **Palette focus:**
 
 - `AwsLambdaFunction`
@@ -681,7 +696,7 @@ Deploy Lambda functions with event source mappings and permissions.
 
 **Viewpoint:** compute
 **Duration:** 1-2h
-**Artifacts:** Lambda Compute Layer
+**Work products:** Lambda Compute Layer
 **Palette focus:**
 
 - `LambdaEventSourceMapping`
@@ -716,7 +731,7 @@ Deploy Lambda functions with event source mappings and permissions.
 
 Configure API Gateway exposure and Step Functions workflows with observability.
 
-**Runs:** in engine cycle · **Role:** cloud-platform-engineer
+**Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
 **Phase entry:**
 
@@ -739,7 +754,7 @@ Configure HTTP/REST/WebSocket APIs with routes, integrations, and authorizers.
 
 **Viewpoint:** api
 **Duration:** 1-2h
-**Artifacts:** API Gateway Layer
+**Work products:** API Gateway Layer
 **Palette focus:**
 
 - `ApiGatewayApi`
@@ -770,7 +785,7 @@ Configure HTTP/REST/WebSocket APIs with routes, integrations, and authorizers.
 
 **Viewpoint:** api
 **Duration:** 1-2h
-**Artifacts:** API Gateway Layer
+**Work products:** API Gateway Layer
 **Palette focus:**
 
 - `ApiGatewayRequestModel`
@@ -815,7 +830,7 @@ Deploy state machines with ASL from PIM workflows.
 
 **Viewpoint:** workflow
 **Duration:** 1-2h
-**Artifacts:** Workflow & Observability
+**Work products:** Workflow & Observability
 **Palette focus:**
 
 - `StepFunctionStateMachine`
@@ -857,7 +872,7 @@ Configure logs, metrics, alarms, and dashboards.
 
 **Viewpoint:** workflow
 **Duration:** 45m
-**Artifacts:** Workflow & Observability
+**Work products:** Workflow & Observability
 **Palette focus:**
 
 - `CloudWatchLogGroup`
@@ -883,7 +898,7 @@ Configure logs, metrics, alarms, and dashboards.
 
 **Viewpoint:** workflow
 **Duration:** 45m
-**Artifacts:** Workflow & Observability
+**Work products:** Workflow & Observability
 **Palette focus:**
 
 - `CloudWatchAlarm`
@@ -911,7 +926,7 @@ Configure logs, metrics, alarms, and dashboards.
 
 Create integration relationship views, close traceability, and pass PSM EVL gate.
 
-**Runs:** in engine cycle · **Role:** process-reviewer
+**Runs:** in engine cycle · **Role:** Process Reviewer
 
 **Phase entry:**
 
@@ -935,7 +950,7 @@ Create cross-resource relationship views for deployment wiring validation.
 
 **Viewpoint:** readiness
 **Duration:** 1h
-**Artifacts:** Integration View Catalog
+**Work products:** Integration View Catalog
 **Palette focus:**
 
 - `AwsRelationshipView`
@@ -977,7 +992,16 @@ Close trace links and production readiness before M2T generation.
 
 **Viewpoint:** readiness
 **Duration:** 1-2h
-**Artifacts:** Deployment Readiness Record
+**Work products:** Deployment Readiness Record
+**Palette focus:**
+
+- `TraceModel`
+- `TraceLink`
+- `TransformationAssumption`
+- `ProductionReadinessAssessment`
+- `ReadinessFinding`
+- `ReadinessCheck`
+- `ManualDecision`
 
 **Steps:**
 
@@ -1008,7 +1032,7 @@ Review the AWS deployment slice, accept the increment, and adapt the next cycle.
 
 **Viewpoint:** readiness
 **Duration:** 45m
-**Artifacts:** PSM Increment Review Record
+**Work products:** PSM Increment Review Record
 
 **Steps:**
 

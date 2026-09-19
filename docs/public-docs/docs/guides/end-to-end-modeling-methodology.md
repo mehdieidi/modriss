@@ -181,7 +181,7 @@ concepts, traces, and readiness information, split across concern-specific ETL m
 
 **Child process:** `modriss.pim.modeling` · **Guide:** [PIM Modeling Methodology](pim-modeling-methodology.md)
 
-Refine generated PIM through six SPEM phases (`pim.ph1`–`pim.ph6`): phases → stages → atomic tasks.
+Refine generated PIM through six SPEM-mapped phase Activities (`pim.ph1`–`pim.ph6`): nested Activities → TaskUses.
 
 ### Key activities
 
@@ -245,7 +245,7 @@ resolves relationships and validates placement.
 
 **Child process:** `modriss.psm.modeling` · **Guide:** [PSM Modeling Methodology](psm-modeling-methodology.md)
 
-Refine generated AWS resources through six SPEM phases (`psm.ph1`–`psm.ph6`).
+Refine generated AWS resources through six SPEM-mapped phase Activities (`psm.ph1`–`psm.ph6`).
 
 ### Key activities
 

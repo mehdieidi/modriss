@@ -17,21 +17,6 @@ function loadProcess(level) {
   return JSON.parse(fs.readFileSync(p, "utf8"));
 }
 
-function firstTaskTypes(phase) {
-  function walk(stages) {
-    for (const stage of stages || []) {
-      if (stage.subStages?.length) {
-        const inner = walk(stage.subStages);
-        if (inner.length) return inner;
-      }
-      const task = stage.tasks?.[0];
-      if (task?.paletteFocus?.length) return task.paletteFocus;
-    }
-    return [];
-  }
-  return walk(phase.stages);
-}
-
 function buildNarratives() {
   const entries = {};
   for (const level of LEVELS) {

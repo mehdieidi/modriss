@@ -29,14 +29,14 @@ definitions and this document are the maintained implementation contract.
 This method is a situational composition of established process and method
 engineering ideas, not a claim that one universal sequence fits every project.
 
-| Foundation                           | How MODRISS uses it                                                                                                                                                                                                                                              |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **SPEM 2.0**                         | Separates reusable method content (roles, tasks, work products, guidance) from a particular process configuration. The JSON hierarchy uses process → phase → stage → sub-stage → task and keeps role/artifact references explicit.                               |
-| **ISO/IEC/IEEE 12207**               | Supplies the software lifecycle scope: agreement, organizational/project enablement, technical management, technical development, operation, maintenance, and disposal. MODRISS tailors these activities while retaining evidence and decision responsibilities. |
-| **ISO/IEC/IEEE 15288**               | Supplies the system lifecycle perspective and supports concurrent, iterative, recursive, and incremental work. This is why architecture, operations, quality, security, and transition are not postponed until after modeling.                                   |
-| **Situational method engineering**   | Treats the method as assembled and tailored from method fragments according to project context, risk, criticality, novelty, team structure, and delivery constraints. Tailoring decisions are themselves versioned work products.                                |
-| **Agile principles and Scrum**       | Supplies empirical control, small usable increments, inspection, adaptation, a product backlog, explicit ownership, and a definition of done. MODRISS does not equate agility with skipping architecture, assurance, or lifecycle obligations.                   |
-| **MDA/MDE process-pattern research** | Supports the distinction between model refinement, transformation, traceability, human review of generated decisions, and feedback from later representations to earlier models.                                                                                 |
+| Foundation                           | How MODRISS uses it                                                                                                                                                                                                                                                                           |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SPEM 2.0**                         | Separates reusable method content (RoleDefinitions, TaskDefinitions, WorkProductDefinitions, Guidance) from process uses (RoleUses, TaskUses, WorkProductUses, Activities, and WorkSequences). MODRISS preserves a UI-friendly phase/stage projection while compiling it to that distinction. |
+| **ISO/IEC/IEEE 12207**               | Supplies the software lifecycle scope: agreement, organizational/project enablement, technical management, technical development, operation, maintenance, and disposal. MODRISS tailors these activities while retaining evidence and decision responsibilities.                              |
+| **ISO/IEC/IEEE 15288**               | Supplies the system lifecycle perspective and supports concurrent, iterative, recursive, and incremental work. This is why architecture, operations, quality, security, and transition are not postponed until after modeling.                                                                |
+| **Situational method engineering**   | Treats the method as assembled and tailored from method fragments according to project context, risk, criticality, novelty, team structure, and delivery constraints. Tailoring decisions are themselves versioned work products.                                                             |
+| **Agile principles and Scrum**       | Supplies empirical control, small usable increments, inspection, adaptation, a product backlog, explicit ownership, and a definition of done. MODRISS does not equate agility with skipping architecture, assurance, or lifecycle obligations.                                                |
+| **MDA/MDE process-pattern research** | Supports the distinction between model refinement, transformation, traceability, human review of generated decisions, and feedback from later representations to earlier models.                                                                                                              |
 
 Primary references:
 
@@ -48,6 +48,12 @@ Primary references:
 - [Asadi, Esfahani & Ramsin, “Process patterns for MDA-based software development”](https://mason.gmu.edu/~nesfaha2/Publications/SERA2010.pdf)
 - [Agile Manifesto principles](https://agilemanifesto.org/principles)
 - [The 2020 Scrum Guide](https://scrumguides.org/scrum-guide.html)
+
+The normative process endpoint is therefore a SPEM-mapped MODRISS JSON DSL,
+not a native SPEM/XMI instance. Its `metamodelBindings` connect TaskDefinitions
+to CIM/PIM/PSM language classifiers for coverage and guidance; they are not
+SPEM WorkProductDefinitions. The exact mapping is documented in
+[`spem/method-content.md`](spem/method-content.md).
 
 These references ground the structure; they do not prove that every selected
 task or metric is universally optimal. Each project must inspect and adapt the

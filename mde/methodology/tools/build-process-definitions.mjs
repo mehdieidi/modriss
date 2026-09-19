@@ -20,24 +20,38 @@ import { PROCESS_ENGINES, enrichEngineWithReworkLoops } from "./lib/process-engi
 import { ITERATION_LOOPS, END_TO_END_LOOPS } from "./lib/iteration-loops.mjs";
 import { CHANGE_MANAGEMENT, CROSS_LEVEL_CHANGE_WORKFLOW } from "./lib/change-management.mjs";
 import { PROCESS_GOVERNANCE } from "./lib/process-governance.mjs";
-import { countTasks } from "./lib/process-walk.mjs";
+import { collectProcessTasks } from "./lib/process-walk.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
 const METAMODEL_ROOT = join(ROOT, "..", "metamodels");
 const OUT_DIR = join(ROOT, "process-definitions");
 
-function workProductsForTypes(types, level, parsed) {
-  return types.map((name) => {
-    if (parsed.enums.includes(name)) {
-      return { metamodel: level, eEnum: name, cardinality: "enum-values" };
-    }
-    return {
-      metamodel: level,
-      eClass: name,
-      cardinality:
-        KERNEL_TYPES.has(name) || SHARED_READINESS_TYPES.has(name) ? "0..*" : "1..*",
-    };
-  });
+const SPEM_REFERENCE = "https://www.omg.org/spec/SPEM/2.0/PDF/";
+
+function roleDefinitionRef(roleId) {
+  return roleId ? `role.${roleId}` : undefined;
+}
+
+function taskDefinitionId(taskId) {
+  return `task.${taskId}`;
+}
+
+function roleDefinitions(roles) {
+  return (roles || []).map((role) => ({
+    id: roleDefinitionRef(role.id),
+    type: "RoleDefinition",
+    name: role.name,
+    responsibilities: role.responsibilities || [],
+  }));
+}
+
+function workProductDefinitions(artifacts) {
+  return (artifacts || []).map((artifact) => ({
+    id: artifact.id,
+    type: artifact.spemType || "ArtifactDefinition",
+    name: artifact.name,
+    description: artifact.description,
+  }));
 }
 
 function resolveTaskTypes(task, conceptAssignment, concepts) {
@@ -49,29 +63,18 @@ function resolveTaskTypes(task, conceptAssignment, concepts) {
   return [...new Set([...(task.types || []), ...assigned])];
 }
 
-function enrichTask(task, level, parsed, conceptAssignment, concepts) {
+function enrichTaskDefinition(task, level, parsed, conceptAssignment, concepts) {
   const types = resolveTaskTypes(task, conceptAssignment, concepts);
-  const workProducts = workProductsForTypes(types, level, parsed);
-  const paletteFocus = types.filter(
-    (t) =>
-      parsed.classes.includes(t) &&
-      !KERNEL_TYPES.has(t) &&
-      !SHARED_READINESS_TYPES.has(t),
-  );
-  const artifacts = (task.artifactIds || [])
-    .map((id) => ARTIFACT_KINDS[level]?.find((a) => a.id === id))
-    .filter(Boolean)
-    .map((a) => ({ id: a.id, name: a.name }));
 
   return {
-    id: task.id,
+    id: taskDefinitionId(task.id),
+    type: "TaskDefinition",
     name: task.name,
-    primaryRole: task.primaryRole,
+    purpose: task.purpose || task.name,
     viewpoint: task.viewpoint,
-    artifacts,
-    artifactIds: task.artifactIds || [],
+    performerRoleRefs: [roleDefinitionRef(task.primaryRole)].filter(Boolean),
+    outputWorkProductRefs: task.artifactIds || [],
     coverageGroups: task.coverageGroups || [],
-    workProducts,
     steps: task.steps,
     entryCriteria: task.entryCriteria,
     exitCriteria: task.exitCriteria,
@@ -79,21 +82,91 @@ function enrichTask(task, level, parsed, conceptAssignment, concepts) {
     progressEvidence: task.progressEvidence,
     childProcessId: task.childProcessId,
     transform: task.transform,
-    paletteFocus: paletteFocus.slice(0, 12),
     durationEstimate: task.durationEstimate,
+    paletteFocus: types
+      .filter(
+        (classifier) =>
+          parsed?.classes.includes(classifier) &&
+          !KERNEL_TYPES.has(classifier) &&
+          !SHARED_READINESS_TYPES.has(classifier),
+      )
+      .slice(0, 12),
+    metamodelBindings: types.map((classifier) => ({
+      metamodel: level,
+      classifier,
+      kind: parsed?.classes.includes(classifier)
+        ? "EClass"
+        : parsed?.enums.includes(classifier)
+          ? "EEnum"
+          : "EDataType",
+    })),
   };
 }
 
-function enrichStages(stages, level, parsed, conceptAssignment, concepts, loops) {
+function workProductUseId(taskUseId, workProductId) {
+  return `wpu.${taskUseId}.${workProductId}`;
+}
+
+function roleUseId(activityId, roleId) {
+  return `ru.${activityId}.${roleId}`;
+}
+
+function activityRoleUseRefs(activity, taskSpecs = []) {
+  const roleIds = new Set(
+    [activity.primaryRole, ...taskSpecs.map((task) => task.primaryRole)].filter(Boolean),
+  );
+  return [...roleIds].map((roleId) => roleUseId(activity.id, roleId));
+}
+
+function compileTaskUse(task, activity, workProductUses) {
+  const outputRefs = (task.artifactIds || []).map((workProductId) => {
+    const id = workProductUseId(task.id, workProductId);
+    workProductUses.push({
+      id,
+      type: "WorkProductUse",
+      activityRef: activity.id,
+      taskUseRef: task.id,
+      workProductDefinitionRef: workProductId,
+      usage: "output",
+    });
+    return id;
+  });
+
+  return {
+    id: task.id,
+    type: "TaskUse",
+    taskDefinitionRef: taskDefinitionId(task.id),
+    performerRoleUseRefs: task.primaryRole
+      ? [roleUseId(activity.id, task.primaryRole)]
+      : [],
+    selectedStepIndices: (task.steps || []).map((_, index) => index),
+    outputWorkProductUseRefs: outputRefs,
+    childProcessId: task.childProcessId,
+    transform: task.transform,
+  };
+}
+
+function enrichStages(stages, level, parsed, conceptAssignment, concepts, loops, workProductUses, roleUses) {
   return (stages || []).map((stage) => {
+    const taskSpecs = stage.tasks || [];
+    for (const roleId of new Set([stage.primaryRole, ...taskSpecs.map((task) => task.primaryRole)].filter(Boolean))) {
+      roleUses.push({
+        id: roleUseId(stage.id, roleId),
+        type: "RoleUse",
+        activityRef: stage.id,
+        roleDefinitionRef: roleDefinitionRef(roleId),
+      });
+    }
     const stageLoops = loops.filter(
       (l) => l.fromStageId === stage.id || l.toStageId === stage.id,
     );
     const base = {
       id: stage.id,
+      type: "Activity",
+      activityKind: "MODRISS::Stage",
       name: stage.name,
       objective: stage.objective,
-      primaryRole: stage.primaryRole,
+      roleUseRefs: activityRoleUseRefs(stage, taskSpecs),
       viewpoint: stage.viewpoint,
       iterative: stage.iterative === true,
       iterationLoops: stageLoops.map((loop) => ({
@@ -103,29 +176,164 @@ function enrichStages(stages, level, parsed, conceptAssignment, concepts, loops)
         peerStageId: loop.fromStageId === stage.id ? loop.toStageId : loop.fromStageId,
         trigger: loop.trigger,
         guidance: loop.guidance,
-        twinPeaks: loop.twinPeaks === true,
+          twinPeaks: loop.twinPeaks === true,
       })),
     };
-    if (stage.subStages?.length) {
-      return {
-        ...base,
-        subStages: enrichStages(
-          stage.subStages,
-          level,
-          parsed,
-          conceptAssignment,
-          concepts,
-          loops,
-        ),
-      };
-    }
     return {
       ...base,
-      tasks: (stage.tasks || []).map((t) =>
-        enrichTask(t, level, parsed, conceptAssignment, concepts),
-      ),
+      subStages: stage.subStages?.length
+        ? enrichStages(
+            stage.subStages,
+            level,
+            parsed,
+            conceptAssignment,
+            concepts,
+            loops,
+            workProductUses,
+            roleUses,
+          )
+        : undefined,
+      taskUses: taskSpecs.map((task) => compileTaskUse(task, stage, workProductUses)),
     };
   });
+}
+
+function collectTaskDefinitions(stages, level, parsed, conceptAssignment, concepts, output) {
+  for (const stage of stages || []) {
+    for (const task of stage.tasks || []) {
+      output.push(enrichTaskDefinition(task, level, parsed, conceptAssignment, concepts));
+    }
+    collectTaskDefinitions(stage.subStages, level, parsed, conceptAssignment, concepts, output);
+  }
+}
+
+function normalizeEngine(engine, processId) {
+  if (!engine) return null;
+  const cycle = (engine.cycle || []).map((step) => ({
+    ...step,
+    performerRoleRef: roleDefinitionRef(step.primaryRole),
+    primaryRole: undefined,
+  }));
+  return {
+    ...engine,
+    extension: "MODRISS::ProcessEngine",
+    cycle,
+    iteration: {
+      id: `${processId}.iteration`,
+      type: "Activity",
+      activityKind: "Iteration",
+      name: engine.displayName,
+      isRepeatable: true,
+      activityRefs: cycle.flatMap((step) => step.phaseIds || step.stageIds || [step.id]),
+    },
+    spemMapping:
+      "MODRISS extension realized as an Activity(kind = Iteration) containing process Activities and WorkSequences.",
+  };
+}
+
+function addAdjacentSequences(items, kind, workSequences) {
+  for (let index = 1; index < items.length; index += 1) {
+    const predecessor = items[index - 1];
+    const successor = items[index];
+    workSequences.push({
+      id: `ws.${predecessor.id}.${successor.id}`,
+      type: "WorkSequence",
+      predecessorRef: predecessor.id,
+      successorRef: successor.id,
+      linkKind: "finishToStart",
+      relation: kind,
+    });
+  }
+}
+
+function buildWorkSequences(phases, engine, loops) {
+  const workSequences = [];
+  addAdjacentSequences(phases, "phase-order", workSequences);
+
+  const walkStages = (stages) => {
+    for (const stage of stages || []) {
+      addAdjacentSequences(stage.subStages || [], "activity-order", workSequences);
+      addAdjacentSequences(stage.taskUses || [], "task-order", workSequences);
+      walkStages(stage.subStages);
+    }
+  };
+  for (const phase of phases || []) {
+    addAdjacentSequences(phase.stages || [], "activity-order", workSequences);
+    walkStages(phase.stages);
+  }
+
+  const engineActivity = (step) =>
+    step?.phaseIds?.[0] || step?.stageIds?.[0] || step?.id;
+  const cycle = engine?.cycle || [];
+  for (let index = 1; index < cycle.length; index += 1) {
+    const predecessor = engineActivity(cycle[index - 1]);
+    const successor = engineActivity(cycle[index]);
+    if (predecessor && successor) {
+      const exists = workSequences.some(
+        (item) => item.predecessorRef === predecessor && item.successorRef === successor,
+      );
+      if (!exists) {
+        workSequences.push({
+          id: `ws.engine.${predecessor}.${successor}`,
+          type: "WorkSequence",
+          predecessorRef: predecessor,
+          successorRef: successor,
+          linkKind: "finishToStart",
+          relation: "engine-cycle",
+        });
+      }
+    }
+  }
+  if (engine?.loop) {
+    const predecessor = engineActivity(cycle.find((step) => step.id === engine.loop.fromStepId));
+    const successor = engineActivity(cycle.find((step) => step.id === engine.loop.toStepId));
+    if (predecessor && successor) {
+      workSequences.push({
+        id: `ws.engine-loop.${predecessor}.${successor}`,
+        type: "WorkSequence",
+        predecessorRef: predecessor,
+        successorRef: successor,
+        linkKind: "finishToStart",
+        relation: "iteration-loop",
+        condition: engine.loop.condition,
+        guidance: engine.loop.guidance,
+      });
+    }
+  }
+  for (const loop of loops || []) {
+    workSequences.push({
+      id: `ws.rework.${loop.id}`,
+      type: "WorkSequence",
+      predecessorRef: loop.fromStageId,
+      successorRef: loop.toStageId,
+      linkKind: "finishToStart",
+      relation: "rework",
+      condition: loop.trigger,
+      guidance: loop.guidance,
+    });
+  }
+  return workSequences;
+}
+
+function compileMethodContent({ packageId, roles, artifacts, guidelines, taskDefinitions }) {
+  return {
+    packageId,
+    type: "MethodPackage",
+    roleDefinitions: roleDefinitions(roles),
+    taskDefinitions,
+    workProductDefinitions: workProductDefinitions(artifacts),
+    guidance: guidelines || [],
+  };
+}
+
+function spemMetadata() {
+  return {
+    spemVersion: "2.0",
+    representation: "MODRISS JSON DSL mapped to SPEM 2.0",
+    conformance: "mapped",
+    compliancePoint: "SPEM Process with Behavior and Content + SPEM Method Content",
+    normativeReference: SPEM_REFERENCE,
+  };
 }
 
 function buildProcessDefinition(level) {
@@ -141,13 +349,20 @@ function buildProcessDefinition(level) {
     );
   }
   const loops = ITERATION_LOOPS[level] || [];
+  const processId = `modriss.${level}.modeling`;
+  const roleUses = [];
+  const workProductUses = [];
+  const taskDefinitions = [];
+  collectTaskDefinitions(phaseSpecs.flatMap((phase) => phase.stages), level, parsed, conceptAssignment, concepts, taskDefinitions);
 
   const phases = phaseSpecs.map((phase) => ({
     id: phase.id,
+    type: "Activity",
+    activityKind: "Phase",
     name: phase.name,
     order: phase.order,
     objective: phase.objective,
-    primaryRole: phase.primaryRole,
+    roleUseRefs: [roleUseId(phase.id, phase.primaryRole)],
     entryCriteria: phase.entryCriteria,
     exitCriteria: phase.exitCriteria,
     inEngine: phase.inEngine === true,
@@ -158,23 +373,46 @@ function buildProcessDefinition(level) {
       conceptAssignment,
       concepts,
       loops,
+      workProductUses,
+      roleUses,
     ),
   }));
+
+  for (const phase of phaseSpecs) {
+    roleUses.push({
+      id: roleUseId(phase.id, phase.primaryRole),
+      type: "RoleUse",
+      activityRef: phase.id,
+      roleDefinitionRef: roleDefinitionRef(phase.primaryRole),
+    });
+  }
+  const processEngine = normalizeEngine(
+    enrichEngineWithReworkLoops(level, PROCESS_ENGINES[level], loops),
+    processId,
+  );
 
   const lastPhase = phases[phases.length - 1];
 
   return {
-    processId: `modriss.${level}.modeling`,
-    spemVersion: "2.0",
+    processId,
+    type: "Process",
+    ...spemMetadata(),
     level,
     displayName: level.toUpperCase(),
-    roles: ROLES[level],
-    artifactKinds: ARTIFACT_KINDS[level] || [],
-    guidelines: PROCESS_GUIDELINES[level] || [],
+    methodContent: compileMethodContent({
+      packageId: `modriss.method-content.${level}`,
+      roles: ROLES[level],
+      artifacts: ARTIFACT_KINDS[level] || [],
+      guidelines: PROCESS_GUIDELINES[level] || [],
+      taskDefinitions,
+    }),
+    roleUses,
+    workProductUses,
     progressModel: PROCESS_GOVERNANCE[level]?.progressModel,
     governance: PROCESS_GOVERNANCE[level]?.governance,
-    processEngine: enrichEngineWithReworkLoops(level, PROCESS_ENGINES[level], loops),
+    processEngine,
     phases,
+    workSequences: buildWorkSequences(phases, processEngine, loops),
     changeManagement: CHANGE_MANAGEMENT[level] || { workflows: [] },
     milestones: [
       {
@@ -187,23 +425,65 @@ function buildProcessDefinition(level) {
 }
 
 function buildEndToEnd() {
-  return {
-    processId: "modriss.end-to-end.modeling",
-    spemVersion: "2.0",
-    level: "end-to-end",
-    displayName: "Full Software Lifecycle with CIM → PIM → PSM",
-    roles: END_TO_END_ROLES,
-    artifactKinds: END_TO_END_ARTIFACT_KINDS,
-    guidelines: PROCESS_GUIDELINES["end-to-end"] || [],
-    progressModel: PROCESS_GOVERNANCE["end-to-end"]?.progressModel,
-    governance: PROCESS_GOVERNANCE["end-to-end"]?.governance,
-    processEngine: enrichEngineWithReworkLoops(
+  const processId = "modriss.end-to-end.modeling";
+  const roleUses = [];
+  const workProductUses = [];
+  const taskDefinitions = [];
+  collectTaskDefinitions(END_TO_END_PHASES.flatMap((phase) => phase.stages), "end-to-end", null, new Map(), [], taskDefinitions);
+  const phases = END_TO_END_PHASES.map((phase) => ({
+    ...phase,
+    primaryRole: undefined,
+    type: "Activity",
+    activityKind: "Phase",
+    roleUseRefs: [roleUseId(phase.id, phase.primaryRole)],
+    stages: enrichStages(
+      phase.stages,
+      "end-to-end",
+      null,
+      new Map(),
+      [],
+      END_TO_END_LOOPS,
+      workProductUses,
+      roleUses,
+    ),
+  }));
+  for (const phase of END_TO_END_PHASES) {
+    roleUses.push({
+      id: roleUseId(phase.id, phase.primaryRole),
+      type: "RoleUse",
+      activityRef: phase.id,
+      roleDefinitionRef: roleDefinitionRef(phase.primaryRole),
+    });
+  }
+  const processEngine = normalizeEngine(
+    enrichEngineWithReworkLoops(
       "end-to-end",
       PROCESS_ENGINES["end-to-end"],
       [],
       END_TO_END_LOOPS,
     ),
-    phases: END_TO_END_PHASES,
+    processId,
+  );
+  return {
+    processId,
+    type: "Process",
+    ...spemMetadata(),
+    level: "end-to-end",
+    displayName: "Full Software Lifecycle with CIM → PIM → PSM",
+    methodContent: compileMethodContent({
+      packageId: "modriss.method-content.end-to-end",
+      roles: END_TO_END_ROLES,
+      artifacts: END_TO_END_ARTIFACT_KINDS,
+      guidelines: PROCESS_GUIDELINES["end-to-end"] || [],
+      taskDefinitions,
+    }),
+    roleUses,
+    workProductUses,
+    progressModel: PROCESS_GOVERNANCE["end-to-end"]?.progressModel,
+    governance: PROCESS_GOVERNANCE["end-to-end"]?.governance,
+    processEngine,
+    phases,
+    workSequences: buildWorkSequences(phases, processEngine, END_TO_END_LOOPS),
     changeManagement: {
       workflows: [
         CROSS_LEVEL_CHANGE_WORKFLOW,
@@ -228,8 +508,11 @@ for (const level of ["cim", "pim", "psm"]) {
   const def = buildProcessDefinition(level);
   const out = join(OUT_DIR, `${level}.json`);
   writeFileSync(out, `${JSON.stringify(def, null, 2)}\n`);
-  console.log(`Wrote ${out} (${def.phases.length} phases, ${countTasks(def.phases)} tasks)`);
+  console.log(
+    `Wrote ${out} (${def.phases.length} phases, ${collectProcessTasks(def).length} tasks)`,
+  );
 }
 
-writeFileSync(join(OUT_DIR, "end-to-end.json"), `${JSON.stringify(buildEndToEnd(), null, 2)}\n`);
-console.log("Wrote end-to-end.json");
+const endToEnd = buildEndToEnd();
+writeFileSync(join(OUT_DIR, "end-to-end.json"), `${JSON.stringify(endToEnd, null, 2)}\n`);
+console.log(`Wrote end-to-end.json (${collectProcessTasks(endToEnd).length} tasks)`);

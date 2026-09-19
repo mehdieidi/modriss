@@ -8,16 +8,18 @@ available in [`software-development-process-fa.md`](software-development-process
 machine-readable definitions below are the executable method content enacted inside that lifecycle.
 
 Canonical, machine-readable **iterative-incremental** process definitions for CIM, PIM,
-AWS PSM, generated-artifact deployment readiness, and the end-to-end pipeline. Each process follows **SPEM 2.0**: sequential phases → stages
-→ optional sub-stages → atomic tasks, plus roles, artifact kinds, guidelines, and a
-**process engine** (the agile kernel that delivers increments).
+AWS PSM, generated-artifact deployment readiness, and the end-to-end pipeline. Each process
+is a MODRISS JSON representation mapped to SPEM 2.0: reusable method content contains
+RoleDefinitions, TaskDefinitions, WorkProductDefinitions, and Guidance; process Activities
+contain RoleUses, WorkProductUses, TaskUses, and explicit WorkSequences. MODRISS-specific
+process-engine, progress, governance, and change-management extensions are labeled as such.
 
 ## Layout
 
 | Path                   | Purpose                                                                                                               |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `spem/`                | SPEM 2.0 method content and UML activity diagrams                                                                     |
-| `process-definitions/` | JSON DSL: phases, stages, tasks, roles, artifacts, progress/governance contracts, and `processEngine`                 |
+| `process-definitions/` | JSON DSL: method content, Activities, TaskUses, WorkSequences, progress/governance contracts, and `processEngine`     |
 | `coverage-matrix/`     | Generated concept → task mappings (CI-validated)                                                                      |
 | `tools/lib/`           | SPEM specs, full-lifecycle orchestration, process engine, iteration loops, governance, artifact kinds, and guidelines |
 | `tools/`               | Build, coverage, validation, and UI metadata augmentation scripts                                                     |
@@ -26,7 +28,7 @@ AWS PSM, generated-artifact deployment readiness, and the end-to-end pipeline. E
 
 When metamodels change:
 
-1. Update SPEM specs in `tools/lib/spem-*.mjs` and concept assignment in `concept-assignment.mjs`.
+1. Update the process specifications in `tools/lib/spem-*.mjs` and concept assignment in `concept-assignment.mjs`.
 2. Regenerate artifacts:
 
    ```bash
@@ -43,3 +45,6 @@ When metamodels change:
 
 - `GET /api/modeling/process/{cim|pim|psm|artifact|end-to-end}`: process definition
 - `GET /api/modeling/process/{cim|pim|psm}/coverage`: coverage matrix
+
+The process endpoint returns the compiled method-content/process-use contract;
+`metamodelBindings` are coverage bindings, not SPEM work products.

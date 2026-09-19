@@ -23,16 +23,86 @@ function collectStages(phases) {
 }
 
 function validateProcess(process, fileName) {
-  const roleIds = new Set((process.roles || []).map((role) => role.id));
-  const artifactIds = new Set((process.artifactKinds || []).map((artifact) => artifact.id));
+  const methodContent = process.methodContent || {};
+  const errors = [];
+  if (process.type !== "Process") errors.push("root is not typed as Process");
+  if (methodContent.type !== "MethodPackage") errors.push("methodContent is not typed as MethodPackage");
+  if (process.conformance !== "mapped") errors.push("process must declare mapped SPEM conformance");
+  const roleIds = new Set((methodContent.roleDefinitions || process.roles || []).map((role) => role.id));
+  const taskDefinitions = new Map(
+    (methodContent.taskDefinitions || []).map((task) => [task.id, task]),
+  );
+  const workProductIds = new Set(
+    (methodContent.workProductDefinitions || process.artifactKinds || []).map(
+      (workProduct) => workProduct.id,
+    ),
+  );
+  const roleUses = new Map((process.roleUses || []).map((roleUse) => [roleUse.id, roleUse]));
+  const workProductUses = new Map(
+    (process.workProductUses || []).map((workProductUse) => [workProductUse.id, workProductUse]),
+  );
   const phaseIds = new Set((process.phases || []).map((phase) => phase.id));
   const stages = collectStages(process.phases);
   const taskIds = new Set();
-  const errors = [];
+  const nodeIds = new Set([...phaseIds, ...stages.keys()]);
+
+  for (const taskDefinition of methodContent.taskDefinitions || []) {
+    for (const roleId of taskDefinition.performerRoleRefs || []) {
+      if (!roleIds.has(roleId)) {
+        errors.push(`task definition ${taskDefinition.id} uses unknown role ${roleId}`);
+      }
+    }
+    for (const workProductId of taskDefinition.outputWorkProductRefs || []) {
+      if (!workProductIds.has(workProductId)) {
+        errors.push(`task definition ${taskDefinition.id} uses unknown work product ${workProductId}`);
+      }
+    }
+    for (const binding of taskDefinition.metamodelBindings || []) {
+      if (!binding.metamodel || !binding.classifier || !binding.kind) {
+        errors.push(`task definition ${taskDefinition.id} has an incomplete metamodel binding`);
+      }
+    }
+  }
+
+  const checkRoleUses = (ownerId, refs) => {
+    for (const roleUseId of refs || []) {
+      const roleUse = roleUses.get(roleUseId);
+      if (!roleUse) {
+        errors.push(`${ownerId} uses unknown role use ${roleUseId}`);
+        continue;
+      }
+      if (!roleIds.has(roleUse.roleDefinitionRef)) {
+        errors.push(`role use ${roleUseId} references unknown role ${roleUse.roleDefinitionRef}`);
+      }
+    }
+  };
 
   const visitStage = (stage) => {
     if (stage.primaryRole && !roleIds.has(stage.primaryRole)) {
       errors.push(`stage ${stage.id} uses unknown role ${stage.primaryRole}`);
+    }
+    checkRoleUses(`stage ${stage.id}`, stage.roleUseRefs);
+    nodeIds.add(stage.id);
+    for (const taskUse of stage.taskUses || []) {
+      taskIds.add(taskUse.id);
+      nodeIds.add(taskUse.id);
+      const taskDefinition = taskDefinitions.get(taskUse.taskDefinitionRef);
+      if (!taskDefinition) {
+        errors.push(`task use ${taskUse.id} references unknown task definition ${taskUse.taskDefinitionRef}`);
+      }
+      checkRoleUses(`task use ${taskUse.id}`, taskUse.performerRoleUseRefs);
+      for (const workProductUseId of taskUse.outputWorkProductUseRefs || []) {
+        const workProductUse = workProductUses.get(workProductUseId);
+        if (!workProductUse) {
+          errors.push(`task use ${taskUse.id} uses unknown work product use ${workProductUseId}`);
+          continue;
+        }
+        if (!workProductIds.has(workProductUse.workProductDefinitionRef)) {
+          errors.push(
+            `work product use ${workProductUseId} references unknown definition ${workProductUse.workProductDefinitionRef}`,
+          );
+        }
+      }
     }
     for (const task of stage.tasks || []) {
       taskIds.add(task.id);
@@ -40,7 +110,9 @@ function validateProcess(process, fileName) {
         errors.push(`task ${task.id} uses unknown role ${task.primaryRole}`);
       }
       for (const artifactId of task.artifactIds || []) {
-        if (!artifactIds.has(artifactId)) errors.push(`task ${task.id} uses unknown artifact ${artifactId}`);
+        if (!workProductIds.has(artifactId)) {
+          errors.push(`task ${task.id} uses unknown artifact ${artifactId}`);
+        }
       }
     }
     for (const child of stage.subStages || []) visitStage(child);
@@ -50,7 +122,19 @@ function validateProcess(process, fileName) {
     if (phase.primaryRole && !roleIds.has(phase.primaryRole)) {
       errors.push(`phase ${phase.id} uses unknown role ${phase.primaryRole}`);
     }
+    checkRoleUses(`phase ${phase.id}`, phase.roleUseRefs);
     for (const stage of phase.stages || []) visitStage(stage);
+  }
+
+  for (const sequence of process.workSequences || []) {
+    if (!nodeIds.has(sequence.predecessorRef) || !nodeIds.has(sequence.successorRef)) {
+      errors.push(
+        `work sequence ${sequence.id} uses unknown predecessor ${sequence.predecessorRef} or successor ${sequence.successorRef}`,
+      );
+    }
+    if (!["finishToStart", "finishToFinish", "startToStart", "startToFinish"].includes(sequence.linkKind)) {
+      errors.push(`work sequence ${sequence.id} has invalid link kind ${sequence.linkKind}`);
+    }
   }
 
   const engine = process.processEngine;

@@ -1,5 +1,5 @@
 /**
- * JSDoc type definitions for the MODRISS SPEM process DSL.
+ * JSDoc type definitions for the MODRISS JSON representation mapped to SPEM.
  */
 
 /**
@@ -7,6 +7,36 @@
  * @property {string} id
  * @property {string} name
  * @property {string} description
+ */
+
+/**
+ * @typedef {Object} MetamodelBinding
+ * @property {string} metamodel
+ * @property {string} classifier
+ * @property {string} kind - EClass | EEnum | EDataType
+ */
+
+/**
+ * @typedef {Object} TaskDefinition
+ * @property {string} id
+ * @property {string} name
+ * @property {string} purpose
+ * @property {string[]} performerRoleRefs
+ * @property {string[]} outputWorkProductRefs
+ * @property {MetamodelBinding[]} metamodelBindings
+ * @property {string[]} steps
+ * @property {string[]} entryCriteria
+ * @property {string[]} exitCriteria
+ * @property {string[]} validationRules
+ */
+
+/**
+ * @typedef {Object} TaskUse
+ * @property {string} id
+ * @property {string} taskDefinitionRef
+ * @property {string[]} performerRoleUseRefs
+ * @property {number[]} selectedStepIndices
+ * @property {string[]} outputWorkProductUseRefs
  */
 
 /**
@@ -21,7 +51,7 @@
  * @typedef {Object} TaskSpec
  * @property {string} id
  * @property {string} name
- * @property {string} primaryRole
+ * @property {string} primaryRole - compact authoring alias compiled to RoleUse
  * @property {string} [viewpoint]
  * @property {string[]} [artifactIds]
  * @property {string[]} [types] - metamodel EClass/EEnum names

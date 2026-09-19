@@ -1,5 +1,5 @@
 @startuml pim-process
-title PIM Modeling Process, SPEM Engine (6 Phases per Service Slice)
+title PIM Modeling Process, SPEM-mapped Iteration (6 Phases per Service Slice)
 start
 partition "Phase 1, Architecture & Slice Framing (engine)" {
   :Stage, Service Slice Planning;

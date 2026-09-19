@@ -1,5 +1,5 @@
 @startuml end-to-end-process
-title End-to-End Lifecycle and SPEM Increment Engine
+title End-to-End Lifecycle and SPEM-mapped Increment Iteration
 start
 partition "e2e.ph0, Initiate / Tailor / Organize" {
   :Product and system intent;

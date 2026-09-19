@@ -15,15 +15,21 @@ class ModelingProcessServiceTest {
   private final ModelingProcessService service = new ModelingProcessService();
 
   @Test
-  void loadsCimProcessWithSpemHierarchy() {
+  void loadsCimProcessWithSpemMethodContentAndUses() {
     Map<String, Object> process = service.processDefinition("cim");
     assertEquals("modriss.cim.modeling", process.get("processId"));
     assertEquals("2.0", process.get("spemVersion"));
     List<?> phases = list(process.get("phases"));
     assertEquals(5, phases.size());
-    assertFalse(list(process.get("roles")).isEmpty());
-    assertFalse(list(process.get("artifactKinds")).isEmpty());
-    assertFalse(list(process.get("guidelines")).isEmpty());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> methodContent = (Map<String, Object>) process.get("methodContent");
+    assertNotNull(methodContent);
+    assertFalse(list(methodContent.get("roleDefinitions")).isEmpty());
+    assertFalse(list(methodContent.get("workProductDefinitions")).isEmpty());
+    assertFalse(list(methodContent.get("taskDefinitions")).isEmpty());
+    assertFalse(list(methodContent.get("guidance")).isEmpty());
+    assertFalse(list(process.get("roleUses")).isEmpty());
+    assertFalse(list(process.get("workSequences")).isEmpty());
     assertNotNull(process.get("processEngine"));
     assertNotNull(process.get("progressModel"));
     assertNotNull(process.get("governance"));
@@ -34,7 +40,7 @@ class ModelingProcessServiceTest {
     assertFalse(stages.isEmpty());
     @SuppressWarnings("unchecked")
     Map<String, Object> firstStage = (Map<String, Object>) stages.get(0);
-    assertFalse(list(firstStage.get("tasks")).isEmpty());
+    assertFalse(list(firstStage.get("taskUses")).isEmpty());
   }
 
   @Test
@@ -64,8 +70,14 @@ class ModelingProcessServiceTest {
     Map<String, Object> process = service.processDefinition("artifact");
     assertEquals("modriss.artifact.deployment-readiness", process.get("processId"));
     assertEquals(4, list(process.get("phases")).size());
-    assertFalse(list(process.get("roles")).isEmpty());
-    assertFalse(list(process.get("artifactKinds")).isEmpty());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> methodContent = (Map<String, Object>) process.get("methodContent");
+    assertNotNull(methodContent);
+    assertFalse(list(methodContent.get("roleDefinitions")).isEmpty());
+    assertFalse(list(methodContent.get("workProductDefinitions")).isEmpty());
+    assertFalse(list(methodContent.get("taskDefinitions")).isEmpty());
+    assertFalse(list(process.get("roleUses")).isEmpty());
+    assertFalse(list(process.get("workSequences")).isEmpty());
     assertNotNull(process.get("processEngine"));
     assertNotNull(process.get("progressModel"));
     assertNotNull(process.get("governance"));

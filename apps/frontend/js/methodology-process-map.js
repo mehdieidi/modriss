@@ -5,6 +5,7 @@ import { state } from "./state.js";
 import { el } from "./dom.js";
 import { escapeHtml } from "./utils.js";
 import { isModelingLevel, modelingElementDefinition } from "./modeling-config-data.js";
+import { guidanceForProcess, roleForTask, tasksForStage } from "./methodology-process-utils.js";
 
 const ICON_BASE = "/assets/icons/process-map";
 const NODE_W = 148;
@@ -63,9 +64,9 @@ function findStageById(stages, stageId) {
   return null;
 }
 
-function stageTaskIds(stage) {
+function stageTaskIds(process, stage) {
   return leafStages(stage)
-    .flatMap((s) => s.tasks || [])
+    .flatMap((s) => tasksForStage(process, s))
     .map((t) => t.id)
     .filter(Boolean);
 }
@@ -75,18 +76,18 @@ function taskStatus(taskId, progress) {
   return progress.completedTaskIds?.includes(taskId) ? "complete" : "pending";
 }
 
-function stageStatus(stage, progress) {
-  const ids = stageTaskIds(stage);
+function stageStatus(process, stage, progress) {
+  const ids = stageTaskIds(process, stage);
   if (!ids.length) return "pending";
   if (ids.every((id) => progress.completedTaskIds.includes(id))) return "complete";
   if (ids.some((id) => progress.completedTaskIds.includes(id))) return "progress";
   return "pending";
 }
 
-function phaseStatus(phase, progress) {
+function phaseStatus(process, phase, progress) {
   const ids = (phase?.stages || [])
     .flatMap((st) => leafStages(st))
-    .flatMap((s) => s.tasks || [])
+    .flatMap((s) => tasksForStage(process, s))
     .map((t) => t.id);
   if (!ids.length) return "pending";
   if (ids.every((id) => progress.completedTaskIds.includes(id))) return "complete";
@@ -146,7 +147,7 @@ function buildProcessView(process, progress) {
     sublabel: enginePhaseIds.has(phase.id) ? "Engine phase" : "Click to open stages",
     icon: iconForName(phase.name, phase.id),
     kind: "phase",
-    status: phaseStatus(phase, progress),
+    status: phaseStatus(process, phase, progress),
     drillable: true,
     drill: { type: "phase", phaseId: phase.id },
     phase,
@@ -181,7 +182,8 @@ function buildPhaseView(process, progress, phaseId) {
   const stages = phase.stages || [];
   const items = stages.map((stage) => {
     const hasSub = stage.subStages?.length > 0;
-    const hasTasks = stage.tasks?.length > 0;
+    const tasks = tasksForStage(process, stage);
+    const hasTasks = tasks.length > 0;
     const drillable = hasSub || hasTasks;
     return {
       id: stage.id,
@@ -189,11 +191,11 @@ function buildPhaseView(process, progress, phaseId) {
       sublabel: hasSub
         ? `${stage.subStages.length} sub-stage(s). Click to open`
         : hasTasks
-          ? `${stage.tasks.length} task(s). Click to open`
+          ? `${tasks.length} task(s). Click to open`
           : stage.objective?.slice(0, 40),
       icon: iconForName(stage.name, stage.id),
       kind: "stage",
-      status: stageStatus(stage, progress),
+      status: stageStatus(process, stage, progress),
       drillable,
       drill: hasSub
         ? { type: "stage", phaseId, stageId: stage.id }
@@ -220,11 +222,13 @@ function buildStageView(process, progress, phaseId, stageId) {
     const items = stage.subStages.map((sub) => ({
       id: sub.id,
       label: sub.name,
-      sublabel: sub.tasks?.length ? `${sub.tasks.length} task(s)` : sub.objective?.slice(0, 36),
+      sublabel: tasksForStage(process, sub).length
+        ? `${tasksForStage(process, sub).length} task(s)`
+        : sub.objective?.slice(0, 36),
       icon: iconForName(sub.name, sub.id),
       kind: "substage",
-      status: stageStatus(sub, progress),
-      drillable: (sub.tasks?.length || 0) > 0,
+      status: stageStatus(process, sub, progress),
+      drillable: tasksForStage(process, sub).length > 0,
       drill: { type: "stage", phaseId, stageId: sub.id },
       phase,
       stage: sub,
@@ -235,7 +239,7 @@ function buildStageView(process, progress, phaseId, stageId) {
     return layout;
   }
 
-  const tasks = stage.tasks || [];
+  const tasks = tasksForStage(process, stage);
   const items = tasks.map((task) => ({
     id: task.id,
     label: task.name,
@@ -528,23 +532,23 @@ function renderDetail(host, node, process, level) {
   if (!node) {
     host.innerHTML = `<div class="methodology-map-detail-empty">
       <p><strong>Semantic zoom</strong></p>
-      <p>Click a <strong>phase</strong> to open its stages, then sub-stages and atomic tasks. Use Back or the breadcrumb to zoom out.</p>
+      <p>Click a <strong>phase Activity</strong> to open nested Activities and TaskUses. Use Back or the breadcrumb to zoom out.</p>
     </div>`;
     return;
   }
 
   const parts = [];
   const phase = node.phase || (node.task ? findPhaseForTask(process, node.task.id) : null);
-  const stage = node.stage || (node.task && phase ? findStageForTask(phase, node.task.id) : null);
+  const stage =
+    node.stage || (node.task && phase ? findStageForTask(process, phase, node.task.id) : null);
   const task = node.task || null;
-  const roleId = task?.primaryRole || stage?.primaryRole || phase?.primaryRole;
-  const role = process?.roles?.find((r) => r.id === roleId);
+  const role = roleForTask(process, task, stage, phase);
   const artifacts = artifactsForNode(process, phase, stage, task);
   const guidelines = guidelinesForNode(process, phase, stage, task);
-  const paletteFocus = paletteFocusForNode(phase, stage, task);
+  const paletteFocus = paletteFocusForNode(process, phase, stage, task);
 
   if (node.task) {
-    parts.push(`<span class="map-detail-kind">Atomic task</span>`);
+    parts.push(`<span class="map-detail-kind">TaskUse</span>`);
     parts.push(`<h3>${escapeHtml(task.name)}</h3>`);
     parts.push(`<p>${escapeHtml(stage?.objective || phase?.objective || "")}</p>`);
     if (role) parts.push(renderRole(role));
@@ -561,15 +565,15 @@ function renderDetail(host, node, process, level) {
       parts.push(renderListSection("Exit criteria", task.exitCriteria));
     if (task.validationRules?.length)
       parts.push(renderChipSection("Validation", task.validationRules));
-    const workProducts = workProductLabels(task.workProducts || []);
-    if (workProducts.length) {
-      parts.push(renderChipSection("Metamodel work products", workProducts.slice(0, 18)));
+    const bindings = (task.metamodelBindings || []).map((binding) => binding.classifier);
+    if (bindings.length) {
+      parts.push(renderChipSection("Metamodel bindings", bindings.slice(0, 18)));
     }
     if (paletteFocus.length)
       parts.push(renderChipSection("Related palette elements", paletteFocus));
     if (guidelines.length) parts.push(renderGuidelines(guidelines));
   } else if (node.stage) {
-    parts.push(`<span class="map-detail-kind">Stage</span>`);
+    parts.push(`<span class="map-detail-kind">Activity · MODRISS::Stage</span>`);
     parts.push(`<h3>${escapeHtml(node.stage.name)}</h3>`);
     parts.push(`<p>${escapeHtml(node.stage.objective || "")}</p>`);
     if (role) parts.push(renderRole(role));
@@ -577,20 +581,21 @@ function renderDetail(host, node, process, level) {
     if (paletteFocus.length)
       parts.push(renderChipSection("Related palette elements", paletteFocus));
     if (guidelines.length) parts.push(renderGuidelines(guidelines));
-    if (node.stage.tasks?.length) {
+    const stageTasks = tasksForStage(process, node.stage);
+    if (stageTasks.length) {
       parts.push(renderSectionTitle("Tasks"));
       parts.push("<ul>");
-      node.stage.tasks.forEach((t) => parts.push(`<li>${escapeHtml(t.name)}</li>`));
+      stageTasks.forEach((t) => parts.push(`<li>${escapeHtml(t.name)}</li>`));
       parts.push("</ul>");
     }
   } else if (node.phase) {
     const primaryTask = (phase.stages || [])
-      .flatMap((stage) => stage.tasks || [])
+      .flatMap((stage) => leafStages(stage).flatMap((leaf) => tasksForStage(process, leaf)))
       .find((task) => task);
     const narrative = {
       summary: phase.summary || phase.objective || primaryTask?.steps?.[0] || phase.name || "",
     };
-    parts.push(`<span class="map-detail-kind">Phase</span>`);
+    parts.push(`<span class="map-detail-kind">Activity · Phase</span>`);
     parts.push(`<h3>${escapeHtml(phase.name)}</h3>`);
     parts.push(`<p>${escapeHtml(phase.objective || narrative.summary)}</p>`);
     if (role) parts.push(renderRole(role));
@@ -630,7 +635,7 @@ function renderDetail(host, node, process, level) {
     const phase = node.phase || (node.task ? findPhaseForTask(process, node.task.id) : null);
     if (phase) selectGuidedPhase(phase.id);
     const targetStage =
-      node.stage || (node.task && phase ? findStageForTask(phase, node.task.id) : null);
+      node.stage || (node.task && phase ? findStageForTask(process, phase, node.task.id) : null);
     if (targetStage) selectGuidedStage(targetStage.id);
     closeMethodologyMap();
   });
@@ -696,41 +701,33 @@ function renderGuidelines(guidelines) {
 
 function guidelinesForNode(process, phase, stage, task) {
   const applies = new Set(["process", phase?.id, stage?.id, task?.id].filter(Boolean));
-  return (process?.guidelines || []).filter((g) => applies.has(g.appliesTo));
+  return guidanceForProcess(process).filter((g) => applies.has(g.appliesTo));
 }
 
 function artifactsForNode(process, phase, stage, task) {
-  const artifactIds = new Set();
-  const addTask = (t) => (t?.artifactIds || []).forEach((id) => artifactIds.add(id));
+  const artifacts = new Map();
+  const addTask = (item) =>
+    (item?.artifacts || []).forEach((artifact) => artifacts.set(artifact.id, artifact));
   if (task) {
     addTask(task);
   } else if (stage) {
-    leafStages(stage).forEach((leaf) => (leaf.tasks || []).forEach(addTask));
+    leafStages(stage).forEach((leaf) => tasksForStage(process, leaf).forEach(addTask));
   } else if (phase) {
-    (phase.stages || []).flatMap(leafStages).forEach((leaf) => (leaf.tasks || []).forEach(addTask));
+    (phase.stages || [])
+      .flatMap(leafStages)
+      .forEach((leaf) => tasksForStage(process, leaf).forEach(addTask));
   }
-  const byId = new Map((process?.artifactKinds || []).map((a) => [a.id, a]));
-  return [...artifactIds].map((id) => byId.get(id) || { id, name: id });
+  return [...artifacts.values()];
 }
 
-function workProductLabels(workProducts) {
-  return [
-    ...new Set(
-      workProducts
-        .map((wp) => wp.eClass || wp.eEnum)
-        .filter((name) => name && !name.endsWith("Type")),
-    ),
-  ];
-}
-
-function paletteFocusForNode(phase, stage, task) {
+function paletteFocusForNode(process, phase, stage, task) {
   if (task) return task.paletteFocus || [];
   const stages = stage ? [stage] : phase?.stages || [];
   return [
     ...new Set(
       stages
         .flatMap(leafStages)
-        .flatMap((leaf) => (leaf.tasks || []).flatMap((item) => item.paletteFocus || [])),
+        .flatMap((leaf) => tasksForStage(process, leaf).flatMap((item) => item.paletteFocus || [])),
     ),
   ];
 }
@@ -739,17 +736,17 @@ function findPhaseForTask(process, taskId) {
   for (const phase of process?.phases || []) {
     for (const st of phase.stages || []) {
       for (const leaf of leafStages(st)) {
-        if ((leaf.tasks || []).some((t) => t.id === taskId)) return phase;
+        if (tasksForStage(process, leaf).some((t) => t.id === taskId)) return phase;
       }
     }
   }
   return null;
 }
 
-function findStageForTask(phase, taskId) {
+function findStageForTask(process, phase, taskId) {
   for (const st of phase?.stages || []) {
     for (const leaf of leafStages(st)) {
-      if ((leaf.tasks || []).some((t) => t.id === taskId)) return leaf;
+      if (tasksForStage(process, leaf).some((t) => t.id === taskId)) return leaf;
     }
   }
   return null;
@@ -814,7 +811,7 @@ function renderProcessMap() {
   if (titleHost) titleHost.textContent = layout.title || "Process map";
   if (subtitleHost) {
     subtitleHost.textContent =
-      layout.subtitle || process.processEngine?.description || "SPEM phases → stages → tasks";
+      layout.subtitle || process.processEngine?.description || "SPEM Activities → TaskUses";
   }
 
   const selectedId = state.guidedModeling.mapSelectedId;

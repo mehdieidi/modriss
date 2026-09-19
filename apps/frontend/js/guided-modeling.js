@@ -12,6 +12,7 @@ import {
   modelingMethodologyConfig,
 } from "./modeling-config-data.js";
 import { applyDefinitionAccent, renderPalette, syncPaletteCollapsedUi } from "./canvas.js";
+import { guidanceForProcess, roleForTask, tasksForStage } from "./methodology-process-utils.js";
 import {
   createMethodologyMapOpenButton,
   closeMethodologyMap,
@@ -72,22 +73,22 @@ function flattenAllStages(stages) {
   return out;
 }
 
-function stageTasks(stage) {
-  return leafStages(stage).flatMap((s) => s.tasks || []);
+function stageTasks(process, stage) {
+  return leafStages(stage).flatMap((s) => tasksForStage(process, s));
 }
 
-function phaseTasks(phase) {
-  return (phase?.stages || []).flatMap((st) => stageTasks(st));
+function phaseTasks(process, phase) {
+  return (phase?.stages || []).flatMap((st) => stageTasks(process, st));
 }
 
-function phaseTaskIds(phase) {
-  return phaseTasks(phase)
+function phaseTaskIds(process, phase) {
+  return phaseTasks(process, phase)
     .map((t) => t.id)
     .filter(Boolean);
 }
 
-function isStageComplete(stage, progress) {
-  const ids = stageTasks(stage)
+function isStageComplete(process, stage, progress) {
+  const ids = stageTasks(process, stage)
     .map((t) => t.id)
     .filter(Boolean);
   return ids.length > 0 && ids.every((id) => progress.completedTaskIds.includes(id));
@@ -97,8 +98,8 @@ function outboundLoops(stage) {
   return (stage?.iterationLoops || []).filter((loop) => loop.direction === "outbound");
 }
 
-function isPhaseComplete(phase, progress) {
-  const ids = phaseTaskIds(phase);
+function isPhaseComplete(process, phase, progress) {
+  const ids = phaseTaskIds(process, phase);
   return ids.length > 0 && ids.every((id) => progress.completedTaskIds.includes(id));
 }
 
@@ -108,36 +109,39 @@ function selectedPhase(process, progress) {
     const found = process.phases.find((p) => p.id === progress.selectedPhaseId);
     if (found) return found;
   }
-  const firstIncomplete = process.phases.find((phase) => !isPhaseComplete(phase, progress));
+  const firstIncomplete = process.phases.find(
+    (phase) => !isPhaseComplete(process, phase, progress),
+  );
   return firstIncomplete || process.phases[0];
 }
 
-function selectedStage(phase, progress) {
+function selectedStage(process, phase, progress) {
   if (!phase?.stages?.length) return null;
   if (progress.selectedStageId) {
     const found = flattenAllStages(phase.stages).find((s) => s.id === progress.selectedStageId);
-    if (found && found.tasks?.length) return found;
+    if (found && tasksForStage(process, found).length) return found;
   }
   const leaves = phase.stages.flatMap(leafStages);
-  const firstIncomplete = leaves.find((stage) => !isStageComplete(stage, progress));
+  const firstIncomplete = leaves.find((stage) => !isStageComplete(process, stage, progress));
   return firstIncomplete || leaves[0] || null;
 }
 
-function selectedTask(stage, progress) {
-  if (!stage?.tasks?.length) return null;
-  return stage.tasks.find((t) => !progress.completedTaskIds.includes(t.id)) || stage.tasks[0];
+function selectedTask(process, stage, progress) {
+  const tasks = tasksForStage(process, stage);
+  if (!tasks.length) return null;
+  return tasks.find((t) => !progress.completedTaskIds.includes(t.id)) || tasks[0];
 }
 
 function selectedContext(process, progress) {
   const phase = selectedPhase(process, progress);
   if (!phase) return { phase: null, stage: null, task: null };
-  const stage = selectedStage(phase, progress);
-  const task = stage ? selectedTask(stage, progress) : null;
+  const stage = selectedStage(process, phase, progress);
+  const task = stage ? selectedTask(process, stage, progress) : null;
   return { phase, stage, task };
 }
 
 function _suggestedPhase(process, progress) {
-  return process?.phases?.find((phase) => !isPhaseComplete(phase, progress)) || null;
+  return process?.phases?.find((phase) => !isPhaseComplete(process, phase, progress)) || null;
 }
 
 function saveProgress(progress) {
@@ -157,7 +161,7 @@ function isMethodologyLevel(level) {
 }
 
 function phaseProgress(process, progress) {
-  const tasks = (process?.phases || []).flatMap((p) => phaseTasks(p));
+  const tasks = (process?.phases || []).flatMap((p) => phaseTasks(process, p));
   const ids = tasks.map((t) => t.id).filter(Boolean);
   const complete = ids.filter((id) => progress.completedTaskIds.includes(id)).length;
   return { complete, total: ids.length, ratio: ids.length ? complete / ids.length : 0 };
@@ -478,17 +482,17 @@ function renderStageTrack(host, phase, progress) {
   const stages = phase?.stages || [];
   if (!stages.length) return;
 
-  const ctx = { stage: selectedStage(phase, progress) };
+  const ctx = { stage: selectedStage(processForActiveLevel(), phase, progress) };
 
   const label = document.createElement("div");
   label.className = "methodology-stage-label";
-  label.textContent = "Stages in this phase";
+  label.textContent = "Activities in this phase";
   host.appendChild(label);
 
   const track = document.createElement("div");
   track.className = "methodology-stage-track";
   stages.forEach((stage) => {
-    const complete = isStageComplete(stage, progress);
+    const complete = isStageComplete(processForActiveLevel(), stage, progress);
     const current = stage.id === ctx.stage?.id;
     const chip = document.createElement("button");
     chip.type = "button";
@@ -591,7 +595,7 @@ function _renderPhaseDetail(host, process, progress) {
 
   renderIterationLoops(detail, stage, process);
 
-  const guidelines = (process?.guidelines || []).filter(
+  const guidelines = guidanceForProcess(process).filter(
     (g) =>
       g.appliesTo === "process" ||
       g.appliesTo === phase.id ||
@@ -614,8 +618,7 @@ function _renderPhaseDetail(host, process, progress) {
     });
   }
 
-  const roleId = task?.primaryRole || stage.primaryRole || phase.primaryRole;
-  const role = (process?.roles || []).find((r) => r.id === roleId);
+  const role = roleForTask(process, task, stage, phase);
   if (role) {
     appendSection(detail, "Performing role", (sec) => {
       const p = document.createElement("p");
@@ -624,8 +627,8 @@ function _renderPhaseDetail(host, process, progress) {
     });
   }
 
-  appendSection(detail, "Atomic tasks", (sec) => {
-    (stage.tasks || []).forEach((t) => sec.appendChild(renderTaskCard(t, progress)));
+  appendSection(detail, "TaskUses", (sec) => {
+    tasksForStage(process, stage).forEach((t) => sec.appendChild(renderTaskCard(t, progress)));
   });
 
   renderChangeManagement(detail, process);
@@ -661,7 +664,11 @@ function _renderPhaseDetail(host, process, progress) {
 
   const leaves = phase.stages.flatMap(leafStages);
   const stageIndex = leaves.findIndex((s) => s.id === stage.id);
-  if (stageIndex >= 0 && stageIndex < leaves.length - 1 && isStageComplete(stage, progress)) {
+  if (
+    stageIndex >= 0 &&
+    stageIndex < leaves.length - 1 &&
+    isStageComplete(process, stage, progress)
+  ) {
     const nextStage = leaves[stageIndex + 1];
     const nextBtn = document.createElement("button");
     nextBtn.type = "button";
@@ -669,7 +676,7 @@ function _renderPhaseDetail(host, process, progress) {
     nextBtn.textContent = `Continue to ${nextStage.name}`;
     nextBtn.addEventListener("click", () => selectGuidedStage(nextStage.id));
     actions.appendChild(nextBtn);
-  } else if (isPhaseComplete(phase, progress)) {
+  } else if (isPhaseComplete(process, phase, progress)) {
     const phaseIndex = process.phases.indexOf(phase);
     const nextPhase = process.phases[phaseIndex + 1];
     if (nextPhase) {
@@ -880,7 +887,7 @@ function renderProgressTrack(phases, phase, progress, onSelect) {
   track.setAttribute("role", "tablist");
   track.setAttribute("aria-label", "Modeling phases");
   phases.forEach((p, i) => {
-    const complete = isPhaseComplete(p, progress);
+    const complete = isPhaseComplete(processForActiveLevel(), p, progress);
     const selected = p.id === phase.id;
     const seg = document.createElement("button");
     seg.type = "button";
@@ -907,7 +914,7 @@ function renderPhaseNavigator(host, process, progress) {
   if (!phase) return;
 
   const index = phases.findIndex((p) => p.id === phase.id);
-  const complete = isPhaseComplete(phase, progress);
+  const complete = isPhaseComplete(process, phase, progress);
   const nav = document.createElement("div");
   nav.className = "methodology-nav";
 

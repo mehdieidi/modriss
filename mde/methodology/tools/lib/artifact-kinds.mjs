@@ -1,6 +1,7 @@
 /**
- * SPEM work product / artifact kind catalog per modeling level.
- * Tasks reference artifactIds; workProducts bind artifact kinds to metamodel types.
+ * SPEM WorkProductDefinition catalog per modeling level.
+ * Task authoring specs reference these IDs as produced/modified process outputs.
+ * Metamodel classifier coverage is compiled separately as metamodelBindings.
  */
 
 /** @type {Record<string, import('./process-types.mjs').ArtifactKind[]>} */

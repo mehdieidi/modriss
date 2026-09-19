@@ -1,6 +1,7 @@
 /**
- * CIM modeling process, SPEM hierarchy: Phase → Stage → (subStage) → atomic Task.
- * Concept types on tasks map to CIM metamodel EClasses/enums (cim-combined.ecore).
+ * Compact CIM process authoring input. The methodology compiler separates its
+ * TaskSpecs into SPEM TaskDefinitions and process-scoped TaskUses.
+ * Concept types become MODRISS metamodelBindings, not SPEM work products.
  */
 
 /** @type {import('./process-types.mjs').ProcessPhaseSpec[]} */

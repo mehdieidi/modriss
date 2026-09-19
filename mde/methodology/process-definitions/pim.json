@@ -1,165 +1,2303 @@
 {
   "processId": "modriss.pim.modeling",
+  "type": "Process",
   "spemVersion": "2.0",
+  "representation": "MODRISS JSON DSL mapped to SPEM 2.0",
+  "conformance": "mapped",
+  "compliancePoint": "SPEM Process with Behavior and Content + SPEM Method Content",
+  "normativeReference": "https://www.omg.org/spec/SPEM/2.0/PDF/",
   "level": "pim",
   "displayName": "PIM",
-  "roles": [
+  "methodContent": {
+    "packageId": "modriss.method-content.pim",
+    "type": "MethodPackage",
+    "roleDefinitions": [
+      {
+        "id": "role.product-owner",
+        "type": "RoleDefinition",
+        "name": "Product Owner",
+        "responsibilities": ["Product goal, ordered backlog, value decisions, acceptance"]
+      },
+      {
+        "id": "role.delivery-lead",
+        "type": "RoleDefinition",
+        "name": "Delivery Lead",
+        "responsibilities": [
+          "Team coordination, dependencies, flow metrics, escalation, retrospectives"
+        ]
+      },
+      {
+        "id": "role.domain-expert",
+        "type": "RoleDefinition",
+        "name": "Domain Expert",
+        "responsibilities": ["Validates that architecture still realizes business scenarios"]
+      },
+      {
+        "id": "role.solution-architect",
+        "type": "RoleDefinition",
+        "name": "Solution Architect",
+        "responsibilities": ["Service boundaries, contracts, integration, policies, readiness"]
+      },
+      {
+        "id": "role.process-reviewer",
+        "type": "RoleDefinition",
+        "name": "Process Reviewer",
+        "responsibilities": ["EVL gate approval, readiness sign-off"]
+      },
+      {
+        "id": "role.quality-engineer",
+        "type": "RoleDefinition",
+        "name": "Quality Engineer",
+        "responsibilities": ["Contract, integration, quality-attribute, and evidence strategy"]
+      },
+      {
+        "id": "role.security-engineer",
+        "type": "RoleDefinition",
+        "name": "Security Engineer",
+        "responsibilities": ["Identity, authorization, data protection, and security review"]
+      },
+      {
+        "id": "role.cloud-platform-engineer",
+        "type": "RoleDefinition",
+        "name": "Cloud Platform Engineer",
+        "responsibilities": ["Provider constraints, deployability feedback, and platform handoff"]
+      },
+      {
+        "id": "role.method-engineer",
+        "type": "RoleDefinition",
+        "name": "Method Engineer",
+        "responsibilities": ["Maintains methodology when metamodels change"]
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "id": "task.pim.ph1.st0.t1",
+        "type": "TaskDefinition",
+        "name": "Plan service slice",
+        "purpose": "Plan service slice",
+        "viewpoint": "services",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.increment-plan"],
+        "coverageGroups": [],
+        "steps": [
+          "Select one service slice traced to CIM goals, bounded contexts, and behavior.",
+          "Record scope boundaries, architectural risks, manual transform decisions, and definition of done.",
+          "Confirm the expected PIM EVL gate and review participants for the cycle."
+        ],
+        "entryCriteria": [
+          "CIM transform complete, prior PIM increment selected, or greenfield PIM"
+        ],
+        "exitCriteria": ["Service-slice scope and definition of done are agreed"],
+        "validationRules": [],
+        "durationEstimate": "30m",
+        "paletteFocus": [],
+        "metamodelBindings": []
+      },
+      {
+        "id": "task.pim.ph1.st1.t1",
+        "type": "TaskDefinition",
+        "name": "Create PIM model root",
+        "purpose": "Create PIM model root",
+        "viewpoint": "dashboard",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.architecture-posture"],
+        "coverageGroups": [],
+        "steps": [
+          "Create or verify PIMModel with domain linkage to CIM source.",
+          "Set modeling date, lifecycle status, and annotation conventions."
+        ],
+        "entryCriteria": ["Service-slice scope agreed"],
+        "exitCriteria": ["PIMModel root exists"],
+        "validationRules": [],
+        "durationEstimate": "20m",
+        "paletteFocus": ["PIMModel"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "PIMModel",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph1.st1.t2",
+        "type": "TaskDefinition",
+        "name": "Set architecture posture",
+        "purpose": "Set architecture posture",
+        "viewpoint": "dashboard",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.architecture-posture"],
+        "coverageGroups": [],
+        "steps": [
+          "Configure ImplementationProfile with serverless posture and platform assumptions.",
+          "Select ArchitectureStyle and document key architectural decisions."
+        ],
+        "entryCriteria": ["PIM model root exists"],
+        "exitCriteria": ["Architecture style and profile configured"],
+        "validationRules": [],
+        "durationEstimate": "30m",
+        "paletteFocus": ["ImplementationProfile"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "ImplementationProfile",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ArchitectureStyle",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph1.st1.t3",
+        "type": "TaskDefinition",
+        "name": "Establish shared model contract and evidence conventions",
+        "purpose": "Establish shared model contract and evidence conventions",
+        "viewpoint": "dashboard",
+        "performerRoleRefs": ["role.method-engineer"],
+        "outputWorkProductRefs": ["pim-artifact.architecture-posture"],
+        "coverageGroups": ["shared-kernel", "shared-enums"],
+        "steps": [
+          "Apply shared identity, annotation, traceability, expression, and lifecycle conventions across PIM elements.",
+          "Record the revision, transformation provenance, and review-state convention for the service slice.",
+          "Keep support concepts in inspectors and readiness evidence instead of exposing them as false deployable architecture nodes."
+        ],
+        "entryCriteria": ["PIM model root exists"],
+        "exitCriteria": ["Shared model contract and evidence convention are recorded"],
+        "validationRules": [],
+        "durationEstimate": "30m",
+        "paletteFocus": [],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "DeployableElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "InvocationSource",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "InvocationTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "FunctionTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "WorkflowTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "SubscriptionTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "RoutingTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "FlowEndpoint",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ProtectedResource",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "PolicyTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DataAccessTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ExternalCallTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "EnvironmentTarget",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "CredentialRequirementLike",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "RouteEndpoint",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "EventCarrier",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ConfigurableElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "KeyValue",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Annotation",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ModelElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "NamedModelElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "TraceableElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "SemanticRelationship",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Multiplicity",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Cardinality",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Expression",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "StructuredDocument",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ComputeElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "StorageElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "IntegrationElement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Priority",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Severity",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ConstraintStrength",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "LifecycleStatus",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "TraceConfidence",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "TraceLinkType",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "FindingType",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "StructuredFormat",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ExpressionLanguage",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ExpressionPhase",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ManualDecisionState",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Decision",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph1.st2.t1",
+        "type": "TaskDefinition",
+        "name": "Define serverless services",
+        "purpose": "Define serverless services",
+        "viewpoint": "services",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.service-map"],
+        "coverageGroups": [],
+        "steps": [
+          "Create ServerlessService elements aligned to CIM bounded contexts.",
+          "Set boundary type and ownership scope per service."
+        ],
+        "entryCriteria": ["Architecture posture set"],
+        "exitCriteria": ["Services defined for increment slice"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["ServerlessService"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "ServerlessService",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "BoundaryType",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph1.st2.t2",
+        "type": "TaskDefinition",
+        "name": "Assign element memberships",
+        "purpose": "Assign element memberships",
+        "viewpoint": "services",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.service-map"],
+        "coverageGroups": [],
+        "steps": [
+          "Create ServiceElementMembership links from services to planned elements.",
+          "Set OwnershipKind for each membership."
+        ],
+        "entryCriteria": ["Services defined"],
+        "exitCriteria": ["Memberships cover deployable boundaries"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": ["ServiceElementMembership"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "ServiceElementMembership",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "OwnershipKind",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph2.st1.t1",
+        "type": "TaskDefinition",
+        "name": "Define schemas and fields",
+        "purpose": "Define schemas and fields",
+        "viewpoint": "contracts",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.contract-catalog"],
+        "coverageGroups": [],
+        "steps": [
+          "Create Schema elements with fields and enum literals.",
+          "Set schema kind and field types aligned to CIM information items."
+        ],
+        "entryCriteria": ["Service boundaries defined"],
+        "exitCriteria": ["Schemas cover API and message payloads"],
+        "validationRules": [],
+        "durationEstimate": "1-2h",
+        "paletteFocus": ["Schema", "SchemaField", "SchemaEnumLiteral"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "Schema",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "SchemaField",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "SchemaEnumLiteral",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "SchemaKind",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "FieldType",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph2.st1.t2",
+        "type": "TaskDefinition",
+        "name": "Model event types and envelopes",
+        "purpose": "Model event types and envelopes",
+        "viewpoint": "contracts",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.contract-catalog"],
+        "coverageGroups": [],
+        "steps": [
+          "Define EventType and EventEnvelope elements from CIM events.",
+          "Apply validation constraints and compatibility rules."
+        ],
+        "entryCriteria": ["Schemas defined"],
+        "exitCriteria": ["Event contracts aligned with CIM behavior surface"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": [
+          "EventType",
+          "EventEnvelope",
+          "SchemaValidationConstraint",
+          "SchemaConstraint"
+        ],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "EventType",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "EventEnvelope",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "SchemaValidationConstraint",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "SchemaConstraint",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "SchemaCompatibility",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph2.st2.t1",
+        "type": "TaskDefinition",
+        "name": "Model data stores and models",
+        "purpose": "Model data stores and models",
+        "viewpoint": "data",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.data-architecture"],
+        "coverageGroups": [],
+        "steps": [
+          "Create DataStore and ObjectStore elements per service.",
+          "Define DataModel and DataField structures from CIM entities."
+        ],
+        "entryCriteria": ["Contracts defined"],
+        "exitCriteria": ["Stores and models cover domain data"],
+        "validationRules": [],
+        "durationEstimate": "1-2h",
+        "paletteFocus": ["DataStore", "ObjectStore", "DataModel", "DataField"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "DataStore",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ObjectStore",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DataModel",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DataField",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "StoreKind",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ConsistencyNeed",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph2.st2.t2",
+        "type": "TaskDefinition",
+        "name": "Define access patterns and indexes",
+        "purpose": "Define access patterns and indexes",
+        "viewpoint": "data",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.data-architecture"],
+        "coverageGroups": [],
+        "steps": [
+          "Model AccessPattern elements from CIM queries and commands.",
+          "Define IndexCandidate and DataAccess bindings per store."
+        ],
+        "entryCriteria": ["Data models drafted"],
+        "exitCriteria": ["Access patterns cover read/write use cases"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["AccessPattern", "IndexCandidate", "DataAccess"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "AccessPattern",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "IndexCandidate",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DataAccess",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DataAccessMode",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "AccessPatternKind",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph2.st2.t3",
+        "type": "TaskDefinition",
+        "name": "Configure change streams and notifications",
+        "purpose": "Configure change streams and notifications",
+        "viewpoint": "data",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.data-architecture"],
+        "coverageGroups": [],
+        "steps": [
+          "Define DataChangeStream elements for event-sourced projections.",
+          "Configure ObjectNotificationRule for object store triggers."
+        ],
+        "entryCriteria": ["Access patterns defined"],
+        "exitCriteria": ["Change streams linked to event contracts"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": ["DataChangeStream", "ObjectNotificationRule"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "DataChangeStream",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ObjectNotificationRule",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph3.st1.t1",
+        "type": "TaskDefinition",
+        "name": "Define functions and contracts",
+        "purpose": "Define functions and contracts",
+        "viewpoint": "compute",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.compute-catalog"],
+        "coverageGroups": [],
+        "steps": [
+          "Create Function elements with FunctionContract bindings.",
+          "Set compute profile and execution model per handler."
+        ],
+        "entryCriteria": ["Data architecture drafted"],
+        "exitCriteria": ["Functions mapped to CIM commands and queries"],
+        "validationRules": [],
+        "durationEstimate": "1-2h",
+        "paletteFocus": ["Function", "FunctionContract"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "Function",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "FunctionContract",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "FunctionKind",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ComputeProfile",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ExecutionModel",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph3.st1.t2",
+        "type": "TaskDefinition",
+        "name": "Configure triggers and runtime",
+        "purpose": "Configure triggers and runtime",
+        "viewpoint": "compute",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.compute-catalog"],
+        "coverageGroups": [],
+        "steps": [
+          "Define Trigger elements linking functions to events and schedules.",
+          "Set runtime language and package manager per function."
+        ],
+        "entryCriteria": ["Functions defined"],
+        "exitCriteria": ["Triggers cover behavioral entry points"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["Trigger"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "Trigger",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "RuntimeLanguage",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "PackageManager",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph3.st2.t1",
+        "type": "TaskDefinition",
+        "name": "Define APIs and routes",
+        "purpose": "Define APIs and routes",
+        "viewpoint": "api",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.api-catalog"],
+        "coverageGroups": [],
+        "steps": [
+          "Create Api elements with routes and HTTP methods.",
+          "Connect routes to function handlers."
+        ],
+        "entryCriteria": ["Compute units defined"],
+        "exitCriteria": ["API routes cover public endpoints"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["Api", "ApiRoute"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "Api",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ApiRoute",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ApiStyle",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "HttpMethod",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "InvocationMode",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph3.st2.t2",
+        "type": "TaskDefinition",
+        "name": "Map API contracts and errors",
+        "purpose": "Map API contracts and errors",
+        "viewpoint": "api",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.api-catalog"],
+        "coverageGroups": [],
+        "steps": [
+          "Bind ApiContract elements to schema definitions.",
+          "Map ErrorMapping responses to CIM business errors."
+        ],
+        "entryCriteria": ["API routes defined"],
+        "exitCriteria": ["Contracts and error mappings complete"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": ["ApiContract", "ErrorMapping"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "ApiContract",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ErrorMapping",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph4.st1.t1",
+        "type": "TaskDefinition",
+        "name": "Model event channels and buses",
+        "purpose": "Model event channels and buses",
+        "viewpoint": "integration",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.integration-topology"],
+        "coverageGroups": [],
+        "steps": [
+          "Create EventChannel, Queue, Topic, and EventBus elements.",
+          "Set delivery semantics and ordering requirements."
+        ],
+        "entryCriteria": ["API surface defined"],
+        "exitCriteria": ["Channels cover async integration points"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["EventChannel", "Queue", "Topic", "EventBus"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "EventChannel",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Queue",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Topic",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "EventBus",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ChannelKind",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DeliverySemantics",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "OrderingRequirement",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph4.st1.t2",
+        "type": "TaskDefinition",
+        "name": "Define flows and routing rules",
+        "purpose": "Define flows and routing rules",
+        "viewpoint": "integration",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.integration-topology"],
+        "coverageGroups": [],
+        "steps": [
+          "Model Flow variants connecting producers and consumers.",
+          "Define EventRoutingRule and Subscription bindings.",
+          "Configure Schedule triggers for periodic integration."
+        ],
+        "entryCriteria": ["Channels defined"],
+        "exitCriteria": ["Flows connect integration endpoints to functions"],
+        "validationRules": [],
+        "durationEstimate": "1-2h",
+        "paletteFocus": [
+          "Flow",
+          "RequestResponseFlow",
+          "EventFlow",
+          "MessageFlow",
+          "PubSubFlow",
+          "OrchestrationFlow",
+          "ExternalIntegrationFlow",
+          "EventRoutingRule",
+          "Schedule",
+          "Subscription"
+        ],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "Flow",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "RequestResponseFlow",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "EventFlow",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "MessageFlow",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "PubSubFlow",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "OrchestrationFlow",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ExternalIntegrationFlow",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "EventRoutingRule",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Schedule",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Subscription",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph4.st2.t1",
+        "type": "TaskDefinition",
+        "name": "Model workflows and states",
+        "purpose": "Model workflows and states",
+        "viewpoint": "workflow",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.workflow-model"],
+        "coverageGroups": [],
+        "steps": [
+          "Create Workflow elements from CIM business processes.",
+          "Define typed workflow steps, transitions, and workflow kind."
+        ],
+        "entryCriteria": ["Integration topology defined"],
+        "exitCriteria": ["Workflows cover long-running CIM processes"],
+        "validationRules": [],
+        "durationEstimate": "1-2h",
+        "paletteFocus": [
+          "Workflow",
+          "WorkflowStep",
+          "StartStep",
+          "TaskStep",
+          "ChoiceStep",
+          "WaitStep",
+          "SuccessEndStep",
+          "FailureEndStep",
+          "ParallelStep",
+          "MapStep",
+          "PassStep",
+          "WorkflowTransition"
+        ],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "Workflow",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "WorkflowStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "StartStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "TaskStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ChoiceStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "WaitStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "SuccessEndStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "FailureEndStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ParallelStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "MapStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "PassStep",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "WorkflowTransition",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "WorkflowKind",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph4.st2.t2",
+        "type": "TaskDefinition",
+        "name": "Configure human tasks and error handling",
+        "purpose": "Configure human tasks and error handling",
+        "viewpoint": "workflow",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.workflow-model"],
+        "coverageGroups": [],
+        "steps": [
+          "Add HumanTask and ApprovalTask elements with escalation policies.",
+          "Define CompensationPolicy and ErrorHandler for failure paths."
+        ],
+        "entryCriteria": ["Workflows drafted"],
+        "exitCriteria": ["Human steps and error paths orchestrated"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": [
+          "HumanTask",
+          "ApprovalTask",
+          "EscalationPolicy",
+          "CompensationPolicy",
+          "ErrorHandler",
+          "ParallelBranch",
+          "MapStateConfig",
+          "CallbackTaskConfig"
+        ],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "HumanTask",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ApprovalTask",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "EscalationPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "CompensationPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ErrorHandler",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ParallelBranch",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "MapStateConfig",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "CallbackTaskConfig",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph5.st1.t1",
+        "type": "TaskDefinition",
+        "name": "Configure identity providers and principals",
+        "purpose": "Configure identity providers and principals",
+        "viewpoint": "security",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.security-model"],
+        "coverageGroups": [],
+        "steps": [
+          "Define IdentityProvider elements aligned to CIM actors.",
+          "Register Principal elements for human and service identities."
+        ],
+        "entryCriteria": ["Workflow orchestration drafted"],
+        "exitCriteria": ["Identity model covers all actor types"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": ["IdentityProvider", "Principal"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "IdentityProvider",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Principal",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "IdentityKind",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "PrincipalKind",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph5.st1.t2",
+        "type": "TaskDefinition",
+        "name": "Define permissions and security policies",
+        "purpose": "Define permissions and security policies",
+        "viewpoint": "security",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.security-model"],
+        "coverageGroups": [],
+        "steps": [
+          "Create Permission elements with effect and action kind.",
+          "Apply AuthPolicy and AuthorizationPolicy to APIs and functions."
+        ],
+        "entryCriteria": ["Principals configured"],
+        "exitCriteria": ["Auth model covers all public endpoints"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["Permission", "SecurityPolicy", "AuthPolicy", "AuthorizationPolicy"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "Permission",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "SecurityPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "AuthPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "AuthorizationPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "PermissionEffect",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "PermissionActionKind",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "LeastPrivilegeStatus",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph5.st2.ss1.t1",
+        "type": "TaskDefinition",
+        "name": "Apply resilience policies",
+        "purpose": "Apply resilience policies",
+        "viewpoint": "policies",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "coverageGroups": [],
+        "steps": [
+          "Define ResiliencePolicy on functions and integration flows.",
+          "Configure RetryPolicy, DeadLetterPolicy, and TimeoutPolicy per target.",
+          "Set IdempotencyPolicy for state-changing handlers."
+        ],
+        "entryCriteria": ["Security and identity configured"],
+        "exitCriteria": ["Resilience policies applied to critical paths"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": [
+          "ResiliencePolicy",
+          "RetryPolicy",
+          "DeadLetterPolicy",
+          "TimeoutPolicy",
+          "IdempotencyPolicy"
+        ],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "ResiliencePolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "RetryPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DeadLetterPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "TimeoutPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "IdempotencyPolicy",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph5.st2.ss1.t2",
+        "type": "TaskDefinition",
+        "name": "Configure throughput and ordering policies",
+        "purpose": "Configure throughput and ordering policies",
+        "viewpoint": "policies",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "coverageGroups": [],
+        "steps": [
+          "Set ConcurrencyPolicy and RateLimitPolicy on APIs and functions.",
+          "Configure BatchPolicy, OrderingPolicy, and CachePolicy where needed.",
+          "Apply BackupPolicy, RetentionPolicy, and CostPolicy to stores."
+        ],
+        "entryCriteria": ["Resilience policies applied"],
+        "exitCriteria": ["Throughput and cost policies configured"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": [
+          "ConcurrencyPolicy",
+          "RateLimitPolicy",
+          "BatchPolicy",
+          "OrderingPolicy",
+          "CachePolicy",
+          "BackupPolicy",
+          "RetentionPolicy",
+          "CostPolicy"
+        ],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "ConcurrencyPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "RateLimitPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "BatchPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "OrderingPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "CachePolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "BackupPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "RetentionPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "CostPolicy",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph5.st2.ss2.t1",
+        "type": "TaskDefinition",
+        "name": "Configure observability policies",
+        "purpose": "Configure observability policies",
+        "viewpoint": "policies",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "coverageGroups": [],
+        "steps": [
+          "Define ObservabilityConfig per service.",
+          "Apply LoggingPolicy, MetricPolicy, and TracingPolicy to functions and APIs."
+        ],
+        "entryCriteria": ["Resilience policies applied"],
+        "exitCriteria": ["Observability baseline configured"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": [
+          "ObservabilityConfig",
+          "LoggingPolicy",
+          "MetricPolicy",
+          "MetricDimension",
+          "TracingPolicy"
+        ],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "ObservabilityConfig",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "LoggingPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "MetricPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "MetricDimension",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "TracingPolicy",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph5.st2.ss2.t2",
+        "type": "TaskDefinition",
+        "name": "Define alerts, SLOs, and CORS",
+        "purpose": "Define alerts, SLOs, and CORS",
+        "viewpoint": "policies",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "coverageGroups": [],
+        "steps": [
+          "Create AlertPolicy and Slo elements for critical endpoints.",
+          "Apply CorsPolicy to public API routes."
+        ],
+        "entryCriteria": ["Observability baseline configured"],
+        "exitCriteria": ["Alerts and SLOs cover critical paths"],
+        "validationRules": [],
+        "durationEstimate": "30m",
+        "paletteFocus": ["AlertPolicy", "Slo", "CorsPolicy"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "AlertPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Slo",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "CorsPolicy",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph5.st2.ss3.t1",
+        "type": "TaskDefinition",
+        "name": "Apply governance and compliance policies",
+        "purpose": "Apply governance and compliance policies",
+        "viewpoint": "policies",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "coverageGroups": [],
+        "steps": [
+          "Define ArchitecturePolicy and PolicySetting elements.",
+          "Apply DataProtectionPolicy and CompliancePolicy from CIM governance."
+        ],
+        "entryCriteria": ["Observability policies configured"],
+        "exitCriteria": ["Governance policies linked to data and APIs"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": [
+          "ArchitecturePolicy",
+          "PolicySetting",
+          "DataProtectionPolicy",
+          "DataQualityPolicy",
+          "CompliancePolicy"
+        ],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "ArchitecturePolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "PolicySetting",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DataProtectionPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DataQualityPolicy",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "CompliancePolicy",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph5.st2.ss3.t2",
+        "type": "TaskDefinition",
+        "name": "Map business rules and decision models",
+        "purpose": "Map business rules and decision models",
+        "viewpoint": "policies",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.policy-catalog"],
+        "coverageGroups": [],
+        "steps": [
+          "Create BusinessRule elements from CIM policies.",
+          "Model DecisionModel with DecisionRule rows for branching logic."
+        ],
+        "entryCriteria": ["Governance policies applied"],
+        "exitCriteria": ["Business rules linked to functions and workflows"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": ["BusinessRule", "DecisionModel", "DecisionRule"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "BusinessRule",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DecisionModel",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DecisionRule",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph5.st3.t1",
+        "type": "TaskDefinition",
+        "name": "Model external endpoints and adapters",
+        "purpose": "Model external endpoints and adapters",
+        "viewpoint": "config",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.config-package"],
+        "coverageGroups": [],
+        "steps": [
+          "Create ExternalEndpoint elements from CIM external systems.",
+          "Define ExternalAdapter bindings to integration flows."
+        ],
+        "entryCriteria": ["Architecture policies applied"],
+        "exitCriteria": ["External integrations modeled"],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": ["ExternalEndpoint", "ExternalAdapter"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "ExternalEndpoint",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ExternalAdapter",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "SupportLevel",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph5.st3.t2",
+        "type": "TaskDefinition",
+        "name": "Configure environments and deployment units",
+        "purpose": "Configure environments and deployment units",
+        "viewpoint": "config",
+        "performerRoleRefs": ["role.solution-architect"],
+        "outputWorkProductRefs": ["pim-artifact.config-package"],
+        "coverageGroups": [],
+        "steps": [
+          "Define Environment and DeploymentUnit elements per stage.",
+          "Configure ConfigurationSet, secrets, and credential requirements.",
+          "Set ConfigParameter and EnvironmentVariable values per environment."
+        ],
+        "entryCriteria": ["External integrations modeled"],
+        "exitCriteria": ["Environments and config complete for slice"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": [
+          "Environment",
+          "DeploymentUnit",
+          "ConfigurationSet",
+          "ConfigParameter",
+          "EnvironmentVariable",
+          "Secret",
+          "CredentialRequirement"
+        ],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "Environment",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DeploymentUnit",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ConfigurationSet",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ConfigParameter",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "EnvironmentVariable",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "Secret",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "CredentialRequirement",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "SecretKind",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ConfigScope",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "EnvironmentClass",
+            "kind": "EEnum"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "DeploymentUnitType",
+            "kind": "EEnum"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph6.st1.t1",
+        "type": "TaskDefinition",
+        "name": "Assess platform capabilities",
+        "purpose": "Assess platform capabilities",
+        "viewpoint": "readiness",
+        "performerRoleRefs": ["role.process-reviewer"],
+        "outputWorkProductRefs": ["pim-artifact.platform-readiness"],
+        "coverageGroups": [],
+        "steps": [
+          "Review PlatformCapability coverage against modeled elements.",
+          "Complete PlatformMappingAssessment with gap analysis."
+        ],
+        "entryCriteria": ["External and config complete"],
+        "exitCriteria": ["Platform mapping assessment documented"],
+        "validationRules": [],
+        "durationEstimate": "1h",
+        "paletteFocus": ["PlatformCapability", "PlatformMappingAssessment"],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "PlatformCapability",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "PlatformMappingAssessment",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph6.st2.t1",
+        "type": "TaskDefinition",
+        "name": "Complete trace and readiness",
+        "purpose": "Complete trace and readiness",
+        "viewpoint": "readiness",
+        "performerRoleRefs": ["role.process-reviewer"],
+        "outputWorkProductRefs": ["pim-artifact.platform-readiness"],
+        "coverageGroups": [],
+        "steps": [
+          "Build TraceModel links across CIM and PIM elements.",
+          "Complete ProductionReadinessAssessment and resolve findings."
+        ],
+        "entryCriteria": ["Platform mapping assessment complete"],
+        "exitCriteria": ["PIM EVL passes; readiness gate approved"],
+        "validationRules": ["pim-semantic-validation"],
+        "durationEstimate": "1-2h",
+        "paletteFocus": [],
+        "metamodelBindings": [
+          {
+            "metamodel": "pim",
+            "classifier": "TraceModel",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "TraceLink",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "TransformationAssumption",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ProductionReadinessAssessment",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ReadinessFinding",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ReadinessCheck",
+            "kind": "EClass"
+          },
+          {
+            "metamodel": "pim",
+            "classifier": "ManualDecision",
+            "kind": "EClass"
+          }
+        ]
+      },
+      {
+        "id": "task.pim.ph6.st3.t1",
+        "type": "TaskDefinition",
+        "name": "Review and adapt PIM increment",
+        "purpose": "Review and adapt PIM increment",
+        "viewpoint": "readiness",
+        "performerRoleRefs": ["role.process-reviewer"],
+        "outputWorkProductRefs": ["pim-artifact.increment-review"],
+        "coverageGroups": [],
+        "steps": [
+          "Review architecture outcomes against CIM trace links and PIM definition of done.",
+          "Record accepted scope, deferred architecture decisions, and platform mapping feedback.",
+          "Create improvement actions and backlog adjustments for the next service slice."
+        ],
+        "entryCriteria": ["PIM EVL passes or all blocking findings are dispositioned"],
+        "exitCriteria": [
+          "Increment accepted or rework loop selected; improvement actions captured"
+        ],
+        "validationRules": [],
+        "durationEstimate": "45m",
+        "paletteFocus": [],
+        "metamodelBindings": []
+      }
+    ],
+    "workProductDefinitions": [
+      {
+        "id": "pim-artifact.increment-plan",
+        "type": "ArtifactDefinition",
+        "name": "PIM Increment Plan",
+        "description": "Selected service slice, trace baseline, and architecture definition of done"
+      },
+      {
+        "id": "pim-artifact.architecture-posture",
+        "type": "ArtifactDefinition",
+        "name": "Architecture Posture",
+        "description": "PIMModel root and implementation profile"
+      },
+      {
+        "id": "pim-artifact.service-map",
+        "type": "ArtifactDefinition",
+        "name": "Service Boundary Map",
+        "description": "Serverless services and memberships"
+      },
+      {
+        "id": "pim-artifact.contract-catalog",
+        "type": "ArtifactDefinition",
+        "name": "Contract Catalog",
+        "description": "Schemas, event types, envelopes"
+      },
+      {
+        "id": "pim-artifact.data-architecture",
+        "type": "ArtifactDefinition",
+        "name": "Data Architecture",
+        "description": "Stores, models, access patterns"
+      },
+      {
+        "id": "pim-artifact.compute-catalog",
+        "type": "ArtifactDefinition",
+        "name": "Compute Catalog",
+        "description": "Functions, contracts, triggers"
+      },
+      {
+        "id": "pim-artifact.api-catalog",
+        "type": "ArtifactDefinition",
+        "name": "API Catalog",
+        "description": "APIs, routes, error mappings"
+      },
+      {
+        "id": "pim-artifact.integration-topology",
+        "type": "ArtifactDefinition",
+        "name": "Integration Topology",
+        "description": "Channels, flows, schedules"
+      },
+      {
+        "id": "pim-artifact.workflow-model",
+        "type": "ArtifactDefinition",
+        "name": "Workflow Model",
+        "description": "Workflows, human tasks, escalation"
+      },
+      {
+        "id": "pim-artifact.security-model",
+        "type": "ArtifactDefinition",
+        "name": "Security Model",
+        "description": "Identity, principals, permissions"
+      },
+      {
+        "id": "pim-artifact.policy-catalog",
+        "type": "ArtifactDefinition",
+        "name": "Architecture Policy Catalog",
+        "description": "Operational and compliance policies"
+      },
+      {
+        "id": "pim-artifact.config-package",
+        "type": "ArtifactDefinition",
+        "name": "Configuration Package",
+        "description": "Environments, secrets, external adapters"
+      },
+      {
+        "id": "pim-artifact.platform-readiness",
+        "type": "ArtifactDefinition",
+        "name": "Platform Readiness Record",
+        "description": "Mapping assessment, trace, readiness"
+      },
+      {
+        "id": "pim-artifact.increment-review",
+        "type": "ArtifactDefinition",
+        "name": "PIM Increment Review Record",
+        "description": "Architecture review outcomes, accepted service slice, and improvement actions"
+      }
+    ],
+    "guidance": [
+      {
+        "id": "pim.guid.serverless-boundary",
+        "name": "Service as deployable boundary",
+        "appliesTo": "process",
+        "text": "Align ServerlessService boundaries to CIM bounded contexts. One increment typically maps to one service slice."
+      },
+      {
+        "id": "pim.guid.generated-is-draft",
+        "name": "Generated PIM is a draft",
+        "appliesTo": "pim.ph1",
+        "text": "Treat CIM→PIM output as architectural scaffolding. Every generated service slice must pass through framing, refinement, readiness, and review before PIM→PSM."
+      },
+      {
+        "id": "pim.guid.contracts-first",
+        "name": "Contracts decouple producers",
+        "appliesTo": "pim.ph2",
+        "text": "Define schemas and event types before wiring functions and routes. Contracts are the integration currency."
+      },
+      {
+        "id": "pim.guid.data-access",
+        "name": "Access patterns drive stores",
+        "appliesTo": "pim.ph2",
+        "text": "Model read/write access patterns from CIM queries/commands before choosing store topology."
+      },
+      {
+        "id": "pim.guid.policy-as-code",
+        "name": "Policy attachment discipline",
+        "appliesTo": "pim.ph5",
+        "text": "Attach resilience, observability, and compliance policies to concrete PolicyTarget elements, not free-floating rules."
+      },
+      {
+        "id": "pim.guid.readiness-in-cycle",
+        "name": "Readiness is part of delivery",
+        "appliesTo": "pim.ph6",
+        "text": "Platform mapping and EVL validation are not after-the-fact audits. They are the review gate of each service-slice cycle."
+      }
+    ]
+  },
+  "roleUses": [
     {
-      "id": "product-owner",
-      "name": "Product Owner",
-      "responsibilities": ["Product goal, ordered backlog, value decisions, acceptance"]
+      "id": "ru.pim.ph1.st0.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph1.st0",
+      "roleDefinitionRef": "role.solution-architect"
     },
     {
-      "id": "delivery-lead",
-      "name": "Delivery Lead",
-      "responsibilities": [
-        "Team coordination, dependencies, flow metrics, escalation, retrospectives"
-      ]
+      "id": "ru.pim.ph1.st1.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph1.st1",
+      "roleDefinitionRef": "role.solution-architect"
     },
     {
-      "id": "domain-expert",
-      "name": "Domain Expert",
-      "responsibilities": ["Validates that architecture still realizes business scenarios"]
+      "id": "ru.pim.ph1.st1.method-engineer",
+      "type": "RoleUse",
+      "activityRef": "pim.ph1.st1",
+      "roleDefinitionRef": "role.method-engineer"
     },
     {
-      "id": "solution-architect",
-      "name": "Solution Architect",
-      "responsibilities": ["Service boundaries, contracts, integration, policies, readiness"]
+      "id": "ru.pim.ph1.st2.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph1.st2",
+      "roleDefinitionRef": "role.solution-architect"
     },
     {
-      "id": "process-reviewer",
-      "name": "Process Reviewer",
-      "responsibilities": ["EVL gate approval, readiness sign-off"]
+      "id": "ru.pim.ph2.st1.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph2.st1",
+      "roleDefinitionRef": "role.solution-architect"
     },
     {
-      "id": "quality-engineer",
-      "name": "Quality Engineer",
-      "responsibilities": ["Contract, integration, quality-attribute, and evidence strategy"]
+      "id": "ru.pim.ph2.st2.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph2.st2",
+      "roleDefinitionRef": "role.solution-architect"
     },
     {
-      "id": "security-engineer",
-      "name": "Security Engineer",
-      "responsibilities": ["Identity, authorization, data protection, and security review"]
+      "id": "ru.pim.ph3.st1.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph3.st1",
+      "roleDefinitionRef": "role.solution-architect"
     },
     {
-      "id": "cloud-platform-engineer",
-      "name": "Cloud Platform Engineer",
-      "responsibilities": ["Provider constraints, deployability feedback, and platform handoff"]
+      "id": "ru.pim.ph3.st2.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph3.st2",
+      "roleDefinitionRef": "role.solution-architect"
     },
     {
-      "id": "method-engineer",
-      "name": "Method Engineer",
-      "responsibilities": ["Maintains methodology when metamodels change"]
+      "id": "ru.pim.ph4.st1.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph4.st1",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph4.st2.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph4.st2",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph5.st1.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph5.st1",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph5.st2.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph5.st2",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph5.st2.ss1.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph5.st2.ss1",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph5.st2.ss2.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph5.st2.ss3.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph5.st2.ss3",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph5.st3.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph5.st3",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph6.st1.process-reviewer",
+      "type": "RoleUse",
+      "activityRef": "pim.ph6.st1",
+      "roleDefinitionRef": "role.process-reviewer"
+    },
+    {
+      "id": "ru.pim.ph6.st2.process-reviewer",
+      "type": "RoleUse",
+      "activityRef": "pim.ph6.st2",
+      "roleDefinitionRef": "role.process-reviewer"
+    },
+    {
+      "id": "ru.pim.ph6.st3.process-reviewer",
+      "type": "RoleUse",
+      "activityRef": "pim.ph6.st3",
+      "roleDefinitionRef": "role.process-reviewer"
+    },
+    {
+      "id": "ru.pim.ph1.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph1",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph2.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph2",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph3.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph3",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph4.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph4",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph5.solution-architect",
+      "type": "RoleUse",
+      "activityRef": "pim.ph5",
+      "roleDefinitionRef": "role.solution-architect"
+    },
+    {
+      "id": "ru.pim.ph6.process-reviewer",
+      "type": "RoleUse",
+      "activityRef": "pim.ph6",
+      "roleDefinitionRef": "role.process-reviewer"
     }
   ],
-  "artifactKinds": [
+  "workProductUses": [
     {
-      "id": "pim-artifact.increment-plan",
-      "name": "PIM Increment Plan",
-      "description": "Selected service slice, trace baseline, and architecture definition of done"
+      "id": "wpu.pim.ph1.st0.t1.pim-artifact.increment-plan",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st0",
+      "taskUseRef": "pim.ph1.st0.t1",
+      "workProductDefinitionRef": "pim-artifact.increment-plan",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.architecture-posture",
-      "name": "Architecture Posture",
-      "description": "PIMModel root and implementation profile"
+      "id": "wpu.pim.ph1.st1.t1.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st1",
+      "taskUseRef": "pim.ph1.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.service-map",
-      "name": "Service Boundary Map",
-      "description": "Serverless services and memberships"
+      "id": "wpu.pim.ph1.st1.t2.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st1",
+      "taskUseRef": "pim.ph1.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.contract-catalog",
-      "name": "Contract Catalog",
-      "description": "Schemas, event types, envelopes"
+      "id": "wpu.pim.ph1.st1.t3.pim-artifact.architecture-posture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st1",
+      "taskUseRef": "pim.ph1.st1.t3",
+      "workProductDefinitionRef": "pim-artifact.architecture-posture",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.data-architecture",
-      "name": "Data Architecture",
-      "description": "Stores, models, access patterns"
+      "id": "wpu.pim.ph1.st2.t1.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st2",
+      "taskUseRef": "pim.ph1.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.compute-catalog",
-      "name": "Compute Catalog",
-      "description": "Functions, contracts, triggers"
+      "id": "wpu.pim.ph1.st2.t2.pim-artifact.service-map",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph1.st2",
+      "taskUseRef": "pim.ph1.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.service-map",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.api-catalog",
-      "name": "API Catalog",
-      "description": "APIs, routes, error mappings"
+      "id": "wpu.pim.ph2.st1.t1.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st1",
+      "taskUseRef": "pim.ph2.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.integration-topology",
-      "name": "Integration Topology",
-      "description": "Channels, flows, schedules"
+      "id": "wpu.pim.ph2.st1.t2.pim-artifact.contract-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st1",
+      "taskUseRef": "pim.ph2.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.contract-catalog",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.workflow-model",
-      "name": "Workflow Model",
-      "description": "Workflows, human tasks, escalation"
+      "id": "wpu.pim.ph2.st2.t1.pim-artifact.data-architecture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st2",
+      "taskUseRef": "pim.ph2.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.data-architecture",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.security-model",
-      "name": "Security Model",
-      "description": "Identity, principals, permissions"
+      "id": "wpu.pim.ph2.st2.t2.pim-artifact.data-architecture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st2",
+      "taskUseRef": "pim.ph2.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.data-architecture",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.policy-catalog",
-      "name": "Architecture Policy Catalog",
-      "description": "Operational and compliance policies"
+      "id": "wpu.pim.ph2.st2.t3.pim-artifact.data-architecture",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph2.st2",
+      "taskUseRef": "pim.ph2.st2.t3",
+      "workProductDefinitionRef": "pim-artifact.data-architecture",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.config-package",
-      "name": "Configuration Package",
-      "description": "Environments, secrets, external adapters"
+      "id": "wpu.pim.ph3.st1.t1.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st1",
+      "taskUseRef": "pim.ph3.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.platform-readiness",
-      "name": "Platform Readiness Record",
-      "description": "Mapping assessment, trace, readiness"
+      "id": "wpu.pim.ph3.st1.t2.pim-artifact.compute-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st1",
+      "taskUseRef": "pim.ph3.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.compute-catalog",
+      "usage": "output"
     },
     {
-      "id": "pim-artifact.increment-review",
-      "name": "PIM Increment Review Record",
-      "description": "Architecture review outcomes, accepted service slice, and improvement actions"
-    }
-  ],
-  "guidelines": [
-    {
-      "id": "pim.guid.serverless-boundary",
-      "name": "Service as deployable boundary",
-      "appliesTo": "process",
-      "text": "Align ServerlessService boundaries to CIM bounded contexts. One increment typically maps to one service slice."
+      "id": "wpu.pim.ph3.st2.t1.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st2",
+      "taskUseRef": "pim.ph3.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "output"
     },
     {
-      "id": "pim.guid.generated-is-draft",
-      "name": "Generated PIM is a draft",
-      "appliesTo": "pim.ph1",
-      "text": "Treat CIM→PIM output as architectural scaffolding. Every generated service slice must pass through framing, refinement, readiness, and review before PIM→PSM."
+      "id": "wpu.pim.ph3.st2.t2.pim-artifact.api-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph3.st2",
+      "taskUseRef": "pim.ph3.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.api-catalog",
+      "usage": "output"
     },
     {
-      "id": "pim.guid.contracts-first",
-      "name": "Contracts decouple producers",
-      "appliesTo": "pim.ph2",
-      "text": "Define schemas and event types before wiring functions and routes. Contracts are the integration currency."
+      "id": "wpu.pim.ph4.st1.t1.pim-artifact.integration-topology",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st1",
+      "taskUseRef": "pim.ph4.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.integration-topology",
+      "usage": "output"
     },
     {
-      "id": "pim.guid.data-access",
-      "name": "Access patterns drive stores",
-      "appliesTo": "pim.ph2",
-      "text": "Model read/write access patterns from CIM queries/commands before choosing store topology."
+      "id": "wpu.pim.ph4.st1.t2.pim-artifact.integration-topology",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st1",
+      "taskUseRef": "pim.ph4.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.integration-topology",
+      "usage": "output"
     },
     {
-      "id": "pim.guid.policy-as-code",
-      "name": "Policy attachment discipline",
-      "appliesTo": "pim.ph5",
-      "text": "Attach resilience, observability, and compliance policies to concrete PolicyTarget elements, not free-floating rules."
+      "id": "wpu.pim.ph4.st2.t1.pim-artifact.workflow-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st2",
+      "taskUseRef": "pim.ph4.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.workflow-model",
+      "usage": "output"
     },
     {
-      "id": "pim.guid.readiness-in-cycle",
-      "name": "Readiness is part of delivery",
-      "appliesTo": "pim.ph6",
-      "text": "Platform mapping and EVL validation are not after-the-fact audits. They are the review gate of each service-slice cycle."
+      "id": "wpu.pim.ph4.st2.t2.pim-artifact.workflow-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph4.st2",
+      "taskUseRef": "pim.ph4.st2.t2",
+      "workProductDefinitionRef": "pim-artifact.workflow-model",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph5.st1.t1.pim-artifact.security-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st1",
+      "taskUseRef": "pim.ph5.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.security-model",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph5.st1.t2.pim-artifact.security-model",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st1",
+      "taskUseRef": "pim.ph5.st1.t2",
+      "workProductDefinitionRef": "pim-artifact.security-model",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss1.t1.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss1",
+      "taskUseRef": "pim.ph5.st2.ss1.t1",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss1.t2.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss1",
+      "taskUseRef": "pim.ph5.st2.ss1.t2",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss2.t1.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "taskUseRef": "pim.ph5.st2.ss2.t1",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss2.t2.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss2",
+      "taskUseRef": "pim.ph5.st2.ss2.t2",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss3.t1.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss3",
+      "taskUseRef": "pim.ph5.st2.ss3.t1",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph5.st2.ss3.t2.pim-artifact.policy-catalog",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st2.ss3",
+      "taskUseRef": "pim.ph5.st2.ss3.t2",
+      "workProductDefinitionRef": "pim-artifact.policy-catalog",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t1.pim-artifact.config-package",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.config-package",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph5.st3.t2.pim-artifact.config-package",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph5.st3",
+      "taskUseRef": "pim.ph5.st3.t2",
+      "workProductDefinitionRef": "pim-artifact.config-package",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph6.st1.t1.pim-artifact.platform-readiness",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st1",
+      "taskUseRef": "pim.ph6.st1.t1",
+      "workProductDefinitionRef": "pim-artifact.platform-readiness",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph6.st2.t1.pim-artifact.platform-readiness",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st2",
+      "taskUseRef": "pim.ph6.st2.t1",
+      "workProductDefinitionRef": "pim-artifact.platform-readiness",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.pim.ph6.st3.t1.pim-artifact.increment-review",
+      "type": "WorkProductUse",
+      "activityRef": "pim.ph6.st3",
+      "taskUseRef": "pim.ph6.st3.t1",
+      "workProductDefinitionRef": "pim-artifact.increment-review",
+      "usage": "output"
     }
   ],
   "progressModel": {
@@ -324,8 +2462,8 @@
         "id": "pim.engine.frame",
         "name": "Frame Service Slice",
         "type": "phase",
-        "primaryRole": "solution-architect",
-        "phaseIds": ["pim.ph1"]
+        "phaseIds": ["pim.ph1"],
+        "performerRoleRef": "role.solution-architect"
       },
       {
         "id": "pim.engine.contracts-data",
@@ -434,15 +2572,27 @@
         "guidance": "Jump to earliest affected assurance stage; replay to readiness.",
         "twinPeaks": false
       }
-    ]
+    ],
+    "extension": "MODRISS::ProcessEngine",
+    "iteration": {
+      "id": "modriss.pim.modeling.iteration",
+      "type": "Activity",
+      "activityKind": "Iteration",
+      "name": "PIM Modeling Engine",
+      "isRepeatable": true,
+      "activityRefs": ["pim.ph1", "pim.ph2", "pim.ph3", "pim.ph4", "pim.ph5", "pim.ph6"]
+    },
+    "spemMapping": "MODRISS extension realized as an Activity(kind = Iteration) containing process Activities and WorkSequences."
   },
   "phases": [
     {
       "id": "pim.ph1",
+      "type": "Activity",
+      "activityKind": "Phase",
       "name": "Architecture & Slice Framing",
       "order": 1,
       "objective": "Frame the current service slice, establish or refresh PIM posture, and align serverless boundaries to CIM intent.",
-      "primaryRole": "solution-architect",
+      "roleUseRefs": ["ru.pim.ph1.solution-architect"],
       "entryCriteria": ["CIM transform complete, prior PIM increment selected, or greenfield PIM"],
       "exitCriteria": [
         "PIM root configured",
@@ -453,432 +2603,88 @@
       "stages": [
         {
           "id": "pim.ph1.st0",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Service Slice Planning",
           "objective": "Select the PIM service slice and define architecture review expectations.",
-          "primaryRole": "solution-architect",
+          "roleUseRefs": ["ru.pim.ph1.st0.solution-architect"],
           "viewpoint": "services",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph1.st0.t1",
-              "name": "Plan service slice",
-              "primaryRole": "solution-architect",
-              "viewpoint": "services",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.increment-plan",
-                  "name": "PIM Increment Plan"
-                }
-              ],
-              "artifactIds": ["pim-artifact.increment-plan"],
-              "coverageGroups": [],
-              "workProducts": [],
-              "steps": [
-                "Select one service slice traced to CIM goals, bounded contexts, and behavior.",
-                "Record scope boundaries, architectural risks, manual transform decisions, and definition of done.",
-                "Confirm the expected PIM EVL gate and review participants for the cycle."
-              ],
-              "entryCriteria": [
-                "CIM transform complete, prior PIM increment selected, or greenfield PIM"
-              ],
-              "exitCriteria": ["Service-slice scope and definition of done are agreed"],
-              "validationRules": [],
-              "paletteFocus": [],
-              "durationEstimate": "30m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph1.st0.t1",
+              "performerRoleUseRefs": ["ru.pim.ph1.st0.solution-architect"],
+              "selectedStepIndices": [0, 1, 2],
+              "outputWorkProductUseRefs": ["wpu.pim.ph1.st0.t1.pim-artifact.increment-plan"]
             }
           ]
         },
         {
           "id": "pim.ph1.st1",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Architecture Posture",
           "objective": "Create or refresh the PIMModel root with architecture style and implementation profile.",
-          "primaryRole": "solution-architect",
+          "roleUseRefs": ["ru.pim.ph1.st1.solution-architect", "ru.pim.ph1.st1.method-engineer"],
           "viewpoint": "dashboard",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph1.st1.t1",
-              "name": "Create PIM model root",
-              "primaryRole": "solution-architect",
-              "viewpoint": "dashboard",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.architecture-posture",
-                  "name": "Architecture Posture"
-                }
-              ],
-              "artifactIds": ["pim-artifact.architecture-posture"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "PIMModel",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": [
-                "Create or verify PIMModel with domain linkage to CIM source.",
-                "Set modeling date, lifecycle status, and annotation conventions."
-              ],
-              "entryCriteria": ["Service-slice scope agreed"],
-              "exitCriteria": ["PIMModel root exists"],
-              "validationRules": [],
-              "paletteFocus": ["PIMModel"],
-              "durationEstimate": "20m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph1.st1.t1",
+              "performerRoleUseRefs": ["ru.pim.ph1.st1.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph1.st1.t1.pim-artifact.architecture-posture"]
             },
             {
               "id": "pim.ph1.st1.t2",
-              "name": "Set architecture posture",
-              "primaryRole": "solution-architect",
-              "viewpoint": "dashboard",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.architecture-posture",
-                  "name": "Architecture Posture"
-                }
-              ],
-              "artifactIds": ["pim-artifact.architecture-posture"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "ImplementationProfile",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "ArchitectureStyle",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Configure ImplementationProfile with serverless posture and platform assumptions.",
-                "Select ArchitectureStyle and document key architectural decisions."
-              ],
-              "entryCriteria": ["PIM model root exists"],
-              "exitCriteria": ["Architecture style and profile configured"],
-              "validationRules": [],
-              "paletteFocus": ["ImplementationProfile"],
-              "durationEstimate": "30m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph1.st1.t2",
+              "performerRoleUseRefs": ["ru.pim.ph1.st1.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph1.st1.t2.pim-artifact.architecture-posture"]
             },
             {
               "id": "pim.ph1.st1.t3",
-              "name": "Establish shared model contract and evidence conventions",
-              "primaryRole": "method-engineer",
-              "viewpoint": "dashboard",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.architecture-posture",
-                  "name": "Architecture Posture"
-                }
-              ],
-              "artifactIds": ["pim-artifact.architecture-posture"],
-              "coverageGroups": ["shared-kernel", "shared-enums"],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "DeployableElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "InvocationSource",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "InvocationTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "FunctionTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "WorkflowTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "SubscriptionTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "RoutingTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "FlowEndpoint",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ProtectedResource",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "PolicyTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "DataAccessTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ExternalCallTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "EnvironmentTarget",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "CredentialRequirementLike",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "RouteEndpoint",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "EventCarrier",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ConfigurableElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "KeyValue",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "Annotation",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ModelElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "NamedModelElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "TraceableElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "SemanticRelationship",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "Multiplicity",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "Cardinality",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "Expression",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "StructuredDocument",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ComputeElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "StorageElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "IntegrationElement",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "Priority",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "Severity",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "ConstraintStrength",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "LifecycleStatus",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "TraceConfidence",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "TraceLinkType",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "FindingType",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "StructuredFormat",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "ExpressionLanguage",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "ExpressionPhase",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "ManualDecisionState",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "Decision",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Apply shared identity, annotation, traceability, expression, and lifecycle conventions across PIM elements.",
-                "Record the revision, transformation provenance, and review-state convention for the service slice.",
-                "Keep support concepts in inspectors and readiness evidence instead of exposing them as false deployable architecture nodes."
-              ],
-              "entryCriteria": ["PIM model root exists"],
-              "exitCriteria": ["Shared model contract and evidence convention are recorded"],
-              "validationRules": [],
-              "paletteFocus": [],
-              "durationEstimate": "30m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph1.st1.t3",
+              "performerRoleUseRefs": ["ru.pim.ph1.st1.method-engineer"],
+              "selectedStepIndices": [0, 1, 2],
+              "outputWorkProductUseRefs": ["wpu.pim.ph1.st1.t3.pim-artifact.architecture-posture"]
             }
           ]
         },
         {
           "id": "pim.ph1.st2",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Service Boundaries",
           "objective": "Define serverless services and element memberships aligned to bounded contexts.",
-          "primaryRole": "solution-architect",
+          "roleUseRefs": ["ru.pim.ph1.st2.solution-architect"],
           "viewpoint": "services",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph1.st2.t1",
-              "name": "Define serverless services",
-              "primaryRole": "solution-architect",
-              "viewpoint": "services",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.service-map",
-                  "name": "Service Boundary Map"
-                }
-              ],
-              "artifactIds": ["pim-artifact.service-map"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "ServerlessService",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "BoundaryType",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create ServerlessService elements aligned to CIM bounded contexts.",
-                "Set boundary type and ownership scope per service."
-              ],
-              "entryCriteria": ["Architecture posture set"],
-              "exitCriteria": ["Services defined for increment slice"],
-              "validationRules": [],
-              "paletteFocus": ["ServerlessService"],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph1.st2.t1",
+              "performerRoleUseRefs": ["ru.pim.ph1.st2.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph1.st2.t1.pim-artifact.service-map"]
             },
             {
               "id": "pim.ph1.st2.t2",
-              "name": "Assign element memberships",
-              "primaryRole": "solution-architect",
-              "viewpoint": "services",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.service-map",
-                  "name": "Service Boundary Map"
-                }
-              ],
-              "artifactIds": ["pim-artifact.service-map"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "ServiceElementMembership",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "OwnershipKind",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create ServiceElementMembership links from services to planned elements.",
-                "Set OwnershipKind for each membership."
-              ],
-              "entryCriteria": ["Services defined"],
-              "exitCriteria": ["Memberships cover deployable boundaries"],
-              "validationRules": [],
-              "paletteFocus": ["ServiceElementMembership"],
-              "durationEstimate": "45m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph1.st2.t2",
+              "performerRoleUseRefs": ["ru.pim.ph1.st2.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph1.st2.t2.pim-artifact.service-map"]
             }
           ]
         }
@@ -886,10 +2692,12 @@
     },
     {
       "id": "pim.ph2",
+      "type": "Activity",
+      "activityKind": "Phase",
       "name": "Contracts & Data",
       "order": 2,
       "objective": "Define API/event contracts and persistent data architecture for the increment slice.",
-      "primaryRole": "solution-architect",
+      "roleUseRefs": ["ru.pim.ph2.solution-architect"],
       "entryCriteria": ["Architecture & Slice Framing complete"],
       "exitCriteria": [
         "Contracts exist for APIs and events",
@@ -899,9 +2707,11 @@
       "stages": [
         {
           "id": "pim.ph2.st1",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Contracts & Schemas",
           "objective": "Model schemas, validation constraints, and event envelopes aligned to CIM behavior.",
-          "primaryRole": "solution-architect",
+          "roleUseRefs": ["ru.pim.ph2.st1.solution-architect"],
           "viewpoint": "contracts",
           "iterative": false,
           "iterationLoops": [
@@ -924,119 +2734,32 @@
               "twinPeaks": false
             }
           ],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph2.st1.t1",
-              "name": "Define schemas and fields",
-              "primaryRole": "solution-architect",
-              "viewpoint": "contracts",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.contract-catalog",
-                  "name": "Contract Catalog"
-                }
-              ],
-              "artifactIds": ["pim-artifact.contract-catalog"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "Schema",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "SchemaField",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "SchemaEnumLiteral",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "SchemaKind",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "FieldType",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create Schema elements with fields and enum literals.",
-                "Set schema kind and field types aligned to CIM information items."
-              ],
-              "entryCriteria": ["Service boundaries defined"],
-              "exitCriteria": ["Schemas cover API and message payloads"],
-              "validationRules": [],
-              "paletteFocus": ["Schema", "SchemaField", "SchemaEnumLiteral"],
-              "durationEstimate": "1-2h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph2.st1.t1",
+              "performerRoleUseRefs": ["ru.pim.ph2.st1.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph2.st1.t1.pim-artifact.contract-catalog"]
             },
             {
               "id": "pim.ph2.st1.t2",
-              "name": "Model event types and envelopes",
-              "primaryRole": "solution-architect",
-              "viewpoint": "contracts",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.contract-catalog",
-                  "name": "Contract Catalog"
-                }
-              ],
-              "artifactIds": ["pim-artifact.contract-catalog"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "EventType",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "EventEnvelope",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "SchemaValidationConstraint",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "SchemaConstraint",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "SchemaCompatibility",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Define EventType and EventEnvelope elements from CIM events.",
-                "Apply validation constraints and compatibility rules."
-              ],
-              "entryCriteria": ["Schemas defined"],
-              "exitCriteria": ["Event contracts aligned with CIM behavior surface"],
-              "validationRules": [],
-              "paletteFocus": [
-                "EventType",
-                "EventEnvelope",
-                "SchemaValidationConstraint",
-                "SchemaConstraint"
-              ],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph2.st1.t2",
+              "performerRoleUseRefs": ["ru.pim.ph2.st1.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph2.st1.t2.pim-artifact.contract-catalog"]
             }
           ]
         },
         {
           "id": "pim.ph2.st2",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Data Architecture",
           "objective": "Model data stores, access patterns, and change streams for domain persistence.",
-          "primaryRole": "solution-architect",
+          "roleUseRefs": ["ru.pim.ph2.st2.solution-architect"],
           "viewpoint": "data",
           "iterative": false,
           "iterationLoops": [
@@ -1050,146 +2773,30 @@
               "twinPeaks": false
             }
           ],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph2.st2.t1",
-              "name": "Model data stores and models",
-              "primaryRole": "solution-architect",
-              "viewpoint": "data",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.data-architecture",
-                  "name": "Data Architecture"
-                }
-              ],
-              "artifactIds": ["pim-artifact.data-architecture"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "DataStore",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ObjectStore",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "DataModel",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "DataField",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "StoreKind",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "ConsistencyNeed",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create DataStore and ObjectStore elements per service.",
-                "Define DataModel and DataField structures from CIM entities."
-              ],
-              "entryCriteria": ["Contracts defined"],
-              "exitCriteria": ["Stores and models cover domain data"],
-              "validationRules": [],
-              "paletteFocus": ["DataStore", "ObjectStore", "DataModel", "DataField"],
-              "durationEstimate": "1-2h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph2.st2.t1",
+              "performerRoleUseRefs": ["ru.pim.ph2.st2.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph2.st2.t1.pim-artifact.data-architecture"]
             },
             {
               "id": "pim.ph2.st2.t2",
-              "name": "Define access patterns and indexes",
-              "primaryRole": "solution-architect",
-              "viewpoint": "data",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.data-architecture",
-                  "name": "Data Architecture"
-                }
-              ],
-              "artifactIds": ["pim-artifact.data-architecture"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "AccessPattern",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "IndexCandidate",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "DataAccess",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "DataAccessMode",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "AccessPatternKind",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Model AccessPattern elements from CIM queries and commands.",
-                "Define IndexCandidate and DataAccess bindings per store."
-              ],
-              "entryCriteria": ["Data models drafted"],
-              "exitCriteria": ["Access patterns cover read/write use cases"],
-              "validationRules": [],
-              "paletteFocus": ["AccessPattern", "IndexCandidate", "DataAccess"],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph2.st2.t2",
+              "performerRoleUseRefs": ["ru.pim.ph2.st2.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph2.st2.t2.pim-artifact.data-architecture"]
             },
             {
               "id": "pim.ph2.st2.t3",
-              "name": "Configure change streams and notifications",
-              "primaryRole": "solution-architect",
-              "viewpoint": "data",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.data-architecture",
-                  "name": "Data Architecture"
-                }
-              ],
-              "artifactIds": ["pim-artifact.data-architecture"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "DataChangeStream",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ObjectNotificationRule",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": [
-                "Define DataChangeStream elements for event-sourced projections.",
-                "Configure ObjectNotificationRule for object store triggers."
-              ],
-              "entryCriteria": ["Access patterns defined"],
-              "exitCriteria": ["Change streams linked to event contracts"],
-              "validationRules": [],
-              "paletteFocus": ["DataChangeStream", "ObjectNotificationRule"],
-              "durationEstimate": "45m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph2.st2.t3",
+              "performerRoleUseRefs": ["ru.pim.ph2.st2.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph2.st2.t3.pim-artifact.data-architecture"]
             }
           ]
         }
@@ -1197,19 +2804,23 @@
     },
     {
       "id": "pim.ph3",
+      "type": "Activity",
+      "activityKind": "Phase",
       "name": "Compute & Exposure",
       "order": 3,
       "objective": "Define compute units and expose them through a coherent API surface.",
-      "primaryRole": "solution-architect",
+      "roleUseRefs": ["ru.pim.ph3.solution-architect"],
       "entryCriteria": ["Contracts & Data complete for slice"],
       "exitCriteria": ["Functions cover behavioral surface", "Public API surface complete"],
       "inEngine": true,
       "stages": [
         {
           "id": "pim.ph3.st1",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Compute Units",
           "objective": "Define functions with contracts and triggers mapped to CIM commands and events.",
-          "primaryRole": "solution-architect",
+          "roleUseRefs": ["ru.pim.ph3.st1.solution-architect"],
           "viewpoint": "compute",
           "iterative": false,
           "iterationLoops": [
@@ -1241,104 +2852,32 @@
               "twinPeaks": false
             }
           ],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph3.st1.t1",
-              "name": "Define functions and contracts",
-              "primaryRole": "solution-architect",
-              "viewpoint": "compute",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.compute-catalog",
-                  "name": "Compute Catalog"
-                }
-              ],
-              "artifactIds": ["pim-artifact.compute-catalog"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "Function",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "FunctionContract",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "FunctionKind",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "ComputeProfile",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "ExecutionModel",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create Function elements with FunctionContract bindings.",
-                "Set compute profile and execution model per handler."
-              ],
-              "entryCriteria": ["Data architecture drafted"],
-              "exitCriteria": ["Functions mapped to CIM commands and queries"],
-              "validationRules": [],
-              "paletteFocus": ["Function", "FunctionContract"],
-              "durationEstimate": "1-2h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph3.st1.t1",
+              "performerRoleUseRefs": ["ru.pim.ph3.st1.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph3.st1.t1.pim-artifact.compute-catalog"]
             },
             {
               "id": "pim.ph3.st1.t2",
-              "name": "Configure triggers and runtime",
-              "primaryRole": "solution-architect",
-              "viewpoint": "compute",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.compute-catalog",
-                  "name": "Compute Catalog"
-                }
-              ],
-              "artifactIds": ["pim-artifact.compute-catalog"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "Trigger",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "RuntimeLanguage",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "PackageManager",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Define Trigger elements linking functions to events and schedules.",
-                "Set runtime language and package manager per function."
-              ],
-              "entryCriteria": ["Functions defined"],
-              "exitCriteria": ["Triggers cover behavioral entry points"],
-              "validationRules": [],
-              "paletteFocus": ["Trigger"],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph3.st1.t2",
+              "performerRoleUseRefs": ["ru.pim.ph3.st1.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph3.st1.t2.pim-artifact.compute-catalog"]
             }
           ]
         },
         {
           "id": "pim.ph3.st2",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "API Surface",
           "objective": "Expose functions through APIs with routes, contracts, and error mappings.",
-          "primaryRole": "solution-architect",
+          "roleUseRefs": ["ru.pim.ph3.st2.solution-architect"],
           "viewpoint": "api",
           "iterative": false,
           "iterationLoops": [
@@ -1361,91 +2900,22 @@
               "twinPeaks": false
             }
           ],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph3.st2.t1",
-              "name": "Define APIs and routes",
-              "primaryRole": "solution-architect",
-              "viewpoint": "api",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.api-catalog",
-                  "name": "API Catalog"
-                }
-              ],
-              "artifactIds": ["pim-artifact.api-catalog"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "Api",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ApiRoute",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "ApiStyle",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "HttpMethod",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "InvocationMode",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create Api elements with routes and HTTP methods.",
-                "Connect routes to function handlers."
-              ],
-              "entryCriteria": ["Compute units defined"],
-              "exitCriteria": ["API routes cover public endpoints"],
-              "validationRules": [],
-              "paletteFocus": ["Api", "ApiRoute"],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph3.st2.t1",
+              "performerRoleUseRefs": ["ru.pim.ph3.st2.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph3.st2.t1.pim-artifact.api-catalog"]
             },
             {
               "id": "pim.ph3.st2.t2",
-              "name": "Map API contracts and errors",
-              "primaryRole": "solution-architect",
-              "viewpoint": "api",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.api-catalog",
-                  "name": "API Catalog"
-                }
-              ],
-              "artifactIds": ["pim-artifact.api-catalog"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "ApiContract",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ErrorMapping",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": [
-                "Bind ApiContract elements to schema definitions.",
-                "Map ErrorMapping responses to CIM business errors."
-              ],
-              "entryCriteria": ["API routes defined"],
-              "exitCriteria": ["Contracts and error mappings complete"],
-              "validationRules": [],
-              "paletteFocus": ["ApiContract", "ErrorMapping"],
-              "durationEstimate": "45m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph3.st2.t2",
+              "performerRoleUseRefs": ["ru.pim.ph3.st2.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph3.st2.t2.pim-artifact.api-catalog"]
             }
           ]
         }
@@ -1453,10 +2923,12 @@
     },
     {
       "id": "pim.ph4",
+      "type": "Activity",
+      "activityKind": "Phase",
       "name": "Integration & Orchestration",
       "order": 4,
       "objective": "Wire async integration topology and long-running workflow orchestration.",
-      "primaryRole": "solution-architect",
+      "roleUseRefs": ["ru.pim.ph4.solution-architect"],
       "entryCriteria": ["Compute & Exposure complete for slice"],
       "exitCriteria": [
         "Async integration topology complete",
@@ -1466,9 +2938,11 @@
       "stages": [
         {
           "id": "pim.ph4.st1",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Integration Topology",
           "objective": "Model event channels, flows, and routing rules connecting services.",
-          "primaryRole": "solution-architect",
+          "roleUseRefs": ["ru.pim.ph4.st1.solution-architect"],
           "viewpoint": "integration",
           "iterative": false,
           "iterationLoops": [
@@ -1491,341 +2965,51 @@
               "twinPeaks": false
             }
           ],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph4.st1.t1",
-              "name": "Model event channels and buses",
-              "primaryRole": "solution-architect",
-              "viewpoint": "integration",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.integration-topology",
-                  "name": "Integration Topology"
-                }
-              ],
-              "artifactIds": ["pim-artifact.integration-topology"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "EventChannel",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "Queue",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "Topic",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "EventBus",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "ChannelKind",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "DeliverySemantics",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "OrderingRequirement",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create EventChannel, Queue, Topic, and EventBus elements.",
-                "Set delivery semantics and ordering requirements."
-              ],
-              "entryCriteria": ["API surface defined"],
-              "exitCriteria": ["Channels cover async integration points"],
-              "validationRules": [],
-              "paletteFocus": ["EventChannel", "Queue", "Topic", "EventBus"],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph4.st1.t1",
+              "performerRoleUseRefs": ["ru.pim.ph4.st1.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph4.st1.t1.pim-artifact.integration-topology"]
             },
             {
               "id": "pim.ph4.st1.t2",
-              "name": "Define flows and routing rules",
-              "primaryRole": "solution-architect",
-              "viewpoint": "integration",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.integration-topology",
-                  "name": "Integration Topology"
-                }
-              ],
-              "artifactIds": ["pim-artifact.integration-topology"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "Flow",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "RequestResponseFlow",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "EventFlow",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "MessageFlow",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "PubSubFlow",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "OrchestrationFlow",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ExternalIntegrationFlow",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "EventRoutingRule",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "Schedule",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "Subscription",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": [
-                "Model Flow variants connecting producers and consumers.",
-                "Define EventRoutingRule and Subscription bindings.",
-                "Configure Schedule triggers for periodic integration."
-              ],
-              "entryCriteria": ["Channels defined"],
-              "exitCriteria": ["Flows connect integration endpoints to functions"],
-              "validationRules": [],
-              "paletteFocus": [
-                "Flow",
-                "RequestResponseFlow",
-                "EventFlow",
-                "MessageFlow",
-                "PubSubFlow",
-                "OrchestrationFlow",
-                "ExternalIntegrationFlow",
-                "EventRoutingRule",
-                "Schedule",
-                "Subscription"
-              ],
-              "durationEstimate": "1-2h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph4.st1.t2",
+              "performerRoleUseRefs": ["ru.pim.ph4.st1.solution-architect"],
+              "selectedStepIndices": [0, 1, 2],
+              "outputWorkProductUseRefs": ["wpu.pim.ph4.st1.t2.pim-artifact.integration-topology"]
             }
           ]
         },
         {
           "id": "pim.ph4.st2",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Workflow Orchestration",
           "objective": "Model workflows from CIM business processes with human tasks and compensation.",
-          "primaryRole": "solution-architect",
+          "roleUseRefs": ["ru.pim.ph4.st2.solution-architect"],
           "viewpoint": "workflow",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph4.st2.t1",
-              "name": "Model workflows and states",
-              "primaryRole": "solution-architect",
-              "viewpoint": "workflow",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.workflow-model",
-                  "name": "Workflow Model"
-                }
-              ],
-              "artifactIds": ["pim-artifact.workflow-model"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "Workflow",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "WorkflowStep",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "StartStep",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "TaskStep",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ChoiceStep",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "WaitStep",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "SuccessEndStep",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "FailureEndStep",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ParallelStep",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "MapStep",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "PassStep",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "WorkflowTransition",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "WorkflowKind",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create Workflow elements from CIM business processes.",
-                "Define typed workflow steps, transitions, and workflow kind."
-              ],
-              "entryCriteria": ["Integration topology defined"],
-              "exitCriteria": ["Workflows cover long-running CIM processes"],
-              "validationRules": [],
-              "paletteFocus": [
-                "Workflow",
-                "WorkflowStep",
-                "StartStep",
-                "TaskStep",
-                "ChoiceStep",
-                "WaitStep",
-                "SuccessEndStep",
-                "FailureEndStep",
-                "ParallelStep",
-                "MapStep",
-                "PassStep",
-                "WorkflowTransition"
-              ],
-              "durationEstimate": "1-2h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph4.st2.t1",
+              "performerRoleUseRefs": ["ru.pim.ph4.st2.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph4.st2.t1.pim-artifact.workflow-model"]
             },
             {
               "id": "pim.ph4.st2.t2",
-              "name": "Configure human tasks and error handling",
-              "primaryRole": "solution-architect",
-              "viewpoint": "workflow",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.workflow-model",
-                  "name": "Workflow Model"
-                }
-              ],
-              "artifactIds": ["pim-artifact.workflow-model"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "HumanTask",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ApprovalTask",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "EscalationPolicy",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "CompensationPolicy",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ErrorHandler",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ParallelBranch",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "MapStateConfig",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "CallbackTaskConfig",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": [
-                "Add HumanTask and ApprovalTask elements with escalation policies.",
-                "Define CompensationPolicy and ErrorHandler for failure paths."
-              ],
-              "entryCriteria": ["Workflows drafted"],
-              "exitCriteria": ["Human steps and error paths orchestrated"],
-              "validationRules": [],
-              "paletteFocus": [
-                "HumanTask",
-                "ApprovalTask",
-                "EscalationPolicy",
-                "CompensationPolicy",
-                "ErrorHandler",
-                "ParallelBranch",
-                "MapStateConfig",
-                "CallbackTaskConfig"
-              ],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph4.st2.t2",
+              "performerRoleUseRefs": ["ru.pim.ph4.st2.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph4.st2.t2.pim-artifact.workflow-model"]
             }
           ]
         }
@@ -1833,10 +3017,12 @@
     },
     {
       "id": "pim.ph5",
+      "type": "Activity",
+      "activityKind": "Phase",
       "name": "Assurance & Configuration",
       "order": 5,
       "objective": "Apply security, operational policies, and environment configuration across the slice.",
-      "primaryRole": "solution-architect",
+      "roleUseRefs": ["ru.pim.ph5.solution-architect"],
       "entryCriteria": ["Integration & Orchestration complete for slice"],
       "exitCriteria": [
         "Auth model covers all public endpoints",
@@ -1847,9 +3033,11 @@
       "stages": [
         {
           "id": "pim.ph5.st1",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Security & Identity",
           "objective": "Configure identity providers, principals, and authorization for APIs and functions.",
-          "primaryRole": "solution-architect",
+          "roleUseRefs": ["ru.pim.ph5.st1.solution-architect"],
           "viewpoint": "security",
           "iterative": false,
           "iterationLoops": [
@@ -1872,119 +3060,32 @@
               "twinPeaks": false
             }
           ],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph5.st1.t1",
-              "name": "Configure identity providers and principals",
-              "primaryRole": "solution-architect",
-              "viewpoint": "security",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.security-model",
-                  "name": "Security Model"
-                }
-              ],
-              "artifactIds": ["pim-artifact.security-model"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "IdentityProvider",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "Principal",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "IdentityKind",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "PrincipalKind",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Define IdentityProvider elements aligned to CIM actors.",
-                "Register Principal elements for human and service identities."
-              ],
-              "entryCriteria": ["Workflow orchestration drafted"],
-              "exitCriteria": ["Identity model covers all actor types"],
-              "validationRules": [],
-              "paletteFocus": ["IdentityProvider", "Principal"],
-              "durationEstimate": "45m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph5.st1.t1",
+              "performerRoleUseRefs": ["ru.pim.ph5.st1.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph5.st1.t1.pim-artifact.security-model"]
             },
             {
               "id": "pim.ph5.st1.t2",
-              "name": "Define permissions and security policies",
-              "primaryRole": "solution-architect",
-              "viewpoint": "security",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.security-model",
-                  "name": "Security Model"
-                }
-              ],
-              "artifactIds": ["pim-artifact.security-model"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "Permission",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "SecurityPolicy",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "AuthPolicy",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "AuthorizationPolicy",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "PermissionEffect",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "PermissionActionKind",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "LeastPrivilegeStatus",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create Permission elements with effect and action kind.",
-                "Apply AuthPolicy and AuthorizationPolicy to APIs and functions."
-              ],
-              "entryCriteria": ["Principals configured"],
-              "exitCriteria": ["Auth model covers all public endpoints"],
-              "validationRules": [],
-              "paletteFocus": ["Permission", "SecurityPolicy", "AuthPolicy", "AuthorizationPolicy"],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph5.st1.t2",
+              "performerRoleUseRefs": ["ru.pim.ph5.st1.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph5.st1.t2.pim-artifact.security-model"]
             }
           ]
         },
         {
           "id": "pim.ph5.st2",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Architecture Policies",
           "objective": "Apply resilience, observability, governance, and cost policies to architecture elements.",
-          "primaryRole": "solution-architect",
+          "roleUseRefs": ["ru.pim.ph5.st2.solution-architect"],
           "viewpoint": "policies",
           "iterative": false,
           "iterationLoops": [
@@ -2001,500 +3102,120 @@
           "subStages": [
             {
               "id": "pim.ph5.st2.ss1",
+              "type": "Activity",
+              "activityKind": "MODRISS::Stage",
               "name": "Resilience & Throughput",
               "objective": "Configure retry, timeout, concurrency, and throughput policies.",
-              "primaryRole": "solution-architect",
+              "roleUseRefs": ["ru.pim.ph5.st2.ss1.solution-architect"],
               "viewpoint": "policies",
               "iterative": false,
               "iterationLoops": [],
-              "tasks": [
+              "taskUses": [
                 {
                   "id": "pim.ph5.st2.ss1.t1",
-                  "name": "Apply resilience policies",
-                  "primaryRole": "solution-architect",
-                  "viewpoint": "policies",
-                  "artifacts": [
-                    {
-                      "id": "pim-artifact.policy-catalog",
-                      "name": "Architecture Policy Catalog"
-                    }
-                  ],
-                  "artifactIds": ["pim-artifact.policy-catalog"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "pim",
-                      "eClass": "ResiliencePolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "RetryPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "DeadLetterPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "TimeoutPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "IdempotencyPolicy",
-                      "cardinality": "1..*"
-                    }
-                  ],
-                  "steps": [
-                    "Define ResiliencePolicy on functions and integration flows.",
-                    "Configure RetryPolicy, DeadLetterPolicy, and TimeoutPolicy per target.",
-                    "Set IdempotencyPolicy for state-changing handlers."
-                  ],
-                  "entryCriteria": ["Security and identity configured"],
-                  "exitCriteria": ["Resilience policies applied to critical paths"],
-                  "validationRules": [],
-                  "paletteFocus": [
-                    "ResiliencePolicy",
-                    "RetryPolicy",
-                    "DeadLetterPolicy",
-                    "TimeoutPolicy",
-                    "IdempotencyPolicy"
-                  ],
-                  "durationEstimate": "1h"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.pim.ph5.st2.ss1.t1",
+                  "performerRoleUseRefs": ["ru.pim.ph5.st2.ss1.solution-architect"],
+                  "selectedStepIndices": [0, 1, 2],
+                  "outputWorkProductUseRefs": ["wpu.pim.ph5.st2.ss1.t1.pim-artifact.policy-catalog"]
                 },
                 {
                   "id": "pim.ph5.st2.ss1.t2",
-                  "name": "Configure throughput and ordering policies",
-                  "primaryRole": "solution-architect",
-                  "viewpoint": "policies",
-                  "artifacts": [
-                    {
-                      "id": "pim-artifact.policy-catalog",
-                      "name": "Architecture Policy Catalog"
-                    }
-                  ],
-                  "artifactIds": ["pim-artifact.policy-catalog"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "pim",
-                      "eClass": "ConcurrencyPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "RateLimitPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "BatchPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "OrderingPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "CachePolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "BackupPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "RetentionPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "CostPolicy",
-                      "cardinality": "1..*"
-                    }
-                  ],
-                  "steps": [
-                    "Set ConcurrencyPolicy and RateLimitPolicy on APIs and functions.",
-                    "Configure BatchPolicy, OrderingPolicy, and CachePolicy where needed.",
-                    "Apply BackupPolicy, RetentionPolicy, and CostPolicy to stores."
-                  ],
-                  "entryCriteria": ["Resilience policies applied"],
-                  "exitCriteria": ["Throughput and cost policies configured"],
-                  "validationRules": [],
-                  "paletteFocus": [
-                    "ConcurrencyPolicy",
-                    "RateLimitPolicy",
-                    "BatchPolicy",
-                    "OrderingPolicy",
-                    "CachePolicy",
-                    "BackupPolicy",
-                    "RetentionPolicy",
-                    "CostPolicy"
-                  ],
-                  "durationEstimate": "45m"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.pim.ph5.st2.ss1.t2",
+                  "performerRoleUseRefs": ["ru.pim.ph5.st2.ss1.solution-architect"],
+                  "selectedStepIndices": [0, 1, 2],
+                  "outputWorkProductUseRefs": ["wpu.pim.ph5.st2.ss1.t2.pim-artifact.policy-catalog"]
                 }
               ]
             },
             {
               "id": "pim.ph5.st2.ss2",
+              "type": "Activity",
+              "activityKind": "MODRISS::Stage",
               "name": "Observability & SLOs",
               "objective": "Configure logging, metrics, tracing, alerts, and service level objectives.",
-              "primaryRole": "solution-architect",
+              "roleUseRefs": ["ru.pim.ph5.st2.ss2.solution-architect"],
               "viewpoint": "policies",
               "iterative": false,
               "iterationLoops": [],
-              "tasks": [
+              "taskUses": [
                 {
                   "id": "pim.ph5.st2.ss2.t1",
-                  "name": "Configure observability policies",
-                  "primaryRole": "solution-architect",
-                  "viewpoint": "policies",
-                  "artifacts": [
-                    {
-                      "id": "pim-artifact.policy-catalog",
-                      "name": "Architecture Policy Catalog"
-                    }
-                  ],
-                  "artifactIds": ["pim-artifact.policy-catalog"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "pim",
-                      "eClass": "ObservabilityConfig",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "LoggingPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "MetricPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "MetricDimension",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "TracingPolicy",
-                      "cardinality": "1..*"
-                    }
-                  ],
-                  "steps": [
-                    "Define ObservabilityConfig per service.",
-                    "Apply LoggingPolicy, MetricPolicy, and TracingPolicy to functions and APIs."
-                  ],
-                  "entryCriteria": ["Resilience policies applied"],
-                  "exitCriteria": ["Observability baseline configured"],
-                  "validationRules": [],
-                  "paletteFocus": [
-                    "ObservabilityConfig",
-                    "LoggingPolicy",
-                    "MetricPolicy",
-                    "MetricDimension",
-                    "TracingPolicy"
-                  ],
-                  "durationEstimate": "45m"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.pim.ph5.st2.ss2.t1",
+                  "performerRoleUseRefs": ["ru.pim.ph5.st2.ss2.solution-architect"],
+                  "selectedStepIndices": [0, 1],
+                  "outputWorkProductUseRefs": ["wpu.pim.ph5.st2.ss2.t1.pim-artifact.policy-catalog"]
                 },
                 {
                   "id": "pim.ph5.st2.ss2.t2",
-                  "name": "Define alerts, SLOs, and CORS",
-                  "primaryRole": "solution-architect",
-                  "viewpoint": "policies",
-                  "artifacts": [
-                    {
-                      "id": "pim-artifact.policy-catalog",
-                      "name": "Architecture Policy Catalog"
-                    }
-                  ],
-                  "artifactIds": ["pim-artifact.policy-catalog"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "pim",
-                      "eClass": "AlertPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "Slo",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "CorsPolicy",
-                      "cardinality": "1..*"
-                    }
-                  ],
-                  "steps": [
-                    "Create AlertPolicy and Slo elements for critical endpoints.",
-                    "Apply CorsPolicy to public API routes."
-                  ],
-                  "entryCriteria": ["Observability baseline configured"],
-                  "exitCriteria": ["Alerts and SLOs cover critical paths"],
-                  "validationRules": [],
-                  "paletteFocus": ["AlertPolicy", "Slo", "CorsPolicy"],
-                  "durationEstimate": "30m"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.pim.ph5.st2.ss2.t2",
+                  "performerRoleUseRefs": ["ru.pim.ph5.st2.ss2.solution-architect"],
+                  "selectedStepIndices": [0, 1],
+                  "outputWorkProductUseRefs": ["wpu.pim.ph5.st2.ss2.t2.pim-artifact.policy-catalog"]
                 }
               ]
             },
             {
               "id": "pim.ph5.st2.ss3",
+              "type": "Activity",
+              "activityKind": "MODRISS::Stage",
               "name": "Governance & Business Rules",
               "objective": "Apply data protection, compliance, and business rule policies.",
-              "primaryRole": "solution-architect",
+              "roleUseRefs": ["ru.pim.ph5.st2.ss3.solution-architect"],
               "viewpoint": "policies",
               "iterative": false,
               "iterationLoops": [],
-              "tasks": [
+              "taskUses": [
                 {
                   "id": "pim.ph5.st2.ss3.t1",
-                  "name": "Apply governance and compliance policies",
-                  "primaryRole": "solution-architect",
-                  "viewpoint": "policies",
-                  "artifacts": [
-                    {
-                      "id": "pim-artifact.policy-catalog",
-                      "name": "Architecture Policy Catalog"
-                    }
-                  ],
-                  "artifactIds": ["pim-artifact.policy-catalog"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "pim",
-                      "eClass": "ArchitecturePolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "PolicySetting",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "DataProtectionPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "DataQualityPolicy",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "CompliancePolicy",
-                      "cardinality": "1..*"
-                    }
-                  ],
-                  "steps": [
-                    "Define ArchitecturePolicy and PolicySetting elements.",
-                    "Apply DataProtectionPolicy and CompliancePolicy from CIM governance."
-                  ],
-                  "entryCriteria": ["Observability policies configured"],
-                  "exitCriteria": ["Governance policies linked to data and APIs"],
-                  "validationRules": [],
-                  "paletteFocus": [
-                    "ArchitecturePolicy",
-                    "PolicySetting",
-                    "DataProtectionPolicy",
-                    "DataQualityPolicy",
-                    "CompliancePolicy"
-                  ],
-                  "durationEstimate": "45m"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.pim.ph5.st2.ss3.t1",
+                  "performerRoleUseRefs": ["ru.pim.ph5.st2.ss3.solution-architect"],
+                  "selectedStepIndices": [0, 1],
+                  "outputWorkProductUseRefs": ["wpu.pim.ph5.st2.ss3.t1.pim-artifact.policy-catalog"]
                 },
                 {
                   "id": "pim.ph5.st2.ss3.t2",
-                  "name": "Map business rules and decision models",
-                  "primaryRole": "solution-architect",
-                  "viewpoint": "policies",
-                  "artifacts": [
-                    {
-                      "id": "pim-artifact.policy-catalog",
-                      "name": "Architecture Policy Catalog"
-                    }
-                  ],
-                  "artifactIds": ["pim-artifact.policy-catalog"],
-                  "coverageGroups": [],
-                  "workProducts": [
-                    {
-                      "metamodel": "pim",
-                      "eClass": "BusinessRule",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "DecisionModel",
-                      "cardinality": "1..*"
-                    },
-                    {
-                      "metamodel": "pim",
-                      "eClass": "DecisionRule",
-                      "cardinality": "1..*"
-                    }
-                  ],
-                  "steps": [
-                    "Create BusinessRule elements from CIM policies.",
-                    "Model DecisionModel with DecisionRule rows for branching logic."
-                  ],
-                  "entryCriteria": ["Governance policies applied"],
-                  "exitCriteria": ["Business rules linked to functions and workflows"],
-                  "validationRules": [],
-                  "paletteFocus": ["BusinessRule", "DecisionModel", "DecisionRule"],
-                  "durationEstimate": "45m"
+                  "type": "TaskUse",
+                  "taskDefinitionRef": "task.pim.ph5.st2.ss3.t2",
+                  "performerRoleUseRefs": ["ru.pim.ph5.st2.ss3.solution-architect"],
+                  "selectedStepIndices": [0, 1],
+                  "outputWorkProductUseRefs": ["wpu.pim.ph5.st2.ss3.t2.pim-artifact.policy-catalog"]
                 }
               ]
             }
-          ]
+          ],
+          "taskUses": []
         },
         {
           "id": "pim.ph5.st3",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "External & Config",
           "objective": "Model external integrations, environments, secrets, and deployment units.",
-          "primaryRole": "solution-architect",
+          "roleUseRefs": ["ru.pim.ph5.st3.solution-architect"],
           "viewpoint": "config",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph5.st3.t1",
-              "name": "Model external endpoints and adapters",
-              "primaryRole": "solution-architect",
-              "viewpoint": "config",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.config-package",
-                  "name": "Configuration Package"
-                }
-              ],
-              "artifactIds": ["pim-artifact.config-package"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "ExternalEndpoint",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ExternalAdapter",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "SupportLevel",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Create ExternalEndpoint elements from CIM external systems.",
-                "Define ExternalAdapter bindings to integration flows."
-              ],
-              "entryCriteria": ["Architecture policies applied"],
-              "exitCriteria": ["External integrations modeled"],
-              "validationRules": [],
-              "paletteFocus": ["ExternalEndpoint", "ExternalAdapter"],
-              "durationEstimate": "45m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph5.st3.t1",
+              "performerRoleUseRefs": ["ru.pim.ph5.st3.solution-architect"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph5.st3.t1.pim-artifact.config-package"]
             },
             {
               "id": "pim.ph5.st3.t2",
-              "name": "Configure environments and deployment units",
-              "primaryRole": "solution-architect",
-              "viewpoint": "config",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.config-package",
-                  "name": "Configuration Package"
-                }
-              ],
-              "artifactIds": ["pim-artifact.config-package"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "Environment",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "DeploymentUnit",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ConfigurationSet",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ConfigParameter",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "EnvironmentVariable",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "Secret",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "CredentialRequirement",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "SecretKind",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "ConfigScope",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "EnvironmentClass",
-                  "cardinality": "enum-values"
-                },
-                {
-                  "metamodel": "pim",
-                  "eEnum": "DeploymentUnitType",
-                  "cardinality": "enum-values"
-                }
-              ],
-              "steps": [
-                "Define Environment and DeploymentUnit elements per stage.",
-                "Configure ConfigurationSet, secrets, and credential requirements.",
-                "Set ConfigParameter and EnvironmentVariable values per environment."
-              ],
-              "entryCriteria": ["External integrations modeled"],
-              "exitCriteria": ["Environments and config complete for slice"],
-              "validationRules": [],
-              "paletteFocus": [
-                "Environment",
-                "DeploymentUnit",
-                "ConfigurationSet",
-                "ConfigParameter",
-                "EnvironmentVariable",
-                "Secret",
-                "CredentialRequirement"
-              ],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph5.st3.t2",
+              "performerRoleUseRefs": ["ru.pim.ph5.st3.solution-architect"],
+              "selectedStepIndices": [0, 1, 2],
+              "outputWorkProductUseRefs": ["wpu.pim.ph5.st3.t2.pim-artifact.config-package"]
             }
           ]
         }
@@ -2502,10 +3223,12 @@
     },
     {
       "id": "pim.ph6",
+      "type": "Activity",
+      "activityKind": "Phase",
       "name": "Platform Readiness",
       "order": 6,
       "objective": "Assess platform capability mapping, close traceability, and pass PIM EVL gate.",
-      "primaryRole": "process-reviewer",
+      "roleUseRefs": ["ru.pim.ph6.process-reviewer"],
       "entryCriteria": ["Assurance & Configuration complete for slice"],
       "exitCriteria": [
         "PIM EVL passes",
@@ -2516,55 +3239,32 @@
       "stages": [
         {
           "id": "pim.ph6.st1",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Platform Mapping Assessment",
           "objective": "Evaluate platform capability coverage and mapping readiness.",
-          "primaryRole": "process-reviewer",
+          "roleUseRefs": ["ru.pim.ph6.st1.process-reviewer"],
           "viewpoint": "readiness",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph6.st1.t1",
-              "name": "Assess platform capabilities",
-              "primaryRole": "process-reviewer",
-              "viewpoint": "readiness",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.platform-readiness",
-                  "name": "Platform Readiness Record"
-                }
-              ],
-              "artifactIds": ["pim-artifact.platform-readiness"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "PlatformCapability",
-                  "cardinality": "1..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "PlatformMappingAssessment",
-                  "cardinality": "1..*"
-                }
-              ],
-              "steps": [
-                "Review PlatformCapability coverage against modeled elements.",
-                "Complete PlatformMappingAssessment with gap analysis."
-              ],
-              "entryCriteria": ["External and config complete"],
-              "exitCriteria": ["Platform mapping assessment documented"],
-              "validationRules": [],
-              "paletteFocus": ["PlatformCapability", "PlatformMappingAssessment"],
-              "durationEstimate": "1h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph6.st1.t1",
+              "performerRoleUseRefs": ["ru.pim.ph6.st1.process-reviewer"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph6.st1.t1.pim-artifact.platform-readiness"]
             }
           ]
         },
         {
           "id": "pim.ph6.st2",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Trace & Readiness Gate",
           "objective": "Close trace links and production readiness before PIM→PSM transform.",
-          "primaryRole": "process-reviewer",
+          "roleUseRefs": ["ru.pim.ph6.st2.process-reviewer"],
           "viewpoint": "readiness",
           "iterative": false,
           "iterationLoops": [
@@ -2578,108 +3278,369 @@
               "twinPeaks": false
             }
           ],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph6.st2.t1",
-              "name": "Complete trace and readiness",
-              "primaryRole": "process-reviewer",
-              "viewpoint": "readiness",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.platform-readiness",
-                  "name": "Platform Readiness Record"
-                }
-              ],
-              "artifactIds": ["pim-artifact.platform-readiness"],
-              "coverageGroups": [],
-              "workProducts": [
-                {
-                  "metamodel": "pim",
-                  "eClass": "TraceModel",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "TraceLink",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "TransformationAssumption",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ProductionReadinessAssessment",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ReadinessFinding",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ReadinessCheck",
-                  "cardinality": "0..*"
-                },
-                {
-                  "metamodel": "pim",
-                  "eClass": "ManualDecision",
-                  "cardinality": "0..*"
-                }
-              ],
-              "steps": [
-                "Build TraceModel links across CIM and PIM elements.",
-                "Complete ProductionReadinessAssessment and resolve findings."
-              ],
-              "entryCriteria": ["Platform mapping assessment complete"],
-              "exitCriteria": ["PIM EVL passes; readiness gate approved"],
-              "validationRules": ["pim-semantic-validation"],
-              "paletteFocus": [],
-              "durationEstimate": "1-2h"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph6.st2.t1",
+              "performerRoleUseRefs": ["ru.pim.ph6.st2.process-reviewer"],
+              "selectedStepIndices": [0, 1],
+              "outputWorkProductUseRefs": ["wpu.pim.ph6.st2.t1.pim-artifact.platform-readiness"]
             }
           ]
         },
         {
           "id": "pim.ph6.st3",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
           "name": "Increment Review & Adapt",
           "objective": "Review the service slice architecture, accept the increment, and adapt the next cycle.",
-          "primaryRole": "process-reviewer",
+          "roleUseRefs": ["ru.pim.ph6.st3.process-reviewer"],
           "viewpoint": "readiness",
           "iterative": false,
           "iterationLoops": [],
-          "tasks": [
+          "taskUses": [
             {
               "id": "pim.ph6.st3.t1",
-              "name": "Review and adapt PIM increment",
-              "primaryRole": "process-reviewer",
-              "viewpoint": "readiness",
-              "artifacts": [
-                {
-                  "id": "pim-artifact.increment-review",
-                  "name": "PIM Increment Review Record"
-                }
-              ],
-              "artifactIds": ["pim-artifact.increment-review"],
-              "coverageGroups": [],
-              "workProducts": [],
-              "steps": [
-                "Review architecture outcomes against CIM trace links and PIM definition of done.",
-                "Record accepted scope, deferred architecture decisions, and platform mapping feedback.",
-                "Create improvement actions and backlog adjustments for the next service slice."
-              ],
-              "entryCriteria": ["PIM EVL passes or all blocking findings are dispositioned"],
-              "exitCriteria": [
-                "Increment accepted or rework loop selected; improvement actions captured"
-              ],
-              "validationRules": [],
-              "paletteFocus": [],
-              "durationEstimate": "45m"
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.pim.ph6.st3.t1",
+              "performerRoleUseRefs": ["ru.pim.ph6.st3.process-reviewer"],
+              "selectedStepIndices": [0, 1, 2],
+              "outputWorkProductUseRefs": ["wpu.pim.ph6.st3.t1.pim-artifact.increment-review"]
             }
           ]
         }
       ]
+    }
+  ],
+  "workSequences": [
+    {
+      "id": "ws.pim.ph1.pim.ph2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph1",
+      "successorRef": "pim.ph2",
+      "linkKind": "finishToStart",
+      "relation": "phase-order"
+    },
+    {
+      "id": "ws.pim.ph2.pim.ph3",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph2",
+      "successorRef": "pim.ph3",
+      "linkKind": "finishToStart",
+      "relation": "phase-order"
+    },
+    {
+      "id": "ws.pim.ph3.pim.ph4",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph3",
+      "successorRef": "pim.ph4",
+      "linkKind": "finishToStart",
+      "relation": "phase-order"
+    },
+    {
+      "id": "ws.pim.ph4.pim.ph5",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph4",
+      "successorRef": "pim.ph5",
+      "linkKind": "finishToStart",
+      "relation": "phase-order"
+    },
+    {
+      "id": "ws.pim.ph5.pim.ph6",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph5",
+      "successorRef": "pim.ph6",
+      "linkKind": "finishToStart",
+      "relation": "phase-order"
+    },
+    {
+      "id": "ws.pim.ph1.st0.pim.ph1.st1",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph1.st0",
+      "successorRef": "pim.ph1.st1",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.pim.ph1.st1.pim.ph1.st2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph1.st1",
+      "successorRef": "pim.ph1.st2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.pim.ph1.st1.t1.pim.ph1.st1.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph1.st1.t1",
+      "successorRef": "pim.ph1.st1.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph1.st1.t2.pim.ph1.st1.t3",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph1.st1.t2",
+      "successorRef": "pim.ph1.st1.t3",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph1.st2.t1.pim.ph1.st2.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph1.st2.t1",
+      "successorRef": "pim.ph1.st2.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph2.st1.pim.ph2.st2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph2.st1",
+      "successorRef": "pim.ph2.st2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.pim.ph2.st1.t1.pim.ph2.st1.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph2.st1.t1",
+      "successorRef": "pim.ph2.st1.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph2.st2.t1.pim.ph2.st2.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph2.st2.t1",
+      "successorRef": "pim.ph2.st2.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph2.st2.t2.pim.ph2.st2.t3",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph2.st2.t2",
+      "successorRef": "pim.ph2.st2.t3",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph3.st1.pim.ph3.st2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph3.st1",
+      "successorRef": "pim.ph3.st2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.pim.ph3.st1.t1.pim.ph3.st1.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph3.st1.t1",
+      "successorRef": "pim.ph3.st1.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph3.st2.t1.pim.ph3.st2.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph3.st2.t1",
+      "successorRef": "pim.ph3.st2.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph4.st1.pim.ph4.st2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph4.st1",
+      "successorRef": "pim.ph4.st2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.pim.ph4.st1.t1.pim.ph4.st1.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph4.st1.t1",
+      "successorRef": "pim.ph4.st1.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph4.st2.t1.pim.ph4.st2.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph4.st2.t1",
+      "successorRef": "pim.ph4.st2.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph5.st1.pim.ph5.st2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph5.st1",
+      "successorRef": "pim.ph5.st2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.pim.ph5.st2.pim.ph5.st3",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph5.st2",
+      "successorRef": "pim.ph5.st3",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.pim.ph5.st1.t1.pim.ph5.st1.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph5.st1.t1",
+      "successorRef": "pim.ph5.st1.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph5.st2.ss1.pim.ph5.st2.ss2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph5.st2.ss1",
+      "successorRef": "pim.ph5.st2.ss2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.pim.ph5.st2.ss2.pim.ph5.st2.ss3",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph5.st2.ss2",
+      "successorRef": "pim.ph5.st2.ss3",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.pim.ph5.st2.ss1.t1.pim.ph5.st2.ss1.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph5.st2.ss1.t1",
+      "successorRef": "pim.ph5.st2.ss1.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph5.st2.ss2.t1.pim.ph5.st2.ss2.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph5.st2.ss2.t1",
+      "successorRef": "pim.ph5.st2.ss2.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph5.st2.ss3.t1.pim.ph5.st2.ss3.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph5.st2.ss3.t1",
+      "successorRef": "pim.ph5.st2.ss3.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph5.st3.t1.pim.ph5.st3.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph5.st3.t1",
+      "successorRef": "pim.ph5.st3.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
+    },
+    {
+      "id": "ws.pim.ph6.st1.pim.ph6.st2",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph6.st1",
+      "successorRef": "pim.ph6.st2",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.pim.ph6.st2.pim.ph6.st3",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph6.st2",
+      "successorRef": "pim.ph6.st3",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.engine-loop.pim.ph6.pim.ph1",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph6",
+      "successorRef": "pim.ph1",
+      "linkKind": "finishToStart",
+      "relation": "iteration-loop",
+      "condition": "service-slices-remaining",
+      "guidance": "After the phase-embedded review/adapt stage, revolve the PIM engine for the next service slice."
+    },
+    {
+      "id": "ws.rework.pim.loop.contract-gap",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph3.st1",
+      "successorRef": "pim.ph2.st1",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "Function contracts reference undefined schemas or event types.",
+      "guidance": "Complete contracts, then update function bindings."
+    },
+    {
+      "id": "ws.rework.pim.loop.data-access",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph3.st1",
+      "successorRef": "pim.ph2.st2",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "Functions need stores or access patterns not yet modeled.",
+      "guidance": "Extend data architecture, then replay compute tasks."
+    },
+    {
+      "id": "ws.rework.pim.loop.api-contract",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph3.st2",
+      "successorRef": "pim.ph2.st1",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "API routes need schemas or error mappings not defined.",
+      "guidance": "Complete contracts, then remap API routes."
+    },
+    {
+      "id": "ws.rework.pim.loop.integration-topology",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph4.st1",
+      "successorRef": "pim.ph3.st1",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "Channels reference producers/consumers not defined as functions.",
+      "guidance": "Add compute targets, then rewire integration topology."
+    },
+    {
+      "id": "ws.rework.pim.loop.security-gap",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph5.st1",
+      "successorRef": "pim.ph3.st2",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "Public endpoints lack principals or auth policies.",
+      "guidance": "Identify unprotected resources; add security bindings."
+    },
+    {
+      "id": "ws.rework.pim.loop.policy-ripple",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph5.st2",
+      "successorRef": "pim.ph4.st1",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "Policies require integration or compute changes.",
+      "guidance": "Apply policy targets on integration/compute elements."
+    },
+    {
+      "id": "ws.rework.pim.loop.readiness-rework",
+      "type": "WorkSequence",
+      "predecessorRef": "pim.ph6.st2",
+      "successorRef": "pim.ph5.st1",
+      "linkKind": "finishToStart",
+      "relation": "rework",
+      "condition": "PIM EVL or platform mapping reveals blocking gaps.",
+      "guidance": "Jump to earliest affected assurance stage; replay to readiness."
     }
   ],
   "changeManagement": {

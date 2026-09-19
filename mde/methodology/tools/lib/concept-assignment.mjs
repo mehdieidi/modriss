@@ -1,5 +1,6 @@
 /**
- * Concept assignment: maps metamodel concepts to atomic tasks in the SPEM tree.
+ * Concept assignment: maps metamodel concepts to authoring TaskSpecs. The
+ * compiler emits these as MODRISS metamodelBindings on TaskDefinitions.
  */
 import { collectAllTasks } from "./process-walk.mjs";
 
