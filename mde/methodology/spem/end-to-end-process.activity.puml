@@ -1,33 +1,64 @@
 @startuml end-to-end-process
-title End-to-End Lifecycle and SPEM-mapped Increment Iteration
+title End-to-End Lifecycle and Nested SPEM-Mapped Iterations
 start
-partition "e2e.ph0, Initiate / Tailor / Organize" {
+
+partition "e2e.ph0 — Initiate / Tailor / Organize" {
   :Product and system intent;
-  :Situational method profile;
-  :Team topology and quality baseline;
+  :Serverless suitability and provider decision;
+  :Situational method profile, team topology\nand assurance baseline;
 }
+
 repeat
-  partition "e2e.ph1, Iterative-Incremental Delivery" {
-    :e2e.p0, Frame Increment;
+  :Open release cycle\n(outcome hypothesis + candidate scope);
+
+  repeat
     repeat
-      :e2e.p1, CIM engine\n(modriss.cim.modeling - 5 phases);
-    repeat while (CIM gate evidence rejected?) is (yes)
-    :e2e.p2, CIM -> PIM ETL;
-    repeat
-      :e2e.p3, PIM engine\n(modriss.pim.modeling - 6 phases);
-    repeat while (PIM gate evidence rejected?) is (yes)
-    :e2e.p4, PIM -> PSM ETL;
-    repeat
-      :e2e.p5, PSM engine\n(modriss.psm.modeling - 6 phases);
-    repeat while (PSM gate evidence rejected?) is (yes)
-    :e2e.p6, M2T generation;
-    :e2e.p7, Artifact readiness and increment acceptance;
+      partition "e2e.ph1 — Iterative-Incremental Delivery" {
+        :e2e.p0 — Frame increment;
+        :e2e.p1 — CIM child process and G2;
+        :e2e.p2/p3 — CIM→PIM ETL, reconcile, PIM and G3;
+        :e2e.p4/p5 — PIM→PSM ETL, reconcile, AWS PSM and G4;
+        :e2e.p6/p7 — EGL/EGX generation, artifact readiness and G5;
+      }
+    repeat while (More increments required for candidate?) is (yes)
+    -> no;
+
+    partition "e2e.ph2 — Release Assembly & Qualification" {
+      :e2e.ph2.st1 — Assemble immutable candidate;
+      :Review release evidence and recovery posture at G6;
+    }
+  repeat while (G6 candidate rejected?) is (yes — re-enter e2e.ph1)
+  -> no — authorized;
+
+  partition "e2e.ph2 — Progressive Promotion & Transition" {
+    :e2e.ph2.st2 — Promote, observe and stop/rollback on breach;
+    if (Promotion and operational acceptance succeed?) then (G7 yes)
+      :e2e.ph2.st3 — Handover, release review and G7;
+    else (no)
+      :Stop or roll back; retain the last accepted baseline;
+      :Queue corrective work for the next e2e.ph1 pass;
+    endif
   }
-repeat while (Next increment required?) is (yes)
-partition "e2e.ph2-ph4, Release / Operate / Retire" {
-  :Release assembly and progressive transition;
-  :Operate, evolve, and learn;
-  :Retire, migrate, and close when authorized;
+
+  partition "e2e.ph3 — Operate / Evolve / Learn" {
+    :e2e.ph3.st1 — Operate and observe accepted baseline;
+    :e2e.ph3.st2 — Incident, problem and risk response;
+    :e2e.ph3.st3 — Route change to earliest authoritative source;
+    :e2e.ph3.st4 — Product and method retrospective;
+    note right
+      Operation of the accepted baseline continues while
+      the next release cycle is engineered.
+    end note
+  }
+
+repeat while (Retirement authorized?) is (no — next release)
+-> yes;
+
+partition "e2e.ph4 — Retire / Migrate / Close" {
+  :e2e.ph4.st1 — Retirement decision and plan;
+  :e2e.ph4.st2 — Migrate and decommission;
+  :e2e.ph4.st3 — Closure and organizational learning at G8;
 }
+
 stop
 @enduml

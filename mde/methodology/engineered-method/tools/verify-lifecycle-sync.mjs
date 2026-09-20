@@ -1,0 +1,133 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+const root = process.cwd();
+const methodRoot = path.join(root, 'mde', 'methodology');
+const engineeredRoot = path.join(methodRoot, 'engineered-method');
+const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
+const fail = message => {
+  throw new Error(message);
+};
+const requireText = (text, expected, label) => {
+  if (!text.includes(expected)) fail(`${label} is missing: ${expected}`);
+};
+const count = (text, pattern) => [...text.matchAll(pattern)].length;
+const verifyPlantUmlStructure = (text, label) => {
+  requireText(text, '@startuml', label);
+  requireText(text, '@enduml', label);
+  const pairs = [
+    ['repeat', /^\s*repeat\s*$/gm, 'repeat while', /^\s*repeat while\b/gm],
+    ['if', /^\s*if\s*\(/gm, 'endif', /^\s*endif\s*$/gm],
+    ['brace-delimited block', /\{\s*$/gm, 'block close', /^\s*}\s*$/gm],
+  ];
+  for (const [openName, openPattern, closeName, closePattern] of pairs) {
+    const opens = count(text, openPattern);
+    const closes = count(text, closePattern);
+    if (opens !== closes) fail(`${label} has ${opens} ${openName} and ${closes} ${closeName} statements`);
+  }
+};
+
+const methodProcess = JSON.parse(read('mde/methodology/process-definitions/end-to-end.json'));
+const sequences = methodProcess.workSequences ?? [];
+const requiredSequences = [
+  {
+    id: 'ws.release-rework.e2e.ph2.e2e.ph1',
+    predecessorRef: 'e2e.ph2',
+    successorRef: 'e2e.ph1',
+    relation: 'release-rework',
+    condition: 'G6-rejected-or-promotion-failed',
+  },
+  {
+    id: 'ws.release-cycle.e2e.ph3.e2e.ph1',
+    predecessorRef: 'e2e.ph3',
+    successorRef: 'e2e.ph1',
+    relation: 'release-cycle',
+    condition: 'retirement-not-authorized-and-next-release-or-change-selected',
+  },
+  {
+    id: 'ws.e2e.ph3.e2e.ph4',
+    predecessorRef: 'e2e.ph3',
+    successorRef: 'e2e.ph4',
+    relation: 'retirement-transition',
+    condition: 'retirement-authorized',
+  },
+];
+
+for (const expected of requiredSequences) {
+  const actual = sequences.find(sequence => sequence.id === expected.id);
+  if (!actual) fail(`Missing lifecycle WorkSequence ${expected.id}`);
+  for (const [property, value] of Object.entries(expected)) {
+    if (actual[property] !== value) {
+      fail(`${expected.id}.${property} must be ${value}; found ${actual[property]}`);
+    }
+  }
+  if (!actual.guidance) fail(`${expected.id} must carry transition guidance`);
+}
+
+const releaseCycle = methodProcess.processEngine?.releaseCycle;
+if (!releaseCycle?.isRepeatable || releaseCycle.repeatCondition !== 'retirement-not-authorized') {
+  fail('processEngine.releaseCycle must explicitly repeat until retirement is authorized');
+}
+
+const overview = read('mde/methodology/engineered-method/spem/lifecycle.puml');
+const sourceView = read('mde/methodology/spem/end-to-end-process.activity.puml');
+const releaseView = read('mde/methodology/engineered-method/spem/release-cycle.puml');
+for (const [label, diagram] of [
+  ['lifecycle.puml', overview],
+  ['end-to-end-process.activity.puml', sourceView],
+  ['release-cycle.puml', releaseView],
+]) {
+  requireText(diagram, 'Retirement authorized?', label);
+  requireText(diagram.toLowerCase(), 'next release', label);
+  if (!/accepted (release|baseline)/i.test(diagram)) {
+    fail(`${label} must state that an accepted release or baseline remains in operation`);
+  }
+}
+if (/Begin next release[^\n]*\n\s*detach/i.test(overview + releaseView)) {
+  fail('A next-release path must loop; it may not terminate with detach');
+}
+
+const plantUmlPaths = [
+  'mde/methodology/engineered-method/spem/lifecycle.puml',
+  'mde/methodology/engineered-method/spem/release-cycle.puml',
+  'mde/methodology/engineered-method/spem/model-driven-increment.puml',
+  'mde/methodology/engineered-method/spem/change-routing.puml',
+  'mde/methodology/spem/end-to-end-process.activity.puml',
+  'mde/methodology/spem/cim-process.activity.puml',
+  'mde/methodology/spem/pim-process.activity.puml',
+  'mde/methodology/spem/psm-process.activity.puml',
+  'mde/methodology/spem/artifact-process.activity.puml',
+];
+for (const plantUmlPath of plantUmlPaths) {
+  verifyPlantUmlStructure(read(plantUmlPath), plantUmlPath);
+}
+
+const lifecycleHtml = read('mde/methodology/engineered-method/diagrams/modriss-lifecycle-manuscript.html');
+const alternateHtml = read('mde/methodology/engineered-method/diagrams/modriss-lifecycle-2.html');
+requireText(lifecycleHtml, 'NEXT RELEASE / CHANGE', 'primary publication diagram');
+requireText(alternateHtml, 'NEXT RELEASE / CHANGE RE-ENTRY', 'alternative publication diagram');
+const lifecycleSvg = read('mde/methodology/engineered-method/diagrams/modriss-lifecycle-manuscript.svg');
+const alternateSvg = read('mde/methodology/engineered-method/diagrams/modriss-lifecycle-2.svg');
+requireText(lifecycleSvg, 'NEXT RELEASE / CHANGE', 'exported primary SVG');
+requireText(alternateSvg, 'NEXT RELEASE / CHANGE RE-ENTRY', 'exported alternative SVG');
+
+const processNarrative = read('mde/methodology/engineered-method/04-development-process.md');
+const thesisChapter = read('mde/methodology/engineered-method/10-thesis-process-chapter.md');
+requireText(processNarrative, '### Nested lifecycle cadence', 'development-process narrative');
+requireText(thesisChapter, 'The lifecycle therefore has three nested cycles.', 'thesis chapter');
+
+const xml = read('mde/methodology/engineered-method/spem/modriss-method-library.spem.xml');
+requireText(xml, 'modriss:sourceId="modriss.end-to-end.release-cycle"', 'generated SPEM XML');
+requireText(xml, 'modriss:repeatCondition="retirement-not-authorized"', 'generated SPEM XML');
+for (const expected of requiredSequences) {
+  requireText(xml, `modriss:relation="${expected.relation}"`, 'generated SPEM XML');
+  requireText(xml, `modriss:condition="${expected.condition}"`, 'generated SPEM XML');
+}
+
+console.log(JSON.stringify({
+  status: 'ok',
+  checkedWorkSequences: requiredSequences.map(sequence => sequence.id),
+  checkedPlantUmlViews: plantUmlPaths.length,
+  checkedPublicationSourcesAndExports: 4,
+  checkedNarratives: 2,
+}, null, 2));

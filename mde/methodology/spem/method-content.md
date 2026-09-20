@@ -192,6 +192,15 @@ rework paths are represented by WorkSequences with conditions and guidance.
 This preserves the agile increment engine without misrepresenting it as a
 standard SPEM class.
 
+The end-to-end process distinguishes two repeatable Activities. The
+`processEngine.iteration` Activity is the Phase 1 vertical increment loop. The
+`processEngine.releaseCycle` Activity contains Phases 1–3 and repeats while
+retirement is not authorized. Its explicit WorkSequences route release
+rejection from Phase 2 to Phase 1, route evidence for a later release from
+Phase 3 to Phase 1, and permit Phase 3 to reach Phase 4 only under an authorized
+retirement condition. The accepted release remains operational while a later
+release is developed.
+
 ## Explicit sequencing
 
 Array order is only a presentation order. The authoritative process
@@ -207,6 +216,13 @@ records iteration and rework conditions as extension attributes. This allows
 the same definition to express sequential flow, rework, iteration loops, and
 future parallel or conditional paths without treating JSON array position as
 the process semantics.
+
+For the full lifecycle, the decisive conditional sequences are:
+
+- Phase 2 → Phase 1 when G6 rejects a candidate or promotion fails;
+- Phase 3 → Phase 1 when retirement is not authorized and a next release or
+  change is selected; and
+- Phase 3 → Phase 4 only when retirement is authorized.
 
 ## Compliance boundary
 

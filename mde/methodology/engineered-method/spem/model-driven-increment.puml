@@ -1,0 +1,46 @@
+@startuml
+title MODRISS Model-Driven Increment — Detailed Phase 1 View
+
+skinparam backgroundColor white
+skinparam shadowing false
+
+start
+:Frame one valuable capability or event journey;
+:Record requirements, quality scenarios, risks,\ndependencies and acceptance evidence;
+
+repeat
+  :Discover or revise the CIM slice;
+  :Run structural conformance and the explicit\nuser/model semantic-validation workflow;
+repeat while (G2 CIM acceptance rejected?) is (yes)
+-> no;
+
+:Run versioned CIM→PIM ETL into a generated target;
+:Three-way reconcile generated baseline, previous\nbaseline and refined working PIM;
+repeat
+  :Refine services, events, contracts, data, state,\nworkflow, security, resilience, SLOs and portability;
+repeat while (G3 PIM acceptance rejected?) is (yes)
+-> no;
+
+:Run versioned PIM→AWS PSM ETL and reconcile;
+repeat
+  :Refine AWS resources, IAM, network, storage,\nmessaging, compute, API, workflow and observability;
+repeat while (G4 PSM acceptance rejected?) is (yes)
+-> no;
+
+:Generate reproducible EGL/EGX artifact baseline;
+:Complete supported handwritten extensions;
+:Run unit, contract, component, integration, NFR,\nsecurity, recovery and operational tests selected by risk;
+
+if (G5 increment accepted?) then (yes)
+  :Record exact model, transform, generator, artifact,\ntest and evidence revisions;
+  stop
+else (rework / defer)
+  :Route every finding to its earliest authoritative\nmodel, generator, code or process source;
+  detach
+endif
+
+legend bottom
+  Assistant-generated model actions are gated only by structural Ecore/EMF
+  conformance. Semantic EVL validation is an explicit user/model workflow.
+endlegend
+@enduml

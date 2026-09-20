@@ -1,0 +1,294 @@
+{
+  "schemaVersion": "1.0",
+  "packageId": "modriss.engineered.core-content",
+  "name": "MODRISS Engineered Core Method Content",
+  "roleMappings": [
+    { "methodRoleId": "R-01", "roleDefinitionRefs": ["role.sponsor"] },
+    { "methodRoleId": "R-02", "roleDefinitionRefs": ["role.product-owner"] },
+    { "methodRoleId": "R-03", "roleDefinitionRefs": ["role.domain-expert"] },
+    { "methodRoleId": "R-04", "roleDefinitionRefs": ["role.method-engineer"] },
+    { "methodRoleId": "R-05", "roleDefinitionRefs": ["role.delivery-lead"] },
+    {
+      "methodRoleId": "R-06",
+      "roleDefinitionRefs": ["role.requirements-engineer", "role.business-modeler"]
+    },
+    { "methodRoleId": "R-07", "roleDefinitionRefs": ["role.solution-architect"] },
+    { "methodRoleId": "R-08", "roleDefinitionRefs": ["role.cloud-platform-engineer"] },
+    { "methodRoleId": "R-09", "roleDefinitionRefs": ["role.application-engineer"] },
+    { "methodRoleId": "R-10", "roleDefinitionRefs": ["role.quality-engineer"] },
+    { "methodRoleId": "R-11", "roleDefinitionRefs": ["role.security-engineer"] },
+    { "methodRoleId": "R-12", "roleDefinitionRefs": ["role.finops-cost-analyst"] },
+    { "methodRoleId": "R-13", "roleDefinitionRefs": ["role.release-engineer"] },
+    { "methodRoleId": "R-14", "roleDefinitionRefs": ["role.service-owner"] },
+    { "methodRoleId": "R-15", "roleDefinitionRefs": ["role.process-reviewer"] },
+    { "methodRoleId": "R-16", "roleDefinitionRefs": ["role.records-data-steward"] }
+  ],
+  "methodContent": {
+    "roleDefinitions": [
+      {
+        "id": "role.sponsor",
+        "type": "RoleDefinition",
+        "name": "Sponsor",
+        "methodRoleId": "R-01",
+        "responsibilities": [
+          "Authorizes investment and resolves business-level escalations",
+          "Accepts continuation, redirection, and stop decisions"
+        ]
+      },
+      {
+        "id": "role.finops-cost-analyst",
+        "type": "RoleDefinition",
+        "name": "FinOps and Cost Analyst",
+        "methodRoleId": "R-12",
+        "responsibilities": [
+          "Owns cost hypotheses, budgets, allocation, anomaly thresholds, and cost feedback"
+        ]
+      },
+      {
+        "id": "role.records-data-steward",
+        "type": "RoleDefinition",
+        "name": "Records and Data Steward",
+        "methodRoleId": "R-16",
+        "responsibilities": [
+          "Owns retention, disposition, migration evidence, and lifecycle closure for records and data"
+        ]
+      }
+    ],
+    "taskDefinitions": [],
+    "workProductDefinitions": [
+      {
+        "id": "wp.product-system-charter",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-01",
+        "workProductKind": "Artifact",
+        "name": "Product and System Charter",
+        "description": "Problem, outcomes, stakeholders, boundaries, non-goals, constraints, and the first release hypothesis."
+      },
+      {
+        "id": "wp.serverless-suitability-record",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-02",
+        "workProductKind": "Artifact",
+        "name": "Feasibility and Serverless Suitability Record",
+        "description": "Alternatives, serverless fit criteria, assumptions, experiments, and recommendation."
+      },
+      {
+        "id": "wp.cost-model-budget-guardrails",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-03",
+        "workProductKind": "Artifact",
+        "name": "Initial Cost Model and Budget Guardrails",
+        "description": "Demand assumptions, service cost drivers, scenarios, budgets, and uncertainty."
+      },
+      {
+        "id": "wp.risk-opportunity-register",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-04",
+        "workProductKind": "Artifact",
+        "name": "Risk and Opportunity Register",
+        "description": "Cause, event, effect, exposure, owner, treatment, trigger, status, and evidence."
+      },
+      {
+        "id": "wp.situational-method-profile",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-05",
+        "workProductKind": "Artifact",
+        "name": "Situational Method Profile",
+        "description": "Situational factors, selected packages, substitutions or omissions, evidence depth, and review triggers."
+      },
+      {
+        "id": "wp.team-topology-responsibility",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-06",
+        "workProductKind": "Artifact",
+        "name": "Team Topology and Responsibility Assignment",
+        "description": "Scopes, roles, accountable owners, decision rights, dependencies, and escalation paths."
+      },
+      {
+        "id": "wp.integrated-roadmap-plan",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-07",
+        "workProductKind": "Artifact",
+        "name": "Integrated Roadmap, Release, and Increment Plan",
+        "description": "Outcomes, increments, dependencies, release hypotheses, and forecasts."
+      },
+      {
+        "id": "wp.cim-revision",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-08",
+        "workProductKind": "Model",
+        "name": "CIM Revision",
+        "description": "Strategic, organizational, domain, behavior, process, policy, governance, and transformation intent."
+      },
+      {
+        "id": "wp.cim-readiness-record",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-09",
+        "workProductKind": "Artifact",
+        "name": "CIM Review and Readiness Record",
+        "description": "Structural and semantic evidence, trace, findings, decisions, and accepted CIM revision."
+      },
+      {
+        "id": "wp.cim-pim-transformation-run",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-10",
+        "workProductKind": "Artifact",
+        "name": "CIM to PIM Transformation Run",
+        "description": "Source, baseline, working and target revisions, transformation version, trace, conflicts, and manual decisions."
+      },
+      {
+        "id": "wp.pim-revision",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-11",
+        "workProductKind": "Model",
+        "name": "PIM Revision",
+        "description": "Provider-independent services, contracts, data, compute, APIs, events, workflows, integration, policy, security, and deployment intent."
+      },
+      {
+        "id": "wp.architecture-decisions",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-12",
+        "workProductKind": "Artifact",
+        "name": "Architecture Decision Record Set",
+        "description": "Decision context, alternatives, decision, consequences, evidence, and review triggers."
+      },
+      {
+        "id": "wp.crosscutting-analysis",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-13",
+        "workProductKind": "Artifact",
+        "name": "Threat, Privacy, Failure, and Cost Analysis",
+        "description": "Scenarios, controls and treatments, residual risk, tests, and monitors."
+      },
+      {
+        "id": "wp.pim-readiness-record",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-14",
+        "workProductKind": "Artifact",
+        "name": "PIM Review and Readiness Record",
+        "description": "Validation, platform mapping, trace, findings, decisions, and accepted PIM revision."
+      },
+      {
+        "id": "wp.pim-psm-transformation-run",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-15",
+        "workProductKind": "Artifact",
+        "name": "PIM to PSM Transformation Run",
+        "description": "Source, baseline, working and target revisions, mapping profile, trace, conflicts, and manual decisions."
+      },
+      {
+        "id": "wp.aws-psm-revision",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-16",
+        "workProductKind": "Model",
+        "name": "AWS PSM Revision",
+        "description": "Provider resources, configuration, relationships, IAM, networking, observability, and deployment intent."
+      },
+      {
+        "id": "wp.psm-readiness-record",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-17",
+        "workProductKind": "Artifact",
+        "name": "PSM Review and Readiness Record",
+        "description": "Validation, trace, quota, cost, security, and generation-readiness decisions."
+      },
+      {
+        "id": "wp.generated-artifact-baseline",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-18",
+        "workProductKind": "Artifact",
+        "name": "Generated Artifact Baseline and Manifest",
+        "description": "Output files and hashes, model and generator revisions, warnings, manual actions, and artifact trace."
+      },
+      {
+        "id": "wp.source-test-baseline",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-19",
+        "workProductKind": "Artifact",
+        "name": "Source and Test Baseline",
+        "description": "Completed logic, adapters, client code, unit, contract and component tests, and provenance."
+      },
+      {
+        "id": "wp.verification-validation-record",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-20",
+        "workProductKind": "Artifact",
+        "name": "Verification and Validation Record",
+        "description": "Test scope, environments, inputs, results, findings, coverage, and limitations."
+      },
+      {
+        "id": "wp.immutable-release-candidate",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-21",
+        "workProductKind": "Artifact",
+        "name": "Immutable Release Candidate",
+        "description": "Artifact digests, configuration and schema versions, dependencies, provenance, and selected SBOM evidence."
+      },
+      {
+        "id": "wp.release-recovery-plan",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-22",
+        "workProductKind": "Artifact",
+        "name": "Release and Recovery Plan",
+        "description": "Promotion strategy, thresholds, migrations, rollback or roll-forward, communications, and approvals."
+      },
+      {
+        "id": "wp.operational-readiness-pack",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-23",
+        "workProductKind": "Artifact",
+        "name": "Operational Readiness and Handover Pack",
+        "description": "SLOs, dashboards, alerts, runbooks, support, access, backup and recovery, and known risks."
+      },
+      {
+        "id": "wp.deployment-promotion-record",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-24",
+        "workProductKind": "Artifact",
+        "name": "Deployment and Promotion Record",
+        "description": "Candidate, target, timestamps, checks, observations, decisions, and outcome."
+      },
+      {
+        "id": "wp.operational-evidence-set",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-25",
+        "workProductKind": "Artifact",
+        "name": "Operational Evidence Set",
+        "description": "SLI and SLO evidence, incidents, capacity, cost, security, product outcomes, and provider events."
+      },
+      {
+        "id": "wp.incident-problem-record",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-26",
+        "workProductKind": "Artifact",
+        "name": "Incident and Problem Record",
+        "description": "Timeline, impact, recovery, causes and system conditions, actions, and learning."
+      },
+      {
+        "id": "wp.change-impact-record",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-27",
+        "workProductKind": "Artifact",
+        "name": "Change and Impact Record",
+        "description": "Request, authoritative re-entry point, affected traces, risk, plan, and evidence."
+      },
+      {
+        "id": "wp.retirement-closure-record",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-28",
+        "workProductKind": "Artifact",
+        "name": "Retirement, Migration, and Closure Record",
+        "description": "Stakeholders, data, integrations, access, resources, migration, verification, and retained evidence."
+      },
+      {
+        "id": "wp.retrospective-improvement-record",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-29",
+        "workProductKind": "Artifact",
+        "name": "Retrospective and Improvement Record",
+        "description": "Observations, measures, decisions, actions, reusable candidates, and no-op rationale."
+      }
+    ],
+    "guidance": []
+  }
+}

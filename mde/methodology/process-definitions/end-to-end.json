@@ -3565,6 +3565,17 @@
         "e2e.p7.artifact-completion"
       ]
     },
+    "releaseCycle": {
+      "id": "modriss.end-to-end.release-cycle",
+      "type": "Activity",
+      "activityKind": "Iteration",
+      "name": "Release Cycle",
+      "isRepeatable": true,
+      "activityRefs": ["e2e.ph1", "e2e.ph2", "e2e.ph3"],
+      "repeatCondition": "retirement-not-authorized",
+      "exitCondition": "retirement-authorized",
+      "guidance": "While the accepted release remains in operation, roadmap demand and operational evidence initiate a later release at Phase 1. Phase 4 is entered only through an authorized retirement decision."
+    },
     "spemMapping": "MODRISS extension realized as an Activity(kind = Iteration) containing process Activities and WorkSequences."
   },
   "phases": [
@@ -5922,7 +5933,8 @@
       "predecessorRef": "e2e.ph0",
       "successorRef": "e2e.ph1",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "phase-order",
+      "condition": "G1-method-and-organization-ready"
     },
     {
       "id": "ws.e2e.ph1.e2e.ph2",
@@ -5930,7 +5942,8 @@
       "predecessorRef": "e2e.ph1",
       "successorRef": "e2e.ph2",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "phase-order",
+      "condition": "release-candidate-scope-ready"
     },
     {
       "id": "ws.e2e.ph2.e2e.ph3",
@@ -5938,7 +5951,9 @@
       "predecessorRef": "e2e.ph2",
       "successorRef": "e2e.ph3",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "phase-order",
+      "condition": "G6-authorized-and-G7-transitioned",
+      "guidance": "If promotion breaches a stop threshold, retain the last accepted operating baseline and route corrective work to Phase 1."
     },
     {
       "id": "ws.e2e.ph3.e2e.ph4",
@@ -5946,7 +5961,29 @@
       "predecessorRef": "e2e.ph3",
       "successorRef": "e2e.ph4",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "retirement-transition",
+      "condition": "retirement-authorized",
+      "guidance": "Normal continued operation does not enter Phase 4. Retirement requires an explicit authorized decision and plan."
+    },
+    {
+      "id": "ws.release-rework.e2e.ph2.e2e.ph1",
+      "type": "WorkSequence",
+      "predecessorRef": "e2e.ph2",
+      "successorRef": "e2e.ph1",
+      "linkKind": "finishToStart",
+      "relation": "release-rework",
+      "condition": "G6-rejected-or-promotion-failed",
+      "guidance": "Correct the candidate at the earliest authoritative model, generator, or code source, then propagate forward and requalify a new immutable candidate."
+    },
+    {
+      "id": "ws.release-cycle.e2e.ph3.e2e.ph1",
+      "type": "WorkSequence",
+      "predecessorRef": "e2e.ph3",
+      "successorRef": "e2e.ph1",
+      "linkKind": "finishToStart",
+      "relation": "release-cycle",
+      "condition": "retirement-not-authorized-and-next-release-or-change-selected",
+      "guidance": "Form a new release hypothesis from roadmap demand and operational evidence. The accepted release remains in operation while the later release is engineered."
     },
     {
       "id": "ws.e2e.ph0.st1.e2e.ph0.st2",

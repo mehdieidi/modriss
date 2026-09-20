@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1120 792" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="modriss-lifecycle-title modriss-lifecycle-desc">
+  <title id="modriss-lifecycle-title">MODRISS full-lifecycle software development method</title>
+  <desc id="modriss-lifecycle-desc">Five-phase serverless software lifecycle showing situational initiation, iterative CIM-to-PIM-to-PSM delivery, release, operations, retirement, feedback paths, evidence gates, and continuous disciplines.</desc>
+  <defs>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;display=swap');</style>
+    <style>
+      .sans{font-family:'Geist',system-ui,sans-serif}.serif{font-family:'Instrument Serif','Noto Serif',serif}.mono{font-family:'Geist Mono',ui-monospace,monospace}
+      .ink{fill:#2d3142}.muted{fill:#4f5d75}.soft{fill:#7a8399}.accent{fill:#eb6c36}
+      .eyebrow{font:500 8px 'Geist Mono',ui-monospace,monospace;letter-spacing:.18em}.title{font:400 32px 'Instrument Serif','Noto Serif',serif}.subtitle{font:400 10px 'Geist',system-ui,sans-serif}
+      .phase-tag{font:600 8px 'Geist Mono',ui-monospace,monospace;letter-spacing:.12em}.phase-name{font:600 12px 'Geist',system-ui,sans-serif}.slot-label{font:500 8px 'Geist Mono',ui-monospace,monospace;letter-spacing:.1em}.cell-head{font:600 10px 'Geist',system-ui,sans-serif}.cell-text{font:400 9px 'Geist',system-ui,sans-serif}.cell-tech{font:400 8px 'Geist Mono',ui-monospace,monospace}.gate{font:600 8px 'Geist Mono',ui-monospace,monospace;letter-spacing:.06em}.legend-key{font:500 8px 'Geist Mono',ui-monospace,monospace;letter-spacing:.12em}.legend-text{font:400 9px 'Geist',system-ui,sans-serif}
+      .forward{fill:none;stroke:#4f5d75;stroke-width:1.2}.feedback{fill:none;stroke:#4f5d75;stroke-width:1;stroke-dasharray:5 4}.hair{stroke:#bfc0c0;stroke-width:.8}.stage{fill:#fff;stroke:#bfc0c0;stroke-width:1}.stage-focal{fill:#fff;stroke:#eb6c36;stroke-width:1.4}.header{fill:#ececec}.header-focal{fill:#fdf0ea}.slot-a{fill:#fff}.slot-b{fill:#f8f8f8}.discipline{fill:#ececec;stroke:#bfc0c0;stroke-width:1}
+    </style>
+    <marker id="main-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#4f5d75"/></marker>
+    <marker id="main-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#eb6c36"/></marker>
+    <marker id="main-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <rect width="1120" height="792" fill="#f5f5f5"/>
+  <text class="eyebrow muted" x="40" y="28">MODEL-DRIVEN METHODOLOGY · SERVERLESS SOFTWARE LIFECYCLE</text>
+  <text class="title ink" x="40" y="64">MODRISS full-lifecycle software development method</text>
+  <text class="subtitle muted" x="40" y="88">Situational method engineering around a vertical CIM → PIM → AWS PSM → software delivery engine</text>
+
+  <!-- Primary and feedback connections are drawn before stage containers. -->
+  <line class="forward" x1="280" y1="172" x2="300" y2="172" marker-end="url(#main-arrow-accent)"/>
+  <line class="forward" x1="464" y1="172" x2="484" y2="172" marker-end="url(#main-arrow)"/>
+  <line class="forward" x1="648" y1="172" x2="668" y2="172" marker-end="url(#main-arrow)"/>
+  <line class="forward" x1="832" y1="172" x2="852" y2="172" marker-end="url(#main-arrow)"/>
+  <path class="feedback" d="M752 600 V628 Q752 636 744 636 H392 Q384 636 384 628 V604" marker-end="url(#main-arrow)"/>
+  <rect x="492" y="614" width="168" height="12" rx="2" fill="#f5f5f5"/>
+  <text class="cell-tech muted" x="576" y="623" text-anchor="middle">NEXT RELEASE / CHANGE</text>
+  <path class="feedback" d="M936 600 V656 Q936 664 928 664 H208 Q200 664 200 656 V604" marker-end="url(#main-arrow)"/>
+  <rect x="512" y="642" width="112" height="12" rx="2" fill="#f5f5f5"/>
+  <text class="cell-tech muted" x="568" y="651" text-anchor="middle">LEARNING · NEXT RUN</text>
+
+  <!-- Stable semantic-slot labels. -->
+  <g class="slot-label muted" text-anchor="start">
+    <text x="40" y="244">QUESTION</text>
+    <text x="40" y="328">CORE WORK</text>
+    <text x="40" y="468">EVIDENCE</text>
+    <text x="40" y="552">OUTPUT</text>
+  </g>
+
+  <!-- Phase 0 -->
+  <g>
+    <rect class="stage" x="120" y="136" width="160" height="464" rx="6"/>
+    <rect class="header" x="120" y="136" width="160" height="72" rx="6"/>
+    <rect class="header" x="120" y="200" width="160" height="8"/>
+    <text class="phase-tag muted" x="132" y="156">PHASE 0</text>
+    <text class="phase-name ink" x="132" y="176">Initiate, Tailor</text>
+    <text class="phase-name ink" x="132" y="192">and Organize</text>
+    <rect class="slot-a" x="121" y="208" width="158" height="64"/>
+    <text class="cell-head ink" x="132" y="232">Should we build it—</text><text class="cell-text muted" x="132" y="248">and under what method?</text>
+    <line class="hair" x1="120" y1="272" x2="280" y2="272"/>
+    <rect class="slot-b" x="121" y="273" width="158" height="143"/>
+    <text class="cell-head ink" x="132" y="296">Frame value and feasibility</text>
+    <text class="cell-text muted" x="132" y="316">Serverless suitability</text><text class="cell-text muted" x="132" y="332">Cost · risk · provider</text><text class="cell-text muted" x="132" y="348">Situational method profile</text><text class="cell-text muted" x="132" y="364">Team and ownership</text><text class="cell-text muted" x="132" y="380">Quality · security · ops</text>
+    <line class="hair" x1="120" y1="416" x2="280" y2="416"/>
+    <rect class="slot-a" x="121" y="417" width="158" height="95"/>
+    <text class="gate ink" x="132" y="440">G0 · PURSUE / REDIRECT</text><text class="gate ink" x="132" y="456">G1 · METHOD READY</text><text class="cell-text muted" x="132" y="480">Charter · profile · risks</text><text class="cell-text muted" x="132" y="496">first release hypothesis</text>
+    <line class="hair" x1="120" y1="512" x2="280" y2="512"/>
+    <rect class="slot-b" x="121" y="513" width="158" height="86" rx="6"/>
+    <text class="cell-head ink" x="132" y="540">Authorized product</text><text class="cell-text muted" x="132" y="556">and enactable method</text><text class="cell-tech soft" x="132" y="576">WP-01…WP-07</text>
+  </g>
+
+  <!-- Phase 1, focal -->
+  <g>
+    <rect class="stage-focal" x="304" y="136" width="160" height="464" rx="6"/>
+    <rect class="header-focal" x="304" y="136" width="160" height="72" rx="6"/>
+    <rect class="header-focal" x="304" y="200" width="160" height="8"/>
+    <text class="phase-tag accent" x="316" y="156">PHASE 1 · ITERATE</text>
+    <text class="phase-name ink" x="316" y="176">Model-Driven</text><text class="phase-name ink" x="316" y="192">Delivery</text>
+    <rect class="slot-a" x="305" y="208" width="158" height="64"/>
+    <text class="cell-head ink" x="316" y="232">Which vertical slice</text><text class="cell-text muted" x="316" y="248">is valuable and ready?</text>
+    <line x1="304" y1="272" x2="464" y2="272" stroke="#eb6c36" stroke-opacity=".35" stroke-width=".8"/>
+    <rect x="305" y="273" width="158" height="143" fill="#fdf8f5"/>
+    <text class="cell-head ink" x="316" y="296">Frame increment</text>
+    <text class="cell-head accent" x="316" y="320">CIM → PIM → AWS PSM</text>
+    <text class="cell-tech muted" x="316" y="338">ETL · RECONCILE · ETL</text>
+    <text class="cell-text muted" x="316" y="360">Refine and assure models</text><text class="cell-text muted" x="316" y="376">EGL/EGX generation</text><text class="cell-text muted" x="316" y="392">Complete · integrate · test</text>
+    <line x1="304" y1="416" x2="464" y2="416" stroke="#eb6c36" stroke-opacity=".35" stroke-width=".8"/>
+    <rect class="slot-a" x="305" y="417" width="158" height="95"/>
+    <text class="gate ink" x="316" y="440">G2 · CIM ACCEPTED</text><text class="gate ink" x="316" y="456">G3 · PIM MAPPABLE</text><text class="gate ink" x="316" y="472">G4 · PSM GENERABLE</text><text class="gate ink" x="316" y="488">G5 · INCREMENT ACCEPTED</text>
+    <line x1="304" y1="512" x2="464" y2="512" stroke="#eb6c36" stroke-opacity=".35" stroke-width=".8"/>
+    <rect x="305" y="513" width="158" height="86" rx="6" fill="#fdf8f5"/>
+    <text class="cell-head ink" x="316" y="540">Accepted vertical increment</text><text class="cell-text muted" x="316" y="556">models · trace · software</text><text class="cell-tech soft" x="316" y="576">WP-08…WP-20</text>
+  </g>
+
+  <!-- Phase 2 -->
+  <g>
+    <rect class="stage" x="488" y="136" width="160" height="464" rx="6"/>
+    <rect class="header" x="488" y="136" width="160" height="72" rx="6"/><rect class="header" x="488" y="200" width="160" height="8"/>
+    <text class="phase-tag muted" x="500" y="156">PHASE 2</text><text class="phase-name ink" x="500" y="176">Release and</text><text class="phase-name ink" x="500" y="192">Transition</text>
+    <rect class="slot-a" x="489" y="208" width="158" height="64"/><text class="cell-head ink" x="500" y="232">Is this exact candidate</text><text class="cell-text muted" x="500" y="248">safe to promote?</text>
+    <line class="hair" x1="488" y1="272" x2="648" y2="272"/><rect class="slot-b" x="489" y="273" width="158" height="143"/>
+    <text class="cell-head ink" x="500" y="296">Assemble immutable candidate</text><text class="cell-text muted" x="500" y="320">Compatibility and evidence</text><text class="cell-text muted" x="500" y="336">Release and recovery plan</text><text class="cell-text muted" x="500" y="352">Progressive promotion</text><text class="cell-text muted" x="500" y="368">Observe thresholds</text><text class="cell-text muted" x="500" y="384">Operational handover</text>
+    <line class="hair" x1="488" y1="416" x2="648" y2="416"/><rect class="slot-a" x="489" y="417" width="158" height="95"/>
+    <text class="gate ink" x="500" y="440">G6 · RELEASE AUTHORIZED</text><text class="gate ink" x="500" y="456">G7 · TRANSITIONED</text><text class="cell-text muted" x="500" y="480">Digests · tests · recovery</text><text class="cell-text muted" x="500" y="496">support ownership</text>
+    <line class="hair" x1="488" y1="512" x2="648" y2="512"/><rect class="slot-b" x="489" y="513" width="158" height="86" rx="6"/>
+    <text class="cell-head ink" x="500" y="540">Operational release</text><text class="cell-text muted" x="500" y="556">accepted by product + service</text><text class="cell-tech soft" x="500" y="576">WP-21…WP-24</text>
+  </g>
+
+  <!-- Phase 3 -->
+  <g>
+    <rect class="stage" x="672" y="136" width="160" height="464" rx="6"/>
+    <rect class="header" x="672" y="136" width="160" height="72" rx="6"/><rect class="header" x="672" y="200" width="160" height="8"/>
+    <text class="phase-tag muted" x="684" y="156">PHASE 3 · CONTINUOUS</text><text class="phase-name ink" x="684" y="176">Operate, Evolve</text><text class="phase-name ink" x="684" y="192">and Learn</text>
+    <rect class="slot-a" x="673" y="208" width="158" height="64"/><text class="cell-head ink" x="684" y="232">Is the service achieving</text><text class="cell-text muted" x="684" y="248">outcomes within guardrails?</text>
+    <line class="hair" x1="672" y1="272" x2="832" y2="272"/><rect class="slot-b" x="673" y="273" width="158" height="143"/>
+    <text class="cell-head ink" x="684" y="296">Observe outcomes and SLOs</text><text class="cell-text muted" x="684" y="320">Security · cost · capacity</text><text class="cell-text muted" x="684" y="336">Incident and recovery</text><text class="cell-text muted" x="684" y="352">Problem analysis</text><text class="cell-text muted" x="684" y="368">Route controlled change</text><text class="cell-text muted" x="684" y="384">Retrospect and generalize</text>
+    <line class="hair" x1="672" y1="416" x2="832" y2="416"/><rect class="slot-a" x="673" y="417" width="158" height="95"/>
+    <text class="gate ink" x="684" y="440">SLO · OUTCOME · COST</text><text class="gate ink" x="684" y="456">RISK · SECURITY SIGNALS</text><text class="cell-text muted" x="684" y="480">Incident/problem evidence</text><text class="cell-text muted" x="684" y="496">change impact and trace</text>
+    <line class="hair" x1="672" y1="512" x2="832" y2="512"/><rect class="slot-b" x="673" y="513" width="158" height="86" rx="6"/>
+    <text class="cell-head ink" x="684" y="540">Stable service and</text><text class="cell-text muted" x="684" y="556">prioritized controlled change</text><text class="cell-tech soft" x="684" y="576">WP-25…WP-27 · WP-29</text>
+  </g>
+
+  <!-- Phase 4 -->
+  <g>
+    <rect class="stage" x="856" y="136" width="160" height="464" rx="6"/>
+    <rect class="header" x="856" y="136" width="160" height="72" rx="6"/><rect class="header" x="856" y="200" width="160" height="8"/>
+    <text class="phase-tag muted" x="868" y="156">PHASE 4</text><text class="phase-name ink" x="868" y="176">Retire, Migrate</text><text class="phase-name ink" x="868" y="192">and Close</text>
+    <rect class="slot-a" x="857" y="208" width="158" height="64"/><text class="cell-head ink" x="868" y="232">Can every user, data,</text><text class="cell-text muted" x="868" y="248">resource and duty close?</text>
+    <line class="hair" x1="856" y1="272" x2="1016" y2="272"/><rect class="slot-b" x="857" y="273" width="158" height="143"/>
+    <text class="cell-head ink" x="868" y="296">Decide and plan retirement</text><text class="cell-text muted" x="868" y="320">Migrate users and data</text><text class="cell-text muted" x="868" y="336">Close integrations</text><text class="cell-text muted" x="868" y="352">Revoke access</text><text class="cell-text muted" x="868" y="368">Remove cloud resources</text><text class="cell-text muted" x="868" y="384">Archive required evidence</text>
+    <line class="hair" x1="856" y1="416" x2="1016" y2="416"/><rect class="slot-a" x="857" y="417" width="158" height="95"/>
+    <text class="gate ink" x="868" y="440">G8 · LIFECYCLE CLOSED</text><text class="cell-text muted" x="868" y="464">Migration · retention</text><text class="cell-text muted" x="868" y="480">access · infrastructure</text><text class="cell-text muted" x="868" y="496">billing verified</text>
+    <line class="hair" x1="856" y1="512" x2="1016" y2="512"/><rect class="slot-b" x="857" y="513" width="158" height="86" rx="6"/>
+    <text class="cell-head ink" x="868" y="540">Verified closure and</text><text class="cell-text muted" x="868" y="556">reusable organizational learning</text><text class="cell-tech soft" x="868" y="576">WP-28 · WP-29</text>
+  </g>
+
+  <!-- Continuous disciplines are a single cross-cutting rail. -->
+  <rect class="discipline" x="120" y="688" width="896" height="44" rx="6"/>
+  <text class="phase-tag ink" x="136" y="706">CONTINUOUS DISCIPLINES</text>
+  <text class="cell-text muted" x="136" y="722">Product &amp; project management · risk · quality · security/privacy · configuration/change · trace/evidence · FinOps · knowledge · measurement · team dependencies</text>
+
+  <!-- Bottom legend strip. -->
+  <line x1="40" y1="752" x2="1080" y2="752" stroke="#bfc0c0" stroke-width=".8"/>
+  <text class="legend-key muted" x="40" y="772">LEGEND</text>
+  <line x1="112" y1="768" x2="144" y2="768" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#main-arrow)"/><text class="legend-text muted" x="156" y="772">primary lifecycle flow</text>
+  <line x1="308" y1="768" x2="340" y2="768" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5 4" marker-end="url(#main-arrow)"/><text class="legend-text muted" x="352" y="772">feedback and controlled re-entry</text>
+  <rect x="560" y="760" width="20" height="16" rx="3" fill="#fdf0ea" stroke="#eb6c36"/><text class="legend-text muted" x="592" y="772">focal iterative delivery engine</text>
+  <text class="legend-key soft" x="1080" y="772" text-anchor="end">SPEM-STRUCTURED · EVIDENCE-GATED · TAILORABLE</text>
+</svg>

@@ -1,0 +1,28 @@
+@startuml artifact-process
+title Artifact Readiness and Deployment Process, SPEM-Mapped View
+start
+
+repeat
+  partition "artifact.ph1 — Inspect & Baseline Generated Project" {
+    :Inventory generated output;
+    :Classify generated, protected and handwritten refinements;
+  }
+  partition "artifact.ph2 — Harden Environment & Delivery Configuration" {
+    :Externalize environment configuration and secrets;
+    :Implement repeatable build and deployment pipeline;
+  }
+  partition "artifact.ph3 — Verify Release Candidate" {
+    :Build and static verification;
+    :Deploy and exercise non-production environment;
+  }
+repeat while (Candidate rework required?) is (yes — correct source and regenerate)
+-> no;
+
+partition "artifact.ph4 — Approve Release & Operational Handover" {
+  :Create release, rollback and communication plan;
+  :Review exact candidate and authorize release;
+  :Complete handover and post-deployment validation;
+}
+
+stop
+@enduml

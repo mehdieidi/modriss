@@ -1,0 +1,45 @@
+@startuml
+title MODRISS Release Cycle — From Accepted Increments to the Next Release
+
+skinparam backgroundColor white
+skinparam shadowing false
+
+start
+repeat
+  :Define release outcome hypothesis, scope,\ncompatibility policy and target cadence;
+
+  repeat
+    repeat
+      :Select and deliver one bounded vertical increment;
+      :Accept exact CIM, PIM, PSM, generated artifacts\nand verification evidence at G2–G5;
+    repeat while (Another increment needed for candidate?) is (yes)
+    -> no;
+
+    :Assemble immutable release candidate;
+    :Check compatibility, security, quality, cost,\ncapacity, recovery and operational readiness;
+  repeat while (G6 release authorization rejected?) is (yes — correct at authoritative source)
+  -> no — authorized;
+
+  :Promote progressively through approved environments;
+  if (A stop threshold is breached?) then (yes)
+    :Stop or roll back;
+    :Keep the last accepted operating baseline;
+    :Create a corrective increment or release;
+  else (no)
+    :Complete handover and post-deployment checks;
+    :Accept the new operating baseline at G7;
+  endif
+
+  :Operate, observe and compare outcomes\nwith the release hypothesis;
+  :Form the next release hypothesis from roadmap,\ntelemetry, incidents, risks and user feedback;
+  note right
+    The currently accepted release continues to run.
+    The next pass creates a later release; it does not
+    restart the product lifecycle.
+  end note
+repeat while (Retirement authorized?) is (no — begin next release)
+-> yes;
+
+:Enter Phase 4 retirement workflow;
+stop
+@enduml

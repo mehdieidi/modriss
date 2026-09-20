@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1120 792" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="modriss-engine-title modriss-engine-desc">
+  <title id="modriss-engine-title">MODRISS iterative model-driven delivery engine</title>
+  <desc id="modriss-engine-desc">Eight-step vertical increment process from outcome framing through CIM, PIM, AWS PSM, transformations, artifact generation, completion, testing, acceptance, and controlled rework.</desc>
+  <defs>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;display=swap');</style>
+    <style>
+      .sans{font-family:'Geist',system-ui,sans-serif}.serif{font-family:'Instrument Serif','Noto Serif',serif}.mono{font-family:'Geist Mono',ui-monospace,monospace}
+      .ink{fill:#2d3142}.muted{fill:#4f5d75}.soft{fill:#7a8399}.accent{fill:#eb6c36}
+      .eyebrow{font:500 8px 'Geist Mono',ui-monospace,monospace;letter-spacing:.18em}.title{font:400 32px 'Instrument Serif','Noto Serif',serif}.subtitle{font:400 10px 'Geist',system-ui,sans-serif}
+      .step{fill:#fff;stroke:#bfc0c0;stroke-width:1}.step-focal{fill:#fdf0ea;stroke:#eb6c36;stroke-width:1.4}.tag{font:600 8px 'Geist Mono',ui-monospace,monospace;letter-spacing:.1em}.name{font:600 12px 'Geist',system-ui,sans-serif}.detail{font:400 9px 'Geist',system-ui,sans-serif}.tech{font:400 8px 'Geist Mono',ui-monospace,monospace}.gate{font:600 8px 'Geist Mono',ui-monospace,monospace;letter-spacing:.06em}
+      .flow{fill:none;stroke:#4f5d75;stroke-width:1.2}.flow-focal{fill:none;stroke:#eb6c36;stroke-width:1.4}.feedback{fill:none;stroke:#4f5d75;stroke-width:1;stroke-dasharray:5 4}.rail{fill:#ececec;stroke:#bfc0c0;stroke-width:1}.legend-key{font:500 8px 'Geist Mono',ui-monospace,monospace;letter-spacing:.12em}.legend-text{font:400 9px 'Geist',system-ui,sans-serif}
+    </style>
+    <marker id="engine-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#4f5d75"/></marker>
+    <marker id="engine-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#eb6c36"/></marker>
+    <marker id="engine-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <rect width="1120" height="792" fill="#f5f5f5"/>
+  <text class="eyebrow muted" x="40" y="28">PHASE 1 DETAIL · ONE VERTICAL INCREMENT</text>
+  <text class="title ink" x="40" y="64">The MODRISS model-driven delivery engine</text>
+  <text class="subtitle muted" x="40" y="88">Automation creates reviewable drafts; named roles accept exact revisions and route findings to the earliest authoritative source</text>
+
+  <!-- Flow is drawn before nodes. -->
+  <line class="flow" x1="280" y1="240" x2="316" y2="240" marker-end="url(#engine-arrow)"/>
+  <line class="flow" x1="520" y1="240" x2="556" y2="240" marker-end="url(#engine-arrow)"/>
+  <line class="flow-focal" x1="760" y1="240" x2="796" y2="240" marker-end="url(#engine-arrow-accent)"/>
+  <line class="flow-focal" x1="900" y1="296" x2="900" y2="416" marker-end="url(#engine-arrow-accent)"/>
+  <line class="flow" x1="800" y1="476" x2="764" y2="476" marker-end="url(#engine-arrow)"/>
+  <line class="flow" x1="560" y1="476" x2="524" y2="476" marker-end="url(#engine-arrow)"/>
+  <line class="flow" x1="320" y1="476" x2="284" y2="476" marker-end="url(#engine-arrow)"/>
+  <path class="feedback" d="M120 532 V584 Q120 592 112 592 H56 Q48 592 48 584 V156 Q48 148 56 148 H112 Q120 148 120 156 V180" marker-end="url(#engine-arrow)"/>
+  <rect x="60" y="352" width="112" height="16" rx="2" fill="#f5f5f5"/>
+  <text class="tech muted" x="116" y="363" text-anchor="middle">REWORK / NEXT SLICE</text>
+
+  <!-- Top row -->
+  <g>
+    <rect class="step" x="80" y="184" width="200" height="112" rx="6"/>
+    <rect x="92" y="196" width="28" height="16" rx="2" fill="#ececec"/><text class="tag muted" x="106" y="207" text-anchor="middle">01</text>
+    <text class="name ink" x="96" y="232">Frame increment</text><text class="detail muted" x="96" y="252">Outcome slice · requirements · risks</text><text class="detail muted" x="96" y="268">quality scenarios · evidence plan</text><text class="tech soft" x="96" y="284">Product Owner · Delivery Lead</text>
+  </g>
+  <g>
+    <rect class="step" x="320" y="184" width="200" height="112" rx="6"/>
+    <rect x="332" y="196" width="28" height="16" rx="2" fill="#ececec"/><text class="tag muted" x="346" y="207" text-anchor="middle">02</text><text class="gate ink" x="504" y="207" text-anchor="end">G2</text>
+    <text class="name ink" x="336" y="232">Discover and accept CIM</text><text class="detail muted" x="336" y="252">Domain intent · events · policy</text><text class="detail muted" x="336" y="268">requirements · acceptance · trace</text><text class="tech soft" x="336" y="284">Requirements / Business Modeler</text>
+  </g>
+  <g>
+    <rect class="step" x="560" y="184" width="200" height="112" rx="6"/>
+    <rect x="572" y="196" width="28" height="16" rx="2" fill="#ececec"/><text class="tag muted" x="586" y="207" text-anchor="middle">03</text>
+    <text class="name ink" x="576" y="232">Transform and reconcile</text><text class="detail muted" x="576" y="252">CIM → generated PIM draft</text><text class="detail muted" x="576" y="268">baseline + working + conflicts</text><text class="tech soft" x="576" y="284">Versioned ETL · trace report</text>
+  </g>
+  <g>
+    <rect class="step-focal" x="800" y="184" width="200" height="112" rx="6"/>
+    <rect x="812" y="196" width="28" height="16" rx="2" fill="#eb6c36" fill-opacity=".22"/><text class="tag accent" x="826" y="207" text-anchor="middle">04</text><text class="gate ink" x="984" y="207" text-anchor="end">G3</text>
+    <text class="name ink" x="816" y="232">Refine PIM architecture</text><text class="detail muted" x="816" y="252">Services · contracts · data · workflow</text><text class="detail muted" x="816" y="268">failure · security · SLO · portability</text><text class="tech soft" x="816" y="284">Solution Architect · cross-cutting owners</text>
+  </g>
+
+  <!-- Bottom row -->
+  <g>
+    <rect class="step" x="800" y="420" width="200" height="112" rx="6"/>
+    <rect x="812" y="432" width="28" height="16" rx="2" fill="#ececec"/><text class="tag muted" x="826" y="443" text-anchor="middle">05</text>
+    <text class="name ink" x="816" y="468">Transform and reconcile</text><text class="detail muted" x="816" y="488">PIM → generated AWS PSM draft</text><text class="detail muted" x="816" y="504">mapping gaps · conflicts · decisions</text><text class="tech soft" x="816" y="520">Versioned ETL · provider profile</text>
+  </g>
+  <g>
+    <rect class="step" x="560" y="420" width="200" height="112" rx="6"/>
+    <rect x="572" y="432" width="28" height="16" rx="2" fill="#ececec"/><text class="tag muted" x="586" y="443" text-anchor="middle">06</text><text class="gate ink" x="744" y="443" text-anchor="end">G4</text>
+    <text class="name ink" x="576" y="468">Refine and accept AWS PSM</text><text class="detail muted" x="576" y="488">Resources · IAM · network · quotas</text><text class="detail muted" x="576" y="504">observability · recovery · cost</text><text class="tech soft" x="576" y="520">Cloud Platform Engineer</text>
+  </g>
+  <g>
+    <rect class="step" x="320" y="420" width="200" height="112" rx="6"/>
+    <rect x="332" y="432" width="28" height="16" rx="2" fill="#ececec"/><text class="tag muted" x="346" y="443" text-anchor="middle">07</text>
+    <text class="name ink" x="336" y="468">Generate reproducible baseline</text><text class="detail muted" x="336" y="488">Infrastructure · handlers · tests</text><text class="detail muted" x="336" y="504">pipelines · docs · manifest · trace</text><text class="tech soft" x="336" y="520">EGL/EGX · exact revisions</text>
+  </g>
+  <g>
+    <rect class="step" x="80" y="420" width="200" height="112" rx="6"/>
+    <rect x="92" y="432" width="28" height="16" rx="2" fill="#ececec"/><text class="tag muted" x="106" y="443" text-anchor="middle">08</text><text class="gate ink" x="264" y="443" text-anchor="end">G5</text>
+    <text class="name ink" x="96" y="468">Complete, test and accept</text><text class="detail muted" x="96" y="488">Business logic · integration · NFR</text><text class="detail muted" x="96" y="504">security · resilience · operations</text><text class="tech soft" x="96" y="520">Accepted vertical increment</text>
+  </g>
+
+  <!-- Work-product progression and validation boundary. -->
+  <rect class="rail" x="80" y="620" width="920" height="64" rx="6"/>
+  <text class="tag ink" x="96" y="640">AUTHORITATIVE WORK-PRODUCT CHAIN</text>
+  <text class="detail muted" x="96" y="660">Increment record → CIM revision → transformation run → PIM revision → transformation run → AWS PSM revision → generated manifest → verification record</text>
+  <text class="tech soft" x="96" y="676">Every handoff preserves revision, provenance, trace, findings, owner and acceptance decision.</text>
+
+  <rect x="80" y="704" width="920" height="32" rx="6" fill="#eb6c36" fill-opacity=".05" stroke="#eb6c36" stroke-opacity=".5" stroke-width="1" stroke-dasharray="4 4"/>
+  <text class="tech ink" x="96" y="724">ASSISTANT BOUNDARY · apply/repair/commit uses structural Ecore/EMF conformance only; EVL remains an explicit user/model-validation workflow.</text>
+
+  <line x1="40" y1="752" x2="1080" y2="752" stroke="#bfc0c0" stroke-width=".8"/>
+  <text class="legend-key muted" x="40" y="772">LEGEND</text>
+  <line x1="112" y1="768" x2="144" y2="768" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#engine-arrow)"/><text class="legend-text muted" x="156" y="772">forward refinement</text>
+  <line x1="288" y1="768" x2="320" y2="768" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5 4" marker-end="url(#engine-arrow)"/><text class="legend-text muted" x="332" y="772">controlled rework / next slice</text>
+  <rect x="520" y="760" width="20" height="16" rx="3" fill="#fdf0ea" stroke="#eb6c36"/><text class="legend-text muted" x="552" y="772">architecture decision pivot</text>
+  <text class="legend-key soft" x="1080" y="772" text-anchor="end">DRAFT ≠ ACCEPTED · AUTOMATION ≠ ACCOUNTABILITY</text>
+</svg>

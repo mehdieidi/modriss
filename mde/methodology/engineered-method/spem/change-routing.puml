@@ -1,0 +1,39 @@
+@startuml
+title MODRISS Operational Change Routing and Lifecycle Re-entry
+
+skinparam backgroundColor white
+skinparam shadowing false
+
+start
+:Capture roadmap request, telemetry signal, incident,\nsecurity finding, provider change or cost anomaly;
+:Create change-impact record and preserve evidence;
+
+if (Immediate restoration required?) then (yes)
+  :Execute incident/recovery procedure;
+  :Record temporary downstream change;
+else (no)
+endif
+
+if (Outcome, requirement or domain meaning changed?) then (yes)
+  :Re-enter at CIM;
+elseif (Provider-independent architecture changed?) then (yes)
+  :Re-enter at PIM;
+elseif (AWS realization or deployment changed?) then (yes)
+  :Re-enter at PSM;
+elseif (Reusable generation logic changed?) then (yes)
+  :Re-enter at EGL/EGX generator source;
+elseif (Business logic or supported extension changed?) then (yes)
+  :Re-enter at artifact/code workflow;
+elseif (Promotion, rollback or support control changed?) then (yes)
+  :Re-enter at release/operations workflow;
+else (method concern)
+  :Re-enter at method-engineering backlog;
+endif
+
+:Perform trace-based impact analysis;
+:Create a bounded increment and propagate forward\nthrough every affected downstream level;
+:Reconcile any emergency downstream change\ninto its authoritative source;
+:Obtain new G2–G7 evidence as applicable;
+:Release, observe and close the change record;
+stop
+@enduml
