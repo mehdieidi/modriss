@@ -12,48 +12,21 @@ import {
   modelingMethodologyConfig,
 } from "./modeling-config-data.js";
 import { applyDefinitionAccent, renderPalette, syncPaletteCollapsedUi } from "./canvas.js";
-import { guidanceForProcess, roleForTask, tasksForStage } from "./methodology-process-utils.js";
+import {
+  guidanceForProcess,
+  processDisplayTitle,
+  roleForTask,
+  tasksForStage,
+} from "./methodology-process-utils.js";
 import {
   createMethodologyMapOpenButton,
+  createFullMethodologyOpenButton,
   closeMethodologyMap,
   initMethodologyProcessMap,
   openMethodologyMap,
   openMethodologyMapAt,
   refreshMethodologyProcessMap,
 } from "./methodology-process-map.js";
-
-const STORAGE_KEY = "modriss.guidedModeling.progress";
-const PHASE_MENU_ID = "methodologyPhaseMenu";
-
-let phaseMenuOpen = false;
-let phaseMenuListenersBound = false;
-
-function storageKey() {
-  const projectId = state.project?.id || "default";
-  const level = state.activeType || "cim";
-  const modelId = state.modelId || "draft";
-  return `${STORAGE_KEY}:${projectId}:${level}:${modelId}`;
-}
-
-function loadProgress() {
-  try {
-    const raw = window.localStorage.getItem(storageKey());
-    const parsed = raw ? JSON.parse(raw) : null;
-    return {
-      completedTaskIds: parsed?.completedTaskIds || [],
-      selectedPhaseId: parsed?.selectedPhaseId || null,
-      selectedStageId: parsed?.selectedStageId || null,
-      checkedCriteria: parsed?.checkedCriteria || {},
-    };
-  } catch {
-    return {
-      completedTaskIds: [],
-      selectedPhaseId: null,
-      selectedStageId: null,
-      checkedCriteria: {},
-    };
-  }
-}
 
 function leafStages(stage) {
   if (stage?.subStages?.length) {
@@ -73,82 +46,46 @@ function flattenAllStages(stages) {
   return out;
 }
 
-function stageTasks(process, stage) {
-  return leafStages(stage).flatMap((s) => tasksForStage(process, s));
-}
-
-function phaseTasks(process, phase) {
-  return (phase?.stages || []).flatMap((st) => stageTasks(process, st));
-}
-
-function phaseTaskIds(process, phase) {
-  return phaseTasks(process, phase)
-    .map((t) => t.id)
-    .filter(Boolean);
-}
-
-function isStageComplete(process, stage, progress) {
-  const ids = stageTasks(process, stage)
-    .map((t) => t.id)
-    .filter(Boolean);
-  return ids.length > 0 && ids.every((id) => progress.completedTaskIds.includes(id));
-}
-
 function outboundLoops(stage) {
   return (stage?.iterationLoops || []).filter((loop) => loop.direction === "outbound");
 }
 
-function isPhaseComplete(process, phase, progress) {
-  const ids = phaseTaskIds(process, phase);
-  return ids.length > 0 && ids.every((id) => progress.completedTaskIds.includes(id));
+function currentSelection() {
+  const selection = state.guidedModeling.selection;
+  return selection?.level === state.activeType ? selection : {};
 }
 
-function selectedPhase(process, progress) {
+function selectedPhase(process) {
   if (!process?.phases?.length) return null;
-  if (progress.selectedPhaseId) {
-    const found = process.phases.find((p) => p.id === progress.selectedPhaseId);
+  const selection = currentSelection();
+  if (selection.phaseId) {
+    const found = process.phases.find((p) => p.id === selection.phaseId);
     if (found) return found;
   }
-  const firstIncomplete = process.phases.find(
-    (phase) => !isPhaseComplete(process, phase, progress),
-  );
-  return firstIncomplete || process.phases[0];
+  return process.phases[0];
 }
 
-function selectedStage(process, phase, progress) {
+function selectedStage(process, phase) {
   if (!phase?.stages?.length) return null;
-  if (progress.selectedStageId) {
-    const found = flattenAllStages(phase.stages).find((s) => s.id === progress.selectedStageId);
-    if (found && tasksForStage(process, found).length) return found;
+  const selection = currentSelection();
+  if (selection.stageId) {
+    const found = flattenAllStages(phase.stages).find((s) => s.id === selection.stageId);
+    if (found) return found;
   }
   const leaves = phase.stages.flatMap(leafStages);
-  const firstIncomplete = leaves.find((stage) => !isStageComplete(process, stage, progress));
-  return firstIncomplete || leaves[0] || null;
+  return leaves[0] || phase.stages[0] || null;
 }
 
-function selectedTask(process, stage, progress) {
-  const tasks = tasksForStage(process, stage);
-  if (!tasks.length) return null;
-  return tasks.find((t) => !progress.completedTaskIds.includes(t.id)) || tasks[0];
+function selectedTask(process, stage) {
+  return tasksForStage(process, stage)[0] || null;
 }
 
-function selectedContext(process, progress) {
-  const phase = selectedPhase(process, progress);
+function selectedContext(process) {
+  const phase = selectedPhase(process);
   if (!phase) return { phase: null, stage: null, task: null };
-  const stage = selectedStage(process, phase, progress);
-  const task = stage ? selectedTask(process, stage, progress) : null;
+  const stage = selectedStage(process, phase);
+  const task = stage ? selectedTask(process, stage) : null;
   return { phase, stage, task };
-}
-
-function _suggestedPhase(process, progress) {
-  return process?.phases?.find((phase) => !isPhaseComplete(process, phase, progress)) || null;
-}
-
-function saveProgress(progress) {
-  state.guidedModeling.progress = progress;
-  window.localStorage.setItem(storageKey(), JSON.stringify(progress));
-  refreshMethodologyProcessMap();
-  renderGuidedModelingPanel();
 }
 
 function processForActiveLevel() {
@@ -160,52 +97,20 @@ function isMethodologyLevel(level) {
   return isModelingLevel(level) || isArtifactLevel(level);
 }
 
-function phaseProgress(process, progress) {
-  const tasks = (process?.phases || []).flatMap((p) => phaseTasks(process, p));
-  const ids = tasks.map((t) => t.id).filter(Boolean);
-  const complete = ids.filter((id) => progress.completedTaskIds.includes(id)).length;
-  return { complete, total: ids.length, ratio: ids.length ? complete / ids.length : 0 };
-}
-
-function renderProgressContract(process) {
-  const contract = process?.progressModel;
-  if (!contract) return null;
-  const metrics = (contract.metrics || [])
-    .slice(0, 4)
-    .map(
-      (metric) => `
-    <li><strong>${escapeHtml(metric.name)}</strong><span>${escapeHtml(metric.unit)} · ${escapeHtml(metric.cadence)}</span></li>
-  `,
-    )
-    .join("");
-  const section = document.createElement("section");
-  section.className = "methodology-progress-contract";
-  section.innerHTML = `
-    <div class="methodology-progress-contract-heading">
-      <span>Progress contract</span>
-      <small>${escapeHtml(contract.trackingUnit || "versioned-process-run")}</small>
-    </div>
-    <p>Checklist progress is local to this model. Team progress is authoritative only when the process-run record links evidence, blockers, decisions, and gate outcomes.</p>
-    <ul>${metrics}</ul>`;
-  return section;
-}
-
 export function guidedPaletteFocusTypes() {
   if (state.leftPaneMode !== "methodology" && !state.guidedModeling?.paletteFocusActive) {
     return new Set();
   }
   const process = processForActiveLevel();
   if (!process) return new Set();
-  const progress = state.guidedModeling.progress || loadProgress();
-  const { task } = selectedContext(process, progress);
+  const { task } = selectedContext(process);
   return new Set(task?.paletteFocus || []);
 }
 
 export function guidedActiveTask() {
   const process = processForActiveLevel();
   if (!process) return null;
-  const progress = state.guidedModeling.progress || loadProgress();
-  const { task } = selectedContext(process, progress);
+  const { task } = selectedContext(process);
   return task;
 }
 
@@ -235,45 +140,25 @@ export async function activatePhaseViewpoint(viewpoint) {
 }
 
 export function selectGuidedPhase(phaseId) {
-  const progress = loadProgress();
-  progress.selectedPhaseId = phaseId;
-  progress.selectedStageId = null;
-  saveProgress(progress);
+  state.guidedModeling.selection = { level: state.activeType, phaseId, stageId: null };
+  refreshMethodologyProcessMap();
+  renderGuidedModelingPanel();
+  renderPalette();
 }
 
 export function selectGuidedStage(stageId) {
-  const progress = loadProgress();
-  progress.selectedStageId = stageId;
-  saveProgress(progress);
-}
-
-export function markGuidedTaskComplete(taskId) {
-  const progress = loadProgress();
-  if (!progress.completedTaskIds.includes(taskId)) {
-    progress.completedTaskIds.push(taskId);
-  }
-  saveProgress(progress);
-  renderPalette();
-}
-
-export function toggleGuidedTaskComplete(taskId) {
-  const progress = loadProgress();
-  if (progress.completedTaskIds.includes(taskId)) {
-    progress.completedTaskIds = progress.completedTaskIds.filter((id) => id !== taskId);
-  } else {
-    progress.completedTaskIds.push(taskId);
-  }
-  saveProgress(progress);
-  renderPalette();
-}
-
-export function resetGuidedProgress() {
-  saveProgress({
-    completedTaskIds: [],
-    selectedPhaseId: null,
-    selectedStageId: null,
-    checkedCriteria: {},
-  });
+  const process = processForActiveLevel();
+  const phase = process?.phases?.find((candidate) =>
+    flattenAllStages(candidate.stages).some((stage) => stage.id === stageId),
+  );
+  const selection = currentSelection();
+  state.guidedModeling.selection = {
+    level: state.activeType,
+    phaseId: phase?.id || selection.phaseId || selectedPhase(process)?.id || null,
+    stageId,
+  };
+  refreshMethodologyProcessMap();
+  renderGuidedModelingPanel();
   renderPalette();
 }
 
@@ -334,7 +219,11 @@ export async function loadGuidedModelingDefinitions() {
     );
     state.guidedModeling.definitions = Object.fromEntries(results);
     state.guidedModeling.endToEnd = await api("/modeling/process/end-to-end");
-    state.guidedModeling.progress = loadProgress();
+    try {
+      state.guidedModeling.methodLibrary = await api("/modeling/method-content");
+    } catch (error) {
+      console.warn("Full method-content library unavailable", error);
+    }
     refreshMethodologyProcessMap();
   } catch (error) {
     console.warn("Guided modeling definitions unavailable", error);
@@ -363,8 +252,7 @@ function buildTaskPrompt(phase, stage, task) {
 export function openAssistantForGuidedPhase() {
   const process = processForActiveLevel();
   if (!process) return;
-  const progress = state.guidedModeling.progress || loadProgress();
-  const { phase, stage, task } = selectedContext(process, progress);
+  const { phase, stage, task } = selectedContext(process);
   if (!phase || !task) return;
   const prompt = buildTaskPrompt(phase, stage, task);
   window.dispatchEvent(
@@ -386,7 +274,7 @@ export async function openPaletteForCurrentPhase() {
   switchLeftPaneMode("palette");
   state.guidedModeling.paletteFocusActive = true;
   renderPalette();
-  setStatus("Palette highlights elements for the selected methodology phase.");
+  setStatus("Palette highlights elements for the selected process phase.");
 }
 
 function renderConceptChip(type) {
@@ -402,29 +290,6 @@ function renderConceptChip(type) {
     await openPaletteForCurrentPhase();
   });
   return chip;
-}
-
-function renderPhaseMetaBadges(items, complete) {
-  const wrap = document.createElement("div");
-  wrap.className = "methodology-phase-meta-badges";
-  items.forEach((text) => {
-    const badge = document.createElement("span");
-    const isStatus = text === "Complete" || text === "In progress";
-    badge.className = [
-      "methodology-meta-badge",
-      isStatus && complete ? "is-complete" : "",
-      isStatus && !complete ? "is-progress" : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
-    badge.textContent = text;
-    wrap.appendChild(badge);
-  });
-  return wrap;
-}
-
-function removeFloatedPhaseMenu() {
-  document.getElementById(PHASE_MENU_ID)?.remove();
 }
 
 function renderIterationLoops(host, stage, process) {
@@ -478,11 +343,11 @@ function openStageInMap(phaseId, stageId) {
   openMethodologyMapAt({ phaseId, stageId });
 }
 
-function renderStageTrack(host, phase, progress) {
+function renderStageTrack(host, phase) {
   const stages = phase?.stages || [];
   if (!stages.length) return;
 
-  const ctx = { stage: selectedStage(processForActiveLevel(), phase, progress) };
+  const selected = selectedStage(processForActiveLevel(), phase);
 
   const label = document.createElement("div");
   label.className = "methodology-stage-label";
@@ -492,15 +357,10 @@ function renderStageTrack(host, phase, progress) {
   const track = document.createElement("div");
   track.className = "methodology-stage-track";
   stages.forEach((stage) => {
-    const complete = isStageComplete(processForActiveLevel(), stage, progress);
-    const current = stage.id === ctx.stage?.id;
+    const current = stage.id === selected?.id;
     const chip = document.createElement("button");
     chip.type = "button";
-    chip.className = [
-      "methodology-stage-chip",
-      complete ? "is-complete" : "",
-      current ? "is-current" : "",
-    ]
+    chip.className = ["methodology-stage-chip", current ? "is-selected" : ""]
       .filter(Boolean)
       .join(" ");
     chip.title = `Open ${stage.name} in the process map`;
@@ -511,10 +371,9 @@ function renderStageTrack(host, phase, progress) {
   host.appendChild(track);
 }
 
-function renderTaskCard(task, progress) {
-  const done = progress.completedTaskIds.includes(task.id);
+function renderTaskCard(task) {
   const card = document.createElement("div");
-  card.className = `methodology-task-card${done ? " is-done" : ""}`;
+  card.className = "methodology-task-card";
   const title = document.createElement("h4");
   title.textContent = task.name;
   card.appendChild(title);
@@ -548,17 +407,11 @@ function renderTaskCard(task, progress) {
     task.paletteFocus.forEach((type) => grid.appendChild(renderConceptChip(type)));
     card.appendChild(grid);
   }
-  const markBtn = document.createElement("button");
-  markBtn.type = "button";
-  markBtn.className = "methodology-btn";
-  markBtn.textContent = done ? "Mark incomplete" : "Mark task complete";
-  markBtn.addEventListener("click", () => toggleGuidedTaskComplete(task.id));
-  card.appendChild(markBtn);
   return card;
 }
 
-function _renderPhaseDetail(host, process, progress) {
-  const { phase, stage, task } = selectedContext(process, progress);
+function _renderPhaseDetail(host, process) {
+  const { phase, stage, task } = selectedContext(process);
   if (!phase || !stage) return;
 
   const detail = document.createElement("article");
@@ -578,13 +431,13 @@ function _renderPhaseDetail(host, process, progress) {
 
   if (task?.entryCriteria?.length) {
     appendSection(detail, "Before you start", (sec) => {
-      sec.appendChild(renderCriteriaList(task.entryCriteria, task.id, "entry", progress));
+      sec.appendChild(renderCriteriaList(task.entryCriteria));
     });
   }
 
   if (task?.exitCriteria?.length) {
-    appendSection(detail, "You're done when", (sec) => {
-      sec.appendChild(renderCriteriaList(task.exitCriteria, task.id, "exit", progress));
+    appendSection(detail, "Exit criteria", (sec) => {
+      sec.appendChild(renderCriteriaList(task.exitCriteria));
     });
   }
 
@@ -635,7 +488,7 @@ function _renderPhaseDetail(host, process, progress) {
   }
 
   appendSection(detail, "TaskUses", (sec) => {
-    tasksForStage(process, stage).forEach((t) => sec.appendChild(renderTaskCard(t, progress)));
+    tasksForStage(process, stage).forEach((t) => sec.appendChild(renderTaskCard(t)));
   });
 
   renderChangeManagement(detail, process);
@@ -669,33 +522,6 @@ function _renderPhaseDetail(host, process, progress) {
   row.appendChild(aiBtn);
   actions.appendChild(row);
 
-  const leaves = phase.stages.flatMap(leafStages);
-  const stageIndex = leaves.findIndex((s) => s.id === stage.id);
-  if (
-    stageIndex >= 0 &&
-    stageIndex < leaves.length - 1 &&
-    isStageComplete(process, stage, progress)
-  ) {
-    const nextStage = leaves[stageIndex + 1];
-    const nextBtn = document.createElement("button");
-    nextBtn.type = "button";
-    nextBtn.className = "methodology-btn methodology-btn-primary";
-    nextBtn.textContent = `Continue to ${nextStage.name}`;
-    nextBtn.addEventListener("click", () => selectGuidedStage(nextStage.id));
-    actions.appendChild(nextBtn);
-  } else if (isPhaseComplete(process, phase, progress)) {
-    const phaseIndex = process.phases.indexOf(phase);
-    const nextPhase = process.phases[phaseIndex + 1];
-    if (nextPhase) {
-      const nextBtn = document.createElement("button");
-      nextBtn.type = "button";
-      nextBtn.className = "methodology-btn methodology-btn-primary";
-      nextBtn.textContent = `Continue to phase ${nextPhase.name}`;
-      nextBtn.addEventListener("click", () => selectGuidedPhase(nextPhase.id));
-      actions.appendChild(nextBtn);
-    }
-  }
-
   detail.appendChild(actions);
   host.appendChild(detail);
 }
@@ -707,7 +533,7 @@ function renderChangeManagement(host, process) {
   appendSection(host, "Changing the model", (sec) => {
     const intro = document.createElement("p");
     intro.textContent =
-      "After marking phases complete, use these workflows when scope changes or elements need add/modify/remove.";
+      "Use these workflows when scope changes or elements need to be added, modified, or removed.";
     intro.style.fontSize = "0.72rem";
     intro.style.color = "var(--muted)";
     sec.appendChild(intro);
@@ -833,95 +659,50 @@ function appendSection(parent, title, build) {
   parent.appendChild(section);
 }
 
-function renderCriteriaList(items, phaseId, kind, progress) {
+function renderCriteriaList(items) {
   const wrap = document.createElement("div");
   wrap.className = "methodology-criteria";
-  const key = `${phaseId}:${kind}`;
-  const checked = new Set(progress.checkedCriteria[key] || []);
-  items.forEach((text, index) => {
-    const id = `${key}:${index}`;
-    const row = document.createElement("label");
-    row.className = "methodology-criterion";
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.checked = checked.has(id);
-    input.addEventListener("change", () => {
-      const p = loadProgress();
-      const set = new Set(p.checkedCriteria[key] || []);
-      if (input.checked) set.add(id);
-      else set.delete(id);
-      p.checkedCriteria[key] = [...set];
-      saveProgress(p);
-    });
+  const list = document.createElement("ul");
+  items.forEach((text) => {
+    const row = document.createElement("li");
     const span = document.createElement("span");
     span.textContent = text;
-    row.appendChild(input);
     row.appendChild(span);
-    wrap.appendChild(row);
+    list.appendChild(row);
   });
+  wrap.appendChild(list);
   return wrap;
 }
 
-function bindPhaseMenuListeners() {
-  if (phaseMenuListenersBound) {
-    return;
-  }
-  phaseMenuListenersBound = true;
-  document.addEventListener("click", (event) => {
-    if (!phaseMenuOpen) {
-      return;
-    }
-    if (
-      event.target?.closest?.(".methodology-phase-select-wrap") ||
-      event.target?.closest?.(`#${PHASE_MENU_ID}`)
-    ) {
-      return;
-    }
-    phaseMenuOpen = false;
-    renderGuidedModelingPanel();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && phaseMenuOpen) {
-      phaseMenuOpen = false;
-      renderGuidedModelingPanel();
-    }
-  });
-}
-
-function renderProgressTrack(phases, phase, progress, onSelect) {
+function renderPhaseTrack(phases, phase, onSelect) {
   const track = document.createElement("div");
-  track.className = "methodology-progress-track";
+  track.className = "methodology-phase-track";
   track.setAttribute("role", "tablist");
-  track.setAttribute("aria-label", "Modeling phases");
+  track.setAttribute("aria-label", "Process phases");
   phases.forEach((p, i) => {
-    const complete = isPhaseComplete(processForActiveLevel(), p, progress);
     const selected = p.id === phase.id;
     const seg = document.createElement("button");
     seg.type = "button";
-    seg.className = [
-      "methodology-progress-segment",
-      complete ? "is-complete" : "",
-      selected ? "is-current" : "",
-    ]
+    seg.className = ["methodology-phase-option", selected ? "is-selected" : ""]
       .filter(Boolean)
       .join(" ");
-    seg.title = `${i}. ${p.name}`;
+    seg.title = `${i + 1}. ${p.name}`;
+    seg.textContent = `${i + 1}. ${p.name}`;
     seg.setAttribute("role", "tab");
     seg.setAttribute("aria-selected", String(selected));
-    seg.setAttribute("aria-label", `${i}. ${p.name}`);
+    seg.setAttribute("aria-label", `${i + 1}. ${p.name}`);
     seg.addEventListener("click", () => onSelect(p.id));
     track.appendChild(seg);
   });
   return track;
 }
 
-function renderPhaseNavigator(host, process, progress) {
+function renderPhaseNavigator(host, process) {
   const phases = process.phases || [];
-  const phase = selectedPhase(process, progress);
+  const phase = selectedPhase(process);
   if (!phase) return;
 
   const index = phases.findIndex((p) => p.id === phase.id);
-  const complete = isPhaseComplete(process, phase, progress);
   const nav = document.createElement("div");
   nav.className = "methodology-nav";
 
@@ -936,7 +717,6 @@ function renderPhaseNavigator(host, process, progress) {
   prev.textContent = "‹";
   prev.disabled = index <= 0;
   prev.addEventListener("click", () => {
-    phaseMenuOpen = false;
     if (index > 0) openPhaseInMap(phases[index - 1].id);
   });
 
@@ -946,9 +726,6 @@ function renderPhaseNavigator(host, process, progress) {
     <div class="methodology-phase-step-label">Phase ${index + 1} of ${phases.length}</div>
     <h3 class="methodology-phase-title">${escapeHtml(phase.name)}</h3>`;
 
-  const metaParts = [complete ? "Complete" : "In progress"];
-  heading.appendChild(renderPhaseMetaBadges(metaParts, complete));
-
   const next = document.createElement("button");
   next.type = "button";
   next.className = "methodology-nav-btn";
@@ -957,7 +734,6 @@ function renderPhaseNavigator(host, process, progress) {
   next.textContent = "›";
   next.disabled = index < 0 || index >= phases.length - 1;
   next.addEventListener("click", () => {
-    phaseMenuOpen = false;
     if (index < phases.length - 1) openPhaseInMap(phases[index + 1].id);
   });
 
@@ -967,15 +743,14 @@ function renderPhaseNavigator(host, process, progress) {
   nav.appendChild(header);
   const phaseLabel = document.createElement("div");
   phaseLabel.className = "methodology-navigator-label";
-  phaseLabel.textContent = "All phases";
+  phaseLabel.textContent = "Phases";
   nav.appendChild(phaseLabel);
   nav.appendChild(
-    renderProgressTrack(phases, phase, progress, (phaseId) => {
-      phaseMenuOpen = false;
+    renderPhaseTrack(phases, phase, (phaseId) => {
       openPhaseInMap(phaseId);
     }),
   );
-  renderStageTrack(nav, phase, progress);
+  renderStageTrack(nav, phase);
   host.appendChild(nav);
 }
 
@@ -984,83 +759,46 @@ export function renderGuidedModelingPanel() {
   if (!host) return;
 
   if (!isMethodologyLevel(state.activeType)) {
-    phaseMenuOpen = false;
-    removeFloatedPhaseMenu();
-    host.innerHTML = `<div class="methodology-empty">Open a CIM, PIM, PSM, or generated artifacts to use the methodology guide.</div>`;
+    host.innerHTML = `<div class="methodology-empty">Open a CIM, PIM, PSM, or generated artifacts to view its process.</div>`;
     return;
   }
 
   const process = processForActiveLevel();
   if (!process) {
-    phaseMenuOpen = false;
-    removeFloatedPhaseMenu();
-    host.innerHTML = `<div class="methodology-empty">Loading methodology…</div>`;
+    host.innerHTML = `<div class="methodology-empty">Loading process…</div>`;
     return;
   }
 
-  const progress = state.guidedModeling.progress || loadProgress();
-  const { complete, total, ratio } = phaseProgress(process, progress);
-  const phase = selectedPhase(process, progress);
+  const phase = selectedPhase(process);
 
-  removeFloatedPhaseMenu();
   host.innerHTML = "";
 
   const hero = document.createElement("div");
   hero.className = "methodology-hero";
   hero.innerHTML = `
-    <div class="methodology-hero-top">
-      <div class="methodology-progress-ring" style="--pct: ${Math.round(ratio * 100)}">
-        <span>${complete}/${total}</span>
-      </div>
-      <div class="methodology-hero-text">
-        <h2>${escapeHtml(process.displayName || state.activeType.toUpperCase())} methodology</h2>
-        <p>${complete} of ${total} tasks complete</p>
-      </div>
+    <div class="methodology-hero-text">
+      <h2>${escapeHtml(processDisplayTitle(process))}</h2>
+      <p>Explore phases, stages, and tasks in this process.</p>
     </div>`;
   hero.appendChild(createMethodologyMapOpenButton());
+  hero.appendChild(createFullMethodologyOpenButton());
   host.appendChild(hero);
 
-  const progressContract = renderProgressContract(process);
-  if (progressContract) host.appendChild(progressContract);
-
   if (phase) {
-    renderPhaseNavigator(host, process, progress);
+    renderPhaseNavigator(host, process);
   }
-
-  const footer = document.createElement("div");
-  footer.className = "methodology-footer";
-  const reset = document.createElement("button");
-  reset.type = "button";
-  reset.className = "methodology-btn methodology-btn-danger";
-  reset.textContent = "Reset all progress";
-  reset.addEventListener("click", () => {
-    if (window.confirm("Reset methodology progress for this model?")) {
-      resetGuidedProgress();
-    }
-  });
-  footer.appendChild(reset);
-  host.appendChild(footer);
 }
 
 export function initGuidedModeling() {
   state.guidedModeling ??= {
     definitions: {},
     endToEnd: null,
-    progress: loadProgress(),
+    selection: null,
     loading: false,
     searchQuery: "",
     paletteFocusActive: false,
   };
   state.leftPaneMode ??= "palette";
-
-  bindPhaseMenuListeners();
-
-  window.addEventListener("resize", () => {
-    if (!phaseMenuOpen) {
-      return;
-    }
-    renderGuidedModelingPanel();
-  });
 
   el.methodologySearchInput?.addEventListener("input", () => {
     state.guidedModeling.searchQuery = el.methodologySearchInput?.value || "";
@@ -1071,12 +809,11 @@ export function initGuidedModeling() {
         (p) => p.name.toLowerCase().includes(q) || String(p.id).toLowerCase().includes(q),
       );
       if (match) {
-        const progress = loadProgress();
-        if (progress.selectedPhaseId !== match.id) {
-          progress.selectedPhaseId = match.id;
-          state.guidedModeling.progress = progress;
-          window.localStorage.setItem(storageKey(), JSON.stringify(progress));
-        }
+        state.guidedModeling.selection = {
+          level: state.activeType,
+          phaseId: match.id,
+          stageId: null,
+        };
       }
     }
     renderGuidedModelingPanel();
@@ -1087,7 +824,7 @@ export function initGuidedModeling() {
 }
 
 export function onGuidedModelingContextChanged() {
-  state.guidedModeling.progress = loadProgress();
+  state.guidedModeling.selection = null;
   if (state.leftPaneMode === "methodology") {
     renderGuidedModelingPanel();
   }

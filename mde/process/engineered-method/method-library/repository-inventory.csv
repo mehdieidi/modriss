@@ -1,0 +1,314 @@
+sourceProcess,elementType,id,name,sourceFile
+end-to-end,RoleDefinition,role.product-owner,Product Owner,mde/process/process-definitions/end-to-end.json
+end-to-end,RoleDefinition,role.delivery-lead,Delivery Lead,mde/process/process-definitions/end-to-end.json
+end-to-end,RoleDefinition,role.business-modeler,Business Modeler,mde/process/process-definitions/end-to-end.json
+end-to-end,RoleDefinition,role.requirements-engineer,Requirements Engineer,mde/process/process-definitions/end-to-end.json
+end-to-end,RoleDefinition,role.domain-expert,Domain Expert,mde/process/process-definitions/end-to-end.json
+end-to-end,RoleDefinition,role.solution-architect,Solution Architect,mde/process/process-definitions/end-to-end.json
+end-to-end,RoleDefinition,role.cloud-platform-engineer,Cloud Platform Engineer,mde/process/process-definitions/end-to-end.json
+end-to-end,RoleDefinition,role.quality-engineer,Quality Engineer,mde/process/process-definitions/end-to-end.json
+end-to-end,RoleDefinition,role.security-engineer,Security Engineer,mde/process/process-definitions/end-to-end.json
+end-to-end,RoleDefinition,role.release-engineer,Release Engineer,mde/process/process-definitions/end-to-end.json
+end-to-end,RoleDefinition,role.service-owner,Service Owner,mde/process/process-definitions/end-to-end.json
+end-to-end,RoleDefinition,role.process-reviewer,Process Reviewer,mde/process/process-definitions/end-to-end.json
+end-to-end,RoleDefinition,role.method-engineer,Method Engineer,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph0.st1.t1,Define product outcomes and success measures,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph0.st1.t2,Establish the initial release and increment hypothesis,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph0.st2.t1,Assess context and method risks,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph0.st2.t2,Define the tailored Definition of Ready and Done,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph0.st3.t1,Define team ownership and interfaces,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph0.st3.t2,Set coordination cadence and escalation paths,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph0.st4.t1,Define quality and security control objectives,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph0.st4.t2,Define operational and release strategy,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.p0.increment-planning.t1,Plan the vertical increment,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.p1.cim-modeling.t1,Run the CIM increment,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.p2.cim-to-pim.t1,Execute and inspect CIM-to-PIM transformation,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.p3.pim-refinement.t1,Run the PIM increment,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.p4.pim-to-psm.t1,Execute and inspect PIM-to-PSM transformation,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.p5.psm-refinement.t1,Run the PSM increment,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.p6.m2t-generation.t1,Generate and fingerprint the artifact baseline,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.p7.artifact-completion.t1,Run artifact readiness and accept the increment,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph2.st1.t1,Assemble the release candidate,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph2.st1.t2,Review release evidence and go/no-go criteria,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph2.st2.t1,Deploy and validate progressively,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph2.st2.t2,Complete handover and rollback rehearsal,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph2.st3.t1,Review release outcome and update roadmap,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph3.st1.t1,"Review SLOs, telemetry, and product outcomes",mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph3.st2.t1,Manage incidents and recovery,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph3.st2.t2,Perform problem and risk learning,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph3.st3.t1,Assess and propagate a change,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph3.st4.t1,"Inspect flow, quality, and coordination metrics",mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph4.st1.t1,Approve retirement scope and plan,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph4.st2.t1,Execute migration and data disposition,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph4.st2.t2,Decommission service and access,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph4.st3.t1,Complete closure review,mde/process/process-definitions/end-to-end.json
+end-to-end,WorkProductDefinition,e2e-artifact.product-charter,Product and System Charter,mde/process/process-definitions/end-to-end.json
+end-to-end,WorkProductDefinition,e2e-artifact.method-profile,Situational Method Profile,mde/process/process-definitions/end-to-end.json
+end-to-end,WorkProductDefinition,e2e-artifact.team-topology,Team Topology and Dependency Map,mde/process/process-definitions/end-to-end.json
+end-to-end,WorkProductDefinition,e2e-artifact.increment-record,Increment Record,mde/process/process-definitions/end-to-end.json
+end-to-end,WorkProductDefinition,e2e-artifact.release-record,Release Record,mde/process/process-definitions/end-to-end.json
+end-to-end,WorkProductDefinition,e2e-artifact.operations-record,Operations and Learning Record,mde/process/process-definitions/end-to-end.json
+end-to-end,WorkProductDefinition,e2e-artifact.retirement-record,Retirement and Closure Record,mde/process/process-definitions/end-to-end.json
+end-to-end,Guidance,e2e.guid.incremental-vertical,Thin vertical increments,mde/process/process-definitions/end-to-end.json
+end-to-end,Guidance,e2e.guid.human-in-loop,Human-in-the-loop transforms,mde/process/process-definitions/end-to-end.json
+end-to-end,Guidance,e2e.guid.empirical-control,Empirical process control,mde/process/process-definitions/end-to-end.json
+cim,RoleDefinition,role.product-owner,Product Owner,mde/process/process-definitions/cim.json
+cim,RoleDefinition,role.delivery-lead,Delivery Lead,mde/process/process-definitions/cim.json
+cim,RoleDefinition,role.domain-expert,Domain Expert,mde/process/process-definitions/cim.json
+cim,RoleDefinition,role.business-modeler,Business Modeler,mde/process/process-definitions/cim.json
+cim,RoleDefinition,role.requirements-engineer,Requirements Engineer,mde/process/process-definitions/cim.json
+cim,RoleDefinition,role.security-engineer,Security & Privacy Engineer,mde/process/process-definitions/cim.json
+cim,RoleDefinition,role.process-reviewer,Process Reviewer,mde/process/process-definitions/cim.json
+cim,RoleDefinition,role.method-engineer,Method Engineer,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph1.st1.t1,Create CIM model root,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph1.st1.t2,Establish shared model contract and evidence conventions,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph1.st2.t1,Plan capability slice,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph1.st3.t1,Define business goals and KPIs,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph1.st3.t2,Identify stakeholders,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph2.st1.t1,Model actors and roles,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph2.st1.t2,Register external systems,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph2.st2.t1,Map business capabilities,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph2.st2.t2,Record capability dependencies,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph2.st3.t1,Define domain glossary,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph3.st1.ss1.t1,Define data classifications,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph3.st1.ss2.t1,Create information items,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph3.st2.ss1.t1,Model domain entities,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph3.st2.ss2.t1,Model value objects and relationships,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph3.st3.ss1.t1,Model commands and outcomes,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph3.st3.ss2.t1,Model queries,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph3.st3.ss3.t1,"Model events, errors, and conditions",mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph4.st1.t1,Define aggregate candidates,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph4.st2.ss1.t1,Model business processes,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph4.st2.ss2.t1,Define policies and decision tables,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph4.st3.t1,Synthesize bounded contexts,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph5.st1.t1,Formalize requirements,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph5.st1.t2,Apply governance constraints,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph5.st2.t1,Record transformation metadata,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph5.st3.t1,Complete trace and readiness,mde/process/process-definitions/cim.json
+cim,TaskDefinition,task.cim.ph5.st4.t1,Review and adapt CIM increment,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.model-root,CIM Model Root,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.increment-plan,CIM Increment Plan,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.strategic-intent,Strategic Intent Package,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.participation-model,Participation Model,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.capability-map,Capability,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.glossary,Ubiquitous Language Glossary,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.information-taxonomy,Information Taxonomy,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.domain-structure,Domain Structure Model,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.behavior-surface,CQRS Behavior Surface,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.aggregate-model,Aggregate Boundary Model,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.process-model,Business Process Model,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.decision-model,Decision & Policy Model,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.context-map,Bounded Context Map,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.requirements-package,Requirements Package,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.governance-package,Governance Constraint Package,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.transformation-contract,Transformation Contract,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.trace-readiness,Trace & Readiness Record,mde/process/process-definitions/cim.json
+cim,WorkProductDefinition,cim-artifact.increment-review,CIM Increment Review Record,mde/process/process-definitions/cim.json
+cim,Guidance,cim.guid.mda-intent,Computation-independent intent,mde/process/process-definitions/cim.json
+cim,Guidance,cim.guid.increment-cycle,Thin capability slices,mde/process/process-definitions/cim.json
+cim,Guidance,cim.guid.gqm,Goal-Question-Metric (Basili),mde/process/process-definitions/cim.json
+cim,Guidance,cim.guid.ddd-language,Ubiquitous language first (Evans),mde/process/process-definitions/cim.json
+cim,Guidance,cim.guid.information-before-entity,Information before entity (CIM-ENTITY-001),mde/process/process-definitions/cim.json
+cim,Guidance,cim.guid.event-storming,Event storming surface (Brandolini),mde/process/process-definitions/cim.json
+cim,Guidance,cim.guid.twin-peaks,Twin Peaks requirements (Nuseibeh),mde/process/process-definitions/cim.json
+pim,RoleDefinition,role.product-owner,Product Owner,mde/process/process-definitions/pim.json
+pim,RoleDefinition,role.delivery-lead,Delivery Lead,mde/process/process-definitions/pim.json
+pim,RoleDefinition,role.domain-expert,Domain Expert,mde/process/process-definitions/pim.json
+pim,RoleDefinition,role.solution-architect,Solution Architect,mde/process/process-definitions/pim.json
+pim,RoleDefinition,role.process-reviewer,Process Reviewer,mde/process/process-definitions/pim.json
+pim,RoleDefinition,role.quality-engineer,Quality Engineer,mde/process/process-definitions/pim.json
+pim,RoleDefinition,role.security-engineer,Security Engineer,mde/process/process-definitions/pim.json
+pim,RoleDefinition,role.cloud-platform-engineer,Cloud Platform Engineer,mde/process/process-definitions/pim.json
+pim,RoleDefinition,role.method-engineer,Method Engineer,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph1.st0.t1,Plan service slice,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph1.st1.t1,Create PIM model root,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph1.st1.t2,Set architecture posture,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph1.st1.t3,Establish shared model contract and evidence conventions,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph1.st2.t1,Define serverless services,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph1.st2.t2,Assign element memberships,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph2.st1.t1,Define schemas and fields,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph2.st1.t2,Model event types and envelopes,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph2.st2.t1,Model data stores and models,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph2.st2.t2,Define access patterns and indexes,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph2.st2.t3,Configure change streams and notifications,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph3.st1.t1,Define functions and contracts,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph3.st1.t2,Configure triggers and runtime,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph3.st2.t1,Define APIs and routes,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph3.st2.t2,Map API contracts and errors,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph4.st1.t1,Model event channels and buses,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph4.st1.t2,Define flows and routing rules,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph4.st2.t1,Model workflows and states,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph4.st2.t2,Configure human tasks and error handling,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph5.st1.t1,Configure identity providers and principals,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph5.st1.t2,Define permissions and security policies,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph5.st2.ss1.t1,Apply resilience policies,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph5.st2.ss1.t2,Configure throughput and ordering policies,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph5.st2.ss2.t1,Configure observability policies,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph5.st2.ss2.t2,"Define alerts, SLOs, and CORS",mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph5.st2.ss3.t1,Apply governance and compliance policies,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph5.st2.ss3.t2,Map business rules and decision models,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph5.st3.t1,Model external endpoints and adapters,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph5.st3.t2,Configure environments and deployment units,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph6.st1.t1,Assess platform capabilities,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph6.st2.t1,Complete trace and readiness,mde/process/process-definitions/pim.json
+pim,TaskDefinition,task.pim.ph6.st3.t1,Review and adapt PIM increment,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.increment-plan,PIM Increment Plan,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.architecture-posture,Architecture Posture,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.service-map,Service Boundary Map,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.contract-catalog,Contract Catalog,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.data-architecture,Data Architecture,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.compute-catalog,Compute Catalog,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.api-catalog,API Catalog,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.integration-topology,Integration Topology,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.workflow-model,Workflow Model,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.security-model,Security Model,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.policy-catalog,Architecture Policy Catalog,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.config-package,Configuration Package,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.platform-readiness,Platform Readiness Record,mde/process/process-definitions/pim.json
+pim,WorkProductDefinition,pim-artifact.increment-review,PIM Increment Review Record,mde/process/process-definitions/pim.json
+pim,Guidance,pim.guid.serverless-boundary,Service as deployable boundary,mde/process/process-definitions/pim.json
+pim,Guidance,pim.guid.generated-is-draft,Generated PIM is a draft,mde/process/process-definitions/pim.json
+pim,Guidance,pim.guid.contracts-first,Contracts decouple producers,mde/process/process-definitions/pim.json
+pim,Guidance,pim.guid.data-access,Access patterns drive stores,mde/process/process-definitions/pim.json
+pim,Guidance,pim.guid.policy-as-code,Policy attachment discipline,mde/process/process-definitions/pim.json
+pim,Guidance,pim.guid.readiness-in-cycle,Readiness is part of delivery,mde/process/process-definitions/pim.json
+psm,RoleDefinition,role.product-owner,Product Owner,mde/process/process-definitions/psm.json
+psm,RoleDefinition,role.delivery-lead,Delivery Lead,mde/process/process-definitions/psm.json
+psm,RoleDefinition,role.solution-architect,Solution Architect,mde/process/process-definitions/psm.json
+psm,RoleDefinition,role.cloud-platform-engineer,Cloud Platform Engineer,mde/process/process-definitions/psm.json
+psm,RoleDefinition,role.process-reviewer,Process Reviewer,mde/process/process-definitions/psm.json
+psm,RoleDefinition,role.quality-engineer,Quality Engineer,mde/process/process-definitions/psm.json
+psm,RoleDefinition,role.security-engineer,Security Engineer,mde/process/process-definitions/psm.json
+psm,RoleDefinition,role.service-owner,Service Owner / SRE,mde/process/process-definitions/psm.json
+psm,RoleDefinition,role.release-engineer,Release Engineer,mde/process/process-definitions/psm.json
+psm,RoleDefinition,role.method-engineer,Method Engineer,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph1.st0.t1,Plan deployable slice,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph1.st1.t1,Create AWS PSM model root,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph1.st1.t2,Define stage and naming policies,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph1.st1.t3,Establish shared model contract and evidence conventions,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph1.st2.t1,Create SAM stack and globals,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph1.st2.t2,Define CFN parameters and outputs,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph1.st3.t1,Configure IAM roles and policies,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph1.st3.t2,"Provision KMS, secrets, and SSM",mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph2.st1.t1,Configure VPC and subnets,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph2.st1.t2,Define endpoints and security groups,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph2.st2.t1,Configure Cognito user pools,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph2.st2.t2,"Configure clients, groups, and identity pools",mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph3.st1.t1,Provision DynamoDB tables,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph3.st1.t2,Configure S3 buckets and policies,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph3.st2.t1,Create SQS queues,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph3.st2.t2,Configure SNS topics and subscriptions,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph4.st1.t1,Configure EventBridge buses and rules,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph4.st1.t2,"Configure schedules, pipes, and connections",mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph4.st2.t1,Deploy Lambda functions,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph4.st2.t2,Configure event sources and permissions,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph5.st1.t1,Configure APIs and routes,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph5.st1.t2,Configure integrations and authorizers,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph5.st2.ss1.t1,Deploy state machines,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph5.st2.ss2.t1,Configure CloudWatch logs and metrics,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph5.st2.ss2.t2,Configure alarms and dashboards,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph6.st1.t1,Create integration relationship views,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph6.st2.t1,Complete trace and readiness,mde/process/process-definitions/psm.json
+psm,TaskDefinition,task.psm.ph6.st3.t1,Review and adapt PSM increment,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.increment-plan,PSM Increment Plan,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.deployment-strategy,Deployment Strategy,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.stack-scaffold,SAM Stack Scaffold,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.security-baseline,Security Baseline,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.network-identity,Network & Identity,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.storage-layer,Durable Storage Layer,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.messaging-layer,Messaging Layer,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.event-fabric,Event Fabric,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.compute-layer,Lambda Compute Layer,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.api-layer,API Gateway Layer,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.workflow-observability,Workflow & Observability,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.integration-views,Integration View Catalog,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.deployment-readiness,Deployment Readiness Record,mde/process/process-definitions/psm.json
+psm,WorkProductDefinition,psm-artifact.increment-review,PSM Increment Review Record,mde/process/process-definitions/psm.json
+psm,Guidance,psm.guid.sam-containment,SAM stack containment,mde/process/process-definitions/psm.json
+psm,Guidance,psm.guid.generated-is-draft,Generated PSM is a draft,mde/process/process-definitions/psm.json
+psm,Guidance,psm.guid.least-privilege,Least-privilege IAM,mde/process/process-definitions/psm.json
+psm,Guidance,psm.guid.integration-views,Integration views for traceability,mde/process/process-definitions/psm.json
+psm,Guidance,psm.guid.deployable-slice,Deployable slice discipline,mde/process/process-definitions/psm.json
+artifact,RoleDefinition,role.release-engineer,Release Engineer,mde/process/process-definitions/artifact.json
+artifact,RoleDefinition,role.cloud-platform-engineer,Cloud Platform Engineer,mde/process/process-definitions/artifact.json
+artifact,RoleDefinition,role.application-engineer,Application Engineer,mde/process/process-definitions/artifact.json
+artifact,RoleDefinition,role.security-engineer,Security Engineer,mde/process/process-definitions/artifact.json
+artifact,RoleDefinition,role.quality-engineer,Quality Engineer,mde/process/process-definitions/artifact.json
+artifact,RoleDefinition,role.service-owner,Service Owner,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph1.st1.t1,Review project structure and generated templates,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph1.st1.t2,Establish source-control and release baseline,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph1.st2.t1,Route structural gaps back to the PSM,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph1.st2.t2,Complete repository hygiene,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph2.st1.t1,Define parameter and environment contract,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph2.st1.t2,Configure secret references and encryption,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph2.st2.t1,Review IAM and deployment permissions,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph2.st2.t2,Implement repeatable build and deployment pipeline,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph3.st1.t1,Run reproducible build and infrastructure validation,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph3.st1.t2,Assess dependencies and security findings,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph3.st2.t1,Deploy to staging and execute acceptance tests,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph3.st2.t2,Verify observability and operational signals,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph4.st1.t1,"Create release, rollback, and communication plan",mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph4.st1.t2,Obtain production readiness approval,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph4.st2.t1,Complete operations handover,mde/process/process-definitions/artifact.json
+artifact,TaskDefinition,task.artifact.ph4.st2.t2,Execute production validation and close release,mde/process/process-definitions/artifact.json
+artifact,WorkProductDefinition,artifact.generated-baseline,Generated Project Baseline,mde/process/process-definitions/artifact.json
+artifact,WorkProductDefinition,artifact.environment-contract,Environment Configuration Contract,mde/process/process-definitions/artifact.json
+artifact,WorkProductDefinition,artifact.security-record,Security Review Record,mde/process/process-definitions/artifact.json
+artifact,WorkProductDefinition,artifact.verification-evidence,Verification Evidence,mde/process/process-definitions/artifact.json
+artifact,WorkProductDefinition,artifact.release-plan,Release & Rollback Plan,mde/process/process-definitions/artifact.json
+artifact,WorkProductDefinition,artifact.operations-pack,Operations Handover Pack,mde/process/process-definitions/artifact.json
+artifact,Guidance,artifact.guid.generated-baseline,Generated output is a controlled baseline,mde/process/process-definitions/artifact.json
+artifact,Guidance,artifact.guid.environment-parity,Environment parity with explicit differences,mde/process/process-definitions/artifact.json
+artifact,Guidance,artifact.guid.no-secrets,No secrets in artifacts,mde/process/process-definitions/artifact.json
+artifact,Guidance,artifact.guid.evidence,Evidence before promotion,mde/process/process-definitions/artifact.json
+artifact,Guidance,artifact.guid.rollback,Rehearse recovery,mde/process/process-definitions/artifact.json
+engineered-core,RoleDefinition,role.sponsor,Sponsor,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,RoleDefinition,role.finops-cost-analyst,FinOps and Cost Analyst,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,RoleDefinition,role.records-data-steward,Records and Data Steward,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.product-system-charter,Product and System Charter,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.serverless-suitability-record,Feasibility and Serverless Suitability Record,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.cost-model-budget-guardrails,Initial Cost Model and Budget Guardrails,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.risk-opportunity-register,Risk and Opportunity Register,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.situational-method-profile,Situational Method Profile,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.team-topology-responsibility,Team Topology and Responsibility Assignment,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.integrated-roadmap-plan,"Integrated Roadmap, Release, and Increment Plan",mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.cim-revision,CIM Revision,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.cim-readiness-record,CIM Review and Readiness Record,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.cim-pim-transformation-run,CIM to PIM Transformation Run,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.pim-revision,PIM Revision,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.architecture-decisions,Architecture Decision Record Set,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.crosscutting-analysis,"Threat, Privacy, Failure, and Cost Analysis",mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.pim-readiness-record,PIM Review and Readiness Record,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.pim-psm-transformation-run,PIM to PSM Transformation Run,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.aws-psm-revision,AWS PSM Revision,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.psm-readiness-record,PSM Review and Readiness Record,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.generated-artifact-baseline,Generated Artifact Baseline and Manifest,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.source-test-baseline,Source and Test Baseline,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.verification-validation-record,Verification and Validation Record,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.immutable-release-candidate,Immutable Release Candidate,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.release-recovery-plan,Release and Recovery Plan,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.operational-readiness-pack,Operational Readiness and Handover Pack,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.deployment-promotion-record,Deployment and Promotion Record,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.operational-evidence-set,Operational Evidence Set,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.incident-problem-record,Incident and Problem Record,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.change-impact-record,Change and Impact Record,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.retirement-closure-record,"Retirement, Migration, and Closure Record",mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.retrospective-improvement-record,Retrospective and Improvement Record,mde/process/engineered-method/method-library/core-method-content.json
+engineered-fragments,Guidance,guidance.fragment.mf-01,MF-01 — Opportunity and feasibility,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-02,"MF-02 — Serverless suitability, cost, risk, and provider decision",mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-03,MF-03 — Situational method tailoring,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-04,"MF-04 — Product, release, and increment framing",mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-05,MF-05 — Event-driven domain discovery and CIM modeling,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-06,MF-06 — CIM assurance and readiness,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-07,MF-07 — CIM to PIM transformation and reconciliation,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-08,MF-08 — Platform-independent serverless architecture,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-09,MF-09 — PIM to PSM transformation and reconciliation,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-10,MF-10 — AWS PSM refinement and assurance,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-11,MF-11 — Reproducible model-to-text generation,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-12,MF-12 — Artifact completion and test in the small,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-13,MF-13 — Test in the large and release qualification,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-14,MF-14 — Progressive CI/CD and transition,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-15,"MF-15 — Operate, observe, control cost, and learn",mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-16,"MF-16 — Incident, problem, and controlled change propagation",mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-17,"MF-17 — Retirement, migration, and closure",mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.uf-01,"UF-01 — Integrated management, assurance, and evidence",mde/process/engineered-method/method-library/method-fragments.json

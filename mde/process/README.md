@@ -35,14 +35,14 @@ When metamodels change:
 2. Regenerate artifacts:
 
    ```bash
-   node mde/methodology/tools/build-process-definitions.mjs
-   node mde/methodology/tools/generate-coverage-matrix.mjs
-   node mde/methodology/tools/augment-ui-metadata.mjs
-   node mde/methodology/tools/generate-methodology-guides.mjs
-   node mde/methodology/tools/generate-methodology-narratives.mjs
+   node mde/process/tools/build-process-definitions.mjs
+   node mde/process/tools/generate-coverage-matrix.mjs
+   node mde/process/tools/augment-ui-metadata.mjs
+   node mde/process/tools/generate-methodology-guides.mjs
+   node mde/process/tools/generate-methodology-narratives.mjs
    ```
 
-3. Run `node mde/methodology/tools/validate-coverage.mjs` (also invoked by `scripts/verify.py`).
+3. Run `node mde/process/tools/validate-coverage.mjs` (also invoked by `scripts/verify.py`).
 
 ## API
 

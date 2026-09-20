@@ -136,7 +136,7 @@ the module structure and Maven dependency direction. The formal sources of truth
 
 - [Public documentation](docs/public-docs/)
 - [Model-driven engineering concepts](docs/public-docs/docs/concepts/model-driven-engineering.md)
-- [Full-lifecycle software development method](mde/methodology/software-development-process.md)
+- [Full-lifecycle software development method](mde/process/software-development-process.md)
 - [End-to-end modeling methodology](docs/public-docs/docs/guides/end-to-end-modeling-methodology.md)
 - [REST API reference](docs/public-docs/docs/reference/rest-api.md)
 - [OpenAPI contract](docs/api/openapi/openapi.yaml)

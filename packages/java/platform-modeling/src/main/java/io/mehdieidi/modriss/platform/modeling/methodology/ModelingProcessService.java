@@ -16,8 +16,7 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Loads SPEM-aligned modeling process definitions from {@code
- * mde/methodology/process-definitions/}.
+ * Loads SPEM-aligned modeling process definitions from {@code mde/process/process-definitions/}.
  */
 public final class ModelingProcessService {
 
@@ -49,6 +48,20 @@ public final class ModelingProcessService {
   public Map<String, Object> processDefinition(String level) {
     String normalized = normalizeLevel(level);
     return readDefinition(normalized);
+  }
+
+  /**
+   * Returns the consolidated SPEM method-content index for the full MODRISS library.
+   *
+   * @return reusable roles, tasks, work products, guidance, and process components
+   */
+  public Map<String, Object> methodContentIndex() {
+    Path file =
+        methodologyRoot()
+            .resolve("engineered-method")
+            .resolve("spem")
+            .resolve("method-content-index.json");
+    return readJsonFile(file, "SPEM method-content index");
   }
 
   /**

@@ -1051,10 +1051,23 @@ paths:
           required: true
           schema:
             type: string
-            enum: [cim, pim, psm]
+            enum: [cim, pim, psm, artifact, end-to-end]
       responses:
         "200":
           description: Modeling process definition
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /api/modeling/method-content:
+    get:
+      tags: [Modeling]
+      summary: Get the consolidated SPEM method-content library
+      security: []
+      responses:
+        "200":
+          description: Roles, tasks, work products, guidance, and process components
           content:
             application/json:
               schema:

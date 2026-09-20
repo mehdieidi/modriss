@@ -23,7 +23,7 @@ The thesis-style rationale and the narrative description of all 18 method
 fragments are in `../12-method-library-and-fragment-report.md`.
 
 Stable source TaskDefinitions remain in
-`mde/methodology/process-definitions/{cim,pim,psm,artifact,end-to-end}.json`.
+`mde/process/process-definitions/{cim,pim,psm,artifact,end-to-end}.json`.
 They are rendered into the Markdown catalog by the package builder rather than
 being manually duplicated. This keeps the readable descriptions synchronized
 with the executable method specifications and their metamodel coverage.

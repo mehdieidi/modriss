@@ -30,28 +30,28 @@ Detailed requirement arrays are stored on every entry in
 
 ## Process-to-repository trace
 
-| Method element                         | Implemented source/evidence                                                                                                                                           |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CIM abstract syntax                    | `mde/metamodels/cim/cim-combined.ecore` and modular `.emf` sources                                                                                                    |
-| CIM semantics                          | `mde/validation/cim/cim-semantic-validation.evl` and rules                                                                                                            |
-| CIM method component                   | `mde/methodology/process-definitions/cim.json` (26 TaskDefinitions)                                                                                                   |
-| CIM coverage                           | `mde/methodology/coverage-matrix/cim-coverage.json`                                                                                                                   |
-| CIM→PIM                                | `mde/transformations/cim-to-pim/` with trace/readiness and synchronization contract                                                                                   |
-| PIM abstract syntax                    | `mde/metamodels/pim/pim-combined.ecore` and modular `.emf` sources                                                                                                    |
-| PIM semantics                          | `mde/validation/pim/pim-semantic-validation.evl` and rules                                                                                                            |
-| PIM method component                   | `mde/methodology/process-definitions/pim.json` (32 TaskDefinitions)                                                                                                   |
-| PIM coverage                           | `mde/methodology/coverage-matrix/pim-coverage.json`                                                                                                                   |
-| PIM→AWS PSM                            | `mde/transformations/pim-to-awspsm/` with trace/readiness and synchronization contract                                                                                |
-| AWS PSM abstract syntax                | `mde/metamodels/psm/psm-combined.ecore` and modular `.emf` sources                                                                                                    |
-| PSM semantics                          | `mde/validation/psm/psm-semantic-validation.evl`, AWS profile, and rules                                                                                              |
-| PSM method component                   | `mde/methodology/process-definitions/psm.json` (28 TaskDefinitions)                                                                                                   |
-| PSM coverage                           | `mde/methodology/coverage-matrix/psm-coverage.json`                                                                                                                   |
-| PSM→artifacts                          | `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx` and EGL templates                                                                                           |
-| Artifact completion/readiness          | `mde/methodology/process-definitions/artifact.json` (16 TaskDefinitions)                                                                                              |
-| Integrated executable process          | `mde/methodology/process-definitions/end-to-end.json`                                                                                                                 |
-| Nested lifecycle and release semantics | `mde/methodology/engineered-method/spem/lifecycle.puml`, `release-cycle.puml`, and generated conditional `WorkSequence` elements in `modriss-method-library.spem.xml` |
-| Human modeling guidance                | `docs/public-docs/docs/guides/{cim,pim,psm,end-to-end}-modeling-methodology.md`                                                                                       |
-| Operations/release guidance            | `docs/devops-sre/` and public operations documentation                                                                                                                |
+| Method element                         | Implemented source/evidence                                                                                                                                       |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CIM abstract syntax                    | `mde/metamodels/cim/cim-combined.ecore` and modular `.emf` sources                                                                                                |
+| CIM semantics                          | `mde/validation/cim/cim-semantic-validation.evl` and rules                                                                                                        |
+| CIM method component                   | `mde/process/process-definitions/cim.json` (26 TaskDefinitions)                                                                                                   |
+| CIM coverage                           | `mde/process/coverage-matrix/cim-coverage.json`                                                                                                                   |
+| CIM→PIM                                | `mde/transformations/cim-to-pim/` with trace/readiness and synchronization contract                                                                               |
+| PIM abstract syntax                    | `mde/metamodels/pim/pim-combined.ecore` and modular `.emf` sources                                                                                                |
+| PIM semantics                          | `mde/validation/pim/pim-semantic-validation.evl` and rules                                                                                                        |
+| PIM method component                   | `mde/process/process-definitions/pim.json` (32 TaskDefinitions)                                                                                                   |
+| PIM coverage                           | `mde/process/coverage-matrix/pim-coverage.json`                                                                                                                   |
+| PIM→AWS PSM                            | `mde/transformations/pim-to-awspsm/` with trace/readiness and synchronization contract                                                                            |
+| AWS PSM abstract syntax                | `mde/metamodels/psm/psm-combined.ecore` and modular `.emf` sources                                                                                                |
+| PSM semantics                          | `mde/validation/psm/psm-semantic-validation.evl`, AWS profile, and rules                                                                                          |
+| PSM method component                   | `mde/process/process-definitions/psm.json` (28 TaskDefinitions)                                                                                                   |
+| PSM coverage                           | `mde/process/coverage-matrix/psm-coverage.json`                                                                                                                   |
+| PSM→artifacts                          | `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx` and EGL templates                                                                                       |
+| Artifact completion/readiness          | `mde/process/process-definitions/artifact.json` (16 TaskDefinitions)                                                                                              |
+| Integrated executable process          | `mde/process/process-definitions/end-to-end.json`                                                                                                                 |
+| Nested lifecycle and release semantics | `mde/process/engineered-method/spem/lifecycle.puml`, `release-cycle.puml`, and generated conditional `WorkSequence` elements in `modriss-method-library.spem.xml` |
+| Human modeling guidance                | `docs/public-docs/docs/guides/{cim,pim,psm,end-to-end}-modeling-methodology.md`                                                                                   |
+| Operations/release guidance            | `docs/devops-sre/` and public operations documentation                                                                                                            |
 
 ## Lifecycle work-product trace
 

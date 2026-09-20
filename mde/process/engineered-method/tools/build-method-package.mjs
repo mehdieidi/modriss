@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
-const packageRoot = path.join(root, 'mde', 'methodology', 'engineered-method');
-const sourceRoot = path.join(root, 'mde', 'methodology', 'process-definitions');
+const packageRoot = path.join(root, 'mde', 'process', 'engineered-method');
+const sourceRoot = path.join(root, 'mde', 'process', 'process-definitions');
 const spemRoot = path.join(packageRoot, 'spem');
 const libraryRoot = path.join(packageRoot, 'method-library');
 const sourceNames = ['end-to-end', 'cim', 'pim', 'psm', 'artifact'];

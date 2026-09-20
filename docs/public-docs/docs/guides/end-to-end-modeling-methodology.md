@@ -3,13 +3,13 @@
 This guide describes the **technical modeling increment** inside the MODRISS full-lifecycle method,
 from business intent through deployable AWS artifacts. The normative lifecycle method—including
 initiation, situational tailoring, multi-team coordination, release, operations, change propagation,
-and retirement—is [documented here](https://github.com/mehdieidi/modriss/blob/main/mde/methodology/software-development-process.md).
+and retirement—is [documented here](https://github.com/mehdieidi/modriss/blob/main/mde/process/software-development-process.md).
 This guide connects three level-specific methodologies, [CIM](cim-modeling-methodology.md),
 [PIM](pim-modeling-methodology.md), and [PSM](psm-modeling-methodology.md), with transformation
 milestones, EVL gates, iteration loops, and human-in-the-loop refinement.
 
 The machine-readable process definition lives at
-`mde/methodology/process-definitions/end-to-end.json`. Its **`processEngine`** is the vertical
+`mde/process/process-definitions/end-to-end.json`. Its **`processEngine`** is the vertical
 increment kernel: one CIM → PIM → PSM → artifact-readiness revolution per capability increment.
 It is coordinated by the lifecycle phases around it; it is not itself the complete SDLC.
 

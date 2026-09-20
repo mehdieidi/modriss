@@ -191,12 +191,7 @@
               style="--icon-src: url(&quot;/assets/icons/file.svg&quot;)"
             ></span>
           </button>
-          <button
-            class="workspace-rail-item"
-            id="methodologyRailBtn"
-            title="Modeling methodology"
-            type="button"
-          >
+          <button class="workspace-rail-item" id="methodologyRailBtn" title="Process" type="button">
             <span
               aria-hidden="true"
               class="workspace-rail-icon icon-svg icon-mask"
@@ -407,7 +402,7 @@
                 <div id="methodologyPane">
                   <div class="sidebar-section sidebar-section-grow">
                     <div class="sidebar-section-header">
-                      <span class="sidebar-section-title">Methodology</span>
+                      <span class="sidebar-section-title">Process</span>
                       <span class="sidebar-section-hint">step-by-step guide</span>
                     </div>
                     <div class="palette-search-row">
@@ -711,13 +706,13 @@
             <div class="methodology-map-shell">
               <header class="methodology-map-header">
                 <div class="methodology-map-header-text">
-                  <h2 id="methodologyMapTitle">Process map</h2>
+                  <h2 id="methodologyMapTitle">Process</h2>
                   <nav
                     class="methodology-map-breadcrumb"
                     id="methodologyMapBreadcrumb"
                     aria-label="Process map location"
                   ></nav>
-                  <p id="methodologyMapSubtitle">SPEM lifecycle and engine cycle</p>
+                  <p id="methodologyMapSubtitle">Software development process</p>
                 </div>
                 <div class="methodology-map-header-actions">
                   <button
@@ -731,6 +726,19 @@
                       aria-hidden="true"
                       class="icon-svg icon-mask"
                       style="--icon-src: url(&quot;/assets/icons/undo.svg&quot;)"
+                    ></span>
+                  </button>
+                  <button
+                    type="button"
+                    class="methodology-map-back"
+                    id="methodologyMapForwardBtn"
+                    title="Forward"
+                    aria-label="Forward"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="icon-svg icon-mask"
+                      style="--icon-src: url(&quot;/assets/icons/arrow_forward.svg&quot;)"
                     ></span>
                   </button>
                   <div class="methodology-map-zoom" aria-label="Zoom">
@@ -1374,7 +1382,7 @@
         role="dialog"
       >
         <div class="modal-dialog">
-          <h3 class="modal-title" id="validationTitle">Methodology Constraints</h3>
+          <h3 class="modal-title" id="validationTitle">Modeling Framework Constraints</h3>
           <p class="modal-subtitle" id="validationSubtitle"></p>
           <div class="validation-issues" id="validationIssues"></div>
           <div class="modal-actions">

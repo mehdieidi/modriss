@@ -128,7 +128,7 @@ export const state = {
   guidedModeling: {
     definitions: {},
     endToEnd: null,
-    progress: { completedTaskIds: [], activePhaseId: null },
+    selection: null,
     loading: false,
   },
   validation: {

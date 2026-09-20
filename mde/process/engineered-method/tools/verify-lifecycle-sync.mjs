@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
-const methodRoot = path.join(root, 'mde', 'methodology');
+const methodRoot = path.join(root, 'mde', 'process');
 const engineeredRoot = path.join(methodRoot, 'engineered-method');
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const fail = message => {
@@ -27,7 +27,7 @@ const verifyPlantUmlStructure = (text, label) => {
   }
 };
 
-const methodProcess = JSON.parse(read('mde/methodology/process-definitions/end-to-end.json'));
+const methodProcess = JSON.parse(read('mde/process/process-definitions/end-to-end.json'));
 const sequences = methodProcess.workSequences ?? [];
 const requiredSequences = [
   {
@@ -69,9 +69,9 @@ if (!releaseCycle?.isRepeatable || releaseCycle.repeatCondition !== 'retirement-
   fail('processEngine.releaseCycle must explicitly repeat until retirement is authorized');
 }
 
-const overview = read('mde/methodology/engineered-method/spem/lifecycle.puml');
-const sourceView = read('mde/methodology/spem/end-to-end-process.activity.puml');
-const releaseView = read('mde/methodology/engineered-method/spem/release-cycle.puml');
+const overview = read('mde/process/engineered-method/spem/lifecycle.puml');
+const sourceView = read('mde/process/spem/end-to-end-process.activity.puml');
+const releaseView = read('mde/process/engineered-method/spem/release-cycle.puml');
 for (const [label, diagram] of [
   ['lifecycle.puml', overview],
   ['end-to-end-process.activity.puml', sourceView],
@@ -88,35 +88,35 @@ if (/Begin next release[^\n]*\n\s*detach/i.test(overview + releaseView)) {
 }
 
 const plantUmlPaths = [
-  'mde/methodology/engineered-method/spem/lifecycle.puml',
-  'mde/methodology/engineered-method/spem/release-cycle.puml',
-  'mde/methodology/engineered-method/spem/model-driven-increment.puml',
-  'mde/methodology/engineered-method/spem/change-routing.puml',
-  'mde/methodology/spem/end-to-end-process.activity.puml',
-  'mde/methodology/spem/cim-process.activity.puml',
-  'mde/methodology/spem/pim-process.activity.puml',
-  'mde/methodology/spem/psm-process.activity.puml',
-  'mde/methodology/spem/artifact-process.activity.puml',
+  'mde/process/engineered-method/spem/lifecycle.puml',
+  'mde/process/engineered-method/spem/release-cycle.puml',
+  'mde/process/engineered-method/spem/model-driven-increment.puml',
+  'mde/process/engineered-method/spem/change-routing.puml',
+  'mde/process/spem/end-to-end-process.activity.puml',
+  'mde/process/spem/cim-process.activity.puml',
+  'mde/process/spem/pim-process.activity.puml',
+  'mde/process/spem/psm-process.activity.puml',
+  'mde/process/spem/artifact-process.activity.puml',
 ];
 for (const plantUmlPath of plantUmlPaths) {
   verifyPlantUmlStructure(read(plantUmlPath), plantUmlPath);
 }
 
-const lifecycleHtml = read('mde/methodology/engineered-method/diagrams/modriss-lifecycle-manuscript.html');
-const alternateHtml = read('mde/methodology/engineered-method/diagrams/modriss-lifecycle-2.html');
+const lifecycleHtml = read('mde/process/engineered-method/diagrams/modriss-lifecycle-manuscript.html');
+const alternateHtml = read('mde/process/engineered-method/diagrams/modriss-lifecycle-2.html');
 requireText(lifecycleHtml, 'NEXT RELEASE / CHANGE', 'primary publication diagram');
 requireText(alternateHtml, 'NEXT RELEASE / CHANGE RE-ENTRY', 'alternative publication diagram');
-const lifecycleSvg = read('mde/methodology/engineered-method/diagrams/modriss-lifecycle-manuscript.svg');
-const alternateSvg = read('mde/methodology/engineered-method/diagrams/modriss-lifecycle-2.svg');
+const lifecycleSvg = read('mde/process/engineered-method/diagrams/modriss-lifecycle-manuscript.svg');
+const alternateSvg = read('mde/process/engineered-method/diagrams/modriss-lifecycle-2.svg');
 requireText(lifecycleSvg, 'NEXT RELEASE / CHANGE', 'exported primary SVG');
 requireText(alternateSvg, 'NEXT RELEASE / CHANGE RE-ENTRY', 'exported alternative SVG');
 
-const processNarrative = read('mde/methodology/engineered-method/04-development-process.md');
-const thesisChapter = read('mde/methodology/engineered-method/10-thesis-process-chapter.md');
+const processNarrative = read('mde/process/engineered-method/04-development-process.md');
+const thesisChapter = read('mde/process/engineered-method/10-thesis-process-chapter.md');
 requireText(processNarrative, '### Nested lifecycle cadence', 'development-process narrative');
 requireText(thesisChapter, 'The lifecycle therefore has three nested cycles.', 'thesis chapter');
 
-const xml = read('mde/methodology/engineered-method/spem/modriss-method-library.spem.xml');
+const xml = read('mde/process/engineered-method/spem/modriss-method-library.spem.xml');
 requireText(xml, 'modriss:sourceId="modriss.end-to-end.release-cycle"', 'generated SPEM XML');
 requireText(xml, 'modriss:repeatCondition="retirement-not-authorized"', 'generated SPEM XML');
 for (const expected of requiredSequences) {

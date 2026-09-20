@@ -2977,7 +2977,7 @@
           <modriss:requirementRef>MR-MDE-01</modriss:requirementRef>
           <modriss:requirementRef>MR-MDE-02</modriss:requirementRef>
           <modriss:patternSource>MDASP Define CIM</modriss:patternSource>
-          <modriss:patternSource>mde/methodology/process-definitions/cim.json</modriss:patternSource>
+          <modriss:patternSource>mde/process/process-definitions/cim.json</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-06" name="MF-06 — CIM assurance and readiness" modriss:sourceId="guidance.fragment.mf-06">
@@ -3047,7 +3047,7 @@
           <modriss:requirementRef>MR-SL-10</modriss:requirementRef>
           <modriss:requirementRef>MR-SL-12</modriss:requirementRef>
           <modriss:patternSource>MDASP Define PIM</modriss:patternSource>
-          <modriss:patternSource>mde/methodology/process-definitions/pim.json</modriss:patternSource>
+          <modriss:patternSource>mde/process/process-definitions/pim.json</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-09" name="MF-09 — PIM to PSM transformation and reconciliation" modriss:sourceId="guidance.fragment.mf-09">
@@ -3091,7 +3091,7 @@
           <modriss:requirementRef>MR-SL-13</modriss:requirementRef>
           <modriss:requirementRef>MR-SL-16</modriss:requirementRef>
           <modriss:requirementRef>MR-SL-17</modriss:requirementRef>
-          <modriss:patternSource>mde/methodology/process-definitions/psm.json</modriss:patternSource>
+          <modriss:patternSource>mde/process/process-definitions/psm.json</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-11" name="MF-11 — Reproducible model-to-text generation" modriss:sourceId="guidance.fragment.mf-11">
@@ -3128,7 +3128,7 @@
           <modriss:requirementRef>MR-SL-14</modriss:requirementRef>
           <modriss:requirementRef>MR-MDE-11</modriss:requirementRef>
           <modriss:patternSource>MDASP Coding/Testing</modriss:patternSource>
-          <modriss:patternSource>mde/methodology/process-definitions/artifact.json</modriss:patternSource>
+          <modriss:patternSource>mde/process/process-definitions/artifact.json</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-13" name="MF-13 — Test in the large and release qualification" modriss:sourceId="guidance.fragment.mf-13">

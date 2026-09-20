@@ -1,13 +1,13 @@
 {
   "schemaVersion": "1.0",
   "generatedFrom": [
-    "mde/methodology/process-definitions/end-to-end.json",
-    "mde/methodology/process-definitions/cim.json",
-    "mde/methodology/process-definitions/pim.json",
-    "mde/methodology/process-definitions/psm.json",
-    "mde/methodology/process-definitions/artifact.json",
-    "mde/methodology/engineered-method/method-library/core-method-content.json",
-    "mde/methodology/engineered-method/method-library/method-fragments.json"
+    "mde/process/process-definitions/end-to-end.json",
+    "mde/process/process-definitions/cim.json",
+    "mde/process/process-definitions/pim.json",
+    "mde/process/process-definitions/psm.json",
+    "mde/process/process-definitions/artifact.json",
+    "mde/process/engineered-method/method-library/core-method-content.json",
+    "mde/process/engineered-method/method-library/method-fragments.json"
   ],
   "spemVersion": "2.0",
   "representation": "Consolidated MODRISS method content mapped to SPEM 2.0",
@@ -12337,7 +12337,7 @@
       "workProducts": ["WP-08"],
       "selection": "required",
       "requirements": ["MR-RE-01", "MR-RE-02", "MR-MDE-01", "MR-MDE-02"],
-      "references": ["MDASP Define CIM", "mde/methodology/process-definitions/cim.json"],
+      "references": ["MDASP Define CIM", "mde/process/process-definitions/cim.json"],
       "sourceProcesses": ["engineered-fragments"],
       "sourceVariants": []
     },
@@ -12400,7 +12400,7 @@
         "MR-SL-10",
         "MR-SL-12"
       ],
-      "references": ["MDASP Define PIM", "mde/methodology/process-definitions/pim.json"],
+      "references": ["MDASP Define PIM", "mde/process/process-definitions/pim.json"],
       "sourceProcesses": ["engineered-fragments"],
       "sourceVariants": []
     },
@@ -12434,7 +12434,7 @@
       "workProducts": ["WP-16", "WP-17"],
       "selection": "required for AWS profile",
       "requirements": ["MR-SL-12", "MR-SL-13", "MR-SL-16", "MR-SL-17"],
-      "references": ["mde/methodology/process-definitions/psm.json"],
+      "references": ["mde/process/process-definitions/psm.json"],
       "sourceProcesses": ["engineered-fragments"],
       "sourceVariants": []
     },
@@ -12468,7 +12468,7 @@
       "workProducts": ["WP-18", "WP-19", "WP-20"],
       "selection": "required",
       "requirements": ["MR-SL-13", "MR-SL-14", "MR-MDE-11"],
-      "references": ["MDASP Coding/Testing", "mde/methodology/process-definitions/artifact.json"],
+      "references": ["MDASP Coding/Testing", "mde/process/process-definitions/artifact.json"],
       "sourceProcesses": ["engineered-fragments"],
       "sourceVariants": []
     },

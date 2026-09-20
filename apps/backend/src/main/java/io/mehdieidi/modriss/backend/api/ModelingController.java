@@ -70,6 +70,16 @@ public class ModelingController {
   }
 
   /**
+   * Returns the consolidated SPEM method-content library used by the full methodology explorer.
+   *
+   * @return roles, tasks, work products, guidance, and process components
+   */
+  @GetMapping("/modeling/method-content")
+  Map<String, Object> methodContentIndex() {
+    return modelingProcess.methodContentIndex();
+  }
+
+  /**
    * Returns concept coverage matrix for a modeling level.
    *
    * @param level {@code cim}, {@code pim}, or {@code psm}

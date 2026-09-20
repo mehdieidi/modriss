@@ -57,7 +57,7 @@ every vendor's proprietary SPEM tooling.
 
 ## Relationship to the existing repository
 
-The existing files under `mde/methodology/process-definitions` remain the
+The existing files under `mde/process/process-definitions` remain the
 executable, UI-oriented definitions of CIM, PIM, PSM, artifact readiness, and
 the integrated lifecycle. This package provides the missing academic argument:
 why the lifecycle has this structure, which method fragments it reuses, which

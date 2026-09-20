@@ -65,3 +65,15 @@ export function roleForTask(process, task, stage, phase) {
 export function guidanceForProcess(process) {
   return process?.methodContent?.guidance || process?.guidelines || [];
 }
+
+export function processDisplayTitle(process) {
+  if (process?.processId === "modriss.end-to-end.modeling") return "Full Process";
+
+  const level = String(process?.level || "").toLowerCase();
+  if (["cim", "pim", "psm"].includes(level)) {
+    return `${level.toUpperCase()} Modeling Process`;
+  }
+  if (level === "artifact") return "Generated Artifacts & Deployment Readiness Process";
+
+  return process?.displayName ? `${process.displayName} Process` : "Process";
+}

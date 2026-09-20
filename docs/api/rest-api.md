@@ -154,6 +154,7 @@ paths.
 | ------ | ------------------------------------------------------------------------------------ | --------------- | -------------------------------- |
 | `GET`  | `/api/modeling/config`                                                               | none            | modeling palette and UI metadata |
 | `GET`  | `/api/modeling/process/{level}`                                                      | none            | SPEM-aligned process definition  |
+| `GET`  | `/api/modeling/method-content`                                                       | none            | consolidated SPEM method library |
 | `GET`  | `/api/modeling/process/{level}/coverage`                                             | none            | concept coverage matrix          |
 | `POST` | `/api/layout`                                                                        | `LayoutRequest` | `LayoutResponse`                 |
 | `POST` | `/api/{level}/{modelId}/views/{viewId}/layout?force=false&strategy=SPACIOUS_LAYERED` | none            | Persisted lazy view layout       |

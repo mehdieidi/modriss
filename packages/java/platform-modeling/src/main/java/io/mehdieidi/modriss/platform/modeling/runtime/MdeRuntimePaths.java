@@ -142,7 +142,7 @@ public final class MdeRuntimePaths {
    * @return methodology directory
    */
   public Path methodologyRoot() {
-    return resolveConfiguredRoot(null, "mde/methodology").normalize();
+    return resolveConfiguredRoot(null, "mde/process").normalize();
   }
 
   /**

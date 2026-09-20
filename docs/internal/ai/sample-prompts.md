@@ -307,7 +307,7 @@ These prompts are especially useful after selecting one or more canvas elements.
 ## Guided Modeling Task Prompts
 
 Use these when the **Guided Modeling** panel is active. Each prompt maps to a process task ID
-from `mde/methodology/process-definitions/`.
+from `mde/process/process-definitions/`.
 
 ### CIM phases
 

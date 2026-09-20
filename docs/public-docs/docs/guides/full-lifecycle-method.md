@@ -7,9 +7,9 @@ situational tailoring, team topology, release management, transition,
 operations, controlled change propagation, and retirement.
 
 The maintained normative method is
-[`mde/methodology/software-development-process.md`](https://github.com/mehdieidi/modriss/blob/main/mde/methodology/software-development-process.md).
+[`mde/process/software-development-process.md`](https://github.com/mehdieidi/modriss/blob/main/mde/process/software-development-process.md).
 Its machine-readable process definitions are in
-[`mde/methodology/process-definitions/`](https://github.com/mehdieidi/modriss/tree/main/mde/methodology/process-definitions).
+[`mde/process/process-definitions/`](https://github.com/mehdieidi/modriss/tree/main/mde/process/process-definitions).
 
 ## Lifecycle shape
 

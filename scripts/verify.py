@@ -53,7 +53,7 @@ def main() -> int:
 
     run([python_executable(), "scripts/check-flyway-migration-versions.py", "--changed-only"])
 
-    run(["node", "mde/methodology/tools/validate-coverage.mjs"])
+    run(["node", "mde/process/tools/validate-coverage.mjs"])
 
     if not args.skip_tests:
         test_cmd = [maven(), "test"]

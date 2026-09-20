@@ -80,7 +80,7 @@
       "resultContext": "An accepted computation-independent model expresses intent, behavior, policy, and governance.",
       "roles": ["R-02", "R-03", "R-06"],
       "workProducts": ["WP-08"],
-      "source": ["MDASP Define CIM", "mde/methodology/process-definitions/cim.json"],
+      "source": ["MDASP Define CIM", "mde/process/process-definitions/cim.json"],
       "selection": "required",
       "requirements": ["MR-RE-01", "MR-RE-02", "MR-MDE-01", "MR-MDE-02"]
     },
@@ -123,7 +123,7 @@
       "resultContext": "An accepted provider-independent architecture is ready for capability mapping.",
       "roles": ["R-07", "R-09", "R-10", "R-11", "R-12", "R-14"],
       "workProducts": ["WP-11", "WP-12", "WP-13", "WP-14"],
-      "source": ["MDASP Define PIM", "mde/methodology/process-definitions/pim.json"],
+      "source": ["MDASP Define PIM", "mde/process/process-definitions/pim.json"],
       "selection": "required",
       "requirements": [
         "MR-SL-05",
@@ -157,7 +157,7 @@
       "resultContext": "An accepted AWS PSM is ready for reproducible generation.",
       "roles": ["R-08", "R-10", "R-11", "R-12", "R-14", "R-15"],
       "workProducts": ["WP-16", "WP-17"],
-      "source": ["mde/methodology/process-definitions/psm.json"],
+      "source": ["mde/process/process-definitions/psm.json"],
       "selection": "required for AWS profile",
       "requirements": ["MR-SL-12", "MR-SL-13", "MR-SL-16", "MR-SL-17"]
     },
@@ -183,7 +183,7 @@
       "resultContext": "Business logic and extensions are complete and component evidence is available.",
       "roles": ["R-09", "R-10", "R-11"],
       "workProducts": ["WP-18", "WP-19", "WP-20"],
-      "source": ["MDASP Coding/Testing", "mde/methodology/process-definitions/artifact.json"],
+      "source": ["MDASP Coding/Testing", "mde/process/process-definitions/artifact.json"],
       "selection": "required",
       "requirements": ["MR-SL-13", "MR-SL-14", "MR-MDE-11"]
     },

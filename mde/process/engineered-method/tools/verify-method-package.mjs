@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
-const packageRoot = path.join(root, 'mde', 'methodology', 'engineered-method');
+const packageRoot = path.join(root, 'mde', 'process', 'engineered-method');
 const readJson = file => JSON.parse(fs.readFileSync(file, 'utf8'));
 const fail = message => {
   throw new Error(message);
