@@ -811,6 +811,14 @@ The current consolidated package contains:
 - four MethodConfigurations corresponding to exploration, standard,
   multi-team, and regulated/high-criticality profiles.
 
+The fragment-by-fragment rationale and the textual description of the library
+are reported in `12-method-library-and-fragment-report.md`. A generated
+human-readable appendix, `method-library/reusable-method-content-catalog.md`,
+lists every consolidated role, task, work product, and guidance definition.
+The Markdown appendix and the JSON/SPEM representations are built from the same
+sources so that the academic account does not become a separate, stale method
+version.
+
 The formal package uses the normative SPEM 2.0 namespace and standard metaclass
 names. MODRISS-specific provenance, coverage, gate, and runtime metadata are
 isolated as extensions. The representation is deliberately called a

@@ -13,14 +13,20 @@ independent of the order in which content is used in one delivery process.
 - `repository-inventory.csv` is generated from the implemented process
   definitions and the two engineered catalogs and lists their reusable roles,
   tasks, work products, and guidance.
+- `reusable-method-content-catalog.md` is the generated human-readable catalog
+  of every consolidated role, task, work product, and guidance definition,
+  including task steps, entry/exit criteria, checks, and provenance.
 - The complete consolidated task catalog is generated into
   `../spem/method-content-index.json`.
 
+The thesis-style rationale and the narrative description of all 18 method
+fragments are in `../12-method-library-and-fragment-report.md`.
+
 Stable source TaskDefinitions remain in
 `mde/methodology/process-definitions/{cim,pim,psm,artifact,end-to-end}.json`.
-They are referenced rather than manually copied into prose because those files
-are already generated from the executable method specifications and validated
-against metamodel coverage.
+They are rendered into the Markdown catalog by the package builder rather than
+being manually duplicated. This keeps the readable descriptions synchronized
+with the executable method specifications and their metamodel coverage.
 
 ## Fragment template
 

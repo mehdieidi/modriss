@@ -12,6 +12,8 @@ const index = readJson(path.join(packageRoot, 'spem', 'method-content-index.json
 const core = readJson(path.join(packageRoot, 'method-library', 'core-method-content.json'));
 const fragments = readJson(path.join(packageRoot, 'method-library', 'method-fragments.json'));
 const xml = fs.readFileSync(path.join(packageRoot, 'spem', 'modriss-method-library.spem.xml'), 'utf8');
+const markdownCatalog = fs.readFileSync(path.join(packageRoot, 'method-library', 'reusable-method-content-catalog.md'), 'utf8');
+const libraryReport = fs.readFileSync(path.join(packageRoot, '12-method-library-and-fragment-report.md'), 'utf8');
 
 const groups = [
   ['roleDefinitions', index.roleDefinitions],
@@ -22,6 +24,11 @@ const groups = [
 for (const [name, items] of groups) {
   const ids = items.map(item => item.id);
   if (new Set(ids).size !== ids.length) fail(`Duplicate ${name} IDs in consolidated index`);
+  for (const id of ids) {
+    const headingMarker = `(\`${id}\`)`;
+    const occurrences = markdownCatalog.split(headingMarker).length - 1;
+    if (occurrences !== 1) fail(`Human-readable catalog must contain exactly one ${name} heading for ${id}; found ${occurrences}`);
+  }
 }
 
 const xmiIds = [...xml.matchAll(/\bxmi:id="([^"]+)"/g)].map(match => match[1]);
@@ -57,6 +64,11 @@ if (coreWorkProducts.length !== 29 || new Set(methodIds).size !== 29) {
   fail('Engineered core must contain exactly 29 uniquely identified lifecycle work products');
 }
 if ((fragments.fragments ?? []).length !== 18) fail('Expected 17 lifecycle fragments and one continuous fragment');
+for (const fragment of fragments.fragments ?? []) {
+  if (!libraryReport.includes(`#### ${fragment.id} —`)) {
+    fail(`Academic method-library report is missing fragment ${fragment.id}`);
+  }
+}
 
 const methodRoleMappings = index.methodRoleMappings ?? [];
 if (methodRoleMappings.length !== 16 || new Set(methodRoleMappings.map(item => item.methodRoleId)).size !== 16) {
@@ -85,4 +97,6 @@ console.log(JSON.stringify({
   processComponents: index.processComponents.length,
   processPatterns: patternGuidance.length,
   conceptualRoleMappings: methodRoleMappings.length,
+  humanReadableCatalogElements: groups.reduce((total, [, items]) => total + items.length, 0),
+  academicallyDescribedFragments: fragments.fragments.length,
 }, null, 2));

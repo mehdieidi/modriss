@@ -137,6 +137,86 @@ fs.writeFileSync(
   `${inventoryRows.map(row => row.map(csv).join(',')).join('\n')}\n`,
 );
 
+const mdInline = value => String(value ?? '')
+  .replaceAll('|', '\\|')
+  .replace(/\s+/g, ' ')
+  .trim();
+const mdRefs = values => (values?.length ? values.map(value => `\`${mdInline(value)}\``).join(', ') : 'None declared');
+const mdSentence = value => {
+  const text = mdInline(value);
+  return /[.!?]$/.test(text) ? text : `${text}.`;
+};
+const mdSentences = values => (values?.length ? values.map(mdSentence).join(' ') : 'No additional description is declared.');
+const sourceLabels = {
+  'end-to-end': 'End-to-end lifecycle',
+  cim: 'CIM modeling component',
+  pim: 'PIM modeling component',
+  psm: 'AWS PSM modeling component',
+  artifact: 'Artifact-readiness component',
+  'engineered-core': 'Engineered core content',
+  'engineered-fragments': 'Engineered fragment catalog',
+};
+
+const catalog = [
+  '# MODRISS Reusable Method Content Catalog',
+  '',
+  '> This catalog is generated from the authoritative process definitions and',
+  '> engineered method-content sources by `../tools/build-method-package.mjs`.',
+  '> Edit the source JSON rather than this file, then rebuild the package.',
+  '',
+  '## Scope and notation',
+  '',
+  `The consolidated repository contains ${index.roleDefinitions.length} RoleDefinitions, ${index.taskDefinitions.length} TaskDefinitions, ${index.workProductDefinitions.length} WorkProductDefinitions, and ${index.guidance.length} Guidance elements. Stable identifiers are shown because the delivery processes refer to these definitions through RoleUse, TaskUse, WorkProductUse, and ProcessParameter elements. “Provenance” identifies the source component from which an element was consolidated.`,
+  '',
+  '## Role definitions',
+  '',
+];
+
+for (const role of index.roleDefinitions) {
+  catalog.push(`### ${mdInline(role.name)} (\`${role.id}\`)`, '');
+  catalog.push(mdSentences(role.responsibilities), '');
+  catalog.push(`Conceptual role mapping: ${mdRefs(role.methodRoleIds)}. Provenance: ${(role.sourceProcesses ?? []).map(source => sourceLabels[source] ?? source).join(', ')}.`, '');
+}
+
+catalog.push('## Task definitions', '');
+for (const sourceName of sourceNames) {
+  const tasks = index.taskDefinitions.filter(task => task.sourceProcesses?.includes(sourceName));
+  catalog.push(`### ${sourceLabels[sourceName]} (${tasks.length} tasks)`, '');
+  for (const task of tasks) {
+    catalog.push(`#### ${mdInline(task.name)} (\`${task.id}\`)`, '');
+    const purpose = mdInline(task.purpose ?? task.description ?? task.name);
+    catalog.push(`${purpose.endsWith('.') ? purpose : `${purpose}.`} The task is performed by ${mdRefs(task.performerRoleRefs)}. It consumes ${mdRefs(task.inputWorkProductRefs)} and produces or updates ${mdRefs(task.outputWorkProductRefs)}.`, '');
+    if (task.entryCriteria?.length) catalog.push(`**Entry.** ${mdSentences(task.entryCriteria)}`, '');
+    if (task.steps?.length) {
+      catalog.push('**Work.**', '');
+      for (const step of task.steps) catalog.push(`- ${mdInline(step)}`);
+      catalog.push('');
+    }
+    if (task.exitCriteria?.length) catalog.push(`**Exit.** ${mdSentences(task.exitCriteria)}`, '');
+    if (task.validationRules?.length) catalog.push(`**Checks.** ${mdSentences(task.validationRules)}`, '');
+    if (task.durationEstimate) catalog.push(`Indicative duration: ${mdInline(task.durationEstimate)}.`, '');
+  }
+}
+
+catalog.push('## Work-product definitions', '');
+for (const workProduct of index.workProductDefinitions) {
+  catalog.push(`### ${mdInline(workProduct.name)} (\`${workProduct.id}\`)`, '');
+  const description = mdInline(workProduct.description ?? workProduct.purpose ?? workProduct.name);
+  catalog.push(`${description.endsWith('.') ? description : `${description}.`} Kind: ${mdInline(workProduct.workProductKind ?? 'Artifact')}. Provenance: ${(workProduct.sourceProcesses ?? []).map(source => sourceLabels[source] ?? source).join(', ')}.`, '');
+}
+
+catalog.push('## Guidance definitions', '');
+for (const guidance of index.guidance) {
+  catalog.push(`### ${mdInline(guidance.name)} (\`${guidance.id}\`)`, '');
+  const guidanceText = mdInline(guidance.text ?? guidance.description ?? guidance.name);
+  catalog.push(guidanceText.endsWith('.') ? guidanceText : `${guidanceText}.`, '');
+  const appliesTo = guidance.appliesTo ? ` Applies to \`${mdInline(guidance.appliesTo)}\`.` : '';
+  const pattern = guidance.sourcePatternId ? ` Pattern source: \`${mdInline(guidance.sourcePatternId)}\`.` : '';
+  catalog.push(`Guidance kind: ${mdInline(guidance.guidanceKind ?? 'Practice guidance')}.${appliesTo}${pattern} Provenance: ${(guidance.sourceProcesses ?? []).map(source => sourceLabels[source] ?? source).join(', ')}.`, '');
+}
+
+fs.writeFileSync(path.join(libraryRoot, 'reusable-method-content-catalog.md'), `${catalog.join('\n')}\n`);
+
 const escapeXml = value => String(value ?? '')
   .replaceAll('&', '&amp;')
   .replaceAll('<', '&lt;')
