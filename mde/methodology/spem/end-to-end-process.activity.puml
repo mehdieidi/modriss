@@ -6,36 +6,28 @@ partition "e2e.ph0, Initiate / Tailor / Organize" {
   :Situational method profile;
   :Team topology and quality baseline;
 }
-partition "e2e.ph1, Iterative-Incremental Delivery" {
-  :e2e.p0, Frame Increment;
-  :e2e.p1, CIM engine\n(modriss.cim.modeling · 5 phases);
-  if (CIM gate evidence accepted?) then (pass)
-  else (fail)
-    backward :e2e.p1;
-  endif
-  :e2e.p2, CIM→PIM ETL;
-  :e2e.p3, PIM engine\n(modriss.pim.modeling · 6 phases);
-  if (PIM gate evidence accepted?) then (pass)
-  else (fail)
-    backward :e2e.p3;
-  endif
-  :e2e.p4, PIM→PSM ETL;
-  :e2e.p5, PSM engine\n(modriss.psm.modeling · 6 phases);
-  if (PSM gate evidence accepted?) then (pass)
-  else (fail)
-    backward :e2e.p5;
-  endif
-  :e2e.p6, M2T generation;
-  :e2e.p7, Artifact readiness and increment acceptance;
-}
-if (Next increment or release scope?) then (yes)
-  backward :e2e.p0;
-else (no)
-  partition "e2e.ph2–ph4, Release / Operate / Retire" {
-    :Release assembly and progressive transition;
-    :Operate, evolve, and learn;
-    :Retire, migrate, and close when authorized;
+repeat
+  partition "e2e.ph1, Iterative-Incremental Delivery" {
+    :e2e.p0, Frame Increment;
+    repeat
+      :e2e.p1, CIM engine\n(modriss.cim.modeling - 5 phases);
+    repeat while (CIM gate evidence rejected?) is (yes)
+    :e2e.p2, CIM -> PIM ETL;
+    repeat
+      :e2e.p3, PIM engine\n(modriss.pim.modeling - 6 phases);
+    repeat while (PIM gate evidence rejected?) is (yes)
+    :e2e.p4, PIM -> PSM ETL;
+    repeat
+      :e2e.p5, PSM engine\n(modriss.psm.modeling - 6 phases);
+    repeat while (PSM gate evidence rejected?) is (yes)
+    :e2e.p6, M2T generation;
+    :e2e.p7, Artifact readiness and increment acceptance;
   }
-  stop
-endif
+repeat while (Next increment required?) is (yes)
+partition "e2e.ph2-ph4, Release / Operate / Retire" {
+  :Release assembly and progressive transition;
+  :Operate, evolve, and learn;
+  :Retire, migrate, and close when authorized;
+}
+stop
 @enduml

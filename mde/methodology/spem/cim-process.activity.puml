@@ -1,55 +1,49 @@
 @startuml cim-process
 title CIM Modeling Process, SPEM-mapped Iteration (5 Phases per Capability Slice)
 start
-partition "Phase 1, Increment Framing (engine)" {
+partition "Program Initiation (engine)" {
   :Stage, Program Charter;
-  :Stage, Capability Slice Planning;
   :Stage, Strategic Framing;
 }
-partition "Phase 2, Context Discovery (engine)" {
-  :Stage, Participation Model;
-  :Stage, Capability Landscape;
-  :Stage, Ubiquitous Language;
-}
-partition "Phase 3, Domain Exploration (engine, iterative)" {
-  repeat
-    :Stage, Information Architecture;
-    :Stage, Structural Model;
-    if (Naming conflicts?) then (yes)
-      backward :Ubiquitous Language;
-    endif
-    :Stage, Behavior Surface;
-    if (Missing taxonomy/structure?) then (yes)
-      backward :Information Architecture;
-    else (no)
-    endif
-  repeat while (CQRS surface coherent?) is (no)
-}
-partition "Phase 4, Domain Synthesis (engine)" {
-  :Stage, Aggregate Boundaries;
-  if (Ownership conflicts?) then (yes)
-    backward :Behavior Surface;
-  endif
-  :Stage, Process & Decisions;
-  :Stage, Bounded Contexts;
-}
-partition "Phase 5, Convergence & Readiness (engine)" {
-  :Stage, Requirements (Twin Peaks);
-  if (Untraceable requirements?) then (yes)
-    backward :Structural Model;
-  endif
-  :Stage, Governance;
-  :Stage, EVL Readiness Gate;
-  :Stage, Increment Review & Adapt;
-}
-if (CIM EVL pass?) then (yes)
-  :CIM→PIM ETL gate;
-  if (More capability slices?) then (yes)
-    backward :Stage, Capability Slice Planning;
+repeat
+  partition "Phase 1, Increment Framing (engine)" {
+    :Stage, Capability Slice Planning;
+  }
+  partition "Phase 2, Context Discovery (engine)" {
+    :Stage, Participation Model;
+    :Stage, Capability Landscape;
+    :Stage, Ubiquitous Language;
+  }
+  partition "Phase 3, Domain Exploration (engine, iterative)" {
+    repeat
+      :Revisit Ubiquitous Language;
+      :Stage, Information Architecture;
+      :Stage, Structural Model;
+      :Stage, Behavior Surface;
+    repeat while (Naming conflicts, missing taxonomy/structure, or incoherent CQRS?) is (yes)
+  }
+  partition "Phase 4, Domain Synthesis (engine)" {
+    repeat
+      :Stage, Aggregate Boundaries;
+      :Stage, Process & Decisions;
+      :Stage, Bounded Contexts;
+      :Review ownership and revise Behavior Surface if needed;
+    repeat while (Ownership conflicts?) is (yes)
+  }
+  partition "Phase 5, Convergence & Readiness (engine)" {
+    repeat
+      :Stage, Requirements (Twin Peaks);
+      :Review requirements trace and refine Structural Model if needed;
+      :Stage, Governance;
+      :Stage, EVL Readiness Gate;
+    repeat while (Untraceable requirements?) is (yes)
+    :Stage, Increment Review & Adapt;
+  }
+  if (CIM EVL pass?) then (yes)
+    :CIM -> PIM ETL gate;
   else (no)
-    stop
+    :Rework CIM model to satisfy EVL;
   endif
-else (no)
-  backward :Requirements;
-endif
+repeat while (CIM EVL failed or more capability slices remain?) is (yes)
+stop
 @enduml

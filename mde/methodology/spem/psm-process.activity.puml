@@ -1,41 +1,39 @@
 @startuml psm-process
 title AWS PSM Modeling Process, SPEM-mapped Iteration (6 Phases per Deployable Slice)
 start
-partition "Phase 1, Deployment & Slice Framing (engine)" {
-  :Stage, Deployable Slice Planning;
-  :Stage, Account & Stage Strategy;
-  :Stage, Stack Scaffolding;
-  :Stage, Security Baseline;
-}
-partition "Phase 2, Network & Identity (engine)" {
-  :Stage, Networking;
-  :Stage, Identity;
-}
-partition "Phase 3, Storage & Messaging (engine)" {
-  :Stage, Durable Storage;
-  :Stage, Messaging;
-}
-partition "Phase 4, Event Fabric & Compute (engine)" {
-  :Stage, Event Fabric;
-  :Stage, Compute;
-}
-partition "Phase 5, API & Orchestration (engine)" {
-  :Stage, API Gateway;
-  :Stage: Workflow & Observability;
-}
-partition "Phase 6, Integration Views & Readiness (engine)" {
-  :Stage, Integration Views;
-  :Stage, Trace & Readiness Gate;
-  :Stage, Increment Review & Adapt;
-}
-if (PSM EVL pass?) then (yes)
-  :M2T artifact generation;
-  if (More deployable slices?) then (yes)
-    backward :Stage, Deployable Slice Planning;
+repeat
+  partition "Phase 1, Deployment & Slice Framing (engine)" {
+    :Stage, Deployable Slice Planning;
+    :Stage, Account & Stage Strategy;
+    :Stage, Stack Scaffolding;
+    :Stage, Security Baseline;
+  }
+  partition "Phase 2, Network & Identity (engine)" {
+    :Stage, Networking;
+    :Stage, Identity;
+  }
+  partition "Phase 3, Storage & Messaging (engine)" {
+    :Stage, Durable Storage;
+    :Stage, Messaging;
+  }
+  partition "Phase 4, Event Fabric & Compute (engine)" {
+    :Stage, Event Fabric;
+    :Stage, Compute;
+  }
+  partition "Phase 5, API & Orchestration (engine)" {
+    :Stage, API Gateway;
+    :Stage, Workflow & Observability;
+  }
+  partition "Phase 6, Integration Views & Readiness (engine)" {
+    :Stage, Integration Views;
+    :Stage, Trace & Readiness Gate;
+    :Stage, Increment Review & Adapt;
+  }
+  if (PSM EVL pass?) then (yes)
+    :M2T artifact generation;
   else (no)
-    stop
+    :Rework PSM model to satisfy EVL;
   endif
-else (no)
-  backward :Trace & Readiness;
-endif
+repeat while (PSM EVL failed or more deployable slices remain?) is (yes)
+stop
 @enduml
