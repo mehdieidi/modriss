@@ -674,29 +674,6 @@ function renderCriteriaList(items) {
   return wrap;
 }
 
-function renderPhaseTrack(phases, phase, onSelect) {
-  const track = document.createElement("div");
-  track.className = "methodology-phase-track";
-  track.setAttribute("role", "tablist");
-  track.setAttribute("aria-label", "Process phases");
-  phases.forEach((p, i) => {
-    const selected = p.id === phase.id;
-    const seg = document.createElement("button");
-    seg.type = "button";
-    seg.className = ["methodology-phase-option", selected ? "is-selected" : ""]
-      .filter(Boolean)
-      .join(" ");
-    seg.title = `${i + 1}. ${p.name}`;
-    seg.textContent = `${i + 1}. ${p.name}`;
-    seg.setAttribute("role", "tab");
-    seg.setAttribute("aria-selected", String(selected));
-    seg.setAttribute("aria-label", `${i + 1}. ${p.name}`);
-    seg.addEventListener("click", () => onSelect(p.id));
-    track.appendChild(seg);
-  });
-  return track;
-}
-
 function renderPhaseNavigator(host, process) {
   const phases = process.phases || [];
   const phase = selectedPhase(process);
@@ -741,15 +718,6 @@ function renderPhaseNavigator(host, process) {
   header.appendChild(heading);
   header.appendChild(next);
   nav.appendChild(header);
-  const phaseLabel = document.createElement("div");
-  phaseLabel.className = "methodology-navigator-label";
-  phaseLabel.textContent = "Phases";
-  nav.appendChild(phaseLabel);
-  nav.appendChild(
-    renderPhaseTrack(phases, phase, (phaseId) => {
-      openPhaseInMap(phaseId);
-    }),
-  );
   renderStageTrack(nav, phase);
   host.appendChild(nav);
 }

@@ -85,7 +85,6 @@ function App() {
         <img src={modrissLogoBlack} alt="" />
         <span>
           MODRISS
-          <small>Model-Driven Methodology for Serverless Software Development</small>
           <small>Research Project</small>
         </span>
       </a>
