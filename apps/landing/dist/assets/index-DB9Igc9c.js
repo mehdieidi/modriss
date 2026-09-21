@@ -11466,7 +11466,7 @@ Error generating stack: ` +
   })(),
   _ = window.location.origin,
   v = window.location.origin.replace(/\/$/, ``),
-  y = `https://github.com/mehdieidi/modriss/tree/main/docs/public-docs`,
+  y = `https://docs.modriss.site`,
   b = `https://github.com/mehdieidi/modriss`,
   x = `https://www.sharif.ir/en/web/me_ce/home`,
   ee = `https://www.sharif.ir/en/web/me_ce/w/mehdi-eidi`,
@@ -11634,13 +11634,7 @@ function re() {
             children: [
               (0, g.jsx)(`img`, { src: p, alt: `` }),
               (0, g.jsxs)(`span`, {
-                children: [
-                  `MODRISS`,
-                  (0, g.jsx)(`small`, {
-                    children: `Model-Driven Methodology for Serverless Software Development`,
-                  }),
-                  (0, g.jsx)(`small`, { children: `Research Project` }),
-                ],
+                children: [`MODRISS`, (0, g.jsx)(`small`, { children: `Research Project` })],
               }),
             ],
           }),
@@ -11658,7 +11652,7 @@ function re() {
               (0, g.jsx)(`a`, { href: `#methodology`, onClick: n, children: `Methodology` }),
               (0, g.jsx)(`a`, { href: `#framework`, onClick: n, children: `Framework` }),
               (0, g.jsx)(`a`, { href: `#publication`, onClick: n, children: `Publications` }),
-              (0, g.jsx)(`a`, { href: y, children: `Documentation` }),
+              (0, g.jsx)(`a`, { href: y, onClick: n, children: `Documentation` }),
               (0, g.jsx)(`a`, {
                 className: `nav-icon`,
                 href: b,

@@ -1414,9 +1414,21 @@ function normalizeLoadedDoc(raw: CvsDocument) {
       layoutHint: "CONTAINER",
     }));
   doc.elements = rawElements.map((element: any) => {
-    const { primitive, card, notation, containmentPaletteExtras, ...clean } = element;
-    const visibleFields = clean.visibleFields || card?.lineFields || notation?.lineFields;
-    return visibleFields ? { ...clean, visibleFields } : clean;
+    const { primitive, card, notation: rawNotation, containmentPaletteExtras, ...clean } = element;
+    const notation =
+      rawNotation && typeof rawNotation === "object" ? { ...rawNotation } : {};
+    if (primitive && !notation.shape) notation.shape = primitive;
+    if (card && typeof card === "object") {
+      notation.tag ??= card.tag;
+      notation.lineFields ??= card.lineFields;
+      notation.detailFields ??= card.detailFields;
+    }
+    const visibleFields = clean.visibleFields || notation.lineFields;
+    return {
+      ...clean,
+      ...(Object.keys(notation).length ? { notation } : {}),
+      ...(visibleFields ? { visibleFields } : {}),
+    };
   });
   const rawViews = Array.isArray(doc.views) ? doc.views : doc.viewpoints || [];
   doc.views = rawViews.map((view: any) => {
@@ -1442,20 +1454,12 @@ function normalizeLoadedDoc(raw: CvsDocument) {
       };
     })
     .filter(Boolean);
-  doc.elementVisualRules = (doc.elementVisualRules || []).map((rule: any) => {
-    if (!rule?.metadata || typeof rule.metadata !== "object") return rule;
-    const { notation, ...metadata } = rule.metadata;
-    return { ...rule, metadata };
-  });
+  doc.elementVisualRules ??= [];
   doc.relationshipVisualRules ??= [];
   doc.relationshipKinds ??= [];
   doc.relationshipKindLabels ??= {};
   doc.badgeRules ??= [];
   doc.canvasPolicy ??= createEmptyDoc(levelFromDoc(doc)).canvasPolicy;
-  if (doc.elementVisualDefaults && typeof doc.elementVisualDefaults === "object") {
-    const { notation, ...defaults } = doc.elementVisualDefaults;
-    doc.elementVisualDefaults = defaults;
-  }
   delete doc.primitives;
   delete doc.notationPrimitives;
   delete doc.elementOverrides;

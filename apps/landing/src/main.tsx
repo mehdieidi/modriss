@@ -8,7 +8,7 @@ import './styles.css'
 
 const appUrl = import.meta.env.VITE_APP_URL ?? window.location.origin
 const backendUrl = (import.meta.env.VITE_BACKEND_BASE_URL ?? window.location.origin).replace(/\/$/, '')
-const docsUrl = import.meta.env.VITE_DOCS_URL ?? 'https://github.com/mehdieidi/modriss/tree/main/docs/public-docs'
+const docsUrl = import.meta.env.VITE_DOCS_URL ?? 'https://docs.modriss.site'
 const githubUrl = import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/mehdieidi/modriss'
 const labUrl = 'https://www.sharif.ir/en/web/me_ce/home'
 const universityProfileUrl = 'https://www.sharif.ir/en/web/me_ce/w/mehdi-eidi'
@@ -94,7 +94,7 @@ function App() {
         <a href="#methodology" onClick={closeMenu}>Methodology</a>
         <a href="#framework" onClick={closeMenu}>Framework</a>
         <a href="#publication" onClick={closeMenu}>Publications</a>
-        <a href={docsUrl}>Documentation</a>
+        <a href={docsUrl} onClick={closeMenu}>Documentation</a>
         <a className="nav-icon" href={githubUrl} aria-label="MODRISS source code on GitHub"><Icon name="github" size={18} /></a>
       </div>
     </nav>

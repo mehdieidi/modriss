@@ -223,6 +223,14 @@ select[multiple] option {
     transform var(--transition);
 }
 
+.workspace-rail-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  text-decoration: none;
+}
+
 .workspace-rail-icon.icon-mask {
   width: 18px;
   height: 18px;

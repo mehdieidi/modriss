@@ -20,60 +20,6 @@
       "detailFields": ["name"]
     }
   },
-  "notationPrimitives": {
-    "workspace-container": {
-      "shape": "large-rounded-rectangle",
-      "purpose": "The PIM workspace or a bounded architecture scope."
-    },
-    "service-container": {
-      "shape": "container-card",
-      "purpose": "A serverless service boundary that owns deployable elements."
-    },
-    "api-card": {
-      "shape": "api-card",
-      "purpose": "An API surface or route with contract and policy summaries."
-    },
-    "function-card": {
-      "shape": "function-card",
-      "purpose": "A compute unit with trigger, data, event, and policy ports."
-    },
-    "schema-tree": {
-      "shape": "table-tree",
-      "purpose": "A schema or nested contract structure edited as a tree/table."
-    },
-    "data-card": {
-      "shape": "data-card",
-      "purpose": "A storage or data design concept with access summaries."
-    },
-    "event-card": {
-      "shape": "event-flow",
-      "purpose": "An event channel, event type, or integration concept."
-    },
-    "workflow-node": {
-      "shape": "workflow-node",
-      "purpose": "A workflow or executable step in a process diagram."
-    },
-    "relationship-edge": {
-      "shape": "edge",
-      "purpose": "A semantic relationship edited by drawing or selecting a connector."
-    },
-    "reference-chip": {
-      "shape": "metadata-chip",
-      "purpose": "A high-cardinality reference shown in a card or inspector."
-    }
-  },
-  "universalSyntax": {
-    "nodeRule": "Every visible concept has one semantic type, a stable label, a type token, and only high-signal summary fields.",
-    "edgeRule": "Use edges for architecture topology, execution, data movement, event movement, permissions, policy attachment, and traceability; keep bindings and high-cardinality details as inspector chips.",
-    "containerRule": "Open only Ecore containment boundaries. Service, API, workflow, schema, store, policy, and configuration ownership become nested palettes; cross-boundary references never become accidental containment.",
-    "zoomRule": "At low zoom show boundaries, names, status, and counts; reveal fields, ports, and edge labels progressively as the user zooms in.",
-    "complexityRule": "Each view answers one architecture question. The service is the primary entry point, and nested focus views expose its internal elements without putting every EClass on the global canvas."
-  },
-  "kernelSyntax": {
-    "traceRule": "TraceModel and TraceLink form an optional purple overlay and never masquerade as runtime architecture edges.",
-    "readinessRule": "Readiness findings, checks, and manual decisions belong in the readiness board and inspector, not as ordinary palette nodes.",
-    "metadataRule": "Expressions, cardinalities, annotations, and other support objects are edited through their owner and remain out of ordinary palettes."
-  },
   "badgeRules": [
     {
       "field": "lifecycleStatus",

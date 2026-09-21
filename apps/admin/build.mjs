@@ -32,6 +32,7 @@ await writeFile(
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex,nofollow" />
     <title>MODRISS Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
     <link rel="stylesheet" href="/assets/index.css" />
   </head>
   <body>

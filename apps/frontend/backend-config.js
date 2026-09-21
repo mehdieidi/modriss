@@ -1,1 +1,2 @@
 window.MODRISS_BACKEND_BASE_URL = "";
+window.MODRISS_DOCS_URL = "";

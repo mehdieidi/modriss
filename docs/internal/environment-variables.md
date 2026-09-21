@@ -30,16 +30,14 @@ Do not commit real secrets. `.env.example` is the safe template. `.env` is your 
 
 These mostly control Docker Compose and what ports are exposed on your host machine.
 
-| Variable                      | Possible values                    | What it means                                                                                                               |
-| ----------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `POSTGRES_PORT`               | Any free host port, usually `5432` | The port on your machine that forwards to PostgreSQL inside Docker. Change it if you already have Postgres running locally. |
-| `BACKEND_PORT`                | Any free host port, usually `8080` | The host port for the Spring Boot API. The backend still listens on `8080` inside the container.                            |
-| `FRONTEND_PORT`               | Any free host port, usually `8082` | The host port for the modeling frontend.                                                                                    |
-| `LANDING_PORT`                | Any free host port, usually `8083` | The host port for the landing page.                                                                                         |
-| `AWS_EMULATOR_GATEWAY_PORT`   | Any free host port, usually `4566` | The host port for the selected emulator's AWS-compatible endpoint.                                                          |
-| `POSTGRES_HOST`               | Hostname, usually `localhost`      | Host used by the backup and restore scripts. Compose itself uses the `postgres` service name internally.                    |
-| `FREELLMAPI_NETWORK`          | Docker network name                | Network joined by the backend for host-based FreeLLM/API access; defaults to `freellmapi_default`.                          |
-| `FREELLMAPI_NETWORK_EXTERNAL` | `false`                            | Set to `true` only when `FREELLMAPI_NETWORK` already exists and should be managed outside this Compose project.             |
+| Variable                    | Possible values                    | What it means                                                                                                               |
+| --------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_PORT`             | Any free host port, usually `5432` | The port on your machine that forwards to PostgreSQL inside Docker. Change it if you already have Postgres running locally. |
+| `BACKEND_PORT`              | Any free host port, usually `8080` | The host port for the Spring Boot API. The backend still listens on `8080` inside the container.                            |
+| `FRONTEND_PORT`             | Any free host port, usually `8082` | The host port for the modeling frontend.                                                                                    |
+| `LANDING_PORT`              | Any free host port, usually `8083` | The host port for the landing page.                                                                                         |
+| `AWS_EMULATOR_GATEWAY_PORT` | Any free host port, usually `4566` | The host port for the selected emulator's AWS-compatible endpoint.                                                          |
+| `POSTGRES_HOST`             | Hostname, usually `localhost`      | Host used by the backup and restore scripts. Compose itself uses the `postgres` service name internally.                    |
 
 ## Diagram Editor
 

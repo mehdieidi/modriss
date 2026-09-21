@@ -65,6 +65,13 @@ function elementsFromUiElements(elements = []) {
   return elements
     .filter((item) => item && item.type)
     .map((item) => {
+      const notation = { ...(item.notation || {}) };
+      if (item.primitive && !notation.shape) notation.shape = item.primitive;
+      if (item.card && typeof item.card === "object") {
+        notation.tag ??= item.card.tag;
+        notation.lineFields ??= item.card.lineFields;
+        notation.detailFields ??= item.card.detailFields;
+      }
       return {
         type: item.type,
         label: item.label,
@@ -77,7 +84,8 @@ function elementsFromUiElements(elements = []) {
         supportOnly: item.supportOnly,
         containedOnly: item.containedOnly,
         relationshipElement: item.relationshipElement,
-        visibleFields: item.visibleFields || item.notation?.lineFields || [],
+        visibleFields: item.visibleFields || notation.lineFields || [],
+        ...(Object.keys(notation).length ? { notation } : {}),
       };
     });
 }
@@ -85,7 +93,6 @@ function elementsFromUiElements(elements = []) {
 function elementVisualRulesFromUiRules(rules = []) {
   return rules.map((rule) => {
     const metadata = { ...(rule.metadata || {}) };
-    delete metadata.notation;
     return { ...rule, metadata };
   });
 }
@@ -123,9 +130,7 @@ function migrateLevel(level) {
       nsUri: meta.nsUri,
     },
     elementVisualDefaults: (() => {
-      const defaults = { ...(ui.elementVisualDefaults || {}) };
-      delete defaults.notation;
-      return defaults;
+      return { ...(ui.elementVisualDefaults || {}) };
     })(),
     elements: elementsFromUiElements(ui.elements || []),
     containers: containersFromUiElements(ui.elements || []),

@@ -24,13 +24,17 @@ Legacy `*-ui-metadata.json` files remain on the classpath as fallback when a CVS
 Each CVS document declares:
 
 - `metamodelRef`: level key, Ecore path, namespace URI
-- `primitives`, reusable visual primitives with geometry
-- `elementVisualRules` / `elementOverrides`, type and package visual rules
-- `referenceMappings`, EReference to semantic edge kind
-- `relationshipMappings`, relationship-object EClasses
-- `viewpoints`, workbench views (palette, visible element filters, layout hints, legal edge kinds)
-- `canvasPolicy`, palette roles, container focus, semantic zoom thresholds
-- `semanticDashboardColumns`, optional viewpoint-owned dashboard layout columns
+- `elements`, explicit per-type visual definitions and visible fields
+- `elementVisualDefaults` and `elementVisualRules`, default and matched visual metadata
+- `referenceMappings` and `relationshipMappings`, semantic edges and relationship-object EClasses
+- `views`, question-focused palettes and canvas element filters
+- `containers`, containment palettes, canvas scopes, and relationship kinds
+- `canvasPolicy`, palette roles, container focus, and semantic zoom thresholds
+- `rootTemplate` and optional `starterTemplate`, initial model content
+
+Admin rejects retired top-level fields (`primitives`, `notationPrimitives`, `elementOverrides`,
+`viewpoints`, `universalSyntax`, `kernelSyntax`, and `kernelNotation`). Their design guidance belongs
+in documentation; executable visual metadata belongs in the current CVS fields above.
 
 At runtime `CvsV2Loader` converts CVS into the UI metadata shape consumed by
 `ModelingConfigService`, then derives per-type `elementMappings` after Ecore merge.
@@ -39,7 +43,8 @@ At runtime `CvsV2Loader` converts CVS into the UI metadata shape consumed by
 
 Completeness is enforced in two places:
 
-1. **Load time**, CVS must declare `cvsVersion: 2`, viewpoints, and canvas policy.
+1. **Load time**, CVS must declare `cvsVersion: 2`, per-type elements, views,
+   containers, and canvas policy.
 2. **Merge time**, every concrete EClass receives `visualRole`, notation geometry, and card
    fields; `syntaxCoverage` reports uncovered view types and reference fields.
 
@@ -70,7 +75,7 @@ npm run migrate:all -w @modriss/notation-migrate
   to a container, the editor offers only legal contained targets, opens the container focus canvas
   for the selected internal target, and records an outer visual-only summary edge for zoomed-out
   readability.
-- Dashboard layout semantics are stored on CVS viewpoints through `semanticDashboardColumns`; the
+- Dashboard layout semantics are stored on CVS views through `semanticDashboardColumns`; the
   backend layout service consumes those columns from stored view JSON instead of owning DSML class
   groups.
 

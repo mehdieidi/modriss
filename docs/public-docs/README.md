@@ -1,12 +1,18 @@
 # MODRISS Public Documentation
 
 This directory is the source package for the public MODRISS documentation website. It is organized
-as a self-contained MkDocs project so it can be previewed locally or deployed by any static-site
-pipeline that supports MkDocs.
+as a self-contained MkDocs project and built into a static site for the Docker Compose deployment.
 
 ## Preview Locally
 
-From this directory:
+The normal local stack serves the docs through Caddy at `http://docs.localhost:8088`. From the
+repository root, start it with:
+
+```bash
+docker compose up -d --build
+```
+
+For a standalone MkDocs preview, from this directory:
 
 ```bash
 python -m pip install -r requirements.txt
@@ -22,6 +28,9 @@ mkdocs build --strict
 ```
 
 The generated site is written to `site/`.
+
+Production serves the same generated site at `https://docs.modriss.site` through Caddy. The
+production deployment script builds and refreshes the docs container and checks the public URL.
 
 ## Documentation Sources
 

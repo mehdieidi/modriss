@@ -24,6 +24,7 @@ services:
   frontend:
     environment:
       MODRISS_FRONTEND_BACKEND_BASE_URL: ${MODRISS_FRONTEND_BACKEND_BASE_URL:-http://api.localhost:8088}
+      MODRISS_FRONTEND_DOCS_URL: ${MODRISS_DOCS_URL:-http://docs.localhost:8088}
     ports:
       - "${FRONTEND_PORT:-8082}:8082"
 
@@ -38,6 +39,7 @@ services:
       args:
         VITE_BACKEND_BASE_URL: ${MODRISS_PUBLIC_URL:-http://localhost:8088}
         VITE_APP_URL: ${MODRISS_EDITOR_URL:-http://editor.localhost:8088}
+        VITE_DOCS_URL: ${MODRISS_DOCS_URL:-http://docs.localhost:8088}
     ports:
       - "${LANDING_PORT:-8083}:8083"
 

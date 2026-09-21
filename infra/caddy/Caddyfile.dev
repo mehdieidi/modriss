@@ -54,6 +54,12 @@ http://admin.localhost:8088 {
 	reverse_proxy admin:8084
 }
 
+http://docs.localhost:8088 {
+	import security_headers
+	import access_logs
+	reverse_proxy docs:80
+}
+
 http://editor.localhost:8088 {
 	import security_headers
 	import access_logs

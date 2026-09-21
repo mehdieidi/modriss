@@ -21,6 +21,7 @@ Local URLs:
 | Surface    | URL                                |
 | ---------- | ---------------------------------- |
 | Landing    | `http://localhost:8088`            |
+| Docs       | `http://docs.localhost:8088`       |
 | Editor     | `http://editor.localhost:8088`     |
 | Admin      | `http://admin.localhost:8088`      |
 | API        | `http://api.localhost:8088`        |
@@ -50,6 +51,7 @@ Set these URL values in `.env`:
 MODRISS_PUBLIC_URL=https://modriss.site
 MODRISS_EDITOR_URL=https://editor.modriss.site
 MODRISS_ADMIN_URL=https://admin.modriss.site
+MODRISS_DOCS_URL=https://docs.modriss.site
 MODRISS_FRONTEND_BACKEND_BASE_URL=
 MODRISS_ALLOWED_ORIGINS=https://modriss.site,https://editor.modriss.site,https://admin.modriss.site,https://api.modriss.site
 MODRISS_PROD_SPRING_PROFILE=prod
@@ -57,9 +59,9 @@ MODRISS_PROD_SPRING_PROFILE=prod
 
 The production overlay also supplies the production Spring profile and uses the production URL defaults for the landing build and admin runtime configuration. The deployment script rejects a rendered browser configuration that contains `localhost` or `127.0.0.1`. Keep all passwords, bootstrap tokens, and provider API keys only in `.env`; replace the development placeholder values before exposing the server.
 
-DNS records for `modriss.site`, `www.modriss.site`, `editor.modriss.site`, `admin.modriss.site`, and `api.modriss.site` must point to the server IP. Open inbound TCP ports `80` and `443` and UDP port `443`. Caddy obtains and renews Let's Encrypt certificates automatically. `www.modriss.site` permanently redirects to `https://modriss.site`.
+DNS records for `modriss.site`, `www.modriss.site`, `editor.modriss.site`, `admin.modriss.site`, `docs.modriss.site`, and `api.modriss.site` must point to the server IP. Open inbound TCP ports `80` and `443` and UDP port `443`. Caddy obtains and renews Let's Encrypt certificates automatically. `www.modriss.site` permanently redirects to `https://modriss.site`.
 
-Only the Caddy container is published in the rendered production Compose configuration. PostgreSQL, backend, frontend, admin, landing, Prometheus, Loki, Grafana, Dozzle, LocalStack, and Floci communicate over Docker networks and have no host port mappings. Caddy's `:2019` admin/metrics listener is available only on that internal network.
+Only the Caddy container is published in the rendered production Compose configuration. PostgreSQL, backend, frontend, admin, landing, docs, Prometheus, Loki, Grafana, Dozzle, LocalStack, and Floci communicate over Docker networks and have no host port mappings. Caddy's `:2019` admin/metrics listener is available only on that internal network.
 
 ## Normal operation
 
@@ -74,6 +76,7 @@ Only the Caddy container is published in the rendered production Compose configu
 The production script checks out the latest fast-forwardable commit, validates the production model, builds and recreates services with `--remove-orphans`, prints service status, and retries these HTTPS checks:
 
 - `https://modriss.site`
+- `https://docs.modriss.site`
 - `https://editor.modriss.site`
 - `https://admin.modriss.site`
 - `https://api.modriss.site/actuator/health/readiness`

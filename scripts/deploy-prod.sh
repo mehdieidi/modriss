@@ -38,7 +38,7 @@ if docker compose "${compose_args[@]}" config | grep -Eq '(POSTGRES_PASSWORD|GF_
   exit 1
 fi
 
-if docker compose "${compose_args[@]}" config | grep -Eq '(MODRISS_FRONTEND_BACKEND_BASE_URL|MODRISS_ADMIN_BACKEND_BASE_URL|MODRISS_ALLOWED_ORIGINS|VITE_BACKEND_BASE_URL|VITE_APP_URL):.*(localhost|127\.0\.0\.1)'; then
+if docker compose "${compose_args[@]}" config | grep -Eq '(MODRISS_FRONTEND_BACKEND_BASE_URL|MODRISS_FRONTEND_DOCS_URL|MODRISS_ADMIN_BACKEND_BASE_URL|MODRISS_ALLOWED_ORIGINS|VITE_BACKEND_BASE_URL|VITE_APP_URL|VITE_DOCS_URL):.*(localhost|127\.0\.0\.1)'; then
   echo "Refusing production deployment: rendered browser configuration contains localhost or 127.0.0.1." >&2
   echo "Set the production URL and CORS values in .env." >&2
   exit 1
@@ -49,10 +49,10 @@ docker compose "${compose_args[@]}" up -d --build --remove-orphans
 
 # The editor is a static Python server. Its startup command copies the bind-mounted
 # checkout into /srv, so an ordinary `up` does not refresh an already-running
-# frontend container after git pull. Recreate it explicitly, together with Caddy
-# so changes to the production edge configuration are loaded as well.
-echo "Refreshing the static editor frontend and production edge configuration..."
-docker compose "${compose_args[@]}" up -d --no-deps --force-recreate frontend caddy
+# frontend container after git pull. Recreate it explicitly, together with the
+# docs site and Caddy so the published content and edge routes are refreshed.
+echo "Refreshing the static editor frontend, public docs, and production edge configuration..."
+docker compose "${compose_args[@]}" up -d --no-deps --force-recreate frontend docs caddy
 
 echo "Production services:"
 docker compose "${compose_args[@]}" ps
@@ -75,6 +75,7 @@ check_url() {
 }
 
 check_url "https://modriss.site"
+check_url "https://docs.modriss.site"
 check_url "https://editor.modriss.site"
 check_url "https://admin.modriss.site"
 check_url "https://api.modriss.site/actuator/health/readiness"

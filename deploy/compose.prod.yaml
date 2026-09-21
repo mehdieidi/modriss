@@ -27,6 +27,7 @@ services:
   frontend:
     environment:
       MODRISS_FRONTEND_BACKEND_BASE_URL: ${MODRISS_FRONTEND_BACKEND_BASE_URL:-}
+      MODRISS_FRONTEND_DOCS_URL: ${MODRISS_DOCS_URL:-https://docs.modriss.site}
 
   admin:
     environment:
@@ -37,6 +38,7 @@ services:
       args:
         VITE_BACKEND_BASE_URL: ${MODRISS_PUBLIC_URL:-https://modriss.site}
         VITE_APP_URL: ${MODRISS_EDITOR_URL:-https://editor.modriss.site}
+        VITE_DOCS_URL: ${MODRISS_DOCS_URL:-https://docs.modriss.site}
 
   grafana:
     environment:

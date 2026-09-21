@@ -68,6 +68,12 @@ admin.modriss.site {
 	reverse_proxy admin:8084
 }
 
+docs.modriss.site {
+	import security_headers
+	import access_logs
+	reverse_proxy docs:80
+}
+
 api.modriss.site {
 	import security_headers
 	import access_logs

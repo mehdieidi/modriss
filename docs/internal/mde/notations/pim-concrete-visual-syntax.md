@@ -46,7 +46,7 @@ links rather than being mistaken for containment.
 
 ## 2. Visual grammar
 
-The CVS defines a small, reusable vocabulary in `notationPrimitives`:
+The element definitions and visual rules use a small, reusable visual vocabulary:
 
 | Concept                      | Visual treatment                                  | Intended meaning                                                               |
 | ---------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------ |

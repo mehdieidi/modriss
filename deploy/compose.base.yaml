@@ -33,6 +33,8 @@ services:
         condition: service_started
       landing:
         condition: service_started
+      docs:
+        condition: service_healthy
       grafana:
         condition: service_started
       prometheus:
@@ -84,9 +86,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - default
-      - freellmapi
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health/readiness"]
       interval: 10s
@@ -103,12 +102,14 @@ services:
     environment:
       # The empty production value makes the browser use same-origin /api routes through Caddy.
       MODRISS_FRONTEND_BACKEND_BASE_URL: ${MODRISS_FRONTEND_BACKEND_BASE_URL:-}
+      MODRISS_FRONTEND_DOCS_URL: ${MODRISS_DOCS_URL:-}
     command:
       - sh
       - -c
       - |
         cp -a /app/. /srv/
         printf '%s\n' "window.MODRISS_BACKEND_BASE_URL = \"$${MODRISS_FRONTEND_BACKEND_BASE_URL}\";" > /srv/backend-config.js
+        printf '%s\n' "window.MODRISS_DOCS_URL = \"$${MODRISS_FRONTEND_DOCS_URL}\";" >> /srv/backend-config.js
         exec python3 -m http.server --bind 0.0.0.0 8082 --directory /srv
     volumes:
       - ../apps/frontend:/app:ro
@@ -201,6 +202,18 @@ services:
   landing:
     build:
       context: ../apps/landing
+    restart: unless-stopped
+
+  docs:
+    build:
+      context: ../docs/public-docs
+      dockerfile: Dockerfile
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
     restart: unless-stopped
 
   dozzle:
@@ -311,11 +324,3 @@ volumes:
   modriss-localstack-data:
   modriss-prometheus-data:
   modriss-postgres-data:
-
-networks:
-  freellmapi:
-    # Create the network for a standalone MODRISS deployment. Set
-    # FREELLMAPI_NETWORK_EXTERNAL=true when attaching to an existing FreeLLM
-    # network instead.
-    external: ${FREELLMAPI_NETWORK_EXTERNAL:-false}
-    name: ${FREELLMAPI_NETWORK:-freellmapi_default}

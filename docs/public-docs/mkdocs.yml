@@ -1,4 +1,5 @@
 site_name: MODRISS
+site_url: https://docs.modriss.site
 site_description: Technical documentation for MODRISS, an academic research project on model-driven serverless software development
 repo_name: modriss
 repo_url: https://github.com/mehdieidi/modriss

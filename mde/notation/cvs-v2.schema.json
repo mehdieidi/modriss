@@ -14,6 +14,17 @@
     "rootTemplate"
   ],
   "additionalProperties": true,
+  "not": {
+    "anyOf": [
+      { "required": ["primitives"] },
+      { "required": ["notationPrimitives"] },
+      { "required": ["elementOverrides"] },
+      { "required": ["viewpoints"] },
+      { "required": ["universalSyntax"] },
+      { "required": ["kernelSyntax"] },
+      { "required": ["kernelNotation"] }
+    ]
+  },
   "$defs": {
     "themeColor": {
       "description": "Icon/accent or edge stroke color for light and dark UI themes.",

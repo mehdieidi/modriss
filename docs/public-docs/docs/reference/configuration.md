@@ -40,8 +40,6 @@ values and behavior, in the sections below.
 | `MODRISS_DIAGRAM_RENDERER`      | `antv-g6`                 | Selects the diagram editor renderer. Unsupported values can make the modeling editor fail to initialize.                                              |
 | `MODRISS_ALLOWED_ORIGINS`       | derived by Compose        | Comma-separated CORS origins for browser REST/SSE requests. Setting it replaces the generated origin list; an incorrect list blocks browser requests. |
 | `MODRISS_CONTAINER_UPLOAD_ROOT` | `/app/uploads` in Compose | Backend-container upload path. Change it only if the corresponding storage mount/path exists.                                                         |
-| `FREELLMAPI_NETWORK`            | `freellmapi_default`      | Docker network used by the backend for host-based FreeLLM/API access.                                                                                 |
-| `FREELLMAPI_NETWORK_EXTERNAL`   | `false`                   | Set to `true` when the configured FreeLLM network already exists and is managed outside this Compose project.                                         |
 
 ## MDE and uploads
 

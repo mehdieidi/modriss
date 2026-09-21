@@ -142,6 +142,29 @@ function configureLandingBrandLink() {
   brand.setAttribute("href", landingUrl.toString());
 }
 
+function configureDocumentationLink() {
+  const docsLink = document.getElementById("documentationRailLink");
+  if (!docsLink) {
+    return;
+  }
+  const configuredDocsUrl = String(window.MODRISS_DOCS_URL || "").trim();
+  if (configuredDocsUrl) {
+    docsLink.setAttribute("href", configuredDocsUrl);
+    return;
+  }
+  const hostname = window.location.hostname;
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname.endsWith(".localhost")
+  ) {
+    docsLink.setAttribute("href", "http://docs.localhost:8088");
+  }
+}
+
+configureDocumentationLink();
+
 function refreshCurrentUserLabel() {
   if (!el.currentUserLabel) {
     return;
