@@ -1,5 +1,9 @@
 # Situational Method Profile
 
+This profile records how the development process is tailored to a project and
+which reusable method content is selected. It configures the process component
+of the MODRISS methodology; the modeling framework is specified separately.
+
 ## Identity
 
 | Field                              | Value                                                            |
@@ -18,9 +22,9 @@ provider maturity, release frequency, operational ownership, data sensitivity,
 external dependencies, portability, lifetime, cost exposure, and migration or
 retirement constraints.
 
-| Factor | Assessment and evidence | Consequence for the method |
-| ------ | ----------------------- | -------------------------- |
-|        |                         |                            |
+| Factor | Assessment and evidence | Consequence for the process |
+| ------ | ----------------------- | --------------------------- |
+|        |                         |                             |
 
 ## Selected method content
 
@@ -45,4 +49,4 @@ retirement. An omission without an equivalent control is invalid.
 
 List the events that force reassessment, such as changed criticality, provider,
 team topology, compliance scope, architecture novelty, release risk, incident,
-cost exposure, or repeated method friction.
+cost exposure, or recurring process friction.

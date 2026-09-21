@@ -36,7 +36,7 @@ flowchart TD
     evlJson["Hydrate JSON references, export EMF resource, run EVL"]
     stale{"Recoverable stale source issue?"}
     repair["Regenerate XMI from JSON, attach sidecar, revalidate"]
-    cim["Add CIM JSON methodology checks for CIM"]
+    cim["Add CIM-specific JSON checks"]
     result["Return valid=false if any ERROR issue"]
 
     start --> null

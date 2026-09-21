@@ -2,14 +2,14 @@
 
 ## Scope and target situation
 
-The target is a **general but configurable product-development method** for
-serverless software whose engineering backbone is MODRISS. It is broader than
-one project-specific process, but narrower than a universal software method.
-Its intended scope is event-driven and API-oriented information systems that
-can be expressed by the MODRISS CIM and PIM and realized on a supported PSM;
-the current implemented PSM is AWS.
+The target is the MODRISS software-development methodology, which has two
+parts: a configurable development process and a modeling framework. This
+requirements set specifies the process and its required connection to the
+existing framework. The scope is event-driven and API-oriented information
+systems that can be expressed by the MODRISS CIM and PIM and realized on a
+supported PSM; the current implemented PSM is AWS.
 
-The method must work for a single cross-functional team and for several teams
+The process must work for a single cross-functional team and for several teams
 working on bounded slices. It must remain useful when only part of a system is
 serverless or when external and legacy systems participate. Safety-critical or
 hard real-time use is outside the default profile and requires a specialized
@@ -63,7 +63,7 @@ content selected by the default profile but tailorable with recorded rationale;
 | MR-MDE-06 | Distinguish structural conformance, semantic model validation, transformation verification, and product testing.                | MUST   | Evidence records name validation kind and scope.                                          |
 | MR-MDE-07 | Treat transformation output as a draft that requires responsible refinement and acceptance.                                     | MUST   | No transform completion event automatically satisfies a readiness gate.                   |
 | MR-MDE-08 | Support reusable models, patterns, transformations, generators, and method fragments.                                           | SHOULD | Generalization task records candidate, quality review, version, and repository location.  |
-| MR-MDE-09 | Manage model complexity by bounded slices, layers, packages/views, ownership, and explicit dependencies.                        | MUST   | Tailored method defines slice and ownership strategy.                                     |
+| MR-MDE-09 | Manage model complexity by bounded slices, layers, packages/views, ownership, and explicit dependencies.                        | MUST   | Tailored process defines slice and ownership strategy.                                    |
 | MR-MDE-10 | Provide timely tool and process feedback for invalid models, failed transformations, unresolved decisions, and stale revisions. | MUST   | Feedback events are actionable and attributable.                                          |
 | MR-MDE-11 | Provide model-based test derivation where the DSML exposes contracts, workflows, policies, or acceptance information.           | SHOULD | Generated or manually completed tests link to modeled source.                             |
 | MR-MDE-12 | State standards alignment and conformance boundaries precisely.                                                                 | MUST   | SPEM mapping and non-conformance claims are explicit.                                     |
@@ -103,7 +103,7 @@ content selected by the default profile but tailorable with recorded rationale;
 | MR-MG-06 | Use metrics for system and process improvement, not individual ranking.                                                                                | MUST   | Metric guidance prohibits individual performance use and defines interpretation limits. |
 | MR-MG-07 | Capture lessons and generalize reusable assets after increments, releases, incidents, and retirement.                                                  | SHOULD | Retrospective produces improvement action, reusable asset, or reasoned no-op.           |
 
-## Usability and method-quality requirements
+## Process usability and quality requirements
 
 | ID      | Requirement                                                                                                  | Level | Verification                                                                                    |
 | ------- | ------------------------------------------------------------------------------------------------------------ | ----- | ----------------------------------------------------------------------------------------------- |

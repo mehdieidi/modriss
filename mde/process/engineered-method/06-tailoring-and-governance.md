@@ -136,7 +136,7 @@ on evidence rather than preserving an obsolete baseline.
 ### Risk and opportunity management
 
 Continuously identify technical, product, security, privacy, operational,
-supplier, schedule, cost, and method risks. Tie treatment to increments,
+supplier, schedule, cost, and process risks. Tie treatment to increments,
 experiments, architecture, tests, controls, monitors, or contingency. Review
 triggers and residual risk at gates.
 

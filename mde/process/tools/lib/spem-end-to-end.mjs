@@ -4,8 +4,8 @@ import { applyDeclaredTaskInputs } from "./process-inputs.mjs";
  * Full-lifecycle situational method that coordinates the three modeling
  * processes and the generated-artifact readiness process.
  *
- * This is an orchestration method: CIM, PIM, PSM, and artifact work retain
- * their own gates. The end-to-end method adds product, team, release,
+ * This is an orchestration process: CIM, PIM, PSM, and artifact work retain
+ * their own gates. The end-to-end process adds product, team, release,
  * operations, and retirement coordination around those child processes.
  */
 
@@ -55,8 +55,8 @@ export const END_TO_END_ROLES = [
   { id: "security-engineer", name: "Security Engineer", responsibilities: ["Owns security, privacy, threat, and exception evidence"] },
   { id: "release-engineer", name: "Release Engineer", responsibilities: ["Owns release candidates, promotion, rollback, and deployment records"] },
   { id: "service-owner", name: "Service Owner", responsibilities: ["Accepts operational readiness, SLOs, support ownership, and service outcomes"] },
-  { id: "process-reviewer", name: "Process Reviewer", responsibilities: ["Reviews gates, evidence, decisions, and method improvement"] },
-  { id: "method-engineer", name: "Method Engineer", responsibilities: ["Tailors and evolves the situational method and its process assets"] },
+  { id: "process-reviewer", name: "Process Reviewer", responsibilities: ["Reviews gates, evidence, decisions, and process improvement"] },
+  { id: "method-engineer", name: "Method Engineer", responsibilities: ["Tailors the development process and maintains its alignment with the modeling framework as metamodels change"] },
 ];
 
 const END_TO_END_PHASES_SOURCE = [
@@ -64,7 +64,7 @@ const END_TO_END_PHASES_SOURCE = [
     id: "e2e.ph0",
     name: "Initiate, Tailor & Organize",
     order: 0,
-    objective: "Establish the product/system purpose, situational method, team topology, quality baseline, and release strategy before modeling begins.",
+    objective: "Establish the product/system purpose, process profile, team topology, quality baseline, and release strategy before modeling begins.",
     primaryRole: "product-owner",
     entryCriteria: ["A problem, opportunity, or mandated change has an accountable sponsor"],
     exitCriteria: ["The method profile is approved", "Teams, ownership, dependencies, and decision rights are explicit", "The first increment has a testable outcome hypothesis"],
@@ -75,8 +75,8 @@ const END_TO_END_PHASES_SOURCE = [
         task("e2e.ph0.st1.t1", "Define product outcomes and success measures", "product-owner", ["State the user or mission problem and desired outcomes.", "Define measurable product, operational, security, and quality outcomes.", "Record assumptions, constraints, non-goals, and the first release hypothesis."], ["e2e-artifact.product-charter"], { exitCriteria: ["Outcome measures and non-goals are accepted by stakeholders"], validationRules: ["Every initial scope item is connected to an outcome or mandatory constraint"] }),
         task("e2e.ph0.st1.t2", "Establish the initial release and increment hypothesis", "requirements-engineer", ["Identify the smallest useful vertical capability slice.", "Define acceptance signals and the evidence needed to call it usable.", "Record unresolved assumptions as owned decisions rather than hidden risks."], ["e2e-artifact.product-charter", "e2e-artifact.increment-record"], { validationRules: ["The first slice crosses the required lifecycle boundary and has observable acceptance evidence"] }),
       ]),
-      stage("e2e.ph0.st2", "Situational Method Tailoring", "Select and tailor method fragments to the project context without removing essential control objectives.", "method-engineer", [
-        task("e2e.ph0.st2.t1", "Assess context and method risks", "method-engineer", ["Assess criticality, regulatory obligations, novelty, uncertainty, team distribution, system size, and delivery cadence.", "Select the required CIM, PIM, PSM, artifact, and lifecycle activities.", "Record excluded, combined, or delegated activities with rationale and compensating evidence."], ["e2e-artifact.method-profile"], { validationRules: ["Every tailoring decision names its context, consequence, owner, and review point"] }),
+      stage("e2e.ph0.st2", "Situational Process Tailoring", "Select and tailor reusable method content and process activities to the project context without removing essential control objectives.", "method-engineer", [
+        task("e2e.ph0.st2.t1", "Assess context and process-tailoring risks", "method-engineer", ["Assess criticality, regulatory obligations, novelty, uncertainty, team distribution, system size, and delivery cadence.", "Select the required CIM, PIM, PSM, artifact, and lifecycle activities.", "Record excluded, combined, or delegated activities with rationale and compensating evidence."], ["e2e-artifact.method-profile"], { validationRules: ["Every tailoring decision names its context, consequence, owner, and review point"] }),
         task("e2e.ph0.st2.t2", "Define the tailored Definition of Ready and Done", "process-reviewer", ["Define entry and exit evidence for model slices, transformations, release candidates, and operations.", "Define which findings are blocking and how time-bound risk acceptance works.", "Publish the profile version used by the process run."], ["e2e-artifact.method-profile"], { validationRules: ["A task cannot be accepted solely because activity occurred; required evidence and gate criteria are explicit"] }),
       ]),
       stage("e2e.ph0.st3", "Team Topology & Coordination", "Make ownership and coordination explicit for multiple teams working on one integrated model and product.", "delivery-lead", [
@@ -153,7 +153,7 @@ const END_TO_END_PHASES_SOURCE = [
     id: "e2e.ph3",
     name: "Operate, Evolve & Learn",
     order: 3,
-    objective: "Operate the service, respond to incidents, evolve models and artifacts through controlled change propagation, and continuously improve the method.",
+    objective: "Operate the service, respond to incidents, evolve models and artifacts through controlled change propagation, and continuously improve the development process.",
     primaryRole: "service-owner",
     entryCriteria: ["A service or operational capability has been released or is being maintained"],
     exitCriteria: ["Operational work is recorded", "Changes are traced through the appropriate lifecycle path", "Product and method learning is reviewed at the agreed cadence"],
@@ -169,8 +169,8 @@ const END_TO_END_PHASES_SOURCE = [
       stage("e2e.ph3.st3", "Change Propagation", "Evolve the product through a controlled impact-analysis and re-execution path.", "delivery-lead", [
         task("e2e.ph3.st3.t1", "Assess and propagate a change", "delivery-lead", ["Classify the change as product, domain, architecture, platform, artifact, operational, or retirement scope.", "Use traces and dependency ownership to identify impacted downstream levels and teams.", "Re-enter the smallest affected process stage, regenerate or redeploy as required, and preserve compatibility evidence."], ["e2e-artifact.increment-record", "e2e-artifact.operations-record"], { iterative: true, validationRules: ["The change record identifies source revision, impacted levels, downstream evidence, and acceptance decision"] }),
       ], { iterative: true }),
-      stage("e2e.ph3.st4", "Method and Product Retrospective", "Improve the product and the method using evidence from increments, releases, incidents, and dependencies.", "process-reviewer", [
-        task("e2e.ph3.st4.t1", "Inspect flow, quality, and coordination metrics", "process-reviewer", ["Review flow time, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.", "Look for systemic queues, missing work products, invalid gates, and coordination failures.", "Approve bounded method changes and record their expected effect."], ["e2e-artifact.operations-record", "e2e-artifact.method-profile"], { iterative: true, validationRules: ["Metrics lead to inspectable improvement experiments rather than individual performance rankings"] }),
+      stage("e2e.ph3.st4", "Process and Product Retrospective", "Improve the product and development process using evidence from increments, releases, incidents, and dependencies.", "process-reviewer", [
+        task("e2e.ph3.st4.t1", "Inspect flow, quality, and coordination metrics", "process-reviewer", ["Review flow time, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.", "Look for systemic queues, missing work products, invalid gates, and coordination failures.", "Approve bounded process changes and record their expected effect."], ["e2e-artifact.operations-record", "e2e-artifact.method-profile"], { iterative: true, validationRules: ["Metrics lead to inspectable improvement experiments rather than individual performance rankings"] }),
       ], { iterative: true }),
     ],
   },
@@ -191,8 +191,8 @@ const END_TO_END_PHASES_SOURCE = [
         task("e2e.ph4.st2.t1", "Execute migration and data disposition", "cloud-platform-engineer", ["Execute migration, archival, retention, deletion, or export according to approved policy.", "Validate completeness, confidentiality, integrity, and recoverability where required.", "Record final data and integration evidence."], ["e2e-artifact.retirement-record"], { validationRules: ["No data or integration is silently abandoned"] }),
         task("e2e.ph4.st2.t2", "Decommission service and access", "service-owner", ["Disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.", "Verify replacement ownership and customer communication.", "Retain required source, model, trace, release, incident, and decision records."], ["e2e-artifact.retirement-record"], { validationRules: ["Decommission evidence covers runtime, data, access, cost, and support surfaces"] }),
       ]),
-      stage("e2e.ph4.st3", "Closure & Organizational Learning", "Close the lifecycle and feed reusable learning into future method profiles and product planning.", "process-reviewer", [
-        task("e2e.ph4.st3.t1", "Complete closure review", "process-reviewer", ["Confirm retirement exit criteria and records are complete.", "Review product, architecture, operational, and method outcomes.", "Publish reusable patterns, risks, and method changes for future projects."], ["e2e-artifact.retirement-record", "e2e-artifact.method-profile"], { validationRules: ["Closure identifies retained evidence, unresolved obligations, and accountable custodians"] }),
+      stage("e2e.ph4.st3", "Closure & Organizational Learning", "Close the lifecycle and feed reusable learning into future process profiles and product planning.", "process-reviewer", [
+        task("e2e.ph4.st3.t1", "Complete closure review", "process-reviewer", ["Confirm retirement exit criteria and records are complete.", "Review product, architecture, operational, and process outcomes.", "Publish reusable patterns, risks, and process changes for future projects."], ["e2e-artifact.retirement-record", "e2e-artifact.method-profile"], { validationRules: ["Closure identifies retained evidence, unresolved obligations, and accountable custodians"] }),
       ]),
     ],
   },

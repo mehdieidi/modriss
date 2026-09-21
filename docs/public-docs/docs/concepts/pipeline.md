@@ -1,6 +1,8 @@
 # Validation, Transformation, and Generation
 
-## End-to-End Pipeline
+The MODRISS pipeline carries a model from business intent to a generated AWS project. Each target is a model that can be inspected and refined before the next step.
+
+## End-to-end pipeline
 
 ```mermaid
 flowchart LR
@@ -17,45 +19,27 @@ flowchart LR
 
 ## Validation
 
-Validation has two layers:
+Structural validation checks that the model loads and conforms to its Ecore metamodel. It checks required features, multiplicities, and reference integrity.
 
-1. Structural validation checks Ecore conformance, model loading, required features, multiplicity,
-   and reference integrity.
-2. EVL semantic validation checks domain-specific constraints and critiques.
+EVL semantic validation checks rules about the model's domain and readiness. EVL `constraint` results report mandatory violations; `critique` results suggest optional improvements. The report can include the affected element, source location, diagnostic, message, and repair guidance.
 
-EVL `constraint` results are treated as mandatory violations. EVL `critique` results are optional
-improvements. Reports contain phases, diagnostics, source locations, element references, messages,
-and fix suggestions where available.
+Semantic validation is an explicit user/model workflow. The assistant's apply, repair, and commit paths validate generated model output only through structural Ecore/EMF conformance with `ModelService.validateStructural(...)`. They do not invoke EVL.
 
-See the [complete EVL semantic validation reference](../evl/index.md) for the rule-by-rule rationale,
-applicability guard, source check, diagnostic, and repair guidance.
-
-See the [model-to-model transformation reference](../transformations/index.md) for the rule-by-rule
-source/target mapping, guards, traceability, manual decisions, and post-phase resolution behavior.
-
-See the [model-to-text and code-generation reference](../generation/index.md) for the EGX/EGL
-generation rules, artifact paths, merge/protected-region behavior, and output-specific resources.
+The [EVL reference](../evl/index.md) explains the rules. The [transformation reference](../transformations/index.md) describes source and target mappings, guards, traceability, manual decisions, and post-processing. The [generation reference](../generation/index.md) documents output paths and generation behavior.
 
 ## CIM to PIM
 
-The CIM-to-PIM ETL profile creates PIM scaffolding, boundaries, security concepts, data structures,
-behaviors, contracts, processes, policies, integrations, deployment concepts, traces, and readiness
-information. The transformation is split into concern-specific ETL modules with shared EOL helpers.
+The CIM-to-PIM ETL profile derives PIM scaffolding from a CIM model. It covers service boundaries, security concepts, data structures, behavior, contracts, processes, policies, integrations, deployment concepts, traces, and readiness. Concern-specific ETL modules use shared EOL helpers.
 
 ## PIM to AWS PSM
 
-The PIM-to-AWS-PSM ETL profile creates AWS roots, stages, stacks, compute, APIs, storage, messaging,
-events, workflows, IAM, configuration, observability, and provider mappings. Post-processing resolves
-relationships and validates placement and readiness.
+The PIM-to-AWS-PSM ETL profile derives AWS roots, stages, stacks, compute, APIs, storage, messaging, events, workflows, IAM, configuration, observability, and provider mappings. Post-processing resolves relationships and checks placement and readiness.
 
-Both model-to-model stages support repeated upstream evolution through deterministic fresh
-generation and three-way EMF synchronization. See
-[Iterative and evolutionary model transformations](../architecture/iterative-model-transformations.md)
-for the Base/Working/NewGenerated lifecycle, merge rules, conflict handling, and safety guarantees.
+Both model-to-model stages support repeated upstream evolution through deterministic fresh generation and three-way EMF synchronization. The [iterative transformation guide](../architecture/iterative-model-transformations.md) explains the Base, Working, and NewGenerated lifecycle, merge rules, conflicts, and safety checks.
 
-## PSM to Artifacts
+## AWS PSM to artifacts
 
-The generator emits a reviewable AWS serverless project containing, as applicable:
+The generator creates a reviewable AWS serverless project. Depending on the model, the output can include:
 
 - SAM or CloudFormation infrastructure
 - Go Lambda handlers and shared runtime packages
@@ -66,6 +50,4 @@ The generator emits a reviewable AWS serverless project containing, as applicabl
 - Architecture, security, operations, deployment, and traceability documentation
 - Generation, trace, protected-region, manual-action, and security-review reports
 
-Generation is deliberately not the final human decision. Generated projects expose protected
-regions and manual actions for application-specific logic, credentials, ownership, and production
-review.
+Review generated files before deployment. Protected regions and manual-action reports identify application logic, credentials, ownership, and production decisions that still need attention.

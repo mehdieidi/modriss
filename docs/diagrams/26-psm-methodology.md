@@ -1,4 +1,4 @@
-# AWS PSM Modeling Methodology
+# AWS PSM Modeling Process
 
 AWS PSM modeling follows `modriss.psm.modeling` (`mde/process/process-definitions/psm.json`). **Six SPEM phases** (`psm.ph1`–`psm.ph6`) with **25 atomic tasks**. **Deployment Foundation** and **Network & Identity** run once; data/compute/orchestration phases repeat in the engine cycle.
 

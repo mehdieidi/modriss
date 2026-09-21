@@ -2,20 +2,20 @@
 
 ## Abstract
 
-A software-development process is difficult to reuse if it is represented only
-as a fixed sequence of phases. The same activity may be needed in several
-projects, but with different roles, evidence requirements, or degrees of
-formality. MODRISS therefore separates reusable method content from the process
-in which that content is enacted. Its method library contains role, task,
-work-product, and guidance definitions; its fragment repository packages
-coherent portions of that content as reusable process patterns; and its
-delivery process selects and arranges those elements for a particular
-serverless project. This report explains the design of the library, describes
-its contents in human-readable form, and records the rationale by which the
-fragments are selected, combined, and governed. It is the narrative companion
-to the JSON catalogs and the SPEM-logical representation.
+The MODRISS methodology has two parts: a development process and a modeling
+framework. This report concerns the process part and its use of reusable SPEM
+method content. A software-development process is difficult to reuse if it is
+represented only as a fixed sequence of phases. The same activity may be needed
+in several projects, but with different roles, evidence requirements, or degrees
+of formality. The method library contains role, task, work-product, and
+guidance definitions; its fragment repository packages coherent portions of
+that content as reusable process patterns; and the delivery process selects
+and arranges those elements for a particular serverless project. This report
+explains the library design, describes its contents, and records the rationale
+for selecting, combining, and governing the fragments. It accompanies the JSON
+catalogs and the SPEM-logical representation.
 
-## 1. Why the methodology needs a method library
+## 1. Why the process component uses a method library
 
 Method engineering treats a development method as an engineered artifact, not
 as an indivisible recipe. Brinkkemper (1996) describes method engineering in
@@ -26,21 +26,21 @@ the suitable method depends on the project situation. A fragment useful in a
 regulated, multi-team product may be disproportionate in a short exploratory
 study, even though both projects use the same modeling languages.
 
-This distinction is particularly important in MODRISS. The CIM, PIM, and PSM
-modeling components are reusable, but a complete serverless-development method
-also needs feasibility analysis, release control, operational learning,
-retirement, and continuous management. Copying all of that material into a
-single project-specific process would make tailoring opaque and maintenance
-error-prone. The method library instead provides stable definitions that can be
-placed in several process configurations. A project process contains _uses_ of
-those definitions rather than private copies.
+In MODRISS, the modeling framework defines CIM, PIM, and AWS PSM. The separate
+development-process component covers feasibility analysis, release control,
+operational learning, retirement, and continuous management. Reusable method
+content supports that process. Copying its definitions into each project
+process would make tailoring opaque and maintenance error-prone. The method
+library instead provides stable definitions that can be placed in several
+process configurations. A project process contains _uses_ of those definitions
+rather than private copies.
 
 The design follows the separation made by SPEM 2.0 between Method Content and
 Process with Methods (OMG, 2008). A `TaskDefinition`, for example, describes
 reusable work. A `TaskUse` places that task in a particular activity and may
 select the steps relevant to that use. The same distinction applies to roles
 and work products. This makes the library useful both as an academic account of
-the method and as an executable source for the MODRISS tooling.
+reusable process content and as an executable source for the MODRISS tooling.
 
 ## 2. Construction and evidential basis
 
@@ -87,7 +87,7 @@ The library has three related layers:
 
 The consolidated baseline currently contains 17 RoleDefinitions, 132
 TaskDefinitions, 88 WorkProductDefinitions, and 44 Guidance elements. The 17
-technical role definitions map to 16 conceptual methodology roles because the
+technical role definitions map to 16 conceptual process roles because the
 conceptual Requirements/Business Modeler role is represented by two stable
 tooling roles: Requirements Engineer and Business Modeler. The task definitions
 come from five process components: 30 from the end-to-end lifecycle, 26 from
@@ -99,7 +99,7 @@ The complete element-by-element account is provided in
 [the reusable method-content catalog](method-library/reusable-method-content-catalog.md).
 That catalog is generated from the same sources as the SPEM-logical XML, so it
 can be read as an appendix without becoming a separately maintained version of
-the method.
+the process content.
 
 ## 4. Structure of a MODRISS method fragment
 
@@ -302,7 +302,7 @@ system from its authoritative sources. It permits immediate restoration work
 when necessary, preserves the incident timeline, and subsequently classifies
 the cause and impact. A domain or requirement issue returns to CIM; an
 architectural issue returns to PIM; an AWS realization issue returns to PSM;
-generation, implementation, release-control, and method issues return to their
+generation, implementation, release-control, and process-design issues return to their
 respective sources. The corrected change is then propagated forward and
 re-evidenced.
 
@@ -324,7 +324,7 @@ UF-01 spans the lifecycle instead of occupying a late phase. It integrates
 product and delivery management, risk and opportunity management, quality
 assurance, security and privacy, configuration and change control,
 traceability, FinOps, dependency coordination, documentation and knowledge,
-measurement, method improvement, and supplier concerns. These disciplines have
+measurement, process improvement, and supplier concerns. These disciplines have
 different owners and cadences, but they share a purpose: decisions, revisions,
 risks, findings, and evidence must remain coherent while delivery proceeds.
 The fragment is always selected; its rigor is adjusted through the Situational
@@ -335,7 +335,7 @@ Method Profile.
 The following matrix makes the assembly interfaces explicit. Role and work-
 product identifiers refer to the definitions described in the reusable content
 catalog. “Required” means that the control objective belongs to the core
-method; the effort and evidence depth may still be tailored.
+process; the effort and evidence depth may still be tailored.
 
 | Fragment | Kind                | Selection                                           | Roles                                          | Principal work products                                | Requirements realized                  |
 | -------- | ------------------- | --------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------ | -------------------------------------- |
@@ -412,11 +412,11 @@ release → operational evidence → change or retirement evidence`.
 
 The 29 lifecycle products fall into three families:
 
-| Family                                                                | IDs         | Purpose                                                                                                                                                            |
-| --------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Strategy, feasibility, method, and planning                           | WP-01–WP-07 | establish why the endeavor exists, whether serverless is suitable, how risk and cost are controlled, which method configuration applies, and how work is organized |
-| Models, transformations, decisions, and generated baseline            | WP-08–WP-18 | preserve accepted CIM/PIM/PSM revisions, transformation provenance, architectural and assurance evidence, and reproducible generation                              |
-| Implementation, verification, release, operation, change, and closure | WP-19–WP-29 | control software and tests, exact candidates, promotion and recovery, operational evidence, incidents, changes, retirement, and improvement                        |
+| Family                                                                | IDs         | Purpose                                                                                                                                                             |
+| --------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Strategy, feasibility, process tailoring, and planning                | WP-01–WP-07 | establish why the endeavor exists, whether serverless is suitable, how risk and cost are controlled, which process configuration applies, and how work is organized |
+| Models, transformations, decisions, and generated baseline            | WP-08–WP-18 | preserve accepted CIM/PIM/PSM revisions, transformation provenance, architectural and assurance evidence, and reproducible generation                               |
+| Implementation, verification, release, operation, change, and closure | WP-19–WP-29 | control software and tests, exact candidates, promotion and recovery, operational evidence, incidents, changes, retirement, and improvement                         |
 
 A work product is not simply a file. Its definition establishes meaning; its
 process use identifies the activity and task context; its revision and state
@@ -537,7 +537,7 @@ TaskDefinition/RoleDefinition/WorkProductDefinition → process use → project
 evidence`.
 
 This traceability allows the thesis to justify why a fragment exists and how
-its presence can be examined. It does not prove that the method improves
+its presence can be examined. It does not prove that the process improves
 delivery time, quality, cost, or user outcomes. Those claims depend on the
 empirical protocol and observed enactments. Similarly, the XML is described as
 a SPEM-logical exchange model rather than as certified native interchange for
@@ -545,15 +545,14 @@ every vendor tool.
 
 ## 10. Conclusion
 
-The MODRISS library turns the methodology from a single lifecycle diagram into
-a reusable body of engineering knowledge. Its role, task, work-product, and
-guidance definitions establish stable semantics. Its fragments explain the
-problems that coherent groups of content solve and the contexts in which they
-should be selected. Its configurations make the method adaptable without
-making it arbitrary. The machine-readable and narrative representations serve
-different purposes, but they describe the same baseline: the former supports
-tooling and verification, while the latter makes the construction available
-for academic inspection, enactment, and critique.
+The MODRISS method library provides reusable content for the development-
+process part of the methodology. Its role, task, work-product, and guidance
+definitions establish stable semantics. Its fragments explain the problems
+that coherent groups of content address and the contexts in which they may be
+selected. Process configurations record how that content is used in a project.
+The machine-readable and narrative representations serve different purposes,
+but describe the same baseline for tooling, verification, academic inspection,
+enactment, and critique.
 
 ## References
 

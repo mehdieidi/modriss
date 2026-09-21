@@ -77,7 +77,9 @@
       "id": "role.method-engineer",
       "type": "RoleDefinition",
       "name": "Method Engineer",
-      "responsibilities": ["Tailors and evolves the situational method and its process assets"],
+      "responsibilities": [
+        "Tailors the development process and maintains its alignment with the modeling framework as metamodels change"
+      ],
       "sourceProcesses": ["end-to-end", "cim", "pim", "psm"],
       "sourceVariants": [],
       "methodRoleIds": ["R-04"]
@@ -86,7 +88,7 @@
       "id": "role.process-reviewer",
       "type": "RoleDefinition",
       "name": "Process Reviewer",
-      "responsibilities": ["Reviews gates, evidence, decisions, and method improvement"],
+      "responsibilities": ["Reviews gates, evidence, decisions, and process improvement"],
       "sourceProcesses": ["end-to-end", "cim", "pim", "psm"],
       "sourceVariants": [],
       "methodRoleIds": ["R-15"]
@@ -3635,8 +3637,8 @@
     {
       "id": "task.e2e.ph0.st2.t1",
       "type": "TaskDefinition",
-      "name": "Assess context and method risks",
-      "purpose": "Assess context and method risks",
+      "name": "Assess context and process-tailoring risks",
+      "purpose": "Assess context and process-tailoring risks",
       "performerRoleRefs": ["role.method-engineer"],
       "inputWorkProductRefs": ["e2e-artifact.product-charter", "e2e-artifact.increment-record"],
       "inputSource": "declared",
@@ -3668,11 +3670,11 @@
         "Record excluded, combined, or delegated activities with rationale and compensating evidence."
       ],
       "entryCriteria": [],
-      "exitCriteria": ["Assess context and method risks evidence is recorded"],
+      "exitCriteria": ["Assess context and process-tailoring risks evidence is recorded"],
       "validationRules": [
         "Every tailoring decision names its context, consequence, owner, and review point"
       ],
-      "progressEvidence": "Assess context and method risks decision, evidence links, owner, and status are recorded",
+      "progressEvidence": "Assess context and process-tailoring risks decision, evidence links, owner, and status are recorded",
       "paletteFocus": [],
       "metamodelBindings": [],
       "sourceProcesses": ["end-to-end"],
@@ -4615,7 +4617,7 @@
       "steps": [
         "Review flow time, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.",
         "Look for systemic queues, missing work products, invalid gates, and coordination failures.",
-        "Approve bounded method changes and record their expected effect."
+        "Approve bounded process changes and record their expected effect."
       ],
       "entryCriteria": [],
       "exitCriteria": ["Inspect flow, quality, and coordination metrics evidence is recorded"],
@@ -4884,8 +4886,8 @@
       "coverageGroups": [],
       "steps": [
         "Confirm retirement exit criteria and records are complete.",
-        "Review product, architecture, operational, and method outcomes.",
-        "Publish reusable patterns, risks, and method changes for future projects."
+        "Review product, architecture, operational, and process outcomes.",
+        "Publish reusable patterns, risks, and process changes for future projects."
       ],
       "entryCriteria": [],
       "exitCriteria": ["Complete closure review evidence is recorded"],

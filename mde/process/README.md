@@ -1,11 +1,11 @@
-# MODRISS Modeling Methodologies
+# MODRISS Modeling Process Definitions
 
-The normative English full-lifecycle method is defined in
+The normative English full-lifecycle development process is defined in
 [`software-development-process.md`](software-development-process.md). It covers initiation,
 situational tailoring, team coordination, iterative-incremental CIM/PIM/PSM delivery, release,
 transition, operations, change propagation, and retirement. The Persian lifecycle translation is
 available in [`software-development-process-fa.md`](software-development-process-fa.md). The
-machine-readable definitions below are the executable method content enacted inside that lifecycle.
+machine-readable definitions below specify the modeling processes and their reusable method content for use within that lifecycle.
 
 Canonical, machine-readable **iterative-incremental** process definitions for CIM, PIM,
 AWS PSM, generated-artifact deployment readiness, and the end-to-end pipeline. Each process

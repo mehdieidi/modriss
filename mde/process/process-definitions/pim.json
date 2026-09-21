@@ -72,7 +72,9 @@
         "id": "role.method-engineer",
         "type": "RoleDefinition",
         "name": "Method Engineer",
-        "responsibilities": ["Maintains methodology when metamodels change"]
+        "responsibilities": [
+          "Maintains alignment between the modeling framework and development process as metamodels change"
+        ]
       }
     ],
     "taskDefinitions": [

@@ -10,7 +10,7 @@ Department of Computer Engineering, Sharif University of Technology. It studies 
 It also explores LLM-assisted modeling and the use of large language models to support human modelers
 in authoring, inspecting, explaining, and controlled modification of models expressed in these domain-specific modeling languages.
 
-This repository contains the proposed methodology, model-driven framework, and its web-based low-code platform. The current
+This repository contains the MODRISS development process, modeling framework, and web-based low-code platform. The current
 platform-specific target is the AWS serverless ecosystem. The platform-independent modeling layer
 and transformation-based architecture are intended to support future extensions to other cloud
 platforms, including Microsoft Azure and Google Cloud Platform (GCP), through corresponding
@@ -136,8 +136,8 @@ the module structure and Maven dependency direction. The formal sources of truth
 
 - [Public documentation](docs/public-docs/)
 - [Model-driven engineering concepts](docs/public-docs/docs/concepts/model-driven-engineering.md)
-- [Full-lifecycle software development method](mde/process/software-development-process.md)
-- [End-to-end modeling methodology](docs/public-docs/docs/guides/end-to-end-modeling-methodology.md)
+- [Full-lifecycle software development process](mde/process/software-development-process.md)
+- [Capability-increment process](docs/public-docs/docs/guides/end-to-end-modeling-methodology.md)
 - [REST API reference](docs/public-docs/docs/reference/rest-api.md)
 - [OpenAPI contract](docs/api/openapi/openapi.yaml)
 - [Generated artifact guide](docs/public-docs/docs/guides/generated-artifacts.md)

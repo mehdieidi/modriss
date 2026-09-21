@@ -47,7 +47,7 @@
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:RoleDefinition" xmi:id="id_role.method-engineer" name="Method Engineer" modriss:sourceId="role.method-engineer">
           <modriss:methodRoleId>R-04</modriss:methodRoleId>
-          <modriss:responsibility>Tailors and evolves the situational method and its process assets</modriss:responsibility>
+          <modriss:responsibility>Tailors the development process and maintains its alignment with the modeling framework as metamodels change</modriss:responsibility>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
           <modriss:sourceProcess>cim</modriss:sourceProcess>
           <modriss:sourceProcess>pim</modriss:sourceProcess>
@@ -55,7 +55,7 @@
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:RoleDefinition" xmi:id="id_role.process-reviewer" name="Process Reviewer" modriss:sourceId="role.process-reviewer">
           <modriss:methodRoleId>R-15</modriss:methodRoleId>
-          <modriss:responsibility>Reviews gates, evidence, decisions, and method improvement</modriss:responsibility>
+          <modriss:responsibility>Reviews gates, evidence, decisions, and process improvement</modriss:responsibility>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
           <modriss:sourceProcess>cim</modriss:sourceProcess>
           <modriss:sourceProcess>pim</modriss:sourceProcess>
@@ -844,8 +844,8 @@
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph0.st1.t2.step.3" sectionName="Step 3" sectionDescription="Record unresolved assumptions as owned decisions rather than hidden risks."/>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.e2e.ph0.st2.t1" name="Assess context and method risks" modriss:sourceId="task.e2e.ph0.st2.t1">
-          <modriss:purpose>Assess context and method risks</modriss:purpose>
+        <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.e2e.ph0.st2.t1" name="Assess context and process-tailoring risks" modriss:sourceId="task.e2e.ph0.st2.t1">
+          <modriss:purpose>Assess context and process-tailoring risks</modriss:purpose>
           <modriss:defaultPerformer roleDefinitionRef="id_role.method-engineer"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.ph0.st2.t1.in.e2e-artifact.product-charter" direction="in" optionality="mandatory" parameterType="id_e2e-artifact.product-charter"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.ph0.st2.t1.in.e2e-artifact.increment-record" direction="in" optionality="mandatory" parameterType="id_e2e-artifact.increment-record"/>
@@ -1050,7 +1050,7 @@
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.ph3.st4.t1.out.e2e-artifact.method-profile" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.method-profile"/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph3.st4.t1.step.1" sectionName="Step 1" sectionDescription="Review flow time, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes."/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph3.st4.t1.step.2" sectionName="Step 2" sectionDescription="Look for systemic queues, missing work products, invalid gates, and coordination failures."/>
-          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph3.st4.t1.step.3" sectionName="Step 3" sectionDescription="Approve bounded method changes and record their expected effect."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph3.st4.t1.step.3" sectionName="Step 3" sectionDescription="Approve bounded process changes and record their expected effect."/>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.e2e.ph4.st1.t1" name="Approve retirement scope and plan" modriss:sourceId="task.e2e.ph4.st1.t1">
@@ -1104,8 +1104,8 @@
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.ph4.st3.t1.out.e2e-artifact.retirement-record" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.retirement-record"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.ph4.st3.t1.out.e2e-artifact.method-profile" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.method-profile"/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph4.st3.t1.step.1" sectionName="Step 1" sectionDescription="Confirm retirement exit criteria and records are complete."/>
-          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph4.st3.t1.step.2" sectionName="Step 2" sectionDescription="Review product, architecture, operational, and method outcomes."/>
-          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph4.st3.t1.step.3" sectionName="Step 3" sectionDescription="Publish reusable patterns, risks, and method changes for future projects."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph4.st3.t1.step.2" sectionName="Step 2" sectionDescription="Review product, architecture, operational, and process outcomes."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph4.st3.t1.step.3" sectionName="Step 3" sectionDescription="Publish reusable patterns, risks, and process changes for future projects."/>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.pim.ph1.st0.t1" name="Plan service slice" modriss:sourceId="task.pim.ph1.st0.t1">
@@ -3516,7 +3516,7 @@
               </nestedBreakdownElement>
               <nestedBreakdownElement xmi:type="spem:ProcessPerformer" xmi:id="id_ppf.e2e.ph0.st1.t2.ru.e2e.ph0.st1.requirements-engineer" linkedTaskUse="id_e2e.ph0.st1.t2" linkedRoleUse="id_ru.e2e.ph0.st1.requirements-engineer" modriss:kind="primary"/>
             </nestedBreakdownElement>
-            <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_e2e.ph0.st2" name="Situational Method Tailoring" modriss:kind="MODRISS::Stage" modriss:sourceId="e2e.ph0.st2">
+            <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_e2e.ph0.st2" name="Situational Process Tailoring" modriss:kind="MODRISS::Stage" modriss:sourceId="e2e.ph0.st2">
               <nestedBreakdownElement xmi:type="spem:TaskUse" xmi:id="id_e2e.ph0.st2.t1" name="e2e.ph0.st2.t1" task="id_task.e2e.ph0.st2.t1" modriss:sourceId="e2e.ph0.st2.t1">
                 <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.e2e.ph0.st2.t1.in.wpu.e2e.ph0.st2.t1.input.e2e-artifact.product-charter" direction="in" parameterType="id_wpu.e2e.ph0.st2.t1.input.e2e-artifact.product-charter" modriss:optional="false"/>
                 <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.e2e.ph0.st2.t1.in.wpu.e2e.ph0.st2.t1.input.e2e-artifact.increment-record" direction="in" parameterType="id_wpu.e2e.ph0.st2.t1.input.e2e-artifact.increment-record" modriss:optional="false"/>
@@ -3732,7 +3732,7 @@
               </nestedBreakdownElement>
               <nestedBreakdownElement xmi:type="spem:ProcessPerformer" xmi:id="id_ppf.e2e.ph3.st3.t1.ru.e2e.ph3.st3.delivery-lead" linkedTaskUse="id_e2e.ph3.st3.t1" linkedRoleUse="id_ru.e2e.ph3.st3.delivery-lead" modriss:kind="primary"/>
             </nestedBreakdownElement>
-            <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_e2e.ph3.st4" name="Method and Product Retrospective" modriss:kind="MODRISS::Stage" modriss:sourceId="e2e.ph3.st4">
+            <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_e2e.ph3.st4" name="Process and Product Retrospective" modriss:kind="MODRISS::Stage" modriss:sourceId="e2e.ph3.st4">
               <nestedBreakdownElement xmi:type="spem:TaskUse" xmi:id="id_e2e.ph3.st4.t1" name="e2e.ph3.st4.t1" task="id_task.e2e.ph3.st4.t1" modriss:sourceId="e2e.ph3.st4.t1">
                 <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.e2e.ph3.st4.t1.in.wpu.e2e.ph3.st4.t1.input.e2e-artifact.increment-record" direction="in" parameterType="id_wpu.e2e.ph3.st4.t1.input.e2e-artifact.increment-record" modriss:optional="false"/>
                 <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.e2e.ph3.st4.t1.in.wpu.e2e.ph3.st4.t1.input.e2e-artifact.operations-record" direction="in" parameterType="id_wpu.e2e.ph3.st4.t1.input.e2e-artifact.operations-record" modriss:optional="false"/>
@@ -3825,7 +3825,7 @@
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.rework.e2e.loop.pim-feedback-cim" predecessor="id_e2e.p3.pim-refinement" successor="id_e2e.p1.cim-modeling" linkKind="finishToStart" modriss:relation="rework" modriss:condition="PIM refinement reveals missing CIM concepts for the increment." modriss:guidance="Extend CIM via change workflow; re-run CIM EVL before re-transform."/>
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.rework.e2e.loop.psm-feedback-pim" predecessor="id_e2e.p5.psm-refinement" successor="id_e2e.p3.pim-refinement" linkKind="finishToStart" modriss:relation="rework" modriss:condition="AWS constraints require PIM architecture changes." modriss:guidance="Adjust PIM policies or integration; re-run PIM→PSM ETL."/>
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.rework.e2e.loop.artifact-feedback-psm" predecessor="id_e2e.p7.artifact-completion" successor="id_e2e.p5.psm-refinement" linkKind="finishToStart" modriss:relation="rework" modriss:condition="Generated artifacts fail validation or deployment dry-run." modriss:guidance="Fix PSM at source stage; regenerate artifacts."/>
-          <nestedBreakdownElement xmi:type="spem:Milestone" xmi:id="id_e2e.m0.method-tailored" name="Method and team topology approved" modriss:sourceId="e2e.m0.method-tailored"/>
+          <nestedBreakdownElement xmi:type="spem:Milestone" xmi:id="id_e2e.m0.method-tailored" name="Process tailoring and team topology approved" modriss:sourceId="e2e.m0.method-tailored"/>
           <nestedBreakdownElement xmi:type="spem:Milestone" xmi:id="id_e2e.m1.increment-accepted" name="Vertical increment accepted" modriss:sourceId="e2e.m1.increment-accepted"/>
           <nestedBreakdownElement xmi:type="spem:Milestone" xmi:id="id_e2e.m2.release-promoted" name="Release promoted and handed over" modriss:sourceId="e2e.m2.release-promoted"/>
           <nestedBreakdownElement xmi:type="spem:Milestone" xmi:id="id_e2e.m3.operational-learning" name="Operational learning reviewed" modriss:sourceId="e2e.m3.operational-learning"/>

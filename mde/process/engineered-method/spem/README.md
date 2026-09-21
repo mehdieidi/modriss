@@ -2,7 +2,7 @@
 
 ## Representation decision
 
-SPEM 2.0 is used because the method needs both:
+SPEM 2.0 represents the process component and preserves its distinction between:
 
 - reusable lifecycle-independent method content (`RoleDefinition`,
   `TaskDefinition`, `WorkProductDefinition`, `Guidance`); and

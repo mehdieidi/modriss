@@ -1,4 +1,4 @@
-# PIM Methodology Activity Diagram
+# PIM Modeling Process Activity Diagram
 
 This activity view shows one service-slice revolution of `modriss.pim.modeling` after CIM-to-PIM ETL.
 

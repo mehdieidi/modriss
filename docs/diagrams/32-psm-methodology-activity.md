@@ -1,4 +1,4 @@
-# AWS PSM Methodology Activity Diagram
+# AWS PSM Modeling Process Activity Diagram
 
 This activity view shows one deployable-slice revolution of `modriss.psm.modeling` after PIM-to-PSM ETL.
 

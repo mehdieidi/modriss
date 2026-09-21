@@ -53,5 +53,5 @@ Transformation execution should happen after source structural and semantic vali
 - [Epsilon Transformation Language](https://eclipse.dev/epsilon/doc/etl/): ETL rules, guards, and transformation execution.
 - [DSML reference](../dsml/index.md): source and target classes, attributes, and relationships.
 - [EVL semantic validation reference](../evl/index.md): constraints applied before/after transformation.
-- [Validation, transformation, and generation](../concepts/pipeline.md): the complete methodology pipeline.
+- [Validation, transformation, and generation](../concepts/pipeline.md): the validation and transformation steps in the modeling framework.
 - [Model-to-text and code-generation reference](../generation/index.md): follow the EGX/EGL rules that turn AWS PSM into infrastructure, code, tests, scripts, CI/CD, and reports.

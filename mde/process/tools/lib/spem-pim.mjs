@@ -1,7 +1,7 @@
 import { applyDeclaredTaskInputs } from "./process-inputs.mjs";
 
 /**
- * Compact PIM process authoring input. The methodology compiler separates its
+ * Compact PIM process authoring input. The process compiler separates its
  * TaskSpecs into SPEM TaskDefinitions and process-scoped TaskUses.
  * Concept types become MODRISS metamodelBindings, not SPEM work products.
  */

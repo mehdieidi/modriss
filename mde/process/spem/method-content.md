@@ -28,6 +28,12 @@ mapping scope, not a claim of one of OMG's official compliance points.
 
 ## Separation of method content and process use
 
+The MODRISS methodology has two parts: the development process and the
+modeling framework. The representation below concerns the process part. Its
+`methodContent` and `process` objects are SPEM structures within that part;
+they are not the two parts of the methodology. Reusable method content is used
+by the development process.
+
 Every generated process definition has two semantic parts:
 
 ```text
@@ -132,7 +138,7 @@ for every task. An empty array is an intentional declaration that the task has
 no required input WorkProductDefinition. The compiler rejects a missing
 declaration and records `inputSource: "declared"` on the resulting
 TaskDefinition; it never infers inputs from task order or from the preceding
-task's outputs. This keeps the method semantics stable when activities are
+task's outputs. This keeps TaskDefinition semantics stable when process activities are
 reordered, grouped, split, or tailored.
 
 ## Explicit process parameters and performers

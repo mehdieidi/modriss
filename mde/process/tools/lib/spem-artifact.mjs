@@ -3,7 +3,7 @@ import { applyDeclaredTaskInputs } from "./process-inputs.mjs";
 /**
  * Compact artifact-readiness process authoring input.
  *
- * The methodology compiler projects this source into SPEM-mapped method
+ * The process compiler projects this source into SPEM-mapped method
  * content and process uses, just like CIM, PIM, PSM, and end-to-end sources.
  */
 

@@ -24,7 +24,7 @@ export const CHANGE_MANAGEMENT = {
         name: "Add Domain Element",
         trigger: "A new concept (entity, command, event, process step) is needed outside the current phase.",
         steps: [
-          "Identify the metamodel phase that owns the concept (use methodology palette phase hints).",
+          "Identify the metamodel phase that owns the concept (use the process palette phase hints).",
           "Navigate to that phase; create the element with correct containment and references.",
           "Run Impact Analysis: find trace links, constrains, and bounded-context memberships affected.",
           "Update dependent elements in later phases; mark downstream tasks incomplete if EVL rules break.",

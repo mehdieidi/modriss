@@ -2,8 +2,9 @@
 
 ## Construction strategy
 
-The method was built with a hybrid policy rather than derived from a single
-reference process. In SMEP terms, the infrastructure consists of:
+The development process was built with a hybrid policy rather than derived
+from a single reference process. In SMEP terms, the infrastructure consists
+of:
 
 - **metamodel:** SPEM 2.0 provides the method-content/process architecture;
 - **base process:** MDASP provides the model-driven lifecycle backbone;
@@ -55,8 +56,8 @@ The artifact-oriented policy connected:
 Evidence → Change/Retirement Evidence`.
 
 Every transition received a task, accountable role, input/output relation,
-trace expectation, and review outcome. This reduces seams between the business,
-modeling, implementation, and operational portions of the method.
+trace expectation, and review outcome. This reduces gaps between business,
+modeling, implementation, and operational work in the process.
 
 ### Iteration 3 — assemble the implemented modeling fragments
 

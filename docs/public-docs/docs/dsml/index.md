@@ -25,7 +25,7 @@ flowchart LR
 - [PIM reference](pim/index.md): refine behavior into generic serverless architecture.
 - [AWS PSM reference](psm/index.md): bind the architecture to AWS resources and deployment details.
 - [Shared kernel reference](shared-kernel.md): find inherited identity, lifecycle, traceability, expression, and readiness attributes.
-- [End-to-end modeling methodology](../guides/end-to-end-modeling-methodology.md): follow the workflow across all three levels.
+- [Capability-increment process](../guides/end-to-end-modeling-methodology.md): see how the process coordinates work across all three modeling levels.
 - [Validation, transformation, and generation](../concepts/pipeline.md): understand where EVL, ETL, EGX, and EGL act on the models.
 - [EVL semantic validation reference](../evl/index.md): understand every semantic constraint and critique, its applicability, its diagnostic, and the repair path.
 - [Model-to-model transformation reference](../transformations/index.md): follow every CIM→PIM and PIM→AWS PSM rule, guard, target, trace, and deferred-resolution phase.

@@ -61,6 +61,6 @@ generically.
 - Validation, transformations, and generation were reviewed.
 - UI metadata and specialized frontend behavior were reviewed.
 - JSON/XMI and stored-model compatibility were tested.
-- AI retrieval and hard-coded assistant behavior were reviewed (metamodel/methodology catalog,
+- AI retrieval and hard-coded assistant behavior were reviewed (metamodel and process-definition catalogs,
   structural apply gate, auto-apply/undo semantics).
 - API, migrations, samples, tests, docs, and diagrams were updated where affected.

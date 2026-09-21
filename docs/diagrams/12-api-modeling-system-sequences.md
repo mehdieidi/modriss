@@ -66,7 +66,7 @@ sequenceDiagram
     actor Client
     participant C as ModelingController
     participant S as ModelingProcessService
-    participant R as SPEM methodology assets
+    participant R as SPEM method-content and process assets
     Client->>C: GET /api/modeling/process/{level}
     C->>S: processDefinition(level)
     S->>R: Load canonical process definition

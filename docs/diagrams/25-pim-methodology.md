@@ -1,4 +1,4 @@
-# PIM Modeling Methodology
+# PIM Modeling Process
 
 Platform-independent modeling follows `modriss.pim.modeling` (`mde/process/process-definitions/pim.json`). **Six SPEM phases** (`pim.ph1`–`pim.ph6`) with nested stages and **29 atomic tasks**. **Architecture Establishment** runs once; engine phases repeat per service slice.
 

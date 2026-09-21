@@ -74,4 +74,4 @@ Explicit model-validation workflows may run EVL and expose these semantic findin
 - [Eclipse Epsilon Validation Language](https://eclipse.dev/epsilon/doc/evl/): EVL syntax and execution model.
 - [Validation, transformation, and generation](../concepts/pipeline.md): where EVL sits in the end-to-end pipeline.
 - [CIM DSML reference](../dsml/cim/index.md), [PIM DSML reference](../dsml/pim/index.md), and [AWS PSM reference](../dsml/psm/index.md): the classes and attributes that these rules validate.
-- [End-to-end modeling methodology](../guides/end-to-end-modeling-methodology.md): how EVL gates fit into the SDLC.
+- [Capability-increment process](../guides/end-to-end-modeling-methodology.md): how EVL gates fit into the development process.

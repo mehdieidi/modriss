@@ -2,11 +2,11 @@
 
 ## Primary lifecycle figure
 
-Use `modriss-lifecycle-manuscript.svg` as the main methodology figure.
+Use `modriss-lifecycle-manuscript.svg` as the main development-process figure.
 
 Suggested caption:
 
-> **The MODRISS full-lifecycle software development method.** The five phases
+> **The MODRISS full-lifecycle software development process.** The five phases
 > organize opportunity and situational tailoring, iterative model-driven
 > delivery, release and transition, operation and evolution, and retirement.
 > Each phase answers a governing question, performs defined work, produces
@@ -42,7 +42,7 @@ Suggested caption:
 
 ## Alternative phase-oriented lifecycle figure
 
-Use `modriss-lifecycle-2.svg` when a conventional methodology
+Use `modriss-lifecycle-2.svg` when a conventional process
 overview, with a large nested construction phase, is preferable to the
 semantic-slot presentation of the primary figure.
 
@@ -71,7 +71,7 @@ Example LaTeX placement when SVG support is available:
 \begin{figure*}[t]
   \centering
   \includesvg[width=\textwidth]{modriss-lifecycle-manuscript}
-  \caption{The MODRISS full-lifecycle software development method.}
+  \caption{The MODRISS full-lifecycle software development process.}
   \label{fig:modriss-lifecycle}
 \end{figure*}
 ```

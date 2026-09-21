@@ -291,9 +291,8 @@ export const PROCESS_GOVERNANCE = {
     ]),
     governance: {
       entryEvidence: ["product goal", "business case", "tailored method profile", "team topology", "release strategy"],
-      exitEvidence: ["operating service or justified retirement", "release and incident evidence", "product outcome review", "method improvement record"],
-      gate: "The end-to-end method coordinates the child processes; it does not waive any level gate or the artifact/release process.",
+      exitEvidence: ["operating service or justified retirement", "release and incident evidence", "product outcome review", "process improvement record"],
+      gate: "The end-to-end development process coordinates its level-specific processes; it does not waive any level gate or the artifact/release process.",
     },
   },
 };
-

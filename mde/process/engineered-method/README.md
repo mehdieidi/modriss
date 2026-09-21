@@ -1,7 +1,7 @@
-# MODRISS Engineered Software Development Method
+# Engineering the MODRISS Development Process
 
-This directory is the research and method-engineering package for the MODRISS
-software development method. It separates three things that are often conflated:
+This directory contains the research and method-engineering materials for the
+MODRISS development process. It documents three related concerns:
 
 1. the **modeling framework** implemented by the CIM, PIM, and AWS PSM DSMLs,
    their Ecore abstract syntax, EVL semantics, ETL transformations, and EGL/EGX
@@ -10,6 +10,12 @@ software development method. It separates three things that are often conflated:
    create or modify work products; and
 3. the configurable **delivery process** that places that method content in a
    full product lifecycle from opportunity framing to retirement.
+
+The MODRISS methodology has two parts: the development process and the modeling
+framework. The modeling framework is the first concern above. Reusable method
+content and the configurable delivery process belong to the process part.
+Method content defines the roles, tasks, work products, and guidance used by
+process activities.
 
 The package was constructed from the six papers supplied in
 `.idea/process_papers`, the implemented MODRISS MDE assets, and the existing
@@ -80,5 +86,6 @@ workflow outside assistant apply, repair, and commit paths.
 
 For thesis writing, `10-thesis-process-chapter.md` is the cohesive chapter
 draft. Files 01–03 retain the detailed method-engineering evidence, 04–06 the
-normative methodology, 07–09 the evaluation and validation material, and the
-SPEM and diagram directories the formal and visual representations.
+normative process and its tailoring rules, and 07–09 the evaluation and
+validation material. The SPEM and diagram directories contain its formal and
+visual representations.

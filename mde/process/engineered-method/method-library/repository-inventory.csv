@@ -14,7 +14,7 @@ end-to-end,RoleDefinition,role.process-reviewer,Process Reviewer,mde/process/pro
 end-to-end,RoleDefinition,role.method-engineer,Method Engineer,mde/process/process-definitions/end-to-end.json
 end-to-end,TaskDefinition,task.e2e.ph0.st1.t1,Define product outcomes and success measures,mde/process/process-definitions/end-to-end.json
 end-to-end,TaskDefinition,task.e2e.ph0.st1.t2,Establish the initial release and increment hypothesis,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph0.st2.t1,Assess context and method risks,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph0.st2.t1,Assess context and process-tailoring risks,mde/process/process-definitions/end-to-end.json
 end-to-end,TaskDefinition,task.e2e.ph0.st2.t2,Define the tailored Definition of Ready and Done,mde/process/process-definitions/end-to-end.json
 end-to-end,TaskDefinition,task.e2e.ph0.st3.t1,Define team ownership and interfaces,mde/process/process-definitions/end-to-end.json
 end-to-end,TaskDefinition,task.e2e.ph0.st3.t2,Set coordination cadence and escalation paths,mde/process/process-definitions/end-to-end.json

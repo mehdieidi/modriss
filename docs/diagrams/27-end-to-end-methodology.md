@@ -1,4 +1,4 @@
-# End-to-End Modeling Methodology
+# Capability-Increment Process
 
 The full MDE lifecycle is `modriss.end-to-end.modeling` (`mde/process/process-definitions/end-to-end.json`). It has five SPEM phases: initiation/tailoring, iterative-incremental model-driven delivery, release/transition, operations/evolution, and retirement/closure. The delivery phase (`e2e.ph1`) contains **eight engine stages** that orchestrate child process engines, ETL transforms, artifact readiness, and cross-level rework loops.
 
@@ -117,4 +117,4 @@ sequenceDiagram
 | `e2e.p6.m2t-generation`      | `awspsm-to-artifacts`  | :                       |
 | `e2e.p7.artifact-completion` | Manual review          | :                       |
 
-See [24-cim-methodology.md](24-cim-methodology.md), [25-pim-methodology.md](25-pim-methodology.md), and [26-psm-methodology.md](26-psm-methodology.md).
+See the [CIM modeling process](24-cim-methodology.md), [PIM modeling process](25-pim-methodology.md), and [AWS PSM modeling process](26-psm-methodology.md).

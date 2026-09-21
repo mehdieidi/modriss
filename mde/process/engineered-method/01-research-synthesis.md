@@ -9,7 +9,7 @@ system while treating CIM, PIM, and PSM models as primary, traceable work
 products?**
 
 The distinction matters. A modeling workflow can end after transformation or
-generation. A software development method must additionally define people,
+generation. The development-process part of a methodology also defines people,
 decisions, evidence, management, quality, releases, team coordination,
 operations, maintenance, and retirement.
 
@@ -38,8 +38,8 @@ This paper is used in two ways:
 
 ### Ramsin and Paige (2010): iterative criteria-based requirements engineering
 
-This paper supplies the requirements-engineering method for the method itself.
-The procedure begins with high-level requirements, uses them as seed criteria,
+This paper supplies the requirements-engineering procedure used in this work.
+It begins with high-level requirements, uses them as seed criteria,
 selects and summarizes relevant methods with a process-centred template, then
 iteratively evaluates those methods. Evaluation findings refine, split, merge,
 or add criteria until both the criteria and findings stabilize. The stable
@@ -54,8 +54,9 @@ Four meta-criteria control the evaluation set:
 4. balanced across technical, managerial, and usage concerns.
 
 The paper's final requirements also establish important qualities for the
-resulting method: a clear and process-centred definition; full lifecycle and
-umbrella coverage; seamless transitions; requirements basis; testable and
+resulting methodology, including a clear account of its development process,
+full-lifecycle and umbrella coverage, seamless transitions, a requirements
+basis, testable and
 tangible artifacts; active user involvement; practicality; manageable
 complexity; configurability and scalability; consistent modeling; and explicit
 inconsistency management.
@@ -171,9 +172,9 @@ MODRISS uses a hybrid of the supplied approaches:
 9. **Test in the large.** Evaluate completeness, coherence, traceability,
    criteria coverage, SPEM consistency, repository alignment, and residual
    gaps.
-10. **Deploy and evolve the method.** Publish guidance, train roles, capture
-    enactment evidence, and improve the method through retrospectives and
-    empirical studies.
+10. **Deploy and evolve the MODRISS methodology.** Publish guidance, train
+    roles, capture enactment evidence, and use retrospectives and empirical
+    studies to inform revisions to the process and modeling framework.
 
 This is a method-engineering result rather than a claim that literature alone
 proves effectiveness. Structural validity is supported by traceable assembly

@@ -1,9 +1,10 @@
-# MODRISS Full-Lifecycle Software Development Method
+# MODRISS Full-Lifecycle Software Development Process
 
 ## Purpose
 
-MODRISS is a model-driven engineering (MDE) platform for building serverless
-software. Its three DSMLs are not three independent development methods:
+The MODRISS methodology comprises a full-lifecycle development process and a
+modeling framework. This document specifies the process component. Its three
+DSMLs support work within that process at different abstraction levels:
 
 - **CIM** expresses product, business, domain, behavior, governance, and
   transformation intent without platform detail.
@@ -13,7 +14,7 @@ software. Its three DSMLs are not three independent development methods:
   policies, observability, and deployment intent.
 
 The generated artifacts are then reviewed, verified, released, operated,
-changed, and eventually retired. The method therefore has two structures:
+changed, and eventually retired. The process therefore has two structures:
 
 1. a **full lifecycle** around the product/system; and
 2. a repeatable **vertical increment engine** inside that lifecycle.
@@ -26,15 +27,16 @@ definitions and this document are the maintained implementation contract.
 
 ## Why this structure is justified
 
-This method is a situational composition of established process and method
-engineering ideas, not a claim that one universal sequence fits every project.
+The process design adapts established lifecycle and method-engineering ideas to
+the serverless research context. Its activities and evidence are tailored to
+project conditions.
 
 | Foundation                           | How MODRISS uses it                                                                                                                                                                                                                                                                           |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **SPEM 2.0**                         | Separates reusable method content (RoleDefinitions, TaskDefinitions, WorkProductDefinitions, Guidance) from process uses (RoleUses, TaskUses, WorkProductUses, Activities, and WorkSequences). MODRISS preserves a UI-friendly phase/stage projection while compiling it to that distinction. |
 | **ISO/IEC/IEEE 12207**               | Supplies the software lifecycle scope: agreement, organizational/project enablement, technical management, technical development, operation, maintenance, and disposal. MODRISS tailors these activities while retaining evidence and decision responsibilities.                              |
 | **ISO/IEC/IEEE 15288**               | Supplies the system lifecycle perspective and supports concurrent, iterative, recursive, and incremental work. This is why architecture, operations, quality, security, and transition are not postponed until after modeling.                                                                |
-| **Situational method engineering**   | Treats the method as assembled and tailored from method fragments according to project context, risk, criticality, novelty, team structure, and delivery constraints. Tailoring decisions are themselves versioned work products.                                                             |
+| **Situational method engineering**   | Informs the selection and tailoring of reusable method content and process activities according to project context, risk, criticality, novelty, team structure, and delivery constraints. Tailoring decisions are themselves versioned work products.                                         |
 | **Agile principles and Scrum**       | Supplies empirical control, small usable increments, inspection, adaptation, a product backlog, explicit ownership, and a definition of done. MODRISS does not equate agility with skipping architecture, assurance, or lifecycle obligations.                                                |
 | **MDA/MDE process-pattern research** | Supports the distinction between model refinement, transformation, traceability, human review of generated decisions, and feedback from later representations to earlier models.                                                                                                              |
 
@@ -61,9 +63,9 @@ method profile using evidence.
 
 ## Findings addressed in this revision
 
-The repository review found that the earlier methodology was a useful
-technical task catalog but not yet a complete, executable software-development
-method. The main defects were:
+The repository review found that the earlier process definition was a useful
+technical task catalog but did not yet specify an executable, full-lifecycle
+software development process. The main defects were:
 
 - the end-to-end definition stopped at an eight-stage modeling pipeline and had
   no explicit initiation, tailoring, release, operations, or retirement;
@@ -85,15 +87,19 @@ method. The main defects were:
 
 The fixes deliberately preserve the existing CIM, PIM, PSM, transformation,
 generation, and semantic-validation behavior unless a process contract required
-an explicit boundary. This keeps method repair separate from unrelated
+an explicit boundary. This keeps process revision separate from unrelated
 transformation changes.
 
 ## Method concepts
 
-- A **method** is reusable guidance: roles, tasks, work products, criteria,
-  metrics, and patterns.
-- A **process run** is the configured use of that method for one product,
-  release, increment, or change.
+- The **MODRISS methodology** comprises the development process and the modeling framework.
+- **Reusable method content** consists of SPEM role, task, work-product, and
+  guidance definitions used by process activities. It is part of the process
+  component, not a third part of the methodology.
+- A **process run** is one configured enactment of the development process for
+  a product, release, increment, or change. Its method profile records the
+  selected process activities and method content, roles, evidence, thresholds,
+  and rationale.
 - A **work product** is something produced or consumed by work, such as a
   model revision, trace model, readiness assessment, release record, or
   operations pack.
@@ -101,7 +107,7 @@ transformation changes.
   infrastructure templates, tests, runbooks, or deployment configuration.
 - A **gate** is an evidence-based decision. It is not merely the completion of
   the tasks that precede it.
-- A **method profile** records tailoring: selected activities, combined or
+- A **method profile** records process tailoring: selected, combined, or
   omitted activities, roles, evidence, thresholds, and rationale.
 
 ## Lifecycle architecture
@@ -121,17 +127,16 @@ Frame increment -> CIM -> CIM/PIM -> PIM -> PIM/PSM -> PSM -> M2T -> readiness
         +--> retire / migrate / close
 ```
 
-The model-engine cycle is intentionally narrower than the full lifecycle. It
-can repeat many times before one release, and the product can operate through
-many releases. This prevents the common category error of calling a technical
-modeling pipeline a complete software development process.
+The model-driven increment cycle is one part of the development process. It can
+repeat many times before one release, and the product can operate through many
+releases. The cycle does not cover the full product lifecycle on its own.
 
 ## Lifecycle phases and responsibilities
 
 ### 0. Initiate, tailor, and organize
 
 The product owner and sponsor define the outcome hypothesis, boundaries,
-constraints, and initial release hypothesis. The method engineer performs a
+constraints, and initial release hypothesis. The Method Engineer performs a
 situational assessment and publishes a method profile. The delivery lead
 defines team topology, model ownership, integration ownership, dependency
 boards, decision rights, escalation, and review cadence. Quality, security,
@@ -149,7 +154,7 @@ Required outputs include:
 ### 1. Iterative-incremental model-driven delivery
 
 Each increment is a thin, valuable, testable vertical slice. The integrated
-engine coordinates the child methods in this order:
+engine coordinates the child processes in this order:
 
 1. frame the increment and its acceptance evidence;
 2. run the CIM child process;
@@ -222,7 +227,7 @@ Roles are responsibilities, not mandatory job titles. One person may hold
 several roles in a small project; a large project may distribute one role over
 multiple people. Accountability must remain unambiguous.
 
-The integrated method uses at least these responsibility groups:
+The integrated process assigns responsibilities to at least these groups:
 
 - product owner and domain experts for value and meaning;
 - requirements and business modelers for intent and acceptance;
@@ -341,4 +346,4 @@ contract but does not provide a project tracker by itself. Team coordination
 and release records still require integration with the project’s chosen work
 and source-control systems. Future work should add a first-class persisted
 process-run service, dependency-board UI, release ledger, and empirical studies
-of the method across projects.
+of the development process across projects.

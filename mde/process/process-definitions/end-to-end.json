@@ -98,13 +98,15 @@
         "id": "role.process-reviewer",
         "type": "RoleDefinition",
         "name": "Process Reviewer",
-        "responsibilities": ["Reviews gates, evidence, decisions, and method improvement"]
+        "responsibilities": ["Reviews gates, evidence, decisions, and process improvement"]
       },
       {
         "id": "role.method-engineer",
         "type": "RoleDefinition",
         "name": "Method Engineer",
-        "responsibilities": ["Tailors and evolves the situational method and its process assets"]
+        "responsibilities": [
+          "Tailors the development process and maintains its alignment with the modeling framework as metamodels change"
+        ]
       }
     ],
     "taskDefinitions": [
@@ -189,8 +191,8 @@
       {
         "id": "task.e2e.ph0.st2.t1",
         "type": "TaskDefinition",
-        "name": "Assess context and method risks",
-        "purpose": "Assess context and method risks",
+        "name": "Assess context and process-tailoring risks",
+        "purpose": "Assess context and process-tailoring risks",
         "performerRoleRefs": ["role.method-engineer"],
         "inputWorkProductRefs": ["e2e-artifact.product-charter", "e2e-artifact.increment-record"],
         "inputSource": "declared",
@@ -222,11 +224,11 @@
           "Record excluded, combined, or delegated activities with rationale and compensating evidence."
         ],
         "entryCriteria": [],
-        "exitCriteria": ["Assess context and method risks evidence is recorded"],
+        "exitCriteria": ["Assess context and process-tailoring risks evidence is recorded"],
         "validationRules": [
           "Every tailoring decision names its context, consequence, owner, and review point"
         ],
-        "progressEvidence": "Assess context and method risks decision, evidence links, owner, and status are recorded",
+        "progressEvidence": "Assess context and process-tailoring risks decision, evidence links, owner, and status are recorded",
         "paletteFocus": [],
         "metamodelBindings": []
       },
@@ -1594,7 +1596,7 @@
         "steps": [
           "Review flow time, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.",
           "Look for systemic queues, missing work products, invalid gates, and coordination failures.",
-          "Approve bounded method changes and record their expected effect."
+          "Approve bounded process changes and record their expected effect."
         ],
         "entryCriteria": [],
         "exitCriteria": ["Inspect flow, quality, and coordination metrics evidence is recorded"],
@@ -1855,8 +1857,8 @@
         "coverageGroups": [],
         "steps": [
           "Confirm retirement exit criteria and records are complete.",
-          "Review product, architecture, operational, and method outcomes.",
-          "Publish reusable patterns, risks, and method changes for future projects."
+          "Review product, architecture, operational, and process outcomes.",
+          "Publish reusable patterns, risks, and process changes for future projects."
         ],
         "entryCriteria": [],
         "exitCriteria": ["Complete closure review evidence is recorded"],
@@ -3440,9 +3442,9 @@
       "operating service or justified retirement",
       "release and incident evidence",
       "product outcome review",
-      "method improvement record"
+      "process improvement record"
     ],
-    "gate": "The end-to-end method coordinates the child processes; it does not waive any level gate or the artifact/release process."
+    "gate": "The end-to-end development process coordinates its level-specific processes; it does not waive any level gate or the artifact/release process."
   },
   "processEngine": {
     "id": "modriss.end-to-end.engine",
@@ -3583,7 +3585,7 @@
       "id": "e2e.ph0",
       "name": "Initiate, Tailor & Organize",
       "order": 0,
-      "objective": "Establish the product/system purpose, situational method, team topology, quality baseline, and release strategy before modeling begins.",
+      "objective": "Establish the product/system purpose, process profile, team topology, quality baseline, and release strategy before modeling begins.",
       "entryCriteria": ["A problem, opportunity, or mandated change has an accountable sponsor"],
       "exitCriteria": [
         "The method profile is approved",
@@ -3686,8 +3688,8 @@
           "id": "e2e.ph0.st2",
           "type": "Activity",
           "activityKind": "MODRISS::Stage",
-          "name": "Situational Method Tailoring",
-          "objective": "Select and tailor method fragments to the project context without removing essential control objectives.",
+          "name": "Situational Process Tailoring",
+          "objective": "Select and tailor reusable method content and process activities to the project context without removing essential control objectives.",
           "roleUseRefs": ["ru.e2e.ph0.st2.method-engineer", "ru.e2e.ph0.st2.process-reviewer"],
           "iterative": false,
           "iterationLoops": [],
@@ -5139,7 +5141,7 @@
       "id": "e2e.ph3",
       "name": "Operate, Evolve & Learn",
       "order": 3,
-      "objective": "Operate the service, respond to incidents, evolve models and artifacts through controlled change propagation, and continuously improve the method.",
+      "objective": "Operate the service, respond to incidents, evolve models and artifacts through controlled change propagation, and continuously improve the development process.",
       "entryCriteria": [
         "A service or operational capability has been released or is being maintained"
       ],
@@ -5476,8 +5478,8 @@
           "id": "e2e.ph3.st4",
           "type": "Activity",
           "activityKind": "MODRISS::Stage",
-          "name": "Method and Product Retrospective",
-          "objective": "Improve the product and the method using evidence from increments, releases, incidents, and dependencies.",
+          "name": "Process and Product Retrospective",
+          "objective": "Improve the product and development process using evidence from increments, releases, incidents, and dependencies.",
           "roleUseRefs": ["ru.e2e.ph3.st4.process-reviewer"],
           "iterative": true,
           "iterationLoops": [],
@@ -5819,7 +5821,7 @@
           "type": "Activity",
           "activityKind": "MODRISS::Stage",
           "name": "Closure & Organizational Learning",
-          "objective": "Close the lifecycle and feed reusable learning into future method profiles and product planning.",
+          "objective": "Close the lifecycle and feed reusable learning into future process profiles and product planning.",
           "roleUseRefs": ["ru.e2e.ph4.st3.process-reviewer"],
           "iterative": false,
           "iterationLoops": [],
@@ -6287,7 +6289,7 @@
     {
       "type": "Milestone",
       "id": "e2e.m0.method-tailored",
-      "name": "Method and team topology approved",
+      "name": "Process tailoring and team topology approved",
       "phaseId": "e2e.ph0",
       "stageId": "e2e.ph0.st3"
     },

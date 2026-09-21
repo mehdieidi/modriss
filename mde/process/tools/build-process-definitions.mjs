@@ -665,7 +665,7 @@ function buildEndToEnd() {
       ],
     },
     milestones: [
-      { type: "Milestone", id: "e2e.m0.method-tailored", name: "Method and team topology approved", phaseId: "e2e.ph0", stageId: "e2e.ph0.st3" },
+      { type: "Milestone", id: "e2e.m0.method-tailored", name: "Process tailoring and team topology approved", phaseId: "e2e.ph0", stageId: "e2e.ph0.st3" },
       { type: "Milestone", id: "e2e.m1.increment-accepted", name: "Vertical increment accepted", phaseId: "e2e.ph1", stageId: "e2e.p7.artifact-completion" },
       { type: "Milestone", id: "e2e.m2.release-promoted", name: "Release promoted and handed over", phaseId: "e2e.ph2", stageId: "e2e.ph2.st2" },
       { type: "Milestone", id: "e2e.m3.operational-learning", name: "Operational learning reviewed", phaseId: "e2e.ph3", stageId: "e2e.ph3.st4" },

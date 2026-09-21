@@ -25,13 +25,17 @@ The generated site is written to `site/`.
 
 ## Documentation Sources
 
-This package summarizes the current implementation and points to canonical repository assets where
-appropriate:
+The pages here describe the running implementation and link to formal sources where readers need
+more detail. Paths in this list are relative to the repository root:
 
 - Backend controllers and configuration define runtime API behavior.
-- Emfatic, Ecore, EVL, ETL, EOL, EGX, and EGL files under `mde/` define the formal MDE behavior.
-- Flyway migrations define persisted PostgreSQL structure.
+- The Emfatic, Ecore, EVL, ETL, EOL, EGX, and EGL files under `mde/` define the formal modeling behavior.
+- Flyway migrations define the persisted PostgreSQL structure.
 - `docs/api/openapi/openapi.yaml` is the checked-in API contract.
-- `docs/diagrams/` contains the complete Mermaid architecture diagram package.
+- `docs/diagrams/` contains architecture diagrams and the source for the modeling-path SVG.
+- `mde/process/engineered-method/diagrams/` contains the lifecycle and delivery-engine SVG sources.
 
-When behavior changes, update this package together with the affected source-of-truth files.
+The modeling-path, lifecycle, and delivery-engine SVGs are copied into
+`docs/public-docs/docs/assets/diagrams/` for the public site. Refresh those copies when a source
+diagram changes. When implementation behavior changes, update this package together with the
+affected source-of-truth files.

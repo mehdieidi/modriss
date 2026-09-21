@@ -2,7 +2,7 @@
 
 ## Trace model
 
-The method is justified through four linked layers:
+The process design is justified through four linked layers:
 
 `method requirement → reusable fragment → lifecycle Activity/TaskUse → MODRISS
 repository asset or project evidence`.
@@ -68,7 +68,7 @@ Detailed requirement arrays are stored on every entry in
 
 ## Assistant-validation boundary trace
 
-The method distinguishes two workflows:
+The MODRISS process design distinguishes two workflows:
 
 - **assistant apply/repair/commit:** structural Ecore/EMF conformance only,
   through `ModelService.validateStructural(...)`; and
@@ -99,5 +99,5 @@ The defensible current claim is: **MODRISS provides a systematically engineered,
 criteria-evaluated, SPEM-structured method design aligned with an implemented
 three-level serverless MDE framework.** The evidence supports completeness and
 traceability of the design and concrete realization of the core modeling chain.
-It does not yet establish that the method is more effective than alternatives;
+It does not yet establish that the process is more effective than alternatives;
 that requires empirical study.

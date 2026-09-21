@@ -8,18 +8,19 @@ software-engineering perspective. A serverless system is normally assembled
 from fine-grained functions, events, managed data services, identity policies,
 workflows, and provider-specific deployment resources. Its behaviour and cost
 emerge from the interaction of these elements and from decisions that are not
-contained in the function code alone. This report develops two connected
-arguments. First, serverless computing changes a sufficiently broad set of
-project conditions to justify a deliberately engineered and tailorable software
-development method. Second, many of the resulting problems concern abstraction,
+contained in the function code alone. The MODRISS methodology has two parts: a
+development process and a modeling framework. This report develops two
+connected arguments. First, serverless computing changes a sufficiently broad
+set of project conditions to justify a deliberately engineered and tailorable
+development process. Second, many resulting problems concern abstraction,
 consistency, traceability, automation, and the relationship between
 platform-independent intent and platform-specific realization. These are
-problems for which model-driven engineering is particularly well suited. The
+problems for which a model-driven framework is particularly well suited. The
 conclusion is not that every serverless project should follow one fixed process,
 nor that modeling removes the need for implementation and operational judgment.
-Rather, serverless constitutes a recognizable development situation, and a
-model-driven method provides a defensible way to organize and automate work
-within that situation.
+Serverless constitutes a recognizable development situation. MODRISS addresses
+it through a process that can be tailored and a modeling framework that supports
+work across abstraction levels.
 
 ## 1. The basis of the argument
 
@@ -53,7 +54,7 @@ justify. If, however, it alters several classes of situational factors and those
 changes require different decisions, competencies, evidence, and coordination,
 then serverless is methodologically significant.
 
-## 2. Why serverless development needs an engineered method
+## 2. Why serverless development needs an engineered process
 
 ### 2.1 Serverless changes the development situation
 
@@ -82,16 +83,16 @@ integration of supporting services (Eskandani and Salvaneschi, 2023).
 The relevance of these findings to the situational-factor framework can be made
 explicit.
 
-| Situational class | Change introduced or intensified by serverless                                                                                                                                                                                                            | Consequence for the development method                                                                                                                                                                          |
+| Situational class | Change introduced or intensified by serverless                                                                                                                                                                                                            | Consequence for the development process                                                                                                                                                                         |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Personnel         | Teams need competence in event-driven design, managed services, identity and access management, infrastructure as code, observability, and consumption-based cost. A composition-oriented mental model differs from conventional application development. | The method needs explicit responsibilities, capability assessment, training or technical spikes, and collaboration across development, operations, security, and cost-management concerns.                      |
+| Personnel         | Teams need competence in event-driven design, managed services, identity and access management, infrastructure as code, observability, and consumption-based cost. A composition-oriented mental model differs from conventional application development. | The process needs explicit responsibilities, capability assessment, training or technical spikes, and collaboration across development, operations, security, and cost-management concerns.                     |
 | Requirements      | Latency, burst behaviour, delivery semantics, idempotency, data residency, quotas, recovery, and cost ceilings become architecturally significant requirements. Some are difficult to settle before workload evidence exists.                             | Requirements work must include measurable service-level objectives, workload and cost assumptions, compliance constraints, uncertainty, and acceptance evidence; these must be revisited with operational data. |
 | Application       | The system is distributed and event driven; state commonly resides outside functions; failures, retries, concurrency, and function composition affect end-to-end behaviour.                                                                               | Analysis and design must cover event flows, state ownership, function boundaries, contracts, orchestration or choreography, failure handling, and suitability for serverless—not only function code.            |
-| Technology        | FaaS platforms and managed services evolve quickly and expose different limits, events, workflow languages, identity mechanisms, and deployment formats. Tool support is uneven.                                                                          | The method needs provider evaluation, proof-of-concept work, technology-decision records, compatibility controls, and a defined response to platform evolution.                                                 |
+| Technology        | FaaS platforms and managed services evolve quickly and expose different limits, events, workflow languages, identity mechanisms, and deployment formats. Tool support is uneven.                                                                          | The process needs provider evaluation, proof-of-concept work, technology-decision records, compatibility controls, and a defined response to platform evolution.                                                |
 | Organization      | Effective use commonly crosses application development, platform engineering, security, operations, and financial governance. Organizational cloud maturity influences what can safely be delegated or automated.                                         | Tailoring must consider team topology, decision rights, separation of duties, platform guardrails, and the availability of shared capabilities.                                                                 |
 | Operation         | The provider operates servers, but the customer still owns service objectives, telemetry, incident response, data protection, configuration, and expenditure. Cold starts and provider-side scaling can affect user-visible behaviour.                    | Observability, cost monitoring, resilience testing, incident learning, runbooks, and operational feedback have to be part of the lifecycle rather than post-deployment additions.                               |
 | Management        | Fine-grained resources increase dependency and configuration coordination. Performance and cost are workload dependent, and frequent deployment raises release and recovery demands.                                                                      | Risk, dependency, configuration, release, quality, and change management require serverless-specific evidence and automation.                                                                                   |
-| Business          | Pay-per-use pricing can improve economics for some workloads, while provider dependence, uncertain demand, service availability, and switching cost influence the business case.                                                                          | The method must begin with suitability and value analysis and retain cost forecasts, provider assumptions, lock-in decisions, and exit or retirement considerations.                                            |
+| Business          | Pay-per-use pricing can improve economics for some workloads, while provider dependence, uncertain demand, service availability, and switching cost influence the business case.                                                                          | The process must begin with suitability and value analysis and retain cost forecasts, provider assumptions, lock-in decisions, and exit or retirement considerations.                                           |
 
 The table also explains why the popular term _NoOps_ is misleading when treated
 as a process prescription. Operational work is partly transferred to the cloud
@@ -113,7 +114,7 @@ contribute to end-to-end latency. A meaningful process must connect performance
 requirements to architectural decisions, testing conditions, deployment
 configuration, and observed runtime evidence.
 
-### 2.2 From situational change to method requirements
+### 2.2 From situational change to process requirements
 
 The method-engineering conclusion follows in three steps:
 
@@ -139,13 +140,14 @@ for assembling and tailoring those fragments; criteria-based requirements
 engineering supplies the mechanism for explaining why each one is present
 (Asadi and Ramsin, 2009; Ramsin and Paige, 2010).
 
-## 3. Why the methodology should be model driven
+## 3. Rationale for the modeling framework
 
 ### 3.1 The serverless abstraction gap
 
-The preceding argument establishes the need for a serverless-aware method, but
-does not yet establish that the method should be model driven. That second claim
-depends on the kind of information a serverless project must control.
+The preceding argument establishes why the development process must address
+serverless concerns. This section explains why the modeling framework uses
+model-driven techniques to manage the information a serverless project must
+control.
 
 Much of a serverless system is declarative and relational. A function has a
 runtime, resource limits, permissions, triggers, inputs, outputs, failure
@@ -172,7 +174,7 @@ syntax, but their deployability depends on precise platform details.
 
 ### 3.2 How MDE responds to the serverless situation
 
-A model-driven method can establish a controlled path between those levels.
+A modeling framework can establish a controlled path between those levels.
 The contribution is not simply a diagram drawn before coding. Models become
 primary engineering artifacts with defined abstract syntax, constraints, and
 transformation semantics.
@@ -240,15 +242,14 @@ The second argument can therefore be stated as follows:
    while its gaps show why these facilities must be embedded in a complete
    development process.
 
-On these premises, a model-driven serverless methodology is justified not
-because modeling is inherently superior to programming, but because it moves
+On these premises, the MODRISS modeling framework is justified because it moves
 recurring serverless decisions into explicit, analyzable, and transformable
 artifacts. Its value should be greatest where systems contain many interacting
 functions and services, where consistency and traceability matter, where a
 family of applications can reuse transformations, or where provider evolution
 would otherwise require repeated manual work. A very small, short-lived
-function may not recover the cost of a rich modeling approach. This is precisely
-why the method must remain situational and tailorable.
+function may not recover the cost of a rich modeling approach. This is why the
+development process must remain situational and tailorable.
 
 ## 4. Implication for the thesis
 
@@ -275,10 +276,10 @@ to requirements and design.
 
 Accordingly, the primary thesis can be expressed with appropriate restraint:
 **serverless adoption creates a recurring cluster of situational factors that
-requires an explicitly tailored development method; because many of the
+requires an explicitly tailored development process; because many of the
 resulting concerns involve abstraction levels, structured relationships,
-cross-artifact consistency, and repeatable realization, that method can benefit
-materially from a model-driven foundation.** The effectiveness and economy of
+cross-artifact consistency, and repeatable realization, the modeling framework
+can provide useful support for that process.** The effectiveness and economy of
 the resulting methodology remain empirical questions and should be evaluated
 through representative project enactments rather than inferred from its design
 alone.

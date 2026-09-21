@@ -2,9 +2,9 @@
 
 ## Purpose
 
-The method-engineering argument establishes that MODRISS is systematic,
+The method-engineering argument establishes that the MODRISS process is systematic,
 traceable, internally coherent, and grounded in the supplied literature. It
-does not, by itself, show that teams can apply the method effectively. This
+does not, by itself, show that teams can apply the process effectively. This
 protocol defines the empirical work needed before making claims about utility,
 efficiency, usability, scalability, or superiority over another approach.
 
@@ -16,20 +16,20 @@ evaluate configurability and analytic generalization.
 
 ## Research questions
 
-| ID     | Question                                                                                                                                                            |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| EV-RQ1 | Can a team enact the tailored MODRISS lifecycle from opportunity framing through a deployed and operated vertical slice?                                            |
-| EV-RQ2 | Does the method maintain usable traceability and consistency from requirements/CIM through PIM, PSM, generated artifacts, release evidence, and operational change? |
-| EV-RQ3 | Which activities create useful decisions or defect prevention, and which create avoidable burden or duplication?                                                    |
-| EV-RQ4 | Does situational tailoring preserve required control objectives while reducing unnecessary work for the case?                                                       |
-| EV-RQ5 | How do serverless-specific concerns—cost, events, state, failure, security, cold starts, observability, and provider lock-in—affect decisions and outcomes?         |
-| EV-RQ6 | Can the method coordinate ownership and dependencies when more than one team or a platform team is involved?                                                        |
+| ID     | Question                                                                                                                                                             |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| EV-RQ1 | Can a team enact the tailored MODRISS lifecycle from opportunity framing through a deployed and operated vertical slice?                                             |
+| EV-RQ2 | Does the process maintain usable traceability and consistency from requirements/CIM through PIM, PSM, generated artifacts, release evidence, and operational change? |
+| EV-RQ3 | Which activities create useful decisions or defect prevention, and which create avoidable burden or duplication?                                                     |
+| EV-RQ4 | Does situational tailoring preserve required control objectives while reducing unnecessary work for the case?                                                        |
+| EV-RQ5 | How do serverless-specific concerns—cost, events, state, failure, security, cold starts, observability, and provider lock-in—affect decisions and outcomes?          |
+| EV-RQ6 | Can the process coordinate ownership and dependencies when more than one team or a platform team is involved?                                                        |
 
 ## Propositions and rival explanations
 
 1. Explicit model boundaries and transformation reconciliation will make
    downstream change impact easier to identify. A rival explanation is that
-   repository discipline or experienced personnel, rather than the method,
+   repository discipline or experienced personnel, rather than the process,
    causes the improvement.
 2. Vertical model-driven increments will reveal integration and operational
    risks earlier than completing each abstraction level in bulk. A rival is
@@ -72,7 +72,7 @@ Collect evidence at these observation points:
 2. completion of each increment and gate G0–G5;
 3. release authorization, promotion, and transition at G6–G7;
 4. an agreed operating window that includes real or controlled workload;
-5. at least one change, finding, or incident routed through the method; and
+5. at least one change, finding, or incident routed through the process; and
 6. retirement/closure if feasible, otherwise a table-top retirement exercise.
 
 ## Measures
@@ -168,7 +168,7 @@ blinded evidence package. Report raw agreement and disagreements; use a chance-
 corrected agreement measure only when the rating distribution and sample size
 make it meaningful. Resolve ratings through recorded evidence, not averaging.
 
-The method is ready for broader evaluation when both cases can complete a
+The process is ready for broader evaluation when both cases can complete a
 release and feedback cycle without an unowned lifecycle gap. A fragment is a
 candidate for revision when it repeatedly causes the same misunderstanding,
 unnecessary work, missing decision, late defect, or unresolved handoff. A
@@ -179,7 +179,7 @@ are understood and reviewed.
 
 Report separately:
 
-- what the method **specifies**;
+- what the process **specifies**;
 - what the repository **automates or enforces**;
 - what participants **actually enacted**; and
 - what outcomes were **observed**.

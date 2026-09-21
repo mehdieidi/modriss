@@ -2,22 +2,24 @@
 
 ## Abstract
 
-MODRISS combines a model-driven engineering framework with a full-lifecycle
-software development process for serverless systems. The framework supplies
+The MODRISS methodology has two parts: a full-lifecycle software development
+process and a modeling framework for serverless systems. The
+framework supplies
 three domain-specific modeling languages at the computation-independent,
 platform-independent, and platform-specific levels; Ecore metamodels; semantic
 constraints expressed in the Epsilon Validation Language; model
 transformations written in ETL; and artifact generation implemented with EGX
 and EGL. Those facilities explain how models are represented, checked,
-transformed, and turned into software artifacts. They do not, by themselves,
-constitute a software development methodology. A methodology also has to guide
-the human and organizational work surrounding the models: opportunity
-analysis, requirements, planning, architecture, implementation, verification,
-release, operation, change, team coordination, risk, quality, and retirement.
+transformed, and turned into software artifacts. The framework defines how the
+models are represented and processed. The development process guides the human
+and organizational work surrounding them: opportunity analysis, requirements,
+planning, architecture, implementation, verification, release, operation,
+change, team coordination, risk, quality, and retirement.
 
-This chapter describes how that process was engineered and presents the
-resulting method. The construction followed a requirements-led, situational
-method-engineering approach. An iterative criteria-based technique was used to
+This chapter describes how the process part of the methodology was engineered
+and presents the resulting process design. The construction followed a
+requirements-led, situational method-engineering approach. An iterative
+criteria-based technique was used to
 derive and stabilize requirements; process patterns from situational method
 engineering and model-driven development supplied reusable fragments; Hybrid
 Methodology Design guided top-down assembly; and a serverless-specific
@@ -28,7 +30,7 @@ twenty-nine principal work products, four reference configurations, and a
 repository of reusable process patterns. It is represented using SPEM 2.0 and
 connected to the executable process definitions already present in MODRISS.
 
-The result is best understood as an engineered method design with strong
+The result is best understood as an engineered process design with strong
 structural and traceability evidence. Its practical effectiveness remains an
 empirical question and must be assessed through enactment in representative
 projects.
@@ -41,9 +43,13 @@ Ramsin and Paige describe a software development methodology as having two
 closely related parts: modeling conventions, including their syntax and
 semantics, and a process that places development activities and products in an
 ordered and manageable course of work (Ramsin and Paige, 2010). This distinction
-is especially useful for MODRISS.
+is especially useful for MODRISS. In this project, **methodology** names the
+whole design, comprising the development process and modeling framework.
+**Process** refers to lifecycle guidance, activities, roles, decisions, and
+evidence. Reusable SPEM method content supplies definitions used by activities
+within the process part.
 
-The modeling side of MODRISS is already substantial. It defines three
+The MODRISS modeling framework is already substantial. It defines three
 abstraction levels—CIM, PIM, and AWS PSM—and provides dedicated DSMLs for them.
 Their abstract syntax is expressed in Ecore, their semantic constraints are
 written in EVL, the CIM-to-PIM and PIM-to-PSM refinements are implemented in
@@ -61,9 +67,9 @@ own decisions, teams share boundaries, releases carry risk, incidents create
 new information, and evidence has to survive beyond a meeting or a tool run.
 
 The purpose of the process developed in this research is therefore broader
-than teaching a modeler how to populate the three DSMLs. It provides a
-full-lifecycle method for engineering serverless software with the MODRISS MDE
-framework at its technical core. The process is intended to answer three
+than teaching a modeler how to populate the three DSMLs. It provides full-
+lifecycle guidance for engineering serverless software with the MODRISS
+modeling framework. The process is intended to answer three
 questions:
 
 1. What development lifecycle is needed to take a serverless product from an
@@ -176,7 +182,7 @@ These criteria were used twice in this research. During construction they acted
 as requirements-discovery instruments: a weak or absent concern became a
 candidate requirement. After construction they acted as an evaluation
 framework. This dual use makes omissions visible early and prevents the final
-evaluation from being invented to favor the resulting method.
+evaluation from being invented to favor the resulting process design.
 
 ### 2.6 Process-centered presentation
 
@@ -206,15 +212,15 @@ The process was constructed through ten connected activities. They are
 described sequentially for clarity, although several were revisited when later
 analysis exposed a gap.
 
-### 3.1 Define the method boundary
+### 3.1 Define the methodology and process boundary
 
-The first decision was to separate the modeling framework from the development
-process. The framework owns the DSMLs, metamodels, model semantics,
-transformations, and generators. The process owns the lifecycle, human work,
-responsibilities, work-product states, decisions, evidence, management, and
-tailoring. The boundary prevents two common errors: calling a transformation
-pipeline a software methodology, and rewriting the modeling framework as prose
-inside a generic lifecycle.
+The first decision was to distinguish the two parts of the methodology. The
+modeling framework comprises the DSMLs, metamodels, model semantics,
+transformations, and generators. The development process comprises lifecycle
+phases, human work, responsibilities, work-product states, decisions, evidence,
+management, and tailoring. A transformation pipeline is one part of the
+framework, so it cannot represent the whole methodology. The process describes
+how people use the framework during the product lifecycle.
 
 ### 3.2 Establish seed criteria
 
@@ -229,7 +235,7 @@ management.
 ### 3.3 Inspect the MODRISS baseline
 
 The repository was treated as evidence, not merely as an implementation to be
-documented after the method had been designed. The inspection covered the CIM,
+documented after the process had been designed. The inspection covered the CIM,
 PIM, PSM, and shared metamodels; EVL validation suites; ETL transformations;
 trace, readiness, identity, and reconciliation behavior; EGL/EGX templates;
 coverage matrices; existing modeling guides; and the five executable process
@@ -239,7 +245,7 @@ This inspection changed the construction problem. MODRISS already contained
 26 CIM tasks, 32 PIM tasks, 28 PSM tasks, 16 artifact-readiness tasks, and a
 30-task integrated process. The goal was therefore not to replace the detailed
 modeling guidance. It was to justify, assemble, surround, and govern those
-components as parts of a complete method.
+components as parts of the MODRISS methodology.
 
 ### 3.4 Refine criteria into requirements
 
@@ -259,7 +265,7 @@ The stabilized set contains 57 requirements in six families.
 | Model-driven engineering      | `MR-MDE-*` |    12 | Level boundaries, transformations, identity, reconciliation, validation, reuse, and standards                    |
 | Serverless engineering        | `MR-SL-*`  |    18 | Suitability, cost, provider choice, events, state, failure, security, testing, delivery, operations, and lock-in |
 | Management and scale          | `MR-MG-*`  |     7 | Planning, risk, quality, security, configuration, evidence, teams, measurement, and learning                     |
-| Method quality                | `MR-Q-*`   |     8 | Understandability, configurability, practicality, scalability, visibility, and preserved controls                |
+| Process quality               | `MR-Q-*`   |     8 | Understandability, configurability, practicality, scalability, visibility, and preserved controls                |
 
 Each requirement has a support level—MUST, SHOULD, or MAY—and a verification
 statement. This is significant: a requirement such as provider selection is
@@ -287,9 +293,9 @@ generated baseline → release candidate → deployed release → operational
 evidence → change or retirement evidence`.
 
 Every transition was given an accountable role, an input/output relation, a
-revision and provenance expectation, and a review outcome. This chain is what
-turns separate modeling, development, and operations activities into one
-method.
+revision and provenance expectation, and a review outcome. This chain connects
+modeling, development, and operations activities within the full-lifecycle
+process.
 
 ### 3.7 Assemble and specialize process patterns
 
@@ -303,14 +309,14 @@ the phases.
 
 ### 3.8 Define situational configurations
 
-The method was designed as a stable core with configuration packages rather
+The process was designed as a stable core with configuration packages rather
 than several unrelated lifecycle variants. Project novelty, serverless fit,
 criticality, data sensitivity, team topology, skills, volatility, architectural
 novelty, platform strategy, integration landscape, release risk, availability,
 scale uncertainty, compliance, cadence, and legacy constraints influence the
 selected profile and evidence depth.
 
-### 3.9 Test the assembled method in the large
+### 3.9 Evaluate the integrated process
 
 The assembled design was checked for lifecycle continuity, requirement
 coverage, role and work-product ownership, traceability, fragment compatibility,
@@ -321,12 +327,12 @@ scored as complete.
 
 ### 3.10 Publish and plan empirical validation
 
-The resulting method was published as human-readable guidance, a
+The resulting process design was published as human-readable guidance, a
 machine-readable fragment catalog, a consolidated method-content index, and a
 SPEM-logical exchange model. An empirical protocol defines contrasting case
 studies, observation points, measures, evidence sources, rival explanations,
 and validity safeguards. This final activity matters because internal
-coherence is not evidence that the method improves real projects.
+coherence is not evidence that the process improves real projects.
 
 ## 4. The MODRISS model-driven foundation
 
@@ -363,9 +369,9 @@ that operational evidence and lifecycle learning can return work to an earlier
 authoritative source. The bar beneath the phases represents continuous
 disciplines rather than a separate late-stage review.
 
-![The MODRISS full-lifecycle software development method](diagrams/modriss-lifecycle-manuscript.svg)
+![The MODRISS full-lifecycle software development process](diagrams/modriss-lifecycle-manuscript.svg)
 
-**Figure 1. The MODRISS full-lifecycle software development method.** Each
+**Figure 1. The MODRISS full-lifecycle software development process.** Each
 phase answers a governing question, performs defined work, produces reviewable
 evidence, and yields a primary outcome. Solid arrows show lifecycle progression;
 dashed arrows show controlled re-entry and learning.
@@ -414,14 +420,14 @@ initial assurance, environment, secret, SLO, observability, recovery, and
 CI/CD expectations.
 
 The phase has two decisions. Gate G0 records whether to pursue, explore,
-redirect, or stop. Gate G1 confirms that the method and organization are ready
+redirect, or stop. Gate G1 confirms that process tailoring and organization are ready
 for the first increment. The principal outputs are the product/system charter,
 serverless suitability record, cost model and budget guardrails, risk register,
 situational method profile, team topology, and initial roadmap.
 
 ### 5.2 Phase 1 — Iterative-Incremental Model-Driven Delivery
 
-Phase 1 is the technical engine of the method, but it does not operate as “finish
+Phase 1 is the technical engine within the development process, but it does not operate as “finish
 the complete CIM, then the complete PIM, then the complete PSM.” Each iteration
 selects a coherent and valuable slice and takes it through every level needed to
 produce testable software. Broader models may provide context, yet acceptance
@@ -493,7 +499,7 @@ later release may be justified and engineered.
 
 ### 5.4 Phase 3 — Operate, Evolve, and Learn
 
-The running service is managed against product outcomes and SLOs. The method
+The running service is managed against product outcomes and SLOs. The process
 expects observation of latency, availability, errors, throttling, concurrency,
 retries, dead letters, workflow failures, quota use, cold starts, security
 signals, capacity, cost per meaningful business unit, and provider health.
@@ -502,7 +508,7 @@ and continuity work remain owned.
 
 Incidents first trigger recovery and communication. The subsequent problem
 analysis may reveal a defect in a domain rule, architecture, provider mapping,
-generator, implementation, release control, or method guidance. The change is
+generator, implementation, release control, or process guidance. The change is
 routed to the earliest authoritative source:
 
 | Nature of change                                                              | Authoritative re-entry point      |
@@ -521,7 +527,7 @@ system and its authoritative models gradually become unrelated artifacts.
 
 Retrospectives compare actual outcomes, SLOs, cost, risk, estimates, and flow
 with the original hypotheses. Reusable models, transformations, tests,
-templates, runbooks, and method fragments are generalized only after review.
+templates, runbooks, and reusable method content are generalized only after review.
 
 ### 5.5 Phase 4 — Retire, Migrate, and Close
 
@@ -676,7 +682,7 @@ The nine gates are decision points rather than phase-completion percentages.
 | Gate | Decision                                  | Minimum evidence focus                                                                          |
 | ---- | ----------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | G0   | Pursue, explore, redirect, or stop        | Outcomes, feasibility, serverless fit, alternatives, cost and risk assumptions                  |
-| G1   | Method and organization ready             | Method profile, owners, team topology, first increment, controls, dependencies                  |
+| G1   | Process and organization ready            | Method profile, owners, team topology, first increment, controls, dependencies                  |
 | G2   | CIM accepted                              | Stakeholder meaning, requirements, domain behavior, acceptance, trace, open decisions           |
 | G3   | PIM accepted and platform-mappable        | Contracts, data/state, failure behavior, security, SLOs, trace, capability needs                |
 | G4   | PSM accepted for generation               | Exact revision, mapping decisions, IAM/network/quota/cost controls, trace, generation readiness |
@@ -724,7 +730,7 @@ disciplines:
 
 ### 7.3 Release and CI/CD semantics
 
-The method distinguishes an increment, release candidate, release, and
+The process distinguishes an increment, release candidate, release, and
 deployment. An increment is an accepted vertical slice. A release candidate is
 an immutable compatible assembly of increments and configuration. A release is
 an authorized candidate, and a deployment is one promotion event within its
@@ -816,8 +822,8 @@ are reported in `12-method-library-and-fragment-report.md`. A generated
 human-readable appendix, `method-library/reusable-method-content-catalog.md`,
 lists every consolidated role, task, work product, and guidance definition.
 The Markdown appendix and the JSON/SPEM representations are built from the same
-sources so that the academic account does not become a separate, stale method
-version.
+sources so that the academic account does not become a separate, stale process
+description.
 
 The formal package uses the normative SPEM 2.0 namespace and standard metaclass
 names. MODRISS-specific provenance, coverage, gate, and runtime metadata are
@@ -831,7 +837,7 @@ and PSM TaskDefinitions reference the existing executable process catalogs;
 coverage matrices bind tasks to metamodel concepts; transformations and
 generators are linked as implementation evidence; and the integrated process
 provides the executable lifecycle view. This relation matters because a SPEM
-diagram alone can describe an attractive method that no tool or project can
+diagram alone can describe a process that no tool or project can
 actually enact.
 
 ## 11. Criteria-based evaluation
@@ -839,14 +845,14 @@ actually enact.
 The finished design was evaluated with the complete Eidi and Ramsin criterion
 set. Two ratings were kept separate:
 
-- **method design coverage**, which asks whether explicit activities, roles,
+- **process-design coverage**, which asks whether explicit activities, roles,
   products, guidance, and evidence rules address a criterion; and
 - **repository realization**, which asks how much of that support is currently
   implemented by the metamodels, validation, transformations, generators,
   process definitions, and tools.
 
 This separation prevents prose from being scored as automation and prevents a
-generator feature from being mistaken for a development method.
+generator feature from being mistaken for a development process.
 
 The design provides explicit support across the general lifecycle: requirements,
 analysis, design, implementation, testing, deployment, maintenance, management,
@@ -879,7 +885,7 @@ method profile, retain criterion-level evidence, and report assessor agreement.
 
 ## 12. Validity and limitations
 
-The method has four kinds of design evidence. Source validity comes from the
+The process design has four kinds of evidence. Source validity comes from the
 explicit relation between lifecycle families and the reviewed method-engineering
 and model-driven sources. Requirements validity comes from iterative criteria
 refinement. Internal validity comes from the trace among requirements,
@@ -887,7 +893,7 @@ patterns, tasks, roles, work products, gates, and SPEM elements. Implementation
 validity comes from links to actual MODRISS metamodels, transformations,
 generators, coverage matrices, and executable process definitions.
 
-These forms of evidence support the claim that the method was systematically
+These forms of evidence support the claim that the process was systematically
 engineered. They do not demonstrate that it is efficient, easy to learn, or
 more effective than an alternative process. The author is also both method
 designer and evaluator, which creates a risk of confirmation bias. The
@@ -906,23 +912,24 @@ deviations, and practitioner experience. Independent assessors should rescore
 the criteria from the evidence package and preserve disagreements.
 
 Until such studies are completed, the defensible claim is that MODRISS provides
-a criteria-evaluated, SPEM-structured, full-lifecycle method design aligned with
-an implemented three-level serverless MDE framework. Claims about productivity,
+a criteria-evaluated, SPEM-structured, full-lifecycle development process
+designed to work with the implemented three-level modeling framework. Claims about productivity,
 quality improvement, scalability in practice, or superiority require empirical
 results.
 
 ## 13. Conclusion
 
-The MODRISS development process closes the gap between a capable modeling
-framework and a usable software development methodology. It retains the CIM,
-PIM, PSM, transformation, and generation work as the technical center of the
-method, while placing that work inside a larger product and service lifecycle.
+The MODRISS methodology comprises the development process and the modeling
+framework. The process connects the framework's modeling capabilities with the
+wider work of developing and operating a software product. It places CIM, PIM,
+PSM, transformation, and generation activities inside a product and service
+lifecycle.
 The process starts with value, feasibility, and situational tailoring; delivers
 thin model-driven increments; separates release authorization from generation;
 connects operation to authoritative models; and gives retirement the same
 discipline as deployment.
 
-The method was not assembled by adding generic agile or DevOps terminology
+The process was not assembled by adding generic agile or DevOps terminology
 around a modeling chain. Its lifecycle, fragments, roles, products, gates, and
 profiles can be traced to stabilized requirements, literature-derived patterns,
 serverless evaluation criteria, and concrete MODRISS capabilities. The SPEM
@@ -930,7 +937,7 @@ library preserves the distinction between reusable method content and its use
 in a configured process, while the executable definitions keep the design
 connected to the tool-supported project.
 
-The resulting method is intentionally configurable. A small exploratory team
+The resulting process is intentionally configurable. A small exploratory team
 and a regulated multi-team program should not produce identical evidence or
 staff every role separately. They should, however, preserve the same essential
 control objectives: explicit intent, accountable decisions, traceable model

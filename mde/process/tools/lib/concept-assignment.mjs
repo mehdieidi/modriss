@@ -208,7 +208,7 @@ export const ROLES = {
     {
       id: "method-engineer",
       name: "Method Engineer",
-      responsibilities: ["Maintains methodology when metamodels change"],
+      responsibilities: ["Maintains alignment between the modeling framework and development process as metamodels change"],
     },
   ],
   pim: [
@@ -255,7 +255,7 @@ export const ROLES = {
     {
       id: "method-engineer",
       name: "Method Engineer",
-      responsibilities: ["Maintains methodology when metamodels change"],
+      responsibilities: ["Maintains alignment between the modeling framework and development process as metamodels change"],
     },
   ],
   psm: [
@@ -307,7 +307,7 @@ export const ROLES = {
     {
       id: "method-engineer",
       name: "Method Engineer",
-      responsibilities: ["Maintains methodology when metamodels change"],
+      responsibilities: ["Maintains alignment between the modeling framework and development process as metamodels change"],
     },
   ],
 };

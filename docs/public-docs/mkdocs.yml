@@ -1,21 +1,33 @@
-site_name: MODRISS Documentation
-site_description: Public documentation for the MODRISS AI-assisted model-driven serverless platform
+site_name: MODRISS
+site_description: Technical documentation for MODRISS, an academic research project on model-driven serverless software development
 repo_name: modriss
+repo_url: https://github.com/mehdieidi/modriss
 theme:
   name: material
+  logo: assets/modriss-logo.svg
+  favicon: assets/modriss-favicon.svg
   features:
     - navigation.indexes
     - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
     - content.code.copy
     - content.tabs.link
   palette:
     - scheme: default
-      primary: deep purple
-      accent: indigo
+      primary: blue grey
+      accent: teal
     - scheme: slate
-      primary: deep purple
-      accent: indigo
+      primary: blue grey
+      accent: teal
+extra_css:
+  - stylesheets/extra.css
+extra_javascript:
+  - javascripts/doc-image-viewer.js
 markdown_extensions:
   - admonition
   - attr_list
@@ -31,149 +43,153 @@ markdown_extensions:
       alternate_style: true
   - tables
 nav:
-  - Home: index.md
-  - Getting Started:
-      - Overview: getting-started/overview.md
-      - Quickstart: getting-started/quickstart.md
-      - Local Development: getting-started/local-development.md
-  - Core Concepts:
-      - Model-Driven Engineering: concepts/model-driven-engineering.md
-      - Modeling Levels: concepts/modeling-levels.md
-      - Validation, Transformation, and Generation: concepts/pipeline.md
-  - DSML Reference:
-      - DSML reference home: dsml/index.md
-      - Shared kernel: dsml/shared-kernel.md
-      - CIM:
-          - CIM overview: dsml/cim/index.md
-          - CIM model root: dsml/cim/cim-root.md
-          - Organization and bounded contexts: dsml/cim/cim-organization.md
-          - Domain and data: dsml/cim/cim-domain-data.md
-          - Behavior: dsml/cim/cim-behavior.md
-          - Processes and policies: dsml/cim/cim-process-policy.md
-          - Governance: dsml/cim/cim-governance.md
-          - Transformation metadata: dsml/cim/cim-transformation.md
-          - CIM enumerations: dsml/cim/cim-types.md
-      - PIM:
-          - PIM overview: dsml/pim/index.md
-          - PIM model root: dsml/pim/pim-root.md
-          - Deployment: dsml/pim/pim-deployment.md
-          - Compute: dsml/pim/pim-compute.md
-          - APIs: dsml/pim/pim-api.md
-          - Integrations: dsml/pim/pim-integration.md
-          - Data: dsml/pim/pim-data.md
-          - Contracts: dsml/pim/pim-contracts.md
-          - Policies: dsml/pim/pim-policy.md
-          - Workflows: dsml/pim/pim-workflow.md
-          - External systems: dsml/pim/pim-external.md
-          - Security: dsml/pim/pim-security.md
-          - Configuration: dsml/pim/pim-config.md
-          - PIM enumerations: dsml/pim/pim-types.md
-      - AWS PSM:
-          - AWS PSM overview: dsml/psm/index.md
-          - AWS PSM model root: dsml/psm/awspsm-root.md
-          - Core and SAM: dsml/psm/awspsm-core.md
-          - Security: dsml/psm/awspsm-security.md
-          - Networking: dsml/psm/awspsm-networking.md
-          - Identity: dsml/psm/awspsm-identity.md
-          - Storage: dsml/psm/awspsm-storage.md
-          - Messaging: dsml/psm/awspsm-messaging.md
-          - EventBridge: dsml/psm/awspsm-events.md
-          - Lambda compute: dsml/psm/awspsm-compute.md
-          - API Gateway: dsml/psm/awspsm-api.md
-          - Step Functions: dsml/psm/awspsm-workflow.md
-          - Observability: dsml/psm/awspsm-observability.md
-          - Integration views: dsml/psm/awspsm-integrations.md
-          - AWS PSM enumerations: dsml/psm/awspsm-enums.md
-  - EVL Validation Reference:
-      - EVL reference home: evl/index.md
-      - Shared kernel: evl/shared/kernel-constraints.md
-      - CIM:
-          - Behavior: evl/cim/behavior.md
-          - Core and traceability: evl/cim/core-kernel-trace.md
-          - Domain and data: evl/cim/domain-data.md
-          - Governance and readiness: evl/cim/governance-readiness.md
-          - Organization and intent: evl/cim/organization-intent.md
-          - Processes and policies: evl/cim/process-policy.md
-      - PIM:
-          - APIs: evl/pim/api.md
-          - Compute: evl/pim/compute.md
-          - Contracts: evl/pim/contracts.md
-          - Core: evl/pim/core.md
-          - Data: evl/pim/data.md
-          - Deployment: evl/pim/deployment.md
-          - Integration: evl/pim/integration.md
-          - Policies: evl/pim/policies.md
-          - Readiness: evl/pim/readiness.md
-          - Security, configuration, and external systems: evl/pim/security-config-external.md
-          - Workflows: evl/pim/workflow.md
-      - AWS PSM:
-          - APIs: evl/psm/api.md
-          - Compute: evl/psm/compute.md
-          - Core and deployment: evl/psm/core.md
-          - EventBridge: evl/psm/events.md
-          - Identity: evl/psm/identity.md
-          - Messaging: evl/psm/messaging.md
-          - Networking: evl/psm/networking.md
-          - Observability: evl/psm/observability.md
-          - Integration relationships: evl/psm/relationships.md
-          - Security: evl/psm/security.md
-          - Storage: evl/psm/storage.md
-          - Step Functions and ASL: evl/psm/workflow.md
-  - Transformation Reference:
-      - Transformation reference home: transformations/index.md
-      - CIM → PIM:
-          - CIM → PIM overview: transformations/cim-to-pim/index.md
-          - Behavior and contracts: transformations/cim-to-pim/behavior-contracts.md
-          - Boundaries and security: transformations/cim-to-pim/boundaries-security.md
-          - Domain and data: transformations/cim-to-pim/domain-data.md
-          - Integration and deployment: transformations/cim-to-pim/integration-deployment.md
-          - Processes and policies: transformations/cim-to-pim/process-policy.md
-          - Root scaffolding: transformations/cim-to-pim/root-scaffolding.md
-      - PIM → AWS PSM:
-          - PIM → AWS PSM overview: transformations/pim-to-awspsm/index.md
-          - Compute and APIs: transformations/pim-to-awspsm/compute-api.md
-          - Contracts, external systems, and policy: transformations/pim-to-awspsm/contracts-external-policy.md
-          - Data, messaging, and events: transformations/pim-to-awspsm/data-messaging-events.md
-          - Root, stages, and stacks: transformations/pim-to-awspsm/root-stage-stack.md
-          - Workflow, security, and configuration: transformations/pim-to-awspsm/workflow-security-config.md
-  - Code Generation Reference:
-      - Generation reference home: generation/index.md
-      - CI/CD: generation/categories/cicd.md
-      - Contracts: generation/categories/contracts.md
-      - Documentation and reports: generation/categories/docs.md
-      - Infrastructure: generation/categories/infrastructure.md
-      - Lambda runtime: generation/categories/lambda.md
-      - Scripts: generation/categories/scripts.md
-      - Tests and fixtures: generation/categories/tests.md
-  - User Guides:
-      - Modeling Workflow: guides/modeling-workflow.md
-      - CIM Modeling Methodology: guides/cim-modeling-methodology.md
-      - PIM Modeling Methodology: guides/pim-modeling-methodology.md
-      - PSM Modeling Methodology: guides/psm-modeling-methodology.md
-      - End-to-End Modeling: guides/end-to-end-modeling-methodology.md
-      - Full-Lifecycle Method: guides/full-lifecycle-method.md
-      - AI Assistant: guides/ai-assistant.md
-      - Generated AWS Projects: guides/generated-artifacts.md
-      - Floci AWS Emulator: guides/floci-emulator.md
-  - Reference:
-      - REST API: reference/rest-api.md
-      - Realtime Assistant API: reference/realtime-api.md
-      - Configuration: reference/configuration.md
-      - Data and Storage: reference/data-storage.md
-      - CLI Tools: reference/cli-tools.md
-      - Repository Layout: reference/repository-layout.md
-  - Architecture:
-      - System Architecture: architecture/system.md
-      - Backend and Storage: architecture/backend-storage.md
-      - Iterative Model Transformations: architecture/iterative-model-transformations.md
-      - Frontend: architecture/frontend.md
+  - Documentation:
+      - Home: index.md
+      - Getting started:
+          - Overview: getting-started/overview.md
+          - Quickstart: getting-started/quickstart.md
+          - Local development: getting-started/local-development.md
+  - Development process:
+      - Full-lifecycle development process: guides/full-lifecycle-method.md
+      - Capability-increment process: guides/end-to-end-modeling-methodology.md
+      - CIM modeling process: guides/cim-modeling-methodology.md
+      - PIM modeling process: guides/pim-modeling-methodology.md
+      - AWS PSM modeling process: guides/psm-modeling-methodology.md
+  - Modeling framework:
+      - Concepts:
+          - Model-driven engineering: concepts/model-driven-engineering.md
+          - Modeling levels: concepts/modeling-levels.md
+          - Validation, transformation, and generation: concepts/pipeline.md
+      - DSML reference:
+          - Overview: dsml/index.md
+          - Shared kernel: dsml/shared-kernel.md
+          - CIM:
+              - Overview: dsml/cim/index.md
+              - Model root: dsml/cim/cim-root.md
+              - Organization and bounded contexts: dsml/cim/cim-organization.md
+              - Domain and data: dsml/cim/cim-domain-data.md
+              - Behavior: dsml/cim/cim-behavior.md
+              - Processes and policies: dsml/cim/cim-process-policy.md
+              - Governance: dsml/cim/cim-governance.md
+              - Transformation metadata: dsml/cim/cim-transformation.md
+              - Enumerations: dsml/cim/cim-types.md
+          - PIM:
+              - Overview: dsml/pim/index.md
+              - Model root: dsml/pim/pim-root.md
+              - Deployment: dsml/pim/pim-deployment.md
+              - Compute: dsml/pim/pim-compute.md
+              - APIs: dsml/pim/pim-api.md
+              - Integrations: dsml/pim/pim-integration.md
+              - Data: dsml/pim/pim-data.md
+              - Contracts: dsml/pim/pim-contracts.md
+              - Policies: dsml/pim/pim-policy.md
+              - Workflows: dsml/pim/pim-workflow.md
+              - External systems: dsml/pim/pim-external.md
+              - Security: dsml/pim/pim-security.md
+              - Configuration: dsml/pim/pim-config.md
+              - Enumerations: dsml/pim/pim-types.md
+          - AWS PSM:
+              - Overview: dsml/psm/index.md
+              - Model root: dsml/psm/awspsm-root.md
+              - Core and SAM: dsml/psm/awspsm-core.md
+              - Security: dsml/psm/awspsm-security.md
+              - Networking: dsml/psm/awspsm-networking.md
+              - Identity: dsml/psm/awspsm-identity.md
+              - Storage: dsml/psm/awspsm-storage.md
+              - Messaging: dsml/psm/awspsm-messaging.md
+              - EventBridge: dsml/psm/awspsm-events.md
+              - Lambda compute: dsml/psm/awspsm-compute.md
+              - API Gateway: dsml/psm/awspsm-api.md
+              - Step Functions: dsml/psm/awspsm-workflow.md
+              - Observability: dsml/psm/awspsm-observability.md
+              - Integration views: dsml/psm/awspsm-integrations.md
+              - Enumerations: dsml/psm/awspsm-enums.md
+      - EVL validation:
+          - Overview: evl/index.md
+          - Shared kernel: evl/shared/kernel-constraints.md
+          - CIM:
+              - Behavior: evl/cim/behavior.md
+              - Core and traceability: evl/cim/core-kernel-trace.md
+              - Domain and data: evl/cim/domain-data.md
+              - Governance and readiness: evl/cim/governance-readiness.md
+              - Organization and intent: evl/cim/organization-intent.md
+              - Processes and policies: evl/cim/process-policy.md
+          - PIM:
+              - APIs: evl/pim/api.md
+              - Compute: evl/pim/compute.md
+              - Contracts: evl/pim/contracts.md
+              - Core: evl/pim/core.md
+              - Data: evl/pim/data.md
+              - Deployment: evl/pim/deployment.md
+              - Integration: evl/pim/integration.md
+              - Policies: evl/pim/policies.md
+              - Readiness: evl/pim/readiness.md
+              - Security, configuration, and external systems: evl/pim/security-config-external.md
+              - Workflows: evl/pim/workflow.md
+          - AWS PSM:
+              - APIs: evl/psm/api.md
+              - Compute: evl/psm/compute.md
+              - Core and deployment: evl/psm/core.md
+              - EventBridge: evl/psm/events.md
+              - Identity: evl/psm/identity.md
+              - Messaging: evl/psm/messaging.md
+              - Networking: evl/psm/networking.md
+              - Observability: evl/psm/observability.md
+              - Integration relationships: evl/psm/relationships.md
+              - Security: evl/psm/security.md
+              - Storage: evl/psm/storage.md
+              - Step Functions and ASL: evl/psm/workflow.md
+      - Transformations:
+          - Overview: transformations/index.md
+          - CIM to PIM:
+              - Overview: transformations/cim-to-pim/index.md
+              - Behavior and contracts: transformations/cim-to-pim/behavior-contracts.md
+              - Boundaries and security: transformations/cim-to-pim/boundaries-security.md
+              - Domain and data: transformations/cim-to-pim/domain-data.md
+              - Integration and deployment: transformations/cim-to-pim/integration-deployment.md
+              - Processes and policies: transformations/cim-to-pim/process-policy.md
+              - Root scaffolding: transformations/cim-to-pim/root-scaffolding.md
+          - PIM to AWS PSM:
+              - Overview: transformations/pim-to-awspsm/index.md
+              - Compute and APIs: transformations/pim-to-awspsm/compute-api.md
+              - Contracts, external systems, and policy: transformations/pim-to-awspsm/contracts-external-policy.md
+              - Data, messaging, and events: transformations/pim-to-awspsm/data-messaging-events.md
+              - Root, stages, and stacks: transformations/pim-to-awspsm/root-stage-stack.md
+              - Workflow, security, and configuration: transformations/pim-to-awspsm/workflow-security-config.md
+      - Code generation:
+          - Overview: generation/index.md
+          - CI/CD: generation/categories/cicd.md
+          - Contracts: generation/categories/contracts.md
+          - Documentation and reports: generation/categories/docs.md
+          - Infrastructure: generation/categories/infrastructure.md
+          - Lambda runtime: generation/categories/lambda.md
+          - Scripts: generation/categories/scripts.md
+          - Tests and fixtures: generation/categories/tests.md
+  - Prototype guides:
+      - Modeling workflow: guides/modeling-workflow.md
+      - AI-assisted modeling: guides/ai-assistant.md
+      - Generated AWS projects: guides/generated-artifacts.md
+      - Floci AWS emulator: guides/floci-emulator.md
+  - Prototype reference:
+      - Architecture:
+          - System architecture: architecture/system.md
+          - Backend and storage: architecture/backend-storage.md
+          - Iterative model transformations: architecture/iterative-model-transformations.md
+          - Frontend: architecture/frontend.md
+      - APIs and configuration:
+          - REST API: reference/rest-api.md
+          - Realtime assistant API: reference/realtime-api.md
+          - Configuration: reference/configuration.md
+          - Data and storage: reference/data-storage.md
+          - CLI tools: reference/cli-tools.md
+          - Repository layout: reference/repository-layout.md
   - Operations:
       - DevOps and SRE: operations/devops-sre.md
       - Deployment: operations/deployment.md
       - Security: operations/security.md
       - Testing: operations/testing.md
-      - Alerting Runbooks: operations/alerting-runbooks.md
+      - Alerting runbooks: operations/alerting-runbooks.md
       - Troubleshooting: operations/troubleshooting.md
-  - Contributing:
-      - Change Guide: contributing/change-guide.md
-      - Status and Roadmap: contributing/status-roadmap.md
+  - Project information:
+      - Change guide: contributing/change-guide.md
+      - Status and roadmap: contributing/status-roadmap.md

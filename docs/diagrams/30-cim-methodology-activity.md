@@ -1,4 +1,4 @@
-# CIM Methodology Activity Diagram
+# CIM Modeling Process Activity Diagram
 
 This activity view shows one capability-slice revolution of `modriss.cim.modeling`.
 

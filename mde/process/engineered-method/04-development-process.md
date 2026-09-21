@@ -105,7 +105,7 @@ evidence, threat/privacy approach, environment and secret strategy, SLO/SLI
 intent, observability, backup/recovery, CI/CD controls, artifact provenance,
 and definitions of Ready and Done.
 
-Gate G1 — **Method and organization ready**. The first increment has a bounded
+Gate G1 — **Process and organization ready**. The first increment has a bounded
 outcome, owners, dependencies, risk treatment, evidence expectations, and a
 valid method profile.
 
@@ -121,8 +121,8 @@ broader for context, but accepted scope and revisions are explicit.
 
 Select a valuable capability/event journey, outcome signal, requirements,
 quality scenarios, dependencies, risks, and acceptance evidence. Define the
-affected bounded contexts and anticipated deployment slice. Reassess the method
-profile if novelty or criticality changed.
+affected bounded contexts and anticipated deployment slice. Reassess the
+process profile if novelty or criticality changed.
 
 Exit: Increment Ready.
 

@@ -3,7 +3,7 @@
 ## Purpose and authority
 
 The diagrams form a hierarchy of views over one process definition. They are
-not independent versions of the method. The executable process source in
+not independent versions of the development process. The executable process source in
 `../../process-definitions/end-to-end.json`, the reusable method-content
 catalog, and the generated SPEM-logical XML are authoritative for identities,
 roles, work products, dependencies, and conditions. PlantUML views explain

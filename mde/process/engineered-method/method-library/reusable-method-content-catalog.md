@@ -48,13 +48,13 @@ Conceptual role mapping: `R-12`. Provenance: Engineered core content.
 
 ### Method Engineer (`role.method-engineer`)
 
-Tailors and evolves the situational method and its process assets.
+Tailors the development process and maintains its alignment with the modeling framework as metamodels change.
 
 Conceptual role mapping: `R-04`. Provenance: End-to-end lifecycle, CIM modeling component, PIM modeling component, AWS PSM modeling component.
 
 ### Process Reviewer (`role.process-reviewer`)
 
-Reviews gates, evidence, decisions, and method improvement.
+Reviews gates, evidence, decisions, and process improvement.
 
 Conceptual role mapping: `R-15`. Provenance: End-to-end lifecycle, CIM modeling component, PIM modeling component, AWS PSM modeling component.
 
@@ -256,9 +256,9 @@ Establish the initial release and increment hypothesis. The task is performed by
 
 **Checks.** The first slice crosses the required lifecycle boundary and has observable acceptance evidence.
 
-#### Assess context and method risks (`task.e2e.ph0.st2.t1`)
+#### Assess context and process-tailoring risks (`task.e2e.ph0.st2.t1`)
 
-Assess context and method risks. The task is performed by `role.method-engineer`. It consumes `e2e-artifact.product-charter`, `e2e-artifact.increment-record` and produces or updates `e2e-artifact.method-profile`.
+Assess context and process-tailoring risks. The task is performed by `role.method-engineer`. It consumes `e2e-artifact.product-charter`, `e2e-artifact.increment-record` and produces or updates `e2e-artifact.method-profile`.
 
 **Work.**
 
@@ -266,7 +266,7 @@ Assess context and method risks. The task is performed by `role.method-engineer`
 - Select the required CIM, PIM, PSM, artifact, and lifecycle activities.
 - Record excluded, combined, or delegated activities with rationale and compensating evidence.
 
-**Exit.** Assess context and method risks evidence is recorded.
+**Exit.** Assess context and process-tailoring risks evidence is recorded.
 
 **Checks.** Every tailoring decision names its context, consequence, owner, and review point.
 
@@ -474,7 +474,7 @@ Inspect flow, quality, and coordination metrics. The task is performed by `role.
 
 - Review flow time, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.
 - Look for systemic queues, missing work products, invalid gates, and coordination failures.
-- Approve bounded method changes and record their expected effect.
+- Approve bounded process changes and record their expected effect.
 
 **Exit.** Inspect flow, quality, and coordination metrics evidence is recorded.
 
@@ -529,8 +529,8 @@ Complete closure review. The task is performed by `role.process-reviewer`. It co
 **Work.**
 
 - Confirm retirement exit criteria and records are complete.
-- Review product, architecture, operational, and method outcomes.
-- Publish reusable patterns, risks, and method changes for future projects.
+- Review product, architecture, operational, and process outcomes.
+- Publish reusable patterns, risks, and process changes for future projects.
 
 **Exit.** Complete closure review evidence is recorded.
 
